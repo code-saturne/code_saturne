@@ -3225,11 +3225,12 @@ cs_field_log_all_key_vals(bool  log_defaults)
  * \brief Define base keys.
  *
  * Keys defined by this function are:
- *   "label"     (string)
- *   "post_vis"  (integer)
- *   "log"       (integer)
- *   "coupled"   (integer, restricted to CS_FIELD_VARIABLE)
- *   "moment_dt" (integer, restricted to CS_FIELD_PROPERTY);
+ *   "label"        (string)
+ *   "log"          (integer)
+ *   "post_vis"     (integer)
+ *   "post_probes"  (integer)
+ *   "coupled"      (integer, restricted to CS_FIELD_VARIABLE)
+ *   "moment_dt"    (integer, restricted to CS_FIELD_PROPERTY);
  *
  * A recommened practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.
@@ -3241,8 +3242,9 @@ cs_field_define_keys_base(void)
 {
   cs_field_define_key_str("label", NULL, 0);
 
-  cs_field_define_key_int("post_vis", 0, 0);
   cs_field_define_key_int("log", 0, 0);
+  cs_field_define_key_int("post_vis", 0, 0);
+  cs_field_define_key_int("post_probes", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
 }

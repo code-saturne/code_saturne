@@ -145,8 +145,6 @@ double precision rhs(3,ncelet)
 
 ! Local variables
 
-character*80     chaine
-character*8      cnom
 integer          ifac,ii,jj,infac,iel, ig, it,isou, jsou
 logical          ilved
 double precision pfacd,flux,fluxi,fluxj, pnd
@@ -174,9 +172,6 @@ pi  = 0.d0
 pj  = 0.d0
 pia = 0.d0
 pja = 0.d0
-
-chaine = nomvar(ippu)
-cnom   = chaine(1:8)
 
 !===============================================================================
 ! 2. Compute the diffusive part with reconstruction technics

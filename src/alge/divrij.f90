@@ -25,7 +25,6 @@ subroutine divrij &
 
  ( idim   , ivar   ,                                              &
    rtpa   ,                                                       &
-   coefa  , coefb  ,                                              &
    viscf  , viscb  )
 
 !===============================================================================
@@ -51,8 +50,6 @@ subroutine divrij &
 ! ivar             ! e  ! <-- ! numero de variable courante                    !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! viscf(nfac)      ! tr ! --> ! resultat du calcul                             !
 ! viscb(nfabor)    ! tr ! --> ! resultat du calcul                             !
 !__________________!____!_____!________________________________________________!
@@ -68,7 +65,6 @@ subroutine divrij &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstphy
@@ -86,18 +82,19 @@ implicit none
 integer          idim   , ivar
 
 double precision rtpa(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
 
 integer          ifac, ivar1, ivar2, ivar3, init, inc
 integer          iccocg,iflmb0
-integer          iclva1, iclva2, iclva3
 integer          nswrgp, imligp, iwarnp
 integer          imaspe, itypfl
 double precision epsrgp, climgp, extrap
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:), pointer :: cofac1, cofac2, cofac3
+double precision, dimension(:), pointer :: cofbc1, cofbc2, cofbc3
+
 !===============================================================================
 
 !===============================================================================
@@ -129,9 +126,14 @@ elseif(ivar.eq.iw) then
 endif
 
 ! --- Boundary conditions on the component Rij for the momentum equation
-iclva1 = iclrtp(ivar1,icoefr)
-iclva2 = iclrtp(ivar2,icoefr)
-iclva3 = iclrtp(ivar3,icoefr)
+
+call field_get_coefac_s(ivarfl(ivar1), cofac1)
+call field_get_coefac_s(ivarfl(ivar2), cofac2)
+call field_get_coefac_s(ivarfl(ivar3), cofac3)
+
+call field_get_coefbc_s(ivarfl(ivar1), cofbc1)
+call field_get_coefbc_s(ivarfl(ivar2), cofbc2)
+call field_get_coefbc_s(ivarfl(ivar3), cofbc3)
 
 !===============================================================================
 ! 2.  CALCUL DE LA DIVERGENCE
@@ -160,10 +162,8 @@ call inimas                                                       &
    epsrgp , climgp , extrap ,                                     &
    crom   , brom   ,                                              &
    rtpa(1,ivar1)   , rtpa(1,ivar2)   , rtpa(1,ivar3)   ,          &
-   coefa(1,iclva1) , coefa(1,iclva2) , coefa(1,iclva3) ,          &
-   coefb(1,iclva1) , coefb(1,iclva2) , coefb(1,iclva3) ,          &
+   cofac1 , cofac2 , cofac3 , cofbc1 , cofbc2 , cofbc3 ,          &
    viscf  , viscb  )
-
 
 !     Calcul des efforts aux bords (partie 5/5), si necessaire
 

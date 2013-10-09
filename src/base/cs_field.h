@@ -804,11 +804,12 @@ cs_field_log_all_key_vals(bool  log_defaults);
  * Define base keys.
  *
  * Keys defined by this function are:
- *   "label"     (string)
- *   "post_vis"  (integer)
- *   "log"       (integer)
- *   "coupled"   (integer, restricted to CS_FIELD_VARIABLE)
- *   "moment_dt" (integer, restricted to CS_FIELD_PROPERTY);
+ *   "label"        (string)
+ *   "log"          (integer)
+ *   "post_vis"     (integer)
+ *   "post_probes"  (integer)
+ *   "coupled"      (integer, restricted to CS_FIELD_VARIABLE)
+ *   "moment_dt"    (integer, restricted to CS_FIELD_PROPERTY);
  *
  * A recommened practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.

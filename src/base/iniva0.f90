@@ -37,7 +37,6 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncofab        total number of couples coefa/b for bound cond
 !> \param[out]    dt            time step value
-!> \param[out]    tpucou        velocity-pressure coupling
 !> \param[out]    rtp           calculation variables at cells center
 !> \param[out]    propce        physical properties at cell centers
 !> \param[out]    coefa         boundary conditions for boundary faces
@@ -48,7 +47,7 @@
 
 subroutine iniva0 &
  ( nvar   , nscal  , ncofab ,                                     &
-   dt     , tpucou , rtp    , propce ,                            &
+   dt     , rtp    , propce ,                                     &
    coefa  , coefb  , frcxt  , prhyd)
 
 !===============================================================================
@@ -80,7 +79,7 @@ implicit none
 
 integer          nvar   , nscal  , ncofab
 
-double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -269,15 +268,6 @@ enddo
 do iel = 1, ncel
   rtp(iel,ipr) = pred0
 enddo
-
-!     Couplage U-P
-if(ipucou.eq.1) then
-  do iel = 1, ncel
-    tpucou(iel,1) = 0.d0
-    tpucou(iel,2) = 0.d0
-    tpucou(iel,3) = 0.d0
-  enddo
-endif
 
 !===============================================================================
 ! 5. INITIALISATION DE K, RIJ ET EPS

@@ -218,6 +218,7 @@ use period
 use mltgrd
 use optcal, only: rlxp1
 use mesh
+use field
 
 !===============================================================================
 
@@ -257,8 +258,7 @@ double precision eswork(3,ncelet)
 ! Local variables
 
 character*80     chaine
-character*16     cnom(3)
-integer          lchain
+character*16     cnom
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iel,icycle,nswmod
 integer          iinvpe
@@ -300,13 +300,13 @@ if (iswdyp.ge.1) then
   allocate(rhs0(3,ncelet))
 endif
 
-! Names
-chaine = nomvar(ippu)
-cnom(1)= chaine(1:16)
-chaine = nomvar(ippv)
-cnom(2)= chaine(1:16)
-chaine = nomvar(ippw)
-cnom(3)= chaine(1:16)
+! Name
+if (ivar.gt.0) then
+  call field_get_name(ivarfl(ivar), chaine)
+else
+  chaine = nomvar(ippu)
+endif
+cnom= chaine(1:16)
 
 ! Symmetric matrix, except if advection
 isym  = 1
@@ -384,15 +384,13 @@ if (imgrp.gt.0) then
 
   ! --- Building of the mesh hierarchy
 
-  chaine = nomvar(ippu)
   iwarnp = iwarni(ivar)
   nagmax = nagmx0(ivar)
   npstmg = ncpmgr(ivar)
-  lchain = 16
 
   call clmlga &
   !==========
- ( chaine(1:16) ,    lchain ,                                     &
+ ( cnom   , len(cnom) ,                                           &
    isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
@@ -587,7 +585,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
   call invers &
   !==========
- ( cnom(1), isym   , ibsize , iesize ,                            &
+ ( cnom   , isym   , ibsize , iesize ,                            &
    ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
    iwarnp , niterf , icycle , iinvpe ,                            &
@@ -776,9 +774,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   nbivar(ippw) = nbivar(ippw) + niterf
   ! Writing
   if (iwarnp.ge.3) then
-     write(nfecra,1000) cnom(1), isweep, residu, rnorm
-     write(nfecra,1000) cnom(2), isweep, residu, rnorm
-     write(nfecra,1000) cnom(3), isweep, residu, rnorm
+     write(nfecra,1000) cnom, isweep, residu, rnorm
   endif
 
   isweep = isweep + 1
@@ -799,18 +795,14 @@ endif
 
 if (iwarnp.ge.1) then
   if (residu.le.epsrsp*rnorm) then
-    write(nfecra,1000) cnom(1),isweep-1,residu,rnorm
-    write(nfecra,1000) cnom(2),isweep-1,residu,rnorm
-    write(nfecra,1000) cnom(3),isweep-1,residu,rnorm
+    write(nfecra,1000) cnom,isweep-1,residu,rnorm
   endif
 endif
 
 ! Writing: non-convergence
 if (iwarnp.ge.1) then
   if (isweep.gt.nswmod) then
-    write(nfecra,1100) cnom(1), nswmod
-    write(nfecra,1100) cnom(2), nswmod
-    write(nfecra,1100) cnom(3), nswmod
+    write(nfecra,1100) cnom, nswmod
   endif
 endif
 
@@ -867,9 +859,7 @@ endif
 !===============================================================================
 
 if (imgrp.gt.0) then
-  chaine = nomvar(ippu)
-  lchain = 16
-  call dsmlga(chaine(1:16), lchain)
+  call dsmlga(cnom, len(cnom))
 endif
 
 ! Free memory

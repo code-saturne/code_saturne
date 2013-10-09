@@ -256,6 +256,9 @@ module numvar
   !> Field id for property i
   integer, save :: iprpfl(npromx)
 
+  !> Field id for the dttens tensor
+  integer, save :: idtten
+
   !> \}
 
   !=============================================================================

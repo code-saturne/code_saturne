@@ -58,7 +58,6 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     flumas        internal mass flux (depending on iappel)
 !> \param[in]     flumab        boundary mass flux (depending on iappel)
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
@@ -95,7 +94,7 @@ subroutine predvv &
    dt     , rtpa   , vel    , vela   ,                            &
    propce ,                                                       &
    flumas , flumab ,                                              &
-   tslagr , coefa  , coefb  , coefav , coefbv , cofafv , cofbfv , &
+   tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
@@ -128,6 +127,7 @@ use mesh
 use cs_f_interfaces
 use cfpoin
 use field
+use field_operator
 
 !===============================================================================
 
@@ -146,7 +146,6 @@ double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(ncelet,3)
@@ -171,11 +170,9 @@ double precision vela  (3  ,ncelet)
 ! Local variables
 
 integer          iel   , ielpdc, ifac  , ivar  , isou  , itypfl
-integer          iccocg, inc   , init  , ii    , isqrt
+integer          iccocg, inc   , iprev , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ipp
 integer          iswdyp, idftnp
-integer          iclipr
-integer          iclik
 integer          ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
@@ -211,7 +208,9 @@ double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
 double precision, dimension(:), pointer :: brom, crom, croma, pcrom
-double precision, dimension(:), pointer :: pres
+double precision, dimension(:), pointer :: coefa_k, coefb_k
+double precision, dimension(:), pointer :: coefa_p, coefb_p
+
 !===============================================================================
 
 !===============================================================================
@@ -228,14 +227,6 @@ if (idften(iu).eq.6) allocate(viscce(6,ncelet))
 ! Allocate a temporary array for the prediction-stage error estimator
 if (iescal(iespre).gt.0) then
   allocate(eswork(3,ncelet))
-endif
-
-iclipr = iclrtp(ipr,icoef)
-
-if(itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
-  iclik  = iclrtp(ik ,icoef)
-else
-  iclik = 0
 endif
 
 ! Reperage de rho au bord
@@ -325,7 +316,7 @@ endif
 ! ---> PRISE EN COMPTE DU GRADIENT DE PRESSION
 
 ! Allocate a work array for the gradient calculation
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
 
 iccocg = 1
 inc    = 1
@@ -338,22 +329,17 @@ extrap = extrag(ipr)
 
 ! For compressible flows, the new Pressure field is required
 if (ippmod(icompf).ge.0) then
-  call field_get_val_s(ivarfl(ipr), pres)
-
+  iprev = 0
 ! For incompressible flows, keep the pressure at time n
 ! in case of PISO algorithm
 else
-  call field_get_val_prev_s(ivarfl(ipr), pres)
+  iprev = 1
 endif
 
-call grdpot &
-!==========
- ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-   iwarnp , epsrgp , climgp , extrap ,                            &
-   frcxt  ,                                                       &
-   pres   , coefa(1,iclipr) , coefb(1,iclipr) ,                   &
-   grad   )
-
+call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
+                              iccocg, nswrgp, iphydr, iwarnp,     &
+                              imligp, epsrgp , extrap, climgp,    &
+                              frcxt, grad)
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
@@ -361,21 +347,23 @@ call grdpot &
 !    On se limite a la premiere iteration (pour faire simple par
 !      rapport a la partie issue de condli, hors boucle)
 if (ineedf.eq.1 .and. iterns.eq.1) then
+  call field_get_coefa_s (ivarfl(ipr), coefa_p)
+  call field_get_coefb_s (ivarfl(ipr), coefb_p)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
     pip = rtpa(iel,ipr) &
-        + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
-    pfac = coefa(ifac,iclipr) +coefb(ifac,iclipr)*pip
+        + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
+    pfac = coefa_p(ifac) +coefb_p(ifac)*pip
     pfac1= rtpa(iel,ipr)                                          &
-         +(cdgfbo(1,ifac)-xyzcen(1,iel))*grad(iel,1)              &
-         +(cdgfbo(2,ifac)-xyzcen(2,iel))*grad(iel,2)              &
-         +(cdgfbo(3,ifac)-xyzcen(3,iel))*grad(iel,3)
-    pfac = coefb(ifac,iclipr)*(extrag(ipr)*pfac1                  &
+         +(cdgfbo(1,ifac)-xyzcen(1,iel))*grad(1,iel)              &
+         +(cdgfbo(2,ifac)-xyzcen(2,iel))*grad(2,iel)              &
+         +(cdgfbo(3,ifac)-xyzcen(3,iel))*grad(3,iel)
+    pfac = coefb_p(ifac)*(extrag(ipr)*pfac1                       &
          +(1.d0-extrag(ipr))*pfac)                                &
-         +(1.d0-coefb(ifac,iclipr))*pfac                          &
+         +(1.d0-coefb_p(ifac))*pfac                               &
          + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1))                      &
          + gy*(cdgfbo(2,ifac)-xyzp0(2))                           &
          + gz*(cdgfbo(3,ifac)-xyzp0(3)) )                         &
@@ -408,9 +396,9 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 !     Calcul de dt/rho*grad P
   do iel = 1, ncel
     dtsrom = dt(iel)/crom(iel)
-    trav(1,iel) = grad(iel,1)*dtsrom
-    trav(2,iel) = grad(iel,2)*dtsrom
-    trav(3,iel) = grad(iel,3)*dtsrom
+    trav(1,iel) = grad(1,iel)*dtsrom
+    trav(2,iel) = grad(2,iel)*dtsrom
+    trav(3,iel) = grad(3,iel)*dtsrom
   enddo
 
   if (irangp.ge.0.or.iperio.eq.1) then
@@ -484,9 +472,9 @@ if (iappel.eq.1) then
   if (iporos.eq.0) then
     if (iphydr.eq.1) then
       do iel = 1, ncel
-        trav(1,iel) = (frcxt(1 ,iel) - grad(iel,1)) * volume(iel)
-        trav(2,iel) = (frcxt(2 ,iel) - grad(iel,2)) * volume(iel)
-        trav(3,iel) = (frcxt(3 ,iel) - grad(iel,3)) * volume(iel)
+        trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * volume(iel)
+        trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * volume(iel)
+        trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * volume(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
@@ -498,18 +486,18 @@ if (iappel.eq.1) then
     else
       do iel = 1, ncel
         drom = (crom(iel)-ro0)
-        trav(1,iel) = (drom*gx - grad(iel,1)) * volume(iel)
-        trav(2,iel) = (drom*gy - grad(iel,2)) * volume(iel)
-        trav(3,iel) = (drom*gz - grad(iel,3)) * volume(iel)
+        trav(1,iel) = (drom*gx - grad(1,iel)) * volume(iel)
+        trav(2,iel) = (drom*gy - grad(2,iel)) * volume(iel)
+        trav(3,iel) = (drom*gz - grad(3,iel)) * volume(iel)
       enddo
     endif
   ! With porosity
   else
     if (iphydr.eq.1) then
       do iel = 1, ncel
-        trav(1,iel) = (frcxt(1 ,iel) - grad(iel,1)) * volume(iel) * porosi(iel)
-        trav(2,iel) = (frcxt(2 ,iel) - grad(iel,2)) * volume(iel) * porosi(iel)
-        trav(3,iel) = (frcxt(3 ,iel) - grad(iel,3)) * volume(iel) * porosi(iel)
+        trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * volume(iel) * porosi(iel)
+        trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * volume(iel) * porosi(iel)
+        trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * volume(iel) * porosi(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
@@ -521,9 +509,9 @@ if (iappel.eq.1) then
     else
       do iel = 1, ncel
         drom = (crom(iel)-ro0)
-        trav(1,iel) = (drom*gx - grad(iel,1) ) * volume(iel) * porosi(iel)
-        trav(2,iel) = (drom*gy - grad(iel,2) ) * volume(iel) * porosi(iel)
-        trav(3,iel) = (drom*gz - grad(iel,3) ) * volume(iel) * porosi(iel)
+        trav(1,iel) = (drom*gx - grad(1,iel) ) * volume(iel) * porosi(iel)
+        trav(2,iel) = (drom*gy - grad(2,iel) ) * volume(iel) * porosi(iel)
+        trav(3,iel) = (drom*gz - grad(3,iel) ) * volume(iel) * porosi(iel)
       enddo
     endif
 
@@ -535,9 +523,9 @@ elseif(iappel.eq.2) then
   if (iporos.eq.0) then
     if (iphydr.eq.1) then
       do iel = 1, ncel
-        trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(iel,1))*volume(iel)
-        trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(iel,2))*volume(iel)
-        trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(iel,3))*volume(iel)
+        trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(1,iel))*volume(iel)
+        trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(2,iel))*volume(iel)
+        trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(3,iel))*volume(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
@@ -549,9 +537,9 @@ elseif(iappel.eq.2) then
     else
       do iel = 1, ncel
         drom = (crom(iel)-ro0)
-        trav(1,iel) = trav(1,iel) + (drom*gx - grad(iel,1))*volume(iel)
-        trav(2,iel) = trav(2,iel) + (drom*gy - grad(iel,2))*volume(iel)
-        trav(3,iel) = trav(3,iel) + (drom*gz - grad(iel,3))*volume(iel)
+        trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*volume(iel)
+        trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*volume(iel)
+        trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*volume(iel)
       enddo
     endif
 
@@ -560,11 +548,11 @@ elseif(iappel.eq.2) then
     if (iphydr.eq.1) then
       do iel = 1, ncel
         trav(1,iel) = trav(1,iel)                                           &
-                    + (frcxt(1 ,iel) - grad(iel,1))*volume(iel)*porosi(iel)
+                    + (frcxt(1 ,iel) - grad(1,iel))*volume(iel)*porosi(iel)
         trav(2,iel) = trav(2,iel)                                           &
-                    + (frcxt(2 ,iel) - grad(iel,2))*volume(iel)*porosi(iel)
+                    + (frcxt(2 ,iel) - grad(2,iel))*volume(iel)*porosi(iel)
         trav(3,iel) = trav(3,iel)                                           &
-                    + (frcxt(3 ,iel) - grad(iel,3))*volume(iel)*porosi(iel)
+                    + (frcxt(3 ,iel) - grad(3,iel))*volume(iel)*porosi(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
@@ -579,9 +567,9 @@ elseif(iappel.eq.2) then
     else
       do iel = 1, ncel
         drom = (crom(iel)-ro0)
-        trav(1,iel) = trav(1,iel) + (drom*gx - grad(iel,1))*volume(iel)*porosi(iel)
-        trav(2,iel) = trav(2,iel) + (drom*gy - grad(iel,2))*volume(iel)*porosi(iel)
-        trav(3,iel) = trav(3,iel) + (drom*gz - grad(iel,3))*volume(iel)*porosi(iel)
+        trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*volume(iel)*porosi(iel)
+        trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*volume(iel)*porosi(iel)
+        trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*volume(iel)*porosi(iel)
       enddo
     endif
   endif
@@ -673,9 +661,10 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
    .and. igrhok.eq.1 .and. iterns.eq.1) then
 
   ! Allocate a work array for the gradient calculation
-  allocate(grad(ncelet,3))
+  allocate(grad(3,ncelet))
 
   iccocg = 1
+  iprev  = 1
   inc    = 1
   nswrgp = nswrgr(ik)
   imligp = imligr(ik)
@@ -683,23 +672,20 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   climgp = climgr(ik)
   extrap = extrag(ik)
 
-  iwarnp = iwarni(iu)
+  iwarnp = iwarni(ik)
 
-  call grdcel &
-  !==========
- ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra, epsrgp , climgp , extrap ,                    &
-   rtpa(1,ik)   , coefa(1,iclik)  , coefb(1,iclik)  ,             &
-   grad   )
+  call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
+                             iccocg, nswrgp, iwarnp, imligp,      &
+                             epsrgp, extrap, climgp, grad)
 
   d2s3 = 2.d0/3.d0
 
   ! With porosity
   if (iporos.ge.1) then
     do iel = 1, ncel
-      grad(iel,1) = grad(iel,1)*porosi(iel)
-      grad(iel,2) = grad(iel,2)*porosi(iel)
-      grad(iel,3) = grad(iel,3)*porosi(iel)
+      grad(1,iel) = grad(1,iel)*porosi(iel)
+      grad(2,iel) = grad(2,iel)*porosi(iel)
+      grad(3,iel) = grad(3,iel)*porosi(iel)
     enddo
   endif
 
@@ -712,9 +698,9 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
     call field_get_val_prev_s(icrom, croma)
     do iel = 1, ncel
       romvom = -croma(iel)*volume(iel)*d2s3
-      propce(iel,iptsna  )=propce(iel,iptsna  )+grad(iel,1)*romvom
-      propce(iel,iptsna+1)=propce(iel,iptsna+1)+grad(iel,2)*romvom
-      propce(iel,iptsna+2)=propce(iel,iptsna+2)+grad(iel,3)*romvom
+      propce(iel,iptsna  )=propce(iel,iptsna  )+grad(1,iel)*romvom
+      propce(iel,iptsna+1)=propce(iel,iptsna+1)+grad(2,iel)*romvom
+      propce(iel,iptsna+2)=propce(iel,iptsna+2)+grad(3,iel)*romvom
     enddo
   ! Si on n'extrapole pas les termes sources en temps : TRAV ou TRAVA
   else
@@ -722,14 +708,14 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
       do iel = 1, ncel
         romvom = -crom(iel)*volume(iel)*d2s3
         do isou = 1, 3
-          trav(isou,iel) = trav(isou,iel) + grad(iel,isou) * romvom
+          trav(isou,iel) = trav(isou,iel) + grad(isou,iel) * romvom
         enddo
       enddo
     else
       do iel = 1, ncel
         romvom = -crom(iel)*volume(iel)*d2s3
         do isou = 1, 3
-          trava(isou,iel) = trava(isou,iel) + grad(iel,isou) * romvom
+          trava(isou,iel) = trava(isou,iel) + grad(isou,iel) * romvom
         enddo
       enddo
     endif
@@ -737,14 +723,16 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
 
   ! Calcul des efforts aux parois (partie 3/5), si demande
   if (ineedf.eq.1) then
+    call field_get_coefa_s (ivarfl(ik), coefa_k)
+    call field_get_coefb_s (ivarfl(ik), coefb_k)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      xkb = rtpa(iel,ik) + diipbx*grad(iel,1)                      &
-           + diipby*grad(iel,2) + diipbz*grad(iel,3)
-      xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
+      xkb = rtpa(iel,ik) + diipbx*grad(1,iel)                      &
+           + diipby*grad(2,iel) + diipbz*grad(3,iel)
+      xkb = coefa_k(ifac)+coefb_k(ifac)*xkb
       xkb = d2s3*crom(iel)*xkb
       do isou = 1, 3
         forbr(isou,ifac) = forbr(isou,ifac) + xkb*surfbo(isou,ifac)
@@ -880,16 +868,12 @@ if(itytur.eq.3.and.iterns.eq.1) then
     if(isou.eq.2) ivar = iv
     if(isou.eq.3) ivar = iw
 
-    call divrij                                                   &
+    call divrij(isou, ivar, rtpa, viscf, viscb)
     !==========
- ( isou   , ivar   ,                                              &
-   rtpa   ,                                                       &
-   coefa  , coefb  ,                                              &
-   viscf  , viscb  )
 
     init = 1
     call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,              &
-                                   ifacel,ifabor,viscf,viscb,w1)
+                ifacel,ifabor,viscf,viscb,w1)
 
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes de divergence

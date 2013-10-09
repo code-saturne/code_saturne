@@ -62,10 +62,10 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine ecrhis &
-      (ndim, ncelet, ncel, modhis, xyzcen, ra)
-      integer :: ndim, ncelet, ncel, modhis
-      double precision, dimension(ndim, ncelet) :: xyzcen
-      double precision, dimension(*), target :: ra
+      (nvar, nproce, modhis, rtp)
+      use mesh
+      integer :: nvar, nproce, modhis
+      double precision, dimension(ncelet,*), target :: rtp
     end subroutine ecrhis
 
     !---------------------------------------------------------------------------

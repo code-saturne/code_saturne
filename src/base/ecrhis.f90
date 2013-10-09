@@ -20,35 +20,27 @@
 
 !-------------------------------------------------------------------------------
 
+!> \file ecrhis.f90
+!> \brief Write plot data
+!>
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nproce        total number of physical properties
+!> \param[in]     modhis        0 or 1: initialize/output; 2: finalize
+!> \param[in,out] rtp           calculated variables at cell centers
+!>                              (at current time step)
+!______________________________________________________________________________
+
 subroutine ecrhis &
 !================
 
- ( ndim   , ncelet , ncel , modhis , xyzcen , ra )
-
-!===============================================================================
-! Purpose:
-! -------
-
-! Write plot data
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! modhis           ! i  ! <-- ! 0 or 1: initialize/output; 2: finalize         !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! ra(*)            ! ra ! <-- ! main real work array                           !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+ ( nvar , nproce , modhis , rtp )
 
 !===============================================================================
 ! Module files
@@ -60,6 +52,8 @@ use entsor
 use cstnum
 use optcal
 use parall
+use mesh
+use field
 
 !===============================================================================
 
@@ -67,17 +61,16 @@ implicit none
 
 ! Arguments
 
-integer          ndim, ncelet, ncel
+integer          nvar, nproce
 integer          modhis
-double precision xyzcen(ndim, ncelet)
-double precision, dimension(*), target :: ra
+double precision, dimension(*), target :: rtp(ncelet,*)
 
 ! Local variables
 
 character        nompre*300, nomhis*300
 integer          tplnum, ii, ii1, ii2, lpre, lnom, lng
-integer          icap, ncap, ipp, ira
-integer          idivdt, iel
+integer          icap, ncap, ipp, ivar, iprop
+integer          iel, isou, keymom, mom_id, f_id
 integer          nbcap(nvppmx)
 double precision varcap(ncaptm)
 
@@ -85,7 +78,9 @@ integer, dimension(:), allocatable :: lsttmp
 double precision, dimension(:), allocatable, target :: momtmp
 double precision, dimension(:,:), allocatable :: xyztmp
 
-double precision, dimension(:), pointer :: varptr => null()
+double precision, dimension(:,:), pointer :: val_v => null()
+double precision, dimension(:), pointer :: val_s => null()
+double precision, dimension(:), pointer :: num_s, div_s
 
 ! Time plot number shift (in case multiple routines define plots)
 
@@ -226,34 +221,22 @@ endif
 
 if (modhis.eq.0 .or. modhis.eq.1) then
 
-  do ipp = 2, nvppmx
-    if (ihisvr(ipp,1).ne.0) then
-      ira = abs(ipp2ra(ipp))
+  ! Loop on variables
 
-      ! For moments, we must divide by the cumulative time
-      idivdt = ippmom(ipp)
-      if (idivdt.eq.0) then
-        varptr => ra(ira:ira+ncel)
-      else
-        allocate(momtmp(ncel))
-        varptr => momtmp
-        if (idivdt.gt.0) then
-          do iel = 1, ncel
-            momtmp(iel) = ra(ira+iel-1)/max(ra(idivdt+iel-1),epzero)
-          enddo
-        elseif (idivdt.lt.0) then
-          do iel = 1, ncel
-            momtmp(iel) = ra(ira+iel-1)/max(dtcmom(-idivdt),epzero)
-          enddo
-        endif
-      endif
+  do ivar = 1, nvar
+
+    ipp = ipprtp(ivar)
+
+    if (ihisvr(ipp,1).ne.0) then
+
+      val_s => rtp(:, ivar)
 
       if (ihisvr(ipp,1).lt.0) then
         do icap = 1, ncapt
           if (irangp.lt.0) then
-            varcap(icap) = varptr(nodcap(icap))
+            varcap(icap) = rtp(nodcap(icap), ivar)
           else
-            call parhis(nodcap(icap), ndrcap(icap), varptr, varcap(icap))
+            call parhis(nodcap(icap), ndrcap(icap), val_s, varcap(icap))
             !==========
           endif
         enddo
@@ -261,18 +244,82 @@ if (modhis.eq.0 .or. modhis.eq.1) then
       else
         do icap = 1, ihisvr(ipp,1)
           if (irangp.lt.0) then
-            varcap(icap) = varptr(nodcap(ihisvr(ipp,icap+1)))
+            varcap(icap) = val_s(nodcap(ihisvr(ipp,icap+1)))
           else
             call parhis(nodcap(ihisvr(ipp,icap+1)), &
             !==========
                         ndrcap(ihisvr(ipp,icap+1)), &
-                        varptr, varcap(icap))
+                        val_s, varcap(icap))
           endif
         enddo
         ncap = ihisvr(ipp,1)
       endif
 
-      if (idivdt.ne.0) then
+      if (irangp.le.0 .and. ncap.gt.0) then
+        tplnum = nptpl + ipp
+        call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
+        !==========
+      endif
+    endif
+  enddo
+
+  ! Loop on physical properties
+
+  call field_get_key_id('moment_dt', keymom)
+
+  do iprop= 1, nproce
+
+    ipp = ipppro(iprop)
+
+    if (ihisvr(ipp,1).ne.0) then
+
+      call field_get_key_int(iprpfl(iprop), keymom, mom_id)
+
+      ! For moments, we must divide by the cumulative time
+
+      if (mom_id.eq.-1) then
+        call field_get_val_s(iprpfl(iprop), val_s)
+      else
+        allocate(momtmp(ncel))
+        val_s => momtmp
+        call field_get_val_s(iprpfl(iprop), num_s)
+        call field_get_val_s(mom_id, div_s)
+        if (mom_id.ge.0) then
+          do iel = 1, ncel
+            momtmp(iel) = num_s(iel)/max(div_s(iel),epzero)
+          enddo
+        else
+          do iel = 1, ncel
+            momtmp(iel) = num_s(iel)/max(dtcmom(-mom_id -1),epzero)
+          enddo
+        endif
+      endif
+
+      if (ihisvr(ipp,1).lt.0) then
+        do icap = 1, ncapt
+          if (irangp.lt.0) then
+            varcap(icap) = val_s(nodcap(icap))
+          else
+            call parhis(nodcap(icap), ndrcap(icap), val_s, varcap(icap))
+            !==========
+          endif
+        enddo
+        ncap = ncapt
+      else
+        do icap = 1, ihisvr(ipp,1)
+          if (irangp.lt.0) then
+            varcap(icap) = val_s(nodcap(ihisvr(ipp,icap+1)))
+          else
+            call parhis(nodcap(ihisvr(ipp,icap+1)), &
+            !==========
+                        ndrcap(ihisvr(ipp,icap+1)), &
+                        val_s, varcap(icap))
+          endif
+        enddo
+        ncap = ihisvr(ipp,1)
+      endif
+
+      if (mom_id.ne.-1) then
         deallocate(momtmp)
       endif
 
@@ -283,6 +330,104 @@ if (modhis.eq.0 .or. modhis.eq.1) then
       endif
     endif
   enddo
+
+  ! Other scalar fields
+
+  ipp = ippdt
+  if (ihisvr(ipp,1).ne.0) then
+
+    call field_get_id('dt', f_id)
+    call field_get_val_s(f_id, val_s)
+
+    if (ihisvr(ipp,1).lt.0) then
+      do icap = 1, ncapt
+        if (irangp.lt.0) then
+          varcap(icap) = val_s(nodcap(icap))
+        else
+          call parhis(nodcap(icap), ndrcap(icap), val_s, varcap(icap))
+          !==========
+        endif
+      enddo
+      ncap = ncapt
+    else
+      do icap = 1, ihisvr(ipp,1)
+        if (irangp.lt.0) then
+          varcap(icap) = val_s(nodcap(ihisvr(ipp,icap+1)))
+        else
+          call parhis(nodcap(ihisvr(ipp,icap+1)), &
+          !==========
+                      ndrcap(ihisvr(ipp,icap+1)), &
+                      val_s, varcap(icap))
+        endif
+      enddo
+      ncap = ihisvr(ipp,1)
+    endif
+
+    if (irangp.le.0 .and. ncap.gt.0) then
+      tplnum = nptpl + ipp
+      call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
+      !==========
+    endif
+  endif
+
+  ! Other vector fields (currently, only tpucou)
+
+  if (     ihisvr(ipptx,1).ne.0 .or. ihisvr(ippty,1).ne.0  &
+      .or. ihisvr(ipptz,1).ne.0) then
+    f_id = idtten
+  else
+    f_id = -1
+  endif
+
+  if (f_id .ge. 0) then
+    
+    call field_get_val_v(iprpfl(iprop), val_v)
+
+    do isou = 1, 3
+
+      if (isou.eq.1) then
+        ipp = ipptx
+      else if (isou.eq.2) then
+        ipp = ippty
+      else if (isou.eq.3) then
+        ipp = ipptz
+      endif
+
+      if (ihisvr(ipp,1).lt.0) then
+        do icap = 1, ncapt
+          if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
+            varcap(icap) = val_v(isou, nodcap(icap))
+          endif
+          if (irangp.ge.0) then
+            lng = 1
+            call parbcr(irangp, lng, varcap(icap))
+            !==========
+          endif
+        enddo
+        ncap = ncapt
+      else
+        do icap = 1, ihisvr(ipp,1)
+          if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
+            varcap(icap) = val_v(isou, nodcap(ihisvr(ipp,icap+1)))
+          endif
+          if (irangp.ge.0) then
+            lng = 1
+            call parbcr(irangp, lng, varcap(icap))
+            !==========
+          endif
+        enddo
+        ncap = ihisvr(ipp,1)
+      endif
+
+      if (irangp.le.0 .and. ncap.gt.0) then
+        tplnum = nptpl + ipp
+        call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
+        !==========
+      endif
+
+    enddo
+
+  endif
 
 endif
 

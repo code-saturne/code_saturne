@@ -29,7 +29,7 @@ subroutine fldtri &
 !================
 
  ( nproce ,                                                            &
-   dt     , tpucou , rtpa   , rtp    , propce ,                        &
+   dt     , rtpa   , rtp    , propce ,                                 &
    coefa  , coefb  )
 
 !===============================================================================
@@ -45,7 +45,6 @@ subroutine fldtri &
 !__________________!____!_____!________________________________________________!
 ! nproce           ! i  ! <-- ! nombre de prop phy aux centres                 !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! tpucou(ncelet,3) ! ra ! <-- ! velocity-pressure coupling                     !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -91,7 +90,7 @@ implicit none
 ! Arguments
 
 integer          nproce, nscal
-double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
@@ -314,13 +313,6 @@ enddo
 
 call field_get_id('dt', iflid)
 call field_map_values(iflid, dt, dt)
-
-! Transient velocity/pressure coupling
-
-if (ipucou.ne.0) then
-  call field_get_id('tpucou', iflid)
-  call field_map_values(iflid, tpucou, tpucou)
-endif
 
 return
 end subroutine

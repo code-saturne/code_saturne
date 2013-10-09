@@ -544,27 +544,18 @@ if (idtvar.eq.2.and.ilisvr(ippdt).gt.0) then
   call field_set_key_int(iflid, keylog, ilisvr(ippdt))
 endif
 
-! Transient velocity/pressure coupling
+! Transient velocity/pressure coupling, postprocessing field
+! (variant used for computation is a tensorial field, not this one)
 
-if (ipucou.ne.0) then
-  name = 'tpucou'
-  call field_create(name, itycat, ityloc, idim3, ilved, inoprv, iflid)
-  ! Change label to remove trailing coordinate name
-  name = nomvar(ipptx)
-  name1 = name(1:32)
-  name = nomvar(ippty)
-  name2 = name(1:32)
-  name = nomvar(ipptz)
-  name3 = name(1:32)
-  call fldsnv (name1, name2, name3)
-  !==========
-  call field_set_key_str(iflid, keylbl, name1)
+if (ipucou.ne.0 .or. ncpdct.gt.0) then
+  name = 'dttens'
+  call field_create(name, itycat, ityloc, 6, .true., inoprv, idtten)
 endif
 if (ichrvr(ipptx).gt.0) then
-  call field_set_key_int(iflid, keyvis, ichrvr(ipptx))
+  call field_set_key_int(idtten, keyvis, ichrvr(ipptx))
 endif
 if (ilisvr(ipptx).gt.0) then
-  call field_set_key_int(iflid, keylog, ilisvr(ipptx))
+  call field_set_key_int(idtten, keylog, ilisvr(ipptx))
 endif
 
 ! Interior mass flux field

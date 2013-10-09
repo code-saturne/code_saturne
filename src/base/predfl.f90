@@ -147,6 +147,7 @@ allocate(pot(ncelet), pota(ncelet), dpot(ncelet), rhs(ncelet))
 
 ! --- Writing
 chaine = 'potential       '
+lchain = 16
 
 ! --- Physical quantities
 call field_get_val_s(icrom, crom)
@@ -296,7 +297,6 @@ if (imgr(ipr).gt.0) then
   iwarnp = iwarni(ipr)
   nagmax = nagmx0(ipr)
   npstmg = ncpmgr(ipr)
-  lchain = 16
 
   call clmlga &
   !==========
@@ -484,10 +484,7 @@ call itrmas &
 !===============================================================================
 
 if (imgr(ipr).gt.0) then
-  lchain = 16
-
   call dsmlga(chaine(1:16), lchain)
-
 endif
 
 ! Free memory

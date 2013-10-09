@@ -217,7 +217,8 @@ character*80     fname
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
-double precision, dimension(:,:,:), allocatable :: gradv
+double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, pointer, dimension(:,:) :: dttens
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
@@ -311,6 +312,8 @@ call field_get_val_s(iflmab, bmasfl)
 ! Pointers to specific fields
 if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
 if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
+if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
 !===============================================================================
 ! 2. Treatment of types of BCs given by itypfb

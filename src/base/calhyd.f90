@@ -127,7 +127,10 @@ double precision, allocatable, dimension(:) :: w1, w7, w10
 ! Allocate temporary arrays
 allocate(w1(ncelet), w7(ncelet), w10(ncelet))
 
-! --- Memoire
+! --- Variable name
+
+chaine = 'PresHydr'
+lchain = 16
 
 ! --- Options de resolution
 !     Symetrique
@@ -274,11 +277,9 @@ if (imgr(ipr).gt.0) then
 
 !   --- Creation de la hierarchie de maillages
 
-  chaine = 'PresHydr'
   iwarnp = iwarni(ipr)
   nagmax = nagmx0(ipr)
   npstmg = ncpmgr(ipr)
-  lchain = 16
 
   call clmlga &
   !==========
@@ -321,7 +322,6 @@ do isweep = 1, nswmpr
 
   call prodsc(ncel,isqrt,smbr,smbr,residu)
   if (iwarni(ipr).ge.2) then
-     chaine = 'PresHydr'
      write(nfecra,1400)chaine(1:16),isweep,residu
   endif
 
@@ -339,7 +339,6 @@ do isweep = 1, nswmpr
     drtp(iel) = 0.d0
   enddo
 
-  chaine = 'PresHydr'
   nitmap = nitmax(ipr)
   imgrp  = imgr  (ipr)
   ncymap = ncymax(ipr)
@@ -408,7 +407,6 @@ enddo
 ! --- Boucle de reconstruction : fin
 
 if(iwarni(ipr).ge.2) then
-   chaine = 'PresHydr'
    write( nfecra,1600)chaine(1:16),nswmpr
 endif
 
@@ -422,8 +420,6 @@ deallocate(w1, w7, w10)
 !===============================================================================
 
 if (imgr(ipr).gt.0) then
-  chaine = 'PresHydr'
-  lchain = 16
   call dsmlga(chaine(1:16), lchain)
   !==========
 endif

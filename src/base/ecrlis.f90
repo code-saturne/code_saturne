@@ -24,7 +24,6 @@ subroutine ecrlis &
 !================
 
  ( nvar   , ncelet , ncel   ,                                     &
-   irtp   ,                                                       &
    rtp    , rtpa   , dt     , volume )
 
 !===============================================================================
@@ -78,13 +77,12 @@ use ppincl
 implicit none
 
 integer          nvar, ncelet, ncel
-integer          irtp
 double precision rtpa(ncelet,nvar), rtp(ncelet,nvar)
 double precision dt(ncelet), volume(ncelet)
 
 ! Local variables
 
-integer          ic, icel, ivar, ipp, ira
+integer          ic, icel, ivar, ipp
 character*200    chain, chainc
 
 !==================================================================

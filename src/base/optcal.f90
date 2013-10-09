@@ -783,10 +783,6 @@ module optcal
   !> numero de propriete du temps cumule (voir idtmom)
   integer, save ::          icdtmo(nbmomx)
 
-  !> repere pour le post si on doit diviser la variable
-  !> par un temps cumule (see \ref memtri and \ref usvpst)
-  integer, save ::          ippmom(nvppmx)
-
   !> valeur du pas de temps cumule quand il est uniforme (see \ref idtmom).
   double precision, save :: dtcmom(nbmomx)
 

@@ -352,8 +352,6 @@ module entsor
   integer, save :: ippty
   !> locator pointer vor variables output
   integer, save :: ipptz
-  !> locator pointer vor variables output
-  integer, save :: ipp2ra(nvppmx)
 
   !> for every quantity (variable, physical or numerical property ...),
   !> indicator concerning the writing in the execution report file

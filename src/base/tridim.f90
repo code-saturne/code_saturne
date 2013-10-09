@@ -37,7 +37,6 @@
 !> \param[in]     isostd        standard output indicator
 !>                              + reference face number
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     tpucou        velocity-pressure coupling
 !> \param[in,out] rtpa          calculated variables at cell centers
 !>                              (at current and previous time steps)
 !> \param[in,out] rtp           calculated variables at cell centers
@@ -54,7 +53,7 @@ subroutine tridim &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   dt     , tpucou , rtpa   , rtp    , propce ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    tslagr , coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -106,7 +105,7 @@ integer          nvar   , nscal
 
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
@@ -153,10 +152,11 @@ double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
+double precision, pointer, dimension(:,:) :: dttens
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, crom_prev
-!===============================================================================
 
+!===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -557,7 +557,11 @@ if (nbaste.gt.0.and.itrale.gt.nalinf) then
 endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving
+
 if (idften(ipr).eq.6) then
+
+  call field_get_val_v(idtten, dttens)
+
   do iel = 1, ncel
     dttens(1, iel) = dt(iel)
     dttens(2, iel) = dt(iel)
@@ -566,6 +570,7 @@ if (idften(ipr).eq.6) then
     dttens(5, iel) = 0.d0
     dttens(6, iel) = 0.d0
   enddo
+
   do ielpdc = 1, ncepdc
     iel = icepdc(ielpdc)
 
@@ -577,11 +582,10 @@ if (idften(ipr).eq.6) then
     hdls(5) = ckupdc(ielpdc, 5)
     hdls(6) = ckupdc(ielpdc, 6)
 
-    call symmetric_matrix_inverse(dttens(1, iel), hdls)
-
+    call symmetric_matrix_inverse(dttens(:, iel), hdls)
   enddo
-endif
 
+endif
 
 !===============================================================================
 !   RECALAGE DE LA PRESSION Pth ET MASSE VOLUMIQUE rho
@@ -1197,7 +1201,7 @@ do while (iterns.le.nterup)
     !==========
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
-    dt     , tpucou , rtp    , rtpa   , propce ,                   &
+    dt     , rtp    , rtpa   , propce ,                            &
     tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
     trava  , ximpav , uvwk   )
 

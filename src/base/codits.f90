@@ -216,6 +216,7 @@ use period
 use mltgrd
 use optcal, only: rlxp1
 use mesh
+use field
 
 !===============================================================================
 
@@ -255,7 +256,6 @@ double precision xcpp(ncelet)
 
 character*80     chaine
 character*16     cnom
-integer          lchain
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          itenso,iinvpe, iinvpp
@@ -287,8 +287,12 @@ if (iswdyp.ge.1) then
 endif
 
 ! Names
-chaine = nomvar(ipp)
-cnom   = chaine(1:16)
+if (ivar.gt.0) then
+  call field_get_name(ivarfl(ivar), chaine)
+else
+  chaine = nomvar(ipp)
+endif
+cnom= chaine(1:16)
 
 ! Symmetric matrix, except if advection
 isym  = 1
@@ -380,15 +384,13 @@ if (imgrp.gt.0) then
 
   ! --- Building of the mesh hierarchy
 
-  chaine = nomvar(ipp)
   iwarnp = iwarni(ivar)
   nagmax = nagmx0(ivar)
   npstmg = ncpmgr(ivar)
-  lchain = 16
 
   call clmlga &
   !==========
- ( chaine(1:16) ,    lchain ,                                     &
+ ( cnom   , len(cnom) ,                                           &
    isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
@@ -808,9 +810,7 @@ endif
 !===============================================================================
 
 if (imgrp.gt.0) then
-  chaine = nomvar(ipp)
-  lchain = 16
-  call dsmlga(chaine(1:16), lchain)
+  call dsmlga(cnom, len(cnom))
 endif
 
 ! Free memory

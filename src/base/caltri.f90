@@ -91,9 +91,9 @@ implicit none
 
 integer          ipropc
 integer          irtp   , irtpa
-integer          idt    , itpuco
+integer          idt
 
-integer          idebra, ifinra
+integer          ifinra
 integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
@@ -147,9 +147,6 @@ double precision, allocatable, dimension(:,:) :: dlgeo
 !===============================================================================
 ! Initialization
 !===============================================================================
-
-! Initialize first free position in array "ra"
-idebra = 1
 
 ! Initialize random number generator
 ! (not always necessary, but not at all costly)
@@ -353,10 +350,9 @@ if (nfpt1t.eq.0) deallocate(izft1d)
 ! Allocate main real arrays
 call memtri &
 !==========
- ( idebra ,                                                       &
-   nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    nproce ,                                                       &
-   idt    , itpuco , irtp   , irtpa  , ipropc ,                   &
+   idt    , irtp   , irtpa  , ipropc ,                            &
    ifinra )
 
 allocate(ra(ifinra))
@@ -449,7 +445,7 @@ endif
 call fldtri &
 !==========
  ( nproce ,                                                       &
-   ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp) ,               &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
    ra(ipropc) , coefa , coefb )
 
 call field_allocate_or_map_all
@@ -458,8 +454,7 @@ call field_allocate_or_map_all
 call iniva0 &
 !==========
  ( nvar   , nscal  , ncofab ,                                     &
-   ra(idt)    , ra(itpuco) , ra(irtp) ,                           &
-   ra(ipropc) ,                                                   &
+   ra(idt)    , ra(irtp) , ra(ipropc) ,                           &
    coefa  , coefb  ,                                              &
    frcxt  , prhyd  )
 
@@ -496,7 +491,7 @@ endif
 
 !===============================================================================
 ! Initializations (user and additional)
-!    rtp dt rom romb viscl visct viscls (tpucou with periodicite)
+!    rtp dt rom romb viscl visct viscls
 !===============================================================================
 
 call inivar &
@@ -819,7 +814,7 @@ call tridim                                                       &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp)  ,              &
+   ra(idt)    , ra(irtpa) , ra(irtp)  ,                           &
    ra(ipropc) ,                                                   &
    tslagr , coefa  , coefb  ,                                     &
    frcxt  , prhyd  )
@@ -1057,7 +1052,7 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
     ttchis = ttcabs
 
-    call ecrhis(ndim, ncelet, ncel, modhis, xyzcen, ra)
+    call ecrhis(nvar, nproce, modhis, ra(irtp))
     !==========
 
     if (iilagr.gt.0) then
@@ -1098,7 +1093,6 @@ if (modntl.eq.0) then
   call ecrlis                                                     &
   !==========
   ( nvar   , ncelet , ncel   ,                                    &
-    irtp   ,                                                      &
     ra(irtp  ) , ra(irtpa) , ra(idt ) , volume )
 
   call log_iteration
@@ -1157,7 +1151,7 @@ call dmtmps(tecrf1)
 ! Ici on sauve les historiques (si on en a stocke)
 
 modhis = 2
-call ecrhis(ndim, ncelet, ncel, modhis, xyzcen, ra)
+call ecrhis(nvar, nproce, modhis, ra(irtp))
 !==========
 
 if (iilagr.gt.0) then

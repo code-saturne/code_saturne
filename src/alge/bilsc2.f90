@@ -85,7 +85,7 @@
 !> \param[in]     iccocg        indicator
 !>                               - 1 re-compute cocg matrix (for iterativ gradients)
 !>                               - 0 otherwise
-!> \param[in]     ipp*          index of the variable for post-processing
+!> \param[in]     ipp           index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsrgp        relative precision for the gradient
@@ -152,6 +152,7 @@ use mesh
 use numvar, only: ivarfl
 use field
 use ppincl
+
 !===============================================================================
 
 implicit none
@@ -222,8 +223,11 @@ pjfrj = 0.d0
 
 ! Memoire
 
-
-chaine = nomvar(ipp)
+if (ivar.gt.0) then
+  call field_get_name(ivarfl(ivar), chaine)
+else
+  chaine = nomvar(ipp)
+endif
 cnom   = chaine(1:8)
 
 if (iwarnp.ge.2) then

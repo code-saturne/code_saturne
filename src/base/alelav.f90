@@ -74,6 +74,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
+character*80     chaine
 integer          iel   , isou  , jsou  , ifac
 integer          ipcvmx, ipcvmy, ipcvmz, ippu  , ippv  , ippw
 integer          iflmas, iflmab
@@ -172,10 +173,9 @@ ippu = ipprtp(iuma)
 ippv = ipprtp(ivma)
 ippw = ipprtp(iwma)
 
-if(iwarni(iuma).ge.1) then
-  write(nfecra,1100) nomvar(ippu)
-  write(nfecra,1100) nomvar(ippv)
-  write(nfecra,1100) nomvar(ippw)
+if (iwarni(iuma).ge.1) then
+  call field_get_name(ivarfl(iuma), chaine)
+  write(nfecra,1100) chaine(1:16)
 endif
 
 do iel = 1, ncelet
@@ -271,16 +271,16 @@ deallocate(meshv, meshva)
 #if defined(_CS_LANG_FR)
 
  1000    format(/,                                                &
-'   ** RESOLUTION DE LA VITESSE DE MAILLAGE                   ',/,&
-'      ------------------------------------                   ',/)
- 1100    format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+'   ** RESOLUTION DE LA VITESSE DE MAILLAGE'                   ,/,&
+'      ------------------------------------'                   ,/)
+ 1100    format(/,'           RESOLUTION POUR LA VARIABLE ', a16,/)
 
 #else
 
  1000    format(/,                                                &
 '   ** SOLVING MESH VELOCITY'                                  ,/,&
 '      ---------------------'                                  ,/)
- 1100    format(/,'           SOLVING VARIABLE ',A8           ,/)
+ 1100    format(/,'           SOLVING VARIABLE ', a16          ,/)
 
 #endif
 

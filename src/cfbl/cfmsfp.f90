@@ -288,7 +288,7 @@ if (itsqdm.ne.0) then
 
 ! --- Viscous term
 
-  if( idiff(iu).ge.1 ) then
+  if (idiff(iu).ge.1) then
 
     do iel = 1, ncelet
       w8(iel) = 1.d0

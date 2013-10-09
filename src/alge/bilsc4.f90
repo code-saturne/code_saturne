@@ -240,7 +240,11 @@ pja = 0.d0
 
 ! Memoire
 
-chaine = nomvar(ippu)
+if (ivar.gt.0) then
+  call field_get_name(ivarfl(ivar), chaine)
+else
+  chaine = nomvar(ippu)
+endif
 cnom   = chaine(1:8)
 
 if (iwarnp.ge.2) then

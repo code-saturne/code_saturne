@@ -152,8 +152,6 @@ double precision smbrp (ncelet)
 
 ! Local variables
 
-character*80     chaine
-character*8      cnom
 integer          ifac,ii,jj,infac,iel, ig, it,i
 integer          isou
 double precision pfacd,flux,fluxi,fluxj
@@ -175,9 +173,6 @@ double precision, allocatable, dimension(:,:) :: grad
 
 ! Allocate work arrays
 allocate(grad(ncelet,3))
-
-chaine = nomvar(ipp)
-cnom   = chaine(1:8)
 
 ! Without porosity
 if (iporos.eq.0) then

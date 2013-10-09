@@ -45,7 +45,6 @@
 !> \param[in]     isostd        indicator of standar outlet
 !>                               +index of the reference face
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     tpucou        velocity-pressure coupling (interleaved)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
@@ -64,7 +63,7 @@
 subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
-   dt     , tpucou , rtp    , rtpa   , propce ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
    trava  , ximpa  , uvwk   )
 
@@ -102,7 +101,7 @@ integer          nvar   , nscal  , iterns , icvrge , itrale
 
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
@@ -150,13 +149,14 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, pointer, dimension(:,:,:) :: viscfi => null()
 double precision, pointer, dimension(:) :: viscbi => null()
+double precision, pointer, dimension(:,:) :: dttens => null()
 
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:,:), allocatable :: vel
 double precision, dimension(:,:), allocatable :: vela
 double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:), allocatable :: coefap
-double precision, dimension(:), pointer :: coefb_pr
+double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
 
@@ -210,6 +210,9 @@ if (ivisse.eq.1) then
   allocate(secvif(nfac),secvib(nfabor))
 endif
 
+! Map some specific field arrays
+if (idtten.ge.0) call field_get_val_v(idtten, dttens)
+
 ! Allocate work for the ALE module
 if (iale.eq.1) allocate(mshvel(3,ncelet))
 
@@ -239,7 +242,7 @@ ivar = 0
 iflmas = 0
 imax = 0
 
-! Memoire
+! Memory
 
 if (nterup.gt.1) then
 
@@ -357,7 +360,7 @@ call predvv &
   dt     , rtpa   , vel    , vela   ,                            &
   propce ,                                                       &
   imasfl , bmasfl ,                                              &
-  tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
+  tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , frcxt  , grdphd ,                            &
   trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
@@ -521,12 +524,6 @@ if (iprco.le.0) then
     rtpa(iel,iu) = vela(1,iel)
     rtpa(iel,iv) = vela(2,iel)
     rtpa(iel,iw) = vela(3,iel)
-    ! Store the diagonal part of dttens for postprocessing purpose
-    if (ipucou.eq.1 .or. ncpdct.gt.0) then
-      tpucou(iel,1) = dttens(1,iel)
-      tpucou(iel,2) = dttens(2,iel)
-      tpucou(iel,3) = dttens(3,iel)
-    endif
   enddo
 
   ! Free memory
@@ -556,7 +553,7 @@ if ( ippmod(icompf).lt.0 ) then
   icetsm , isostd ,                                              &
   dt     , rtp    , rtpa   , vel    ,                            &
   propce ,                                                       &
-  coefa  , coefb  , coefau , coefbu , coefap ,                   &
+  coefau , coefbu , coefap ,                                     &
   smacel ,                                                       &
   frcxt  , dfrcxt , dttens , trav   ,                            &
   viscf  , viscb  ,                                              &
@@ -626,7 +623,7 @@ if (ippmod(icompf).lt.0) then
     climgp = climgr(ipr)
     extrap = extrag(ipr)
 
-    call field_get_coefb_s(ivarfl(ipr), coefb_pr)
+    call field_get_coefb_s(ivarfl(ipr), coefb_p)
 
     !Allocation
     allocate(gradp(ncelet,3))
@@ -636,7 +633,7 @@ if (ippmod(icompf).lt.0) then
        ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
          iwarnp , epsrgp , climgp , extrap ,                            &
          dfrcxt ,                                                       &
-         drtp   , coefap        , coefb_pr ,                            &
+         drtp   , coefap        , coefb_p  ,                            &
          gradp  )
 
     thetap = thetav(ipr)
@@ -677,19 +674,19 @@ if (ippmod(icompf).lt.0) then
 
           vel(1, iel) = vel(1, iel)                                             &
                + unsrom*(                                                &
-               dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+                 dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
                + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
                + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
                )
           vel(2, iel) = vel(2, iel)                                             &
                + unsrom*(                                                &
-               dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+                 dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
                + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
                + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
                )
           vel(3, iel) = vel(3, iel)                                             &
                + unsrom*(                                                &
-               dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
+                 dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
                + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
                + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
                )
@@ -707,13 +704,15 @@ if (ippmod(icompf).lt.0) then
         call synvin(frcxt)
         !==========
       endif
-      ! Update of the Direchlet boundary conditions on the pressure for the outlet
+      ! Update of the Direchlet boundary conditions on the
+      ! pressure for the outlet
       iclipr = iclrtp(ipr,icoef)
       iclipf = iclrtp(ipr,icoeff)
       !$omp parallel do if(nfabor > thr_n_min)
+      call field_get_coefa_s(ivarfl(ipr), coefa_p)
       do ifac = 1, nfabor
         if (isostd(ifac).eq.1) then
-          coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefap(ifac)
+          coefa_p(ifac) = coefa_p(ifac) + coefap(ifac)
         endif
       enddo
 
@@ -1004,13 +1003,12 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     call predvv &
     !==========
  ( iappel ,                                                       &
-   nvar   , nscal  , iterns ,                                     &
-   ncepdc , ncetsm ,                                              &
+   nvar   , nscal  , iterns , ncepdc , ncetsm ,                   &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , vel    , vel    ,                            &
    propce ,                                                       &
    esflum , esflub ,                                              &
-   tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
+   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
@@ -1139,9 +1137,7 @@ if (iwarni(iu).ge.1) then
 
   write(nfecra,2200) rnorm,xyzmax(1),xyzmax(2),xyzmax(3)
 
-
   ! Pour la periodicite et le parallelisme, rom est echange dans phyvar
-
 
   rnorma = -grand
   rnormi =  grand
@@ -1234,13 +1230,6 @@ do iel = 1, ncelet
   rtpa(iel,iu) = vela(1,iel)
   rtpa(iel,iv) = vela(2,iel)
   rtpa(iel,iw) = vela(3,iel)
-
-  ! Store the diagonal part of dttens for postprocessing purpose
-  if (ipucou.eq.1 .or. ncpdct.gt.0) then
-    tpucou(iel,1) = dttens(1,iel)
-    tpucou(iel,2) = dttens(2,iel)
-    tpucou(iel,3) = dttens(3,iel)
-  endif
 enddo
 
 ! Free memory

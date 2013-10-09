@@ -64,7 +64,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
@@ -87,7 +86,7 @@ subroutine resopv &
    icetsm , isostd ,                                              &
    dt     , rtp    , rtpa   , vel    ,                            &
    propce ,                                                       &
-   coefa  , coefb  , coefav , coefbv , coefap ,                   &
+   coefav , coefbv , coefap ,                                     &
    smacel ,                                                       &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  ,                                              &
@@ -117,6 +116,7 @@ use lagran
 use cplsat
 use mesh
 use field
+use field_operator
 use cs_f_interfaces
 
 !===============================================================================
@@ -133,7 +133,6 @@ integer          isostd(nfabor+1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision smacel(ncesmp,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision tpucou(6, ncelet), trav(3,ncelet)
@@ -150,13 +149,12 @@ double precision coefap(nfabor)
 
 character*80     chaine
 integer          lchain
-integer          iccocg, inc   , init  , isym  , ipol  , isqrt
+integer          iccocg, inc   , iprev, init  , isym  , ipol  , isqrt
 integer          ii, iel   , ifac  , ifac0 , iel0
 integer          ireslp, nswmpr
 integer          isweep, niterf, icycle
 integer          iflmb0, ifcsor
 integer          nswrgp, imligp, iwarnp
-integer          iclipf, iclipr, icliup, iclivp, icliwp
 integer          ipcrom, iflmas, iflmab
 integer          ipp
 integer          idiffp, iconvp, ndircp
@@ -199,6 +197,8 @@ double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
+double precision, dimension(:), pointer :: coefa_p, coefb_p
+double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 
@@ -224,15 +224,22 @@ if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet))
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
 
 ! --- Writing
+call field_get_name(ivarfl(ipr), chaine)
+lchain = 16
 ipp    = ipprtp(ipr)
 
 ! --- Boundary conditions
-!     (ICLRTP(IPR,ICOEFF) pointe vers ICLRTP(IPR,ICOEF) si IPHYDR=0)
-iclipr = iclrtp(ipr,icoef)
-iclipf = iclrtp(ipr,icoeff)
-icliup = iclrtp(iu ,icoef)
-iclivp = iclrtp(iv ,icoef)
-icliwp = iclrtp(iw ,icoef)
+!     If iphydr = 0, coef*f should point to coef*
+
+call field_get_coefa_s(ivarfl(ipr), coefa_p)
+call field_get_coefb_s(ivarfl(ipr), coefb_p)
+if (iphydr .eq. 0) then
+  call field_get_coefa_s(ivarfl(ipr), coefaf_p)
+  call field_get_coefb_s(ivarfl(ipr), coefbf_p)
+else
+  call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
+  call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
+endif
 
 ! --- Physical quantities
 call field_get_val_s(icrom, crom)
@@ -374,7 +381,6 @@ if(irnpnw.ne.1) then
   call prodsc(ncel,isqrt,res,res,rnormp)
 
   if(iwarni(ipr).ge.2) then
-    chaine = nomvar(ipp)
     write(nfecra,1300)chaine(1:16) ,rnormp
   endif
   dervar(ipp) = rnormp
@@ -383,7 +389,6 @@ if(irnpnw.ne.1) then
 else
 
   if(iwarni(ipr).ge.2) then
-    chaine = nomvar(ipp)
     write(nfecra,1300)chaine(1:16) ,rnormp
   endif
   dervar(ipp) = rnormp
@@ -578,7 +583,7 @@ call matrix &
    isym   , nfecra ,                                              &
    thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
-   coefb(1,iclipr) , coefb(1,iclipf) , rovsdt ,                   &
+   coefb_p , coefbf_p , rovsdt ,                                  &
    imasfl , bmasfl , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )
 
@@ -596,9 +601,10 @@ endif
 ! --- Flux de masse predit et premiere composante Rhie et Chow
 
 ! Allocate a work array for the gradient calculation
-allocate(gradp(ncelet,3))
+allocate(gradp(3,ncelet))
 
 iccocg = 1
+iprev  = 1
 inc    = 1
 nswrgp = nswrgr(ipr)
 imligp = imligr(ipr)
@@ -607,17 +613,14 @@ epsrgp = epsrgr(ipr)
 climgp = climgr(ipr)
 extrap = extrag(ipr)
 
-call grdpot &
-!==========
- ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-   iwarnp , epsrgp , climgp , extrap ,                            &
-   frcxt  ,                                                       &
-   rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr)  ,            &
-   gradp  )
+call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
+                              iccocg, nswrgp, iphydr, iwarnp,     &
+                              imligp, epsrgp , extrap, climgp,    &
+                              frcxt, gradp)
 
 do iel = 1, ncelet
   do isou = 1, 3
-    trav(isou,iel) = gradp(iel,isou)
+    trav(isou,iel) = gradp(isou,iel)
   enddo
 enddo
 
@@ -749,7 +752,7 @@ if (iphydr.eq.1) then
     !==========
  ( init   , nswrgp , nfecra ,                                     &
    dfrcxt ,                                                       &
-   coefb(1,iclipf) ,                                              &
+   coefbf_p ,                                                     &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     )
@@ -762,7 +765,7 @@ if (iphydr.eq.1) then
   ( init   , nswrgp , ircflp ,                                     &
     nfecra ,                                                       &
     dfrcxt ,                                                       &
-    coefb(1,iclipf) ,                                              &
+    coefbf_p ,                                                     &
     viscf  , viscb  ,                                              &
     tpucou ,                                                       &
     weighf ,                                                       &
@@ -818,8 +821,7 @@ if (arak.gt.0.d0) then
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
    rtpa(1,ipr)  ,                                                 &
-   coefa(1,iclipr) , coefb(1,iclipr) ,                            &
-   coefa(1,iclipf) , coefb(1,iclipf) ,                            &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -886,8 +888,7 @@ if (arak.gt.0.d0) then
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
    rtpa(1,ipr)  ,                                                 &
-   coefa(1,iclipr) , coefb(1,iclipr) ,                            &
-   coefa(1,iclipf) , coefb(1,iclipf) ,                            &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1081,11 +1082,9 @@ if (imgr(ipr).gt.0) then
 
   ! --- Building of the mesh hierarchy
 
-  chaine = nomvar(ipp)
   iwarnp = iwarni(ipr)
   nagmax = nagmx0(ipr)
   npstmg = ncpmgr(ipr)
-  lchain = 16
 
   call clmlga &
   !==========
@@ -1245,7 +1244,6 @@ isweep = 1
 
 ! Writing
 if (iwarni(ipr).ge.2) then
-  chaine = nomvar(ipp)
   write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
 endif
 
@@ -1284,8 +1282,7 @@ if (iswdyp.ge.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    rhs0   )
@@ -1299,8 +1296,7 @@ if (iswdyp.ge.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1328,7 +1324,6 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     enddo
   endif
 
-  chaine = nomvar(ipp)
   nitmap = nitmax(ipr)
   imgrp  = imgr  (ipr)
   ncymap = ncymax(ipr)
@@ -1384,8 +1379,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
-     coefap , coefb(1,iclipr) ,                                     &
-     cofafp , coefb(1,iclipf) ,                                     &
+     coefap , coefb_p , cofafp , coefbf_p ,                         &
      viscf  , viscb  ,                                              &
      dt     , dt     , dt     ,                                     &
      adxk   )
@@ -1399,8 +1393,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
-     coefap , coefb(1,iclipr) ,                                     &
-     cofafp , coefb(1,iclipf) ,                                     &
+     coefap , coefb_p , cofafp , coefbf_p ,                         &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
@@ -1517,8 +1510,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    rhs    )
@@ -1532,8 +1524,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1558,7 +1549,6 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
   ! Writing
   if (iwarni(ipr).ge.2) then
-    chaine = nomvar(ipp)
     write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
   endif
 
@@ -1583,7 +1573,6 @@ enddo
 ! Writing
 if(iwarni(ipr).ge.2) then
   if(isweep.gt.nswmpr) then
-     chaine = nomvar(ipp)
      write(nfecra,1600) chaine(1:16),nswmpr
   endif
 endif
@@ -1637,8 +1626,7 @@ if (idften(ipr).eq.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    presa  ,                                                       &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -1656,8 +1644,7 @@ if (idften(ipr).eq.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefa(1,iclipr) , coefb(1,iclipr) ,                            &
-   coefa(1,iclipf) , coefb(1,iclipf) ,                            &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -1671,8 +1658,7 @@ else if (idften(ipr).eq.6) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    presa  ,                                                       &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1692,8 +1678,7 @@ else if (idften(ipr).eq.6) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefa(1,iclipr) , coefb(1,iclipr) ,                            &
-   coefa(1,iclipf) , coefb(1,iclipf) ,                            &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1706,8 +1691,6 @@ endif
 !===============================================================================
 
 if (imgr(ipr).gt.0) then
-  chaine = nomvar(ipp)
-  lchain = 16
   call dsmlga(chaine(1:16), lchain)
   !==========
 endif
@@ -1718,6 +1701,9 @@ endif
 !===============================================================================
 
 if (idilat.eq.4) then
+
+  deallocate(gradp)
+  allocate(gradp(ncelet,3))
 
   ! Allocate temporary arrays
   allocate(dpvar(ncelet))
@@ -1898,8 +1884,7 @@ if (idilat.eq.4) then
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtp(1,ipr)      , rtp(1,ipr)      ,                            &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
@@ -1958,8 +1943,7 @@ if (idilat.eq.4) then
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
      drtp   , drtp   ,                                              &
-     coefap , coefb(1,iclipr) ,                                     &
-     cofafp , coefb(1,iclipf) ,                                     &
+     coefap , coefb_p , cofafp , coefbf_p ,                         &
      velflx , velflb ,                                              &
      viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
      weighf , weighb ,                                              &
@@ -1995,8 +1979,7 @@ if (idilat.eq.4) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -2014,8 +1997,7 @@ if (idilat.eq.4) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    dpvar  ,                                                       &
-   coefap , coefb(1,iclipr) ,                                     &
-   cofafp , coefb(1,iclipf) ,                                     &
+   coefap , coefb_p , cofafp , coefbf_p ,                         &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -2029,8 +2011,7 @@ if (idilat.eq.4) then
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
-     coefap , coefb(1,iclipr) ,                                     &
-     cofafp , coefb(1,iclipf) ,                                     &
+     coefap , coefb_p , cofafp , coefbf_p ,                         &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
@@ -2049,8 +2030,7 @@ if (idilat.eq.4) then
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      dpvar  ,                                                       &
-     coefap , coefb(1,iclipr) ,                                     &
-     cofafp , coefb(1,iclipf) ,                                     &
+     coefap , coefb_p , cofafp , coefbf_p ,                         &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &

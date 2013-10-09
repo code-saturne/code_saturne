@@ -145,6 +145,7 @@ double precision, allocatable, dimension(:) :: dpvar
 
 double precision, allocatable, dimension(:) :: c2
 
+double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: rhopre, crom
 
@@ -171,11 +172,7 @@ allocate(dpvar(ncelet))
 ivar   = ipr
 ippvar = ipprtp(ivar)
 
-! --- Number of boundary conditions
-iclvar = iclrtp(ivar,icoef)
-iclvaf = iclrtp(ivar,icoeff)
-
-! --- Flux de masse associe a l'energie
+! --- Mass flux associated to energy
 call field_get_key_int(ivarfl(isca(ienerg)), kimasf, iflmas)
 call field_get_key_int(ivarfl(isca(ienerg)), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
@@ -190,13 +187,16 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
+call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
+call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
+
 ! Coefficients for the reconstruction of the pressure gradient
 ! computed from the diffusion coefficient coefaf, coefbf
 ! (A Neumann BC has been stored in coefaf, coefbf)
 do ifac = 1, nfabor
   iel = ifabor(ifac)
   hint = dt(iel) / distb(ifac)
-  wbfa(ifac) = -coefa(ifac,iclvaf) / hint
+  wbfa(ifac) = -coefaf_p(ifac) / hint
   wbfb(ifac) = 1.d0
 enddo
 
@@ -333,7 +333,7 @@ call codits                                                                     
   relaxp , thetv  ,                                                             &
   rtpa(1,ivar)    , rtpa(1,ivar)    ,                                           &
   wbfa   , wbfb   ,                                                             &
-  coefa(1,iclvaf) , coefb(1,iclvaf) ,                                           &
+  coefaf_p        , coefbf_p        ,                                           &
   wflmas          , wflmab          ,                                           &
   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,                         &
   rvoid  , rvoid  ,                                                             &
@@ -405,7 +405,7 @@ call itrmas                                                                     
   rvoid  ,                                                                      &
   rtp(1,ivar)     ,                                                             &
   wbfa   , wbfb   ,                                                             &
-  coefa(1,iclvaf) , coefb(1,iclvaf) ,                                           &
+  coefaf_p        , coefbf_p        ,                                           &
   viscf  , viscb  ,                                                             &
   dt     , dt     , dt     ,                                                    &
   imasfl, bmasfl)

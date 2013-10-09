@@ -309,9 +309,6 @@ ippdt        = 1
 ipptx        = 1
 ippty        = 1
 ipptz        = 1
-do ii = 1, nvppmx
-  ipp2ra(ii) = 0
-enddo
 
 do ii = 1, nvppmx
   nomvar(ii)    = ' '
@@ -416,6 +413,8 @@ enddo
 do ii = 1, npromx
   iprpfl(ii) = -1
 enddo
+
+idtten = -1
 
 ! --- Variables de calcul resolues (RTP, RTPA)
 
@@ -1011,19 +1010,13 @@ nbmomt = 0
 nbdtcm = 0
 
 do imom = 1, nbmomx
-!       Pointeur sur les moments
+  ! Pointeur sur les moments
   icmome(imom) = 0
-!       Pointeur sur le pas de temps cumule
+  ! Pointeur sur le pas de temps cumule
   idtmom(imom) = 0
-!       Degre
+  ! Degre
   idgmom(imom) = 0
 enddo
-
-!       Repere pour  diviser la variable par le temps cumule au post.
-do ii = 1, nvppmx
-  ippmom(ii) = 0
-enddo
-
 
 ! --- Calcul de la distance a la paroi
 !     Seules variables utilisateur : ICDPAR, IWARNY
