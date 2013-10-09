@@ -2883,7 +2883,8 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
  * Properties array used in the calculation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprop, UIPROP) (const int *const iviscl,
+void CS_PROCF (uiprop, UIPROP) (const int *const irom,
+                                const int *const iviscl,
                                 const int *const ivisct,
                                 const int *const ivisls,
                                 const int *const icour,
@@ -2909,7 +2910,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const iviscl,
   int itype = 0;
   int n;
   int i = 0;
-  int nbp = 4;
+  int nbp = 5;
   char *name = NULL;
 
   /* Compute the new size of vars->properties_name,
@@ -2948,6 +2949,11 @@ void CS_PROCF (uiprop, UIPROP) (const int *const iviscl,
     BFT_REALLOC(cs_glob_var->properties_ipp,  cs_glob_var->nprop, int);
     BFT_REALLOC(cs_glob_var->propce,  cs_glob_var->nprop, int);
     BFT_REALLOC(cs_glob_var->properties_name, cs_glob_var->nprop, char*);
+
+    cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *irom-1 ]-1 ];
+    cs_glob_var->propce[n] = ipproc[ *irom -1] -1;
+    BFT_MALLOC(cs_glob_var->properties_name[n], strlen("density")+1, char);
+    strcpy(cs_glob_var->properties_name[n++], "density");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iviscl-1 ]-1 ];
     cs_glob_var->propce[n] = ipproc[ *iviscl -1] -1;

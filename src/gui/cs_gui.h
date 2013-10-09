@@ -380,7 +380,8 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
  * Array of properties used in the calculation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprop, UIPROP) (const int *const iviscl,
+void CS_PROCF (uiprop, UIPROP) (const int *const irom,
+                                const int *const iviscl,
                                 const int *const ivisct,
                                 const int *const ivisls,
                                 const int *const icour,
