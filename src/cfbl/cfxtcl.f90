@@ -469,6 +469,7 @@ do ifac = 1, nfabor
 !        qu'on n'a pas initialise et on sort en erreur)
     iccfth = 10000
     if(rcodcl(ifac,ipr,1).gt.0.d0) iccfth = 2*iccfth
+    if(brom(ifac).gt.0.d0)         iccfth = 3*iccfth
     if(rcodcl(ifac,itk,1).gt.0.d0) iccfth = 5*iccfth
     if(rcodcl(ifac,ien,1).gt.0.d0) iccfth = 7*iccfth
     if((iccfth.le.70000.and.iccfth.ne.60000).or.                &
