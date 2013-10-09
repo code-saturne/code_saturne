@@ -84,41 +84,30 @@ double precision dt(ncelet), volume(ncelet)
 
 ! Local variables
 
-integer          ic, icel, ipp, ira, ivrtp, iok
+integer          ic, icel, ivar, ipp, ira
 character*200    chain, chainc
-
-!===============================================================================
-! 0. INITIALISATIONS LOCALES
-!===============================================================================
 
 !==================================================================
 ! 1. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)
 !==================================================================
 
-do ipp = 2, nvppmx
-  iok = 1
-  if(ipp.eq.ipprtp(ipr)) then
-    iok = 0
-  endif
-  if(ilisvr(ipp).eq.1.and.itrsvr(ipp).ge.1) then
-    if(iok.eq.1) then
-      ira = abs(ipp2ra(ipp))
-      ivrtp = (ira-irtp)/ncelet+1
-      dervar(ipp) = 0.d0
-      do icel = 1, ncel
-        dervar(ipp) = dervar(ipp)                                 &
-                + (rtp(icel,ivrtp)-rtpa(icel,ivrtp))**2           &
-                *  volume(icel)/dt(icel)
-      enddo
-      if(irangp.ge.0) call parsom (dervar(ipp))
-      !==========
-      dervar(ipp) = dervar(ipp) / voltot
-    endif
+do ivar = 1, nvar
+  if (ivar.eq.ipr) cycle
+  ipp = ipprtp(ivar)
+  if (ilisvr(ipp).gt.0) then
+    dervar(ipp) = 0
+    do icel = 1, ncel
+      dervar(ipp) = dervar(ipp)                                 &
+              + (rtp(icel,ivar)-rtpa(icel,ivar))**2             &
+              *  volume(icel)/dt(icel)
+    enddo
+    if (irangp.ge.0) call parsom (dervar(ipp))
+    dervar(ipp) = dervar(ipp) / voltot
   endif
 enddo
 
 ipp = ipprtp(ipr)
-if(dervar(ipp).lt.epzero) then
+if (dervar(ipp).lt.epzero) then
   dervar(ipp) = -1.d0
 endif
 dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
@@ -132,9 +121,9 @@ write(nfecra,1010)
 write(nfecra,1011)
 write(nfecra,1010)
 
-do ipp = 2, nvppmx
-  if(ilisvr(ipp).eq.1.and.itrsvr(ipp).ge.1) then
-
+do ivar = 1, nvar
+  ipp = ipprtp(ivar)
+  if (ilisvr(ipp).gt.0) then
     chainc = 'c'
     chain = ' '
     ic = 4
@@ -157,9 +146,7 @@ do ipp = 2, nvppmx
     write(chain,3000) dervar(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
-
     write(nfecra,'(a)') chainc(1:ic)
-
   endif
 enddo
 
