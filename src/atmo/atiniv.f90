@@ -114,7 +114,6 @@ d2s3 = 2.d0/3.d0
 ! 2. READING THE METEO PROFILE FILE (IF IMETEO = 1 DEFAULT OPTION):
 !===============================================================================
 
-
 if (imeteo.gt.0) then
 
   imode = 1
@@ -142,35 +141,36 @@ if (ifilechemistry.ge.1) then
   !==========
   ( imode)
 
-! Computation of the conversion factor matrix used for the reaction rates jaccobian matrix
- do ii=1,nespg
-  do k=1,nespg
-   conv_factor_jac((chempoint(k)-1)*nespg+chempoint(ii))=dmmk(ii)/dmmk(k)
-  enddo
- enddo
-
-! Volume initilization with profiles for species present in the chemical profiles file
- if (isuite.eq.0) then
-   do iel = 1, ncel
-
-    zent=xyzcen(3,iel)
-
-    do k=1,nespgi
-      call intprf                                                   &
-      !==========
-     (nbchmz, nbchim,                                               &
-      zproc, tchem, espnum(1+(k-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
-
-     rtp(iel,isca(idespgi(k))) = xcent ! The first nespg user scalars are supposed to be chemical species
+  ! Computation of the conversion factor matrix used for the reaction rates jaccobian matrix
+  do ii = 1, nespg
+    do k = 1, nespg
+      conv_factor_jac((chempoint(k)-1)*nespg+chempoint(ii)) = dmmk(ii)/dmmk(k)
     enddo
+  enddo
 
-   enddo
- endif
+  ! Volume initilization with profiles for species present in the chemical profiles file
+  if (init_at_chem.eq.1) then
+    do iel = 1, ncel
+
+      zent = xyzcen(3,iel)
+
+      do k = 1, nespgi
+        call intprf                                                   &
+        !==========
+        (nbchmz, nbchim,                                               &
+         zproc, tchem, espnum(1+(k-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
+
+        rtp(iel,isca(idespgi(k))) = xcent ! The first nespg user scalars
+                                          ! are supposed to be chemical species
+      enddo
+
+    enddo
+  endif
 endif
 
-!Verifications
+! Verifications
 if ((iatra1.eq.1.or.ichemistry.ge.1).and.(syear.eq.-999.or.squant.eq.-999.or.shour.eq.-999&
-.or.smin.eq.-999.or.ssec.eq.-999)) then
+     .or.smin.eq.-999.or.ssec.eq.-999)) then
   if (iatra1.eq.1) write(nfecra,1000)
   if (ichemistry.ge.1) write(nfecra,1001)
   call csexit (1)
@@ -181,7 +181,6 @@ if ((iatra1.eq.1.or.ichemistry.ge.1).and.(xlat.ge.rinfin*0.5.or.xlon.ge.rinfin*0
   if (ichemistry.ge.1) write(nfecra,1003)
   call csexit (1)
 endif
-
 
 !===============================================================================
 ! 3. Dry atmosphere: default initialization of potential temperature

@@ -87,6 +87,7 @@ use elincl
 use ppcpfu
 use cplsat
 use field
+use atchem
 use mesh, only: isympa
 
 !===============================================================================
@@ -441,6 +442,14 @@ do iscal = 1, nscal
     call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,xut)
   endif
 enddo
+
+if (ichemistry.gt.0) then
+  rubriq = 'atmospheric_chem'
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,init_at_chem)
+endif
 
 #if defined(_CS_LANG_FR)
 car54 =' Fin de l''ecriture des variables principales         '

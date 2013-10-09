@@ -51,7 +51,7 @@ parameter (Mair = 28.9d-3)           ! Kg/mol
 
 integer, save :: ichemistry
 
-!> ificchemistry: choice to read (=1,2,3,4, according to the scheme) or not (0)
+!> ifilechemistry: choice to read (=1,2,3,4, according to the scheme) or not (0)
 !> a concentration profile file
 integer, save :: ifilechemistry
 !> isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution
@@ -63,6 +63,9 @@ integer, save :: iphotolysis
 integer, save :: nespg
 !> nrg: number of chemical reactions
 integer, save :: nrg
+!> force initilization in case of restart (this option is
+!> automatically set in lecamp)
+integer, save :: init_at_chem
 
 !> molar mass of chemical species (Kg/mol)
 double precision, allocatable, dimension(:) ::  dmmk
@@ -118,6 +121,8 @@ use numvar, only: nscaus
 implicit none
 
 integer imode,ii
+
+init_at_chem = 1
 
 ! First reading of concentration profiles file
 imode = 0
