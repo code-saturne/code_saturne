@@ -268,7 +268,7 @@ class ValueDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        if index.row() == 0 or index.row() == 1:
+        if index.row() == 1 or index.row() == 2:
             v = DoubleValidator(editor, min=0.)
             v.setExclusiveMin(True)
         else:
@@ -680,12 +680,13 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.modelCoals = StandardItemModelCoals(self.case, self.model)
             self.tableViewCoals.setModel(self.modelCoals)
             delegateValue = ValueDelegate(self.tableViewCoals)
+            delegateValue2 = ValueDelegate(self.tableViewCoals)
             delegateLabel = LabelDelegate(self.tableViewCoals)
             self.tableViewCoals.setItemDelegateForColumn(0, delegateLabel)
             self.tableViewCoals.setItemDelegateForColumn(1, delegateValue)
             self.tableViewCoals.setItemDelegateForColumn(2, delegateValue)
-            self.tableViewCoals.setItemDelegateForColumn(3, delegateValue)
-            self.tableViewCoals.setItemDelegateForColumn(4, delegateValue)
+            self.tableViewCoals.setItemDelegateForColumn(3, delegateValue2)
+            self.tableViewCoals.setItemDelegateForColumn(4, delegateValue2)
             self.tableViewCoals.show()
             self.tableViewCoals.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableViewCoals.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
