@@ -21,6 +21,8 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+
+!===============================================================================
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-pulverized_coal.f90
@@ -71,8 +73,6 @@
 !_______________________________________________________________________________
 
 subroutine cs_user_boundary_conditions &
-!=====================================
-
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce ,                            &

@@ -74,7 +74,6 @@
 !>                                     \grad T \cdot \vect{n} \f$
 !_______________________________________________________________________________
 
-
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
@@ -138,7 +137,6 @@ double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
-
 
 !===============================================================================
 

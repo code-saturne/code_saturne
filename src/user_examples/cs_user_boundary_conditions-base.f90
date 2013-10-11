@@ -72,7 +72,6 @@
 !>                                     \grad T \cdot \vect{n} \f$
 !_______________________________________________________________________________
 
-
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &

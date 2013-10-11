@@ -20,6 +20,8 @@
 ! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+!-------------------------------------------------------------------------------
+
 !===============================================================================
 ! Function:
 ! ---------
@@ -71,8 +73,6 @@
 !_______________________________________________________________________________
 
 subroutine cs_user_boundary_conditions &
-!=====================================
-
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce ,                            &
