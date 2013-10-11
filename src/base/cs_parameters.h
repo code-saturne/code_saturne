@@ -74,6 +74,26 @@ typedef struct {
   double  relaxv;
 } cs_var_cal_opt_t;
 
+/*----------------------------------------------------------------------------
+ * Boundary condition types
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+  CS_INDEF = 1,
+  CS_INLET = 2,
+  CS_OUTLET = 3,
+  CS_iSYMMETRY = 4,
+  CS_SMOOTHWALL = 5,
+  CS_ROUGHWALL = 6,
+  CS_ESICF = 7,
+  CS_SSPCF = 8,
+  CS_SOPCF = 9,
+  CS_ERUCF = 10,
+  CS_EPHCF = 11,
+  CS_EQHCF = 12,
+  CS_COUPLED = 13
+};
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

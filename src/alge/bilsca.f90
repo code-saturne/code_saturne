@@ -165,6 +165,7 @@ use paramx
 use pointe
 use entsor
 use parall
+use numvar, only: ivarfl
 use period
 use cplsat
 use mesh
@@ -197,9 +198,15 @@ double precision xcpp(ncelet)
 double precision viscce(*)
 
 ! Local variables
-integer          idiflc
+integer          idiflc, f_id
 
 !===============================================================================
+
+if (ivar.eq.0) then
+  f_id = -1
+else
+  f_id = ivarfl(ivar)
+endif
 
 ! Scalar diffusivity
 if (idftnp.eq.1) then
@@ -207,14 +214,15 @@ if (idftnp.eq.1) then
 
     call bilsc2 &
     !==========
-   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
+   ( idtvar , f_id   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , icvflb , inc    , imrgra , iccocg ,          &
+     ifaccp , iwarnp ,                                              &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
+     pvar   , pvara  ,                                              &
+     itypfb , icvfli , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
-     icvflb , icvfli ,                                              &
      smbrp  )
+
 
   ! The convective part is mulitplied by Cp for the Temperature
   else
@@ -240,14 +248,15 @@ elseif (idftnp.eq.6) then
 
     call bilsc2 &
     !==========
-   ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
+   ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , icvflb , inc    , imrgra , iccocg ,          &
+     ifaccp , iwarnp ,                                              &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
+     pvar   , pvara  ,                                              &
+     itypfb , icvfli , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
-     icvflb , icvfli ,                                              &
      smbrp  )
+
 
   ! The convective part is mulitplied by Cp for the Temperature
   elseif (imucpp.eq.1.and.iconvp.eq.1) then

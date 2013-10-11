@@ -186,6 +186,32 @@ cs_gradient_perio_init_rij(const cs_field_t  *f,
                            cs_real_3_t        grad[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * Process grad buffers in case of rotation on Reynolds stress tensor.
+ *
+ * We retrieve the gradient given by cs_gradient_perio_init_rij (phyvar)
+ * for the Reynolds stress tensor in a buffer on ghost cells. Then we define
+ * grad gradient (1 -> n_cells_with_ghosts).
+ *
+ * We can't implicitly take into account rotation of a gradient of a tensor
+ * variable because we have to know all components.
+ *
+ * We assume that is correct to treat periodicities implicitly for the other
+ * variables when reconstructing gradients.
+ *
+ * parameters:
+ *   f_id      <--   field index
+ *   grad      -->   gradient of field
+ *
+ * size of _drdxyz and _wdrdxy = n_ghost_cells*6*3
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_perio_process_rij(const cs_int_t    *f_id,
+                              cs_real_3_t        grad[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -57,6 +57,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_benchmark.h \
 cs_blas.h \
+cs_convection_diffusion_balance.h \
 cs_gradient.h \
 cs_gradient_perio.h \
 cs_grid.h \
@@ -77,6 +78,7 @@ $(FCFLAGS_DBG) $(FCFLAGS_HOT)
 libcsalge_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
+cs_convection_diffusion_balance.c \
 cs_gradient.c \
 cs_gradient_perio.c \
 cs_grid.c \
@@ -86,7 +88,6 @@ cs_multigrid.c \
 cs_sles.c \
 bilsca.f90 \
 bilsct.f90 \
-bilsc2.f90 \
 bilscv.f90 \
 bilsc4.f90 \
 diften.f90 \

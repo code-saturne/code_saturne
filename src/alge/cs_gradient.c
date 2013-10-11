@@ -3299,7 +3299,6 @@ void CS_PROCF (cgdcel, CGDCEL)
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
 
-  cs_real_4_t  *restrict rhsv;
   cs_real_3_t  *restrict dpdxyz;
 
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
@@ -3317,7 +3316,6 @@ void CS_PROCF (cgdcel, CGDCEL)
   /* Allocate work arrays */
 
   BFT_MALLOC(dpdxyz, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
 
   /* Choose gradient type */
 
@@ -3380,7 +3378,6 @@ void CS_PROCF (cgdcel, CGDCEL)
     }
   }
 
-  BFT_FREE(rhsv);
   BFT_FREE(dpdxyz);
 }
 
