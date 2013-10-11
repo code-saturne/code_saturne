@@ -2,7 +2,7 @@
 #define __CS_CONVECTION_DIFFUSION_BALANCE_H__
 
 /*============================================================================
- * Explicite convection diffusion balance
+ * Explicit convection diffusion balance
  *============================================================================*/
 
 /*

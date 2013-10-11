@@ -1,5 +1,5 @@
 /*============================================================================
- * Explicite convection diffusion balance
+ * Explicit convection diffusion balance
  *============================================================================*/
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
