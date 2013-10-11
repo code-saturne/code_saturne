@@ -606,6 +606,7 @@ enddo
 if (iirayo .gt. 0) then
 
   if (     ippmod(icod3p).eq.1                                    &
+      .or. ippmod(iccoal).gt.0                                    &
       .or. (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3)         &
       .or. (     ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3     &
             .or. ippmod(icolwc).eq.5)) then
