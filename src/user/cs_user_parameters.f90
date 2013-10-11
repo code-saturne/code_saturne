@@ -1741,14 +1741,16 @@ if (.false.) then
   idfmom(1,imom) =  iu
   ntdmom(imom)   =  1000
   ttdmom(imom)   =  0.d0
+
+  ! TODO: allow fields instead of properties for moments
   ! Second moment: <rho u v>
-  imom  = 2
-  idfmom(1,imom) = -irom
-  idfmom(2,imom) =  iu
-  idfmom(3,imom) =  iv
-  imoold(imom)   = -1
-  ntdmom(imom)   =  10000
-  ttdmom(imom)   =  10.d0
+  ! imom  = 2
+  ! idfmom(1,imom) = -irom
+  ! idfmom(2,imom) =  iu
+  ! idfmom(3,imom) =  iv
+  ! imoold(imom)   = -1
+  ! ntdmom(imom)   =  10000
+  ! ttdmom(imom)   =  10.d0
 
 endif
 

@@ -118,7 +118,7 @@ ivar = isca(iscal)
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
 chaine = nomvar(ipprtp(ivar))
 
-! --- Index number of the density in the propce array
+! --- Density
 call field_get_val_s(icrom, crom)
 
 !===============================================================================
@@ -150,7 +150,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     ! --- Explicite source term for the thermal scalar equation:
 
     do iel = 1, ncel
-      crvexp(iel) = crvexp(iel) +                                                &
+      crvexp(iel) = crvexp(iel) +                                   &
            cp0*volume(iel)*crom(iel)*(-ray3Di(iel) + ray3Dst(iel))
     enddo
 
@@ -210,7 +210,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         call nuclea (                                                 &
              rtp(1,isca(iscapp(3))),                                  &
              rtp(1,iw),                                               &
-             propce(1,ipproc(irom)),                                  &
+             crom,                                                    &
              propce(1,ipproc(itempc)),                                &
              propce(1,ipproc(iliqwt)),                                &
              pphy, refrad)
@@ -244,7 +244,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         endif
 
         crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)           &
-                    *(volume(iel)*grad1(iel,3)/propce(iel,ipproc(irom)))
+                    *(volume(iel)*grad1(iel,3)/crom(iel))
       enddo
       treated_scalars=treated_scalars + 1
 
@@ -252,7 +252,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 
       do iel = 1, ncel
         crvexp(iel) = crvexp(iel) - volume(iel)*grad1(iel,3)          &
-                    / propce(iel,ipproc(irom))
+                    / crom(iel)
       enddo
 
       treated_scalars = treated_scalars + 1
@@ -310,7 +310,7 @@ parameter (conversion=1d+6)! passing from 1/cm**3 to 1/m**3
 
 r3max = 0.d0
 do iel = 1, ncel
-  rho = propce(iel,ipproc(irom))
+  rho = crom(iel)
   qliq = propce(iel,ipproc(iliqwt))
   nc = rtp(iel,isca(iscapp(3)))
   if(qliq.ge.1e-8)then
@@ -359,7 +359,7 @@ double precision,dimension(:),allocatable :: local_coefa
 double precision,dimension(:),allocatable :: local_coefb
 double precision,dimension(:),allocatable :: local_field
 
-if(r3max.lt.1.d-10) then
+if (r3max.lt.1.d-10) then
   do iel = 1, ncel
     do i = 1, 3
       grad(iel,i) = 0.d0
@@ -386,7 +386,7 @@ allocate(local_field(ncelet))
 ! --------------------------------------------------------
 
 do iel = 1, ncel
-  local_field(iel) = propce(iel,ipproc(irom)) & ! volumic mass of the air kg/m3
+  local_field(iel) = crom(iel)       & ! volumic mass of the air kg/m3
        *propce(iel,ipproc(iliqwt))   & ! total liquid water content kg/kg
        *vit_sed( r3(iel) )           & ! deposition velocity m/s
        *exp(5*sigc**2)                 ! coefficient coming from log-norm

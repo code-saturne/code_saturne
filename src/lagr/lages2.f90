@@ -110,6 +110,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -136,7 +137,7 @@ double precision fextla(nbpmax,3)
 
 ! Local variables
 
-integer          iel , ip , id , i0 , iromf
+integer          iel , ip , id , i0
 double precision aux0 , aux1 , aux2 , aux3 , aux4 , aux5
 double precision aux6 , aux7 , aux8 , aux9 , aux10 , aux11
 double precision aux12 , aux14 , aux15 , aux16
@@ -149,12 +150,9 @@ double precision p11 , p21 , p22 , p31 , p32 , p33
 double precision grav(3) , rom , vitf
 double precision tbriu
 
-!===============================================================================
+double precision, dimension(:), pointer :: cromf
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
-!===============================================================================
-
 
 !===============================================================================
 ! 1. INITIALISATIONS
@@ -170,10 +168,10 @@ grav(3) = gz
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
-if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
-  iromf = ipproc(irom1)
+if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
-  iromf = ipproc(irom)
+  call field_get_val_s(icrom, cromf)
 endif
 
 !===============================================================================
@@ -195,7 +193,7 @@ do id = 1,3
 
       iel = itepa(ip,jisor)
 
-      rom = propce(iel,iromf)
+      rom = cromf(iel)
 
       auxl(ip,id) =                                               &
         ( rom *gradpr(iel,id) /romp(ip)                           &

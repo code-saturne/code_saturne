@@ -79,6 +79,7 @@ use ppthch
 use ppincl
 use elincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -104,7 +105,7 @@ double precision dtj   , dtjm   , delhsh , cdtj , cpmx
 double precision xelec , yelec  , zelec, diff
 
 double precision, allocatable, dimension(:) :: w1
-
+double precision, dimension(:), pointer :: crom
 
 !===============================================================================
 
@@ -117,9 +118,12 @@ if (1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
+
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! 2.  ARC ELECTRIQUE
@@ -355,9 +359,8 @@ if ( ippmod(ielarc).ge.1 ) then
     cdtj= 2.0d2
 
     do iel = 1, ncel
-      if(propce(iel,ipproc(irom)).ne.0.d0)                     &
-           delhsh =  propce(iel,ipcefj) * dt(iel)              &
-           /propce(iel,ipproc(irom))
+      if (crom(iel).ne.0.d0)                                   &
+           delhsh =  propce(iel,ipcefj) * dt(iel) / crom(iel)
 
       if(delhsh.ne.0.d0) then
         dtjm= rtp(iel,isca(iscalt))/delhsh

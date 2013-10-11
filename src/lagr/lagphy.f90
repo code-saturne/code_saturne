@@ -152,13 +152,11 @@ if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
 
   call lagitf                                                     &
   !==========
-  ( nvar   , nscal  ,                                             &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    ntersl , nvlsta , nvisbr ,                                    &
+  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     itepa  , ibord  ,                                             &
-    dt     , rtp    , propce ,                                    &
+    rtp    , propce ,                                             &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
-    tsvar  , auxl(1,1) , auxl(1,2)  )
+    tsvar  , auxl(1,1) )
 
 endif
 
@@ -171,9 +169,8 @@ if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
   call lagitp                                                     &
   !==========
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  ,                                             &
-    dt     , rtp    , propce ,                                    &
+    propce ,                                                      &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
     tsvar  , auxl(1,1) , auxl(1,2)  )
 
@@ -202,11 +199,9 @@ if (iphyla.eq.1 .and. impvar.eq.1) then
 
   call lagimp                                                     &
   !==========
-  ( nvar   , nscal  ,                                             &
+  ( nvar   ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  ,                                             &
-    dt     , rtp    ,                                             &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
     tsvar  , auxl(1,1) , auxl(1,2)  )
 

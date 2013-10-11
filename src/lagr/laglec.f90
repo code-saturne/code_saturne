@@ -23,8 +23,8 @@
 subroutine laglec &
 !================
 
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( ncelet , ncel   , nfabor ,                                     &
+   nbpmax , nvp    , nvep   , nivep  ,                            &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
    rtpa   , propce ,                                              &
@@ -53,14 +53,11 @@ subroutine laglec &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
@@ -118,8 +115,8 @@ implicit none
 
 ! Arguments
 
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          ncelet , ncel   , nfabor
+integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          itepa(nbpmax,nivep)
 

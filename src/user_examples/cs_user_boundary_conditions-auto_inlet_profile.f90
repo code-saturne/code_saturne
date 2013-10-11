@@ -147,6 +147,8 @@ double precision, dimension(:), pointer :: brom
 !< [init]
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
+call field_get_val_s(ibrom, brom)
+
 d2s3 = 2.d0/3.d0
 !< [init]
 

@@ -124,6 +124,7 @@ use ppthch
 use ppincl
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -152,6 +153,8 @@ integer          npt , iel , ivar , icha
 double precision tvmax , tauv , taum , aux1
 double precision uuf , vvf , wwf , mf
 
+double precision, dimension(:), pointer ::  crom
+
 !===============================================================================
 
 !===============================================================================
@@ -159,6 +162,8 @@ double precision uuf , vvf , wwf , mf
 !===============================================================================
 
 tvmax = 0.8d0
+
+call field_get_val_s(icrom, crom)
 
 !   Nombre de passage pour les termes sources en stationnaire
 
@@ -444,7 +449,7 @@ endif
 
 do iel = 1,ncel
 
-  mf   = volume(iel) * propce(iel,ipproc(irom))
+  mf   = volume(iel) * crom(iel)
   tauv = volp(iel) / volume(iel)
   taum = volm(iel) / mf
 

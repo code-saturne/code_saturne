@@ -76,6 +76,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use field
 use cfpoin, only:ithvar
 
 !===============================================================================
@@ -94,10 +95,11 @@ double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 
 !< [loc_var_dec]
 integer, allocatable, dimension(:) :: lstelt
-integer  iel, ipcrom
+integer  iel
 integer  iscal, imodif
 
 double precision, allocatable, dimension(:) :: w1, w2, w3, w4
+double precision, dimension(:), pointer ::  crom
 !< [loc_var_dec]
 
 !===============================================================================
@@ -110,8 +112,8 @@ double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 !< [alloc]
 allocate(lstelt(ncel)) ! temporary array for cells selection
 allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
+call field_get_val_s(icrom, crom)
 imodif = 1
-ipcrom = ipproc(irom)
 !< [alloc]
 
 !===============================================================================
@@ -181,7 +183,7 @@ if ( isuite.eq.0 ) then
   if(.false.) then
     ithvar = ithvar*3
     do iel = 1, ncel
-        propce(iel,ipcrom) = ro0
+        crom(iel) = ro0
     enddo
   endif
 

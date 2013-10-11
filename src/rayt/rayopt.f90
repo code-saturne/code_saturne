@@ -467,15 +467,15 @@ call raydir
 !    NBRAYF : NOMBRE MAX DES SORTIES DE VARIABLES FACETTES DE BORD
 
 do ii = 1, nbrayf
-  WRITE(CAR4,'(I4.4)') II
-  NBRVAF(II) = 'RAYTFB'//CAR4
+  write(car4,'(i4.4)') ii
+  nbrvaf(ii) = 'RAYTFB'//car4
   irayvf(ii) = 0
 enddo
 
 !--> LUMINENCE
 
 ipp = ipppro(ipproc(ilumin))
-NOMVAR(IPP)   = 'Lumin'
+nomvar(ipp)   = 'Lumin'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 ilisvr(ipp)   = 0
@@ -484,21 +484,21 @@ ilisvr(ipp)   = 0
 
 !     composante x
 ipp = ipppro(ipproc(iqx))
-NOMVAR(IPP)   = 'Qxrad'
+nomvar(ipp)   = 'Qxrad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
 
 !     composante y
 ipp = ipppro(ipproc(iqy))
-NOMVAR(IPP)   = 'Qyrad'
+nomvar(ipp)   = 'Qyrad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
 
 !      composante z
 ipp = ipppro(ipproc(iqz))
-NOMVAR(IPP)   = 'Qzrad'
+nomvar(ipp)   = 'Qzrad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -506,7 +506,7 @@ ilisvr(ipp)   = 0
 !--> TERME SOURCE IMPLICITE
 
 ipp = ipppro(ipproc(itsri(1)))
-NOMVAR(IPP)   = 'ITSRI'
+nomvar(ipp)   = 'ITSRI'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 ilisvr(ipp)   = 0
@@ -514,7 +514,7 @@ ilisvr(ipp)   = 0
 !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
 ipp = ipppro(ipproc(itsre(1)))
-NOMVAR(IPP)   = 'Srad'
+nomvar(ipp)   = 'Srad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -522,7 +522,7 @@ ilisvr(ipp)   = 0
 !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
 ipp = ipppro(ipproc(iabs(1)))
-NOMVAR(IPP)   = 'Absorp'
+nomvar(ipp)   = 'Absorp'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -530,7 +530,7 @@ ilisvr(ipp)   = 0
 !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
 ipp = ipppro(ipproc(iemi(1)))
-NOMVAR(IPP)   = 'Emiss'
+nomvar(ipp)   = 'Emiss'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -538,7 +538,7 @@ ilisvr(ipp)   = 0
 !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
 ipp = ipppro(ipproc(icak(1)))
-NOMVAR(IPP)   = 'CoefAb'
+nomvar(ipp)   = 'CoefAb'
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
@@ -551,7 +551,7 @@ do irphas = 1, nrphas-1
 !--> TERME SOURCE IMPLICITE
 
   ipp = ipppro(ipproc(itsri(irphas)))
-  NOMVAR(IPP)   = 'ITSRI_'//NUM
+  nomvar(ipp)   = 'ITSRI_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = 0
   ilisvr(ipp)   = 0
@@ -560,7 +560,7 @@ do irphas = 1, nrphas-1
 !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
   ipp = ipppro(ipproc(itsre(irphas)))
-  NOMVAR(IPP)   = 'Srad_'//NUM
+  nomvar(ipp)   = 'Srad_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -568,7 +568,7 @@ do irphas = 1, nrphas-1
 !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
   ipp = ipppro(ipproc(iabs(irphas)))
-  NOMVAR(IPP)   = 'Absorp_'//NUM
+  nomvar(ipp)   = 'Absorp_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -576,7 +576,7 @@ do irphas = 1, nrphas-1
 !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
   ipp = ipppro(ipproc(iemi(irphas)))
-  NOMVAR(IPP)   = 'Emiss_'//NUM
+  nomvar(ipp)   = 'Emiss_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -584,7 +584,7 @@ do irphas = 1, nrphas-1
 !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
   ipp = ipppro(ipproc(icak(irphas)))
-  NOMVAR(IPP)   = 'CoefAb_'//NUM
+  nomvar(ipp)   = 'CoefAb_'//num
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1

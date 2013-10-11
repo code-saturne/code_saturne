@@ -107,6 +107,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 use pointe
 
 !===============================================================================
@@ -134,7 +135,7 @@ double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
 
-integer          iel , ip , id , i0 , iromf , mode
+integer          iel , ip , id , i0 , mode
 
 double precision aa , bb , cc , dd , ee
 double precision aux1 , aux2 ,aux3 , aux4 , aux5 , aux6
@@ -152,12 +153,9 @@ double precision ustar, visccf,depint
 
 double precision vislen(nfabor)
 
-!===============================================================================
+double precision, dimension(:), pointer :: cromf
 
 !===============================================================================
-! 0.  Memory management
-!===============================================================================
-
 
 !===============================================================================
 ! 1.  Initialization
@@ -178,12 +176,11 @@ depint = 100.d0
 
 !  The density pointer according to the flow location
 
-if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
-  iromf = ipproc(irom1)
+if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
-  iromf = ipproc(irom)
+  call field_get_val_s(icrom, cromf)
 endif
-
 
 !===============================================================================
 ! 2. loop on the particles
@@ -194,7 +191,7 @@ endif
     if (itepa(ip,jisor).gt.0) then
 
       iel = itepa(ip,jisor)
-      romf = propce(iel,iromf)
+      romf = cromf(iel)
       visccf = propce(iel,ipproc(iviscl)) / romf
 
     ! Fluid temperature computation depending on the type of flow

@@ -817,7 +817,7 @@ do while (iterns.le.nterup)
     call synthe &
     !==========
   ( nvar   , nscal  ,                                              &
-    iu     , iv     , iw     , ipproc(irom)    ,                   &
+    iu     , iv     , iw     ,                                     &
     ttcabs ,                                                       &
     dt     , rtpa   , rtp    , propce ,                            &
     coefa  , coefb  , rcodcl )

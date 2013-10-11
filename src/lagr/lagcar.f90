@@ -105,6 +105,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -131,7 +132,6 @@ double precision energi(ncelet) , dissip(ncelet), romp(nbpmax)
 ! Local variables
 
 integer          iel , ip , id , igvx , igvy , igvz , iscath
-integer          iromf
 
 double precision cd1 , cd2 , rec , cl , c0 , cb , cbcb
 double precision upart , vpart , wpart
@@ -142,6 +142,8 @@ double precision bb1 , bb2 , bb3 , ktil , bx1 , bx2 , bx3
 double precision vpmx , vpmy , vpmz
 double precision r11 , r22 , r33
 double precision xnul , rom , prt , fnus , xrkl , xcp
+
+double precision, dimension(:), pointer :: cromf
 
 !===============================================================================
 
@@ -155,9 +157,6 @@ bb1 = 0.d0
 bb2 = 0.d0
 bb3 = 0.d0
 ktil = 0.d0
-
-! Memoire
-
 
 !===============================================================================
 ! 1. INITIALISATIONS
@@ -177,10 +176,10 @@ d3s444 = 0.44d0 * 3.d0 / 4.d0
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
-if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
-  iromf = ipproc(irom1)
+if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
-  iromf = ipproc(irom)
+  call field_get_val_s(icrom, cromf)
 endif
 
 ! Calcul de la masse volumique
@@ -202,7 +201,7 @@ do ip = 1,nbpart
 
     iel = itepa(ip,jisor)
 
-    rom  = propce(iel,iromf)
+    rom  = cromf(iel)
     xnul = propce(iel,ipproc(iviscl)) / rom
 
     uvwr = sqrt( ( ettp(ip,juf) -ettp(ip,jup) )*                  &
@@ -539,24 +538,24 @@ do id = 1,3
       endif
 
 !--->  Terme purement explicite : probleme avec petit diametre
-!      NE PAS EFFACER SVP           !
+!      ne pas effacer svp           !
 
-!            IF (IILAGR.EQ.2 .AND. ISTALA.GE.1) THEN
+!            if (iilagr.eq.2 .and. istala.ge.1) then
 
-!              IF (STATIS(IEL,ILPD).GT.SEUIL) THEN
+!              if (statis(iel,ilpd).gt.seuil) then
 
-!                ROM   = PROPCE(IEL,IROMF)
+!                rom   = cromf(iel)
 
-!                FF = ROMP(IP) / ROM
-!     &             *( STATIS(IEL,ILFV) / (DBLE(NPST)*VOLUME(IEL)) )
-!     &             *( ETTP(IP,JUF+(ID-1)) - ETTP(IP,JUP+(ID-1)))
-!     &                   /TAUP(IP)
+!                ff = romp(ip) / rom
+!     &             *( statis(iel,ilfv) / (dble(npst)*volume(iel)) )
+!     &             *( ettp(ip,juf+(id-1)) - ettp(ip,jup+(id-1)))
+!     &                   /taup(ip)
 
-!                PIIL(IP,ID) = PIIL(IP,ID) - FF
+!                piil(ip,id) = piil(ip,id) - ff
 
-!              ENDIF
+!              endif
 
-!            ENDIF
+!            endif
 
     endif
 

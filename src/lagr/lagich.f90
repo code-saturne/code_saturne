@@ -99,6 +99,7 @@ use ppincl
 use cpincl
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -120,7 +121,7 @@ double precision cpgd1(nbpmax), cpgd2(nbpmax), cpght(nbpmax)
 ! Local variables
 
 integer          npt , iel , icha , mode , iii
-integer          iromf, ilayer , ilayer_het
+integer          ilayer , ilayer_het
 double precision aux1 , aux2 , aux3 , aux4 , aux5
 double precision volume_couche , rayon(nlayer) , mlayer(nlayer)
 double precision mwater(nlayer) , mwat_max, fwat(nlayer), fcoke(nlayer)
@@ -133,6 +134,8 @@ double precision phith(nlayer), temp(nlayer)
 double precision skp1(nlayer) , skp2(nlayer) , skglob, gamhet, deltah
 
 double precision precis, lv, tebl, tlimit, tmini
+
+double precision, dimension(:), pointer :: cromf
 
 precis = 1.d-15                   ! Petit nombre (pour la precision numerique)
 lv = 2.263d+6                     ! Chaleur Latente en J/kg
@@ -178,10 +181,10 @@ endif
 ! 2. Pointeurs vers la masse volumique du fluide porteur
 !===============================================================================
 
-if ( ippmod(iccoal).ge.0 ) then
-  iromf = ipproc(irom1)
+if (ippmod(iccoal).ge.0) then
+  call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
-  iromf = ipproc(irom)
+  call field_get_val_s(icrom, cromf)
 endif
 
 !===============================================================================
@@ -202,16 +205,16 @@ do npt = 1,nbpart
                  ( ettp(npt,jvf) -ettp(npt,jvp) )                              &
                + ( ettp(npt,jwf) -ettp(npt,jwp) )*                             &
                  ( ettp(npt,jwf) -ettp(npt,jwp) )  )
-    xnul = propce(iel,ipproc(iviscl)) / propce(iel,iromf)
+    xnul = propce(iel,ipproc(iviscl)) / cromf(iel)
     rep  = aux1 * ettp(npt,jdp) / xnul
 
     ! Calcul du Prandtl et du Sherwood
     if (ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2) then
-      xrkl = diftl0 / propce(iel,iromf)
+      xrkl = diftl0 / cromf(iel)
     else if (ivisls(ihm).ge.1) then
-      xrkl = propce(iel,ipproc(ivisls(ihm))) / propce(iel,iromf)
+      xrkl = propce(iel,ipproc(ivisls(ihm))) / cromf(iel)
     else
-      xrkl = visls0(ihm) / propce(iel,iromf)
+      xrkl = visls0(ihm) / cromf(iel)
     endif
     prt   = xnul / xrkl
     sherw = 2 + 0.55d0 * rep**0.5d0 * prt**(d1s3)
@@ -326,7 +329,7 @@ do npt = 1,nbpart
     ! --- Calcul de la pression partielle en oxygene (atm)
     !                                                 ---
     !       PO2 = RHO1*RR*T*YO2/MO2
-    aux1 = propce(iel,iromf) * rr * propce(iel,ipproc(itemp1))                 &
+    aux1 = cromf(iel) * rr * propce(iel,ipproc(itemp1))                 &
          * propce(iel,ipproc(iym1(io2))) / wmole(io2) / prefth
 
     ! --- Calcul de surface efficace : SE

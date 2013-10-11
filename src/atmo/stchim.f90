@@ -38,7 +38,6 @@
 !> \param[in]     iscal         scalar number
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (preceding time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
@@ -46,7 +45,7 @@
 subroutine stchim &
 !================
 
- ( iscal  , rtpa   ,  propce ,                            &
+ ( iscal  , rtpa   ,                                      &
    crvexp , crvimp)
 
 
@@ -63,6 +62,7 @@ use cstphy
 use parall
 use period
 use mesh
+use field
 use atchem
 
 implicit none
@@ -73,12 +73,10 @@ implicit none
 
 integer          iscal
 double precision rtpa(ncelet,*)
-double precision propce(ncelet,*)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-!------------------------------------------------------------------------------------
 !  Variables used for computation of the explicit chemical source term
 integer iel, ii
 double precision dlconc(nespg), source(nespg), dchema(nespg)
@@ -86,12 +84,16 @@ double precision rk(nrg)
 double precision rom
 double precision conv_factor(nespg) ! conversion factors for reaction rates
 
+double precision, dimension(:), pointer :: crom
+
 !===============================================================================
+
+call field_get_val_s(icrom, crom)
 
 do iel = 1, ncel
 
   ! density
-  rom = propce(iel,ipproc(irom))
+  rom = crom(iel)
 
   ! Filling working array rk
   do ii = 1, nrg

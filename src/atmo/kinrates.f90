@@ -57,6 +57,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 use atincl
 use atchem
 
@@ -83,12 +84,16 @@ double precision heurtu              ! yime (UTC)
 double precision albe                ! albedo, useless here
 double precision fo                  ! solar constant, useless here
 
+double precision, dimension(:), pointer ::  crom
+
 ! Initialisation
 
 temp = t0
 dens = ro0
 press = dens*rair*temp ! ideal gas law
 hspec = 0.0d0
+
+if (ippmod(iatmos).ge.1) call field_get_val_s(icrom, crom)
 
 ! Computation of kinetic rates in every cell
 
@@ -111,7 +116,7 @@ do iel = 1, ncel
   ! Dry or humid atmosphere
   if (ippmod(iatmos).ge.1) then
     temp = propce(iel,ipproc(itempc)) + tkelvi
-    dens = propce(iel,ipproc(irom))
+    dens = crom(iel)
     press = dens*rair*temp
 
     ! Constant density with a meteo file

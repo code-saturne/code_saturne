@@ -143,6 +143,7 @@ use entsor
 use lagpar
 use lagran
 use mesh
+use field
 use ppincl
 use pointe
 
@@ -189,7 +190,6 @@ double precision lvisq, tvisq, depint
 double precision c0, cl, visccf
 double precision energi , dissip , vit(3)
 double precision norm_vit , norm
-integer          iromf
 
 ! Local variables for the resuspension model
 
@@ -200,6 +200,8 @@ double precision scalax
 
 double precision iner_tor,  cst_1,  cst_4, adh_tor(3),vpart0(3)
 double precision kk, kkk
+
+double precision, dimension(:), pointer :: cromf
 
 !===============================================================================
 
@@ -223,13 +225,14 @@ c0   = 2.1d0
 cl   = 1.d0 / (0.5d0 + (3.d0/4.d0)*c0)
 
 ! Pointer on the density w.r.t the flow
+
 if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
-  iromf = ipproc(irom1)
+  call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
-  iromf = ipproc(irom)
+  call field_get_val_s(icrom, cromf)
 endif
 
-romf = propce(iel,iromf)
+romf = cromf(iel)
 visccf = propce(iel,ipproc(iviscl)) / romf
 
 norm=sqrt(rtpa(iel,iu)**2 + rtpa(iel,iv)**2 + rtpa(iel,iw)**2)

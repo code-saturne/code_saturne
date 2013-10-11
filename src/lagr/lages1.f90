@@ -94,6 +94,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -119,7 +120,7 @@ double precision fextla(nbpmax,3)
 
 ! Local variables
 
-integer          iel , ip , id , i0 , iromf , mode
+integer          iel , ip , id , i0 , mode
 
 double precision aa , bb , cc , dd , ee
 double precision aux1 , aux2 ,aux3 , aux4 , aux5 , aux6
@@ -136,12 +137,9 @@ double precision tempf
 double precision ddbr, tix2, tiu2, tixiu
 double precision tbrix1, tbrix2, tbriu
 
-!===============================================================================
+double precision, dimension(:), pointer :: cromf
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
-!===============================================================================
-
 
 !===============================================================================
 ! 1. INITIALISATIONS
@@ -157,10 +155,10 @@ grav(3) = gz
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
-if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
-  iromf = ipproc(irom1)
+if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
-  iromf = ipproc(irom)
+  call field_get_val_s(icrom, cromf)
 endif
 
 !===============================================================================
@@ -177,7 +175,7 @@ do id = 1,3
 
       iel = itepa(ip,jisor)
 
-      rom = propce(iel,iromf)
+      rom = cromf(iel)
 
       if (id.eq.1) vitf = rtpa(iel,iu)
       if (id.eq.2) vitf = rtpa(iel,iv)

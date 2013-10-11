@@ -68,6 +68,8 @@
 #include "cs_gui_variables.h"
 #include "cs_selector.h"
 #include "cs_post.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1251,12 +1253,13 @@ static int cs_gui_properties_probe_name(const char *const property_name,
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_properties_post(const char *const property_name,
-                                   const int         ipp,
-                                   int        *const ichrvr,
-                                   int        *const ilisvr,
-                                   int        *const ihisvr,
-                                   const int  *const nvppmx)
+static void
+cs_gui_properties_post(const char  *property_name,
+                       const int    ipp,
+                       int         *ichrvr,
+                       int         *ilisvr,
+                       int         *ihisvr,
+                       const int   *nvppmx)
 {
   int nb_probes;
   int iprob;
@@ -1932,6 +1935,17 @@ cs_gui_postprocess_writers(void)
     BFT_FREE(frequency_choice);
     BFT_FREE(directory);
   }
+}
+
+/*-----------------------------------------------------------------------------
+ * Post-processing options for fields
+ *
+ * These options are used for fields not mapped to variables or properties.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_postprocess_fields(void)
+{
 }
 
 /*----------------------------------------------------------------------------*/

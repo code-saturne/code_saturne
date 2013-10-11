@@ -88,7 +88,6 @@ double precision dlgeo(nfabor,ngeol)
 
 integer          ifac , inoeud
 double precision xs1,ys1,zs1,xs2,ys2,zs2,xs3,ys3,zs3
-double precision gam1,alp2,gam2
 double precision xnor
 double precision xn,yn,zn,xt,yt,zt,xtt,ytt,ztt
 

@@ -131,6 +131,7 @@ double precision, allocatable, dimension(:) :: cfapot, cfbpot
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
+
 !===============================================================================
 
 !===============================================================================

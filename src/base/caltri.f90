@@ -519,8 +519,8 @@ if (iilagr.gt.0) then
 
   call laglec                                                     &
   !==========
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( ncelet , ncel   , nfabor ,                                     &
+   nbpmax , nvp    , nvep   , nivep  ,                            &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
    ra(irtpa) , ra(ipropc) ,                                       &

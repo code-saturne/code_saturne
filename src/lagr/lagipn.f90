@@ -23,7 +23,7 @@
 subroutine lagipn &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
    npar1  , npar2  ,                                              &
    itepa  ,                                                       &
    rtp    ,                                                       &
@@ -47,7 +47,6 @@ subroutine lagipn &
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! npar1 ,npar2     ! e  ! <-- ! borne min et max des particules                !
@@ -97,6 +96,7 @@ use lagpar
 use lagran
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -104,7 +104,7 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax , nvp    , nvep  , nivep
 integer          npar1 , npar2
 integer          itepa(nbpmax,nivep)
 integer          lndnod
@@ -118,16 +118,17 @@ integer          icocel(lndnod) ,  itycel(ncelet+1)
 integer          ifrlag(nfabor)
 ! Local variables
 
-integer          iel , npt , nomb , nbfac , ifac , iromf , il , izone ,i
+integer          iel , npt , nomb , nbfac , ifac , il , izone
 double precision tu , d2s3
 
 double precision, allocatable, dimension(:) :: w1
 
-double precision  lvisq, ypp
-double precision  d3 , vpart, vvue
+double precision  lvisq
 double precision  px , py , pz , distp , d1
-double precision  dismin,dismax, ustar, visccf,depint , romf
+double precision  dismin,dismax, ustar, visccf, romf
 double precision  unif1(1)
+
+double precision, dimension(:), pointer :: cromf
 
 !===============================================================================
 
@@ -204,105 +205,106 @@ enddo
 
 if (idepst.eq.1) then
 
-   do npt = npar1,npar2
-      iel = itepa(npt,jisor)
-      !Calculation of the normalized wall-normal particle distance (y^+)
+  do npt = npar1,npar2
+    iel = itepa(npt,jisor)
+    !Calculation of the normalized wall-normal particle distance (y^+)
 
-      dismin = 1.d+20
-      dismax = -1.d+20
+    dismin = 1.d+20
+    dismax = -1.d+20
 
-      distp = 1.0d+20
-      tepa(npt,jryplu) = 1.0d3
-      nbfac = 0
+    distp = 1.0d+20
+    tepa(npt,jryplu) = 1.0d3
+    nbfac = 0
 
-      do il = itycel(iel)+1,itycel(iel+1)
-         ifac = icocel(il)
-         if (ifac.lt.0) then
-            ifac = -ifac
-            izone = ifrlag(ifac)
+    do il = itycel(iel)+1,itycel(iel+1)
+      ifac = icocel(il)
+      if (ifac.lt.0) then
+        ifac = -ifac
+        izone = ifrlag(ifac)
 
-            !          Test if the particle is located in a boundary cell
+        ! Test if the particle is located in a boundary cell
 
-            if ( iusclb(izone) .eq. idepo1 .or.                   &
-                 iusclb(izone) .eq. idepo2 .or.                   &
-                 iusclb(izone) .eq. idepfa .or.                   &
-                 iusclb(izone) .eq. irebol     ) then
+        if ( iusclb(izone) .eq. idepo1 .or.                   &
+             iusclb(izone) .eq. idepo2 .or.                   &
+             iusclb(izone) .eq. idepfa .or.                   &
+             iusclb(izone) .eq. irebol     ) then
 
 
-               !              Calculation of the wall units
+          ! Calculation of the wall units
 
-               if ( ippmod(iccoal).ge.0 .and. ippmod(icfuel).ge.0 ) then
-                  iromf = ipproc(irom1)
-               else
-                  iromf = ipproc(irom)
-               endif
-               romf = propce(iel,iromf)
-               visccf = propce(iel,ipproc(iviscl)) / romf
+          if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+            call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
+          else
+            call field_get_val_s(icrom, cromf)
+          endif
 
-               ustar = uetbor(ifac)
-               lvisq = visccf / ustar
+          romf = cromf(iel)
+          visccf = propce(iel,ipproc(iviscl)) / romf
 
-               px = ettp(npt,jxp)
-               py = ettp(npt,jyp)
-               pz = ettp(npt,jzp)
+          ustar = uetbor(ifac)
+          lvisq = visccf / ustar
 
-               d1 = abs(px*dlgeo(ifac,1)+py*dlgeo(ifac,2)         &
-                    +pz*dlgeo(ifac,3)+dlgeo(ifac,4))           &
-                    /sqrt( dlgeo(ifac,1)*dlgeo(ifac,1)            &
-                    +dlgeo(ifac,2)*dlgeo(ifac,2)               &
-                    +dlgeo(ifac,3)*dlgeo(ifac,3))
+          px = ettp(npt,jxp)
+          py = ettp(npt,jyp)
+          pz = ettp(npt,jzp)
 
-               if (d1.lt.distp) then
-                  distp = d1
-                  tepa(npt,jryplu) = distp/lvisq
-                  itepa(npt,jdfac) = ifac
-               endif
-            endif
-         endif
-      enddo
+          d1 = abs(px*dlgeo(ifac,1)+py*dlgeo(ifac,2)         &
+                  +pz*dlgeo(ifac,3)+dlgeo(ifac,4))           &
+               /sqrt( dlgeo(ifac,1)*dlgeo(ifac,1)            &
+                  +dlgeo(ifac,2)*dlgeo(ifac,2)               &
+                  +dlgeo(ifac,3)*dlgeo(ifac,3))
 
-      if (tepa(npt,jryplu).lt.tepa(npt,jrinpf)) then
-         itepa(npt,jimark) = 10
-      elseif (tepa(npt,jryplu).gt.100.d0) then
-         itepa(npt,jimark) = -1
-      else
-
-         call zufall(1, unif1(1))
-         !==========
-         if (unif1(1).lt.0.25d0) then
-            itepa(npt,jimark) = 12
-         elseif (unif1(1).gt.0.625d0) then
-            itepa(npt,jimark) = 1
-         elseif ((unif1(1).gt.0.25d0).and.(unif1(1).lt.0.625d0)) then
-            itepa(npt,jimark) = 3
-         endif
+          if (d1.lt.distp) then
+            distp = d1
+            tepa(npt,jryplu) = distp/lvisq
+            itepa(npt,jdfac) = ifac
+          endif
+        endif
       endif
+    enddo
 
-      if (tepa(npt,jryplu).le.tepa(npt,jrinpf)) then
-         ettp(npt,juf) = rtp(iel,iu)
-         ettp(npt,jvf) = rtp(iel,iv)
-         ettp(npt,jwf) = rtp(iel,iw)
+    if (tepa(npt,jryplu).lt.tepa(npt,jrinpf)) then
+      itepa(npt,jimark) = 10
+    elseif (tepa(npt,jryplu).gt.100.d0) then
+      itepa(npt,jimark) = -1
+    else
+
+      call zufall(1, unif1(1))
+      !==========
+      if (unif1(1).lt.0.25d0) then
+        itepa(npt,jimark) = 12
+      elseif (unif1(1).gt.0.625d0) then
+        itepa(npt,jimark) = 1
+      elseif ((unif1(1).gt.0.25d0).and.(unif1(1).lt.0.625d0)) then
+        itepa(npt,jimark) = 3
       endif
+    endif
 
-      ! No deposited particles at the injection
-      itepa(npt,jdepo) = 0
+    if (tepa(npt,jryplu).le.tepa(npt,jrinpf)) then
+      ettp(npt,juf) = rtp(iel,iu)
+      ettp(npt,jvf) = rtp(iel,iv)
+      ettp(npt,jwf) = rtp(iel,iw)
+    endif
 
-   enddo
+    ! No deposited particles at the injection
+    itepa(npt,jdepo) = 0
 
-   ! Initialization of the additional "pointers"
-   ! for the resuspension model
+  enddo
 
-   if (ireent.gt.0) then
+  ! Initialization of the additional "pointers"
+  ! for the resuspension model
 
-      tepa(npt,jfadh) = 0.d0
-      tepa(npt,jmfadh) = 0.d0
+  if (ireent.gt.0) then
 
-      itepa(npt,jnbasg) = 0
-      itepa(npt,jnbasp) = 0
+    tepa(npt,jfadh) = 0.d0
+    tepa(npt,jmfadh) = 0.d0
 
-      tepa(npt,jndisp) = 0.d0
+    itepa(npt,jnbasg) = 0
+    itepa(npt,jnbasp) = 0
 
-   endif
+    tepa(npt,jndisp) = 0.d0
+
+  endif
 
 endif
 

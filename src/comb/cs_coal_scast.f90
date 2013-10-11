@@ -83,7 +83,6 @@ subroutine cs_coal_scast &
 ! Module files
 !===============================================================================
 
-use dimens, only: ndimfb
 use paramx
 use numvar
 use entsor
@@ -144,7 +143,7 @@ double precision xhco2  , xhh2   , xhh2o
 
 double precision gamhet , den
 double precision xxco,xxo2,xxco2,xxh2o
-double precision xkp,xkm,wplus,wmoins,t0p,t0m
+double precision xkp,xkm,t0p,t0m
 double precision anmr,tauchi,tautur
 double precision sqh2o , x2
 double precision err1mx,err2mx
@@ -178,7 +177,7 @@ double precision, dimension(:), pointer ::  crom
 !  Pointeur sur CHx2,
 !  Masse volumique de la pahse gaz,
 !  Masse volumique du melange)
-integer ipctem, ipcyf1, ipcyf2, idgaz, idmel
+integer ipctem, ipcyf1, ipcyf2, idgaz
 !
 ! Constante cinetiques laminaires
 ! -------------------------------
@@ -2025,7 +2024,6 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
     ipcyf1 = ipproc(iym1(1))
     ipcyf2 = ipproc(iym1(2))
     idgaz  = ipproc(irom1)
-    idmel  = ipproc(irom)
 !
 ! Masse molaire
 !
@@ -2145,14 +2143,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( (core1 + core2) * para2 )                                &
-                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
                   * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               else
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( core1 + core2 )                                          &
-                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
                   * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               endif
@@ -2217,14 +2215,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( (core1 + core2) * para2 )                                &
-                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
                   * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
 
               else
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( core1 + core2 )                                          &
-                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
                   * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
 
               endif
@@ -2540,14 +2538,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               auxrb1 = ( volume(iel)*wmno )                                    &
                      * ( (core1 + core2 + core3) * para2 )                     &
                      * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
-                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
 
               else
 
               auxrb1 = ( volume(iel)*wmno )                                    &
                      * ( core1 + core2 + core3 )                               &
                      * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
-                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
 
               endif
 
@@ -2626,14 +2624,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               auxrb2 = ( volume(iel)*wmno )                                    &
                      * ( (core1 + core2 + core3) * para2 )                     &
                      * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
-                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
 
               else
 
               auxrb2 = ( volume(iel)*wmno )                                    &
                      * ( core1 + core2 + core3 )                               &
                      * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
-                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
 
               endif
 

@@ -113,6 +113,7 @@ double precision zetan, zetas, rho, xfu, xm, temp, nn0
 double precision ka, kb, kz, kt, chi, po2, wox
 double precision aa, bb, cc, taa, tcc, caa, cbb, ccc, dd
 double precision, dimension(:), pointer ::  crom
+
 !===============================================================================
 
 !===============================================================================
@@ -161,7 +162,7 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
     cimp = 0.d0
 
     nn0 = 6.0223d23
-    rho = propce(iel,ipproc(irom)) ! Mixture density (kg/m3)
+    rho = crom(iel)                  ! Mixture density (kg/m3)
     temp = propce(iel,ipproc(itemp)) ! Temperature
 
     xm = 1.d0/ (  propce(iel,ipproc(iym(1)))/wmolg(1)             &

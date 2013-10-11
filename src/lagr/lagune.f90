@@ -114,6 +114,7 @@ use pointe
 use lagpar
 use lagran
 use mesh
+use field
 use ppppar
 use ppthch
 use ppincl
@@ -148,7 +149,7 @@ double precision dlgeo(nfabor,ngeol)
 integer          ip     , npt    , iok
 integer          iel    , ivf
 integer          npar1  , npar2
-integer          modntl , iromf
+integer          modntl
 
 integer          ifac
 
@@ -181,6 +182,7 @@ double precision, allocatable, dimension(:):: energt
 
 double precision, allocatable, dimension(:):: tempp
 
+double precision, dimension(:), pointer :: cromf
 
 integer ii
 integer nbpartall, nbpper
@@ -190,7 +192,6 @@ integer nbpartall, nbpper
 integer          ipass
 data             ipass /0/
 save             ipass
-
 
 !===============================================================================
 !===============================================================================
@@ -327,6 +328,12 @@ if (iplar.eq.1) then
      call laggeo(dlgeo)
      !==========
 
+     if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+       call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
+     else
+       call field_get_val_s(icrom, cromf)
+     endif
+
      ! Average friction velocity calculation
      do ifac = 1, nfabor
 
@@ -340,13 +347,7 @@ if (iplar.eq.1) then
 
            ! the density pointer according to the flow location
 
-           if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
-              iromf = ipproc(irom1)
-           else
-              iromf = ipproc(irom)
-           endif
-
-           romf = propce(iel,iromf)
+           romf = cromf(iel)
            visccf = propce(iel,ipproc(iviscl)) / romf
 
            if ( uetbor(ifac).gt.1.d-15) then
@@ -502,17 +503,13 @@ enddo
 
 if ( ntcabs.eq.1 ) then
 
-  call laggra                                                     &
+  call laggra(rtp, coefa, coefb, gradpr, gradvf)
   !==========
- ( rtp    , propce , coefa  , coefb  ,                            &
-   gradpr , gradvf )
 
 else
 
-  call laggra                                                     &
+  call laggra(rtpa, coefa, coefb, gradpr, gradvf)
   !==========
- ( rtpa   , propce , coefa  , coefb  ,                            &
-   gradpr , gradvf )
 
 endif
 
@@ -572,10 +569,8 @@ endif
 
 if (nor.eq.2 .and. iilagr.ne.3) then
 
-  call laggra                                                     &
+  call laggra(rtp, coefa, coefb, gradpr, gradvf)
   !==========
- ( rtp    , propce , coefa  , coefb  ,                            &
-   gradpr , gradvf )
 
 endif
 

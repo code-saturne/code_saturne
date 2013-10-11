@@ -142,7 +142,7 @@ integer          ipcyox,ipcyp1,ipcyp2,ipcyp3,ipcyin
 integer          ipcte1
 
 double precision wmolme
-double precision somch , cfolc , cfolh , cfolo , ckxh
+double precision somch , cfolc , cfolh , cfolo
 
 integer          iok1 , iok2 , iok3 , iok4 , iok5
 integer          , dimension ( : )     , allocatable :: intpdf

@@ -94,7 +94,6 @@ void CS_PROCF(synthe, SYNTHE)(
  const cs_int_t  *const iu,        /* --> index of velocity component         */
  const cs_int_t  *const iv,        /* --> index of velocity component         */
  const cs_int_t  *const iw,        /* --> index of velocity component         */
- const cs_int_t  *const ipcrom,    /* --> index of density in propce array    */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */

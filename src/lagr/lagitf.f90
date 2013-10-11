@@ -23,13 +23,11 @@
 subroutine lagitf &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    itepa  , ibord  ,                                              &
-   dt     , rtp    , propce ,                                     &
+   rtp    , propce ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
-   auxl1  , auxl2  )
+   auxl1  )
 
 !===============================================================================
 ! FONCTION :
@@ -46,21 +44,15 @@ subroutine lagitf &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! <-- ! contient le numero de la                       !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -70,7 +62,6 @@ subroutine lagitf &
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpmax,2)      !    !     !                                                !
@@ -78,7 +69,6 @@ subroutine lagitf &
 ! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
 !                  !    !     !   correction au 2eme sous-pas                  !
 ! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -110,19 +100,17 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          nbpmax , nvp , nvp1 , nvep , nivep
-integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
-double precision dt(ncelet) , rtp(ncelet,*)
+double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
+double precision taup(nbpmax), tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
-double precision auxl1(nbpmax) , auxl2(nbpmax)
+double precision auxl1(nbpmax)
 
 ! Local variables
 

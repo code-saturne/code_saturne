@@ -52,6 +52,16 @@ double precision ttsuit, wtsuit
 
 !===============================================================================
 
+interface
+
+  subroutine gui_postprocess_fields()  &
+      bind(C, name='cs_gui_postprocess_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine gui_postprocess_fields
+
+end interface
+
 !===============================================================================
 ! 1. Initialize modules before user.
 !      . entsor
@@ -130,6 +140,8 @@ call modini
 
 call fldini
 !==========
+
+call gui_postprocess_fields
 
 call user_field_parameters
 !=========================

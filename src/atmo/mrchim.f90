@@ -38,13 +38,12 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (preceding time steps)
 !> \param[in]     rtp           calculated variables at cell centers
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine mrchim &
 !================
 
-( dt     , rtpa   , rtp    , propce)
+( dt     , rtpa   , rtp    )
 
 !===============================================================================
 ! Module files
@@ -63,6 +62,7 @@ use ppthch
 use ppincl
 use elincl
 use mesh
+use field
 use dimens
 use atchem
 
@@ -72,13 +72,10 @@ implicit none
 
 ! Arguments
 
-
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
 
 ! Local Variables
 
-!-------------------------------------------------------------------------------
 integer iel,ii
 double precision rom
 
@@ -93,13 +90,19 @@ integer ncycle
 double precision dtrest
 double precision rvoid(1)
 
+double precision, dimension(:), pointer :: crom
+
+!===============================================================================
+
+call field_get_val_s(icrom, crom)
+
 do iel = 1, ncel
 
   ! time step
   dtc = dt(iel)
 
   ! density
-  rom = propce(iel,ipproc(irom))
+  rom = crom(iel)
 
   ! Filling working array rk
   do ii = 1, nrg

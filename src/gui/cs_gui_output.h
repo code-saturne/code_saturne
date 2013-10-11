@@ -99,6 +99,15 @@ cs_gui_postprocess_meshes(void);
 void
 cs_gui_postprocess_writers(void);
 
+/*-----------------------------------------------------------------------------
+ * Post-processing options for fields
+ *
+ * These options are used for fields not mapped to variables or properties.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_postprocess_fields(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

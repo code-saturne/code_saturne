@@ -333,8 +333,7 @@ call ustssc &
 ! The first nespg user scalars are supposed to be chemical species
 if ((ichemistry.ge.1).and.(isepchemistry.eq.2)                    &
      .and.(iscal.le.nespg).and.(ntcabs.gt.1)) then
-  call stchim( iscal  , rtpa   , propce ,       &
-               smbrs  , rovsdt )
+  call stchim(iscal, rtpa, smbrs, rovsdt)
 endif
 
 

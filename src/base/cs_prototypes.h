@@ -110,6 +110,16 @@ extern void CS_PROCF (findpt, FINDPT)
 );
 
 /*----------------------------------------------------------------------------
+ * Generator for distribution function of p's
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (fische, FISCHE)
+(
+ const cs_int_t   *n,
+ const cs_real_t  *mu,
+       cs_int_t    p[]);
+
+/*----------------------------------------------------------------------------
  * Check necessity of extended mesh from FORTRAN options.
  *
  * Interface Fortran :

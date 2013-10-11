@@ -82,7 +82,6 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 character*80     chaine
 integer          ivar
-integer          ipcefj
 
 !===============================================================================
 

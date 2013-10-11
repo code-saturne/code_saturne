@@ -465,8 +465,7 @@ if(nscaus.gt.0) then
 ! Atmospheric chemistry
 ! Resolution of chemical evolution of species
  if (ichemistry.ge.1) then
-   call mrchim                                                     &
-   ( dt     , rtpa   , rtp    , propce)
+   call mrchim(dt, rtpa, rtp)
  endif
 endif
 

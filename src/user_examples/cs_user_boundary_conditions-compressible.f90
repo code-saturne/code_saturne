@@ -499,7 +499,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 !< [loc_var_dec]
-integer          ifac  , iel   , ii, ipcrom
+integer          ifac  , iel   , ii
 integer          izone , iutile
 integer          ilelt, nlelt
 
@@ -507,6 +507,7 @@ double precision uref2 , dhyd  , rhomoy
 double precision ustar2, xkent , xeent , d2s3
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer ::  crom
 !< [loc_var_dec]
 
 !===============================================================================
@@ -518,6 +519,8 @@ integer, allocatable, dimension(:) :: lstelt
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 d2s3 = 2.d0/3.d0
+
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -607,8 +610,7 @@ do ilelt = 1, nlelt
   !     and of k and epsilon at the inlet (xkent and xeent) using
   !     standard laws for a circular pipe
   !     (their initialization is not needed here but is good practice).
-  ipcrom = ipproc(irom)
-  rhomoy = propce(iel,ipcrom)
+  rhomoy = crom(iel)
   ustar2 = 0.d0
   xkent  = epzero
   xeent  = epzero

@@ -23,7 +23,7 @@
 subroutine laggra &
 !================
 
- ( rtp    , propce , coefa  , coefb  ,                            &
+ ( rtp    , coefa  , coefb  ,                                     &
    gradpr , gradvf )
 
 !===============================================================================
@@ -44,7 +44,6 @@ subroutine laggra &
 !__________________!____!_____!________________________________________________!
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! coefa,coefb      ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! gradpr(ncel,3    ! tr ! --> ! gradient de pression                           !
@@ -76,6 +75,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -85,7 +85,6 @@ implicit none
 
 double precision coefa(ndimfb,*) , coefb(ndimfb,*)
 double precision rtp(ncelet,*)
-double precision propce(ncelet,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 
 ! Local variables
@@ -93,12 +92,12 @@ double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 
 integer          inc , iccocg , iclipr
 integer          ipcliu , ipcliv , ipcliw
-integer          iromf
 integer          iel
 double precision unsrho
 
-!===============================================================================
+double precision, dimension(:), pointer :: cromf
 
+!===============================================================================
 
 !===============================================================================
 ! 0. PARAMETRES
@@ -148,16 +147,16 @@ call grdcel &
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
-if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
-  iromf = ipproc(irom1)
+if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
-  iromf = ipproc(irom)
+  call field_get_val_s(icrom, cromf)
 endif
 
 ! Calcul de -Grad P / Rom
 
 do iel = 1,ncel
-  unsrho = 1.d0 / propce(iel,iromf)
+  unsrho = 1.d0 / cromf(iel)
   gradpr(iel,1) = -gradpr(iel,1) * unsrho
   gradpr(iel,2) = -gradpr(iel,2) * unsrho
   gradpr(iel,3) = -gradpr(iel,3) * unsrho

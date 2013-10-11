@@ -71,6 +71,7 @@ use ppthch
 use ppincl
 use elincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -91,6 +92,8 @@ double precision somje , coepoa , coefav , coepot
 double precision dtj   , dtjm   , delhsh , cdtj , cpmx
 
 logical          ok
+
+double precision, dimension(:), pointer ::  crom
 
 !===============================================================================
 
@@ -242,17 +245,18 @@ if ( ippmod(ielarc).ge.1 ) then
     if(elcou.ne.0.d0) coepoa = couimp/elcou
     coepot = coepoa
 
-    WRITE(NFECRA,*) ' ELCOU = ',ELCOU
+    write(nfecra,*) ' ELCOU = ',ELCOU
 
     dtj = 1.d15
     dtjm =dtj
     delhsh = 0.d0
     cdtj= 20.d0
 
+    call field_get_val_s(icrom, crom)
+
     do iel = 1, ncel
-      if(propce(iel,ipproc(irom)).ne.0.d0)                     &
-           delhsh =  propce(iel,ipcefj) * dt(iel)                 &
-           /propce(iel,ipproc(irom))
+      if (crom(iel).ne.0.d0)                               &
+        delhsh =  propce(iel,ipcefj) * dt(iel) /crom(iel)
 
       if(delhsh.ne.0.d0) then
         dtjm= rtp(iel,isca(iscalt))/delhsh

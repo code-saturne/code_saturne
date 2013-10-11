@@ -75,6 +75,7 @@ use cs_fuel_incl
 use ppincl
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -91,12 +92,15 @@ integer          iel, ifac, icla, ipck, icha, iok
 double precision xm, dd2, vv, sf, xlc, xkmin, pp
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, dimension(:), pointer :: crom
 
 !===============================================================================
-! 0 - GESTION MEMOIRE
+! 0 - Initialization
 !===============================================================================
 
 if (imodak.eq.1) allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 !  1 - COEFFICIENT D'ABSORPTION DU MELANGE GAZEUX (m-1)
@@ -120,9 +124,9 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
 
       ! Soot model
       if (isoot.eq.0) w3(iel) = Xsoot * propce(iel,ipproc(iym(1))) &
-                       * propce(iel,ipproc(irom)) / rosoot
+                       * crom(iel) / rosoot
       if (isoot.ge.1) w3(iel) = rtp(iel,isca(ifsm)) &
-                        * propce(iel,ipproc(irom)) / rosoot
+                        * crom(iel) / rosoot
     enddo
     call raydak(ncel,ncelet,                                      &
     !==========
@@ -220,15 +224,14 @@ if ( ippmod(iccoal) .ge. 0 ) then
 
 ! ---> Calcul du diametre des particules
 
-      dd2 = ( xashch(icha)*diam20(icla)**2 +                       &
+      dd2 = ( xashch(icha)*diam20(icla)**2 +                      &
            ( 1.d0-xashch(icha))                                   &
              *propce(iel,ipproc(idiam2(icla)))**2 )**0.5d0
 
 ! ---> Calcul du coeficient d'absorption des particules K2/X2
 !         3./2. ROM/(ROM2*DD2)
 
-      propce(iel,ipproc(icak(ipck))) =                            &
-                         1.5d0*propce(iel,ipproc(irom))    &
+      propce(iel,ipproc(icak(ipck))) = 1.5d0*crom(iel)            &
                        / ( propce(iel,ipproc(irom2(icla)))*dd2)
 
     enddo
@@ -250,8 +253,7 @@ if ( ippmod(icfuel).ge.0 ) then
 ! ---> Calcul du coeficient d'absorption des particules K2/X2
 !         3./2. ROM/(ROM2*DD2)
 
-      propce(iel,ipproc(icak(ipck))) =                            &
-                         1.5d0*propce(iel,ipproc(irom))    &
+      propce(iel,ipproc(icak(ipck))) =  1.5d0*crom(iel)           &
                  / ( propce(iel,ipproc(irom2(icla)))              &
                     *propce(iel,ipproc(idiam2(icla))) )
 

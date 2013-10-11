@@ -84,7 +84,6 @@ subroutine cs_fuel_scast &
 ! Module files
 !===============================================================================
 
-use dimens, only: ndimfb
 use paramx
 use numvar
 use entsor
@@ -130,13 +129,13 @@ integer          iterch
 
 double precision aux, rhovst
 double precision rom
-double precision fdev,hfov
+double precision hfov
 double precision ho2,hco,xesp(ngazem),t2mt1
 double precision gmech,gmvap,gmhet
-double precision xxco,xxo2,xxco2,xxh2o,xco2mx
+double precision xxco,xxo2,xxco2,xxh2o
 double precision xkp,xkm,t0p,t0m
 double precision aux1 , aux2 , aux3 , w1
-double precision anmr,xcot,xco2e,tauchi,tautur
+double precision anmr,tauchi,tautur
 double precision sqh2o , x2 , wmhcn , wmno ,wmo2
 double precision err1mx,err2mx
 double precision errch,fn,qpr

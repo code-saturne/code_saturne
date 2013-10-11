@@ -87,6 +87,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -109,7 +110,7 @@ double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac, iel, ipcrom
+integer          ifac, iel
 integer          iccfth, imodif, iconvp, idiffp, isym
 
 double precision rvoid(1)
@@ -118,7 +119,10 @@ double precision, allocatable, dimension(:) :: viscf
 double precision, allocatable, dimension(:) :: coefbt, cofbft
 double precision, allocatable, dimension(:) :: w1, c2
 
+double precision, dimension(:), pointer :: crom
+
 !===============================================================================
+
 !===============================================================================
 ! 0.  INITIALIZATION
 !===============================================================================
@@ -129,6 +133,8 @@ allocate(coefbt(nfabor),cofbft(nfabor))
 
 ! Allocate work arrays
 allocate(w1(ncelet))
+
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! 1. COMPUTATION OF THE CFL CONDITION ASSOCIATED TO THE PRESSURE EQUATION
@@ -188,10 +194,8 @@ call cfther &
 
 ! Compute the coefficient CFL/dt
 
-ipcrom = ipproc(irom)
-
 do iel = 1, ncel
-  wcf(iel) = w1(iel) * c2(iel) * propce(iel,ipcrom)               &
+  wcf(iel) = w1(iel) * c2(iel) * crom(iel)                        &
              / (rtp(iel,ipr) * volume(iel))
 enddo
 

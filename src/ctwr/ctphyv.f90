@@ -126,11 +126,9 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          iel
-integer          ipcvis, ipccp , ipcray
-integer          ipcvsl, ith   , iscal , ivart
+integer          ipccp
+integer          ivart
 integer          iclvar
-integer          iiii  , ipcsig, it
-integer          iesp  , mode , isrrom
 
 double precision rho   , r     , cpa   , cpe , cpv , del
 double precision hv0 , hvti , rhoj , tti , xxi,  xsati , dxsati

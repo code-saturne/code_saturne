@@ -48,6 +48,8 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_prototypes.h"
@@ -938,14 +940,12 @@ _rescale_fluctuations(cs_int_t     n_points,
  * parameters:
  *   n_points          --> Local number of points where turbulence is generated
  *   num_face          --> Local id of inlet boundary faces
- *   density           --> Density of the flow
  *   fluctuations      <-> Velocity fluctuations
  *----------------------------------------------------------------------------*/
 
 static void
 _rescale_flowrate(cs_int_t     n_points,
                   cs_int_t    *num_face,
-                  cs_real_t   *density,
                   cs_real_t   *fluctuations)
 {
   /* Compute the mass flow rate of the fluctuating field */
@@ -955,6 +955,7 @@ _rescale_flowrate(cs_int_t     n_points,
 
   double mass_flow_rate = 0., mass_flow_rate_g = 0.;
   double area = 0., area_g = 0.;
+  cs_real_t *density = CS_F_(rho)->val;
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mesh_q = cs_glob_mesh_quantities;
 
@@ -1349,7 +1350,6 @@ void CS_PROCF(synthe, SYNTHE)
  const cs_int_t  *const iu,        /* --> index of velocity component         */
  const cs_int_t  *const iv,        /* --> index of velocity component         */
  const cs_int_t  *const iw,        /* --> index of velocity component         */
- const cs_int_t  *const ipcrom,    /* --> index of density in propce array    */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
@@ -1419,12 +1419,12 @@ void CS_PROCF(synthe, SYNTHE)
 
     /* Modification by the user */
 
-    CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
-                            &nument, &inlet->n_faces,
-                             nvar, nscal,
-                             inlet->parent_num,
-                             dt, rtpa, rtp, propce,
-                             mean_velocity, reynolds_stresses, dissipation_rate);
+    CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)
+      (&nument, &inlet->n_faces,
+       nvar, nscal,
+       inlet->parent_num,
+       dt, rtpa, rtp, propce,
+       mean_velocity, reynolds_stresses, dissipation_rate);
 
     /* Generation of the synthetic turbulence */
     /*----------------------------------------*/
@@ -1502,7 +1502,6 @@ void CS_PROCF(synthe, SYNTHE)
         || inlet->type == CS_INFLOW_SEM)
       _rescale_flowrate(inlet->n_faces,
                         inlet->parent_num,
-                        &propce[(*ipcrom - 1)*n_cells_with_ghosts],
                         fluctuations);
 
     /* Boundary conditions */

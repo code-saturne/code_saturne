@@ -173,9 +173,8 @@ CINDFM='YYYY'
 CINDFC='YY'
 CINDFL='YYYY'
 
-!     Codage en chaine de caracteres du numero de la phase
-WRITE(CPHASE,'(I2.2)') 1
-
+!  Codage en chaine de caracteres du numero de la phase
+cphase='01'
 
 !     Avertissement
 if(nscamx.gt.nfmtsc) then
@@ -352,7 +351,7 @@ if (ixyzp0.eq.-1) then
   endif
 endif
 
-! Here the physcial variables below are required for the low-Mach algorithm
+! Here the physical variables below are required for the low-Mach algorithm
 if (idilat.eq.3) then
 
   !the reference density updated with the low-Mach algorithm
@@ -360,8 +359,7 @@ if (idilat.eq.3) then
   itysup = 0
   nbval  = 1
   irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-       ro0,ierror)
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,ro0,ierror)
   nberro=nberro+ierror
 
   ! the thermodynamic pressure for the previous time step
@@ -384,18 +382,19 @@ endif
 
 inierr = 0
 
-if(irovar.eq.1) then
-  !       Masse volumique - cellules
-  RUBRIQ = 'rho_ce_phase'//CPHASE
+if (irovar.eq.1) then
+
+  ! Masse volumique - cellules
+  rubriq = 'rho_ce_phase01'
   itysup = 1
   nbval  = 1
   irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       propce(1,ipproc(irom)),ierror)
+  call field_get_val_s(icrom, sval)
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
   nberro = nberro+ierror
   inierr = inierr+ierror
 
-  !       Masse volumique - faces de bord
+  ! Masse volumique - faces de bord
   if (nfabok.eq.1) then
     RUBRIQ = 'rho_fb_phase'//CPHASE
     itysup = 3
