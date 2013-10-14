@@ -116,7 +116,7 @@ integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt
 integer          ii    , inod, itypfl
 integer          isou, ivar, iitsm
 integer          iclipr, iclipf
-integer          icliup, iclivp, icliwp, init
+integer          init
 integer          iflmas, iflmab
 integer          iflmb0
 integer          nswrgp, imligp, iwarnp
@@ -370,10 +370,6 @@ call predvv &
 !       on met a jour les flux de masse, et on sort
 
 if (iprco.le.0) then
-
-  icliup = iclrtp(iu,icoef)
-  iclivp = iclrtp(iv,icoef)
-  icliwp = iclrtp(iw,icoef)
 
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ibrom, brom)
@@ -888,13 +884,8 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   ! ---> REPERAGE DES VARIABLES
 
-  icliup = iclrtp(iu,icoef)
-  iclivp = iclrtp(iv,icoef)
-  icliwp = iclrtp(iw,icoef)
-
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ibrom, brom)
-
 
   ! ---> ECHANGE DES VITESSES ET PRESSION EN PERIODICITE ET PARALLELISME
 

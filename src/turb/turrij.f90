@@ -110,7 +110,6 @@ double precision, dimension(:), pointer :: bromo, cromo
 integer          ifac  , iel   , ivar  , isou  , ii
 integer          inc   , iccocg
 integer          ipp   , iwarnp, iclip
-integer          icliup, iclivp, icliwp
 integer          nswrgp, imligp
 integer          iivar
 integer          iitsla
@@ -144,10 +143,6 @@ allocate(gradv(3, 3, ncelet))
 if (iturb.eq.30) then
   allocate(produc(6,ncelet))
 endif
-
-icliup = iclrtp(iu,icoef)
-iclivp = iclrtp(iv,icoef)
-icliwp = iclrtp(iw,icoef)
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)

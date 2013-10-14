@@ -112,7 +112,6 @@ double precision smagor(ncelet)
 ! Local variables
 
 integer          ii, iel, iccocg, inc, isou, jsou
-integer          ipcliu, ipcliv, ipcliw
 integer          ipcvst
 integer          iclipc
 
@@ -153,12 +152,6 @@ allocate(xmij(ncelet,6))
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvst = ipproc(ivisct)
 call field_get_val_s(icrom, crom)
-
-! --- Rang des c.l. des variables dans COEFA COEFB
-!        (c.l. std, i.e. non flux)
-ipcliu = iclrtp(iu,icoef)
-ipcliv = iclrtp(iv,icoef)
-ipcliw = iclrtp(iw,icoef)
 
 ! --- Pour le calcul de la viscosite de sous-maille
 xfil   = xlesfl

@@ -101,7 +101,7 @@ double precision depale(3,nnod)
 ! Local variables
 
 integer          istr, ii, ifac, inod, iel, indast
-integer          iflmas, iflmab,iclp,iclu,iclv,iclw
+integer          iflmas, iflmab,iclp
 
 integer, allocatable, dimension(:) :: lstfac
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -119,9 +119,6 @@ call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
 iclp = iclrtp(ipr,icoef)
-iclu = iclrtp(iu,icoef)
-iclv = iclrtp(iv,icoef)
-iclw = iclrtp(iw,icoef)
 
 !===============================================================================
 ! 2. PREDICTION DU DEPLACEMENT DES STRUCTURES

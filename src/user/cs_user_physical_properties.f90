@@ -137,7 +137,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          ivart, iclvar, iel, ifac
+integer          ivart, iel, ifac
 integer          ipcvis, ipccp
 integer          ipcvsl, ith, iscal, ii
 double precision vara, varb, varc, varam, varbm, varcm, vardm
@@ -209,10 +209,6 @@ if (.false.) then
     write(nfecra,9010) iscalt
     call csexit (1)
   endif
-
-  ! --- Position of boundary conditions for variable 'ivart'
-
-  iclvar = iclrtp(ivart,icoef)
 
   ! --- Pointers to density values
 

@@ -118,8 +118,6 @@ integer          ii    , iii   , imodif, iccfth
 integer          icalep, icalgm
 integer          iflmab
 integer          ien   , itk
-integer          iclp
-integer          iclu  , iclv  , iclw
 integer          nvarcf
 
 integer          nvcfmx
@@ -154,10 +152,6 @@ allocate(bval(nfabor,nvar))
 
 ien = isca(ienerg)
 itk = isca(itempk)
-iclp   = iclrtp(ipr,icoef)
-iclu   = iclrtp(iu ,icoef)
-iclv   = iclrtp(iv ,icoef)
-iclw   = iclrtp(iw ,icoef)
 
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)

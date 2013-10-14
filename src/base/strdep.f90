@@ -101,7 +101,7 @@ double precision cofale(nfabor,11)
 ! Local variables
 
 integer          istr, ii, iel, ifac, ntab
-integer          iflmas, iflmab, iclp, iclu, iclv, iclw
+integer          iflmas, iflmab, iclp
 integer          indast
 integer          icvext, icvint, icv
 
@@ -122,9 +122,6 @@ call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
 iclp = iclrtp(ipr,icoef)
-iclu = iclrtp(iu,icoef)
-iclv = iclrtp(iv,icoef)
-iclw = iclrtp(iw,icoef)
 
 !===============================================================================
 ! 2.  CALCUL DES EFFORTS SUR LES STRUCTURES

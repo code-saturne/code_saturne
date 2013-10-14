@@ -110,7 +110,6 @@ integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt
 integer          nswrgp, imligp
-integer          icliup, iclivp, icliwp
 integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -183,10 +182,6 @@ endif
 if (iturb.eq.51) then
   allocate(w10(ncelet),w11(ncelet))
 endif
-
-icliup = iclrtp(iu,icoef)
-iclivp = iclrtp(iv,icoef)
-icliwp = iclrtp(iw,icoef)
 
 call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)

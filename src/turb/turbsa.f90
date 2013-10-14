@@ -110,7 +110,6 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 integer          iel   , ifac  , inc   , iccocg, ivar
 integer          iiun
 integer          nswrgp, imligp
-integer          icliup
 integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -167,8 +166,6 @@ allocate(tinssa(ncelet), trgrdu(ncelet))
 allocate(w1(ncelet))
 allocate(tsexp(ncelet))
 allocate(dpvar(ncelet))
-
-icliup = iclrtp(iu,icoef)
 
 call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
