@@ -472,6 +472,17 @@ do ifac = 1, nfabor
   enddo
 enddo
 
+if (ippmod(icompf).ge.0) then
+  do ifac = 1, nfabor
+    do isou = 1, 3
+      cofacu(isou,ifac) = 0.d0
+      do jsou = 1, 3
+          cofbcu(isou,jsou,ifac) = 0.d0
+      enddo
+    enddo
+  enddo
+endif
+
 do ifac = 1, nfabor
   itypfb(ifac) = 0
   itrifb(ifac) = 0
