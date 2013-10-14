@@ -837,7 +837,7 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
 
     call lagipn                                                   &
     !==========
-    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
+    ( nbpmax , nvp    , nvep   , nivep  ,                         &
       npar1  , npar2  ,                                           &
       itepa  ,                                                    &
       rtp    ,                                                    &
