@@ -711,7 +711,7 @@ if ( 1.eq.0 ) then
 
   call lagipn                                                     &
   !==========
-  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+  ( nbpmax , nvp    , nvep   , nivep  ,                           &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &
     rtpa   ,                                                      &
