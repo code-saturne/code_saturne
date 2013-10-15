@@ -288,12 +288,12 @@ if (itsqdm.ne.0) then
      else if (idften(iu).eq.6) then
 
         do iel = 1, ncel
-           do isou = 1, 3
-              viscce(isou, iel) = w1(iel)
-           enddo
-           do isou = 4, 6
-              viscce(isou, iel) = 0.d0
-           enddo
+          do isou = 1, 3
+            viscce(isou, iel) = w1(iel)
+          enddo
+          do isou = 4, 6
+            viscce(isou, iel) = 0.d0
+          enddo
         enddo
 
         call vistnv &
@@ -308,20 +308,20 @@ if (itsqdm.ne.0) then
   else
 
      do ifac = 1, nfac
-        viscf(1,1,ifac) = 0.d0
+       viscf(1,1,ifac) = 0.d0
      enddo
      do ifac = 1, nfabor
-        viscb(ifac) = 0.d0
+       viscb(ifac) = 0.d0
      enddo
 
   endif
 
   if (ivisse.eq.1) then
 
-     call visecv &
-     !==========
-  ( propce ,                             &
-    secvif , secvib )
+    call visecv &
+    !==========
+ ( propce ,                             &
+   secvif , secvib )
 
   endif
 
