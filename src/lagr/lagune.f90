@@ -398,10 +398,10 @@ if ( iclogst.eq.1 ) then
 
    call cloginit                                                   &
    !===========
-   ( cstfar, epsvid, epseau, fion, jamlim, tempp )
+   ( cstfar, epsvid, epseau, fion, jamlim, mporos, tempp,          &
+     phi1  , phi2  , cstham, dcutof, lambwl, kboltz )
 
 endif
-
 
 !===============================================================================
 ! 2.  MISE A JOUR DES NOUVELLES PARTICULES ENTREES DANS LE DOMAINE

@@ -297,6 +297,7 @@ module lagran
 
   !> Parameter of the particle clogging model
    double precision, save :: jamlim
+   double precision, save :: mporos
 
   !> \}
   !> \}

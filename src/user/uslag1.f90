@@ -665,6 +665,7 @@ iclogst = 0
 
 jamlim = 0.74d0       ! Jamming limit
 
+mporos = 0.366d0      ! Minimal porosity
 
 !===============================================================================
 ! 13. Variables to visualize on the trajectories or the particles

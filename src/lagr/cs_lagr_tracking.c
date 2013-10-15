@@ -1972,7 +1972,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
   cs_lagr_track_builder_t  *builder = _particle_track_builder;
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
 
-  cs_int_t contact_number;
+  cs_int_t contact_number = 0;
   cs_real_t* surface_coverage;
 
 
@@ -2096,16 +2096,18 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
   else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) {
 
+    particle.cur_cell_num = cs_glob_mesh->b_face_cells[face_id];
+
     cs_real_t uxn = particle.velocity[0] * face_norm[0];
     cs_real_t vyn = particle.velocity[1] * face_norm[1];
     cs_real_t wzn = particle.velocity[2] * face_norm[2];
 
     cs_real_t  energ = 0.5 * particle.mass * (uxn + vyn + wzn) * (uxn + vyn + wzn);
-
+    cs_real_t min_porosity ;
+    cs_real_t limit;
 
     if (cs_glob_lagr_param.clogging)
     {
-
       /* If the clogging modeling is activated,                 */
       /* computation of the number of particles in contact with */
       /* the depositing particle                                */
@@ -2113,12 +2115,15 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
       surface_coverage = &boundary_stat[(*iscovc -1) * nfabor + face_id];
 
       contact_number = clogging_barrier(particle,
+                                        face_id,
                                         face_area,
                                         &energt[face_id],
-                                        surface_coverage);
+                                        surface_coverage,
+                                        &limit,
+                                        &min_porosity
+                                        );
 
     }
-
 
     if ( energ > energt[face_id] * 0.5 * particle.diameter ) {
 
@@ -2142,81 +2147,198 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
         }
         else
-      {
+        {
 
-        cs_int_t i, j, one = 1, two = 2;
-        cs_real_t* random;
+          cs_int_t i, j, one = 1, two = 2;
+          cs_real_t* random;
 
-        cs_real_t nb_depo_part, spher_angle[2];
-        cs_lagr_particle_t cur_part;
+          cs_real_t nb_depo_part, spher_angle[2];
+          cs_lagr_particle_t cur_part,cur_part2;
+          cs_int_t contact;
 
-        nb_depo_part = boundary_stat[(*inclg -1) * nfabor + face_id];
+          nb_depo_part = boundary_stat[(*inclg -1) * nfabor + face_id];
 
-        /* We choose randomly a deposited particle to interact with the depositing one */
+          double norm_vect = 0.5 * (cur_part.diameter + particle.diameter);
+          double unit_vect[3];
 
-        BFT_MALLOC(random,1,cs_real_t);
-        CS_PROCF(zufall, ZUFALL)(&one, random);
-        int part_num = (int) ((*random) * nb_depo_part);
-        BFT_FREE(random);
+          cs_int_t compt,compt2;
+          cs_int_t compt_max = 100;
+          cs_real_t dist;
 
-        k = 0;
-        for (i = 0, j = _particle_set->first_used_id; i < _particle_set->n_particles; i++) {
+          compt2 = 0;
+          do
+          {
+            /* We choose randomly a deposited particle to interact with the depositing one */
+            BFT_MALLOC(random,1,cs_real_t);
+            CS_PROCF(zufall, ZUFALL)(&one, random);
+            int part_num = (int) ((*random) * nb_depo_part);
+            BFT_FREE(random);
 
-          cur_part = _particle_set->particles[j];
+            k = 0;
+            for (i = 0, j = _particle_set->first_used_id; i < _particle_set->n_particles; i++) {
 
-          if ((cur_part.depo) && (cur_part.close_face_id == face_id)) {
+              cur_part = _particle_set->particles[j];
 
-            if (k == part_num)
-              break;
-            else
-              k+=1;
+              if ((cur_part.depo) && (cur_part.close_face_id == face_id)) {
 
+                if (k == part_num)
+                  break;
+                else
+                  k += 1;
+
+              }
+              j = cur_part.next_id;
+            }
+
+            compt2 += 1;
+            compt = 0;
+            do {
+              do {
+                /* The depositing particle is relocated in contact with the randomly chosen */
+                /* deposited                                                                */
+
+                CS_PROCF(zufall, ZUFALL)(&two, spher_angle);
+
+                spher_angle[0] *= PI;
+                spher_angle[1] *= 2 * PI;
+
+                unit_vect[0] =  sin(spher_angle[0]) * cos(spher_angle[1]);
+                unit_vect[1] =  sin(spher_angle[0]) * sin(spher_angle[1]);
+                unit_vect[2] =  cos(spher_angle[0]);
+              } while (_get_dot_prod(unit_vect,face_norm) > -0.3);
+
+              for (k = 0; k < 3; k++) {
+                particle.velocity[k] = 0.0;
+                particle.coord[k] = cur_part.coord[k] + unit_vect[k] * norm_vect;
+              }
+
+              k = 0;
+              contact=0;
+              for (i = 0, j = _particle_set->first_used_id; i < _particle_set->n_particles; i++) {
+
+                cur_part2 = _particle_set->particles[j];
+
+                /* Calculation of the distance of two particles */
+                if ((cur_part2.depo) && (cur_part2.close_face_id == face_id)) {
+
+                  dist = pow(pow(particle.coord[0] - cur_part2.coord[0],2) + pow(particle.coord[1] - cur_part2.coord[1],2)+
+                             pow(particle.coord[2] - cur_part2.coord[2],2),0.5);
+
+                  if ( dist < (cur_part2.diameter/2 + particle.diameter/2)) {
+
+                    contact = contact + 1;
+                  }
+                }
+                j = cur_part2.next_id;
+              }
+
+              compt += 1;
+
+            } while (contact != 0 && compt < compt_max); /* Test of an other angle if contact between particles */
+
+          } while (contact != 0 && compt2 < compt_max);
+          /* Test to prevent the covering of particles */
+         }
+
+        cs_int_t  ii;
+        cs_int_t  ncel   = cs_glob_mesh->n_cells;
+        cs_int_t  node;
+        cs_real_t volp[ncel];
+        cs_real_t porosity = 0.;
+        cs_real_t *xyzcen = cs_glob_mesh_quantities->cell_cen;
+        cs_real_t *volume  = cs_glob_mesh_quantities->cell_vol;
+
+        /* Determination of the cell number of the particle */
+        /* FIXME for parallel cases */
+
+        node = (ncel + 1) / 2;
+
+        cs_real_t xx1 = xyzcen[3 * (node - 1)];
+        cs_real_t yy1 = xyzcen[3 * (node - 1) + 1];
+        cs_real_t zz1 = xyzcen[3 * (node - 1) + 2];
+
+        cs_real_t dis2mn = pow(particle.coord[0] - xx1,2) + pow(particle.coord[1] - yy1,2) + pow(particle.coord[2] - zz1,2);
+
+        for (ii = 1; ii <= ncel ; ii++) {
+          xx1 =  xyzcen[3 * (ii - 1)];
+          yy1 =  xyzcen[3 * (ii - 1) + 1];
+          zz1 =  xyzcen[3 * (ii - 1) + 2];
+
+          cs_real_t dis2 = pow(particle.coord[0] - xx1,2) + pow(particle.coord[1] - yy1,2) + pow(particle.coord[2] - zz1,2);
+
+          if (dis2 < dis2mn) {
+            node = ii ;
+            dis2mn = dis2 ;
           }
-          j = cur_part.next_id;
         }
 
+        particle.cur_cell_num = node;
 
-        /* The depositing particle is relocated in contact with the randomly chosen */
-        /* deposited                                                                */
+        /* Calculation of the cell porosity */
+        porosity = (volume[particle.cur_cell_num] - volp[particle.cur_cell_num]) / volume[particle.cur_cell_num];
 
-        double norm_vect = 0.5 * (cur_part.diameter + particle.diameter);
-        double unit_vect[3];
+        if (porosity > min_porosity) {
 
-        do
+          move_particle = CS_LAGR_PART_MOVE_OFF;
+
+          volp[particle.cur_cell_num] +=  particle.stat_weight * 4./3. * PI * pow(particle.diameter/2,3);
+
+          particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
+
+          _particle_set->n_part_dep += 1;
+          _particle_set->weight_dep += particle.stat_weight;
+
+          particle_state = CS_LAGR_PART_STICKED;
+          particle.depo = 1;
+
+          /* Update of the number of stat. weight of deposited particles       */
+          /* in case of clogging modeling                                      */
+
+          boundary_stat[(*inclg -1) * nfabor + face_id] += particle.stat_weight;
+
+        }
+        else
         {
-          CS_PROCF(zufall, ZUFALL)(&two, spher_angle);
+          /*The particle does not deposit: It 'rebounds' */
+          /* because the porosity threshold is reached   */
 
-          spher_angle[0] *= PI;
-          spher_angle[1] *= 2 * PI;
+          /* The particle mass flux is not calculated */
+          depch = 0;
 
-          unit_vect[0] =  sin(spher_angle[0]) * cos(spher_angle[1]);
-          unit_vect[1] =  sin(spher_angle[0]) * sin(spher_angle[1]);
-          unit_vect[2] =  cos(spher_angle[0]);
+          move_particle = 1;
+          particle_state = CS_LAGR_PART_TO_SYNC;
+          particle.cur_cell_num = cs_glob_mesh->b_face_cells[face_id];
 
-        } while (_get_dot_prod(unit_vect,face_norm) > -0.3);
+          for (k = 0; k < 3; k++)
+            prev_particle.coord[k] = intersect_pt[k];
 
+          /* Modify the ending point. */
 
-        for (k = 0; k < 3; k++) {
-          particle.velocity[k] = 0.0;
-          particle.coord[k] = cur_part.coord[k] + unit_vect[k] * norm_vect;
+          for (k = 0; k < 3; k++)
+            depl[k] = particle.coord[k] - intersect_pt[k];
+
+          tmp = CS_ABS(_get_dot_prod(depl, face_norm));
+          tmp *= 2.0;
+
+          for (k = 0; k < 3; k++)
+            particle.coord[k] -= tmp * face_norm[k];
+
+          /* Modify particle velocity and velocity seen */
+
+          tmp = CS_ABS(_get_dot_prod(particle.velocity, face_norm));
+          tmp *= 2.0;
+
+          for (k = 0; k < 3; k++)
+            particle.velocity[k] -= tmp * face_norm[k];
+
+          tmp = CS_ABS(_get_dot_prod(particle.velocity_seen, face_norm));
+          tmp *= 2.0;
+
+          for (k = 0; k < 3; k++)
+            particle.velocity_seen[k] -= tmp * face_norm[k];
         }
 
       }
-    }
-
-      move_particle = CS_LAGR_PART_MOVE_OFF;
-      particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
-
-      _particle_set->n_part_dep += 1;
-      _particle_set->weight_dep += particle.stat_weight;
-
-      particle_state = CS_LAGR_PART_STICKED;
-      particle.depo = 1;
-
-      /* Update of the number of stat. weight of deposited particles       */
-      /* in case of clogging modeling                                      */
-
-      boundary_stat[(*inclg -1) * nfabor + face_id] += particle.stat_weight;
 
       /* For post-processing purpose */
 
@@ -2226,7 +2348,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
           particle.velocity[k] = 0.0;
           particle.velocity_seen[k] = 0.0;
         }
-        }
+      }
     }
 
     else  {
@@ -4734,6 +4856,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
   assert(set != NULL && prev_set != NULL);
 
   /* Main loop on  particles : global propagation */
+
 
   while ( _continue_displacement() ) {
 

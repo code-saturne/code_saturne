@@ -55,9 +55,16 @@ typedef struct {
   cs_real_t   water_permit;
   cs_real_t   ionic_strength;
   cs_real_t   jamming_limit;
+  cs_real_t   min_porosity;
+  cs_real_t   phi1;
+  cs_real_t   phi2;
 
   cs_real_t*  temperature;
   cs_real_t*  debye_length;
+  cs_real_t   cstham;
+  cs_real_t   dcutof;
+  cs_real_t   lambwl;
+  cs_real_t   kboltz
 
 } cs_lagr_clog_param_t;
 
@@ -74,7 +81,14 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
                               const cs_real_t   *water_permit,
                               const cs_real_t   *ionic_strength,
                               const cs_real_t   *jamming_limit,
-                              const cs_real_t    temperature[]
+                              const cs_real_t   *min_porosity,
+                              const cs_real_t    temperature[],
+                              const cs_real_t   *phi1,
+                              const cs_real_t   *phi2,
+                              const cs_real_t   *cstham,
+                              const cs_real_t   *dcutof,
+                              const cs_real_t   *lambwl,
+                              const cs_real_t   *kboltz
 );
 
 
@@ -97,10 +111,28 @@ void clogend( void );
 
 cs_int_t
 clogging_barrier(cs_lagr_particle_t     particle,
+                 cs_int_t               face_id,
                  cs_real_t              face_area,
                  cs_real_t*             energy_barrier,
-                 cs_real_t*             surface_coverage
+                 cs_real_t*             surface_coverage,
+                 cs_real_t*             limit ,
+                 cs_real_t*             mporos
+
   );
+
+cs_real_t
+vdwsa(           cs_real_t              distcc,
+                 cs_real_t              rpart1,
+                 cs_real_t              rpart2
+  );
+
+
+cs_real_t
+edlsa(            cs_int_t               ifac,
+                  cs_real_t              distcc,
+                  cs_real_t              rpart1,
+                  cs_real_t              rpart2
+                 );
 
 
 END_C_DECLS
