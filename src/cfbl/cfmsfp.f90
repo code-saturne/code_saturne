@@ -23,12 +23,11 @@
 subroutine cfmsfp &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   flumas , flumab ,                                              &
-   trflms , trflmb )
+   dt     , rtpa   , propce , vela   ,                            &
+   ckupdc , smacel ,                                              &
+   flumas , flumab )
 
 !===============================================================================
 ! FONCTION :
@@ -44,20 +43,24 @@ subroutine cfmsfp &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
-!                  !    !     !  (0 : non , 1 : oui)                           !
+! iterns           ! i  ! <-- ! Navier-Stokes iteration number                 !
+! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
+! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
+! icepdc(ncelet)   ! te ! <-- ! numero des ncepdp cellules avec pdc            !
+! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
+! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time steps)                      !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
+! vela             ! ra ! <-- ! variable value at time step beginning          !
+! ckupdc           ! tr ! <-- ! work array for the head loss                   !
+!  (ncepdp,6)      !    !     !                                                !
+! smacel           ! tr ! <-- ! variable value associated to the mass source   !
+! (ncesmp,*   )    !    !     ! term (for ivar=ipr, smacel is the mass flux    !
+!                  !    !     ! \f$ \Gamma^n \f$)                              !
 ! flumas(nfac)     ! tr ! --> ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! --> ! flux de masse aux faces de bord                !
-! trflms(nfac)     ! tr ! --- ! tableau de travail                             !
-! trflmb(nfabor    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -71,10 +74,12 @@ subroutine cfmsfp &
 ! Module files
 !===============================================================================
 
+use cfpoin
 use paramx
 use numvar
 use entsor
 use optcal
+use pointe, only: coefau, coefbu, cofafu, cofbfu
 use cstphy
 use cstnum
 use parall
@@ -91,7 +96,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar   , nscal, iterns
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
@@ -99,31 +104,34 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
-double precision trflms(nfac), trflmb(nfabor)
+double precision vela  (3  ,ncelet)
 
 ! Local variables
 
-integer          ivar
-integer          ifac  , iel
-integer          init  , inc   , iccocg, ii, jj
-integer          nswrgp, imligp, iwarnp
+integer          ivar, ipcvst, ipcvis
+integer          ifac  , iel, ischcp, idftnp, ircflp
+integer          init  , inc   , iccocg, ippu, isstpp
+integer          nswrgp, imligp, iwarnp, iconvp, idiffp
+integer          icvflb
+integer          isou  , jsou
+integer          iflmb0, itypfl
+integer          itsqdm
 
-integer          ivar0 , isou
-integer          imaspe, iflmb0, itypfl
-integer          icliup, iclivp, icliwp, iclvar
-integer          itsqdm, iiun  , iextts
+double precision epsrgp, climgp, extrap, thetap, blencp, relaxp
+double precision rom
 
-double precision epsrgp, climgp, extrap
-double precision flui  , fluj  , pfac  , thetv, rom
-
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w1, w8, w9
 double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:,:), allocatable :: tsexp, gavinj
+double precision, dimension(:,:,:), allocatable :: tsimp
+double precision, allocatable, dimension(:,:,:), target :: viscf
+double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:) :: viscb
+double precision, allocatable, dimension(:) :: secvif, secvib
+double precision, allocatable, dimension(:,:,:) :: coefbv
 
 !===============================================================================
 
@@ -132,10 +140,23 @@ double precision, dimension(:), pointer :: crom, brom
 !===============================================================================
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w1(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet), w11(ncelet), w12(ncelet))
+allocate(tsexp(3,ncelet))
+allocate(gavinj(3,ncelet))
+allocate(tsimp(3,3,ncelet))
+allocate(coefbv(3,3,nfabor))
+
+if (idften(iu).eq.1) then
+  allocate(viscf(1, 1, nfac), viscb(nfabor))
+else if (idften(iu).eq.6) then
+  allocate(viscf(3, 3, nfac), viscb(nfabor))
+  allocate(viscce(6,ncelet))
+endif
+
+if (ivisse.eq.1) then
+  allocate(secvif(nfac),secvib(nfabor))
+endif
 
 ! --- Number of the computational variable
 !     Pressure
@@ -146,23 +167,12 @@ ivar     = ipr
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
-! ---> Mass flux initialization
-
-do ifac = 1, nfac
-  flumas(ifac) = 0.d0
-enddo
-do ifac = 1, nfabor
-  flumab(ifac) = 0.d0
-enddo
-
 !===============================================================================
 ! 2. MASS FLUX AT THE FACES
 !===============================================================================
 
 !     2.1 SOURCE TERMS OF THE MOMENTUM EQUATIONS
 !     ==========================================
-
-!     FX -> W5 , FY -> W6 , FZ -> W7
 
 !     Some first tests (double expansion waves in a shock tube)
 !       has shown that taking into account all the
@@ -193,6 +203,14 @@ do iel = 1, ncel
   w12(iel) = 0.d0
 enddo
 
+do iel = 1, ncel
+  do isou = 1, 3
+    tsexp(isou,iel) = 0.d0
+    do jsou = 1, 3
+      tsimp(isou,jsou,iel) = 0.d0
+    enddo
+  enddo
+enddo
 
 !     Test on momentum source terms
 itsqdm = 0
@@ -205,250 +223,230 @@ if (itsqdm.ne.0) then
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , w10    , w9     ) !FIXME
+   ckupdc , smacel , tsimp  , tsexp     )
 
 
-  ! --- Convective term of the momentum equation
-  if(iconv(iu).ge.1) then
+  ! Convective of the momentum equation
+  ! in upwind and without reconstruction
+  iconvp = iconv(iu)
 
-    icliup = iclrtp(iu ,icoef)
-    iclivp = iclrtp(iv ,icoef)
-    icliwp = iclrtp(iw ,icoef)
+  init   = 1
+  inc    = 1
+  iccocg = 1
+  iflmb0 = 1
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
+  relaxp = relaxv(iu)
+  thetap = thetav(iu)
+  ippu   = ipprtp(iu)
 
-    init   = 1
-    inc    = 1
-    iccocg = 1
-    iflmb0 = 1
-    nswrgp = nswrgr(iu)
-    imligp = imligr(iu)
-    iwarnp = iwarni(iu)
-    epsrgp = epsrgr(iu)
-    climgp = climgr(iu)
-    extrap = extrag(iu)
+  itypfl = 1
 
-    imaspe = 1
-    itypfl = 1
+  ! Mass flux calculation
+  call inimav                                                   &
+  !==========
+( iu     , itypfl ,                                              &
+  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp ,                                              &
+  crom, brom,                                                    &
+  vela,                                                          &
+  coefau , coefbu ,                                              &
+  flumas , flumab )
 
-!     Mass flux calculation
-    call inimas                                                   &
-    !==========
- ( iu  , iv  , iw  , imaspe , itypfl ,                            &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   crom   , brom   ,                                              &
-   rtpa (1,iu)  , rtpa (1,iv)  , rtpa (1,iw)  ,                   &
-   coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
-   coefb(1,icliup) , coefb(1,iclivp) , coefb(1,icliwp) ,          &
-   flumas , flumab )
+  ! ---> Face diffusivity for the velocity
+  idiffp = idiff(iu)
+  if (idiffp.ge. 1) then
 
-!     Calculation of the convective term along the three spatial directions
-!       without reconstruction
-    do isou = 1, 3
-      if(isou.eq.1) ivar0  = iu
-      if(isou.eq.1) iclvar = icliup
-      if(isou.eq.2) ivar0  = iv
-      if(isou.eq.2) iclvar = iclivp
-      if(isou.eq.3) ivar0  = iw
-      if(isou.eq.3) iclvar = icliwp
+     ipcvis = ipproc(iviscl)
+     ipcvst = ipproc(ivisct)
 
-      do ifac = 1, nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-        fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-        trflms(ifac) = -(flui*rtpa(ii,ivar0)+fluj*rtpa(jj,ivar0))
-      enddo
+     if (itytur.eq.3) then
+        do iel = 1, ncel
+           w1(iel) = propce(iel,ipcvis)
+        enddo
+     else
+        do iel = 1, ncel
+           w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+        enddo
+     endif
 
-      do ifac = 1, nfabor
-        ii = ifabor(ifac)
-        flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-        fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-        pfac = coefa(ifac,iclvar)                                 &
-             + coefb(ifac,iclvar)*rtpa(ii,ivar0)
-        trflmb(ifac) = - ( flui*rtpa(ii,ivar0) + fluj*pfac )
-      enddo
+     ! Scalar diffusivity (Default)
+     if (idften(iu).eq.1) then
 
-      init = 0
-      if(isou.eq.1) then
-        call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,          &
-             ifacel,ifabor,trflms,trflmb,w10)
-      elseif(isou.eq.2) then
-        call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,          &
-             ifacel,ifabor,trflms,trflmb,w11)
-      elseif(isou.eq.3) then
-        call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,          &
-             ifacel,ifabor,trflms,trflmb,w12)
-      endif
+        call viscfa &
+        !==========
+     ( imvisf ,                                                       &
+       w1     ,                                                       &
+       viscf  , viscb  )
 
-    enddo
+     ! Tensorial diffusion of the velocity (in case of tensorial porosity)
+     else if (idften(iu).eq.6) then
 
-  endif
+        do iel = 1, ncel
+           do isou = 1, 3
+              viscce(isou, iel) = w1(iel)
+           enddo
+           do isou = 4, 6
+              viscce(isou, iel) = 0.d0
+           enddo
+        enddo
 
+        call vistnv &
+        !==========
+     ( imvisf ,                                                       &
+       viscce ,                                                       &
+       viscf  , viscb  )
 
-! --- Viscous term
+     endif
 
-  if (idiff(iu).ge.1) then
+  ! --- If no dissusion, viscosity is set to 0.
+  else
 
-    do iel = 1, ncelet
-      w8(iel) = 1.d0
-      w9(iel) = 0.d0
-    enddo
-
-    call cfdivs                                                   &
-    !==========
- ( rtpa   , propce ,                                              &
-   w10    , w8     , w9     , w9     )
-   !        ------
-
-    call cfdivs                                                   &
-    !==========
- ( rtpa   , propce ,                                              &
-   w11    , w9     , w8     , w9     )
-   !        ------
-
-    call cfdivs                                                   &
-    !==========
- ( rtpa   , propce ,                                              &
-   w12    , w9     , w9     , w8     )
-   !        ------
+     do ifac = 1, nfac
+        viscf(1,1,ifac) = 0.d0
+     enddo
+     do ifac = 1, nfabor
+        viscb(ifac) = 0.d0
+     enddo
 
   endif
 
-!FIXME
-! --- Mass sourceterm
-!     All is explicit for the moment... to be changed when this
-!      term is tested (see remark at the begining of this file)
+  if (ivisse.eq.1) then
 
-  iiun   = 1
-  iextts = 0
-  thetv  = 0.d0
-  do isou = 1, 3
-    if(isou.eq.1) then
-      ivar0  = iu
-      call catsma                                                 &
-      !==========
- ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
-   icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr)   ,                             &
-   w10   , w1     , w2 )
-      do iel = 1, ncel
-        w10(iel) = w10(iel) + w2(iel)
+     call visecv &
+     !==========
+  ( propce ,                             &
+    secvif , secvib )
+
+  endif
+
+  idftnp = idften(iu)
+
+  ! no recontruction
+  ircflp = 0;
+
+  ! upwind
+  ischcp = 0;
+  blencp = 0;
+  isstpp = 0;
+
+  inc = 1;
+
+  icvflb = 0;
+
+  call bilscv &
+  !==========
+( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
+  ischcp , isstpp , inc    , imrgra , ivisse ,                   &
+  ippu   , iwarnp , idftnp ,                                     &
+  blencp , epsrgp , climgp , relaxp , thetap ,                   &
+  vela   , vela   ,                                              &
+  coefau , coefbu , cofafu , cofbfu ,                            &
+  flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+  icvflb , icvfli ,                                              &
+  tsexp  )
+
+  if (ncesmp.gt.0) then
+    ! --- Mass sourceterm
+    !     All is explicit for the moment... to be changed when this
+    !      term is tested (see remark at the begining of this file)
+    call catsmv &
+    !==========
+ ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
+   icetsm , itypsm(1,iu),                                      &
+   volume , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
+   tsexp  , tsimp , gavinj )
+
+    do iel = 1, ncel
+      do isou = 1, 3
+        tsexp(isou,iel) = tsexp(isou,iel) + gavinj(isou,iel)
       enddo
+    enddo
 
-    elseif(isou.eq.2) then
-      ivar0  = iv
-      call catsma                                                 &
-      !==========
- ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
-   icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr)   ,                             &
-   w11   , w1     , w2 )
-      do iel = 1, ncel
-        w11(iel) = w11(iel) + w2(iel)
-      enddo
-
-    elseif(isou.eq.3) then
-      ivar0  = iw
-      call catsma                                                 &
-      !==========
- ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
-   icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr)   ,                             &
-   w12   , w1     , w2 )
-      do iel = 1, ncel
-        w12(iel) = w12(iel) + w2(iel)
-      enddo
-
-    endif
-
-  enddo
+  endif
 
 endif
 !     End of the test on momentum source terms
 
-
 ! --- Volumic forces term (gravity)
 do iel = 1, ncel
   rom = crom(iel)
-  w5(iel) = gx + w10(iel)/rom
-  w6(iel) = gy + w11(iel)/rom
-  w7(iel) = gz + w12(iel)/rom
+  tsexp(1,iel) = gx + tsexp(1,iel)/rom
+  tsexp(2,iel) = gy + tsexp(2,iel)/rom
+  tsexp(3,iel) = gz + tsexp(3,iel)/rom
 enddo
-
-! 2.2 MASS FLUX CALCULATION AT THE FACES
-! ======================================
 
 ! --- Calculation of the convective "velocities at the cell centers
 !     (Calculation of u^n+dt*f^n)
 
 do iel = 1, ncel
-  w10(iel) = rtpa(iel,iu) + dt(iel)*w5(iel)
-  w11(iel) = rtpa(iel,iv) + dt(iel)*w6(iel)
-  w12(iel) = rtpa(iel,iw) + dt(iel)*w7(iel)
+  do isou = 1, 3
+    tsexp(isou,iel) = vela(isou,iel) + dt(iel)*tsexp(isou,iel)
+  enddo
 enddo
 
-! --- Calculation of the flux with an INIMAS call
+! Computation of the flux
 
-!     In order to avoid a misfit boundary condition, we impose a homogeneous
-!       Neumann condition. Note that it is only usefull for gradient
-!       reconstruction. The boundary value does not matter since the flux
-!       is updated afterwards.
+! In order to avoid a misfit boundary condition, we impose a homogeneous
+! Neumann condition. Note that it is only useful for gradient
+! reconstruction. The boundary value does not matter since the flux
+! is updated afterwards.
 
-!     To avoid the declaration of other arrays, we build a zero flux with
-!       nul avec :
-!       TRFLMB = 1 pour COEFB = 1 et
-!       INC    = 0 pour COEFA = 0
-
-!     We take ROM = W1 = 1 and ROMB = TRFLMB = 1
-!       (ROMB is also usefull for COEFB=1)
-
-do iel = 1, ncel
-  w1(iel) = 1.d0
-enddo
-do ifac = 1, nfabor
-  trflmb(ifac) = 1.d0
-enddo
-
-icliup = iclrtp(iu ,icoef)
-iclivp = iclrtp(iv ,icoef)
-icliwp = iclrtp(iw ,icoef)
-
+! Initialization of the mass flux
 init   = 1
-!              ^ Initialization of the mass flux
+! As mentioned above, for homogeneous Neumann
 inc    = 0
-!              ^ As mentioned above, for a zero flux
 iccocg = 1
-ivar0  = 0
 iflmb0 = 1
+! Reconstruction is useless here
 nswrgp = 0
-!              ^ Reconstruction is useless here
 imligp = imligr(ivar)
 iwarnp = iwarni(ivar)
 epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
 extrap = extrag(ivar)
 
-imaspe = 1
-itypfl = 1
+! Velocity flux (crom, brom not used)
+itypfl = 0
 
-call inimas                                                       &
+do ifac= 1, nfabor
+  do isou = 1, 3
+    do jsou = 1, 3
+      if (isou.eq.jsou) then
+        coefbv(isou,jsou,ifac) = 1.d0
+      else
+        coefbv(isou,jsou,ifac) = 0.d0
+      endif
+    enddo
+  enddo
+enddo
+
+call inimav                                                      &
 !==========
- ( ivar0  , ivar0  , ivar0  , imaspe , itypfl ,                   &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   w1     , trflmb ,                                              &
-   w10    , w11    , w12    ,                                     &
-   coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
-   trflmb          , trflmb          , trflmb          ,          &
-   flumas , flumab )
+( iu     , itypfl ,                                              &
+  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp ,                                              &
+  crom, brom,                                                    &
+  tsexp,                                                         &
+  coefau , coefbv ,                                              &
+  flumas , flumab )
 
 ! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(w1, w8, w9)
 deallocate(w10, w11, w12)
+deallocate(tsexp)
+deallocate(gavinj)
+deallocate(tsimp)
+deallocate(viscf, viscb)
+if (allocated(secvif)) deallocate(secvif, secvib)
+if (allocated(viscce)) deallocate(viscce)
+deallocate(coefbv)
 
 !--------
 ! FORMATS

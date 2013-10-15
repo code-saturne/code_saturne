@@ -26,7 +26,7 @@ subroutine cfdttv &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    wcf    ,                                                       &
    wflmas , wflmab , viscb  )
 
@@ -53,8 +53,6 @@ subroutine cfdttv &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -103,14 +101,13 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfac,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
 double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac, iel
+integer          ifac, iel, iterns
 integer          iccfth, imodif, iconvp, idiffp, isym
 
 double precision rvoid(1)
@@ -118,6 +115,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: viscf
 double precision, allocatable, dimension(:) :: coefbt, cofbft
 double precision, allocatable, dimension(:) :: w1, c2
+double precision, dimension(:,:), allocatable :: vela
 
 double precision, dimension(:), pointer :: crom
 
@@ -133,6 +131,7 @@ allocate(coefbt(nfabor),cofbft(nfabor))
 
 ! Allocate work arrays
 allocate(w1(ncelet))
+allocate(vela(3,ncelet))
 
 call field_get_val_s(icrom, crom)
 
@@ -149,14 +148,22 @@ do ifac = 1, nfabor
   wflmab(ifac) = 0.d0
 enddo
 
+! Interleave velocity values in vela
+do iel = 1, ncelet
+  vela(1,iel) = rtpa(iel,iu)
+  vela(2,iel) = rtpa(iel,iv)
+  vela(3,iel) = rtpa(iel,iw)
+enddo
+
+iterns = 1
 call cfmsfp                                                       &
 !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   wflmas , wflmab ,                                              &
-   viscf  , viscb  )
+   dt     , rtpa   , propce , vela   ,                            &
+   ckupdc , smacel ,                                              &
+   wflmas , wflmab )
+
 
 ! Summation at each cell taking only outward flux
 
@@ -204,6 +211,7 @@ deallocate(viscf)
 deallocate(w1)
 deallocate(c2)
 deallocate(coefbt,cofbft)
+deallocate(vela)
 
 !--------
 ! FORMATS

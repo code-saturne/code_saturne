@@ -329,10 +329,9 @@ if ( ippmod(icompf).ge.0 ) then
 
   call cfmspr &
   !==========
-  ( nvar   , nscal  ,                                              &
+  ( nvar   , nscal  , iterns ,                                     &
     ncepdc , ncetsm , icepdc , icetsm , itypsm ,                   &
-    dt     , rtp    , rtpa   , propce ,                            &
-    coefa  , coefb  ,                                              &
+    dt     , rtp    , rtpa   , propce , vela   ,                   &
     ckupdc , smacel )
 
 endif

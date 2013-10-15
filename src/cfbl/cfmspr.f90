@@ -23,10 +23,10 @@
 subroutine cfmspr &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel )
+   dt     , rtp    , rtpa   , propce , vela   ,                   &
+   ckupdc , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -43,22 +43,18 @@ subroutine cfmspr &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
+! iterns           ! i  ! <-- ! Navier-Stokes iteration number                 !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
-!                  !    !     !  (0 : non , 1 : oui)                           !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
+! icepdc(ncelet)   ! te ! <-- ! numero des ncepdp cellules avec pdc            !
+! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
+! vela             ! ra ! <-- ! variable value at time step beginning          !
 ! ckupdc           ! tr ! <-- ! work array for the head loss                   !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! variable value associated to the mass source   !
@@ -97,7 +93,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar   , nscal, iterns
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
@@ -105,8 +101,8 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision vela  (3  ,ncelet)
 
 ! Local variables
 
@@ -114,7 +110,6 @@ character*80     chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt , ii, jj
-integer          iclvar, iclvaf
 integer          iflmas, iflmab
 integer          ippvar, ipp   , iphydp, icvflb
 integer          nswrgp, imligp, iwarnp
@@ -255,12 +250,11 @@ enddo
 
 call cfmsfp                                                                     &
 !==========
-( nvar   , nscal  , ncepdp , ncesmp ,                                           &
+( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                  &
   icepdc , icetsm , itypsm ,                                                    &
-  dt     , rtpa   , propce ,                                                    &
-  coefa  , coefb  , ckupdc , smacel ,                                           &
-  wflmas , wflmab ,                                                             &
-  viscf  , viscb  )
+  dt     , rtpa   , propce , vela   ,                                           &
+  ckupdc , smacel ,                                                             &
+  wflmas , wflmab )
 
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
