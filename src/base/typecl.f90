@@ -84,6 +84,8 @@ use numvar
 use optcal
 use cstnum
 use cstphy
+use dimens, only: ndimfb
+use pointe, only: b_head_loss
 use entsor
 use parall
 use ppppar
@@ -101,13 +103,13 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvarcl)
-integer          itypfb(nfabor) , itrifb(nfabor)
-integer          isostd(nfabor+1)
+integer          icodcl(ndimfb,nvarcl)
+integer          itypfb(ndimfb) , itrifb(ndimfb)
+integer          isostd(ndimfb+1)
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(ndimfb,nvarcl,3)
 double precision frcxt(3,ncelet)
 
 ! Local variables
@@ -142,7 +144,7 @@ save             ipass
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(pripb(nfabor))
+allocate(pripb(ndimfb))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -304,6 +306,22 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #else
     write(nfecra,6020) 'Free outlet      ', ii, inb
 #endif
+    ii = ifrent
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Entree libre     ', ii, inb
+#else
+    write(nfecra,6020) 'Free inlet       ', ii, inb
+#endif
+
+    ! Presence of free entrance face(s)
+    if (inb.gt.0) then
+      iifren = 1
+      if (.not.(allocated(b_head_loss))) allocate(b_head_loss(ndimfb))
+    else
+      iifren = 0
+    endif
 
     if (nbrcpl.ge.1) then
       ii = icscpl
@@ -327,12 +345,13 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 
     do ii = 1, ntypmx
       if (ii.ne.ientre .and. &
-           ii.ne.iparoi .and. &
-           ii.ne.iparug .and. &
-           ii.ne.isymet .and. &
-           ii.ne.isolib .and. &
-           ii.ne.icscpl .and. &
-           ii.ne.iindef ) then
+          ii.ne.iparoi .and. &
+          ii.ne.iparug .and. &
+          ii.ne.isymet .and. &
+          ii.ne.isolib .and. &
+          ii.ne.ifrent .and. &
+          ii.ne.icscpl .and. &
+          ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) call parcpt (inb)
         if(inb.gt.0) then
@@ -469,12 +488,13 @@ endif
 !================================================================================
 ! 4.  rcodcl(.,    .,1) has been initialized as rinfin so as to check what
 !     the user has modified. Those not modified are reset to zero here.
-!     isolib and ientre are handled later.
+!     isolib, ifrent and ientre are handled later.
 !================================================================================
 
 do ivar = 1, nvar
   do ifac = 1, nfabor
     if ((itypfb(ifac) .ne. isolib) .and. &
+        (itypfb(ifac) .ne. ifrent) .and. &
         (itypfb(ifac) .ne. ientre) .and. &
         (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
       rcodcl(ifac,ivar,1) = 0.d0
@@ -491,16 +511,19 @@ do iscal = 1, nscal
 
     do ifac = 1, nfabor
       if ((itypfb(ifac) .ne. isolib) .and. &
+          (itypfb(ifac) .ne. ifrent) .and. &
           (itypfb(ifac) .ne. ientre) .and. &
           (rcodcl(ifac,iut,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,iut,1) = 0.d0
       endif
       if ((itypfb(ifac) .ne. isolib) .and. &
+          (itypfb(ifac) .ne. ifrent) .and. &
           (itypfb(ifac) .ne. ientre) .and. &
           (rcodcl(ifac,ivt,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,ivt,1) = 0.d0
       endif
       if ((itypfb(ifac) .ne. isolib) .and. &
+          (itypfb(ifac) .ne. ifrent) .and. &
           (itypfb(ifac) .ne. ientre) .and. &
           (rcodcl(ifac,iwt,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,iwt,1) = 0.d0
@@ -519,6 +542,7 @@ xyp0   = xyzp0(2)
 xzp0   = xyzp0(3)
 
 ! ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
+!          (or closest free inlet)
 ! itbslb = max of ifrslb on all ranks, standard outlet face presence indicator
 
 ! Even when the user has not chosen xyzp0 (and it is thus at the
@@ -531,6 +555,22 @@ ifrslb = 0
 
 ideb = idebty(isolib)
 ifin = ifinty(isolib)
+
+do ii = ideb, ifin
+  ifac = itrifb(ii)
+  if (icodcl(ifac,ipr).eq.0) then
+    d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
+         + (cdgfbo(2,ifac)-xyp0)**2  &
+         + (cdgfbo(3,ifac)-xzp0)**2
+    if (d0.lt.d0min) then
+      ifrslb = ifac
+      d0min = d0
+    endif
+  endif
+enddo
+
+ideb = idebty(ifrent)
+ifin = ifinty(ifrent)
 
 do ii = ideb, ifin
   ifac = itrifb(ii)
@@ -588,7 +628,7 @@ if (itbslb.gt.0) then
   !  Put in pripb the value at I' or F (depending on iphydr) of the
   !  total pressure, computed from P*
 
-  if (iphydr.eq.0.or.iphydr.eq.2) then
+  if ((iphydr.eq.0.or.iphydr.eq.2).and.iifren.eq.0) then
     do ifac = 1, nfabor
       ii = ifabor(ifac)
       diipbx = diipb(1,ifac)
@@ -658,7 +698,7 @@ enddo
 !        (le reste Neumann, ou Dirichlet si donnee utilisateur,
 !        sera traite plus tard)
 
-if (iphydr.eq.1) then
+if (iphydr.eq.1.or.iifren.eq.1) then
 
 !     En cas de prise en compte de la pression hydrostatique,
 !     on remplit le tableau ISOSTD
@@ -670,8 +710,8 @@ if (iphydr.eq.1) then
   isostd(nfabor+1) = -1
   do ifac = 1,nfabor
     isostd(ifac) = 0
-    if ((itypfb(ifac).eq.isolib).and.                     &
-         (icodcl(ifac,ipr).eq.0)) then
+    if ((itypfb(ifac).eq.isolib.or.itypfb(ifac).eq.ifrent).and.    &
+        (icodcl(ifac,ipr).eq.0)) then
       isostd(ifac) = 1
     endif
   enddo
@@ -698,7 +738,7 @@ if (itbslb.gt.0) then
     xyzref(2) = cdgfbo(2,ifrslb)
     xyzref(3) = cdgfbo(3,ifrslb)
     xyzref(4) = pripb(ifrslb)
-    if (iphydr.eq.1) isostd(nfabor+1) = ifrslb
+    if (iphydr.eq.1.or.iifren.eq.1) isostd(nfabor+1) = ifrslb
   endif
 
   ! Broadcast PI' and pressure reference
@@ -841,6 +881,49 @@ do ivar = 1, nvar
     enddo
   endif
 enddo
+
+! ---> Free entrance (Bernoulli relation), std free outlet
+!      (a specific treatment si performed on the increment of pressure)
+
+ideb = idebty(ifrent)
+ifin = ifinty(ifrent)
+
+do ivar = 1, nvar
+  if (ivar.eq.ipr) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      iel  = ifabor(ifac)
+      if (icodcl(ifac,ivar).eq.0) then
+
+        ! If the user has given a value of boundary head loss
+        if (rcodcl(ifac,ivar,2).le.0.5d0*rinfin) then
+          b_head_loss(ifac) = rcodcl(ifac,ivar,2)
+        else
+          b_head_loss(ifac) = 0.d0
+        endif
+
+        ! Std outlet
+        icodcl(ifac,ivar)   = 1
+        rcodcl(ifac,ivar,1) = pripb(ifac) + pref
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+
+      endif
+    enddo
+  elseif(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      ! Homogeneous Neumann
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
+
 
 ! Free memory
 deallocate(pripb)
@@ -1068,10 +1151,8 @@ if (iok.gt.0) then
   call bcderr(itypfb)
 endif
 
-
-
-! 6.2 SORTIE (entree sortie libre)
-! ===================
+! 6.2.a SORTIE (entree sortie libre)
+! ==================================
 
 ! ---> La pression a un traitement Dirichlet, les vitesses 9 ont ete
 !        traites plus haut.
@@ -1099,6 +1180,36 @@ do ivar = 1, nvar
       else
         icodcl(ifac,ivar) = 1
         !             rcodcl(ifac,ivar,1) = Utilisateur
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    endif
+  enddo
+enddo
+
+! 6.2.b Free inlet (outlet) Bernoulli
+! ===================================
+
+! ---> Free entrance (Bernoulli, a dirichlet is needed on the other variables
+!      than velocity and pressure, already treated) Free outlet (homogeneous
+!      Neumann)
+
+ideb = idebty(ifrent)
+ifin = ifinty(ifrent)
+
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
+
+      if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+        icodcl(ifac,ivar) = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      else
+        icodcl(ifac,ivar) = 1
+        ! rcodcl(ifac,ivar,1) is given by the user
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif
@@ -1299,6 +1410,18 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     write(nfecra,7020) 'Free outlet      ',ii,inb,flumty(ii)
 #endif
 
+    ii = ifrent
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Entree libre     ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Free inlet       ',ii,inb,flumty(ii)
+#endif
+
     if (nbrcpl.ge.1) then
       ii = icscpl
       inb = ifinty(ii)-idebty(ii)+1
@@ -1331,6 +1454,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
            ii.ne.iparug .and.                                    &
            ii.ne.isymet .and.                                    &
            ii.ne.isolib .and.                                    &
+           ii.ne.ifrent .and.                                    &
            ii.ne.icscpl .and.                                    &
            ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1

@@ -206,7 +206,6 @@ module pointe
   !> \{
 
 
-
   !> number of boundary faces which are coupled
   !> with a wall 1D thermal module. See the user subroutine \ref uspt1d
   integer, save :: nfpt1d
@@ -299,6 +298,13 @@ module pointe
   !> Note the 6 values are sorted as follows: (k11, k22, k33, k12, k23, k33).
   !> See \c ickpdc and the user subroutine ref uskpdc
   double precision, allocatable, dimension(:,:) :: ckupdc
+
+  !> Head loss factor of the fluid outside the domain, between infinity and 
+  !> the entrance (for \ref ifrent boundary type). The default value is 0,
+  !> dimensionless factor. The user may give a value in 
+  !> \ref cs_user_boundary_conditions in the array 
+  !> \c rcodcl(ifac, \ref ipr, 2).
+  double precision, allocatable, dimension(:) :: b_head_loss
 
   !> number of the \c ncetsm cells in which a mass source term is imposed.
   !> See \c iicesm and the user subroutine \ref ustsma
@@ -477,9 +483,9 @@ contains
       allocate(divukw(ncelet))
     endif
 
-   ! Strain rate tensor at the previous time step
-   ! if rotation curvature correction
-   if (irccor.eq.1) then
+    ! Strain rate tensor at the previous time step
+    ! if rotation curvature correction
+    if (irccor.eq.1) then
       if (idtvar.ge.0) then
         allocate(straio(ncelet,6))
       endif
@@ -516,6 +522,7 @@ contains
     if (allocated(yplbr)) deallocate(yplbr)
     if (allocated(s2kw)) deallocate(s2kw, divukw)
     if (allocated(straio))  deallocate(straio)
+    if (allocated(b_head_loss)) deallocate(b_head_loss)
 
     return
 

@@ -91,7 +91,8 @@ typedef enum {
   CS_ERUCF = 10,
   CS_EPHCF = 11,
   CS_EQHCF = 12,
-  CS_COUPLED = 13
+  CS_COUPLED = 13,
+  CS_FREE_INLET =14
 };
 
 /*=============================================================================

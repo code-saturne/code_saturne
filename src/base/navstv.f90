@@ -155,7 +155,7 @@ double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:,:), allocatable :: vel
 double precision, dimension(:,:), allocatable :: vela
 double precision, dimension(:,:), allocatable :: mshvel
-double precision, dimension(:), allocatable :: coefap
+double precision, dimension(:), allocatable :: coefap, coefbp
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
@@ -168,9 +168,9 @@ double precision, dimension(:), pointer :: brom, crom
 
 ! Allocate temporary arrays for the velocity-pressure resolution
 if (idften(iu).eq.1) then
-  allocate(viscf(1, 1, nfac), viscb(nfabor))
+  allocate(viscf(1, 1, nfac), viscb(ndimfb))
 else if (idften(iu).eq.6) then
-  allocate(viscf(3, 3, nfac), viscb(nfabor))
+  allocate(viscf(3, 3, nfac), viscb(ndimfb))
 endif
 
 allocate(drtp(ncelet))
@@ -181,33 +181,33 @@ allocate(vel(3,ncelet))
 ! Allocate other arrays, depending on user options
 
 ! Array for delta p gradient boundary conditions
-allocate(coefap(nfabor))
+allocate(coefap(ndimfb), coefbp(ndimfb))
 
 allocate(dfrcxt(3,ncelet))
 if (iphydr.eq.2) allocate(grdphd(ncelet,ndim))
-if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
+if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(ndimfb))
 if (idften(iu).eq.1) then
   if (itytur.eq.3.and.irijnu.eq.1) then
-    allocate(wvisfi(1,1,nfac), wvisbi(nfabor))
+    allocate(wvisfi(1,1,nfac), wvisbi(ndimfb))
     viscfi => wvisfi(:,:,1:nfac)
-    viscbi => wvisbi(1:nfabor)
+    viscbi => wvisbi(1:ndimfb)
   else
     viscfi => viscf(:,:,1:nfac)
-    viscbi => viscb(1:nfabor)
+    viscbi => viscb(1:ndimfb)
   endif
 else if(idften(iu).eq.6) then
   if (itytur.eq.3.and.irijnu.eq.1) then
-    allocate(wvisfi(3,3,nfac), wvisbi(nfabor))
+    allocate(wvisfi(3,3,nfac), wvisbi(ndimfb))
     viscfi => wvisfi(1:3,1:3,1:nfac)
-    viscbi => wvisbi(1:nfabor)
+    viscbi => wvisbi(1:ndimfb)
   else
     viscfi => viscf(1:3,1:3,1:nfac)
-    viscbi => viscb(1:nfabor)
+    viscbi => viscb(1:ndimfb)
   endif
 endif
 
 if (ivisse.eq.1) then
-  allocate(secvif(nfac),secvib(nfabor))
+  allocate(secvif(nfac),secvib(ndimfb))
 endif
 
 ! Map some specific field arrays
@@ -406,7 +406,7 @@ if (iprco.le.0) then
 
     ! One temporary array needed for internal faces, in case some internal vertices
     !  are moved directly by the user
-    allocate(intflx(nfac), bouflx(nfabor))
+    allocate(intflx(nfac), bouflx(ndimfb))
 
     call field_get_val_s(icrom, crom)
     call field_get_val_s(ibrom, brom)
@@ -525,7 +525,7 @@ if (iprco.le.0) then
   !--------------
   deallocate(vel)
   deallocate(vela)
-  deallocate(coefap)
+  deallocate(coefap, coefbp)
 
   return
 
@@ -539,16 +539,15 @@ if (iwarni(iu).ge.1) then
   write(nfecra,1200)
 endif
 
-if ( ippmod(icompf).lt.0 ) then
+if (ippmod(icompf).lt.0) then
 
   call resopv &
   !==========
-( nvar   ,                                                       &
-  ncetsm ,                                                       &
+( nvar   , ncetsm ,                                              &
   icetsm , isostd ,                                              &
   dt     , rtp    , rtpa   , vel    ,                            &
   propce ,                                                       &
-  coefau , coefbu , coefap ,                                     &
+  coefau , coefbu , coefap , coefbp ,                            &
   smacel ,                                                       &
   frcxt  , dfrcxt , dttens , trav   ,                            &
   viscf  , viscb  ,                                              &
@@ -610,7 +609,7 @@ if (ippmod(icompf).lt.0) then
 
     iccocg = 1
     inc = 0
-    if (iphydr.eq.1) inc = 1
+    if (iphydr.eq.1.or.iifren.eq.1) inc = 1
     nswrgp = nswrgr(ipr)
     imligp = imligr(ipr)
     iwarnp = iwarni(ipr)
@@ -625,11 +624,11 @@ if (ippmod(icompf).lt.0) then
 
     call grdpot &
     !==========
-       ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-         iwarnp , epsrgp , climgp , extrap ,                            &
-         dfrcxt ,                                                       &
-         drtp   , coefap        , coefb_p  ,                            &
-         gradp  )
+    ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+      iwarnp , epsrgp , climgp , extrap ,                            &
+      dfrcxt ,                                                       &
+      drtp   , coefap , coefbp ,                                     &
+      gradp  )
 
     thetap = thetav(ipr)
     !$omp parallel do private(isou)
@@ -771,7 +770,7 @@ if (iale.eq.1) then
 
   ! One temporary array needed for internal faces, in case some internal vertices
   !  are moved directly by the user
-  allocate(intflx(nfac), bouflx(nfabor))
+  allocate(intflx(nfac), bouflx(ndimfb))
 
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ibrom, brom)
@@ -1226,7 +1225,7 @@ enddo
 !--------------
 deallocate(vel)
 deallocate(vela)
-deallocate(coefap)
+deallocate(coefap, coefbp)
 
 !--------
 ! Formats

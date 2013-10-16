@@ -885,6 +885,9 @@ epsdp  = 1.0d-12
 iphydr = 0
 icalhy = -1
 
+! --- No Bernoulli free entrance faces
+iifren = 0
+
 ! --- Handle the condensation source terms (not activate by default icond=0)
 
 !     icond = 1 : standard condensation source terms

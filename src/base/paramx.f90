@@ -163,9 +163,13 @@ module paramx
   ! TODO : mot absent de la doc
   integer   icscpl
 
+  !> if \ref itypfb=ifrent: free entrance based on Bernoulli equation when
+  !> the flow is incoming, standard outlet when outgoing
+  integer   ifrent
+
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
             iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10,      &
-            iephcf=11, ieqhcf=12, icscpl=13)
+            iephcf=11, ieqhcf=12, icscpl=13, ifrent=14)
 
   !> maximal number of valuators for Navier-Stokes
   integer    nestmx

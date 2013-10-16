@@ -64,6 +64,8 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
+!> \param[in]     coefap        boundary conditions for the pressure increment
+!> \param[in]     coefbp        boundary conditions for the pressure increment
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
@@ -86,7 +88,7 @@ subroutine resopv &
    icetsm , isostd ,                                              &
    dt     , rtp    , rtpa   , vel    ,                            &
    propce ,                                                       &
-   coefav , coefbv , coefap ,                                     &
+   coefav , coefbv , coefap , coefbp ,                            &
    smacel ,                                                       &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  ,                                              &
@@ -106,7 +108,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb
+use pointe, only: itypfb, b_head_loss
 use albase
 use parall
 use period
@@ -136,14 +138,15 @@ double precision propce(ncelet,*)
 double precision smacel(ncesmp,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision tpucou(6, ncelet), trav(3,ncelet)
-double precision viscf(nfac), viscb(nfabor)
+double precision viscf(nfac), viscb(ndimfb)
 double precision drtp(ncelet)
 double precision tslagr(ncelet,*)
 double precision trava(ndim,ncelet)
 double precision coefav(3  ,ndimfb)
 double precision coefbv(3,3,ndimfb)
 double precision vel   (3  ,ncelet)
-double precision coefap(nfabor)
+double precision coefap(ndimfb)
+double precision coefbp(ndimfb)
 
 ! Local variables
 
@@ -181,6 +184,7 @@ double precision hint, qimp, qimpv(3), epsrsp, blencp
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
+double precision cfl, kpdc, rho, pimp, bpmasf
 
 double precision rvoid(1)
 
@@ -188,7 +192,7 @@ double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: res, divu, presa
 double precision, dimension(:,:), allocatable :: gradp
-double precision, allocatable, dimension(:) :: cofafp, coefbp, cofbfp
+double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: rhs, rovsdt
 double precision, allocatable, dimension(:) :: velflx, velflb, dpvar
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
@@ -199,13 +203,14 @@ double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
+double precision, allocatable, dimension(:) :: iflux, bflux
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1. Initialisations
 !===============================================================================
 
 ! Initializations to avoid compiler warnings
@@ -215,13 +220,14 @@ rnorm2 = 0.d0
 allocate(dam(ncelet), xam(nfac,2))
 allocate(res(ncelet), presa(ncelet), divu(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet))
+allocate(iflux(nfac), bflux(ndimfb))
 iswdyp = iswdyn(ipr)
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dpvarm1(ncelet), rhs0(ncelet))
 if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet))
 
-! Boundary conditions for delta P
-allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
+! Diffusive flux Boundary conditions for delta P
+allocate(cofafp(ndimfb), cofbfp(ndimfb))
 
 ! --- Writing
 call field_get_name(ivarfl(ipr), chaine)
@@ -342,11 +348,11 @@ if(irnpnw.ne.1) then
    crom, brom   ,                                                 &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
-   imasfl , bmasfl )
+   iflux  , bflux  )
 
   init = 1
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-       ifacel,ifabor,imasfl,bmasfl,res)
+       ifacel,ifabor,iflux,bflux,res)
 
   ! --- Weakly compressible algorithm: semi analytic scheme
   if (idilat.eq.4) then
@@ -394,10 +400,19 @@ endif
 ! 3.  CALCUL DE L'INCREMENT DE PRESSION HYDROSTATIQUE (SI NECESSAIRE)
 !===============================================================================
 
+do ifac = 1, nfac
+  iflux(ifac) = 0.d0
+enddo
+
 do ifac = 1, nfabor
   coefap(ifac) = 0.d0
   cofafp(ifac) = 0.d0
+  coefbp(ifac) = coefb_p(ifac)
+  cofbfp(ifac) = coefbf_p(ifac)
+  bflux(ifac) = 0.d0
 enddo
+
+indhyd = 0
 
 if (iphydr.eq.1) then
 !     L'INCREMENT EST STOCKE PROVISOIREMENT DANS RTP(.,IPRIPH)
@@ -500,14 +515,14 @@ if (iphydr.eq.1) then
 
       call calhyd &
       !==========
- ( indhyd ,                                                       &
-   frchy  , dfrchy ,                                              &
-   rtp(1,ipr)   , imasfl , bmasfl ,                               &
-   coefap , coefbp ,                                              &
-   cofafp , cofbfp ,                                              &
-   viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , rhs    )
+      ( indhyd ,                                &
+        frchy  , dfrchy ,                       &
+        rtp(1,ipr)   , iflux , bflux ,          &
+        coefap , coefbp ,                       &
+        cofafp , cofbfp ,                       &
+        viscf  , viscb  ,                       &
+        dam    , xam    ,                       &
+        drtp   , rhs    )
 
     else
       indhyd = 0
@@ -516,6 +531,145 @@ if (iphydr.eq.1) then
   endif
 endif
 
+
+!     Calcul des CL pour l'increment de pression
+!     On commence par affecter les CL classiques
+!     (COEFA=0 et COEFB=COEFB(P), puis on change
+!     les CL de sortie en mettant COEFA a l'increment
+!     de pression hydrostatique, decale pour valoir 0
+!     sur la face de reference
+if (iphydr.eq.1.or.iifren.eq.1) then
+
+  do ifac=1,nfabor
+    coefap(ifac) = 0.d0
+    cofafp(ifac) = 0.d0
+  enddo
+
+  if (indhyd.eq.1) then
+    ifac0 = isostd(nfabor+1)
+    if (ifac0.le.0) then
+      phydr0 = 0.d0
+    else
+      iel0 = ifabor(ifac0)
+      phydr0 = rtp(iel0,ipr)                                 &
+           +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
+           +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
+           +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
+    endif
+
+    if (irangp.ge.0) then
+      call parsom (phydr0)
+    endif
+  endif
+
+  ! If hydrostatic pressure increment or free entrance Inlet
+  if (indhyd.eq.1.or.iifren.eq.1) then
+
+    do ifac = 1, nfabor
+      if (isostd(ifac).eq.1) then
+        iel=ifabor(ifac)
+
+        if (indhyd.eq.1) then
+          coefap(ifac) =  rtp(iel, ipr)                                 &
+                       + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
+                       + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
+                       + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
+                       -  phydr0
+        endif
+
+        ! Diffusive flux BCs
+        if (idften(ipr).eq.1) then
+          hint = dt(iel)/distb(ifac)
+
+        ! Symmetric tensor diffusivity
+        elseif (idften(ipr).eq.6) then
+
+          visci(1,1) = tpucou(1,iel)
+          visci(2,2) = tpucou(2,iel)
+          visci(3,3) = tpucou(3,iel)
+          visci(1,2) = tpucou(4,iel)
+          visci(2,1) = tpucou(4,iel)
+          visci(2,3) = tpucou(5,iel)
+          visci(3,2) = tpucou(5,iel)
+          visci(1,3) = tpucou(6,iel)
+          visci(3,1) = tpucou(6,iel)
+
+          ! ||Ki.S||^2
+          viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                   + visci(1,2)*surfbo(2,ifac)       &
+                   + visci(1,3)*surfbo(3,ifac))**2   &
+                 + ( visci(2,1)*surfbo(1,ifac)       &
+                   + visci(2,2)*surfbo(2,ifac)       &
+                   + visci(2,3)*surfbo(3,ifac))**2   &
+                 + ( visci(3,1)*surfbo(1,ifac)       &
+                   + visci(3,2)*surfbo(2,ifac)       &
+                   + visci(3,3)*surfbo(3,ifac))**2
+
+          ! IF.Ki.S
+          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                  )*surfbo(1,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                  )*surfbo(2,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                  )*surfbo(3,ifac)
+
+          distfi = distb(ifac)
+
+          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+          ! NB: eps =1.d-1 must be consistent with vitens.f90
+          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+          hint = viscis/surfbn(ifac)/fikis
+
+        endif
+
+        ! Free entrance boundary face (Bernoulli condition to link the pressure
+        ! increment and the predicted velocity)
+        if (itypfb(ifac).eq.ifrent) then
+
+          ! Boundary mass flux of the predicted velocity
+          bpmasf = vel(1, iel)*surfbo(1, ifac)    &
+                 + vel(2, iel)*surfbo(2, ifac)    &
+                 + vel(3, iel)*surfbo(3, ifac)
+
+          ! Ingoing mass Flux, Bernoulli relation ship is used
+          if (bpmasf.le.0.d0) then
+
+            ! Head loss of the fluid outside the domain, between infinity and 
+            ! the entrance
+            kpdc = b_head_loss(ifac)
+            rho = brom(ifac)
+            cfl = -(bmasfl(ifac)/surfbn(ifac)*dt(iel))    &
+                / (2.d0*rho*distb(ifac))*(1.d0 + kpdc)
+
+            pimp = - rtp(iel, ipr)                                              &
+                 - 0.5d0*(1.d0 + kpdc)*bmasfl(ifac)*bpmasf/surfbn(ifac)**2
+
+            call set_convective_outlet_scalar &
+                 !==================
+               ( coefap(ifac), cofafp(ifac),             &
+                 coefbp(ifac), cofbfp(ifac),             &
+                 pimp        , cfl         , hint )
+
+          else
+            cofafp(ifac) = - hint*coefap(ifac)
+          endif
+
+        else
+          cofafp(ifac) = - hint*coefap(ifac)
+        endif
+
+      endif
+    enddo
+  endif
+
+endif
 
 !===============================================================================
 ! 4. Building of the linear system to solve
@@ -543,7 +697,7 @@ if (idiff(ipr).ge.1) then
 
     ! Allocate temporary arrays
     allocate(weighf(2,nfac))
-    allocate(weighb(nfabor))
+    allocate(weighb(ndimfb))
 
     iwarnp = iwarni(ipr)
 
@@ -577,7 +731,7 @@ call matrix &
    isym   , nfecra ,                                              &
    thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
-   coefb_p , coefbf_p , rovsdt ,                                  &
+   coefbp , cofbfp , rovsdt ,                                     &
    imasfl , bmasfl , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )
 
@@ -587,6 +741,9 @@ if (idilat.eq.3) then
     dam(iel) = dam(iel) + epsdp*volume(iel)/dt(iel)
   enddo
 endif
+
+! Free memory
+deallocate(iflux, bflux)
 
 !===============================================================================
 ! 5. Mass flux initialization
@@ -973,101 +1130,6 @@ if (arak.gt.0.d0) then
 
 endif
 
-!     Calcul des CL pour l'increment de pression
-!     On commence par affecter les CL classiques
-!     (COEFA=0 et COEFB=COEFB(P), puis on change
-!     les CL de sortie en mettant COEFA a l'increment
-!     de pression hydrostatique, decale pour valoir 0
-!     sur la face de reference
-if (iphydr.eq.1) then
-
-  do ifac=1,nfabor
-    coefap(ifac) = 0.d0
-    cofafp(ifac) = 0.d0
-  enddo
-
-  if (indhyd.eq.1) then
-    ifac0 = isostd(nfabor+1)
-    if (ifac0.le.0) then
-      phydr0 = 0.d0
-    else
-      iel0 = ifabor(ifac0)
-      phydr0 = rtp(iel0,ipr)                                 &
-           +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
-           +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
-           +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
-    endif
-
-    if (irangp.ge.0) then
-      call parsom (phydr0)
-    endif
-
-    do ifac=1,nfabor
-      if (isostd(ifac).eq.1) then
-        iel=ifabor(ifac)
-        coefap(ifac) = rtp(iel,ipr)                          &
-             +(cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
-             +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
-             +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
-             - phydr0
-        if (idften(ipr).eq.1) then
-          hint = dt(iel)/distb(ifac)
-
-        ! Symmetric tensor diffusivity
-        elseif (idften(ipr).eq.6) then
-
-          visci(1,1) = tpucou(1,iel)
-          visci(2,2) = tpucou(2,iel)
-          visci(3,3) = tpucou(3,iel)
-          visci(1,2) = tpucou(4,iel)
-          visci(2,1) = tpucou(4,iel)
-          visci(2,3) = tpucou(5,iel)
-          visci(3,2) = tpucou(5,iel)
-          visci(1,3) = tpucou(6,iel)
-          visci(3,1) = tpucou(6,iel)
-
-          ! ||Ki.S||^2
-          viscis = ( visci(1,1)*surfbo(1,ifac)       &
-                   + visci(1,2)*surfbo(2,ifac)       &
-                   + visci(1,3)*surfbo(3,ifac))**2   &
-                 + ( visci(2,1)*surfbo(1,ifac)       &
-                   + visci(2,2)*surfbo(2,ifac)       &
-                   + visci(2,3)*surfbo(3,ifac))**2   &
-                 + ( visci(3,1)*surfbo(1,ifac)       &
-                   + visci(3,2)*surfbo(2,ifac)       &
-                   + visci(3,3)*surfbo(3,ifac))**2
-
-          ! IF.Ki.S
-          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
-                  )*surfbo(1,ifac)                              &
-                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
-                  )*surfbo(2,ifac)                              &
-                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
-                  )*surfbo(3,ifac)
-
-          distfi = distb(ifac)
-
-          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-          ! NB: eps =1.d-1 must be consistent with vitens.f90
-          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
-
-          hint = viscis/surfbn(ifac)/fikis
-
-        endif
-
-        cofafp(ifac) = - hint*coefap(ifac)
-      endif
-    enddo
-  endif
-
-endif
-
 !===============================================================================
 ! 6. Preparation of the Algebraic Multigrid
 !===============================================================================
@@ -1125,7 +1187,7 @@ call divmas &
 
 if (idilat.eq.4) then
 
-  allocate(velflx(nfac), velflb(nfabor))
+  allocate(velflx(nfac), velflb(ndimfb))
 
   ! 1. The RHS contains rho div(u*) and not div(rho u*)
   init   = 1
@@ -1258,7 +1320,7 @@ if (iswdyp.ge.1) then
   iccocg = 1
   init = 1
   inc  = 0
-  if (iphydr.eq.1) inc = 1
+  if (iphydr.eq.1.or.iifren.eq.1) inc = 1
   nswrgp = nswrgr(ipr)
   imligp = imligr(ipr)
   iwarnp = iwarni(ipr)
@@ -1276,7 +1338,8 @@ if (iswdyp.ge.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefap , coefb_p , cofafp , coefbf_p ,                         &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    rhs0   )
@@ -1290,7 +1353,8 @@ if (iswdyp.ge.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefap , coefb_p , cofafp , coefbf_p ,                         &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1356,7 +1420,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     iccocg = 1
     init = 0
     inc  = 0
-    if (iphydr.eq.1) inc = 1
+    if (iphydr.eq.1.or.iifren.eq.1) inc = 1
     nswrgp = nswrgr(ipr)
     imligp = imligr(ipr)
     iwarnp = iwarni(ipr)
@@ -1373,7 +1437,8 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
-     coefap , coefb_p , cofafp , coefbf_p ,                         &
+     coefap , coefbp ,                                              &
+     cofafp , cofbfp ,                                              &
      viscf  , viscb  ,                                              &
      dt     , dt     , dt     ,                                     &
      adxk   )
@@ -1387,7 +1452,8 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
-     coefap , coefb_p , cofafp , coefbf_p ,                         &
+     coefap , coefbp ,                                              &
+     cofafp , cofbfp ,                                              &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
@@ -1487,7 +1553,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   iccocg = 1
   init = 1
   inc  = 0
-  if (iphydr.eq.1) inc = 1
+  if (iphydr.eq.1.or.iifren.eq.1) inc = 1
   nswrgp = nswrgr(ipr)
   imligp = imligr(ipr)
   iwarnp = iwarni(ipr)
@@ -1504,7 +1570,8 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
-   coefap , coefb_p , cofafp , coefbf_p ,                         &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    rhs    )
@@ -1518,7 +1585,8 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
-   coefap , coefb_p , cofafp , coefbf_p ,                         &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1604,7 +1672,7 @@ init = 0
 inc  = 0
 ! In case of hydrostatic pressure, inc is set to 1 to take explicit
 ! boundary conditions on the pressure (coefa)
-if (iphydr.eq.1) inc = 1
+if (iphydr.eq.1.or.iifren.eq.1) inc = 1
 nswrgp = nswrgr(ipr)
 imligp = imligr(ipr)
 iwarnp = iwarni(ipr)
@@ -1620,7 +1688,8 @@ if (idften(ipr).eq.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    presa  ,                                                       &
-   coefap , coefb_p , cofafp , coefbf_p ,                         &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -1638,7 +1707,8 @@ if (idften(ipr).eq.1) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -1652,7 +1722,8 @@ else if (idften(ipr).eq.6) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    presa  ,                                                       &
-   coefap , coefb_p , cofafp , coefbf_p ,                         &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -1672,7 +1743,8 @@ else if (idften(ipr).eq.6) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
+   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
@@ -2058,7 +2130,7 @@ endif
 deallocate(dam, xam)
 deallocate(res, divu, presa)
 deallocate(gradp)
-deallocate(cofafp, coefbp, cofbfp)
+deallocate(cofafp, cofbfp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)

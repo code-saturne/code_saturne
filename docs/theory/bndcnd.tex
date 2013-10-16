@@ -161,12 +161,21 @@ The user generally gives standard boundary conditions, which are:
 and to a homogeneous Neumann on the pressure field. 
 
 \item[Outlet:] it correspond to a homogeneous Neumann boundary condition on all the transported variables.
-For the pressure field, a Dirichlet boundary condition which is expected to mimic $\displaystyle\frac{\partial^2 P}{\partial n \partial \tau}=0$ for any vector  $\vect{\tau}$ parallel to the outlet face. This condition means that the pressure
+For the pressure field, a Dirichlet boundary condition which is expected to mimic $\displaystyle\frac{\partial^2 P}{\partial n \partial \tau}=0$ for any vector  $\vect{\tau}$ parallel to the outlet face
+(see \S \ref{sec:bndcnd:outlet_pressure} for more details). 
+This condition means that the pressure
 profile does not vary in the normal direction of the outlet. Warning: if the outgoing mass-flux is negative, 
 \emph{i.e.} if the outlet becomes an inlet, then the mass-flux is clipped to zero. Moreover, since
  the pressure field is defined up to a constant, it is fixed to a reference pressure $P_0$
 at an arbitrary chosen outlet boundary face. 
 The user can choose an other desired face where a Dirichlet on pressure is prescribed.
+
+\item[Free inlet/outlet:] it corresponds to the standard outlet when the flow is outgoing (see \S \ref{sec:bndcnd:outlet_pressure}), but to a free inlet when the flow
+is ingoing. The Bernoulli relationship is used to derive a boundary condition on the pressure increment to couple velocity and pressure at 
+these free inlet faces. 
+Note that no clipping on the velocity is imposed.
+The same boundary conditions as for outlet on the other variables is imposed. For more details please refer to \S \ref{sec:bndcnd:inlet_bernoulli_pressure}.
+
  
 \item[Walls:] This particular treatment will be detailed in the following sections. 
 For the velocity, the aim is to transform the Dirichlet boundary condition (the velocity at the wall 
@@ -331,7 +340,7 @@ Both $\varia^{imp, \, ext} $ and $ h_{ext} $ must be specified by the user. The 
 \end{remark}
 
 %-------------------------------------------------------------------------------
-\subsection{Convective outlet boundary conditions}
+\subsection{Convective outlet boundary conditions}\label{sec:bndcnd:convective_outlet}
 
 If the user wishes to impose a convective outlet (also called radiative outlet) condition which reads:
 \begin{equation}
@@ -943,6 +952,81 @@ P_\fib
 To conclude, the outlet boundary condition on the pressure is a Dirichlet based on 
 the value in $\centip$ (at the previous time step) and shifted to imposed
 the value $P_0$ at a given face $\fib$.
+
+%-------------------------------------------------------------------------------
+\subsection{Free inlet/outlet boundary condition on the pressure increment}\label{sec:bndcnd:inlet_bernoulli_pressure}
+
+In this section the boundary condition on the pressure increment at the free inlet is detailed.
+For the other variables (even the pressure itself), the treatment is similar to \S \ref{sec:bndcnd:outlet_pressure}.
+
+Let us start with the Bernoulli relation ship between a boundary face $\face$ linked to a point on the same
+stream line far away from the computational domain:
+\begin{equation}\label{eq:bndcnd:benoulli_inlet}
+P_\face - \rho_\face \vect{g} \cdot  \left( \vect{x}_\face - \vect{x}_0 \right) + \dfrac{1+K}{2}\rho_\face \vect{u}_\face \cdot \vect{u}_\face  = P_\infty - \rho_\infty \vect{g} \cdot \left(  \vect{x}_\infty
+- \vect{x}_0 \right)
++ \dfrac{1}{2}\rho_\infty \vect{u}_\infty \cdot \vect{u}_\infty,
+\end{equation}
+where $K$ is a possible head loss of the fluid between the infinity and the boundary face entrance 
+(which the user may play with to model the non-computed domain).
+
+Assuming that the stream line is horizontal, that the density is constant over the stream line and that the fluid velocity is zero
+at the infinity, the Equation \eqref{eq:bndcnd:benoulli_inlet} becomes:
+\begin{equation}\label{eq:bndcnd:benoulli_inlet_simple}
+P_\face^\star =- \dfrac{1+K}{2} \rho_\face \vect{u}_\face \cdot \vect{u}_\face ,
+\end{equation}
+where we recall that $P^\star$ is the dynamic pressure.
+
+For stability reasons, the Equation \eqref{eq:bndcnd:benoulli_inlet_simple} is implicit in time as follows:
+\begin{equation}\label{eq:bndcnd:benoulli_inlet_time}
+P_\face^{\star, n+1} =- \dfrac{1+K}{2} \rho_\face \vect{u}^{n}_\face \cdot \vect{u}^{n+1}_\face.
+\end{equation}
+This implicitation is crucial to make the calculations stable. 
+
+The prediction-correction velocity-pressure coupling algorithm requires boundary conditions on the pressure increment
+(computed in the correction step), and therefore 
+relation \eqref{eq:bndcnd:benoulli_inlet_time} is derived to obtain boundary conditions on the pressure increment. Recall that the 
+correction step reads:
+ \begin{equation}\label{eq:bndcnd:correction_step}
+\dfrac{\left( \rho \vect{u} \right)^{n+1} - \left( \rho^n \widetilde{\vect{u}} \right)}{\Delta t} = - \grad \delta P,
+\end{equation}
+the pressure increment $ \delta P = P^{\star, n+1} - P^{\star, n}$ at the face is consequently given by:
+ \begin{equation}\label{eq:bndcnd:pressure_increment}
+\delta P_\face = -P^{\star, n}_\face - \dfrac{1+K}{2} \rho_\face \vect{u}^{n}_\face \cdot \left( \widetilde{\vect{u}} - \dfrac{\Delta t}{\rho} \grad \delta P \right)_\face.
+\end{equation}
+
+
+Neglecting the tangencial velocity component at the entering faces ($\left(\rho \vect{u} \right)^n_\face \simeq \left(\rho \vect{u} \right)^n_\face \cdot \vect{n} \, \vect{n} = \dfrac{ \dot{m}_\face }{\norm{S}_\face} \vect{n} $) and approximating $P^{\star, n}_\face$ with its cell-center value, Equation \ref{eq:bndcnd:pressure_increment} reads:
+%
+ \begin{equation}\label{eq:bndcnd:pressure_increment_simple}
+\delta P_\face = -P^{\star, n}_\celli - \dfrac{1+K}{2} \dfrac{ \dot{m}_\face }{\norm{S}_\face} 
+\left( \widetilde{\vect{u}} \cdot \vect{n} 
+- \dfrac{\Delta t}{\rho} \der{\delta P }{n} \right)_\face.
+\end{equation}
+Noting that $  \left. \der{\delta P }{n} \right|_{\face} = \dfrac{\delta P_\face -  \delta P_\celli }{\overline{\centip \centf}}$,  \eqref{eq:bndcnd:pressure_increment_simple} is rewritten as:
+\begin{equation}\label{eq:bndcnd:pressure_increment_coefs_bernoulli}
+\delta P_\face = A^g_{\delta P} + B^g_{\delta P} \delta P_\celli,
+\end{equation}
+with:
+\begin{equation}\label{eq:bndcnd:pressure_increment_coefs_bernoulli_A_B}
+\begin{array}{r c l}
+ A^g_{\delta P}  & = & \dfrac{1}{1 + CFL} \left( - P^{\star, n}_\celli - \dfrac{1+K}{2} \dfrac{ \dot{m}_\face }{\norm{S}_\face}
+\widetilde{\vect{u}}_\face \cdot \vect{n} 
+  \right), \\
+ B^g_{\delta P} & = & \dfrac{CFL}{1 + CFL} , 
+\end{array}
+\end{equation}
+where the $CFL$ is defined as:
+\begin{equation}\label{eq:bndcnd:pressure_increment_coefs_bernoulli_A_B}
+CFL = - \dfrac{1+K}{2} \dfrac{\Delta t \dot{m}_\face }{ \rho_\face \norm{S}_\face}. 
+\end{equation}
+%
+\begin{remark}
+$CFL$ is a positive quantity for ingoing flows, which ensures stability. 
+\end{remark}
+\begin{remark}
+The formulation \eqref{eq:bndcnd:pressure_increment_coefs_bernoulli_A_B} is nothing else but
+a convective outlet on the pressure increment (see \S \ref{sec:bndcnd:convective_outlet}).
+\end{remark}
 
 %-------------------------------------------------------------------------------
 \subsubsection{Checking step}

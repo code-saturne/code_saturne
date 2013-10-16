@@ -721,6 +721,12 @@ module optcal
   !>    - 0: no treatment (default)
   integer, save :: iphydr
 
+
+  !> indicates the presence of a Bernoulli boundary face (automatically computed)
+  !>    - 0: no face
+  !>    - 1: at least one face
+  integer, save :: iifren
+
   !> compute the hydrostatic pressure in order to compute the Dirichlet
   !> conditions on the pressure at outlets
   !>    - 1: true

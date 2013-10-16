@@ -360,8 +360,8 @@ allocate(ra(ifinra))
 ! Allocate other main arrays
 allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
 
+allocate(isostd(nfabor+1))
 if (iphydr.eq.1) then
-  allocate(isostd(nfabor+1))
   allocate(frcxt(3, ncelet))
 endif
 
@@ -1178,8 +1178,8 @@ deallocate(ra)
 ! Free other main arrays
 deallocate(coefa, coefb)
 
+deallocate(isostd)
 if (iphydr.eq.1) then
-  deallocate(isostd)
   deallocate(frcxt)
 endif
 
