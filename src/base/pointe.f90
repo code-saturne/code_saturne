@@ -299,10 +299,10 @@ module pointe
   !> See \c ickpdc and the user subroutine ref uskpdc
   double precision, allocatable, dimension(:,:) :: ckupdc
 
-  !> Head loss factor of the fluid outside the domain, between infinity and 
+  !> Head loss factor of the fluid outside the domain, between infinity and
   !> the entrance (for \ref ifrent boundary type). The default value is 0,
-  !> dimensionless factor. The user may give a value in 
-  !> \ref cs_user_boundary_conditions in the array 
+  !> dimensionless factor. The user may give a value in
+  !> \ref cs_user_boundary_conditions in the array
   !> \c rcodcl(ifac, \ref ipr, 2).
   double precision, allocatable, dimension(:) :: b_head_loss
 

@@ -641,7 +641,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
           ! Ingoing mass Flux, Bernoulli relation ship is used
           if (bpmasf.le.0.d0) then
 
-            ! Head loss of the fluid outside the domain, between infinity and 
+            ! Head loss of the fluid outside the domain, between infinity and
             ! the entrance
             kpdc = b_head_loss(ifac)
             rho = brom(ifac)
