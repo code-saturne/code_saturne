@@ -1220,8 +1220,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case.undoStopGlobal()
         self.mdl = OutputControlModel(self.case)
 
-        # lagrangian model
-        self.lag_mdl = LagrangianModel(self.case)
+        if self.case['package'].name == 'code_saturne':
+            # lagrangian model
+            self.lag_mdl = LagrangianModel(self.case)
 
         # Combo models
 
@@ -1425,22 +1426,27 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.lineEditNTLIST.setText(str(ntlist))
         self.slotOutputListing(t)
 
-        if self.lag_mdl.getLagrangianStatus() != 'off':
-            self.groupBoxListingParticles.show()
-            period = self.mdl.getListingFrequencyLagrangian()
-            if period == -1:
-                m = "None"
-            elif period == 1:
-                m = "At each step"
-            else:
-                m = "Frequency_l"
-            self.modelNTLAL.setItem(str_model = m)
-            t = self.modelNTLAL.dicoM2V[m]
-            self.lineEditNTLAL.setText(str(period))
-            self.slotChoiceNTLAL(t)
+        if self.case['package'].name == 'code_saturne':
+            if self.lag_mdl.getLagrangianStatus() != 'off':
+                self.groupBoxListingParticles.show()
+                period = self.mdl.getListingFrequencyLagrangian()
+                if period == -1:
+                    m = "None"
+                elif period == 1:
+                    m = "At each step"
+                else:
+                    m = "Frequency_l"
+                self.modelNTLAL.setItem(str_model = m)
+                t = self.modelNTLAL.dicoM2V[m]
+                self.lineEditNTLAL.setText(str(period))
+                self.slotChoiceNTLAL(t)
 
-            # lagrangian mesh
-            self.tabWidget.setTabEnabled(3, True)
+                # lagrangian mesh
+                self.tabWidget.setTabEnabled(3, True)
+            else:
+                self.groupBoxListingParticles.hide()
+                # lagrangian mesh
+                self.tabWidget.setTabEnabled(3, False)
         else:
             self.groupBoxListingParticles.hide()
             # lagrangian mesh
