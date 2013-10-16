@@ -5,9 +5,16 @@ Trunk (unreleased)
 Changes:
 --------
 
-- Documentation: moved tutorials outside the codebase, and into a separate base.
-  This allows looser synchronization with the code base, as tutorials may be
-  updated somewhat less frequently.
+- Documentation: 
+   * moved tutorials outside the codebase, and into a separate base.
+     This allows looser synchronization with the code base, as tutorials may be
+     updated somewhat less frequently.
+   * complete the Doxygen documentation of 
+     - Fortran modules
+     - user examples
+     - Fortran routines
+
+- Remove deprecated uncoupled velocity solver (ivelco=0).
 
 - Particle tracking module:
    * add a modeling of the drying phase of the coal particle combustion 
@@ -27,6 +34,21 @@ Changes:
   - introduction of the coal thermal conductivity
     (for the calculation of intra particle gradients in particle-tracking module)
 
+- Boundary conditions:
+   * Fix in the wall boundary conditions for the viscous boundary term
+     (the viscous boundary term is not always parallel to the wall). This is
+     mainly impactant for verification testcases.
+   * add a new Boundary Condition type for free inlet,
+     - this BC can be used for natural convective flows in free atmosphere for
+       instance (plumes, flame, etc.).
+
+- Turbulence:
+   * Major change in Rij-epsilon models:
+     - the Daly Harlow model on the diffusive term is now by default for SSG
+     - the GGDH brick is used for all the models (LRR, SSG, EBRSM)
+     - the "diffusivity_tensor" is added as a field key word
+     - Rij-epsilon routines are cleaned up and doxygened.
+
 Architectural changes
 ---------------------
 
@@ -41,6 +63,8 @@ Architectural changes
 
 - Added new all-to-all infrastructure, allowing alternative algorithms such as
   Crystal Router to MPI_Altoall/MPI_alltoallv as an option.
+
+- Move the convection-diffusion balance (bilsc2.f90) is moved to C.
 
 Release 3.1.0 (11 Jun 2013)
 ===========================
