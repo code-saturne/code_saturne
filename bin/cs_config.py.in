@@ -89,6 +89,7 @@ class config:
                         'ple',                        # PLE
                         'latex', 'doxygen', 'sphinx', # docs
                         'eos',                        # Equations of state
+                        'freesteam',                  # Freesteam
                         'cgns', 'med', 'hdf5', 'ccm', # Mesh filters
                         'catalyst',                   # co-processing library
                         'medcoupling', 'paramedmem',  # MED coupling
@@ -285,6 +286,14 @@ class config:
                          flags = {'cppflags': "@EOS_CPPFLAGS@",
                                   'ldflags': "@EOS_LDFLAGS@",
                                   'libs': "@EOS_LIBS@"})
+
+        self.libs['freesteam'] = \
+            prerequisite("FREESTEAM",
+                         have = "@cs_have_freesteam@",
+                         prefix="@freesteam_prefix@",
+                         flags = {'cppflags': "@FREESTEAM_CPPFLAGS@",
+                                  'ldflags': "@FREESTEAM_LDFLAGS@",
+                                  'libs': "@FREESTEAM_LIBS@"})
 
         self.libs['metis'] = \
             prerequisite("METIS",

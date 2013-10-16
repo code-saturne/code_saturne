@@ -42,6 +42,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
 $(CPPFLAGS_PLE) \
+$(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
@@ -99,6 +100,7 @@ cs_order.h \
 cs_parameters.h \
 cs_parall.h \
 cs_part_to_block.h \
+cs_physical_properties.h \
 cs_post.h \
 cs_post_default.h \
 cs_preprocess.h \
@@ -215,6 +217,7 @@ csopli.f90 \
 cs_opts.c \
 cs_parall.c \
 cs_parameters.c \
+cs_physical_properties.c \
 cs_post.c \
 cs_post_default.c \
 cs_preprocess.c \

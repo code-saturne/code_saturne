@@ -118,7 +118,7 @@ m4/cs_catalyst.m4 \
 m4/cs_ccm.m4 \
 m4/cs_cgns.m4 \
 m4/cs_docs.m4 \
-m4/cs_eos.m4 \
+m4/cs_freesteam.m4 \
 m4/cs_fortran.m4 \
 m4/cs_hdf5.m4 \
 m4/cs_libxml2.m4 \

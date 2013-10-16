@@ -536,6 +536,7 @@ CS_AC_TEST_CGNS
 CS_AC_TEST_MED
 CS_AC_TEST_CCM
 CS_AC_TEST_EOS
+CS_AC_TEST_FREESTEAM
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SALOME
 CS_AC_TEST_MEDCOUPLING
@@ -991,6 +992,7 @@ if test x$cs_have_medcoupling = xyes ; then
 fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 echo " EOS support: "$cs_have_eos""
+echo " FREESTEAM support: "$cs_have_freesteam""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
