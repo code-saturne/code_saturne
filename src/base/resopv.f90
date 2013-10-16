@@ -229,17 +229,11 @@ lchain = 16
 ipp    = ipprtp(ipr)
 
 ! --- Boundary conditions
-!     If iphydr = 0, coef*f should point to coef*
 
 call field_get_coefa_s(ivarfl(ipr), coefa_p)
 call field_get_coefb_s(ivarfl(ipr), coefb_p)
-if (iphydr .eq. 0) then
-  call field_get_coefa_s(ivarfl(ipr), coefaf_p)
-  call field_get_coefb_s(ivarfl(ipr), coefbf_p)
-else
-  call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
-  call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
-endif
+call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
+call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
 
 ! --- Physical quantities
 call field_get_val_s(icrom, crom)
