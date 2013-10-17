@@ -4705,7 +4705,7 @@ endif
 '@',                                                            /,&
 '@     TIME-SCHEME FOR VELOCITY IS FIRST ORDER',                /,&
 '@       (THETAV = ', e10.2, ')',                               /,&
-'@     CERTAIN TERMES ARE HOWEVER SECOND ORDER IN TIME WITH',   /,&
+'@     CERTAIN TERMS ARE HOWEVER SECOND ORDER IN TIME WITH',    /,&
 '@       THE FOLLOWING SETTINGS:',                              /,&
 '@',                                                            /,&
 '@ parameters       ISTMPF ISNO2T ISTO2T IROEXT IVIEXT ICPEXT', /,&
@@ -4729,7 +4729,7 @@ endif
 '@',                                                            /,&
 '@     TIME-SCHEME FOR VELOCITY IS SECOND ORDER',               /,&
 '@       (THETAV = ', e10.2, ')',                               /,&
-'@     CERTAIN TERMES ARE HOWEVER FIRST ORDER IN TIME  WITH',   /,&
+'@     CERTAIN TERMS ARE HOWEVER FIRST ORDER IN TIME  WITH',    /,&
 '@       THE FOLLOWING SETTINGS:',                              /,&
 '@',                                                            /,&
 '@ parameters       ISTMPF ISNO2T ISTO2T IROEXT IVIEXT ICPEXT', /,&
@@ -5319,7 +5319,7 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SOLVE STEADY-STATE EQN. OPTION IS NOT COMPATIBLE WITH',   /,&
-'@    COUPLING OF SOURCES TERMES IN K-EPS, V2F or K-OMEGA',    /, &
+'@    COUPLING OF SOURCE TERMS IN K-EPS, V2F or K-OMEGA',       /, &
 '@',                                                            /,&
 '@    WE HAVE  IKECOU=',i10,                                    /,&
 '@',                                                            /,&
