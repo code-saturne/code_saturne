@@ -820,7 +820,7 @@ do while (iterns.le.nterup)
     iu     , iv     , iw     ,                                     &
     ttcabs ,                                                       &
     dt     , rtpa   , rtp    , propce ,                            &
-    coefa  , coefb  , rcodcl )
+    rcodcl )
 
   ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
 
