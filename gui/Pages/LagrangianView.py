@@ -268,7 +268,7 @@ class ValueDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        if index.row() == 1 or index.row() == 2:
+        if index.column() == 1 or index.column() == 2:
             v = DoubleValidator(editor, min=0.)
             v.setExclusiveMin(True)
         else:
