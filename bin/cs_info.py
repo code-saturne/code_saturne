@@ -69,7 +69,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("-g", "--guide", dest="guides", type="string",
                       metavar="<guide>", action="append",
-                      help="open a manual " + str(get_pdf(pkg)))
+                      help="open a manual " + str(get_docs(pkg)))
 
     parser.add_option("--version", dest="version",
                       action="store_true",
@@ -109,14 +109,18 @@ def print_version(pkg):
 # Launch the PDF manual
 #-------------------------------------------------------------------------------
 
-def get_pdf(pkg):
+def get_docs(pkg):
     """
-    Return the list of available PDF manual for the command line.
+    Return the list of available PDF and Doxygen manuals for the command line.
     """
     l = []
-    if os.path.isdir(pkg.get_dir('pdfdir')):
-        for pdf in fnmatch.filter(os.listdir(pkg.get_dir('pdfdir')), '*.pdf'):
-            l.append(pdf[:-4])
+    if os.path.isdir(pkg.get_dir('docdir')):
+        for docs in fnmatch.filter(os.listdir(pkg.get_dir('docdir')), '*.pdf'):
+            l.append(docs[:-4])
+        for docs in fnmatch.filter(os.listdir(
+                          os.path.join(pkg.get_dir('docdir'),'doxygen', 'src')),
+                         'index.html'):
+            l.append('Doxygen')
     return l
 
 
@@ -131,9 +135,12 @@ def launch_manual(reader, m, pkg):
                  "kde-open",       # KDE 4
                  "exo-open"]       # Xfce
 
-    readers = ["okular", "evince", "kpdf", "gpdf", "xpdf", "acroread"]
-
-    manual = os.path.join(pkg.get_dir('pdfdir'), m) + '.pdf'
+    if not m == "Doxygen":
+        readers = ["okular", "evince", "kpdf", "gpdf", "xpdf", "acroread"]
+        manual = os.path.join(pkg.get_dir('docdir'), m) + '.pdf'
+    else:
+        readers = ["firefox"]
+        manual = os.path.join(pkg.get_dir('docdir'),'doxygen', 'src', 'index.html')
 
     if not os.path.isfile(manual):
         print("File %s not found." % manual)

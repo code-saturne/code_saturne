@@ -39,7 +39,7 @@ doxygen-src:
 doxygen-ui:
 	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-ui
 
-doxygen: doxygen-src doxygen-ui
+doxygen: doxygen-src
 
 html-local: doxygen
 
@@ -61,8 +61,11 @@ install-html-local:
 	then \
 	  \cp -R pre/html $(DESTDIR)$(htmldir)/doxygen/pre ;\
 	fi ;\
-	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src ;\
-	\cp -R ui/html  $(DESTDIR)$(htmldir)/doxygen/ui
+	if test -d ui/html; \
+	then \
+	  \cp -R ui/html  $(DESTDIR)$(htmldir)/doxygen/ui ;\
+	fi ;\
+	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src
 
 uninstall-local:
 	-rm -rf $(htmldir)/doxygen
