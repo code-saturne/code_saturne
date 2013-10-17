@@ -897,6 +897,9 @@ class CoalCombustionModel(Variables, Model):
         new = number + 1
         node_oxi.xmlInitNode('oxidant', ox_id = new)
         self.isLowerOrEqual(number, 3)
+        # update list of scalar
+        self.__createModelScalars()
+        self.__createModelProperties()
 
 
     def deleteOxidant(self, number):
