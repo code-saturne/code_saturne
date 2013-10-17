@@ -1383,7 +1383,7 @@ cs_convection_diffusion_scalar(
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
       coface = f->bc_coeffs->ac;
-      cofbce = f->bc_coeffs->ac;
+      cofbce = f->bc_coeffs->bc;
     } else {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of icvflb and f_id"), __func__);
@@ -1477,6 +1477,7 @@ cs_convection_diffusion_scalar(
               }
 
               pfac  = inc*coefap[face_id] + coefbp[face_id]*pip;
+              flux = iconvp*((flui- b_massflux[face_id])*pi + fluj*pfac);
 
             /* Imposed convective flux */
             } else {
