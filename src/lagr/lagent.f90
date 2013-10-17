@@ -522,7 +522,7 @@ enddo
 do ii = 1, nfrlag
   nb = ilflag(ii)
   do nc = 1, iusncl(nb)
-    if (iphyla .ne. 2 .or. iuslag(nc,nb,irawcl).ne.1) then
+    if (iphyla .ne. 2) then
       if (ruslag(nc,nb,iropt).lt.0.d0 .or.                          &
           ruslag(nc,nb,idpt) .lt.0.d0 .or.                          &
           ruslag(nc,nb,ivdpt).lt.0.d0       ) then
@@ -656,12 +656,14 @@ if (iphyla.eq.2) then
 
       if (iuslag(nc,nb,irawcl) .eq. 0) then
 
-        if (ruslag(nc,nb,icpt)    .lt. 0.d0 .or.                 &
+        if (ruslag(nc,nb,iropt)   .lt. 0.d0 .or.                 &
+            ruslag(nc,nb,icpt)    .lt. 0.d0 .or.                 &
             ruslag(nc,nb,ifrmwt)  .lt. 0.d0 .or.                 &
             ruslag(nc,nb,ifrmwt)  .gt. 1.d0  ) then
           iok = iok + 1
           write(nfecra,1090)                                     &
-          iphyla, nb, nc, ruslag(nc,nb,icpt),                    &
+          iphyla, nb, nc, ruslag(nc,nb,iropt),                   &
+                          ruslag(nc,nb,icpt),                    &
                           ruslag(nc,nb,ifrmwt)
         endif
 
@@ -2247,6 +2249,8 @@ endif
 '@  Les proprietes physiques des particules au bord pour      ',/,&
 '@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
 '@    doivent etre renseignees :                              ',/,&
+'@    Masse volumique :                                       ',/,&
+'@      RUSLAG(NC,NB,IROPT)  = ',E14.5                         ,/,&
 '@    Cp :                                                    ',/,&
 '@      RUSLAG(NC,NB,ICPT)   = ',E14.5                         ,/,&
 '@    Fraction massique d'' eau dans la particule :           ',/,&

@@ -308,17 +308,21 @@ do npt = 1,nbpart
 
     ! --- Coefficient de cinetique chimique de formation de CO
     !       en (kg.m-2.s-1.atm(-n))
-    aux1 = ahetch(icha)                                                      &
-      * exp(-ehetch(icha)*4185.d0 / (rr*ettp(npt,jhp(ilayer_het))) )
+    ! Conversion (kcal/mol -> J/mol)
+    aux1 = ehetch(icha) * 1.0d3 * xcal2j
+    aux2 = ahetch(icha)                                                      &
+      * exp(- aux1 / (rr*ettp(npt,jhp(ilayer_het))) )
 
     ! --- Coefficient de diffusion en  (Kg/m2/s/atm) et constante
     !     globale de reaction
     if ( tepa(npt,jrdck).gt.precis ) then
-      aux2 = sherw * 2.53d-7 * (propce(iel,ipproc(itemp1))**0.75d0)           &
+      ! La constante 2.53d-7 est expliquée dans le tome 5 du rapport sur les
+      ! physiques particulières de Code_Saturne (HI-81/04/003/A) équation 80
+      aux3 = sherw * 2.53d-7 * (propce(iel,ipproc(itemp1))**0.75d0)           &
                              / tepa(npt,jrdck)
-      skglob = (aux1*aux2) / (aux1+aux2)
+      skglob = (aux2*aux3) / (aux2+aux3)
     else
-      skglob = aux1
+      skglob = aux2
     endif
 
 
@@ -336,7 +340,7 @@ do npt = 1,nbpart
     aux2 =  pi * (1.0d0-xashch(icha)) * tepa(npt,jrdck)**2
 
     ! --- Pas de combustion heterogene si Mch/Mp >= 1.D-3
-    if ( ettpa(npt,jmch(ilayer_het)).ge.(1.d-3*mlayer(ilayer_het)) ) then
+    if ( ettpa(npt,jmch(1)).ge.(1.d-3*mlayer(1)) ) then
       gamhet = 0.d0
     else
       ! --- Calcul de la GamHET
