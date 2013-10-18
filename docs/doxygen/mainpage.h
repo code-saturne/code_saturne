@@ -52,7 +52,11 @@
 
   \section user_sources User sources, functions, and subroutines
 
-  Boundary condition definitions \ref cs_user_boundary_conditions_examples.
+  Many user examples are available in the Related pages 
+    - Boundary condition definitions examples \ref cs_user_boundary_conditions_examples, 
+    - Extra user operations examples \ref cs_user_extra_operations_examples,
+    - Examples of physical fields initialization \ref cs_user_initialization,
+  and so on ...
 
   \page BFT
 
