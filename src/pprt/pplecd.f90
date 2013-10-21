@@ -93,7 +93,8 @@ endif
 !      des particules de charbon
 
 if ( ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0 ) then
-  call uisofu(iirayo, iihmpr, ncharm, ncharb, nclpch, nclacp,         &
+  call uisofu(ippmod, iccoal, icpl3c,                                 &
+              iirayo, iihmpr, ncharm, ncharb, nclpch, nclacp,         &
               ncpcmx, ichcor, diam20, cch,                            &
               hch, och, nch, sch, ipci, pcich, cp2ch, rho0ch,         &
               thcdch , cck, hck, ock, nck, sck, xashch,               &

@@ -3444,7 +3444,10 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
  * (pulverized solid fuels)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
+void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
+                                const int    *const iccoal,
+                                const int    *const icpl3c,
+                                const int    *const iirayo,
                                 const int    *const iihmpr,
                                 const int    *const ncharm,
                                 int          *const ncharb,
@@ -3532,7 +3535,23 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   cs_var_t  *vars = cs_glob_var;
 
   if (*iihmpr != 1)
+  {
     cs_gui_load_file("dp_FCP.xml");
+
+    if (ippmod[*iccoal - 1] == 0)
+    {
+      BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel")+1, char);
+      strcpy(vars->model, "homogeneous_fuel");
+    } else if (ippmod[*iccoal - 1] == 1) {
+      if (ippmod[*icpl3c - 1] > 0) {
+        BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel_moisture_lagr")+1, char);
+        strcpy(vars->model, "homogeneous_fuel_moisture_lagr");
+      } else {
+        BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel_moisture")+1, char);
+        strcpy(vars->model, "homogeneous_fuel_moisture");
+      }
+    }
+  }
 
   /* ---- Nb de charbons */
   *ncharb = cs_gui_get_tag_number("/solid_fuels/solid_fuel", 1);

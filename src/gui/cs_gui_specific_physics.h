@@ -398,7 +398,10 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
  * for physical properties of the activated specific physics (pulverized solid fuels)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
+void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
+                                const int    *const iccoal,
+                                const int    *const icpl3c,
+                                const int    *const iirayo,
                                 const int    *const iihmpr,
                                 const int    *const ncharm,
                                       int    *const ncharb,
