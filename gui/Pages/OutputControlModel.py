@@ -62,9 +62,11 @@ class OutputControlModel(Model):
         """
         self.case = case
         node_control  = self.case.xmlGetNode('analysis_control')
-        node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
         self.node_out = node_control.xmlInitNode('output')
-        self.node_out_lag = node_lagr.xmlInitChildNode('output')
+
+        if self.case['package'].name == 'code_saturne':
+            node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
+            self.node_out_lag = node_lagr.xmlInitChildNode('output')
 
 
     def defaultInitialValues(self):
