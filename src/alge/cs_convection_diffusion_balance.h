@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  * Wrapper to cs_convection_diffusion_balance
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (bilsc5, BILSC5)
+void CS_PROCF (bilsc2, BILSC2)
 (
  const cs_int_t  *const   idtvar,
  const cs_int_t  *const   f_id,
