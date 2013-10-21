@@ -175,8 +175,8 @@ class BlendingFactorDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        value = float(editor.text())
         if editor.validator().state == QValidator.Acceptable:
+            value = float(editor.text())
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
@@ -241,11 +241,11 @@ class SolverDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if index.column() == 3:
-            value = float(editor.text())
-        elif (index.column() == 2 or index.column() == 4):
-            value = int(editor.text())
         if editor.validator().state == QValidator.Acceptable:
+            if index.column() == 3:
+                value = float(editor.text())
+            elif (index.column() == 2 or index.column() == 4):
+                value = int(editor.text())
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():

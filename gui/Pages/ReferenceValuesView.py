@@ -193,8 +193,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input PRESS.
         """
-        p = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            p = float(text)
             self.mdl.setPressure(p)
 
 
@@ -203,8 +203,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input Velocity.
         """
-        v = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            v = float(text)
             self.mdl.setVelocity(v)
 
 
@@ -230,8 +230,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input reference length.
         """
-        l = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            l = float(text)
             self.mdl.setLength(l)
 
 
@@ -240,8 +240,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input TEMPERATURE.
         """
-        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            t = float(text)
             self.mdl.setTemperature(t)
 
 
@@ -250,8 +250,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input oxydant TEMPERATURE.
         """
-        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            t = float(text)
             self.mdl.setTempOxydant(t)
 
 
@@ -260,8 +260,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input fuel TEMPERATURE.
         """
-        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            t = float(text)
             self.mdl.setTempFuel(t)
 
 
@@ -270,8 +270,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input Mass molar.
         """
-        m = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            m = float(text)
             self.mdl.setMassemol(m)
 
 

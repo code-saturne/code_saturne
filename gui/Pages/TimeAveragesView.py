@@ -284,8 +284,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         Return an integer for ntdmom, value of start of calculation.
         """
-        start = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            start = int(text)
             self.start = start
         else:
             self.start = self.mdl.defaultValues()['start']
@@ -313,8 +313,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         Return an integer for imoold, value of restart of calculation.
         """
-        restart = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            restart = int(text)
             self.restart = restart
         else:
             self.restart = self.mdl.defaultValues()['restart']

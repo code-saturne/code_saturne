@@ -176,9 +176,8 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
     @pyqtSignature("const QString &")
     def slotNsuit(self, text):
-        ## n, ok = text.toInt()
-        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            n = int(text)
             self.nsuit = n
             log.debug("getNsuit-> nsuit = %s" % n)
 

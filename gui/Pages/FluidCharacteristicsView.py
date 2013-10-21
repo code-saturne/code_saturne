@@ -526,8 +526,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the density
         """
-        rho = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            rho = float(text)
             self.mdl.setInitialValueDensity(rho)
 
 
@@ -536,8 +536,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the molecular viscosity
         """
-        mu = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            mu = float(text)
             self.mdl.setInitialValueViscosity(mu)
 
 
@@ -546,8 +546,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the specific heat
         """
-        cp = float(self.lineEditCp.text())
         if self.sender().validator().state == QValidator.Acceptable:
+            cp = float(self.lineEditCp.text())
             self.mdl.setInitialValueHeat(cp)
 
 
@@ -556,8 +556,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the volumic viscosity
         """
-        viscv0 = float(self.lineEditViscv0.text())
         if self.sender().validator().state == QValidator.Acceptable:
+            viscv0 = float(self.lineEditViscv0.text())
             self.mdl.setInitialValueVolumicViscosity(viscv0)
 
 
@@ -566,8 +566,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the thermal conductivity
         """
-        al = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            al = float(text)
             self.mdl.setInitialValueCond(al)
 
 
@@ -576,8 +576,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the thermal conductivity
         """
-        diftl0 = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            diftl0 = float(text)
             self.mdl.setInitialValueDyn(diftl0)
 
 
@@ -586,8 +586,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the thermal conductivity
         """
-        diff = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            diff = float(text)
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 

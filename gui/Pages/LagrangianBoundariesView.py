@@ -94,8 +94,8 @@ class ValueDelegate(QItemDelegate):
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
-        value = float(editor.text())
         if editor.validator().state == QValidator.Acceptable:
+            value = float(editor.text())
             model.setData(index, value, Qt.DisplayRole)
 
 

@@ -244,8 +244,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Relaxation coefficient for mass density
         """
-        srrom = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            srrom = float(text)
             self.model.setSRROM(srrom)
 
 
@@ -254,8 +254,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Imposed Power
         """
-        power = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            power = float(text)
             self.model.setPower(power)
 
 
@@ -264,8 +264,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Imposed current intensity
         """
-        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            current = float(text)
             self.model.setCurrent(current)
 
 
@@ -315,8 +315,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            current = float(text)
             self.model.setPlaneDefinition("A", current)
 
 
@@ -325,8 +325,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            current = float(text)
             self.model.setPlaneDefinition("B", current)
 
 
@@ -335,8 +335,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            current = float(text)
             self.model.setPlaneDefinition("C", current)
 
 
@@ -345,8 +345,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            current = float(text)
             self.model.setPlaneDefinition("D", current)
 
 
@@ -355,8 +355,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            current = float(text)
             self.model.setPlaneDefinition("epsilon", current)
 
 

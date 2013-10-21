@@ -221,8 +221,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input DTREF.
         """
-        time_step = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            time_step = float(text)
             self.mdl.setTimeStep(time_step)
 
 
@@ -231,8 +231,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input NTMABS.
         """
-        iteration = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            iteration = int(text)
             self.mdl.setIterationsNumber(iteration)
 
 
@@ -241,8 +241,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input COUMAX.
         """
-        courant_max = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            courant_max = float(text)
             self.mdl.setOptions('max_courant_num', courant_max)
 
 
@@ -251,8 +251,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input FOUMAX.
         """
-        fourier_max = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            fourier_max = float(text)
             self.mdl.setOptions('max_fourier_num', fourier_max)
 
 
@@ -261,8 +261,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input CDTMIN.
         """
-        time_step_min_factor = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            time_step_min_factor = float(text)
             self.mdl.setOptions('time_step_min_factor', time_step_min_factor)
 
 
@@ -271,8 +271,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input CDTMAX.
         """
-        time_step_max_factor = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            time_step_max_factor = float(text)
             self.mdl.setOptions('time_step_max_factor', time_step_max_factor)
 
 
@@ -281,8 +281,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input VARRDT.
         """
-        time_step_var = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            time_step_var = float(text)
             self.mdl.setOptions('time_step_var', time_step_var)
 
 

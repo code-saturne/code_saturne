@@ -810,8 +810,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
-        nalimx = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            nalimx = int(text)
             self.__model.setMaxIterations(nalimx)
 
 
@@ -820,8 +820,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
-        epalim = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            epalim = float(text)
             self.__model.setPrecision(epalim)
 
 

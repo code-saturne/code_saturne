@@ -340,8 +340,8 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
     def slotNdirec(self, text):
         """
         """
-        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            n = int(text)
             self.mdl.setNbDir(n)
 
 
@@ -364,8 +364,8 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
     def slotAbsorptionCoefficient(self, text):
         """
         """
-        c  = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            c  = float(text)
             self.mdl.setAbsorCoeff(c)
 
 

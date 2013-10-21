@@ -191,8 +191,8 @@ if (xray2 < xr2) {
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
-        nalinf = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            nalinf = int(text)
             self.mdl.setSubIterations(nalinf)
 
 

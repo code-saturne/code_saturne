@@ -349,9 +349,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotPotElec(self, var):
         """
         """
-        value = float(var)
-
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(var)
             self.__b.setElecScalarValue(self.potElec, self.potElec_type, value)
 
 
@@ -359,8 +358,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotPotElecIm(self, var):
         """
         """
-        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(var)
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
 
@@ -368,8 +367,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotSpecies(self, var):
         """
         """
-        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(var)
             self.__b.setElecScalarValue(self.species, 'dirichlet', value)
 
 
@@ -453,8 +452,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotValueThermal(self, var):
         """
         """
-        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(var)
             if self.thermal_type in ('dirichlet', 'neumann'):
                 self.__b.setElecScalarValue(self.thermal, self.thermal_type, value)
             elif self.thermal_type == 'exchange_coefficient':
@@ -465,8 +464,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotExThermal(self, var):
         """
         """
-        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(var)
             self.__b.setElecScalarValue(self.thermal, 'exchange_coefficient', value)
 
 

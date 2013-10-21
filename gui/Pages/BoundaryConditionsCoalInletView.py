@@ -90,8 +90,8 @@ class ValueDelegate(QItemDelegate):
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
-        value = float(editor.text())
         if editor.validator().state == QValidator.Acceptable:
+            value = float(editor.text())
             model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
@@ -543,8 +543,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         @type text: C{QString}
         @param text: value
         """
-        v = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            v = float(text)
             self.__boundary.setVelocity(v)
 
 
@@ -616,8 +616,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setDirection('direction_x', value)
 
 
@@ -626,8 +626,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setDirection('direction_y', value)
 
 
@@ -636,8 +636,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setDirection('direction_z', value)
 
 
@@ -695,8 +695,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
     @pyqtSignature("const QString&")
     def __slotTemperature(self, text):
-        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            t = float(text)
             self.__boundary.setOxydantTemperature(t)
 
 

@@ -1595,8 +1595,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the listing output for lagrangian variables
         """
-        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            n = int(text)
             log.debug("slotNTLAL-> NTLIST = %s" % n)
             self.mdl.setListingFrequencyLagrangian(n)
 
@@ -1856,8 +1856,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
-            n = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
+                n = float(text)
                 log.debug("slotPostproFrequencyTime-> FRCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
@@ -2380,8 +2380,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        n = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            n = float(text)
             log.debug("slotMonitoringPointFrequencyTime-> FRHIST = %s" % n)
             self.mdl.setMonitoringPointFrequencyTime(n)
 
@@ -2391,8 +2391,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            n = int(text)
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
 
@@ -2526,8 +2526,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         @type text: C{QString}
         @param text: radius for display probes
         """
-        r = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            r = float(text)
             self.case['probes'].setRadius(r)
 
 

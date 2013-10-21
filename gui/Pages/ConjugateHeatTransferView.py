@@ -93,8 +93,8 @@ class SyrthesVerbosityDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        value = int(editor.text())
         if editor.validator().state == QValidator.Acceptable:
+            value = int(editor.text())
             model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------

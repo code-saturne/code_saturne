@@ -1409,8 +1409,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the C composition
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setComposition(self.fuel, "C", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1422,8 +1422,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the H composition
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setComposition(self.fuel, "H", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1435,8 +1435,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the O composition
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setComposition(self.fuel, "O", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1461,8 +1461,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the S composition
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setComposition(self.fuel, "S", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1474,8 +1474,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the PCI value
         """
-        PCI = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            PCI = float(text)
             self.model.setPCIValue(self.fuel, PCI)
 
 
@@ -1513,8 +1513,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the C composition for coke
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setCokeComposition(self.fuel, "C", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1526,8 +1526,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the H composition for coke
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setCokeComposition(self.fuel, "H", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1539,8 +1539,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the O composition for coke
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setCokeComposition(self.fuel, "O", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1552,8 +1552,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the N composition for coke
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setCokeComposition(self.fuel, "N", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1565,8 +1565,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the S composition for coke
         """
-        composition = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            composition = float(text)
             self.model.setCokeComposition(self.fuel, "S", composition)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1595,8 +1595,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the volatile matter
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setProperty(self.fuel, "volatile_matter", value)
 
 
@@ -1605,8 +1605,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the thermal capacity
         """
-        Cp = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            Cp = float(text)
             self.model.setProperty(self.fuel, "specific_heat_average", Cp)
 
 
@@ -1615,8 +1615,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the thermal conductivity
         """
-        lam = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            lam = float(text)
             self.model.setProperty(self.fuel, "thermal_conductivity", lam)
 
 
@@ -1625,8 +1625,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the density
         """
-        density = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            density = float(text)
             self.model.setProperty(self.fuel, "density", density)
 
 
@@ -1635,8 +1635,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the moisture
         """
-        moisture = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            moisture = float(text)
             self.model.setProperty(self.fuel, "moisture", moisture)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1648,8 +1648,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the ashes ratio
         """
-        ashesRatio = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            ashesRatio = float(text)
             self.model.setProperty(self.fuel, "rate_of_ashes_on_mass", ashesRatio)
         else:
             msg = self.tr("This value must be between 0 and 100.")
@@ -1661,8 +1661,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the ashes forming enthalpy
         """
-        ashesFormingEnthalpy = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            ashesFormingEnthalpy = float(text)
             self.model.setProperty(self.fuel, "ashes_enthalpy", ashesFormingEnthalpy)
 
 
@@ -1671,8 +1671,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the ashes thermal capacity
         """
-        ashesThermalCapacity = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            ashesThermalCapacity = float(text)
             self.model.setProperty(self.fuel, "ashes_thermal_capacity", ashesThermalCapacity)
 
 
@@ -1681,8 +1681,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the Y1 stoichiometric coefficient
         """
-        Y1CH = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            Y1CH = float(text)
             self.model.setY1StoichiometricCoefficient(self.fuel, Y1CH)
 
 
@@ -1691,8 +1691,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the Y2 stoichiometric coefficient
         """
-        Y2CH = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            Y2CH = float(text)
             self.model.setY2StoichiometricCoefficient(self.fuel, Y2CH)
 
 
@@ -1716,8 +1716,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the pre exponential factor A1
         """
-        A1CH = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            A1CH = float(text)
             self.model.setDevolatilisationParameter(self.fuel, "A1_pre-exponential_factor", A1CH)
 
 
@@ -1726,8 +1726,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the pre exponentiel factor A2
         """
-        A2CH = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            A2CH = float(text)
             self.model.setDevolatilisationParameter(self.fuel, "A2_pre-exponential_factor", A2CH)
 
 
@@ -1736,8 +1736,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the energy of activation E1
         """
-        E1CH = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            E1CH = float(text)
             self.model.setDevolatilisationParameter(self.fuel, "E1_energy_of_activation", E1CH)
 
 
@@ -1746,8 +1746,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the Energy of activation E2
         """
-        E2CH = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            E2CH = float(text)
             self.model.setDevolatilisationParameter(self.fuel, "E2_energy_of_activation", E2CH)
 
 
@@ -1756,8 +1756,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the pre exponential constant for O2
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setPreExponentialConstant(self.fuel, "O2", value)
 
 
@@ -1766,8 +1766,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the energy of activation for O2
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setEnergyOfActivation(self.fuel, "O2", value)
 
 
@@ -1789,8 +1789,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the preexponential constant for CO2
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setPreExponentialConstant(self.fuel, "CO2", value)
 
 
@@ -1799,8 +1799,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the energy of activation for CO2
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setEnergyOfActivation(self.fuel, "CO2", value)
 
 
@@ -1822,8 +1822,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the pre exponential constant for H2O
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setPreExponentialConstant(self.fuel, "H2O", value)
 
 
@@ -1832,8 +1832,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the energy of activation for H2O
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setEnergyOfActivation(self.fuel, "H2O", value)
 
 
@@ -1855,8 +1855,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the nitrogen fraction
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_fraction', value)
 
 
@@ -1865,8 +1865,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the nitrogen concentration
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_concentration', value)
 
 
@@ -1875,8 +1875,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the nitrogen partition reaction of reaction 1
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setHCNParameter(self.fuel, "HCN_NH3_partitionning_reaction_1", value)
 
 
@@ -1885,8 +1885,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the Nitrogen partition reaction of reaction 2
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setHCNParameter(self.fuel, "HCN_NH3_partitionning_reaction_2", value)
 
 
@@ -1895,8 +1895,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the nitrogen in char at low temperatures
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_in_char_at_low_temperatures', value)
 
 
@@ -1905,8 +1905,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the nitrogen in char at  temperatures
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_in_char_at_high_temperatures', value)
 
 
@@ -1915,8 +1915,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the nitrogen percentage in char combustion
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.model.setNOxFormationParameter(self.fuel, 'percentage_HCN_char_combustion', value)
 
 

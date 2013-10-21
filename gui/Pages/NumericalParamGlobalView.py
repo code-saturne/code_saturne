@@ -278,8 +278,8 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Set value for parameter RELAXP
         """
-        relaxp = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            relaxp = float(text)
             self.model.setPressureRelaxation(relaxp)
             log.debug("slotRELAXP-> %s" % relaxp)
 
@@ -289,8 +289,8 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Set value for parameter SRROM
         """
-        srrom = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            srrom = float(text)
             self.model.setDensityRelaxation(srrom)
             log.debug("slotSRROM-> %s" % srrom)
 

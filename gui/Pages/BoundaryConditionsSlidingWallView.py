@@ -168,8 +168,8 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @type text: C{QString}
         @param text: sliding wall U velocity component.
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setVelocityComponent(value, 'velocity_U')
 
 
@@ -183,8 +183,8 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @type text: C{QString}
         @param text: sliding wall V velocity component.
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setVelocityComponent(value, 'velocity_V')
 
 
@@ -198,8 +198,8 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @type text: C{QString}
         @param text: sliding wall W velocity component.
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setVelocityComponent(value, 'velocity_W')
 
 

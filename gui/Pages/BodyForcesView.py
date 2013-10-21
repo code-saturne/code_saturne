@@ -118,8 +118,8 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GX
         """
-        gravity_x = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            gravity_x = float(text)
             self.mdl.setGravity('gravity_x', gravity_x)
 
 
@@ -128,8 +128,8 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GY
         """
-        gravity_y = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            gravity_y = float(text)
             self.mdl.setGravity('gravity_y', gravity_y)
 
 

@@ -151,17 +151,17 @@ class CodeNumberDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        value = int(editor.text())
-
-        # Check for unicity
-        if value != self.value and str(value) in self.mdl.getCodeNumbersList():
-            title = self.tr("Warning")
-            msg   = self.tr("Zone number can be used only once.\n"\
-                            "Please give another value.")
-            QMessageBox.warning(self.parent, title, msg)
-            return
-
         if editor.validator().state == QValidator.Acceptable:
+            value = int(editor.text())
+
+            # Check for unicity
+            if value != self.value and str(value) in self.mdl.getCodeNumbersList():
+                title = self.tr("Warning")
+                msg   = self.tr("Zone number can be used only once.\n"\
+                            "Please give another value.")
+                QMessageBox.warning(self.parent, title, msg)
+                return
+
             model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------

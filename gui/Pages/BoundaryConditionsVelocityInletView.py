@@ -397,8 +397,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         @type text: C{QString}
         @param text: value
         """
-        v = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            v = float(text)
             self.__boundary.setVelocity(v)
 
 
@@ -470,8 +470,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT value into direction of inlet flow
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setDirection('direction_x', value)
 
 
@@ -480,8 +480,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT value into direction of inlet flow
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setDirection('direction_y', value)
 
 
@@ -490,8 +490,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT value into direction of inlet flow
         """
-        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            value = float(text)
             self.__boundary.setDirection('direction_z', value)
 
 
@@ -592,10 +592,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Pressure
         """
-        if text != "":
+        if self.sender().validator().state == QValidator.Acceptable:
             t = float(text)
-            if self.sender().validator().state == QValidator.Acceptable:
-                self.__boundary.setThermoValue('pressure', t)
+            self.__boundary.setThermoValue('pressure', t)
 
 
     @pyqtSignature("const QString&")
@@ -603,10 +602,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Density
         """
-        if text != "":
+        if self.sender().validator().state == QValidator.Acceptable:
             t = float(text)
-            if self.sender().validator().state == QValidator.Acceptable:
-                self.__boundary.setThermoValue('density', t)
+            self.__boundary.setThermoValue('density', t)
 
 
     @pyqtSignature("const QString&")
@@ -614,10 +612,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Temperature
         """
-        if text != "":
+        if self.sender().validator().state == QValidator.Acceptable:
             t = float(text)
-            if self.sender().validator().state == QValidator.Acceptable:
-                self.__boundary.setThermoValue('temperature', t)
+            self.__boundary.setThermoValue('temperature', t)
 
 
     @pyqtSignature("const QString&")
@@ -625,10 +622,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Energy
         """
-        if text != "":
+        if self.sender().validator().state == QValidator.Acceptable:
             t = float(text)
-            if self.sender().validator().state == QValidator.Acceptable:
-                self.__boundary.setThermoValue('energy', t)
+            self.__boundary.setThermoValue('energy', t)
 
 
     @pyqtSignature("const QString&")
@@ -636,8 +632,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet total pressure
         """
-        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            t = float(text)
             self.__boundary.setThermoValue('total_pressure', t)
 
 
@@ -646,8 +642,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet total enthalpy
         """
-        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            t = float(text)
             self.__boundary.setThermoValue('enthalpy', t)
 
 
@@ -656,8 +652,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet temperature
         """
-        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            t = float(text)
             self.__boundary.setGasCombustionTemperature(t)
 
 
@@ -666,8 +662,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet mean mixutre fraction
         """
-        f = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            f = float(text)
             self.__boundary.setMeanMixtureFraction(f)
 
 

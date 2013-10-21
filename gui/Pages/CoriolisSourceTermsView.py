@@ -117,8 +117,8 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OMEGAX
         """
-        omega_x = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            omega_x = float(text)
             self.mdl.setOmega('omega_x', omega_x)
 
 
@@ -127,8 +127,8 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OMEGAY
         """
-        omega_y = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            omega_y = float(text)
             self.mdl.setOmega('omega_y', omega_y)
 
 
@@ -137,8 +137,8 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OmegaZ
         """
-        omega_z = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            omega_z = float(text)
             self.mdl.setOmega('omega_z', omega_z)
 
 

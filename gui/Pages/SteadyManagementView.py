@@ -121,8 +121,8 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         """
         Input relaxation coefficient.
         """
-        relax_coef = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
+            relax_coef = float(text)
             self.mdl.setRelaxCoefficient(relax_coef)
 
 
