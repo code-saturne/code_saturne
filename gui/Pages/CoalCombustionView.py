@@ -850,6 +850,9 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.lineEditNitrogenConcentration, SIGNAL("textChanged(const QString &)"), self.slotNitrogenConcentration)
         self.connect(self.lineEditKobayashi1,            SIGNAL("textChanged(const QString &)"), self.slotKobayashi1)
         self.connect(self.lineEditKobayashi2,            SIGNAL("textChanged(const QString &)"), self.slotKobayashi2)
+        self.connect(self.lineEditNitrogenLowTemp,       SIGNAL("textChanged(const QString &)"), self.slotNLowTemp)
+        self.connect(self.lineEditNitrogenHighTemp,      SIGNAL("textChanged(const QString &)"), self.slotNHighTemp)
+        self.connect(self.lineEditHCNChar,               SIGNAL("textChanged(const QString &)"), self.slotHCNChar)
 
         self.connect(self.checkBoxNOxFormation, SIGNAL("clicked(bool)"), self.slotNOxFormation)
         self.connect(self.checkBoxNOxFormationFeature,  SIGNAL("clicked(bool)"), self.slotNOxFeature)
@@ -899,6 +902,9 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         validatorNitrogenConcentration = DoubleValidator(self.lineEditNitrogenConcentration, min=0.)
         validatorKobayashi1 = DoubleValidator(self.lineEditKobayashi1, min=0., max = 1.)
         validatorKobayashi2 = DoubleValidator(self.lineEditKobayashi2, min=0., max = 1.)
+        validatorNitrogenLowTemp = DoubleValidator(self.lineEditNitrogenLowTemp, min=0.)
+        validatorNitrogenHighTemp = DoubleValidator(self.lineEditNitrogenHighTemp, min=0.)
+        validatorHCNChar = DoubleValidator(self.lineEditHCNChar, min=0.)
 
         self.lineEditC.setValidator(validatorC)
         self.lineEditH.setValidator(validatorH)
@@ -939,6 +945,9 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditNitrogenConcentration.setValidator(validatorNitrogenConcentration)
         self.lineEditKobayashi1.setValidator(validatorKobayashi1)
         self.lineEditKobayashi2.setValidator(validatorKobayashi2)
+        self.lineEditNitrogenLowTemp.setValidator(validatorNitrogenLowTemp)
+        self.lineEditNitrogenHighTemp.setValidator(validatorNitrogenHighTemp)
+        self.lineEditHCNChar.setValidator(validatorHCNChar)
 
         # Initialize widgets
         self.initializeView()
@@ -1065,13 +1074,19 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.checkBoxNOxFormation.setChecked(True)
             self.groupBoxNOxFormation.show()
             self.checkBoxNOxFormationFeature.show()
-            self.lineEditQPR.setText(str(self.model.getNitrogenFraction(self.fuel)))
+            self.lineEditQPR.setText(str(self.model.getNOxFormationParameter(self.fuel, 'nitrogen_fraction')))
             self.lineEditNitrogenConcentration.setText \
-                (str(self.model.getNitrogenConcentration(self.fuel)))
+                (str(self.model.getNOxFormationParameter(self.fuel, 'nitrogen_concentration')))
             self.lineEditKobayashi1.setText(str(self.model.getHCNParameter \
                 (self.fuel, "HCN_NH3_partitionning_reaction_1")))
             self.lineEditKobayashi2.setText(str(self.model.getHCNParameter \
                 (self.fuel, "HCN_NH3_partitionning_reaction_2")))
+            self.lineEditNitrogenLowTemp.setText(str(self.model.getNOxFormationParameter \
+                (self.fuel, "nitrogen_in_char_at_low_temperatures")))
+            self.lineEditNitrogenHighTemp.setText(str(self.model.getNOxFormationParameter \
+                (self.fuel, "nitrogen_in_char_at_high_temperatures")))
+            self.lineEditHCNChar.setText(str(self.model.getNOxFormationParameter \
+                (self.fuel, "percentage_HCN_char_combustion")))
             if self.model.getNOxFormationFeature(self.fuel) == 'on':
                 self.labelReburning.show()
                 self.comboBoxReburning.show()
@@ -1080,6 +1095,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         else:
             self.checkBoxNOxFormation.setChecked(False)
             self.groupBoxNOxFormation.hide()
+
 
     def initializeKineticsView(self):
         """
@@ -1841,7 +1857,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
-            self.model.setNitrogenFraction(self.fuel, value)
+            self.model.setNOxFormationParameter(self.fuel, 'nitrogen_fraction', value)
 
 
     @pyqtSignature("const QString&")
@@ -1851,7 +1867,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
-            self.model.setNitrogenConcentration(self.fuel, value)
+            self.model.setNOxFormationParameter(self.fuel, 'nitrogen_concentration', value)
 
 
     @pyqtSignature("const QString&")
@@ -1872,6 +1888,36 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setHCNParameter(self.fuel, "HCN_NH3_partitionning_reaction_2", value)
+
+
+    @pyqtSignature("const QString&")
+    def slotNLowTemp(self, text):
+        """
+        Change the nitrogen in char at low temperatures
+        """
+        value = float(text)
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setNOxFormationParameter(self.fuel, 'nitrogen_in_char_at_low_temperatures', value)
+
+
+    @pyqtSignature("const QString&")
+    def slotNHighTemp(self, text):
+        """
+        Change the nitrogen in char at  temperatures
+        """
+        value = float(text)
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setNOxFormationParameter(self.fuel, 'nitrogen_in_char_at_high_temperatures', value)
+
+
+    @pyqtSignature("const QString&")
+    def slotHCNChar(self, text):
+        """
+        Change the nitrogen percentage in char combustion
+        """
+        value = float(text)
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setNOxFormationParameter(self.fuel, 'percentage_HCN_char_combustion', value)
 
 
     @pyqtSignature("const QString&")

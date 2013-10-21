@@ -78,58 +78,61 @@ class CoalCombustionModel(Variables, Model):
         Return in a dictionnary which contains default values.
         """
         default = {}
-        default['model']                           = "off"
-        default['diameter']                        = 0.000122
-        default['mass_percent']                    = 0.1
-        default['C_compo_dry']                     = 70.9
-        default['H_compo_dry']                     = 4.6
-        default['O_compo_dry']                     = 10.8
-        default['N_compo_dry']                     = 0
-        default['S_compo_dry']                     = 0
-        default['C_coke_compo_dry']                = 100
-        default['H_coke_compo_dry']                = 0.
-        default['O_coke_compo_dry']                = 0.
-        default['N_coke_compo_dry']                = 0.
-        default['S_coke_compo_dry']                = 0.
-        default['O2_oxi']                          = 1
-        default['N2_oxi']                          = 3.76
-        default['H2O_oxi']                         = 0
-        default['CO2_oxi']                         = 0
-        default['PCIChoice']                       = 'LHV'
-        default['PCIType']                         = 'dry_basis'
-        default['diameter_type']                   = 'automatic'
-        default['stoichiometric_coefficient']      = 'user_define'
-        default['PCI']                             = 0
-        default['density']                         = 1200
-        default['volatile_matter']                 = 0.
-        default['ashes_enthalpy']                  = 0
-        default['ashes_thermal_capacity']          = 1800
-        default['rate_of_ashes_on_mass']           = 11.5
-        default['specific_heat_average']           = 1800
-        default['thermal_conductivity']            = 1.e-5
-        default['moisture']                        = 0.
-        default['Y1']                              = 0.416
-        default['Y2']                              = 0.582
-        default['A1_pre-exponential_factor']       = 370000
-        default['A2_pre-exponential_factor']       = 1.3e13
-        default['E1_energy_of_activation']         = 74000
-        default['E2_energy_of_activation']         = 250000
-        default['HCN_NH3_partitionning_reaction_1'] = 0.5
-        default['HCN_NH3_partitionning_reaction_2'] = 0.5
-        default['pre-exp_constant']                = 38.
-        default['E_activation']                    = 15.96
-        default['order_reaction']                  = "1"
-        default['N_fraction']                      = 1
-        default['N_concentration']                 = 0.015
-        default['mean_devolatilisation_rate']      = 0
-        default['refusal_value']                   = 0.001
-        default['oxidant_type']                    = 'molar'
-        default['fuel_type']                       = 'coal'
-        default['NOx_formation']                   = 'on'
-        default['CO2_Kinetics']                    = 'off'
-        default['H2O_Kinetics']                    = 'off'
-        default['improved_NOx_model']              = 'off'
-        default['reburning']                       = 'unused'
+        default['model']                                 = "off"
+        default['diameter']                              = 0.000122
+        default['mass_percent']                          = 0.1
+        default['C_compo_dry']                           = 70.9
+        default['H_compo_dry']                           = 4.6
+        default['O_compo_dry']                           = 10.8
+        default['N_compo_dry']                           = 0
+        default['S_compo_dry']                           = 0
+        default['C_coke_compo_dry']                      = 100
+        default['H_coke_compo_dry']                      = 0.
+        default['O_coke_compo_dry']                      = 0.
+        default['N_coke_compo_dry']                      = 0.
+        default['S_coke_compo_dry']                      = 0.
+        default['O2_oxi']                                = 1
+        default['N2_oxi']                                = 3.76
+        default['H2O_oxi']                               = 0
+        default['CO2_oxi']                               = 0
+        default['PCIChoice']                             = 'LHV'
+        default['PCIType']                               = 'dry_basis'
+        default['diameter_type']                         = 'automatic'
+        default['stoichiometric_coefficient']            = 'user_define'
+        default['PCI']                                   = 0
+        default['density']                               = 1200
+        default['volatile_matter']                       = 0.
+        default['ashes_enthalpy']                        = 0
+        default['ashes_thermal_capacity']                = 1800
+        default['rate_of_ashes_on_mass']                 = 11.5
+        default['specific_heat_average']                 = 1800
+        default['thermal_conductivity']                  = 1.e-5
+        default['moisture']                              = 0.
+        default['Y1']                                    = 0.416
+        default['Y2']                                    = 0.582
+        default['A1_pre-exponential_factor']             = 370000
+        default['A2_pre-exponential_factor']             = 1.3e13
+        default['E1_energy_of_activation']               = 74000
+        default['E2_energy_of_activation']               = 250000
+        default['HCN_NH3_partitionning_reaction_1']      = 0.5
+        default['HCN_NH3_partitionning_reaction_2']      = 0.5
+        default['pre-exp_constant']                      = 38.
+        default['E_activation']                          = 15.96
+        default['order_reaction']                        = "1"
+        default['nitrogen_fraction']                     = 1
+        default['nitrogen_concentration']                = 0.015
+        default['nitrogen_in_char_at_low_temperatures']  = 0.8
+        default['nitrogen_in_char_at_high_temperatures'] = 0.2
+        default['percentage_HCN_char_combustion']        = 1.
+        default['mean_devolatilisation_rate']            = 0
+        default['refusal_value']                         = 0.001
+        default['oxidant_type']                          = 'molar'
+        default['fuel_type']                             = 'coal'
+        default['NOx_formation']                         = 'on'
+        default['CO2_Kinetics']                          = 'off'
+        default['H2O_Kinetics']                          = 'off'
+        default['improved_NOx_model']                    = 'off'
+        default['reburning']                             = 'unused'
 
         return default
 
@@ -1731,53 +1734,28 @@ class CoalCombustionModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getNitrogenFraction(self, fuelId):
+    def getNOxFormationParameter(self, fuelId, parameter):
         """
         """
         self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('nox_formation')
-        value = node.xmlGetDouble('nitrogen_fraction')
+        value = node.xmlGetDouble(parameter)
         if value == None:
-            value = self.defaultValues()['N_fraction']
-            self.setNitrogenFraction(fuelId, value)
+            value = self.defaultValues()[parameter]
+            self.setNOxFormationParameter(fuelId, parameter, value)
         return value
 
 
     @Variables.undoLocal
-    def setNitrogenFraction(self, fuelId, value):
+    def setNOxFormationParameter(self, fuelId, parameter, value):
         """
         """
         self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlGetNode('nox_formation')
-        node.xmlSetData('nitrogen_fraction', value)
-
-
-    @Variables.noUndo
-    def getNitrogenConcentration(self, fuelId):
-        """
-        """
-        self.isInList(str(fuelId), self.getFuelIdList())
-        solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlInitNode('nox_formation')
-        value = node.xmlGetDouble('nitrogen_concentration')
-        if value == None:
-            value = self.defaultValues()['N_concentration']
-            self.setNitrogenConcentration(fuelId, value)
-        return value
-
-
-    @Variables.undoLocal
-    def setNitrogenConcentration(self, fuelId, value):
-        """
-        """
-        self.isInList(str(fuelId), self.getFuelIdList())
-        self.isPositiveFloat(value)
-        solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
-        node = solid_fuel.xmlGetNode('nox_formation')
-        node.xmlSetData('nitrogen_concentration', value)
+        node.xmlSetData(parameter, value)
 
 
     @Variables.noUndo
@@ -1845,8 +1823,11 @@ class CoalCombustionModel(Variables, Model):
         else:
             for fuelId in range (1, self.getCoalNumber() + 1):
                 fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
-                self.getNitrogenFraction(fuelId)
-                self.getNitrogenConcentration(fuelId)
+                self.getNOxFormationParameter(fuelId, 'nitrogen_fraction')
+                self.getNOxFormationParameter(fuelId, 'nitrogen_concentration')
+                self.getNOxFormationParameter(fuelId, 'nitrogen_in_char_at_low_temperatures')
+                self.getNOxFormationParameter(fuelId, 'nitrogen_in_char_at_high_temperatures')
+                self.getNOxFormationParameter(fuelId, 'percentage_HCN_char_combustion')
                 self.getHCNParameter(fuelId, 'HCN_NH3_partitionning_reaction_1')
                 self.getHCNParameter(fuelId, 'HCN_NH3_partitionning_reaction_2')
         # update list of scalar

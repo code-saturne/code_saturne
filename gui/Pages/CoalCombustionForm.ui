@@ -1623,7 +1623,7 @@ p, li { white-space: pre-wrap; }
              <attribute name="title">
               <string>NOx formation</string>
              </attribute>
-             <layout class="QGridLayout" name="gridLayout_13">
+             <layout class="QGridLayout" name="gridLayout_14">
               <item row="0" column="0" rowspan="4">
                <spacer name="horizontalSpacer_20">
                 <property name="orientation">
@@ -1692,9 +1692,16 @@ p, li { white-space: pre-wrap; }
                 <property name="title">
                  <string/>
                 </property>
-                <layout class="QGridLayout" name="gridLayout_9">
+                <layout class="QGridLayout" name="gridLayout_13">
                  <item row="0" column="0">
-                  <layout class="QGridLayout" name="gridLayout_14">
+                  <layout class="QGridLayout" name="gridLayout_9">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="labelQPR">
+                     <property name="text">
+                      <string>QPR</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="0" column="1">
                     <widget class="QLineEdit" name="lineEditQPR"/>
                    </item>
@@ -1730,19 +1737,44 @@ p, li { white-space: pre-wrap; }
                    <item row="3" column="1">
                     <widget class="QLineEdit" name="lineEditKobayashi2"/>
                    </item>
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="labelQPR">
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="labelNitrogenLowTemp">
                      <property name="text">
-                      <string>QPR</string>
+                      <string>Nitrogen in char
+ (low temperature)</string>
                      </property>
                     </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QLineEdit" name="lineEditNitrogenLowTemp"/>
+                   </item>
+                   <item row="5" column="0">
+                    <widget class="QLabel" name="labelNitrogenHighTemp">
+                     <property name="text">
+                      <string>Nitrogen in char
+ (high temperature)</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QLineEdit" name="lineEditNitrogenHighTemp"/>
+                   </item>
+                   <item row="6" column="0">
+                    <widget class="QLabel" name="labelHCNChar">
+                     <property name="text">
+                      <string>HCN in char combustion</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="6" column="1">
+                    <widget class="QLineEdit" name="lineEditHCNChar"/>
                    </item>
                   </layout>
                  </item>
                 </layout>
                </widget>
               </item>
-              <item row="4" column="0" colspan="5">
+              <item row="4" column="3">
                <spacer name="verticalSpacer">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
