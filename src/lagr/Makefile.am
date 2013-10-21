@@ -55,6 +55,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_lagr_clogging.h \
 cs_lagr_extract.h \
 cs_lagr_tracking.h \
 cs_lagr_utils.h \
