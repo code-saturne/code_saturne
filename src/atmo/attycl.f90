@@ -79,6 +79,7 @@ use mesh
 use field
 use atincl
 use atchem
+use siream
 
 !===============================================================================
 
@@ -97,6 +98,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 integer          ifac, izone
 integer          icke, iel, ipcvis
 integer          ii
+integer jsp
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision dhy, rhomoy, uref2, ustar2, viscla, xiturb
@@ -321,7 +323,7 @@ do ifac = 1, nfabor
 
 enddo
 
-! Atmospheric Chemistry
+! Atmospheric gaseous chemistry
 if (ifilechemistry.ge.1) then
 
  do ifac = 1, nfabor
@@ -362,6 +364,43 @@ if (ifilechemistry.ge.1) then
 
 endif
 
+! Atmospheric aerosol chemistry
+if (iaerosol.eq.1) then
+
+  do ifac = 1, nfabor
+
+    if (itypfb(ifac).eq.ientre) then
+
+     izone = izfppp(ifac)
+
+      if (iprofa(izone).eq.1) then
+        do jsp = 1, nesp_aer*nbin_aer+nbin_aer
+          if (rcodcl(ifac,isca(nespg_siream+jsp),1).gt.0.5d0*rinfin) &
+              rcodcl(ifac,isca(nespg_siream+jsp),1) = dlconc0(jsp)
+        enddo
+      endif
+
+      ! For other species zero dirichlet conditions are imposed,
+      ! unless they have already been treated earlier (eg, in usatcl)
+      do ii = 1, nesp_aer*nbin_aer+nbin_aer
+        if (rcodcl(ifac,isca(nespg_siream+ii),1).gt.0.5d0*rinfin) &
+            rcodcl(ifac,isca(nespg_siream+ii),1) = 0.0d0
+      enddo
+
+       ! For gaseous species which have not been treated earlier
+       ! (for example species not present in the third gaseous scheme,
+       ! which can be treated in usatcl of with the file chemistry)
+       ! zero dirichlet conditions are imposed
+       do ii = 1, nespg_siream
+        if (rcodcl(ifac,isca(ii),1).gt.0.5d0*rinfin) &
+            rcodcl(ifac,isca(ii),1) = 0.0d0
+       enddo
+
+    endif
+
+  enddo
+
+endif
 
 !----
 ! FORMATS

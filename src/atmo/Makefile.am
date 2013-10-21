@@ -43,7 +43,8 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_at_plugin.h
 
 # Library source files
 
@@ -51,6 +52,7 @@ noinst_LTLIBRARIES = libcsatmo.la
 libcsatmo_la_SOURCES = \
 atini1.f90 \
 atiniv.f90 \
+atleca.f90 \
 atlecc.f90 \
 atlecm.f90 \
 atmcls.f90 \
@@ -59,31 +61,34 @@ atmstd.f90 \
 atphyv.f90 \
 atprke.f90 \
 atprop.f90 \
-attycl.f90 \
 atr1vf.f90 \
 attssc.f90 \
+attycl.f90 \
 atvarp.f90 \
+chem_luscheme_siream.f90 \
 chem_luscheme1.f90 \
 chem_luscheme2.f90 \
 chem_luscheme3.f90 \
 chem_solvelu.f90 \
+chem_source_terms.f90 \
+compute_gaseous_chemistry.f90 \
+compute_siream.f90 \
+cs_at_plugin.c \
 etheq.f90  \
 intprf.f90 \
 kinrates.f90 \
-mrchim.f90 \
 nuclea.f90 \
-satfun.f90 \
 rayigc.f90 \
 rayir.f90 \
 rayive.f90 \
 rayso.f90 \
 raysze.f90 \
 roschem.f90 \
+satfun.f90 \
 solcat.f90 \
 soliva.f90 \
 solmoy.f90 \
-solvar.f90 \
-stchim.f90
+solvar.f90
 
 libcsatmo_la_LDFLAGS = -no-undefined
 

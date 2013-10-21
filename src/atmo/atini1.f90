@@ -62,6 +62,8 @@ use ppincl
 use atincl
 use atsoil
 use atchem
+use siream
+
 !===============================================================================
 
 implicit none
@@ -69,7 +71,7 @@ implicit none
 ! Local variables
 
 integer          ii, isc, jj, ipp
-
+character*2                :: nbin
 !===============================================================================
 
 
@@ -362,10 +364,13 @@ initmeteo = 1
 call usati1
 !==========
 
-
-! Atmospheric Chemistry
-! if a chemical scheme is solved, a concentration profiles file must be used
+! Atmospheric gaseous chemistry
+! Do not change this order
+if (iaerosol.eq.1) ichemistry = 3
+! if a chemical scheme is solved, a concentration profiles
+! file must be used
 if (ichemistry.ge.1) ifilechemistry = ichemistry
+if (inogaseouschemistry.eq.1) ichemistry = 0
 
 if (ifilechemistry.ge.1) then
 
@@ -390,8 +395,8 @@ if (ifilechemistry.ge.1) then
     dmmk(3)=48.d-3 ! Molar mass O3
     dmmk(4)=16.d-3 ! Molar mass O3P
     chempoint = (/ 4, 3, 2, 1 /)
-
-  else if (ifilechemistry.eq.2) then ! scheme with 20 species and 34 reactions
+  ! scheme with 20 species and 34 reactions
+  else if (ifilechemistry.eq.2) then
     nrg = 34
     nespg = 20
     allocate(dmmk(nespg))
@@ -441,8 +446,13 @@ if (ifilechemistry.ge.1) then
                    10, 1, 12, 11, 13, 5, 6 /)
   ! scheme CB05 with 52 species and 155 reactions
   else if (ifilechemistry.eq.3) then
-    nrg = 155
-    nespg = 52
+    if (iaerosol.eq.1) then
+      nrg = 162
+      nespg = 65
+    else
+      nrg = 155
+      nespg = 52
+    endif
     allocate(dmmk(nespg))
     allocate(chempoint(nespg))
 
@@ -550,13 +560,97 @@ if (ifilechemistry.ge.1) then
     dmmk(50)=64.06d-3  ! Molar mass SO2
     dmmk(51)=98.08d-3  ! Molar mass H2SO4
     dmmk(52)=63.03d-3  ! Molar mass HCO3
-    chempoint = (/ 48, 52, 47, 43, 1, 42, 50, 17, 44, 9, 15, 38, 13,      &
-                   37, 41, 45, 51, 10, 35,46, 14, 49, 39, 33, 2, 3, 40,   &
-                   11, 19, 20, 4, 21, 36, 22, 34, 16, 23, 24, 25, 31, 32, &
-                   26, 5, 6, 27, 12, 28, 30, 29, 7, 8, 18 /)
+    if (iaerosol.eq.1) then
+      nomvar(ipprtp(isca(53)))='HC8'
+      nomvar(ipprtp(isca(54)))='API'
+      nomvar(ipprtp(isca(55)))='LIM'
+      nomvar(ipprtp(isca(56)))='CVARO1'
+      nomvar(ipprtp(isca(57)))='CVARO2'
+      nomvar(ipprtp(isca(58)))='CVALK1'
+      nomvar(ipprtp(isca(59)))='CVOLE1'
+      nomvar(ipprtp(isca(60)))='CVAPI1'
+      nomvar(ipprtp(isca(61)))='CVAPI2'
+      nomvar(ipprtp(isca(62)))='CVLIM1'
+      nomvar(ipprtp(isca(63)))='CVLIM2'
+      nomvar(ipprtp(isca(64)))='NH3'
+      nomvar(ipprtp(isca(65)))='HCL'
+      nomvar(ipprtp(isca(66)))='CVBIBMP'
+      nomvar(ipprtp(isca(67)))='CVANCLP'
+      nomvar(ipprtp(isca(68)))='CVBIISO1'
+      nomvar(ipprtp(isca(69)))='CVBIISO2'
+      dmmk(53)=114.0d0   ! Molar mass HC8
+      dmmk(54)=136.0d0   ! Molar mass API
+      dmmk(55)=136.0d0   ! Molar mass LIM
+      dmmk(56)=150.0d0   ! Molar mass CVARO1
+      dmmk(57)=150.0d0   ! Molar mass CVARO2
+      dmmk(58)=140.0d0   ! Molar mass CVALK1
+      dmmk(59)=140.0d0   ! Molar mass CVOLE1
+      dmmk(60)=184.0d0   ! Molar mass CVAPI1
+      dmmk(61)=184.0d0   ! Molar mass CVAPI2
+      dmmk(62)=200.0d0   ! Molar mass CVLIM1
+      dmmk(63)=200.0d0   ! Molar mass CVLIM2
+      dmmk(64)=17.0d0    ! Molar mass NH3
+      dmmk(65)=36.5d0    ! Molar mass HCL
+    endif
+    if (iaerosol.eq.1) then
+      chempoint = (/ 64, 65, 59, 57, 3, 55, 61, 20, 56, 16, 23, 50,&
+                     17, 51, 54, 60, 62, 13, 48, 58, 18, 63, 52, 46,&
+                     4, 5, 53, 14, 22, 35, 6, 32, 49, 33, 47, 19, 34,&
+                     36, 37, 44, 45, 39, 7, 8, 40, 15, 41, 43, 42, 9,&
+                     10, 21, 11, 24, 27, 30, 31, 12, 38, 25, 26, 28, 29,&
+                     1, 2 /)
+    else
+      chempoint = (/ 48, 52, 47, 43, 1, 42, 50, 17, 44, 9, 15, 38, 13, 37,&
+                     41, 45, 51, 10, 35, 46, 14, 49, 39, 33, 2, 3, 40, 11,&
+                     19, 20, 4, 21, 36, 22, 34, 16, 23, 24, 25, 31, 32, 26,&
+                     5, 6, 27, 12, 28, 30, 29, 7, 8, 18 /)
+    endif
+ endif
 
+endif
+
+! Atmospheric aerosol chemistry
+if (iaerosol.eq.1) then
+
+  write (nfecra,*) "Atmospheric aerosol chemistry activated"
+
+  ! logical unit and name of the chemical profiles file
+  impmea=28
+  ficmea='aerosols'
+
+  ! 4 species not followed in gaseous scheme 3 but necessary to siream
+  nespg_siream=nespg+4
+
+
+  ! Verification
+  if (ifilechemistry.ne.3) then
+    write(nfecra,1004)
+    call csexit (1)
   endif
 
+  ! The user must declare at least as many user scalars as the number
+  ! of chemical species nespg_siream+nbin_aer*nesp_aer
+  ! The user can declare more user scalars than nespg. But only the first
+  ! nespg will be considered for chemistry resolution
+  if (nscaus.lt.nespg_siream+nesp_aer*nbin_aer+nbin_aer) then
+    write(nfecra,1005) nscaus, nespg_siream+nesp_aer*nbin_aer+nbin_aer
+    call csexit (1)
+  endif
+
+  ! Filling the names array
+  esp_siream=(/'MD    ', 'BC    ', 'NA    ', 'H2SO4 ', 'NH3   ', 'HNO3  ',&
+ 'HCL   ','ARO1  ', 'ARO2  ', 'ALK1  ', 'OLE1  ', 'API1  ', 'API2  ',&
+ 'LIM1  ', 'LIM2  ', 'ANCLP ', 'BIISO1', 'BIISO2',&
+ 'BIBMP ', 'POA   ', 'H2O   '/)
+  do ii = 1, nbin_aer
+    write(nbin,"(i2)") ii
+    do jj = 1, nesp_aer
+      nomvar(ipprtp(isca(nespg_siream+ii+(jj-1)*nbin_aer)))=&
+             trim(esp_siream(jj))//'_bin'//trim(adjustl(nbin))
+    enddo
+      nomvar(ipprtp(isca(nespg_siream+nesp_aer*nbin_aer+ii)))=&
+            'Naero_bin'//trim(adjustl(nbin))
+  enddo
 endif
 
 !--------
@@ -640,6 +734,44 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
+ 1004 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    CHIMIE ATMOSPHERIQUE PARTICULAIRE DEMANDEE              ',/,&
+'@                                                            ',/,&
+'@  Lorsque le modele de chimie particulaire siream est utilise',/,&
+'@   un schema gazeux complet(CB05) est automatiquement utilise',/,&
+'@  L''utilisateur ne doit pas en specifier d''autre (ichemistry)',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier usati1 (cs_user_parameters.f90)                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1005 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    CHIMIE ATMOSPHERIQUE PARTICULAIRE DEMANDEE              ',/,&
+'@                                                            ',/,&
+'@  Le nombre de scalaires utilisateurs declares doit etre    ',/,&
+'@  superieur ou egal au nombre d''especes chimiques         ',/,&
+'@                                                            ',/,&
+'@   Nombre de scalaires utilisateurs declares : ',I10         ,/,&
+'@   Nombre d''especes chimiques declarees : ',I10             ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+
 #else
 
  1000 format(                                                     &
@@ -711,6 +843,44 @@ endif
 '@                                                            ',/,&
 '@  Check the input data given through the User Interface     ',/,&
 '@   or in cs_user_parameters.f90.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1004 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@    ATMOSPHERIC AEROSOL CHEMISTRY MODULE                    ',/,&
+'@                                                            ',/,&
+'@  When aerosol chemistry model siream is used               ',/,&
+'@   a full gaseous scheme (CB05) is automatically used       ',/,&
+'@  The user cannot specify any other scheme (ichemistry)     ',/,&
+'@  Computation CAN NOT run.                                  ',/,&
+'@                                                            ',/,&
+'@  Check the input data given through the User Interface     ',/,&
+'@   or in cs_user_parameters.f90.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1005 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+     '@ @@  WARNING:   STOP WHILE READING INPUT DATA          ',/,&
+'@    =========                                               ',/,&
+'@    ATMOSPHERIC AEROSOL CHEMISTRY MODULE                    ',/,&
+'@                                                            ',/,&
+'@  The number of user scalars must be greater                ',/,&
+'@  than the number of chemical species                       ',/,&
+'@                                                            ',/,&
+'@   Number of user scalars declared: ',I10                    ,/,&
+'@   Number of chemical species declared : ',I10               ,/,&
+'@                                                            ',/,&
+'@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

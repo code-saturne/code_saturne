@@ -70,6 +70,7 @@ use ppincl
 use elincl
 use mesh
 use atchem
+use siream
 
 !===============================================================================
 
@@ -462,11 +463,16 @@ if(nscaus.gt.0) then
 ! ---> Fin de la Boucle sur les scalaires utilisateurs.
   enddo
 
-! Atmospheric chemistry
-! Resolution of chemical evolution of species
- if (ichemistry.ge.1) then
-   call mrchim(dt, rtpa, rtp)
- endif
+  ! Atmospheric gaseous chemistry
+  ! Resolution of chemical evolution of species
+  if (ichemistry.ge.1) then
+    call compute_gaseous_chemistry(dt, rtpa, rtp)
+  endif
+
+  ! Atmospheric aerosol chemistry
+  if (iaerosol.eq.1) then
+    call compute_siream(dt, rtp, propce)
+  endif
 endif
 
 ! Free memory

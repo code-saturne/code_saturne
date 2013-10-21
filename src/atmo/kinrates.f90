@@ -60,6 +60,7 @@ use mesh
 use field
 use atincl
 use atchem
+use siream
 
 implicit none
 
@@ -128,7 +129,7 @@ do iel = 1, ncel
    (nbmett, nbmetm,                                               &
     ztmet , tmmet, phmet, zent, ttcabs, press )
 
-  ! Temperature
+    ! Temperature
     call intprf                                                   &
     !==========
    (nbmett, nbmetm,                                               &
@@ -158,7 +159,11 @@ do iel = 1, ncel
   else if (ichemistry.eq.2) then
     call kinetic_2(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
   else if (ichemistry.eq.3) then
-    call kinetic_3(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
+    if (iaerosol.eq.1) then
+      call kinetic_siream(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
+    else
+      call kinetic_3(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
+    endif
   else if (ichemistry.eq.4) then
     call kinetic(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
   endif
@@ -174,7 +179,7 @@ enddo
 ! FORMATS
 !--------
 !----
-! FIN
+! END
 !----
 
 return

@@ -74,11 +74,11 @@ use mesh
 use field
 use post
 use atchem
+use siream
 use cs_c_bindings
 use cs_f_interfaces
 
 use, intrinsic :: iso_c_binding
-
 
 !===============================================================================
 
@@ -384,6 +384,10 @@ if (ippmod(iatmos).ge.0) then
 
   if (ifilechemistry.ge.1) then
     call init_chemistry
+  endif
+
+  if (iaerosol.eq.1) then
+    call init_aerosols
   endif
 
 endif

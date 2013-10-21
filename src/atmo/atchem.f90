@@ -30,9 +30,10 @@ module atchem
 use ppppar, only: nozppm
 
 !=============================================================================
-!> \defgroup at_chemistry Chemistry parameters for the atmospheric module
+!> \defgroup at_gaseous_chemistry Gaseous chemistry parameters for the
+!>                                atmospheric module
 
-!> \addtogroup at_chemistry
+!> \addtogroup at_gaseous_chemistry
 !> \{
 ! Useful constants for chemistry
 !> Avogadro constant (molecules/mol)
@@ -120,7 +121,7 @@ use numvar, only: nscaus
 
 implicit none
 
-integer imode,ii
+integer imode, ii
 
 init_at_chem = 1
 
@@ -170,7 +171,7 @@ allocate(ychem(nbchim))
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    CHIMIE ATMOSPHERIQUE DEMANDEE                           ',/,&
+'@    CHIMIE ATMOSPHERIQUE GAZEUSE DEMANDEE                   ',/,&
 '@                                                            ',/,&
 '@  Le nombre de scalaires utilisateurs declares doit etre    ',/,&
 '@  superieur ou egal au nombre d''especes chimiques          ',/,&
@@ -191,7 +192,7 @@ allocate(ychem(nbchim))
 '@                                                            ',/,&
      '@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecc) ',/,&
 '@    =========                                               ',/,&
-'@    ATMOSPHERIC CHEMISTRY                                   ',/,&
+'@    ATMOSPHERIC GASEOUS CHEMISTRY                           ',/,&
 '@                                                            ',/,&
 '@  The number of user scalars must be greater                ',/,&
 '@  than the number of chemical species                       ',/,&
@@ -199,7 +200,7 @@ allocate(ychem(nbchim))
 '@   Number of user scalars declared: ',I10                    ,/,&
 '@   Number of chemical species declared : ',I10               ,/,&
 '@                                                            ',/,&
-     '@  The computation will not be run                      ',/,&
+'@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

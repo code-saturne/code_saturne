@@ -86,6 +86,8 @@ use ppincl
 use atincl
 use mesh
 use atchem
+use siream
+
 !===============================================================================
 
 implicit none
@@ -132,7 +134,7 @@ if (iatra1.gt.0) then
 
 endif
 
-! Atmospheric Chemistry
+! Atmospheric gaseous chemistry
 if (ifilechemistry.ge.1) then
 
   ! Second reading of chemical profiles file
@@ -141,36 +143,54 @@ if (ifilechemistry.ge.1) then
   !==========
   ( imode)
 
-  ! Computation of the conversion factor matrix used for the reaction rates jaccobian matrix
+  ! Computation of the conversion factor matrix used for
+  ! the reaction rates jaccobian matrix
   do ii = 1, nespg
     do k = 1, nespg
       conv_factor_jac((chempoint(k)-1)*nespg+chempoint(ii)) = dmmk(ii)/dmmk(k)
     enddo
   enddo
 
-  ! Volume initilization with profiles for species present in the chemical profiles file
-  if (init_at_chem.eq.1) then
+  ! Volume initilization with profiles for species present
+  ! in the chemical profiles file
+  if (isuite.eq.0) then
     do iel = 1, ncel
 
       zent = xyzcen(3,iel)
 
       do k = 1, nespgi
-        call intprf                                                   &
+        call intprf                                                         &
         !==========
-        (nbchmz, nbchim,                                               &
+        (nbchmz, nbchim,                                                    &
          zproc, tchem, espnum(1+(k-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
-
-        rtp(iel,isca(idespgi(k))) = xcent ! The first nespg user scalars
-                                          ! are supposed to be chemical species
+        ! The first nespg user scalars are supposed to be chemical species
+        rtp(iel,isca(idespgi(k))) = xcent
       enddo
 
     enddo
   endif
 endif
 
-! Verifications
+! Atmospheric aerosol chemistry
+if (iaerosol.eq.1) then
+
+  ! Reading intial concentrations and numbers
+  call atleca()
+
+  ! Initialization
+if (isuite.eq.0) then
+  do iel = 1, ncel
+    do ii=1,nesp_aer*nbin_aer+nbin_aer
+     rtp(iel,isca(nespg_siream+ii))=dlconc0(ii)
+    enddo
+  enddo
+endif
+
+endif
+
+!Verifications
 if ((iatra1.eq.1.or.ichemistry.ge.1).and.(syear.eq.-999.or.squant.eq.-999.or.shour.eq.-999&
-     .or.smin.eq.-999.or.ssec.eq.-999)) then
+.or.smin.eq.-999.or.ssec.eq.-999)) then
   if (iatra1.eq.1) write(nfecra,1000)
   if (ichemistry.ge.1) write(nfecra,1001)
   call csexit (1)

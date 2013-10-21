@@ -2281,6 +2281,7 @@ use ppppar
 use atincl
 use atsoil
 use atchem
+use siream
 
 !===============================================================================
 
@@ -2301,7 +2302,7 @@ if (1.eq.1) return
 ! 1. Example of calculation options to modify
 !===============================================================================
 
-! Reading the meteo file
+!!! Reading the meteo file
 
 imeteo = 1
 
@@ -2327,7 +2328,7 @@ ssec = 0.d0
 xlon = 0.d0
 xlat = 45.d0
 
-!!! Chemistry
+!!! Gaseous chemistry
 
 ! ichemistry: choice of chemistry resolution scheme
 !0 --> no atmospheric chemistry
@@ -2337,11 +2338,13 @@ xlat = 45.d0
 !4 --> user defined schema
 ichemistry = 1
 
-! ificchemistry: choice to read (=1,2,3,4, according to the scheme) or not (0) a concentration profile file
+! ificchemistry: choice to read (=1,2,3,4, according to the scheme)
+! or not (0) a concentration profile file
 ! if ichemistry>0 ifilechemistry is automaticaly set to ichemistry
 ifilechemistry = 0
 
-! isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution of chemistry
+! isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun)
+! resolution of chemistry
 isepchemistry = 1
 
 ! iphotolysis: inclusion (=1) or not (=2) of photolysis reactions
@@ -2349,6 +2352,31 @@ iphotolysis = 1
 
 ! dtchemmax: maximal time step (s) for chemistry resolution
 dtchemmax = 10.0d0
+
+!!! Aerosol chemistry
+! iaerosol: flag to activate aerosol chemistry
+! if iaerosol = 1, ichemistry is automatically set to 3 (scheme 3)
+iaerosol = 1
+
+! inogaseouschemistry: flag to prevent automatic resolution (=1)
+! of gaseous chemistry (scheme 3)
+inogaseouschemistry = 0
+
+! ncycle_aer: number of iterations for time splitting
+ncycle_aer = 1
+
+! icoag_siream: flag to activate (=1) or not (=0) coagulation
+icoag_siream = 1
+
+! icond_siream: flag to activate (=1) or not (=0) condensation/evaporation
+icond_siream = 1
+
+! inucl_siream: flag to activate (=1) or not (=0) nucleation
+inucl_siream = 1
+
+! icut_siream: cutting bin between equilibrium (1 to icut_siream)
+! and dynamic bins (icut_siream to nbin_aer)
+icut_siream = nbin_aer
 
 !----
 ! End

@@ -48,6 +48,7 @@ subroutine roschem (dlconc,zcsourc,zcsourcf,conv_factor,                      &
 !===============================================================================
 
 use atchem
+use siream
 
 implicit none
 
@@ -74,10 +75,6 @@ double precision dlmatlu(nespg,nespg)
 ! jacobian matrix
 double precision dldrdc(nespg,nespg)
 
-
-
-
-
 !------------------------------------------------------------------------
 !*    0. Setup
 
@@ -91,7 +88,11 @@ if (ichemistry.eq.1) then
 else if (ichemistry.eq.2) then
   call fexchem_2 (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
 else if (ichemistry.eq.3) then
-  call fexchem_3 (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
+  if (iaerosol.eq.1) then
+    call fexchem_siream (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
+  else
+    call fexchem_3 (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
+  endif
 else if (ichemistry.eq.4) then
   call fexchem (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
 endif
@@ -104,7 +105,12 @@ if (ichemistry.eq.1) then
 else if (ichemistry.eq.2) then
   call jacdchemdc_2 (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
 else if (ichemistry.eq.3) then
-  call jacdchemdc_3 (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
+  if (iaerosol.eq.1) then
+    call jacdchemdc_siream (nespg,nrg,dlconc,conv_factor,conv_factor_jac,       &
+                            dlrki,dldrdc)
+  else
+    call jacdchemdc_3 (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
+  endif
 else if (ichemistry.eq.4) then
   call jacdchemdc (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
 endif
@@ -112,10 +118,10 @@ endif
 !------------------------------------------------------------------------
 !*    4. Computes K1    system: DLmat * K1 = DLb1
 
-do ji=1,nespg
+do ji = 1, nespg
   dlb1(ji) = dlr(ji)
-  do jj=1,nespg
-    dlmat(ji,jj) = - igamma*dlstep*dldrdc(ji,jj)
+  do jj = 1, nespg
+    dlmat(ji,jj) = -igamma*dlstep*dldrdc(ji,jj)
   enddo
   dlmat(ji,ji) = 1.d0 + dlmat(ji,ji)
 enddo
@@ -125,7 +131,7 @@ call solvlin (0,dlmat,dlmatlu,dlk1,dlb1)
 !------------------------------------------------------------------------
 !*    5. Computes K2    system: DLmat * K2 = DLb2
 
-do ji=1,nespg
+do ji = 1, nespg
   dlconcbis(ji) = dlconc(ji) + dlstep * dlk1(ji)
   if (dlconcbis(ji) .lt. 0.d0) then
     dlconcbis(ji) = 0.d0
@@ -138,12 +144,16 @@ if (ichemistry.eq.1) then
 else if (ichemistry.eq.2) then
   call fexchem_2 (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
 else if (ichemistry.eq.3) then
-  call fexchem_3 (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
+  if (iaerosol.eq.1) then
+    call fexchem_siream (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
+  else
+    call fexchem_3 (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
+  endif
 else if (ichemistry.eq.4) then
   call fexchem (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
 endif
 
-do ji=1,nespg
+do ji = 1, nespg
   dlb2(ji) =  dlr(ji) - 2.d0*dlk1(ji)
 enddo
 
@@ -163,4 +173,3 @@ enddo
 
 return
 end subroutine roschem
-

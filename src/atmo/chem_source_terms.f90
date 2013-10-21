@@ -24,8 +24,9 @@
 !  Purpose:
 !  --------
 
-!> \file mrchim.f90
-!> \brief Calls the rosenbrock resolution for atmospheric chemistry
+!> \file chem_source_terms.f90
+!> \brief Computes the explicit chemical source term for atmospheric chemistry in
+!>        case of a semi-coupled resolution
 !
 !-------------------------------------------------------------------------------
 
@@ -34,37 +35,36 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     dt            time step (per cell)
+!> \param[in]     iscal         scalar number
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (preceding time steps)
-!> \param[in]     rtp           calculated variables at cell centers
+!> \param[out]    crvexp        explicit part of the source term
+!> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
 
-subroutine mrchim &
+subroutine chem_source_terms &
 !================
 
-( dt     , rtpa   , rtp    )
+ ( iscal  , rtpa   ,                                      &
+   crvexp , crvimp)
+
 
 !===============================================================================
 ! Module files
 !===============================================================================
 
 use paramx
+use pointe
 use numvar
 use entsor
 use optcal
 use cstphy
-use cstnum
 use parall
 use period
-use ppppar
-use ppthch
-use ppincl
-use elincl
 use mesh
 use field
-use dimens
 use atchem
+use siream
 
 implicit none
 
@@ -72,23 +72,18 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+integer          iscal
+double precision rtpa(ncelet,*)
+double precision crvexp(ncelet), crvimp(ncelet)
 
-! Local Variables
+! Local variables
 
-integer iel,ii
-double precision rom
-
-!  Variables used for Rosenbrock resolution
-double precision  dlconc(nespg)
-double precision  source(nespg)
-double precision  dchema(nespg)
-double precision  conv_factor(nespg) ! conversion factors for reaction rates
+!  Variables used for computation of the explicit chemical source term
+integer iel, ii
+double precision dlconc(nespg), source(nespg), dchema(nespg)
 double precision rk(nrg)
-double precision dtc
-integer ncycle
-double precision dtrest
-double precision rvoid(1)
+double precision rom
+double precision conv_factor(nespg) ! conversion factors for reaction rates
 
 double precision, dimension(:), pointer :: crom
 
@@ -98,9 +93,6 @@ call field_get_val_s(icrom, crom)
 
 do iel = 1, ncel
 
-  ! time step
-  dtc = dt(iel)
-
   ! density
   rom = crom(iel)
 
@@ -109,85 +101,43 @@ do iel = 1, ncel
     rk(ii) = reacnum((ii-1)*ncel+iel)
   enddo
 
+  ! Filling working arrays
   do ii = 1, nespg
+    dlconc(chempoint(ii)) = rtpa(iel,isca(ii))  ! rtpa
     conv_factor(chempoint(ii)) = rom*navo*(1.0d-12)/dmmk(ii)
     source(ii) = 0.0d0
   enddo
 
-  if ((isepchemistry.eq.1).or.(ntcabs.eq.1)) then
-    ! -----------------------------
-    ! -- splitted Rosenbrock solver
-    ! -----------------------------
-
-    ! Filling working array dlconc with rtp
-    do ii = 1, nespg
-      dlconc(chempoint(ii)) = rtp(iel,isca(ii))
-    enddo
-
-  else
-    ! -----------------------------
-    ! -- semi-coupled Rosenbrock solver
-    ! -----------------------------
-
-    ! Filling working array dlconc with rtpa
-    do ii = 1, nespg
-      dlconc(chempoint(ii)) = rtpa(iel,isca(ii))
-    enddo
-
-    ! Computation of C(Xn)
-    if (ichemistry.eq.1) then
-      call fexchem_1 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
-    else if (ichemistry.eq.2) then
-      call fexchem_2 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
-    else if (ichemistry.eq.3) then
+  ! Computation of C(Xn)
+  if (ichemistry.eq.1) then
+    call fexchem_1 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
+  else if (ichemistry.eq.2) then
+    call fexchem_2 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
+  else if (ichemistry.eq.3) then
+    if (iaerosol.eq.1) then
+      call fexchem_siream (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
+    else
       call fexchem_3 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
-    else if (ichemistry.eq.4) then
-      call fexchem (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
     endif
-
-    ! Explicit contribution from dynamics as a source term:
-    ! (X*-Xn)/dt(dynamics) - C(Xn). See ustchim
-    ! The first nespg user scalars are supposed to be chemical species
-    do ii = 1, nespg
-      source(chempoint(ii)) = (rtp(iel,isca(ii))-rtpa(iel,isca(ii)))/dtc  &
-                            - dchema(chempoint(ii))
-    enddo
-
-  endif ! End test isepchemistry
-
-  ! Rosenbrock resoluion
-
-  ! The maximum time step used for chemistry resolution is dtchemmax
-  if (dtc.le.dtchemmax) then
-    call roschem (dlconc,source,source,conv_factor,dtc,rk,rk)
-  else
-    ncycle = int(dtc/dtchemmax)
-    dtrest = mod(dtc,dtchemmax)
-    do ii = 1, ncycle
-      call roschem (dlconc,source,source,conv_factor,dtchemmax,rk,rk)
-    enddo
-    call roschem (dlconc,source,source,conv_factor,dtrest,rk,rk)
+  else if (ichemistry.eq.4) then
+    call fexchem (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
   endif
 
-  ! Update of rtp
-  do ii = 1, nespg
-    rtp(iel,isca(ii)) = dlconc(chempoint(ii))
-  enddo
+  ! Adding source term to crvexp
+  ! The first nespg user scalars are supposed to be chemical species
+  ! TODO: try to implicit the ST
+  crvexp(iel) = crvexp(iel)+dchema(chempoint(iscal))*rom*volume(iel)
 
-enddo
-
-! TODO: clipping or not ?
-! Clipping
-do ii = 1, nespg
-  call clpsca (ncelet, ncel, ii, rvoid, rtp)
 enddo
 
 !--------
 ! FORMATS
 !--------
+
 !----
 ! FIN
 !----
 
 return
-end subroutine mrchim
+
+end subroutine chem_source_terms
