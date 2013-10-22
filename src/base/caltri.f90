@@ -861,7 +861,6 @@ if (itrale.gt.0) then
   call cs_user_extra_operations                                   &
   !============================
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    dt     , rtpa   , rtp    , propce )
 
 endif

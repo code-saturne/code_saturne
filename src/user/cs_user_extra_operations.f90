@@ -41,25 +41,14 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     nbpmax        max. number of particles allowed
-!> \param[in]     nvp           number of particle-defined variables
-!> \param[in]     nvep          number of real particle properties
-!> \param[in]     nivep         number of integer particle properties
-!> \param[in]     ntersl        number of return coupling source terms
-!> \param[in]     nvlsta        number of Lagrangian statistical variables
-!> \param[in]     nvisbr        number of boundary statistics
-!> \param[in]     itepa         integer particle attributes
-!>                                (containing cell, ...)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
-
 subroutine cs_user_extra_operations &
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    dt     , rtpa   , rtp    , propce )
 
 !===============================================================================
@@ -78,13 +67,15 @@ use cstnum
 use entsor
 use lagpar
 use lagran
+use lagdim
 use parall
 use period
 use ppppar
 use ppthch
 use ppincl
-use field
 use mesh
+use field
+use field_operator
 
 !===============================================================================
 
@@ -93,8 +84,6 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)

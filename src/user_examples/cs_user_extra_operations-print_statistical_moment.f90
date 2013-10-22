@@ -39,13 +39,6 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     nbpmax        max. number of particles allowed
-!> \param[in]     nvp           number of particle-defined variables
-!> \param[in]     nvep          number of real particle properties
-!> \param[in]     nivep         number of integer particle properties
-!> \param[in]     ntersl        number of return coupling source terms
-!> \param[in]     nvlsta        number of Lagrangian statistical variables
-!> \param[in]     nvisbr        number of boundary statistics
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
@@ -54,7 +47,6 @@
 
 subroutine cs_user_extra_operations &
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    dt     , rtpa   , rtp    , propce )
 
 !===============================================================================
@@ -73,6 +65,7 @@ use cstnum
 use entsor
 use lagpar
 use lagran
+use lagdim
 use parall
 use period
 use ppppar
@@ -89,8 +82,6 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
