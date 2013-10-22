@@ -109,6 +109,28 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function initializing gradient rotational periodicity
+    ! computation API.
+
+    subroutine cs_gradient_perio_initialize()  &
+      bind(C, name='cs_gradient_perio_initialize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gradient_perio_initialize
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function finalizing gradient rotational periodicity
+    ! computation API.
+
+    subroutine cs_gradient_perio_finalize()  &
+      bind(C, name='cs_gradient_perio_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gradient_perio_finalize
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function initializoing post-processing of moments
 
     subroutine cs_log_init_moments(cumulative_time)     &
@@ -123,8 +145,8 @@ module cs_c_bindings
     ! Interface to C function adding an array not saved as a permanent field
     ! to logging of fields
 
-    subroutine cs_log_iteration_add_array(name, category, ml, is_intensive,    &
-                                          dim, val)                            &
+    subroutine cs_log_iteration_add_array(name, category, ml, is_intensive,   &
+                                          dim, val)                           &
       bind(C, name='cs_log_iteration_add_array')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -141,8 +163,8 @@ module cs_c_bindings
     ! Interface to C function adding an array not saved as a permanent field
     ! to logging of fields
 
-    subroutine cs_log_iteration_clipping(name, dim, n_clip_min, n_clip_max,    &
-                                         min_pre_clip, max_pre_clip)           &
+    subroutine cs_log_iteration_clipping(name, dim, n_clip_min, n_clip_max,   &
+                                         min_pre_clip, max_pre_clip)          &
       bind(C, name='cs_log_iteration_clipping')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -156,8 +178,8 @@ module cs_c_bindings
     ! Interface to C function adding an array not saved as a permanent field
     ! to logging of fields
 
-    subroutine cs_log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,   &
-                                               min_pre_clip, max_pre_clip)     &
+    subroutine cs_log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,  &
+                                               min_pre_clip, max_pre_clip)    &
       bind(C, name='cs_log_iteration_clipping_field')
       use, intrinsic :: iso_c_binding
       implicit none

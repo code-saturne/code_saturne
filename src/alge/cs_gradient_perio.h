@@ -161,6 +161,14 @@ void
 cs_gradient_perio_finalize(void);
 
 /*----------------------------------------------------------------------------
+ * Update gradient rotational periodicity computation API in case of
+ * mesh modification.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gradient_perio_update_mesh(void);
+
+/*----------------------------------------------------------------------------
  * Initialize ghost cell values for Reynolds stress tensor gradient.
  *
  * We retrieve the gradient given by perinr (phyvar) for the Reynolds

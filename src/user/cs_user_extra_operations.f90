@@ -54,25 +54,13 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     ettp, ettpa   particle-defined variables
-!>                               (at current and previous time steps)
-!> \param[in]     tepa          real particle properties
-!>                               (statistical weight, ...
-!> \param[in]     statis        statistic means
-!> \param[in]     stativ        accumulator for variance of volume statisitics
-!> \param[in]     tslagr        Lagrangian return coupling term
-!>                               on carrier phase
-!> \param[in]     parbor        particle interaction properties
-!>                               on boundary faces
 !_______________________________________________________________________________
 
 
 subroutine cs_user_extra_operations &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce ,                            &
-   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
+   dt     , rtpa   , rtp    , propce )
 
 !===============================================================================
 
@@ -108,15 +96,8 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep)
-
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
-double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)
-double precision tslagr(ncelet,ntersl)
-double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 

@@ -98,6 +98,7 @@ FILE  *cs_glob_join_log = NULL;
  *   perio_matrix  <-- periodicity transformation matrix
  *   verbosity     <-- level of verbosity required
  *   visualization <-- level of visualization required
+ *   preprocessing <-- is joining part of the preprocessing stage ?
  *
  * returns:
  *   a pointer to a cs_join_param_t structure
@@ -110,7 +111,8 @@ _join_param_define(int                      join_num,
                    fvm_periodicity_type_t   perio_type,
                    double                   perio_matrix[3][4],
                    int                      verbosity,
-                   int                      visualization)
+                   int                      visualization,
+                   bool                     preprocessing)
 {
   double  cplane;
   cs_join_param_t  param;
@@ -209,6 +211,10 @@ _join_param_define(int                      join_num,
 
    param.verbosity = verbosity;
    param.visualization = visualization;
+
+   /* Is joining part of preprocessing ? */
+
+   param.preprocessing = preprocessing;
 
    return param;
 }
@@ -1910,6 +1916,7 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
  *   perio_matrix  <-- periodicity transformation matrix
  *   verbosity     <-- level of verbosity required
  *   visualization <-- level of visualization required
+ *   preprocessing <-- is joining part of the preprocessing stage ?
  *
  * returns:
  *   a pointer to a new allocated cs_join_t structure
@@ -1923,7 +1930,8 @@ cs_join_create(int                      join_number,
                fvm_periodicity_type_t   perio_type,
                double                   perio_matrix[3][4],
                int                      verbosity,
-               int                      visualization)
+               int                      visualization,
+               bool                     preprocessing)
 {
   size_t  l;
 
@@ -1957,7 +1965,8 @@ cs_join_create(int                      join_number,
                                    perio_type,
                                    perio_matrix,
                                    verbosity,
-                                   visualization);
+                                   visualization,
+                                   preprocessing);
 
   /* Copy the selection criteria for future use */
 

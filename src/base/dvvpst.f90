@@ -47,9 +47,6 @@
 !> \param[in]     rtp           calculated variables at cell center
 !>                              (at current time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     statce        cells statistics (lagrangian)
-!> \param[in]     stativ        cells variance statistics (lagrangian)
-!> \param[in]     statfb        boundary faces statistics (lagrangian)
 !> \param[in,out] tracel        post processing cell real values
 !> \param[in,out] trafbr        post processing boundary faces real values
 !______________________________________________________________________________
@@ -60,7 +57,6 @@ subroutine dvvpst &
    ncelps , nfbrps ,                                              &
    lstcel , lstfbr ,                                              &
    rtp    , propce ,                                              &
-   statce , stativ , statfb ,                                     &
    tracel , trafbr )
 
 !===============================================================================
@@ -86,6 +82,7 @@ use cplsat
 use mesh
 use field
 use post
+use turbomachinery
 
 !===============================================================================
 
@@ -101,8 +98,6 @@ integer          lstcel(ncelps), lstfbr(nfbrps)
 
 double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
-double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)
 double precision trafbr(nfbrps*3)
 
@@ -182,7 +177,7 @@ if (numtyp .eq. -1) then
 
   if (icorio.eq.1) then
 
-   call field_get_val_s(icrom, crom)
+    call field_get_val_s(icrom, crom)
 
     idimt = 1
     ientla = .true.
@@ -231,7 +226,7 @@ if (numtyp .eq. -1) then
 
   if (imobil.eq.1) then
 
-   call field_get_val_s(icrom, crom)
+    call field_get_val_s(icrom, crom)
 
     idimt = 1
     ientla = .true.
@@ -268,6 +263,67 @@ if (numtyp .eq. -1) then
 
       tracel(3 + (iloc-1)*idimt) = rtp(iel,iw) &
           - (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
+
+    enddo
+
+    call post_write_var(nummai, 'Rel Velocity', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
+
+  endif
+
+  ! Vitesse et pression relatives en cas de calcul en repère fixe
+
+  if (iturbo.eq.1 .or. iturbo.eq.2) then
+
+    call field_get_val_s(icrom, crom)
+
+    idimt = 1
+    ientla = .true.
+    ivarpr = .false.
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+
+      if (irotce(iel)) then
+        pcentr =  0.5d0*((rotax(2)*xyzcen(3,iel) - rotax(3)*xyzcen(2,iel))**2 &
+                       + (rotax(3)*xyzcen(1,iel) - rotax(1)*xyzcen(3,iel))**2 &
+                       + (rotax(1)*xyzcen(2,iel) - rotax(2)*xyzcen(1,iel))**2)
+      else
+        pcentr = 0.d0
+      endif
+
+      tracel(iloc) = rtp(iel,ipr) - crom(iel)*pcentr
+
+    enddo
+
+    call post_write_var(nummai, 'Rel Pressure', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
+
+    idimt = 3
+    ientla = .true.
+    ivarpr = .false.
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+
+      if (irotce(iel)) then
+
+        tracel(1 + (iloc-1)*idimt) = rtp(iel,iu) &
+            - (rotax(2)*xyzcen(3,iel) - rotax(3)*xyzcen(2,iel))
+
+        tracel(2 + (iloc-1)*idimt) = rtp(iel,iv) &
+            - (rotax(3)*xyzcen(1,iel) - rotax(1)*xyzcen(3,iel))
+
+        tracel(3 + (iloc-1)*idimt) = rtp(iel,iw) &
+            - (rotax(1)*xyzcen(2,iel) - rotax(2)*xyzcen(1,iel))
+
+      else
+        tracel(1 + (iloc-1)*idimt) = rtp(iel,iu)
+        tracel(2 + (iloc-1)*idimt) = rtp(iel,iv)
+        tracel(3 + (iloc-1)*idimt) = rtp(iel,iw)
+      endif
 
     enddo
 
@@ -636,7 +692,7 @@ if (numtyp .eq. -1) then
         !==========
           (nvlsta,                                                &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           statce, stativ, wcell)
+           wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
                             ntcabs, ttcabs, wcell, rbid, rbid)
@@ -669,7 +725,7 @@ if (numtyp .eq. -1) then
         !==========
           (nvlsta,                                                &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           statce, stativ, wcell)
+           wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
                             ntcabs, ttcabs, wcell, rbid, rbid)
@@ -701,8 +757,8 @@ if (numtyp.eq.-2) then
 
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
-          if (statfb(ifac,iencnb).gt.seuilf) then
-            trafbr(iloc) = statfb(ifac,ivarl)/statfb(ifac,iencnb)
+          if (parbor(ifac,iencnb).gt.seuilf) then
+            trafbr(iloc) = parbor(ifac,ivarl)/parbor(ifac,iencnb)
           else
             trafbr(iloc) = 0.d0
           endif
@@ -712,8 +768,8 @@ if (numtyp.eq.-2) then
 
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
-          if (statfb(ifac,inbr).gt.seuilf) then
-            trafbr(iloc) = statfb(ifac,ivarl)/statfb(ifac,inbr)
+          if (parbor(ifac,inbr).gt.seuilf) then
+            trafbr(iloc) = parbor(ifac,ivarl)/parbor(ifac,inbr)
           else
             trafbr(iloc) = 0.d0
           endif
@@ -723,8 +779,8 @@ if (numtyp.eq.-2) then
 
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
-          if (statfb(ifac,inbr).gt.seuilf) then
-            trafbr(iloc) = statfb(ifac,ivarl) / tstatp
+          if (parbor(ifac,inbr).gt.seuilf) then
+            trafbr(iloc) = parbor(ifac,ivarl) / tstatp
           else
             trafbr(iloc) = 0.d0
           endif
@@ -734,8 +790,8 @@ if (numtyp.eq.-2) then
 
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
-          if (statfb(ifac,inbr).gt.seuilf) then
-            trafbr(iloc) = statfb(ifac,ivarl)
+          if (parbor(ifac,inbr).gt.seuilf) then
+            trafbr(iloc) = parbor(ifac,ivarl)
           else
             trafbr(iloc) = 0.d0
           endif

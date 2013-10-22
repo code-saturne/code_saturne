@@ -711,12 +711,10 @@ if ( 1.eq.0 ) then
 
   call lagipn                                                     &
   !==========
-  ( nbpmax , nvp    , nvep   , nivep  ,                           &
+  ( nbpmax ,                                                      &
     npar1  , npar2  ,                                             &
-    itepa  ,                                                      &
     rtpa   ,                                                      &
-    ettp   , tepa   , vagaus ,                                    &
-    icocel , lndnod , itycel ,  dlgeo , propce , ifrlag  )
+    vagaus , propce )
 
 endif
 
@@ -1155,10 +1153,8 @@ subroutine uslast &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
-   ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
-   statis , stativ )
+   taup   , tlag   , tempct )
 
 !===============================================================================
 ! Purpose:
@@ -1211,28 +1207,15 @@ subroutine uslast &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers at       !
 ! (ncelet,*)       !    !     ! the current and previous time step             !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! ettpa            ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
-! tepa(nbpmax,     ! ra ! <-- ! properties of the particles (weight..)         !
-!       nvep)      !    !     !                                                !
 ! taup(nbpmax)     ! ra ! <-- ! particle relaxation time                       !
 ! tlag(nbpmax)     ! ra ! <-- ! relaxation time for the flow                   !
 ! tempct           ! ra ! <-- ! thermal relaxation time                        !
 !  (nbpmax,2)      !    !     !                                                !
-! statis           ! ra ! <-- ! cumul. for the averages of the volume stats.   !
-!(ncelet,nvlsta    !    !     !                                                !
-! stativ           ! ra ! <-- ! cumul. for the variance of the volume stats.   !
-!(ncelet,          !    !     !                                                !
-!   nvlsta-1)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1268,15 +1251,9 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep)
-
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
-double precision statis(ncelet,nvlsta)
-double precision stativ(ncelet,nvlsta-1)
 
 ! Local variables
 
@@ -1492,11 +1469,11 @@ if (1.eq.0) then
 
     do iplan = 1,8
 
-!  Concerning the following file:
-!  the user will check if he has not let the unit
-!  impusr(1) opened in another user subroutine.
-!
-      OPEN(FILE=NAME(IPLAN),UNIT=IMPUSR(1),FORM='formatted')
+      !  Concerning the following file:
+      !  the user will check if he has not let the unit
+      !  impusr(1) opened in another user subroutine.
+
+      open(file=name(iplan),unit=impusr(1),form='formatted')
 
       xyzpt(1) = zzz(iplan)
 
@@ -1506,11 +1483,8 @@ if (1.eq.0) then
         icla = 0
         iflu = 0
 
-        call uslaen                                               &
+        call uslaen(nvlsta, ivff, ivff, ivff, iflu, ilpd, icla, tabvr)
         !==========
- ( nvlsta ,                                                       &
-   ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
-   statis , stativ , tabvr  )
 
         ind = 0
         do ii = 1, npts

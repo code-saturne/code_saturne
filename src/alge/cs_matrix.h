@@ -142,6 +142,13 @@ void
 cs_matrix_finalize(void);
 
 /*----------------------------------------------------------------------------
+ * Update sparse matrix API in case of mesh modification.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_update_mesh(void);
+
+/*----------------------------------------------------------------------------
  * Create a matrix Structure.
  *
  * Note that the structure created maps to the given existing

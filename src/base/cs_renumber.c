@@ -2606,10 +2606,11 @@ _renumber_test(cs_mesh_t  *mesh)
   if (mesh == NULL)
     return;
 
-  bft_printf
-    (_("\n"
-       "Checking mesh renumbering for threads:\n"
-       "-------------------------------------\n\n"));
+  if (mesh->verbosity > 0)
+    bft_printf
+      (_("\n"
+         "Checking mesh renumbering for threads:\n"
+         "-------------------------------------\n\n"));
 
   /* Check for interior faces */
   /*--------------------------*/
@@ -2671,12 +2672,14 @@ _renumber_test(cs_mesh_t  *mesh)
               if (   (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
                   || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id))
                 face_errors[0] += 1;
-              if (   (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
-                  || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id))
-                bft_printf("f_id %d (%d %d) g %d t %d\n",
-                           f_id, c_id_0, c_id_1, g_id, t_id);
-              accumulator[c_id_0] = t_id;
-              accumulator[c_id_1] = t_id;
+              if ( (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
+                || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id)) {
+                if (mesh->verbosity > 0)
+                  bft_printf("f_id %d (%d %d) g %d t %d\n",
+                             f_id, c_id_0, c_id_1, g_id, t_id);
+                accumulator[c_id_0] = t_id;
+                accumulator[c_id_1] = t_id;
+              }
             }
           }
 
@@ -2962,7 +2965,8 @@ cs_renumber_mesh(cs_mesh_t             *mesh,
 
   _renumber_test(mesh);
 
-  _log_bandwidth_info(mesh, _("volume mesh"));
+  if (mesh->verbosity > 0)
+    _log_bandwidth_info(mesh, _("volume mesh"));
 
   if (quantities_computed)
     cs_mesh_quantities_compute(mesh, mesh_quantities);

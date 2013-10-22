@@ -27,7 +27,7 @@ subroutine uslaen &
 
  ( nvlsta ,                                                       &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   statis , stativ , tracel )
+   tracel )
 
 !===============================================================================
 ! Purpose:
@@ -58,11 +58,6 @@ subroutine uslaen &
 !                  !    !     !                                                !
 ! icla             ! i  ! <-- ! 0: global statistic                            !
 !                  !    ! <-- ! !=0: stat for the icla group                   !
-! statis(ncelet    ! ra ! <-- ! cumulation of the volume statistics            !
-!   nvlsta)        !    !     !                                                !
-! stativ           ! ra ! <-- ! cumulation for the variances of the            !
-!  (ncelet,        !    !     ! volume statistics                              !
-!   nvlsta-1)      !    !     !                                                !
 ! tracel(ncelet)   ! ra ! <-- ! real array, values cells post                  !
 !__________________!____!_____!________________________________________________!
 
@@ -98,8 +93,6 @@ integer          nvlsta
 integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 
 double precision tracel(ncelet)
-double precision statis(ncelet,nvlsta)
-double precision stativ(ncelet,nvlsta-1)
 
 ! Local variables
 

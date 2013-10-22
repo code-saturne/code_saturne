@@ -86,9 +86,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
  const cs_real_t  rtp[],     /* <-- cell variables */
  const cs_real_t  propce[],  /* <-- cell physical properties */
- const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
- const cs_real_t  stativ[],  /* <-- cell variance statistics (Lagrangian) */
- const cs_real_t  statfb[],  /* <-- boundary face statistics (Lagrangian) */
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
@@ -210,8 +207,7 @@ void CS_PROCF (usvpst, USVPST)
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
- const cs_real_t  propce[],  /* <-- cell physical properties */
- const cs_real_t  statce[]   /* <-- cell statistics (Lagrangian) */
+ const cs_real_t  propce[]   /* <-- cell physical properties */
 );
 
 /*----------------------------------------------------------------------------
@@ -453,6 +449,20 @@ cs_user_solver(const cs_mesh_t             *mesh,
 
 void
 cs_user_syrthes_coupling(void);
+
+/*----------------------------------------------------------------------------
+ * Define rotor/stator model.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_turbomachinery(void);
+
+/*----------------------------------------------------------------------------
+ * Define rotor axes, associated cells, and rotor/stator faces.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_turbomachinery_rotor(void);
 
 /*----------------------------------------------------------------------------*/
 

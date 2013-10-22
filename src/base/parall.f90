@@ -117,6 +117,8 @@ contains
     ngrpi  = ngrpi_in
     ngrpb  = ngrpb_in
 
+    err = 0
+
     if (.not.allocated(iompli)) then
       allocate(iompli(2, ngrpi, nthrdi), stat=err)
     endif

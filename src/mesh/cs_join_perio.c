@@ -113,7 +113,8 @@ _add_perio_join(fvm_periodicity_type_t  perio_type,
                      perio_type,
                      matrix,
                      verbosity,
-                     visualization);
+                     visualization,
+                     true);
 
   cs_glob_n_joinings++;
 

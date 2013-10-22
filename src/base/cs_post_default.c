@@ -93,9 +93,6 @@ typedef struct {
   const cs_real_t  *rtpa;
   const cs_real_t  *rtp;
   const cs_real_t  *propce;
-  const cs_real_t  *statce;
-  const cs_real_t  *stativ;
-  const cs_real_t  *statfb;
 
   /* Lagrangian variables */
 
@@ -281,7 +278,6 @@ _write_additional_vars(void                  *input,
                               cell_list, b_face_list,
                               _input->rtp,
                               _input->propce,
-                              _input->statce, _input->stativ, _input->statfb,
                               cel_vals, b_face_vals);
 
   /* Free work array */
@@ -297,8 +293,7 @@ _write_additional_vars(void                  *input,
                             cell_list, i_face_list, b_face_list,
                             _input->dt,
                             _input->rtpa, _input->rtp,
-                            _input->propce,
-                            _input->statce);
+                            _input->propce);
 
 }
 
@@ -318,7 +313,6 @@ _write_additional_vars(void                  *input,
  *                    nbpmax, nvp, nvp1, nvep, nivep,
  *                    itepa,
  *                    dt,     rtpa,   rtp,    propce,
- *                    statce, stativ, statfb,
  *                    ettp, ettpa, tepa )
  *
  * integer          ntcabs      : --> : current time step number
@@ -337,9 +331,6 @@ _write_additional_vars(void                  *input,
  * double precision rtpa        : <-- : cell variables at previous time step
  * double precision rtp         : <-- : cell variables
  * double precision propce      : <-- : cell physical properties
- * double precision statce      : <-- : cell statistics (lagrangian)
- * double precision stativ      : <-- : cell variance statistics (lagrangian)
- * double precision statfb      : <-- : boundary face statistics (lagrangian)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
@@ -358,10 +349,7 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_real_t   dt[],
  const cs_real_t   rtpa[],
  const cs_real_t   rtp[],
- const cs_real_t   propce[],
- const cs_real_t   statce[],
- const cs_real_t   stativ[],
- const cs_real_t   statfb[]
+ const cs_real_t   propce[]
 )
 {
   /* Define or update map of variables */
@@ -384,9 +372,6 @@ void CS_PROCF (pstvar, PSTVAR)
   _default_input.rtpa = rtpa;
   _default_input.rtp = rtp;
   _default_input.propce = propce;
-  _default_input.statce = statce;
-  _default_input.stativ = stativ;
-  _default_input.statfb = statfb;
 
   /* Register function for first pass */
 

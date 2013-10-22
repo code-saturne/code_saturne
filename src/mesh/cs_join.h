@@ -107,10 +107,20 @@ cs_join_set_advanced_param(int      join_num,
 
 /*----------------------------------------------------------------------------
  * Apply all the defined joining operations.
+ *
+ * parameters:
+ *   preprocess <-- true if we are in the preprocessing stage
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_all(void);
+cs_join_all(bool  preprocess);
+
+/*----------------------------------------------------------------------------
+ * Clear remaining memory for defined joining operations.
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_finalize(void);
 
 /*---------------------------------------------------------------------------*/
 

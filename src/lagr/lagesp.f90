@@ -246,14 +246,11 @@ if (nordre.eq.1) then
 
      call lagdep                                                  &
     !==========
-   ( nbpmax , nvp    , nvep   , nivep  ,                          &
-     itepa  ,                                                     &
-     dlgeo  ,                                                     &
+   ( nbpmax ,                                                     &
      rtpa   , propce ,                                            &
-     ettp   , ettpa  , tepa   ,                                   &
-     statis , taup   , tlag   , piil   ,                          &
+     taup   , tlag   , piil   ,                                   &
      bx     , vagaus , gradpr , romp   ,                          &
-     brgaus , terbru , fextla , vislen)
+     fextla , vislen)
 
   endif
 

@@ -83,7 +83,9 @@ $(top_srcdir)/src/pprt/ppincl.f90 \
 $(top_srcdir)/src/pprt/ppppar.f90 \
 $(top_srcdir)/src/pprt/ppthch.f90 \
 $(top_srcdir)/src/rayt/radiat.f90 \
-$(top_srcdir)/src/turb/vorinc.f90
+$(top_srcdir)/src/turb/vorinc.f90 \
+$(top_srcdir)/src/base/ptrglo.f90 \
+$(top_srcdir)/src/base/turbomachinery.f90
 
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
@@ -100,6 +102,8 @@ $(top_srcdir)/src/base/mltgrd.f90: paramx.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo
 $(top_srcdir)/src/base/pointe.f90: paramx.lo numvar.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo cstnum.lo
+$(top_srcdir)/src/base/ptrglo.f90: dimens.lo mesh.lo numvar.lo optcal.lo parall.lo period.lo
+$(top_srcdir)/src/base/turbomachinery.f90:  mesh.lo
 $(top_srcdir)/src/atmo/atincl.f90: ppppar.lo ppincl.lo mesh.lo atsoil.lo
 $(top_srcdir)/src/atmo/atchem.f90: ppppar.lo mesh.lo entsor.lo numvar.lo
 $(top_srcdir)/src/atmo/siream.f90: ppppar.lo

@@ -86,6 +86,7 @@ cs_user_postprocess_var.f90 \
 cs_user_radiative_transfer.f90 \
 cs_user_solver.c \
 cs_user_source_terms.f90 \
+cs_user_turbomachinery.c \
 usalcl.f90 \
 usatch.f90 \
 usctdz.f90 \

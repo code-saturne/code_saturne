@@ -233,7 +233,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   /* Join meshes / build periodicity links if necessary */
 
-  cs_join_all();
+  cs_join_all(true);
 
   /* Insert thin walls if necessary */
 

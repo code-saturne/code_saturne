@@ -75,6 +75,8 @@ use field
 use post
 use atchem
 use siream
+use ptrglo
+use turbomachinery
 use cs_c_bindings
 use cs_f_interfaces
 
@@ -89,11 +91,6 @@ implicit none
 
 ! Local variables
 
-integer          ipropc
-integer          irtp   , irtpa
-integer          idt
-
-integer          ifinra
 integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
@@ -116,31 +113,47 @@ character        ficsui*32
 
 integer, allocatable, dimension(:) :: isostd
 
-double precision, allocatable, dimension(:) :: ra
-
 double precision, allocatable, dimension(:,:) :: coefa, coefb
-double precision, allocatable, dimension(:,:) :: frcxt
-double precision, allocatable, dimension(:) :: prhyd
 
-!> \addtogroup lagran
-!> \{
-!> \defgroup lag_arrays Lagrangian arrays
+double precision, pointer, dimension(:,:) :: frcxt => null()
+double precision, pointer, dimension(:)   :: dt => null()
+double precision, pointer, dimension(:,:) :: rtp => null(), rtpa => null()
+double precision, pointer, dimension(:,:) :: propce => null()
+double precision, pointer, dimension(:)   :: prhyd => null()
 
-!> \addtogroup lag_arrays
-!> \{
+!===============================================================================
+! Interfaces
+!===============================================================================
 
-integer, allocatable, dimension(:,:) :: itepa
-integer, allocatable, dimension(:) :: icocel, itycel
-integer, allocatable, dimension(:) :: ifrlag
+interface
 
-double precision, allocatable, dimension(:,:) :: ettp
-double precision, allocatable, dimension(:,:) :: ettpa, tepa
-double precision, allocatable, dimension(:,:) :: statis, stativ, parbor
-double precision, allocatable, dimension(:,:) :: tslagr
-double precision, allocatable, dimension(:,:) :: dlgeo
+  subroutine tridim &
+  !================
+  ( itrale , nvar   , nscal  ,                                     &
+    isostd ,                                                       &
+    dt     , rtpa   , rtp    , propce ,                            &
+    coefa  , coefb  , frcxt  , prhyd  )
 
-!> \}
-!> \}
+    use dimens, only: ndimfb
+    use mesh, only: nfabor
+
+    implicit none
+
+    integer                                   :: itrale, nvar, nscal
+    integer, dimension(nfabor+1)              :: isostd
+
+    double precision, dimension (nfabor, *)   :: coefa, coefb
+
+    double precision, pointer, dimension(:)   :: dt
+    double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+    double precision, pointer, dimension(:,:) :: frcxt
+    double precision, pointer, dimension(:)   :: prhyd
+
+  end subroutine tridim
+
+  !=============================================================================
+
+end interface
 
 !===============================================================================
 
@@ -347,17 +360,12 @@ if (nfpt1t.eq.0) deallocate(izft1d)
 ! Memory management
 !===============================================================================
 
-! Allocate main real arrays
-call memtri &
-!==========
- ( nvar   ,                                                       &
-   nproce ,                                                       &
-   idt    , irtp   , irtpa  , ipropc ,                            &
-   ifinra )
+! Allocate main arrays
 
-allocate(ra(ifinra))
+allocate(dt(ncelet), rtp(ncelet,nvar), rtpa(ncelet,nvar))
+allocate(propce(ncelet,nproce))
 
-! Allocate other main arrays
+! Allocate arrays on boundary faces
 allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
 
 allocate(isostd(nfabor+1))
@@ -376,6 +384,9 @@ call init_aux_arrays(ncelet, nfabor)
 if (iporos.ge.1) then
   call usporo
 endif
+
+call turbomachinery_init_mapping
+!===============================
 
 if (ippmod(iatmos).ge.0) then
 
@@ -446,11 +457,8 @@ endif
 ! Default initializations
 !===============================================================================
 
-call fldtri &
+call fldtri(nproce, dt, rtpa, rtp, propce, coefa, coefb)
 !==========
- ( nproce ,                                                       &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , coefa , coefb )
 
 call field_allocate_or_map_all
 !=============================
@@ -458,7 +466,7 @@ call field_allocate_or_map_all
 call iniva0 &
 !==========
  ( nvar   , nscal  , ncofab ,                                     &
-   ra(idt)    , ra(irtp) , ra(ipropc) ,                           &
+   dt     , rtp    , propce ,                                     &
    coefa  , coefb  ,                                              &
    frcxt  , prhyd  )
 
@@ -471,7 +479,7 @@ if (isuite.eq.1) then
   call lecamo &
   !==========
  ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
-   ra(idt)   , ra(irtp) , ra(ipropc) ,                            &
+   dt     , rtp    , propce ,                                     &
    coefa  , coefb  , frcxt  , prhyd  )
 
   ! Using ALE, geometric parameters must be recalculated
@@ -495,24 +503,19 @@ endif
 
 !===============================================================================
 ! Initializations (user and additional)
-!    rtp dt rom romb viscl visct viscls
+!    rtp dt rom romb viscl visct viscls (tpucou with periodicite)
 !===============================================================================
 
-call inivar &
+call inivar(nvar, nscal, dt, rtp, propce)
 !==========
- ( nvar   , nscal  ,                                              &
-   ra(idt)    , ra(irtp) ,                                        &
-   ra(ipropc) )
 
 !===============================================================================
 ! Radiative transfer: possible restart
 !===============================================================================
 
 if (iirayo.gt.0 .and. isuird.eq.1) then
-
-  call raylec(ncelet, ra(ipropc))
+  call raylec(ncelet, propce)
   !==========
-
 endif
 
 !===============================================================================
@@ -527,7 +530,7 @@ if (iilagr.gt.0) then
    nbpmax , nvp    , nvep   , nivep  ,                            &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ra(irtpa) , ra(ipropc) ,                                       &
+   rtpa   , propce ,                                              &
    ettp   , tepa   , statis , stativ , parbor , tslagr )
 
 endif
@@ -555,7 +558,7 @@ if (nfpt1t.gt.0) then
    tppt1d , rgpt1d , eppt1d ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
-   ra(idt)    , ra(irtpa) )
+   dt     , rtpa   )
 
   iappel = 2
   call vert1d &
@@ -636,10 +639,8 @@ if(ncpdct.gt.0) then
   iappel = 2
 
   if (iihmpr.eq.1) then
-    call uikpdc &
+    call uikpdc(iappel, ncelet, ncepdc, icepdc, ckupdc, rtpa)
     !==========
-  ( iappel, ncelet, ncepdc,   &
-    icepdc, ckupdc, ra(irtpa) )
   endif
 
   call  uskpdc &
@@ -647,8 +648,7 @@ if(ncpdct.gt.0) then
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
-  ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
-  ra(ipropc) ,                                                   &
+  dt     , rtpa   , rtp  , propce ,                              &
   ckupdc )
 
 endif
@@ -668,8 +668,7 @@ if(nctsmt.gt.0) then
   ncetsm , iappel ,                                              &
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
-  ra(idt)    , ra(irtpa) ,                                       &
-  ra(ipropc) ,                                                   &
+  dt     , rtpa   , propce ,                                     &
   ckupdc , smacel )
 
 endif
@@ -688,18 +687,16 @@ if (ivrtex.eq.1) then
 
   call usvort &
   !==========
- ( nvar   , nscal  ,                                              &
-   iappel ,                                                       &
-   ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) )
+ ( nvar   , nscal  , iappel ,                                     &
+   dt     , rtpa   , propce )
 
-  call vorver ( nfabor , iappel )
+  call vorver (nfabor, iappel)
   !==========
 
   call init_vortex
   !===============
 
-  call vorpre(ra(ipropc))
+  call vorpre(propce)
   !==========
 
 endif
@@ -709,12 +706,8 @@ endif
 ! -- Structures mobiles en ALE
 
 if (iale.eq.1) then
-
-! Attention, strini reserve de la memoire qu'il faut garder ensuite
-!           (-> on utilise IFINIA/IFINRA ensuite)
-  call strini(ra(idt))
+  call strini(dt)
   !==========
-
 endif
 
 ! -- Fin de zone Structures mobiles en ALE
@@ -733,7 +726,7 @@ write(nfecra,2000)
 ntcabs = ntpabs
 ttcabs = ttpabs
 
-if (imobil.eq.1)  ttcmob = ttpmob
+if (imobil.eq.1 .or. iturbo.eq.2)  ttcmob = ttpmob
 
 iwarn0 = 1
 do ivar = 1, nvar
@@ -767,7 +760,7 @@ endif
 if (itrale.gt.0) then
 
   if (idtvar.eq.0) then
-    call cplsyn (ntmabs, ntcabs, ra(idt))
+    call cplsyn (ntmabs, ntcabs, dt(1))
     !==========
   else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
     call cplsyn (ntmabs, ntcabs, dtref)
@@ -786,16 +779,16 @@ endif
 if (inpdt0.eq.0 .and. itrale.gt.0) then
   ntcabs = ntcabs + 1
   if(idtvar.eq.0.or.idtvar.eq.1) then
-    ttcabs = ttcabs + ra(idt)
+    ttcabs = ttcabs + dt(1)
   else
     ttcabs = ttcabs + dtref
   endif
   if(iwarn0.gt.0) then
     write(nfecra,3001) ttcabs,ntcabs
   endif
-  if (imobil.eq.1) then
+  if (imobil.eq.1 .or. iturbo.eq.2) then
     if(idtvar.eq.0.or.idtvar.eq.1) then
-      ttcmob = ttcmob + ra(idt)
+      ttcmob = ttcmob + dt(1)
     else
       ttcmob = ttcmob + dtref
     endif
@@ -818,23 +811,19 @@ call tridim                                                       &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   ra(idt)    , ra(irtpa) , ra(irtp)  ,                           &
-   ra(ipropc) ,                                                   &
-   tslagr , coefa  , coefb  ,                                     &
+   dt     , rtpa   , rtp    ,                                     &
+   propce ,                                                       &
+   coefa  , coefb  ,                                              &
    frcxt  , prhyd  )
 
 !===============================================================================
 ! Compute temporal means (accumulation)
 !===============================================================================
 
-
-if(inpdt0.eq.0 .and. itrale.gt.0) then
-call calmom                                                       &
-!==========
-     ( ncel   , ncelet ,                    &
-       ra(irtp  ) , ra(idt   ) , ra(ipropc) )
+if (inpdt0.eq.0 .and. itrale.gt.0) then
+  call calmom(ncel, ncelet, rtp, dt, propce)
+  !==========
 endif
-
 
 !===============================================================================
 ! Lagrangian module
@@ -848,12 +837,8 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   icocel , itycel , ifrlag , itepa  ,                            &
-   dlgeo  ,                                                       &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) ,                                                   &
-   coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
+   dt     , rtpa   , rtp    , propce ,                            &
+   coefa  , coefb  )
 
 endif
 
@@ -870,17 +855,14 @@ if (itrale.gt.0) then
     !==========
   ( ncelet , ncel,                                                &
     ntmabs, ntcabs, ttcabs, ttmabs, ttpabs,                       &
-    xyzcen, ra(irtp), ra(ipropc) )
+    xyzcen, rtp, propce)
   endif
 
   call cs_user_extra_operations                                   &
   !============================
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   itepa  ,                                                       &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) ,                                                   &
-   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
+   dt     , rtpa   , rtp    , propce )
 
 endif
 
@@ -898,7 +880,7 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
     !==========
   ( itrale ,                                               &
     impale , ialtyb ,                                      &
-    ra(idt)    , ra(irtpa) , ra(irtp) ,                    &
+    dt     , rtpa   , rtp    ,                             &
     depale , xyzno0 )
 
   endif
@@ -923,7 +905,7 @@ endif
 ! Stop test for couplings
 
 if (idtvar.eq.0) then
-  call cplsyn (ntmabs, ntcabs, ra(idt))
+  call cplsyn (ntmabs, ntcabs, dt(1))
   !==========
 else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
   call cplsyn (ntmabs, ntcabs, dtref)
@@ -954,7 +936,7 @@ if (iisuit.eq.1) then
   !==========
  ( ndim   , ncelet , ncel   , nfabor  , nvar   , nscal  ,         &
    xyzcen , cdgfbo ,                                              &
-   ra(idt)    , ra(irtp) , ra(ipropc) ,                           &
+   dt     , rtp    , propce ,                                     &
    coefa  , coefb  , frcxt  , prhyd  )
 
   if (nfpt1t.gt.0) then
@@ -981,16 +963,14 @@ if (iisuit.eq.1) then
 
     call lagout                                                      &
     !==========
-    ( nbpmax , nvp    , nvep   , nivep  ,                            &
+    ( nvep   , nivep  ,                                              &
       ntersl , nvlsta , nvisbr ,                                     &
-      itepa  ,                                                       &
-      ra(ipropc) ,                                                   &
-      ettp   , tepa   , parbor , statis , stativ , tslagr )
+      propce )
 
   endif
 
   if (iirayo.gt.0) then
-    call rayout(ra(ipropc))
+    call rayout(propce)
     !==========
   endif
 
@@ -1033,8 +1013,7 @@ call pstvar                                                       &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    itepa  ,                                                       &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) ,                                                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    statis , stativ , parbor )
 
 !===============================================================================
@@ -1056,7 +1035,7 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
     ttchis = ttcabs
 
-    call ecrhis(nvar, nproce, modhis, ra(irtp))
+    call ecrhis(nvar, nproce, modhis, rtp)
     !==========
 
     if (iilagr.gt.0) then
@@ -1074,18 +1053,14 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
 endif
 
-call ushist                                                       &
+call ushist(nvar, nscal, dt, rtpa, rtp, propce)
 !==========
- ( nvar   , nscal  ,                                              &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) )
-
 
 !===============================================================================
 ! Write to "listing" every ntlist iterations
 !===============================================================================
 
-if(ntlist.gt.0) then
+if (ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
 elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
   modntl = 0
@@ -1097,7 +1072,7 @@ if (modntl.eq.0) then
   call ecrlis                                                     &
   !==========
   ( nvar   , ncelet , ncel   ,                                    &
-    ra(irtp  ) , ra(irtpa) , ra(idt ) , volume )
+    rtp    , rtpa   , dt     , volume )
 
   call log_iteration
 
@@ -1155,7 +1130,7 @@ call dmtmps(tecrf1)
 ! Ici on sauve les historiques (si on en a stocke)
 
 modhis = 2
-call ecrhis(nvar, nproce, modhis, ra(irtp))
+call ecrhis(nvar, nproce, modhis, rtp)
 !==========
 
 if (iilagr.gt.0) then
@@ -1176,8 +1151,8 @@ if (nfpt1d.gt.0) then
   !==========
 endif
 
-! Free main array
-deallocate(ra)
+! Free main arrays
+deallocate(dt, rtp, rtpa, propce)
 
 ! Free other main arrays
 deallocate(coefa, coefb)
@@ -1207,11 +1182,11 @@ if (iilagr.gt.0) then
   deallocate(ettpa)
   deallocate(tepa)
   deallocate(statis)
-  if (allocated(stativ)) deallocate(stativ)
+  if (associated(stativ)) deallocate(stativ)
   deallocate(tslagr)
   deallocate(parbor)
 
-  if (allocated(dlgeo)) deallocate(dlgeo)
+  if (associated(dlgeo)) deallocate(dlgeo)
 
 endif
 

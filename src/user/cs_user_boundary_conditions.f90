@@ -419,6 +419,7 @@ use elincl
 use cs_fuel_incl
 use mesh
 use field
+use turbomachinery
 
 !===============================================================================
 

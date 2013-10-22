@@ -23,12 +23,11 @@
 subroutine lagipn &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
+ ( nbpmax ,                                                       &
    npar1  , npar2  ,                                              &
-   itepa  ,                                                       &
    rtp    ,                                                       &
-   ettp   , tepa   , vagaus ,                                     &
-   icocel , lndnod , itycel , dlgeo  , propce , ifrlag  )
+   vagaus ,                                                       &
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -46,31 +45,13 @@ subroutine lagipn &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! npar1 ,npar2     ! e  ! <-- ! borne min et max des particules                !
 !                  !    !     !    a initialiser                               !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-!  dlgeo           ! tr ! <-- ! tableau contenant les donnees geometriques     !
-!(nfabor,ngeol)    !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
-! icocel           ! te ! <-- ! connectivite cellules -> faces                 !
-!   (lndnod)       !    !     !    face de bord si numero negatif              !
-! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-!  itycel          ! te ! <-- ! connectivite cellules -> faces                 !
-! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!   ifrlag         ! te ! <-- ! numero de zone de la face de bord              !
-!   (nfabor)       !    !     !  pour le module lagrangien                     !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -104,18 +85,13 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
+integer          nbpmax
 integer          npar1 , npar2
-integer          itepa(nbpmax,nivep)
-integer          lndnod
 
 double precision rtp(ncelet,*)
-double precision dlgeo(nfabor,ngeol)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
-integer          icocel(lndnod) ,  itycel(ncelet+1)
-integer          ifrlag(nfabor)
+
 ! Local variables
 
 integer          iel , npt , nomb , nbfac , ifac , il , izone

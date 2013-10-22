@@ -24,11 +24,8 @@ subroutine lagesd &
 !================
 
  ( ifac   , ip     ,                                              &
-   nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
-   dlgeo  ,                                                       &
+   nbpmax ,                                                       &
    rtpa   , propce ,                                              &
-   ettp   , ettpa  , tepa   ,                                     &
    taup   , piil   ,                                              &
    vagaus , gradpr , romp,                                        &
    tempf  , romf   , ustar  , lvisq  ,tvisq   ,  depint )
@@ -60,54 +57,11 @@ subroutine lagesd &
 !__________________!____!_____!________________________________________________!
 ! ifac             ! e  ! <-- !                                                !
 ! ip               ! e  ! <-- !                                                !
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nnod             ! e  ! <-- ! nombre de sommets                              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac                     !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr                     !
-! ncelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
-!                  !    !     ! face de bord                                   !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ifabor           ! e  ! <-- !                                                !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
-! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
-! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
-!(nfabor,ngeol)    !    !     !                                                !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
@@ -154,14 +108,10 @@ implicit none
 ! Arguments
 
 integer          ifac   , ip
-integer          nbpmax , nvp    , nvep  , nivep
-integer          itepa(nbpmax,nivep)
+integer          nbpmax
 
-double precision dlgeo(nfabor,ngeol)
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax)
 double precision piil(nbpmax,3)
 double precision vagaus(nbpmax,*)

@@ -67,6 +67,7 @@ use radiat
 use cplsat
 use mesh
 use field
+use turbomachinery
 
 !===============================================================================
 
@@ -1723,7 +1724,7 @@ if (icorio.ne.0 .and. icorio.ne.1) then
   iok = iok + 1
 endif
 
-if (imobil.eq.1) then
+if (imobil.eq.1 .or. iturbo.eq.2) then
   ! Unsteady rotor/stator coupling is not compatible with the
   !   steady algorithm...
   if (idtvar.lt.0) then

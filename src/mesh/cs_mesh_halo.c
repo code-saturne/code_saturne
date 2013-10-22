@@ -3002,8 +3002,10 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
 
   /* Fill cs_halo_t structure for send_halo  */
 
-  bft_printf(_("    Local halo definition\n"));
-  bft_printf_flush();
+  if (mesh->verbosity > 0) {
+    bft_printf(_("    Local halo definition\n"));
+    bft_printf_flush();
+  }
 
   _fill_send_halo(mesh,
                   vertex_ifs,
@@ -3024,8 +3026,10 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
   /* Fill cs_halo_t structure for halo.
      We use the data from send_halo structure */
 
-  bft_printf(_("    Distant halo creation\n"));
-  bft_printf_flush();
+  if (mesh->verbosity > 0) {
+    bft_printf(_("    Distant halo creation\n"));
+    bft_printf_flush();
+  }
 
   _fill_halo(mesh);
 
@@ -3063,8 +3067,10 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
        also ghost cells to ghost cells connectivity for standard and extended
        halo if necessary */
 
-    bft_printf(_("    Updating the faces -> cells connectivity\n"));
-    bft_printf_flush();
+    if (mesh->verbosity > 0) {
+      bft_printf(_("    Updating the faces -> cells connectivity\n"));
+      bft_printf_flush();
+    }
 
     _update_i_face_cells(mesh, face_ifs, gcell_faces_idx, gcell_faces_lst);
 

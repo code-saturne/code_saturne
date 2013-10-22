@@ -39,8 +39,6 @@
 !> \param[in,out] rtpa          calculated variables at cell centers
 !>                              (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     tslagr        terme de couplage retour du
-!>                              lagrangien
 !> \param[in]     coefa         boundary conditions
 !> \param[in]     coefb         boundary conditions
 !______________________________________________________________________________
@@ -48,7 +46,7 @@
 subroutine scalai &
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce ,                            &
-   tslagr , coefa  , coefb  )
+   coefa  , coefb  )
 
 !===============================================================================
 ! Module files
@@ -83,7 +81,6 @@ integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables

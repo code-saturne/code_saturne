@@ -23,11 +23,9 @@
 subroutine lagout &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
+ ( nvep   , nivep  ,                                              &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
-   propce ,                                                       &
-   ettp   , tepa   , parbor , statis , stativ , tslagr )
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -53,29 +51,12 @@ subroutine lagout &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! i  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! i  ! <-- ! nombre de variables particulaires              !
 ! nvep             ! i  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! i  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! i  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! i  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! i  ! <-- ! nombre de statistiques aux frontieres          !
-! itepa            ! ia ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! ra ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! ra ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! ra ! <-- ! cumul pour les moyennes des                    !
-!(ncelet,nvlsta    !    !     !   statistiques volumiques                      !
-! stativ           ! ra ! <-- ! cumul pour les variances des                   !
-!(ncelet,          !    !     !    statistiques volumiques                     !
-!   nvlsta-1)      !    !     !                                                !
-! tslagr           ! ra ! <-- ! terme de couplage retour du                    !
-!(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
-! parbor           ! ra ! <-- ! infos sur interaction des particules           !
-!(nfabor,nvisbr    !    !     !   aux faces de bord                            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -110,17 +91,10 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
+integer          nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep)
-
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) ,  tepa(nbpmax,nvep)
-double precision statis(ncelet,nvlsta)
-double precision stativ(ncelet,nvlsta-1)
-double precision tslagr(ncelet,ntersl)
-double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 

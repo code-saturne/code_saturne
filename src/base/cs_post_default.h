@@ -90,9 +90,6 @@ BEGIN_C_DECLS
  * double precision rtpa        : <-- : cell variables at previous time step
  * double precision rtp         : <-- : cell variables
  * double precision propce      : <-- : cell physical properties
- * double precision statce      : <-- : cell statistics (lagrangian)
- * double precision stativ      : <-- : cell variance statistics (lagrangian)
- * double precision statfb      : <-- : boundary face statistics (lagrangian)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
@@ -111,10 +108,7 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_real_t   dt[],
  const cs_real_t   rtpa[],
  const cs_real_t   rtp[],
- const cs_real_t   propce[],
- const cs_real_t   statce[],
- const cs_real_t   stativ[],
- const cs_real_t   statfb[]
+ const cs_real_t   propce[]
 );
 
 /*----------------------------------------------------------------------------

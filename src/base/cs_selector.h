@@ -207,7 +207,7 @@ cs_selector_get_perio_face_list(int          perio_num,
  * parameters:
  *   criteria    <-- selection criteria string
  *   n_families  --> number of selected families
- *   family_list --> list of selected families faces
+ *   family_list --> list of selected families
  *                   (0 to n, preallocated to cs_glob_mesh->n_families + 1)
  *----------------------------------------------------------------------------*/
 

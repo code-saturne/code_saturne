@@ -197,8 +197,10 @@ _select_entities(cs_join_t   *this_join,
 
   /* Return selection struct. */
 
-  bft_printf(_("\n  Element selection successfully done.\n"));
-  bft_printf_flush();
+  if (mesh->verbosity > 0) {
+    bft_printf(_("\n  Element selection successfully done.\n"));
+    bft_printf_flush();
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -535,16 +537,20 @@ _intersect_edges(cs_join_t               *this_join,
 
   if (join_type == CS_JOIN_TYPE_NULL) {
 
-    bft_printf(_("\n  Joining operation is null.\n"));
-    bft_printf_flush();
+    if (cs_glob_mesh->verbosity > 0) {
+      bft_printf(_("\n  Joining operation is null.\n"));
+      bft_printf_flush();
+    }
 
     cs_join_inter_set_destroy(&inter_set);
 
   }
   else if (join_type == CS_JOIN_TYPE_CONFORMING) {
 
-    bft_printf(_("\n  Joining operation is conforming.\n"));
-    bft_printf_flush();
+    if (cs_glob_mesh->verbosity > 0) {
+      bft_printf(_("\n  Joining operation is conforming.\n"));
+      bft_printf_flush();
+    }
 
     cs_join_inter_set_destroy(&inter_set);
 
@@ -553,8 +559,10 @@ _intersect_edges(cs_join_t               *this_join,
 
     assert(join_type == CS_JOIN_TYPE_NON_CONFORMING);
 
-    bft_printf(_("\n  Joining operation is non-conforming.\n"));
-    bft_printf_flush();
+    if (cs_glob_mesh->verbosity > 0) {
+      bft_printf(_("\n  Joining operation is non-conforming.\n"));
+      bft_printf_flush();
+    }
 
     /* Creation of new vertices. Update list of equivalent vertices.
        Associate to each intersection a vertex (old or created) */
@@ -1237,6 +1245,73 @@ _print_mesh_info(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Print initial joining info into log file
+ *---------------------------------------------------------------------------*/
+
+static void
+_print_join_info(cs_mesh_t  *mesh,
+                 cs_join_t  *this_join,
+                 cs_join_param_t join_param)
+{
+  bft_printf(_("\n -------------------------------------------------------\n"
+               "  Joining number %d:\n\n"), join_param.num);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nJoining number %d:\n\n"), join_param.num);
+
+  if (join_param.perio_type != FVM_PERIODICITY_NULL) {
+    const double m[3][4];
+    memcpy(m, join_param.perio_matrix, sizeof(double)*12);
+    bft_printf(_("  Periodicity type: %s\n"),
+               _(fvm_periodicity_type_name[join_param.perio_type]));
+    bft_printf(_("  Transformation matrix:  %12.5g %12.5g %12.5g %12.5g\n"
+                 "                          %12.5g %12.5g %12.5g %12.5g\n"
+                 "                          %12.5g %12.5g %12.5g %12.5g\n\n"),
+               m[0][0], m[0][1], m[0][2], m[0][3],
+               m[1][0], m[1][1], m[1][2], m[1][3],
+               m[2][0], m[2][1], m[2][2], m[2][3]);
+  }
+
+  bft_printf(_("  Selection criteria: \"%s\"\n"), this_join->criteria);
+
+  if (join_param.verbosity > 0) {
+    bft_printf(_("\n"
+                 "  Parameters for the joining operation:\n"
+                 "    Shortest incident edge fraction:          %8.5f\n"
+                 "    Maximum angle between joined face planes: %8.5f\n\n"),
+               join_param.fraction, join_param.plane);
+
+    bft_printf(_("  Advanced joining parameters:\n"
+                 "    Verbosity level:                          %8d\n"
+                 "    Visualization level:                      %8d\n"
+                 "    Deepest level reachable in tree building: %8d\n"
+                 "    Max boxes by leaf:                        %8d\n"
+                 "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
+                 "    Max ratio of boxes for distribution:      %8.5f\n"
+                 "    Merge step tolerance multiplier:          %8.5f\n"
+                 "    Pre-merge factor:                         %8.5f\n"
+                 "    Tolerance computation mode:               %8d\n"
+                 "    Intersection computation mode:            %8d\n"
+                 "    Max. number of equiv. breaks:             %8d\n"
+                 "    Max. number of subfaces by face:          %8d\n\n"),
+               join_param.verbosity,
+               join_param.visualization,
+               join_param.tree_max_level,
+               join_param.tree_n_max_boxes,
+               join_param.tree_max_box_ratio,
+               join_param.tree_max_box_ratio_distrib,
+               join_param.merge_tol_coef,
+               join_param.pre_merge_factor,
+               join_param.tcm, join_param.icm,
+               join_param.n_max_equiv_breaks,
+               join_param.max_sub_faces);
+
+    _print_mesh_info(mesh, _(" Before joining"));
+    bft_printf("\n");
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Set advanced parameters to user-defined values.
  *
  * Out-of range values are silently set to minimum acceptable values
@@ -1392,7 +1467,8 @@ cs_join_add(const char  *sel_criteria,
                      FVM_PERIODICITY_NULL,
                      NULL,
                      verbosity,
-                     visualization);
+                     visualization,
+                     true);
 
   cs_glob_join_count++; /* Store number of joining (without periodic ones) */
   cs_glob_n_joinings++;
@@ -1466,10 +1542,13 @@ cs_join_set_advanced_param(int      join_num,
 
 /*----------------------------------------------------------------------------
  * Apply all the defined joining operations.
+ *
+ * parameters:
+ *   preprocess <-- true if we are in the preprocessing stage
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_all(void)
+cs_join_all(bool  preprocess)
 {
   int  join_id;
   double  clock_start, clock_end;
@@ -1495,69 +1574,22 @@ cs_join_all(void)
 
   for (join_id = 0; join_id < cs_glob_n_joinings; join_id++) {
 
+    if (cs_glob_join_array[join_id] == NULL)
+      continue;
+
     cs_join_t  *this_join = cs_glob_join_array[join_id];
+
     cs_join_param_t  join_param = this_join->param;
+
+    if (join_param.preprocessing != preprocess)
+      continue;
 
     clock_start = cs_timer_wtime();  /* Start timer */
 
-    /* Print information into log file */
+    /* Print informations into log file */
 
-    bft_printf(_("\n -------------------------------------------------------\n"
-                 "  Joining number %d:\n\n"), join_param.num);
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\nJoining number %d:\n\n"), join_param.num);
-
-    if (join_param.perio_type != FVM_PERIODICITY_NULL) {
-      const double m[3][4];
-      memcpy(m, join_param.perio_matrix, sizeof(double)*12);
-      bft_printf(_("  Periodicity type: %s\n"),
-                 _(fvm_periodicity_type_name[join_param.perio_type]));
-      bft_printf(_("  Transformation matrix:  %12.5g %12.5g %12.5g %12.5g\n"
-                   "                          %12.5g %12.5g %12.5g %12.5g\n"
-                   "                          %12.5g %12.5g %12.5g %12.5g\n\n"),
-                 m[0][0], m[0][1], m[0][2], m[0][3],
-                 m[1][0], m[1][1], m[1][2], m[1][3],
-                 m[2][0], m[2][1], m[2][2], m[2][3]);
-    }
-
-    bft_printf(_("  Selection criteria: \"%s\"\n"), this_join->criteria);
-
-    if (join_param.verbosity > 0) {
-      bft_printf(_("\n"
-                   "  Parameters for the joining operation:\n"
-                   "    Shortest incident edge fraction:          %8.5f\n"
-                   "    Maximum angle between joined face planes: %8.5f\n\n"),
-                 join_param.fraction, join_param.plane);
-
-      bft_printf(_("  Advanced joining parameters:\n"
-                   "    Verbosity level:                          %8d\n"
-                   "    Visualization level:                      %8d\n"
-                   "    Deepest level reachable in tree building: %8d\n"
-                   "    Max boxes by leaf:                        %8d\n"
-                   "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
-                   "    Max ratio of boxes for distribution:      %8.5f\n"
-                   "    Merge step tolerance multiplier:          %8.5f\n"
-                   "    Pre-merge factor:                         %8.5f\n"
-                   "    Tolerance computation mode:               %8d\n"
-                   "    Intersection computation mode:            %8d\n"
-                   "    Max. number of equiv. breaks:             %8d\n"
-                   "    Max. number of subfaces by face:          %8d\n\n"),
-                 join_param.verbosity,
-                 join_param.visualization,
-                 join_param.tree_max_level,
-                 join_param.tree_n_max_boxes,
-                 join_param.tree_max_box_ratio,
-                 join_param.tree_max_box_ratio_distrib,
-                 join_param.merge_tol_coef,
-                 join_param.pre_merge_factor,
-                 join_param.tcm, join_param.icm,
-                 join_param.n_max_equiv_breaks,
-                 join_param.max_sub_faces);
-
-      _print_mesh_info(mesh, _(" Before joining"));
-      bft_printf("\n");
-    }
+    if (mesh->verbosity > 0)
+      _print_join_info(mesh, this_join, join_param);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     _dump_mesh(join_param.num, "InitMesh", mesh);
@@ -1599,7 +1631,7 @@ cs_join_all(void)
                              &work_face_normal,
                              &edge_edge_visibility);
 
-      if (join_param.verbosity > 2)
+      if (mesh->verbosity > 0 && join_param.verbosity > 2)
         bft_printf(_("\n  Number of faces to treat locally: %10d\n"),
                    work_jmesh->n_faces);
 
@@ -1697,7 +1729,7 @@ cs_join_all(void)
     _dump_mesh(join_param.num, "FinalMesh", mesh);
 #endif
 
-    if (join_param.verbosity > 0) {
+    if (mesh->verbosity > 0 && join_param.verbosity > 0) {
       bft_printf("\n");
       _print_mesh_info(mesh, _(" After joining"));
       bft_printf("\n");
@@ -1705,21 +1737,28 @@ cs_join_all(void)
 
     clock_end = cs_timer_wtime();
 
-    bft_printf(_("\n"
-                 "  Joining %2d completed (%.3g s).\n"),
-               join_param.num, clock_end - clock_start);
-    bft_printf_flush();
+    if (mesh->verbosity > 0) {
 
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("\n"
-         "  Complete treatment for joining %2d:\n"
-         "    wall clock time:                                %10.3g\n"),
-       join_param.num, clock_end - clock_start);
+      bft_printf(_("\n"
+                   "  Joining %2d completed (%.3g s).\n"),
+                 join_param.num, clock_end - clock_start);
+      bft_printf_flush();
+
+      cs_log_printf
+        (CS_LOG_PERFORMANCE,
+         _("\n"
+           "  Complete treatment for joining %2d:\n"
+           "    wall clock time:                                %10.3g\n"),
+         join_param.num, clock_end - clock_start);
+
+    }
 
     /* Free memory */
 
-    cs_join_destroy(&this_join);
+    if (join_param.preprocessing) {
+      cs_join_destroy(&this_join);
+      cs_glob_join_array[join_id] = NULL;
+    }
 
 #if defined(HAVE_MPI)   /* Synchronization */
     if (cs_glob_n_ranks > 1)
@@ -1733,32 +1772,60 @@ cs_join_all(void)
 
   } /* End of loop on joinings */
 
-  /* Destroy all remaining structures relative to joining operation */
+  /* Destroy all remaining structures relative to joining operation
+     if not needed anymore */
 
-  BFT_FREE(cs_glob_join_array);
+  for (join_id = 0; join_id < cs_glob_n_joinings; join_id++) {
+    if (cs_glob_join_array[join_id] != NULL)
+      break;
+  }
+  if (join_id >= cs_glob_n_joinings) {
+    BFT_FREE(cs_glob_join_array);
+    cs_glob_n_joinings = 0;
+  }
 
   full_clock_end = cs_timer_wtime();
 
-  bft_printf(_("\n"
-               "  All joining operations successfully finished:\n"
-               "\n"
-               "    Wall clock time:            %10.3g\n\n"),
-             full_clock_end - full_clock_start);
-  bft_printf_flush();
+  if (mesh->verbosity > 0) {
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Joining operations time summary:\n"
-                  "  wall clock time:            %10.3g\n\n"),
-                full_clock_end - full_clock_start);
+    bft_printf(_("\n"
+                 "  All joining operations successfully finished:\n"
+                 "\n"
+                 "    Wall clock time:            %10.3g\n\n"),
+               full_clock_end - full_clock_start);
+    bft_printf_flush();
 
-  cs_log_separator(CS_LOG_PERFORMANCE);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Joining operations time summary:\n"
+                    "  wall clock time:            %10.3g\n\n"),
+                  full_clock_end - full_clock_start);
+
+    cs_log_separator(CS_LOG_PERFORMANCE);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Clear remaining memory for defined joining operations.
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_finalize()
+{
+  for (int join_id = 0; join_id < cs_glob_n_joinings; join_id++) {
+    if (cs_glob_join_array[join_id] != NULL)
+      cs_join_destroy(&(cs_glob_join_array[join_id]));
+  }
+
+  BFT_FREE(cs_glob_join_array);
+  cs_glob_n_joinings = 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    cs_debug_glob_mesh_dump("FinalGlobalVertices", mesh);
+cs_debug_glob_mesh_dump("FinalGlobalVertices", mesh);
 #endif
 
 END_C_DECLS

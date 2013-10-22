@@ -23,14 +23,11 @@
 subroutine lagdep &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
-   dlgeo  ,                                                       &
+ ( nbpmax ,                                                       &
    rtpa   , propce ,                                              &
-   ettp   , ettpa  , tepa   , statis ,                            &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
-   brgaus , terbru , fextla , vislen)
+   fextla , vislen)
 
 !===============================================================================
 ! Purpose:
@@ -58,21 +55,9 @@ subroutine lagdep &
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
-!(nfabor,ngeol)    !    !     !                                                !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! tr ! <-- ! cumul des statistiques volumiques              !
-!(ncelet,nvlsta    !    !     !                                                !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
@@ -116,22 +101,16 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
-
-integer          itepa(nbpmax,nivep)
+integer          nbpmax
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep) , statis(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision vagaus(nbpmax,*)
-double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision gradpr(ncelet,3)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
-double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
 
@@ -408,11 +387,8 @@ endif
             call lagesd                                                    &
             !==========
             ( itepa(ip,jdfac) , ip     ,                                   &
-              nbpmax , nvp    , nvep   , nivep  ,                          &
-              itepa  ,                                                     &
-              dlgeo  ,                                                     &
+              nbpmax ,                                                     &
               rtpa   , propce ,                                            &
-              ettp   , ettpa  , tepa   ,                                   &
               taup   , piil   ,                                            &
               vagaus , gradpr , romp   ,                                   &
               tempf  , romf   , ustar  , lvisq  ,tvisq   , depint )

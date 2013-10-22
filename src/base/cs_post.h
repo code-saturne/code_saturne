@@ -183,6 +183,20 @@ void
 cs_post_set_deformable(void);
 
 /*----------------------------------------------------------------------------
+ * Configure the post-processing output so that mesh connectivity
+ * may be automatically updated.
+ *
+ * This is done for meshes defined using selection criteria or functions.
+ * The behavior of Lagrangian meshes is unchanged.
+ *
+ * To be effective, this function should be called before defining
+ * postprocessing meshes.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_set_changing_connectivity(void);
+
+/*----------------------------------------------------------------------------
  * Define a writer; this objects manages a case's name, directory, and format,
  * as well as associated mesh's time dependency, and the default output
  * frequency for associated variables.

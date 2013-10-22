@@ -295,7 +295,7 @@ if (istala.eq.1) then
         !==========
         ( nvlsta ,                                                &
           ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,   &
-          statis , stativ , tabvr  )
+          tabvr  )
 
         if ((ivf.ne.ilfv).and.(ivf.ne.ilpd)) then
 

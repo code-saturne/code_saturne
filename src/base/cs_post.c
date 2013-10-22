@@ -332,6 +332,12 @@ static char *_cs_post_default_format_options = NULL;
 static bool        _cs_post_deformable = false;
 static cs_real_t  *_cs_post_ini_vtx_coo = NULL;
 
+/* Minimum global mesh time dependency */
+
+fvm_writer_time_dep_t  _cs_post_mod_flag_min = FVM_WRITER_FIXED_MESH;
+
+/* Array for moments */
+
 static const cs_real_t  *_cs_post_cumulative_mom_time = NULL;
 
 /* Flag to indicate output of domain number in parallel mode */
@@ -1063,7 +1069,7 @@ _predefine_mesh(int        mesh_id,
   if (time_varying)
     post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
   else
-    post_mesh->mod_flag_min = FVM_WRITER_FIXED_MESH;
+    post_mesh->mod_flag_min = _cs_post_mod_flag_min;
   post_mesh->mod_flag_max = FVM_WRITER_FIXED_MESH;
 
   /* Associate mesh with writers */
@@ -4978,6 +4984,25 @@ cs_post_set_deformable(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Configure the post-processing output so that mesh connectivity
+ * may be automatically updated.
+ *
+ * This is done for meshes defined using selection criteria or functions.
+ * The behavior of Lagrangian meshes is unchanged.
+ *
+ * To be effective, this function should be called before defining
+ * postprocessing meshes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_set_changing_connectivity(void)
+{
+  _cs_post_mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize post-processing of moments
  *
  * Currently, an external cumulative time array is simply mapped to
@@ -5252,7 +5277,6 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
     if (   active == true
         && post_mesh->alias < 0
-        && post_mesh->id > 0
         && post_mesh->mod_flag_min == FVM_WRITER_TRANSIENT_CONNECT)
       _redefine_mesh(post_mesh, ts);
 

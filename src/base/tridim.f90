@@ -42,7 +42,6 @@
 !> \param[in,out] rtp           calculated variables at cell centers
 !>                              (at current and previous time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     tslagr        lagrangian returned coupling term
 !> \param[in]     coefa         boundary conditions
 !> \param[in]     coefb         boundary conditions
 !> \param[in]     frcxt         external force generating hydrostatic pressure
@@ -54,7 +53,7 @@ subroutine tridim &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
-   tslagr , coefa  , coefb  , frcxt  , prhyd  )
+   coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
 ! Module files
@@ -105,11 +104,12 @@ integer          nvar   , nscal
 
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision frcxt(3,ncelet), prhyd(ncelet)
+
+double precision, pointer, dimension(:)   :: dt
+double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+double precision, pointer, dimension(:,:) :: frcxt
+double precision, pointer, dimension(:) :: prhyd
 
 ! Local variables
 
@@ -122,7 +122,6 @@ integer          ntrela
 integer          isvhb
 integer          ii    , jj    , ippcp , ientha, ippcv
 integer          iterns, inslst, icvrge
-integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
 integer          ielpdc
@@ -143,26 +142,70 @@ save             infpar
 integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: ilzfbr
 
-double precision, allocatable, dimension(:,:) :: uvwk, trava
-double precision, allocatable, dimension(:,:,:) :: ximpav
 double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
 double precision, allocatable, dimension(:,:) :: cofale
+double precision, pointer, dimension(:,:) :: dttens
 double precision, allocatable, dimension(:) :: qcalc
 double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
-double precision, pointer, dimension(:,:) :: dttens
-double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, crom_prev
 
+double precision, pointer, dimension(:,:) :: uvwk
+double precision, pointer, dimension(:,:) :: trava
+double precision, pointer, dimension(:,:,:) :: ximpav
+
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine navstv &
+  !================
+
+  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
+    isostd ,                                                       &
+    dt     , rtp    , rtpa   , propce ,                            &
+    coefa  , coefb  , frcxt  , prhyd  ,                            &
+    trava  , ximpa  , uvwk   )
+
+    use dimens, only: ndimfb
+    use mesh, only: nfabor
+
+    implicit none
+
+    integer          nvar   , nscal  , iterns , icvrge , itrale
+
+    integer          isostd(nfabor+1)
+
+    double precision coefa(ndimfb,*), coefb(ndimfb,*)
+
+    double precision, pointer, dimension(:)   :: dt
+    double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+    double precision, pointer, dimension(:,:) :: frcxt
+    double precision, pointer, dimension(:) :: prhyd
+    double precision, pointer, dimension(:,:) :: trava, uvwk
+    double precision, pointer, dimension(:,:,:) :: ximpa
+
+  end subroutine navstv
+
+  !=============================================================================
+
+end interface
+
+!===============================================================================
+
+uvwk => null()
+trava => null()
+ximpav => null()
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
 
-if(iwarni(iu).ge.1) then
+if (iwarni(iu).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -672,9 +715,9 @@ itrfup = 1
 
 if (nterup.gt.1.or.isno2t.gt.0) then
 
-  if (.not.allocated(ximpav)) allocate(ximpav(ndim,ndim,ncelet))
-  if (.not.allocated(uvwk)) allocate(uvwk(ndim,ncelet))
-  if (.not.allocated(trava)) allocate(trava(ndim,ncelet))
+  if (.not.associated(ximpav)) allocate(ximpav(ndim,ndim,ncelet))
+  if (.not.associated(uvwk)) allocate(uvwk(ndim,ncelet))
+  if (.not.associated(trava)) allocate(trava(ndim,ncelet))
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 
@@ -1007,7 +1050,7 @@ do while (iterns.le.nterup)
     !==========
   ( nvar   , ncp    , ncv    , ientha ,                            &
     rtp    ,                                                       &
-    cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
+    cpcst  , propce(:,ippcp) , cvcst  , propce(:,ippcv),           &
     hbord  , theipb )
 
     if (nfpt1t.gt.0) then
@@ -1186,12 +1229,6 @@ do while (iterns.le.nterup)
       write(nfecra,1040)
     endif
 
-
-    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_val_s(iflmas, imasfl)
-    call field_get_val_s(iflmab, bmasfl)
-
     ! Coupled solving of the velocity components
 
     call navstv &
@@ -1199,7 +1236,7 @@ do while (iterns.le.nterup)
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
     dt     , rtp    , rtpa   , propce ,                            &
-    tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
+    coefa  , coefb  , frcxt  , prhyd  ,                            &
     trava  , ximpav , uvwk   )
 
 
@@ -1461,7 +1498,7 @@ if (nscal.ge.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce ,                            &
-   tslagr , coefa  , coefb  )
+   coefa  , coefb  )
 
 endif
 

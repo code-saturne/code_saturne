@@ -52,8 +52,6 @@
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
 !> \param[in]     prhyd         hydrostatic pressure predicted at cell centers
-!> \param[in]     tslagr        terme de couplage retour du
-!>                                  lagrangien
 !> \param[in]     trava         work array for pressure velocity coupling
 !> \param[in]     ximpa         work array for pressure velocity coupling
 !> \param[in]     uvwk          work array for pressure velocity coupling
@@ -64,7 +62,7 @@ subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
    dt     , rtp    , rtpa   , propce ,                            &
-   tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
+   coefa  , coefb  , frcxt  , prhyd  ,                            &
    trava  , ximpa  , uvwk   )
 
 !===============================================================================
@@ -74,7 +72,7 @@ subroutine navstv &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
+use dimens, only: ndimfb, nproce
 use numvar
 use entsor
 use cstphy
@@ -89,6 +87,10 @@ use ppthch
 use ppincl
 use cplsat
 use mesh
+use lagran, only: iilagr
+use lagdim, only: ntersl
+use turbomachinery
+use ptrglo
 use field
 
 !===============================================================================
@@ -101,14 +103,14 @@ integer          nvar   , nscal  , iterns , icvrge , itrale
 
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(3,ncelet)
-double precision prhyd(ncelet)
-double precision trava(ndim,ncelet),ximpa(ndim,ndim,ncelet)
-double precision uvwk(ndim,ncelet)
+
+double precision, pointer, dimension(:)   :: dt
+double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+double precision, pointer, dimension(:,:) :: frcxt
+double precision, pointer, dimension(:) :: prhyd
+double precision, pointer, dimension(:,:) :: trava, uvwk
+double precision, pointer, dimension(:,:,:) :: ximpa
 
 ! Local variables
 
@@ -132,33 +134,35 @@ double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
 double precision vitbox, vitboy, vitboz
 
+double precision t1, t2, t3, t4, ellap1, ellap2
+
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
 double precision, allocatable, dimension(:,:,:), target :: wvisfi
 double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:) :: drtp
-double precision, allocatable, dimension(:,:) :: trav
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
-double precision, allocatable, dimension(:,:) :: dfrcxt
-double precision, allocatable, dimension(:,:) :: grdphd
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
 
-double precision, pointer, dimension(:,:,:) :: viscfi => null()
-double precision, pointer, dimension(:) :: viscbi => null()
-double precision, pointer, dimension(:,:) :: dttens => null()
-
 double precision, dimension(:,:), allocatable :: gradp
-double precision, dimension(:,:), allocatable :: vel
-double precision, dimension(:,:), allocatable :: vela
 double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:), allocatable :: coefap, coefbp
+
+double precision, dimension(:,:), pointer :: grdphd
+double precision, dimension(:,:), pointer :: vel, vela
+double precision, dimension(:,:,:), pointer :: viscfi
+double precision, dimension(:), pointer :: viscbi
+double precision, dimension(:,:), pointer :: dttens
+double precision, dimension(:,:), pointer :: dfrcxt
+
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:,:), pointer :: trav
 
 !===============================================================================
 
@@ -173,7 +177,6 @@ else if (idften(iu).eq.6) then
   allocate(viscf(3, 3, nfac), viscb(ndimfb))
 endif
 
-allocate(drtp(ncelet))
 allocate(trav(3,ncelet))
 allocate(vela(3,ncelet))
 allocate(vel(3,ncelet))
@@ -212,9 +215,6 @@ endif
 
 ! Map some specific field arrays
 if (idtten.ge.0) call field_get_val_v(idtten, dttens)
-
-! Allocate work for the ALE module
-if (iale.eq.1) allocate(mshvel(3,ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet))
@@ -294,6 +294,12 @@ if (nterup.gt.1) then
 
 endif
 
+! Initialize timers
+t1 = 0.d0
+t2 = 0.d0
+t3 = 0.d0
+t4 = 0.d0
+
 !===============================================================================
 ! 1. Prediction of the mass flux in case of Low Mach compressible algorithm
 !===============================================================================
@@ -350,6 +356,10 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
+! Pointers to properties
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
+
 call predvv &
 !==========
 ( iappel ,                                                       &
@@ -369,9 +379,6 @@ call predvv &
 !       on met a jour les flux de masse, et on sort
 
 if (iprco.le.0) then
-
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
 
   itypfl = 1
   init   = 1
@@ -398,6 +405,8 @@ if (iprco.le.0) then
   ! In the ALE framework, we add the mesh velocity
   if (iale.eq.1) then
 
+    allocate(mshvel(3,ncelet))
+
     do iel = 1, ncelet
       mshvel(1,iel) = rtp(iel,iuma)
       mshvel(2,iel) = rtp(iel,ivma)
@@ -407,9 +416,6 @@ if (iprco.le.0) then
     ! One temporary array needed for internal faces, in case some internal vertices
     !  are moved directly by the user
     allocate(intflx(nfac), bouflx(ndimfb))
-
-    call field_get_val_s(icrom, crom)
-    call field_get_val_s(ibrom, brom)
 
     itypfl = 1
     init   = 1
@@ -471,6 +477,7 @@ if (iprco.le.0) then
 
     ! Free memory
     deallocate(intflx, bouflx)
+    deallocate(mshvel)
 
   endif
 
@@ -478,9 +485,6 @@ if (iprco.le.0) then
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
   if (imobil.eq.1) then
-
-    call field_get_val_s(icrom, crom)
-    call field_get_val_s(ibrom, brom)
 
     !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
     do ifac = 1, nfac
@@ -509,6 +513,39 @@ if (iprco.le.0) then
 
   endif
 
+  if (iturbo.eq.1 .or. iturbo.eq.2) then
+
+    do ifac = 1, nfac
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      if (irotce(iel1) .or. irotce(iel2)) then
+        dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
+        rhofac = 0.5d0*(crom(iel1) + crom(iel2))
+        vitbox = rotax(2)*cdgfac(3,ifac) - rotax(3)*cdgfac(2,ifac)
+        vitboy = rotax(3)*cdgfac(1,ifac) - rotax(1)*cdgfac(3,ifac)
+        vitboz = rotax(1)*cdgfac(2,ifac) - rotax(2)*cdgfac(1,ifac)
+        imasfl(ifac) = imasfl(ifac) - rhofac*(  vitbox*surfac(1,ifac)  &
+                                              + vitboy*surfac(2,ifac)  &
+                                              + vitboz*surfac(3,ifac))
+      endif
+    enddo
+
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      if (irotce(iel)) then
+        dtfac  = dt(iel)
+        rhofac = brom(ifac)
+        vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
+        vitboy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
+        vitboz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
+        bmasfl(ifac) = bmasfl(ifac) - rhofac*(  vitbox*surfbo(1,ifac)  &
+                                              + vitboy*surfbo(2,ifac)  &
+                                              + vitboz*surfbo(3,ifac))
+      endif
+    enddo
+
+  endif
+
   ! Interleaved values of vel and vela
 
   !$omp parallel do
@@ -532,12 +569,140 @@ if (iprco.le.0) then
 endif
 
 !===============================================================================
+! 4. Update mesh for unsteady turbomachinery computations
+!===============================================================================
+
+if (iturbo.eq.2) then
+
+  call dmtmps(t1)
+  !==========
+
+  ! Update mesh
+
+  call turbomachinery_update_mesh (ttcmob, ellap1)
+  !==============================
+
+  ! Scratch and resize temporary internal faces arrays
+
+  deallocate(viscf)
+  if (idften(iu).eq.1) then
+    allocate(viscf(1, 1, nfac))
+  else if (idften(iu).eq.6) then
+    allocate(viscf(3, 3, nfac))
+  endif
+
+  if (allocated(wvisfi)) then ! TODO verifier
+    deallocate(viscfi)
+
+    if (idften(iu).eq.1) then
+      if (itytur.eq.3.and.irijnu.eq.1) then
+        allocate(wvisfi(1,1,nfac))
+        viscfi => wvisfi(:,:,1:nfac)
+      else
+        viscfi => viscf(:,:,1:nfac)
+      endif
+    else if(idften(iu).eq.6) then
+      if (itytur.eq.3.and.irijnu.eq.1) then
+        allocate(wvisfi(3,3,nfac))
+        viscfi => wvisfi(1:3,1:3,1:nfac)
+      else
+        viscfi => viscf(1:3,1:3,1:nfac)
+      endif
+    endif
+
+  endif
+
+  if (allocated(secvif)) then
+    deallocate(secvif)
+    allocate(secvif(nfac))
+  endif
+
+  ! Scratch, resize and initialize main internal faces properties array
+
+  call turbomachinery_reinit_i_face_fields
+
+  if (irangp.ge.0 .or. iperio.eq.1) then
+
+    ! Scratch and resize work arrays
+
+    deallocate(w1, w7, w8, w9)
+    allocate(w1(ncelet), w7(ncelet), w8(ncelet), w9(ncelet))
+    if (allocated(w10)) then
+      deallocate(w10)
+      allocate(w10(ncelet))
+    endif
+
+    ! Resize auxiliary arrays (pointe module)
+
+    call resize_aux_arrays
+    !=====================
+
+    ! Resize main real array
+
+    call resize_main_real_array ( dt , rtp , rtpa , propce )
+    !==========================
+
+    ! Update turbomachinery module
+
+    call turbomachinery_update
+    !=========================
+
+    ! Update field mappings ("owner" fields handled by update_turbomachinery)
+
+    call fldtri(nproce, dt, rtpa, rtp, propce, coefa, coefb)
+    !==========
+
+    ! Resize other arrays related to the velocity-pressure resolution
+
+    call resize_vec_real_array(vel)
+    call resize_vec_real_array(vela)
+    call resize_vec_real_array(trav)
+
+    call resize_vec_real_array(dfrcxt)
+
+    ! Resize other arrays, depending on user options
+
+    if (iilagr.gt.0) &
+      call resize_n_sca_real_arrays(ntersl, tslagr)
+
+    if (iphydr.eq.1) then
+      call resize_vec_real_array(frcxt)
+    elseif (iphydr.eq.2) then
+      call resize_sca_real_array(prhyd)
+      call resize_vec_real_array_ni(grdphd)
+    endif
+
+    if (nterup.gt.1) then
+      call resize_vec_real_array(trava)
+      call resize_vec_real_array(uvwk)
+      call resize_tens_real_array(ximpa)
+    endif
+
+  endif
+
+  ! Update local pointers
+
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
+
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
+
+  call dmtmps(t2)
+  !==========
+
+endif
+
+!===============================================================================
 ! 5. Pressure correction step
 !===============================================================================
 
 if (iwarni(iu).ge.1) then
   write(nfecra,1200)
 endif
+
+! Allocate temporary arrays for the pressure resolution
+allocate(drtp(ncelet))
 
 if (ippmod(icompf).lt.0) then
 
@@ -574,9 +739,6 @@ endif
 !===============================================================================
 
 if (ippmod(icompf).lt.0) then
-
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
 
   ! irevmc = 0: Only the standard method is available for the coupled
   !              version of navstv.
@@ -734,19 +896,19 @@ if (ippmod(icompf).lt.0) then
 
           vel(1, iel) = vel(1, iel)                              &
                - unsrom*(                                 &
-               dttens(1,iel)*(trav(1,iel))     &
+                 dttens(1,iel)*(trav(1,iel))     &
                + dttens(4,iel)*(trav(2,iel))     &
                + dttens(6,iel)*(trav(3,iel))     &
                )
           vel(2, iel) = vel(2, iel)                              &
                - unsrom*(                                 &
-               dttens(4,iel)*(trav(1,iel))     &
+                 dttens(4,iel)*(trav(1,iel))     &
                + dttens(2,iel)*(trav(2,iel))     &
                + dttens(5,iel)*(trav(3,iel))     &
                )
           vel(3, iel) = vel(3, iel)                              &
                - unsrom*(                                 &
-               dttens(6,iel)*(trav(1,iel))     &
+                 dttens(6,iel)*(trav(1,iel))     &
                + dttens(5,iel)*(trav(2,iel))     &
                + dttens(3,iel)*(trav(3,iel))     &
                )
@@ -761,6 +923,8 @@ endif
 ! In the ALE framework, we add the mesh velocity
 if (iale.eq.1) then
 
+  allocate(mshvel(3,ncelet))
+
   !$omp parallel do
   do iel = 1, ncelet
     mshvel(1,iel) = rtp(iel,iuma)
@@ -771,9 +935,6 @@ if (iale.eq.1) then
   ! One temporary array needed for internal faces, in case some internal vertices
   !  are moved directly by the user
   allocate(intflx(nfac), bouflx(ndimfb))
-
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
 
   itypfl = 1
   init   = 1
@@ -835,6 +996,7 @@ if (iale.eq.1) then
 
   ! Free memory
   deallocate(intflx, bouflx)
+  deallocate(mshvel)
 
 endif
 
@@ -844,9 +1006,6 @@ endif
 ! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
 
 if (imobil.eq.1) then
-
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
 
   !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
   do ifac = 1, nfac
@@ -874,16 +1033,55 @@ if (imobil.eq.1) then
   enddo
 endif
 
+if (iturbo.eq.1 .or. iturbo.eq.2) then
+
+  call dmtmps(t3)
+  !==========
+
+  do ifac = 1, nfac
+    iel1 = ifacel(1,ifac)
+    iel2 = ifacel(2,ifac)
+    if (irotce(iel1) .or. irotce(iel2)) then
+      dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
+      rhofac = 0.5d0*(crom(iel1) + crom(iel2))
+      vitbox = rotax(2)*cdgfac(3,ifac) - rotax(3)*cdgfac(2,ifac)
+      vitboy = rotax(3)*cdgfac(1,ifac) - rotax(1)*cdgfac(3,ifac)
+      vitboz = rotax(1)*cdgfac(2,ifac) - rotax(2)*cdgfac(1,ifac)
+      imasfl(ifac) = imasfl(ifac) - rhofac*(  vitbox*surfac(1,ifac)  &
+                                            + vitboy*surfac(2,ifac)  &
+                                            + vitboz*surfac(3,ifac))
+    endif
+  enddo
+
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    if (irotce(iel)) then
+      dtfac  = dt(iel)
+      rhofac = brom(ifac)
+      vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
+      vitboy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
+      vitboz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
+      bmasfl(ifac) = bmasfl(ifac) - rhofac*(  vitbox*surfbo(1,ifac)  &
+                                            + vitboy*surfbo(2,ifac)  &
+                                            + vitboz*surfbo(3,ifac))
+    endif
+  enddo
+
+  call dmtmps(t4)
+  !==========
+
+  ellap2 = t2-t1 + t4-t3
+
+endif
+
 !===============================================================================
 ! 8. Compute error estimators for correction step and the global algo
 !===============================================================================
 
 if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
-  ! ---> REPERAGE DES VARIABLES
-
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
+  ! Allocate temporary arrays
+  allocate(esflum(nfac), esflub(nfabor))
 
   ! ---> ECHANGE DES VITESSES ET PRESSION EN PERIODICITE ET PARALLELISME
 
@@ -1056,7 +1254,7 @@ endif
 if (ndircp.le.0) then
   call prmoy0 &
   !==========
-( ncelet , ncel   , volume , rtp(1,ipr) )
+( ncelet , ncel   , volume , rtp(:,ipr) )
 endif
 
 ! Calcul de la pression totale IPRTOT : (definie comme propriete )
@@ -1078,9 +1276,6 @@ endif
 !===============================================================================
 ! 10. Printing
 !===============================================================================
-
-call field_get_val_s(icrom, crom)
-call field_get_val_s(ibrom, brom)
 
 if (iwarni(iu).ge.1) then
 
@@ -1195,19 +1390,21 @@ if (iwarni(iu).ge.1) then
 
 endif
 
+if (iturbo.eq.2) then
+  if (mod(ntcabs,ntlist).eq.0)  write(nfecra,3000) ellap1, ellap2
+endif
+
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(drtp)
 deallocate(trav)
 deallocate(dfrcxt)
-if (allocated(grdphd)) deallocate(grdphd)
-if (allocated(esflum)) deallocate(esflum, esflub)
-if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 deallocate(w1)
 deallocate(w7, w8, w9)
 if (allocated(w10)) deallocate(w10)
-if (allocated(mshvel)) deallocate(mshvel)
+if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 if (allocated(secvif)) deallocate(secvif, secvib)
+if (iphydr.eq.2) deallocate(grdphd)
 
 ! Interleaved values of vel and vela
 
@@ -1262,6 +1459,11 @@ deallocate(coefap, coefbp)
 ' Non convergence du couplage vitesse pression par point fixe  ' )
  2001 format(                                                           &
 '-------------------------------------------------------------',/)
+ 3000 format(/,                                                     &
+'   ** INFORMATION SUR LE TRAITEMENT ROTOR/STATOR INSTATIONNAIRE',/,&
+'      ---------------------------------------------------------',/,&
+' Temps dedie a la mise a jour du maillage (s) :',F12.4,          /,&
+' Temps total                              (s) :',F12.4,          /)
 
 #else
 
@@ -1295,6 +1497,11 @@ deallocate(coefap, coefbp)
 ' Non convergence of fixed point for velocity pressure coupling' )
  2001 format(                                                           &
 '-------------------------------------------------------------',/)
+ 3000 format(/,                                             &
+'   ** INFORMATION ON UNSTEADY ROTOR/STATOR TREATMENT',/,&
+'      ----------------------------------------------',/,&
+' Time dedicated to mesh update (s):',F12.4,           /,&
+' Global time                   (s):',F12.4,           /)
 
 #endif
 

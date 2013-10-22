@@ -27,11 +27,8 @@ subroutine lagune &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   icocel , itycel , ifrlag , itepa  ,                            &
-   dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
-   coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -59,43 +56,19 @@ subroutine lagune &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! icocel           ! te ! --> ! connectivite cellules -> faces                 !
-!   (lndnod)       !    !     !    face de bord si numero negatif              !
-! itycel           ! te ! --> ! connectivite cellules -> faces                 !
-!   (ncelet+1)     !    !     !    pointeur du tableau icocel                  !
-! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
-!   (nfabor)       !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
-! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! --> ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! tr ! --> ! moyennes statistiques                          !
-!(ncelet,nvlsta    !    !     !                                                !
-! stativ           ! tr ! <-- ! cumul pour les variances des                   !
-!(ncelet,          !    !     !    statistiques volumiques                     !
-!   nvlsta-1)      !    !     !                                                !
-! tslagr           ! tr ! --> ! terme de couplage retour du                    !
-!(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
-! parbor           ! tr ! --> ! infos sur interaction des particules           !
-!(nfabor,nvisbr    !    !     !   aux faces de bord                            !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -130,19 +103,9 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          icocel(lndnod) , itycel(ncelet+1)
-integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
-
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
-double precision ettp(nbpmax,nvp), ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
-double precision statis(ncelet,nvlsta)
-double precision stativ(ncelet,nvlsta-1)
-double precision tslagr(ncelet,ntersl)
-double precision parbor(nfabor,nvisbr)
-double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
 
@@ -325,7 +288,7 @@ if (iplar.eq.1) then
 
     ! boundary faces data
 
-     call laggeo(dlgeo)
+     call laggeo
      !==========
 
      if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
@@ -665,12 +628,11 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
 
   call lagcou                                                     &
   !==========
-   ( nbpmax , nvp    , nvep   , nivep  ,                          &
+   ( nbpmax ,                                                     &
      ntersl ,                                                     &
-     itepa  , indep  , ibord  ,                                   &
+     indep  , ibord  ,                                            &
      rtp    , propce ,                                            &
-     ettp   , ettpa  , tepa   , taup   ,                          &
-     tempct , tsfext , tslagr ,                                   &
+     taup   , tempct , tsfext ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
      tslag  , w1     , w2   ,                                     &
      auxl(1,1) , auxl(1,2)   , auxl(1,3) )
@@ -807,14 +769,8 @@ endif
 !===============================================================================
 
 if (nor.eq.nordre .and. ilapoi.eq.1) then
-
-  call lagpoi                                                     &
+  call lagpoi
   !==========
- ( nbpmax , nvp    , nivep  ,                                     &
-   nvlsta ,                                                       &
-   itepa  ,                                                       &
-   ettp   , statis )
-
 endif
 
 !===============================================================================
@@ -835,14 +791,8 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
     npar1 = nbpart - npclon + 1
     npar2 = nbpart
 
-    call lagipn                                                   &
+    call lagipn(nbpmax, npar1, npar2, rtp, vagaus, propce)
     !==========
-    ( nbpmax , nvp    , nvep   , nivep  ,                         &
-      npar1  , npar2  ,                                           &
-      itepa  ,                                                    &
-      rtp    ,                                                    &
-      ettp   , tepa   , vagaus ,                                  &
-      icocel , lndnod , itycel , dlgeo  , propce , ifrlag )
 
   endif
 
@@ -864,10 +814,8 @@ call uslast                                                       &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
-   ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
-   statis , stativ )
+   taup   , tlag   , tempct )
 
 !===============================================================================
 ! 16. Visualisations

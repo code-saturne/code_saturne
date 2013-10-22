@@ -20,13 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine lagpoi &
+subroutine lagpoi
 !================
-
- ( nbpmax , nvp    , nivep  ,                            &
-   nvlsta ,                                              &
-   itepa  ,                                              &
-   ettp   , statis )
 
 !===============================================================================
 ! FONCTION :
@@ -45,16 +40,6 @@ subroutine lagpoi &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! itepa            ! te ! --> ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! statis           ! tr ! <-- ! moyennes statistiques                          !
-!(ncelet,nvlsta    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -85,14 +70,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-integer          nbpmax , nvp    , nivep
-integer          nvlsta
-
-integer          itepa(nbpmax,nivep)
-
-double precision ettp(nbpmax,nvp)
-double precision statis(ncelet,nvlsta)
 
 ! Local variables
 
@@ -135,8 +112,8 @@ enddo
 
 call lageqp                                                       &
 !==========
- ( statis(1,ilvx)  , statis(1,ilvy)  , statis(1,ilvz)  ,          &
-   statis(1,ilfv)  ,                                              &
+ ( statis(:,ilvx)  , statis(:,ilvy)  , statis(:,ilvz)  ,          &
+   statis(:,ilfv)  ,                                              &
    phil   )
 
 ! Calcul du gradient du Correcteur PHI

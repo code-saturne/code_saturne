@@ -1373,14 +1373,8 @@ enddo
 npar1 = nbpart+1
 npar2 = nbpart+ nlocnew
 
-call lagipn                                                       &
+call lagipn(nbpmax, npar1, npar2, rtpa, vagaus, propce)
 !==========
-  ( nbpmax , nvp    , nvep   , nivep  ,                           &
-    npar1  , npar2  ,                                             &
-    itepa  ,                                                      &
-    rtpa   ,                                                      &
-    ettp   , tepa   , vagaus ,                                    &
-    icocel , lndnod , itycel , dlgeo  , propce , ifrlag )
 
 !===============================================================================
 ! 7. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES

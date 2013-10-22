@@ -136,6 +136,7 @@ use cplsat
 use mesh
 use field
 use lagran
+use turbomachinery
 
 !===============================================================================
 
@@ -442,7 +443,9 @@ do ifac = 1, nfabor
 
     ! If we are not using ALE, force the displacement velocity for the face
     !  to be tangential (and update rcodcl for possible use)
-    if (iale.eq.0.and.imobil.eq.0) then
+    ! In frozen rotor (iturbo = 1), the velocity is neither tangential to the
+    !  wall (absolute velocity solved in a relative frame of reference)
+    if (iale.eq.0.and.imobil.eq.0.and.iturbo.eq.0) then
       rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
       rcodcx = rcodcx -rcodcn*rnx
       rcodcy = rcodcy -rcodcn*rny

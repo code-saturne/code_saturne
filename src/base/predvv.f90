@@ -124,6 +124,7 @@ use ppincl
 use cplsat
 use ihmpre, only: iihmpr
 use mesh
+use turbomachinery
 use cs_f_interfaces
 use cfpoin
 use field
@@ -295,6 +296,7 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   endif
 !     Ajout eventuel de la force de Coriolis
   if (icorio.eq.1) then
+    ! "True" Coriolis term if one solves the relative velocity
     do iel = 1, ncel
       cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
       cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
@@ -302,6 +304,18 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       dfrcxt(1 ,iel) = dfrcxt(1 ,iel) - 2.d0*crom(iel)*cx
       dfrcxt(2 ,iel) = dfrcxt(2 ,iel) - 2.d0*crom(iel)*cy
       dfrcxt(3 ,iel) = dfrcxt(3 ,iel) - 2.d0*crom(iel)*cz
+    enddo
+  elseif (iturbo.eq.1) then
+    ! "Coriolis-type" term if one solves the absolute velocity
+    do iel = 1, ncel
+      if (irotce(iel)) then
+        cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
+        cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
+        cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
+        dfrcxt(iel,1) = dfrcxt(iel,1) - crom(iel)*cx
+        dfrcxt(iel,2) = dfrcxt(iel,2) - crom(iel)*cy
+        dfrcxt(iel,3) = dfrcxt(iel,3) - crom(iel)*cz
+      endif
     enddo
   endif
 
@@ -850,6 +864,47 @@ if (icorio.eq.1.and.iphydr.eq.0) then
         trava(1,iel) = trava(1,iel) + romvom*cx
         trava(2,iel) = trava(2,iel) + romvom*cy
         trava(3,iel) = trava(3,iel) + romvom*cz
+      enddo
+
+    endif
+  endif
+
+elseif (iturbo.eq.1 .and. iphydr.eq.0) then
+
+  ! A la premiere iter sur navsto, on ajoute la partie issue des
+  ! termes explicites
+  if (iterns.eq.1) then
+
+    ! Si on n'itere pas sur navsto : TRAV
+    if (nterup.eq.1) then
+
+      call field_get_val_s(icrom, crom)
+
+      do iel = 1, ncel
+        if (irotce(iel)) then
+          cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
+          cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
+          cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
+          romvom = -crom(iel)*volume(iel)
+          trav(1,iel) = trav(1,iel) + romvom*cx
+          trav(2,iel) = trav(2,iel) + romvom*cy
+          trav(3,iel) = trav(3,iel) + romvom*cz
+        endif
+      enddo
+
+    ! Si on itere sur navsto : TRAVA
+    else
+
+      do iel = 1, ncel
+        if (irotce(iel)) then
+          cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
+          cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
+          cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
+          romvom = -crom(iel)*volume(iel)
+          trava(1,iel) = trava(1,iel) + romvom*cx
+          trava(2,iel) = trava(2,iel) + romvom*cy
+          trava(3,iel) = trava(3,iel) + romvom*cz
+        endif
       enddo
 
     endif

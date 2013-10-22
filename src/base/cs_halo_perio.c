@@ -369,6 +369,7 @@ _apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
   tensor[5] = t0[2][0];
 
 }
+
 /*----------------------------------------------------------------------------
  * Compute the rotation of a third-order symmetric interleaved tensor
  * (18 components)

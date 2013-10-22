@@ -77,6 +77,7 @@ use parall
 use cplsat
 use field
 use atchem
+use turbomachinery
 
 !===============================================================================
 
@@ -441,14 +442,17 @@ ttpmob = rval ! no direct read to avoid pointer issue
 nberro=nberro+ierror
 
 ! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
-!       -> on n'affiche le message que si imobil=1 (sinon RAS)
+!       -> on n'affiche le message que si imobil=1 ou iturbo=2 (sinon RAS)
 if (nberro.ne.0) then
-  if (imobil.eq.1) write(nfecra,9403) ttpabs
+  if (imobil.eq.1 .or. iturbo.eq.2) write(nfecra,9403) ttpabs
   ttpmob = ttpabs
 endif
 
-! --->  Information (uniquement si imobil=1 et pas d affichage precedent)
-if (imobil.eq.1 .and. nberro.eq.0)  write(nfecra,2412) ttpmob
+! --->  Information (uniquement si imobil=1 ou iturbo=2
+!         et pas d affichage precedent)
+if (imobil.eq.1 .or. iturbo.eq.2) then
+  if (nberro.eq.0)  write(nfecra,2412) ttpmob
+endif
 
 ! --->  Fin de la lecture des options
 write(nfecra,1499)
@@ -1079,18 +1083,7 @@ endif
 ! 6. LECTURE D'INFORMATIONS COMPLEMENTAIRES LEGERES
 !================================================================
 
-if (ichemistry.gt.0) then
-  rubriq = 'atmospheric_chem'
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              init_at_chem,ierror)
-
-  if (ierror.eq.0.and.init_at_chem.gt.0) then
-    init_at_chem = 0
-  endif
-endif
+!     Pour le moment, il n'y en a pas.
 
 !================================================================
 ! 7. FERMETURE DU FICHIER SUITE PRINCIPAL

@@ -111,6 +111,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use turbomachinery
 
 !===============================================================================
 

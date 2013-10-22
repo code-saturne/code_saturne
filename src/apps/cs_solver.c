@@ -107,6 +107,7 @@
 #include "cs_system_info.h"
 #include "cs_timer.h"
 #include "cs_les_inflow.h"
+#include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -271,6 +272,10 @@ cs_run(void)
 
   cs_preprocess_mesh(halo_type);
 
+  /* Initialization for turbomachinery computations */
+
+  cs_turbomachinery_initialize();
+
   /* Initialize meshes for the main post-processing */
 
   check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
@@ -388,6 +393,11 @@ cs_run(void)
   /* Free cooling towers related structures */
 
   cs_ctwr_all_destroy();
+
+  /* Free turbomachinery related structures */
+
+  cs_turbomachinery_finalize();
+  cs_join_finalize();
 
   /* Free post processing or logging related structures */
 

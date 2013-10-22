@@ -23,11 +23,11 @@
 subroutine lagcou &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
+ ( nbpmax ,                                                       &
    ntersl ,                                                       &
-   itepa  , indep  , ibord  ,                                     &
+   indep  , ibord  ,                                              &
    rtp    , propce ,                                              &
-   ettp   , ettpa  , tepa   , taup   , tempct , tsfext , tslagr , &
+   taup   , tempct , tsfext ,                                     &
    cpgd1  , cpgd2  , cpght  ,                                     &
    tslag  , volp   , volm   ,                                     &
    auxl1  , auxl2  , auxl3  )
@@ -61,12 +61,7 @@ subroutine lagcou &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! indep            ! te ! <-- ! pour chaque particule :                        !
 !  (nbpmax)        !    !     !    numero de la cellule de depart              !
 ! ibord            ! te ! <-- ! contient le numero de la                       !
@@ -74,18 +69,10 @@ subroutine lagcou &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tsfext(nbpmax    ! tr ! <-- ! forces externes                                !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpmax,2)      !    !     !                                                !
-! tslagr(nbpmax    ! tr ! --> ! termes sources de couplage retour              !
-!     ntersl)      !    !     !                                                !
 ! cpgd1,cpgd2,     ! tr ! <-- ! termes de devolatilisation 1 et 2 et           !
 !  cpght(nbpmax    !    !     !   de combusion heterogene (charbon             !
 !                  !    !     !   avec couplage retour thermique)              !
@@ -132,19 +119,16 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
+integer          nbpmax
 integer          ntersl
-integer          itepa(nbpmax,nivep), indep(nbpmax), ibord(nbpmax)
+integer          indep(nbpmax), ibord(nbpmax)
 
 double precision propce(ncelet,*) , rtp(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tempct(nbpmax,2)
 double precision tsfext(nbpmax)
 double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)
 double precision tslag(ncelet,ntersl)
 double precision volp(ncelet) , volm(ncelet)
-double precision tslagr(ncelet,ntersl)
 double precision auxl1(nbpmax) , auxl2(nbpmax) , auxl3(nbpmax)
 
 ! Local variables

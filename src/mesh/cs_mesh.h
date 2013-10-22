@@ -172,6 +172,7 @@ typedef struct {
 
   cs_gnum_t n_g_free_faces;          /* Global number of boundary faces
                                         which are in fact isolated */
+  int verbosity;                     /* Current verbosity level */
   int modified;                      /* Modification status */
 
 } cs_mesh_t;

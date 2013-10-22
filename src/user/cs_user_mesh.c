@@ -7,7 +7,7 @@
  *   3) Define (conforming or non-conforming) periodicity.
  *   4) Define thin walls.
  *   5) Modify the geometry and mesh.
- *   6) Smooth the mesh.
+ *   6) Smoothe the mesh.
  *============================================================================*/
 
 /* VERS */

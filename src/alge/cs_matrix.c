@@ -4771,6 +4771,33 @@ cs_matrix_finalize(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Update sparse matrix API in case of mesh modification.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_update_mesh(void)
+{
+  cs_mesh_t  *mesh = cs_glob_mesh;
+
+  cs_matrix_destroy(&cs_glob_matrix_default);
+  cs_matrix_structure_destroy(&cs_glob_matrix_default_struct);
+
+  cs_glob_matrix_default_struct
+    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                 true,
+                                 mesh->n_cells,
+                                 mesh->n_cells_with_ghosts,
+                                 mesh->n_i_faces,
+                                 mesh->global_cell_num,
+                                 mesh->i_face_cells,
+                                 mesh->halo,
+                                 mesh->i_face_numbering);
+
+  cs_glob_matrix_default
+    = cs_matrix_create(cs_glob_matrix_default_struct);
+}
+
+/*----------------------------------------------------------------------------
  * Create a matrix Structure.
  *
  * Note that the structure created maps to the given existing

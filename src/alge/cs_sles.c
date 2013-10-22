@@ -3015,7 +3015,7 @@ cs_sles_initialize(void)
 
   assert(mesh != NULL);
 
-   cs_glob_sles_native_matrix_struct
+  cs_glob_sles_native_matrix_struct
     = cs_matrix_structure_create(CS_MATRIX_NATIVE,
                                  true,
                                  mesh->n_cells,
@@ -3067,6 +3067,38 @@ cs_sles_finalize(void)
 
   cs_matrix_structure_destroy(&cs_glob_sles_native_matrix_struct);
  }
+
+/*----------------------------------------------------------------------------
+ * Update sparse linear equation solver API in case of mesh modification.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_update_mesh(void)
+{
+  cs_mesh_t  *mesh = cs_glob_mesh;
+
+  assert(mesh != NULL);
+
+  /* Free then rebuid matrix structures */
+
+  cs_matrix_destroy(&cs_glob_sles_native_matrix);
+
+  cs_matrix_structure_destroy(&cs_glob_sles_native_matrix_struct);
+
+  cs_glob_sles_native_matrix_struct
+    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                 true,
+                                 mesh->n_cells,
+                                 mesh->n_cells_with_ghosts,
+                                 mesh->n_i_faces,
+                                 mesh->global_cell_num,
+                                 mesh->i_face_cells,
+                                 mesh->halo,
+                                 mesh->i_face_numbering);
+
+  cs_glob_sles_native_matrix
+    = cs_matrix_create(cs_glob_sles_native_matrix_struct);
+}
 
 #if defined(HAVE_MPI)
 

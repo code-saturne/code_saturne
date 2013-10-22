@@ -149,6 +149,7 @@ use radiat
 use cplsat
 use mesh
 use field
+use turbomachinery
 
 !===============================================================================
 
@@ -336,6 +337,11 @@ endif
 
 if (imobil.eq.1) then
   call mmtycl(itypfb, rcodcl)
+  !==========
+endif
+
+if (iturbo.eq.1 .or. iturbo.eq.2) then
+  call mmtyc2 (itypfb, rcodcl)
   !==========
 endif
 

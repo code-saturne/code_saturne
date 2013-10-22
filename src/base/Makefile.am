@@ -120,6 +120,7 @@ cs_time_plot.h \
 cs_time_step.h \
 cs_timer.h \
 cs_tpar1d.h \
+cs_turbomachinery.h \
 cs_ventil.h \
 cs_wall_functions.h
 
@@ -235,6 +236,7 @@ cs_syr_coupling.c \
 cs_time_plot.c \
 cs_time_step.c \
 cs_tpar1d.c \
+cs_turbomachinery.c \
 cs_ventil.c \
 cs_wall_functions.c \
 csprnt.f90 \
@@ -266,9 +268,9 @@ lecamp.f90 \
 lecamx.f90 \
 majgeo.f90 \
 memfin.f90 \
-memtri.f90 \
 modini.f90 \
 mmtycl.f90 \
+mmtyc2.f90 \
 navstv.f90 \
 newmrk.f90 \
 numvec.f90 \

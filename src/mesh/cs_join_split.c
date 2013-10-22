@@ -46,8 +46,8 @@
 
 #include "fvm_io_num.h"
 #include "fvm_periodicity.h"
-
 #include "cs_block_dist.h"
+#include "cs_mesh.h"
 #include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
@@ -1605,9 +1605,11 @@ _get_subface_gnum(face_builder_t         *builder,
 
   }
 
-  bft_printf(_("\n  Global number of faces after splitting: %10llu\n"),
-             (unsigned long long)builder->n_g_subfaces);
-  bft_printf_flush();
+  if (cs_glob_mesh->verbosity > 0) {
+    bft_printf(_("\n  Global number of faces after splitting: %10llu\n"),
+               (unsigned long long)builder->n_g_subfaces);
+    bft_printf_flush();
+  }
 
   /* Free memory */
 

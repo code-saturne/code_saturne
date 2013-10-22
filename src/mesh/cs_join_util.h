@@ -167,6 +167,11 @@ typedef struct {
 
   int  visualization;
 
+  /* Preprocessing flag:
+     true if this joining is part of preprocessing, false otherwise */
+
+  bool preprocessing;
+
 } cs_join_param_t;
 
 /*----------------------------------------------------------------------------
@@ -291,6 +296,7 @@ extern FILE  *cs_glob_join_log;
  *   perio_matrix  <-- periodicity transformation matrix
  *   verbosity     <-- level of verbosity required
  *   visualization <-- level of visualization required
+ *   preprocessing <-- is joining part of the preprocessing stage ?
  *
  * returns:
  *   a pointer to a new allocated cs_join_t structure
@@ -304,7 +310,8 @@ cs_join_create(int                      join_number,
                fvm_periodicity_type_t   perio_type,
                double                   perio_matrix[3][4],
                int                      verbosity,
-               int                      visualization);
+               int                      visualization,
+               bool                     preprocessing);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_t structure.

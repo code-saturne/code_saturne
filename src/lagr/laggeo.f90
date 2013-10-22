@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine laggeo &
+subroutine laggeo
 !================
-
- ( dlgeo  )
 
 !===============================================================================
 ! Purpose:
@@ -43,8 +41,6 @@ subroutine laggeo &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
-!(nfabor,ngeol)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -81,8 +77,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
 

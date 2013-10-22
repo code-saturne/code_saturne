@@ -339,6 +339,28 @@ module pointe
 
   !> \}
 
+  !=============================================================================
+
+  !> \addtogroup lagran
+  !> \{
+  !> \defgroup lag_arrays Lagrangian arrays
+
+  !> \addtogroup lag_arrays
+  !> \{
+
+  integer, pointer, dimension(:,:) :: itepa => null()
+  integer, allocatable, dimension(:) :: icocel, itycel
+  integer, allocatable, dimension(:) :: ifrlag
+
+  double precision, pointer, dimension(:,:) :: ettp => null(), ettpa => null()
+  double precision, pointer, dimension(:,:) :: tepa => null()
+  double precision, pointer, dimension(:,:) :: statis => null(), stativ => null()
+  double precision, pointer, dimension(:,:) :: parbor => null()
+  double precision, pointer, dimension(:,:) :: tslagr => null()
+  double precision, pointer, dimension(:,:) :: dlgeo => null()
+
+  !> \}
+
   !> \}
 
 contains
@@ -484,7 +506,7 @@ contains
     endif
 
     ! Strain rate tensor at the previous time step
-    ! if rotation curvature correction
+    ! if rotation curvature correction of eddy viscosity
     if (irccor.eq.1) then
       if (idtvar.ge.0) then
         allocate(straio(ncelet,6))
@@ -494,6 +516,153 @@ contains
     return
 
   end subroutine init_aux_arrays
+
+  !=============================================================================
+
+  ! Resize auxiliary arrays
+
+  subroutine resize_aux_arrays
+
+    use mesh, only: ncel, ncelet
+
+    implicit none
+
+    ! Arguments
+
+    ! Local variables
+
+    integer iel, isou
+    double precision, allocatable, dimension(:) :: buffer
+    double precision, allocatable, dimension(:,:) :: buff2
+
+    ! Resize/copy arrays
+
+    allocate(buffer(ncelet))
+
+    ! Porosity array when needed
+
+    if (allocated(porosi)) then
+      do iel = 1, ncel
+        buffer(iel) = porosi(iel)
+      enddo
+      deallocate(porosi)
+      call synsca (buffer)
+      allocate(porosi(ncelet))
+      do iel = 1, ncelet
+        porosi(iel) = buffer(iel)
+      enddo
+    endif
+
+    ! Symmetric cell diffusivity when needed
+
+    if (allocated(visten)) then
+      allocate(buff2(6,ncel))
+      do iel = 1, ncel
+        do isou = 1, 6
+          buff2(isou,iel) = visten(isou,iel)
+        enddo
+      enddo
+      deallocate(visten)
+      allocate(visten(6,ncelet))
+      do iel = 1, ncel
+        do isou = 1, 6
+          visten(isou,iel) = buff2(isou,iel)
+        enddo
+      enddo
+      deallocate(buff2)
+      call syntin(visten)
+    endif
+
+    ! Wall-distance calculation
+
+    if (allocated(dispar)) then
+      do iel = 1, ncel
+        buffer(iel) = dispar(iel)
+      enddo
+      deallocate(dispar)
+      call synsca (buffer)
+      allocate(dispar(ncelet))
+      do iel = 1, ncelet
+        dispar(iel) = buffer(iel)
+      enddo
+    endif
+
+    if (allocated(yplpar)) then
+      do iel = 1, ncel
+        buffer(iel) = yplpar(iel)
+      enddo
+      deallocate(yplpar)
+      call synsca (buffer)
+      allocate(yplpar(ncelet))
+      do iel = 1, ncelet
+        yplpar(iel) = buffer(iel)
+      enddo
+    endif
+
+    if (allocated(ifapat)) then
+      do iel = 1, ncel
+        buffer(iel) = dble(ifapat(iel))
+      enddo
+      deallocate(ifapat)
+      call synsca (buffer)
+      allocate(ifapat(ncelet))
+      do iel = 1, ncelet
+        ifapat(iel) = nint(buffer(iel))
+      enddo
+    endif
+
+    ! Temporary storage arrays for k-omega model
+
+    if (allocated(s2kw)) then
+      do iel = 1, ncel
+        buffer(iel) = s2kw(iel)
+      enddo
+      deallocate(s2kw)
+      call synsca (buffer)
+      allocate(s2kw(ncelet))
+      do iel = 1, ncelet
+        s2kw(iel) = buffer(iel)
+      enddo
+
+      do iel = 1, ncel
+        buffer(iel) = divukw(iel)
+      enddo
+      deallocate(divukw)
+      call synsca (buffer)
+      allocate(divukw(ncelet))
+      do iel = 1, ncelet
+        divukw(iel) = buffer(iel)
+      enddo
+    endif
+
+    ! Strain rate tensor at the previous time step
+    ! for rotation-curvature correction of eddy viscosity
+
+    deallocate(buffer)
+
+    if (allocated(straio)) then
+      allocate(buff2(ncel,6))
+      do isou = 1, 6
+        do iel = 1, ncel
+          buff2(iel,isou) = straio(iel,isou)
+        enddo
+      enddo
+      deallocate(straio)
+      allocate(straio(ncelet,6))
+      do isou = 1, 6
+        do iel = 1, ncel
+          straio(iel,isou) = buff2(iel,isou)
+        enddo
+      enddo
+      deallocate(buff2)
+      call synten (straio(1,1), straio(1,4), straio(1,5), &
+                   straio(1,4), straio(1,2), straio(1,6), &
+                   straio(1,5), straio(1,6), straio(1,3))
+    endif
+
+    return
+
+  end subroutine resize_aux_arrays
 
   !=============================================================================
 

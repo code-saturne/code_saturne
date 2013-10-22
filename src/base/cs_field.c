@@ -1065,7 +1065,6 @@ cs_f_field_get_key_str(int           f_id,
  *   f_id    <-- field id
  *   k_id    <-- id of associated key
  *   k_value --> pointer to structure
- *
  *----------------------------------------------------------------------------*/
 
 void
@@ -1090,7 +1089,6 @@ cs_f_field_set_key_struct(int    f_id,
  *   f_id    <-- field id
  *   k_id    <-- id of associated key
  *   k_value --> pointer to structure
- *
  *----------------------------------------------------------------------------*/
 
 void

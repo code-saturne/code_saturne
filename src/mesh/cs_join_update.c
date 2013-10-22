@@ -4704,16 +4704,18 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
   /* Print information about new mesh configuration */
 
-  bft_printf(_("\n  Global configuration after the joining operation:\n"
-               "     Global number of border faces to add: %10llu\n"),
+  if (cs_glob_mesh->verbosity)
+    bft_printf(_("\n  Global configuration after the joining operation:\n"
+                 "     Global number of border faces to add: %10llu\n"),
              (unsigned long long)n_g_new_b_faces);
 
   if (n_g_multiple_bfaces > 0) {
 
     cs_lnum_t *multiple_bfaces = NULL;
 
-    bft_printf(_("     Global number of multiple border faces: %10llu\n"),
-               (unsigned long long)n_g_multiple_bfaces);
+    if (cs_glob_mesh->verbosity)
+      bft_printf(_("     Global number of multiple border faces: %10llu\n"),
+                 (unsigned long long)n_g_multiple_bfaces);
 
     /* Post-treatment of the implied faces */
 
