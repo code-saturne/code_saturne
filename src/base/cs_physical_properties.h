@@ -39,63 +39,62 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  PLANE_PH,
-  PLANE_PT,
-  PLANE_PS,
-  PLANE_PU,
-  PLANE_PV,
-  PLANE_TS,
-  PLANE_TX,
+  CS_PHYS_PROP_PLANE_PH,
+  CS_PHYS_PROP_PLANE_PT,
+  CS_PHYS_PROP_PLANE_PS,
+  CS_PHYS_PROP_PLANE_PU,
+  CS_PHYS_PROP_PLANE_PV,
+  CS_PHYS_PROP_PLANE_TS,
+  CS_PHYS_PROP_PLANE_TX,
 
-} cs_thermo_plane_type_t;
+} cs_phys_prop_thermo_plane_type_t;
 
 typedef enum {
 
-  PRESSURE,
-  TEMPERATURE,
-  ENTHALPY,
-  ENTROPY,
-  ISOBARIC_HEAT_CAPACITY,
-  ISOCHORIC_HEAT_CAPACITY,
-  SPECIFIC_VOLUME,
-  DENSITY,
-  INTERNAL_ENERGY,
-  QUALITY,
-  THERMAL_CONDUCTIVITY,
-  DYNAMIC_VISCOSITY,
-  SPEED_OF_SOUND
+  CS_PHYS_PROP_PRESSURE,
+  CS_PHYS_PROP_TEMPERATURE,
+  CS_PHYS_PROP_ENTHALPY,
+  CS_PHYS_PROP_ENTROPY,
+  CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY,
+  CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY,
+  CS_PHYS_PROP_SPECIFIC_VOLUME,
+  CS_PHYS_PROP_DENSITY,
+  CS_PHYS_PROP_INTERNAL_ENERGY,
+  CS_PHYS_PROP_QUALITY,
+  CS_PHYS_PROP_THERMAL_CONDUCTIVITY,
+  CS_PHYS_PROP_DYNAMIC_VISCOSITY,
+  CS_PHYS_PROP_SPEED_OF_SOUND
 
-} cs_property_type_t;
+} cs_phys_prop_type_t;
 
-
-/*============================================================================
- *  Public function prototypes for Fortran API
+/*=============================================================================
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute properties with freeteam in a defined thermal plane.
+ * Compute properties with Freesteam in a defined thermal plane.
  *
- * Fortran Interface :
+ * parameters:
+ *   thermo_plane <-- thermodynamic plane
+ *   property     <-- property queried
+ *   n_vals       <-- number of values
+ *   var1         <-- values on first plane axis
+ *   var2         <-- values on second plane axis
+ *   val          --> resulting property values
  *
- * subroutine  csfspp(thermo_plane, property, ncel, var1, var2, val)
- * *****************
- *
- * integer           thermo_plane : <-- : define thermal plane
- * integer           property     : <-- : define property to compute
- * integer           ncel         : <-- : size of the local array
- * double precision  var1(*)      : <-- : first array for thermal plane
- * double precision  var2(*)      : <-- : second array for thermal plane
- * double precision  val(*)       : --> : values
+ * returns:
+ *   floating point value associated with the key id for this field
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (csfspp, CSFSPP)(cs_thermo_plane_type_t *thermo_plane,
-                          cs_property_type_t *property,
-                          const    int *const ncel,
-                          double *var1,
-                          double *var2,
-                          double *val);
+cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
+                       cs_phys_prop_type_t                property,
+                       const cs_lnum_t                    n_vals,
+                       const cs_real_t                    var1[],
+                       const cs_real_t                    var2[],
+                       cs_real_t                          val[]);
 
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -2,8 +2,6 @@
  * Compute properties for water with Freesteam
  *============================================================================*/
 
-/* VERS */
-
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
@@ -72,354 +70,373 @@
 
 BEGIN_C_DECLS
 
-/*============================================================================
- * User function definitions
+/*=============================================================================
+ * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Compute properties with freeteam in a defined thermal plane.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute properties with Freesteam in a defined thermal plane.
+ *
+ * \param[in]   thermo_plane  thermodynamic plane
+ * \param[in]   property      property queried
+ * \param[in]   n_vals        number of values
+ * \param[in]   var1          values on first plane axis
+ * \param[in]   var2          values on second plane axis
+ * \param[out]  val           resulting property values
+ *
+ * \return  floating point value associated with the key id for this field
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (csfspp, CSFSPP)(cs_thermo_plane_type_t *thermo_plane,
-                          cs_property_type_t *property,
-                          const    int *const ncel,
-                          double *var1,
-                          double *var2,
-                          double *val)
+cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
+                       cs_phys_prop_type_t                property,
+                       const cs_lnum_t                    n_vals,
+                       const cs_real_t                    var1[],
+                       const cs_real_t                    var2[],
+                       cs_real_t                          val[])
 {
 #if defined(HAVE_FREESTEAM)
-  if (*thermo_plane == PLANE_PH)
-    for (int i = 0; i < *ncel; i++) {
+  if (thermo_plane == CS_PHYS_PROP_PLANE_PH) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_ph(var1[i], var2[i]);
-      switch (*property) {
-      case PRESSURE:
+      switch (property) {
+      case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "ph");
+                  _("bad choice: you choose to work in %s plane\n"), "ph");
         break;
-      case TEMPERATURE:
+      case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
         break;
-      case ENTHALPY:
+      case CS_PHYS_PROP_ENTHALPY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "ph");
+                  _("bad choice: you choose to work in %s plane\n"), "ph");
         break;
-      case ENTROPY:
+      case CS_PHYS_PROP_ENTROPY:
         val[i] = freesteam_s(S0);
         break;
-      case ISOBARIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
         break;
-      case ISOCHORIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case SPECIFIC_VOLUME:
+      case CS_PHYS_PROP_SPECIFIC_VOLUME:
         val[i] = freesteam_v(S0);
         break;
-      case DENSITY:
+      case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
-      case INTERNAL_ENERGY:
+      case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
         break;
-      case QUALITY:
+      case CS_PHYS_PROP_QUALITY:
         val[i] = freesteam_x(S0);
         break;
-      case THERMAL_CONDUCTIVITY:
+      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
         break;
-      case DYNAMIC_VISCOSITY:
+      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
         val[i] = freesteam_mu(S0);
         break;
-      case SPEED_OF_SOUND:
+      case CS_PHYS_PROP_SPEED_OF_SOUND:
         val[i] = freesteam_w(S0);
         break;
       }
     }
-  else if (*thermo_plane == PLANE_PT)
-    for (int i = 0; i < *ncel; i++) {
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_PT) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_pT(var1[i], var2[i]);
-      switch (*property) {
-      case PRESSURE:
+      switch (property) {
+      case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "pT");
+                  _("bad choice: you choose to work in %s plane\n"), "pT");
         break;
-      case TEMPERATURE:
+      case CS_PHYS_PROP_TEMPERATURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "pT");
+                  _("bad choice: you choose to work in %s plane\n"), "pT");
         break;
-      case ENTHALPY:
+      case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
         break;
-      case ENTROPY:
+      case CS_PHYS_PROP_ENTROPY:
         val[i] = freesteam_s(S0);
         break;
-      case ISOBARIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
         break;
-      case ISOCHORIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case SPECIFIC_VOLUME:
+      case CS_PHYS_PROP_SPECIFIC_VOLUME:
         val[i] = freesteam_v(S0);
         break;
-      case DENSITY:
+      case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
-      case INTERNAL_ENERGY:
+      case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
         break;
-      case QUALITY:
+      case CS_PHYS_PROP_QUALITY:
         val[i] = freesteam_x(S0);
         break;
-      case THERMAL_CONDUCTIVITY:
+      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
         break;
-      case DYNAMIC_VISCOSITY:
+      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
         val[i] = freesteam_mu(S0);
         break;
-      case SPEED_OF_SOUND:
+      case CS_PHYS_PROP_SPEED_OF_SOUND:
         val[i] = freesteam_w(S0);
         break;
       }
     }
-  else if (*thermo_plane == PLANE_PS)
-    for (int i = 0; i < *ncel; i++) {
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_PS) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_ps(var1[i], var2[i]);
-      switch (*property) {
-      case PRESSURE:
+      switch (property) {
+      case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "ps");
+                  _("bad choice: you choose to work in %s plane\n"), "ps");
         break;
-      case TEMPERATURE:
+      case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
         break;
-      case ENTHALPY:
+      case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
         break;
-      case ENTROPY:
+      case CS_PHYS_PROP_ENTROPY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "ps");
+                  _("bad choice: you choose to work in %s plane\n"), "ps");
         break;
-      case ISOBARIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
         break;
-      case ISOCHORIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case SPECIFIC_VOLUME:
+      case CS_PHYS_PROP_SPECIFIC_VOLUME:
         val[i] = freesteam_v(S0);
         break;
-      case DENSITY:
+      case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
-      case INTERNAL_ENERGY:
+      case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
         break;
-      case QUALITY:
+      case CS_PHYS_PROP_QUALITY:
         val[i] = freesteam_x(S0);
         break;
-      case THERMAL_CONDUCTIVITY:
+      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
         break;
-      case DYNAMIC_VISCOSITY:
+      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
         val[i] = freesteam_mu(S0);
         break;
-      case SPEED_OF_SOUND:
+      case CS_PHYS_PROP_SPEED_OF_SOUND:
         val[i] = freesteam_w(S0);
         break;
       }
     }
-  else if (*thermo_plane == PLANE_PU)
-    for (int i = 0; i < *ncel; i++) {
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_PU) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_pu(var1[i], var2[i]);
-      switch (*property) {
-      case PRESSURE:
+      switch (property) {
+      case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "pu");
+                  _("bad choice: you choose to work in %s plane\n"), "pu");
         break;
-      case TEMPERATURE:
+      case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
         break;
-      case ENTHALPY:
+      case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
         break;
-      case ENTROPY:
+      case CS_PHYS_PROP_ENTROPY:
         val[i] = freesteam_s(S0);
         break;
-      case ISOBARIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
         break;
-      case ISOCHORIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case SPECIFIC_VOLUME:
+      case CS_PHYS_PROP_SPECIFIC_VOLUME:
         val[i] = freesteam_v(S0);
         break;
-      case DENSITY:
+      case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
-      case INTERNAL_ENERGY:
+      case CS_PHYS_PROP_INTERNAL_ENERGY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "pu");
+                  _("bad choice: you choose to work in %s plane\n"), "pu");
         break;
-      case QUALITY:
+      case CS_PHYS_PROP_QUALITY:
         val[i] = freesteam_x(S0);
         break;
-      case THERMAL_CONDUCTIVITY:
+      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
         break;
-      case DYNAMIC_VISCOSITY:
+      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
         val[i] = freesteam_mu(S0);
         break;
-      case SPEED_OF_SOUND:
+      case CS_PHYS_PROP_SPEED_OF_SOUND:
         val[i] = freesteam_w(S0);
         break;
       }
     }
-  else if (*thermo_plane == PLANE_PV)
-    for (int i = 0; i < *ncel; i++) {
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_PV) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_pv(var1[i], var2[i]);
-      switch (*property) {
-      case PRESSURE:
+      switch (property) {
+      case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "pv");
+                  _("bad choice: you choose to work in %s plane\n"), "pv");
         break;
-      case TEMPERATURE:
+      case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
         break;
-      case ENTHALPY:
+      case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
         break;
-      case ENTROPY:
+      case CS_PHYS_PROP_ENTROPY:
         val[i] = freesteam_s(S0);
         break;
-      case ISOBARIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
         break;
-      case ISOCHORIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case SPECIFIC_VOLUME:
+      case CS_PHYS_PROP_SPECIFIC_VOLUME:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "pv");
+                  _("bad choice: you choose to work in %s plane\n"), "pv");
         break;
-      case DENSITY:
+      case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
-      case INTERNAL_ENERGY:
+      case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
         break;
-      case QUALITY:
+      case CS_PHYS_PROP_QUALITY:
         val[i] = freesteam_x(S0);
         break;
-      case THERMAL_CONDUCTIVITY:
+      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
         break;
-      case DYNAMIC_VISCOSITY:
+      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
         val[i] = freesteam_mu(S0);
         break;
-      case SPEED_OF_SOUND:
+      case CS_PHYS_PROP_SPEED_OF_SOUND:
         val[i] = freesteam_w(S0);
         break;
       }
     }
-  else if (*thermo_plane == PLANE_TS)
-    for (int i = 0; i < *ncel; i++) {
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_TS) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_Ts(var1[i], var2[i]);
-      switch (*property) {
-      case PRESSURE:
+      switch (property) {
+      case CS_PHYS_PROP_PRESSURE:
         val[i] = freesteam_p(S0);
         break;
-      case TEMPERATURE:
+      case CS_PHYS_PROP_TEMPERATURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "Ts");
+                  _("bad choice: you choose to work in %s plane\n"), "Ts");
         break;
-      case ENTHALPY:
+      case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
         break;
-      case ENTROPY:
+      case CS_PHYS_PROP_ENTROPY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "Ts");
+                  _("bad choice: you choose to work in %s plane\n"), "Ts");
         break;
-      case ISOBARIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
         break;
-      case ISOCHORIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case SPECIFIC_VOLUME:
+      case CS_PHYS_PROP_SPECIFIC_VOLUME:
         val[i] = freesteam_v(S0);
         break;
-      case DENSITY:
+      case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
-      case INTERNAL_ENERGY:
+      case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
         break;
-      case QUALITY:
+      case CS_PHYS_PROP_QUALITY:
         val[i] = freesteam_x(S0);
         break;
-      case THERMAL_CONDUCTIVITY:
+      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
         break;
-      case DYNAMIC_VISCOSITY:
+      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
         val[i] = freesteam_mu(S0);
         break;
-      case SPEED_OF_SOUND:
+      case CS_PHYS_PROP_SPEED_OF_SOUND:
         val[i] = freesteam_w(S0);
         break;
       }
     }
-  else if (*thermo_plane == PLANE_TX)
-    for (int i = 0; i < *ncel; i++) {
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_TX) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_Tx(var1[i], var2[i]);
       switch (*property) {
-      case PRESSURE:
+      case CS_PHYS_PROP_PRESSURE:
         val[i] = freesteam_p(S0);
         break;
-      case TEMPERATURE:
+      case CS_PHYS_PROP_TEMPERATURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "Tx");
+                  _("bad choice: you choose to work in %s plane\n"), "Tx");
         break;
-      case ENTHALPY:
+      case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
         break;
-      case ENTROPY:
+      case CS_PHYS_PROP_ENTROPY:
         val[i] = freesteam_s(S0);
         break;
-      case ISOBARIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
         break;
-      case ISOCHORIC_HEAT_CAPACITY:
+      case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case SPECIFIC_VOLUME:
+      case CS_PHYS_PROP_SPECIFIC_VOLUME:
         val[i] = freesteam_v(S0);
         break;
-      case DENSITY:
+      case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
-      case INTERNAL_ENERGY:
+      case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
         break;
-      case QUALITY:
+      case CS_PHYS_PROP_QUALITY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice : you choose to work in %s plane\n"), "Tx");
+                  _("bad choice: you choose to work in %s plane\n"), "Tx");
         break;
-      case THERMAL_CONDUCTIVITY:
+      case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
         break;
-      case DYNAMIC_VISCOSITY:
+      case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
         val[i] = freesteam_mu(S0);
         break;
-      case SPEED_OF_SOUND:
+      case CS_PHYS_PROP_SPEED_OF_SOUND:
         val[i] = freesteam_w(S0);
         break;
       }
     }
+  }
 #else
-        bft_error(__FILE__, __LINE__, 0, _("You try to use freesteam table without it\n"));
+  bft_error(__FILE__, __LINE__, 0,
+            _("Freesteam support not available in this build.\n"));
 #endif
 }
 
