@@ -65,13 +65,13 @@ log.setLevel(GuiParam.DEBUG)
 
 class StandardItemModelOutput(QStandardItemModel):
 
-    def __init__(self, case):
+    def __init__(self, case, mdl):
         """
         """
         QStandardItemModel.__init__(self)
 
         self.case = case
-        self.mdl = OutputSurfacicVariablesModel(self.case)
+        self.mdl = mdl
 
         self.setColumnCount(2)
         self.dataLabel      = []
@@ -83,7 +83,7 @@ class StandardItemModelOutput(QStandardItemModel):
     def populateModel(self):
         # Data initialization
 
-        for name in OutputSurfacicVariablesModel(self.case).list_name:
+        for name in self.mdl.list_name:
             row = self.rowCount()
             self.setRowCount(row + 1)
 
@@ -201,7 +201,7 @@ class OutputSurfacicVariablesView(QWidget, Ui_OutputSurfacicVariablesForm):
         self.case.undoStopGlobal()
         self.mdl = OutputSurfacicVariablesModel(self.case)
 
-        self.modelOutput = StandardItemModelOutput(self.case)
+        self.modelOutput = StandardItemModelOutput(self.case, self.mdl)
         self.tableViewOutput.setModel(self.modelOutput)
         self.tableViewOutput.setAlternatingRowColors(True)
         self.tableViewOutput.resizeColumnToContents(0)
