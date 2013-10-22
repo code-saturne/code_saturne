@@ -43,6 +43,7 @@ import sys, unittest
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
+from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.NumericalParamEquationModel import NumericalParamEquatModel
@@ -67,7 +68,6 @@ class GasCombustionModel(Variables, Model):
         self.node_gas    = nModels.xmlInitNode('gas_combustion',    'model')
         self.node_coal   = nModels.xmlInitNode('solid_fuels',       'model')
         self.node_joule  = nModels.xmlInitNode('joule_effect',      'model')
-        self.node_therm  = nModels.xmlInitNode('thermal_scalar',    'model')
         self.node_atmo   = nModels.xmlInitNode('atmospheric_flows', 'model')
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_reference = self.node_models.xmlInitNode('reference_values')
@@ -115,10 +115,6 @@ class GasCombustionModel(Variables, Model):
         """
         gasCombustionList = self.gasCombustionModel
 
-        n, m = FluidCharacteristicsModel(self.case).getThermalModel()
-        if m != "off" and m not in gasCombustionList:
-            gasCombustionList = ('off',)
-
         if self.node_turb['model'] not in ('k-epsilon',
                                            'k-epsilon-PL',
                                            'Rij-epsilon',
@@ -142,6 +138,7 @@ class GasCombustionModel(Variables, Model):
         node_fluid  = node_prop.xmlInitNode('fluid_properties')
 
         old_model = self.node_gas['model']
+        ThermalScalarModel(self.case).setThermalModel('off')
 
         if model == 'off':
             self.node_gas['model'] = model
@@ -162,7 +159,6 @@ class GasCombustionModel(Variables, Model):
             self.node_gas['model'] = model
             self.node_coal['model']  = 'off'
             self.node_joule['model'] = 'off'
-            self.node_therm['model'] = 'off'
             self.setNewFluidProperty(node_fluid, 'dynamic_diffusion')
 
             if old_model != model:
@@ -184,7 +180,7 @@ class GasCombustionModel(Variables, Model):
         """
         model = self.node_gas['model']
         if model not in self.gasCombustionModelsList():
-            model = self.defaultGasCombustionValues()['model']
+            model = 'off'
             self.setGasCombustionModel(model)
 
         return model
@@ -249,17 +245,19 @@ class GasCombustionModel(Variables, Model):
                               "4-peak_enthalpy"]
         lst = []
 
+        ThermalScalarModel(self.case).setThermalModel('off')
+
         if model == 'd3p':
             lst.append("Fra_MEL")
             lst.append("Var_FMe")
             if option == 'extended':
-                lst.append("Enthalpy")
+                ThermalScalarModel(self.case).setThermalModel('enthalpy')
         elif model == 'ebu':
             lst.append("Fra_GF")
             if option == "mixture_st" or option =="enthalpy_misture_st":
                 lst.append("Fra_MEL")
             elif option == "enthalpy_st" or option =="enthalpy_mixture_st":
-                lst.append("Enthalpy")
+                ThermalScalarModel(self.case).setThermalModel('enthalpy')
         elif model == 'lwp':
             lst.append("Fra_MEL")
             lst.append("Var_FMe")
@@ -268,7 +266,7 @@ class GasCombustionModel(Variables, Model):
             if option in list_options:
                 lst.append("Var_FMa")
             if option in acceptable_options:
-                lst.append("Enthalpy")
+                ThermalScalarModel(self.case).setThermalModel('enthalpy')
         return lst
 
 
@@ -318,7 +316,7 @@ class GasCombustionModel(Variables, Model):
 
             for name in new_list:
                 if name not in previous_list:
-                    self.setNewModelScalar(self.node_gas, name)
+                    self.setNewScalar(self.node_gas, name, "model")
 
             NPE = NumericalParamEquatModel(self.case)
             for node in self.node_gas.xmlGetChildNodeList('scalar'):

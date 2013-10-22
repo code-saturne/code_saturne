@@ -134,8 +134,8 @@ do icla = 1, nclafu
 
   xnuss = 2.d0
   do iel = 1, ncel
-    if ( ivisls(ihm).gt.0 ) then
-      ipcvsl = ipproc(ivisls(ihm))
+    if ( ivisls(iscalt).gt.0 ) then
+      ipcvsl = ipproc(ivisls(iscalt))
       if ( icp.gt.0 ) then
         ipccp   = ipproc(icp)
         lambda = propce(iel,ipcvsl) * propce(iel,ipccp)
@@ -145,9 +145,9 @@ do icla = 1, nclafu
     else
       if ( icp.gt.0 ) then
         ipccp  = ipproc(icp)
-        lambda = visls0(ihm) * propce(iel,ipccp)
+        lambda = visls0(iscalt) * propce(iel,ipccp)
       else
-        lambda = visls0(ihm) * cp0
+        lambda = visls0(iscalt) * cp0
       endif
     endif
 !

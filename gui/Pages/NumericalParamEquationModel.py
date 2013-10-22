@@ -142,6 +142,12 @@ class NumericalParamEquatModel(Model):
                     elif node['name'] =='enthalpy':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
+                    elif node['name'] =='potential_temperature':
+                        self.default['min_value'] = 0
+                        self.default['max_value'] = 1e+12
+                    elif node['name'] =='liquid_potential_temperature':
+                        self.default['min_value'] = 0
+                        self.default['max_value'] = 1e+12
         else:
             self.default['min_value'] = -1e+12
             self.default['max_value'] = 1e+12
@@ -151,7 +157,8 @@ class NumericalParamEquatModel(Model):
 
     def _getThermalScalarNode(self):
         """ Private method: return node of thermal scalar """
-        node_scalar = self.case.xmlGetNode('additional_scalars')
+        node_models = self.case.xmlGetNode('thermophysical_models')
+        node_scalar = node_models.xmlGetNode('thermal_scalar')
         thermal_scalar_list = node_scalar.xmlGetNodeList('scalar', type='thermal')
         return thermal_scalar_list
 

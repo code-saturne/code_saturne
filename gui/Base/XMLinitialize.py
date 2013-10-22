@@ -286,6 +286,38 @@ class XMLinit(Variables):
             print("Profiles have been removed from your files due to  incompatibility")
             print("You must re-create them")
 
+        # thermal scalar
+        for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows']:
+            node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
+            mdl = node['model']
+            if mdl and mdl != 'off':
+                if phys != 'atmospheric_flows':
+                    n = node.xmlGetNode('scalar', name="Enthalpy")
+                    if n:
+                        n.xmlRemoveNode()
+                    ThermalScalarModel(self.case).setThermalModel('enthalpy')
+                else:
+                    if (mdl == "dry"):
+                        n = node.xmlGetNode('scalar', name="potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('potential_temperature')
+                    else:
+                        n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
+        node = self.case.xmlGetNode('additional_scalars')
+        n = node.xmlGetNode('scalar', type='thermal')
+        if n:
+            nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
+            nthvar = nth.xmlInitNode('scalar', 'type')
+            nthvar['type']  = "thermal"
+            nthvar['name']  = n['name']
+            nthvar['label'] = n['label']
+            nthvar.xmlChildsCopy(n)
+            n.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

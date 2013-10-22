@@ -134,7 +134,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
                                 const int *const ieqco2,
                                 const int *const ihtco2,
                                 const int *const ihth2o,
-                                const int *const ihm,
+                                const int *const iscalt,
                                 const int *const inp,
                                 const int *const ixch,
                                 const int *const ixck,
@@ -238,7 +238,7 @@ void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
                                 const int *const ieljou,
                                 const int *const ielarc,
                                 const int *const ngazg,
-                                const int *const ihm,
+                                const int *const iscalt,
                                 const int *const ipotr,
                                 const int *const iycoel,
                                 const int *const ipoti,
@@ -279,7 +279,7 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
                                 const int *const icolwc,
                                 const int *const icoebu,
                                 const int *const icod3p,
-                                const int *const ihm,
+                                const int *const iscalt,
                                 const int *const ifm,
                                 const int *const ifp2m,
                                 const int *const iygfm,
@@ -380,16 +380,14 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
  * *****************
  * integer         ippmod   -->   specific physics indicator array
  * integer         iatmos   -->   index for atmospheric flow
- * integer         itempp   -->   index for potential temperature
- * integer         itempl   -->   index for liquid potential temperature
+ * integer         iscalt   -->   index for thermal variable
  * integer         itotwt   -->   index for total water content
  * integer         intdrp   -->   index for total number of droplets
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
                                 const int *const iatmos,
-                                const int *const itempp,
-                                const int *const itempl,
+                                const int *const iscalt,
                                 const int *const itotwt,
                                 const int *const intdrp);
 

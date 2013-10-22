@@ -516,30 +516,30 @@ enddo
 ! 4. STOCKAGE DE LA TEMPERATURE (en Kelvin) dans TEMPK(IEL)
 !===============================================================================
 
-if (abs(iscsth(iscalt)).eq.1) then
+if (itherm.eq.1) then
 
   !---> ON REMPLIT TEMPK
 
-  if (iscsth(iscalt).eq.-1) then
+  if (itpscl.eq.2) then
     do iel = 1, ncel
       tempk(iel) = rtpa(iel,ivart) + tkelvi
     enddo
-  else
+  else if (itpscl.eq.1) then
     do iel = 1, ncel
       tempk(iel) = rtpa(iel,ivart)
     enddo
   endif
 
-  elseif (iscsth(iscalt).eq.2) then
+elseif (itherm.eq.2) then
 
-    !---> LECTURES DES DONNEES UTILISATEURS (TBORD est un auxiliaire)
+  !---> LECTURES DES DONNEES UTILISATEURS (TBORD est un auxiliaire)
 
-    mode = 1
+  mode = 1
 
-    if (ippmod(iphpar).le.1) then
+  if (ippmod(iphpar).le.1) then
 
-      call usray4 &
-      !==========
+    call usray4 &
+    !==========
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
@@ -547,19 +547,19 @@ if (abs(iscsth(iscalt)).eq.1) then
    tparo  , thwall , tempk  )
       ! Resultat : T en K
 
-    else
+  else
 
-      call ppray4 &
-      !==========
+    call ppray4 &
+    !==========
  ( mode   ,                                                       &
    itypfb ,                                                       &
    rtp    , rtpa   , propce ,                                     &
    tparo  , thwall , tempk  )
       ! Resultat : T en K
 
-    endif
-
   endif
+
+endif
 
 !===============================================================================
 ! 5. CALCUL DES TEMPERATURES DE PAROIS
@@ -624,11 +624,11 @@ endif
 ! 6.1  LA VARIABLE TRANSPORTEE EST LA TEMPERATURE
 !===============================================================================
 
-if (abs(iscsth(iscalt)).eq.1) then
+if (itherm.eq.1) then
 
-  if (iscsth(iscalt).eq.-1) then
+  if (itpscl.eq.2) then
     xmtk = -tkelvi
-  else
+  else if (itpscl.eq.1) then
     xmtk = 0.d0
   endif
 
@@ -659,7 +659,7 @@ if (abs(iscsth(iscalt)).eq.1) then
 ! 6.2  LA VARIABLE TRANSPORTEE EST L'ENTHALPIE
 !===============================================================================
 
-elseif (iscsth(iscalt).eq.2) then
+elseif (itherm.eq.2) then
 
   !---> LECTURES DES DONNEES UTILISATEURS
   !     ON CONVERTIT TPAROI EN ENTHALPIE DE BORD, STOCKEE DANS FLUNET,

@@ -79,7 +79,9 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.thermalModel = ('off',
                              'temperature_celsius',
                              'temperature_kelvin',
-                             'enthalpy')
+                             'enthalpy',
+                             'potential_temperature',
+                             'liquid_potential_temperature')
 
 
     def _defaultThermalScalarValues(self):
@@ -97,7 +99,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         Put a new thermal scalar name on to the XML document and its dependances
         """
         self.isInList(thermal_scalar, self.thermalModel)
-        node = self.scalar_node.xmlInitNode('scalar', name=thermal_scalar, type='thermal')
+        node = self.node_therm.xmlInitNode('scalar', name=thermal_scalar, type='thermal')
 
         if not node['label']:
             lab_def = Tool.dicoLabel(node['name'])
@@ -203,6 +205,19 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         return model
 
 
+    @Variables.noUndo
+    def getThermalScalarLabel(self):
+        """
+        Get label for thermal scalar
+        """
+        label = ""
+        node = self.node_therm.xmlGetNode('scalar', type='thermal')
+        if node:
+            label = node['label']
+
+        return label
+
+
 #-------------------------------------------------------------------------------
 # ThermalScalar Model test case
 #-------------------------------------------------------------------------------
@@ -234,13 +249,13 @@ class ThermalScalarTestCase(ModelTest):
         """
         mdl = ThermalScalarModel(self.case)
         mdl.setThermalModel('temperature_kelvin')
-        doc = '''<additional_scalars>
+        doc = '''<thermal_scalar>
                     <scalar label="TempK" name="temperature_kelvin" type="thermal">
                         <initial_value zone_id="1">293.15</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
                     </scalar>
-                 </additional_scalars>'''
+                 </thermal_scalar>'''
 
         assert mdl.scalar_node == self.xmlNodeFromString(doc), \
             'Could not update thermal scalar in ThermalScalarModel'

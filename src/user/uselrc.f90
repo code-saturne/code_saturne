@@ -292,7 +292,7 @@ if ( ippmod(ielarc).ge.1 ) then
                  -zclaq)**2)
             posi=xclaq*xyzcen(1,iel)
             if( rayo.le.5d-4 .and. posi.ge.0d0 ) then
-              rtp(iel,isca(ihm)) = 8.d7
+              rtp(iel,isca(iscalt)) = 8.d7
             endif
           endif
         enddo

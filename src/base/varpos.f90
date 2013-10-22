@@ -202,6 +202,9 @@ if (ipass.eq.1) then
   call ppcsca
   !==========
 
+  if (itherm.ne.0 .and. nmodpp.eq.0) then
+    nscapp = 1
+  endif
 
 ! ---> Verifications
 
@@ -242,7 +245,11 @@ if (ipass.eq.1) then
       iscapp(ii) = iscal
     enddo
 
-    call ppvarp
+    if (itherm.ne.0 .and. nmodpp.eq.0) then
+      iscalt = iscapp(1)
+    endif
+
+    call ppvarp(nmodpp)
 
   endif
 

@@ -76,25 +76,8 @@ character*2                :: nbin
 
 
 !===============================================================================
-! 0. VERIFICATION ISCALT, ISCSTH pour IPPMOD(IATMOS) = 1 or 2
+! 0. VERIFICATIONS
 !===============================================================================
-!     L'utilisateur ne doit pas y avoir touche.
-
-if (ippmod(iatmos).ge.1) then
-  if(iscalt.ne.-1) then
-    write(nfecra,1000)iscalt
-    call csexit (1)
-    !==========
-  endif
-
-  do ii = 1, nscapp
-    if(iscsth(iscapp(ii)).ne.-10) then
-    write(nfecra,1001)ii,iscapp(ii),iscsth(iscapp(ii))
-     call csexit (1)
-     !==========
-    endif
-  enddo
-endif
 
 if (ippmod(iatmos).ge.2) then
   if (itytur.ne.2) then
@@ -133,14 +116,15 @@ ivivar = 0
 !===============================================================================
 
 ! 2.1  Dry atmosphere
-! =====================
+! ===================
 
-if ( ippmod(iatmos).eq.1 ) then
+if (ippmod(iatmos).eq.1) then
 
-  iscsth(itempp) = 1
-  iscalt = itempp
-  scamin(itempp) = 0.d0
-  scamax(itempp) = +grand
+  itpscl = 1
+
+  iscacp(iscalt) = 1
+  scamin(iscalt) = 0.d0
+  scamax(iscalt) = +grand
 
 !  for the dry atmosphere case, non constant density
   irovar = 1
@@ -159,7 +143,7 @@ if ( ippmod(iatmos).eq.1 ) then
 
   enddo
 
-  ipp = ipprtp(isca(itempp))  ! NB : already defined by the user interface ?
+  ipp = ipprtp(isca(iscalt))  ! NB : already defined by the user interface ?
   nomvar(ipp)  = 'PotTemp'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -170,13 +154,13 @@ endif
 ! 2.2  Humid atmosphere
 ! =====================
 
-if ( ippmod(iatmos).eq.2 ) then
+if (ippmod(iatmos).eq.2) then
 
-  iscsth(itempl) = 1
-  iscsth(itotwt) = 0
-  iscsth(intdrp) = 0
+  iscacp(iscalt) = 1
+  iscacp(itotwt) = 0
+  iscacp(intdrp) = 0
 
-  iscalt = itempl
+  itpscl = 1
 
 !  for the humid atmosphere case, non constant density
   irovar = 1
@@ -195,7 +179,7 @@ if ( ippmod(iatmos).eq.2 ) then
 
   enddo
 
-  ipp = ipprtp(isca(itempl))
+  ipp = ipprtp(isca(iscalt))
   nomvar(ipp)  = 'LqPotTmp'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -659,47 +643,6 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@                                                            ',/,&
-'@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner dans usipsu, or  ',/,&
-'@    elle a ete affectee comme suit :                        ',/,&
-'@    ISCALT = ',I10                                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usipsu (dans cs_user_parameters.f90)             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@                                                            ',/,&
-'@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner dans usipsu, or ',/,&
-'@    pour le scalaire ',I10 ,'.                              ',/,&
-'@    on a :                                                  ',/,&
-'@    ISCSTH(',I10   ,') = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usipsu (cs_user_parameters.f90)                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  1002 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -800,10 +743,10 @@ endif
 '@    =========                                               ',/,&
 '@                ATMOSPHERIC  MODULE                         ',/,&
 '@                                                            ',/,&
-'@  ISCSTH IS SPECIFIED AUTOMATICALLY.                        ',/,&
-'@  For the scalar ', I10 ,' iscsth  should not be specified  ',/,&
+'@  ISCACP IS SPECIFIED AUTOMATICALLY.                        ',/,&
+'@  For the scalar ', I10 ,' iscacp  should not be specified  ',/,&
 '@   in usipsu, here:                                         ',/,&
-'@          ISCSTH(',I10   ,') = ',I10                         ,/,&
+'@          ISCACP(',I10   ,') = ',I10                         ,/,&
 '@  Computation CAN NOT run.                                  ',/,&
 '@                                                            ',/,&
 '@  Check the input data given through the User Interface     ',/,&

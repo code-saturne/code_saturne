@@ -213,7 +213,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   call cs_fuel_htconvers1 ( mode   , h1init , coefe  ,  t1init )
  !=======================
   do iel = 1, ncel
-    rtp(iel,isca(ihm)) = h1init
+    rtp(iel,isca(iscalt)) = h1init
   enddo
 
 ! ------ Variables de transport relatives au melange gazeux

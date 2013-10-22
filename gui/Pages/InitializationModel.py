@@ -83,9 +83,13 @@ class InitializationModel(Model):
         self.turb = TurbulenceModel(self.case)
         self.turbulenceModes = ('formula',
                                 'reference_value')
-        self.node_scalartherm = self.node_userscalar
-        if ElectricalModel(self.case).getElectricalModel() != "off":
-            self.node_scalartherm = self.models.xmlGetNode("joule_effect")
+        self.node_scalartherm = self.models.xmlGetNode('thermal_scalar')
+
+        self.thermalModel = ('TempC',
+                             'TempK',
+                             'Enthalpy',
+                             'PotTemp',
+                             'LiqPotTemp')
 
 
     def __defaultValues(self):
@@ -247,7 +251,7 @@ omega = k^0.5/almax;"""
         Set the formula for tharmal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
+        self.isInList(scalar, self.thermalModel)
         node = self.node_scalartherm.xmlGetNode('scalar', label = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -263,7 +267,7 @@ omega = k^0.5/almax;"""
         Return the formula for thermal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
+        self.isInList(scalar, self.thermalModel)
         node = self.node_scalartherm.xmlGetNode('scalar', label = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"

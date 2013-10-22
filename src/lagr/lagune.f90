@@ -382,11 +382,11 @@ if ( iclogst.eq.1 ) then
 
       if (iscalt.gt.0) then
 
-         if (iscsth(iscalt).eq.-1) then
+         if (itherm.eq.1 .and. itpscl.eq.2) then
             tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
-         else if (iscsth(iscalt).eq. 1) then
+         else if (itherm.eq.1 .and. itpscl.eq.2) then
             tempp(ifac) = rtp(iel,isca(iscalt))
-         else if (iscsth(iscalt).eq.2) then
+         else if (itherm.eq.2) then
             call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
          endif
 

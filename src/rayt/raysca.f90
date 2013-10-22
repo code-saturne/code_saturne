@@ -96,7 +96,7 @@ integer          iel
 ! Radiative source terms (thermal scalar only)
 !===============================================================================
 
-if (abs(iscsth(iisca)).eq.1 .or. iscsth(iisca).eq.2) then
+if (iisca.eq.iscalt .and. (itherm.eq.1 .or. itherm.eq.2)) then
 
   ! Implicit part
 

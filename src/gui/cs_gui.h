@@ -57,6 +57,22 @@ BEGIN_C_DECLS
 void CS_PROCF (uiinit, UIINIT) (void);
 
 /*----------------------------------------------------------------------------
+ * Thermal model.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE CSTHER (ITHERM)
+ * *****************
+ *
+ * INTEGER          ITHERM  --> thermal model
+ * integer          itpscl  --> temperature scale if itherm = 1
+ *----------------------------------------------------------------------------*/
+
+
+void CS_PROCF (csther, CSTHER) (int  *itherm,
+                                int  *itpscl);
+
+/*----------------------------------------------------------------------------
  * Turbulence model.
  *
  * Fortran Interface:
@@ -117,6 +133,19 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
 void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
 
 /*----------------------------------------------------------------------------
+ * User thermal scalar.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UITHSC
+ * *****************
+ *
+ * INTEGER          ISCALT     -->   thermal scalars number
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uithsc, UITHSC) (int *const iscalt);
+
+/*----------------------------------------------------------------------------
  * User scalars which are variance.
  *
  * Fortran Interface:
@@ -134,7 +163,7 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr);
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSIVIS (IDTVAR)
+ * SUBROUTINE CSIVIS
  * *****************
  *
  * INTEGER          ISCAVR  <->  number of the related variance if any
@@ -144,10 +173,25 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr);
  * INTEGER          ITEMPK  -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------
+ * Constant or variable indicator for the user scalar laminar viscosity.
+ *
+ * Fortran Interface:
+ *
+ * subroutine csivis (iscavr, ivisls, iscalt, itherm, itempk)
+ * *****************
+ *
+ * integer          iscavr  <-->  number of the related variance if any
+ * integer          ivisls  <--   indicator for the user scalar viscosity
+ * integer          iscalt  <-->  number of the user thermal scalar if any
+ * integer          itherm  <-->  type of thermal model
+ * integer          itempk   -->  rtp index for temperature (in K)
+ *----------------------------------------------------------------------------*/
+
 void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
                                 int *const ivisls,
                                 int *const iscalt,
-                                int *const iscsth,
+                                int *const itherm,
                                 int *const itempk);
 
 /*----------------------------------------------------------------------------
@@ -219,7 +263,8 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const ivma,
                                 const int *const iwma,
                                 const int *const isca,
-                                const int *const iscapp);
+                                const int *const iscapp,
+                                const int *const itherm);
 
 /*----------------------------------------------------------------------------
  * Restart parameters.
@@ -271,21 +316,6 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
                                 double *const foumax,
                                 double *const varrdt,
                                 double *const relxst);
-
-/*----------------------------------------------------------------------------
- * Check if a users thermal scalar is defined.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSSCA1
- * *****************
- *
- * INTEGER          ISCALT  -->   number of the user thermal scalar if any
- * INTEGER          ISCSTH  -->   type of the user thermal scalar
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
-                                int *const iscsth);
 
 /*----------------------------------------------------------------------------
  *
@@ -369,12 +399,12 @@ void CS_PROCF (cssca2, CSSCA2) ( const    int *const iscavr,
                                        double *const scamin,
                                        double *const scamax);
 
-void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
-                                const    int *const iscsth,
+void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
+                                const    int *const iscalt,
                                 const    int *const iscavr,
-                                      double *const visls0,
-                                      double *const t0,
-                                      double *const p0);
+                                double *const visls0,
+                                double *const t0,
+                                double *const p0);
 
 /*----------------------------------------------------------------------------
  * Array of properties used in the calculation
@@ -581,6 +611,7 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t  *const ncelet,
                               const cs_int_t  *const nscaus,
+                              const cs_int_t  *const itherm,
                               const cs_int_t         iviscl[],
                               const cs_int_t         icp[],
                               const cs_int_t         ivisls[],
@@ -588,7 +619,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t         ivivar[],
                               const cs_int_t         isca[],
                               const cs_int_t         iscalt[],
-                              const cs_int_t         iscsth[],
                               const cs_int_t         iscavr[],
                               const cs_int_t         ipproc[],
                               const cs_int_t         iviscv[],

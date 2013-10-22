@@ -200,7 +200,7 @@ if ( isuite.eq.0 ) then
 !    -- Entahlpy value
 
   do iel = 1, ncel
-    rtp(iel,isca(ihm)) = hinit
+    rtp(iel,isca(iscalt)) = hinit
   enddo
 
 

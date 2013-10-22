@@ -159,7 +159,7 @@ double precision hbord(nfabor),theipb(nfabor)
 ! Local variables
 
 integer          ifac, iel, ivar, isou, jsou, ii, jj, kk, isvhbl
-integer          ihcp, iscal
+integer          iscal
 integer          modntl
 integer          iuntur, iuiptn
 integer          iclk  , iclep
@@ -1176,26 +1176,13 @@ do ifac = 1, nfabor
             isvhbl = isvhb
           endif
 
-          ihcp = 0
-          if (iscsth(iscal).eq.0.or.     &
-              iscsth(iscal).eq.2.or.     &
-              iscsth(iscal).eq.3) then
-            ihcp = 0
-          elseif (abs(iscsth(iscal)).eq.1) then
-            if (ipccp.gt.0) then
-              ihcp = 2
-            else
-              ihcp = 1
-            endif
-          endif
-
           cpp = 1.d0
-          if (ihcp.eq.0) then
-            cpp = 1.d0
-          elseif (ihcp.eq.2) then
-            cpp = propce(iel,ipccp )
-          elseif (ihcp.eq.1) then
-            cpp = cp0
+          if (iscacp(iscal).eq.1) then
+            if (ipccp.gt.0) then
+              cpp = propce(iel,ipccp )
+            else
+              cpp = cp0
+            endif
           endif
 
           if (ivisls(iscal).gt.0) then
@@ -1205,39 +1192,28 @@ do ifac = 1, nfabor
           endif
           if (ipcvsl.le.0) then
             rkl = visls0(iscal)
-            if (abs(iscsth(iscal)).eq.1) then
-              prdtl = cpp*visclc/rkl
-            else
-              prdtl = visclc/rkl
-            endif
+            prdtl = cpp*visclc/rkl
           else
-            rkl = propce(iel,ipcvsl)
-            if (abs(iscsth(iscal)).eq.1) then
-              prdtl = cpp*visclc/rkl
-            else
-              prdtl = visclc/rkl
-            endif
+            prdtl = cpp*visclc/rkl
           endif
 
           ! --> Compressible module:
-          !  On suppose que le nombre de Pr doit etre
-          !  defini de la meme facon que l'on resolve
-          !  en enthalpie ou en energie, soit Mu*Cp/Lambda.
-          !  Si l'on resout en energie, on a calcule ci-dessus
-          !  Mu*Cv/Lambda.
+          ! On suppose que le nombre de Pr doit etre
+          ! defini de la meme facon que l'on resolve
+          ! en enthalpie ou en energie, soit Mu*Cp/Lambda.
+          ! Si l'on resout en energie, on a calcule ci-dessus
+          ! Mu*Cv/Lambda.
 
-          if (ippmod(icompf).ge.0) then
-            if (iscsth(iscal).eq.3) then
-              if (ipccp.gt.0) then
-                prdtl = prdtl*propce(iel,ipccp )
-              else
-                prdtl = prdtl*cp0
-              endif
-              if (ipccv.gt.0) then
-                prdtl = prdtl/propce(iel,ipccv )
-              else
-                prdtl = prdtl/cv0
-              endif
+          if (iscal.eq.iscalt .and. itherm.eq.3) then
+            if (ipccp.gt.0) then
+              prdtl = prdtl*propce(iel,ipccp)
+            else
+              prdtl = prdtl*cp0
+            endif
+            if (ipccv.gt.0) then
+              prdtl = prdtl/propce(iel,ipccv)
+            else
+              prdtl = prdtl/cv0
             endif
           endif
 
@@ -1468,7 +1444,7 @@ do ifac = 1, nfabor
               ! We compute the exchange coefficient in W/(m2 K)
 
               ! Enthalpy
-              if (iscsth(iscal).eq.2) then
+              if (itherm.eq.2) then
                 ! If Cp is variable
                 if (ipccp.gt.0) then
                   bhconv(ifac) = hflui*propce(iel, ipccp)
@@ -1477,7 +1453,7 @@ do ifac = 1, nfabor
                 endif
 
               ! Energie (compressible module)
-              elseif (iscsth(iscal).eq.3) then
+              elseif (itherm.eq.3) then
                 ! If Cv is variable
                 if (ipccv.gt.0) then
                   bhconv(ifac) = hflui*propce(iel,ipccv)
@@ -1486,7 +1462,7 @@ do ifac = 1, nfabor
                 endif
 
               ! Temperature
-              elseif (abs(iscsth(iscal)).eq.1) then
+              elseif (iscacp(iscal).eq.1) then
                 bhconv(ifac) = hflui
               endif
 

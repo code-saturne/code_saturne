@@ -208,7 +208,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
    endif
 
    if (ipcvsl.gt.0) then ! lambda/Cp is variable
-     if (abs(iscsth(iscal)).eq.1) then
+     if (iscacp(iscal).eq.1) then
        lambda =  propce(iel, ipcvsl)
        lambda_over_cp = lambda/cp
      else
@@ -216,7 +216,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
        lambda =  lambda_over_cp * cp
      endif
    else
-     if (abs(iscsth(iscal)).eq.1) then
+     if (iscacp(iscal).eq.1) then
        lambda =  visls0(iscal)
        lambda_over_cp = lambda/cp
      else

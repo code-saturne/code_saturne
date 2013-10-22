@@ -96,7 +96,11 @@ class Boundary(object) :
         self._nature = nature
         self.case = case
         self._XMLBoundaryConditionsNode = self.case.xmlGetNode('boundary_conditions')
-        self._thermalLabelsList = ('temperature_celsius', 'temperature_kelvin', 'enthalpy')
+        self._thermalLabelsList = ('temperature_celsius',
+                                   'temperature_kelvin',
+                                   'enthalpy',
+                                   'potential_temperature',
+                                   'liquid_potential_temperature')
 
         self.sca_model = DefineUserScalarsModel(self.case)
 
@@ -322,6 +326,8 @@ class InletBoundary(Boundary):
         if self.sca_model.getMeteoScalarsList() != None:
             for sca in self.sca_model.getMeteoScalarsList():
                 scalar_list.append(sca)
+        if self.sca_model.getThermalScalarLabelsList() != None:
+            scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
 
         return scalar_list
 
@@ -1736,6 +1742,8 @@ class OutletBoundary(Boundary) :
         if self.sca_model.getMeteoScalarsList() != None:
             for sca in self.sca_model.getMeteoScalarsList():
                 scalar_list.append(sca)
+        if self.sca_model.getThermalScalarLabelsList() != None:
+            scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
 
         return scalar_list
 
@@ -1999,6 +2007,8 @@ class WallBoundary(Boundary) :
         if self.sca_model.getMeteoScalarsList() != None:
             for sca in self.sca_model.getMeteoScalarsList():
                 scalar_list.append(sca)
+        if self.sca_model.getThermalScalarLabelsList() != None:
+            scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
 
         return scalar_list
 

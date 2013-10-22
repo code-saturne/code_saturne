@@ -183,7 +183,6 @@ enddo
 ! ---> Initialisation pour la combustion fuel
 !       Variables transportees
 
-ihm     = 0
 do icla = 1, nclcpm
   ing(icla)   = 0
   iyfol(icla) = 0
@@ -243,10 +242,6 @@ ipotva(3) = 0
 do iesp=1,ngazgm
   iycoel(iesp) = 0
 enddo
-
-! ---> Initialisation de l'enthalpie commune a tous
-
-ihm       = 0
 
 ! ---> Coefficient de relation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)

@@ -113,7 +113,7 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 
 ! ---> Variables propres a la suspension gaz - particules
 is = 1
-ihm   = iscapp(is)
+iscalt   = iscapp(is)
 
 ! Activate the drift: 0 (no activation), 1 (activation)
 iscdri = i_coal_drift
@@ -122,7 +122,7 @@ iscdri = i_coal_drift
 !--------------------------
 
 do icla = 1, nclacp
-  is = 1+icla
+  is = 1 + icla
   ! Field number of particle
   inp(icla) = iscapp(is)
   write(f_name,'(a5,i2.2)')'Np_CP' ,icla
@@ -143,7 +143,7 @@ do icla = 1, nclacp
   ! For post-processing
   call field_set_key_int(f_id, keyvis, iopchr)
 
-  is = 1+1*nclacp+icla
+  is = 1 + 1*nclacp+icla
   ! Field Xch
   ixch(icla)= iscapp(is)
   write(f_name,'(a6,i2.2)')'Xch_CP' ,icla
@@ -164,7 +164,7 @@ do icla = 1, nclacp
   ! For post-processing
   call field_set_key_int(f_id, keyvis, iopchr)
 
-  is = 1+2*nclacp+icla
+  is = 1 + 2*nclacp+icla
   ! Field xck
   ixck(icla) = iscapp(is)
   write(f_name,'(a6,i2.2)')'xck_cp' ,icla
@@ -187,7 +187,7 @@ do icla = 1, nclacp
 
   ! With drying
   if (ippmod(iccoal).eq.1) then
-    is = 1+3*nclacp+icla
+    is = 1 + 3*nclacp+icla
     ! Field Xwt
     ixwt(icla) = iscapp(is)
     write(f_name,'(a6,i2.2)')'Xwt_CP', icla
@@ -208,7 +208,7 @@ do icla = 1, nclacp
     ! For post-processing
     call field_set_key_int(f_id, keyvis, iopchr)
 
-    is = 1+4*nclacp+icla
+    is = 1 + 4*nclacp+icla
     ! Field h2
     ih2(icla) = iscapp(is)
     write(f_name,'(a6,i2.2)')'Ent_CP' ,icla
@@ -230,7 +230,7 @@ do icla = 1, nclacp
     call field_set_key_int(f_id, keyvis, iopchr)
 
     if (i_coal_drift.eq.1) then
-      is = 1+5*nclacp+icla
+      is = 1 + 5*nclacp+icla
       ! Field X_Age
       iagecp_temp(icla) = iscapp(is)
       write(f_name,'(a8,i2.2)')'X_Age_CP' ,icla
@@ -250,7 +250,7 @@ do icla = 1, nclacp
       call field_set_key_int(f_id, keyvis, iopchr)
     endif
   else
-    is = 1+3*nclacp+icla
+    is = 1 + 3*nclacp+icla
     ! Field h2
     ih2(icla) = iscapp(is)
     write(f_name,'(a6,i2.2)')'Ent_CP' ,icla
@@ -272,7 +272,7 @@ do icla = 1, nclacp
     call field_set_key_int(f_id, keyvis, iopchr)
 
     if (i_coal_drift.eq.1) then
-      is = 1+4*nclacp+icla
+      is = 1 + 4*nclacp+icla
       ! Field X_Age
       iagecp_temp(icla) = iscapp(is)
       write(f_name,'(a8,i2.2)')'X_Age_CP' ,icla
@@ -650,9 +650,9 @@ if (iihmpr.eq.1) then
 !
   call uicpsc (ncharb, nclacp, noxyd, ippmod,               &
                iccoal, ieqnox, ieqco2, ihtco2,              &
-               ihth2o, ihm, inp, ixch, ixck, ixwt, ih2,     &
+               ihth2o, iscalt, inp, ixch, ixck, ixwt, ih2,  &
                if1m, if2m, if4m, if5m, if6m,                &
-               if7m, if8m, ifvp2m, iyco2, if9m,     &
+               if7m, if8m, ifvp2m, iyco2, if9m,             &
                iyhcn, iyno, ihox, iynh3)
 endif
 

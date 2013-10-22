@@ -593,8 +593,8 @@ do ifac = 1, nfabor
       rcodcl(ifac, iaggas, 1) = zero
     endif
 ! ------ CL pour HM
-    rcodcl(ifac,isca(ihm),1) = (1.d0-x20t(izone))*h1(izone)    &
-                              +x2h20t(izone)
+    rcodcl(ifac,isca(iscalt),1) = (1.d0-x20t(izone))*h1(izone)    &
+                                 +x2h20t(izone)
 ! ------ CL pour X1.F4M (Oxyd 2)
     if ( noxyd .ge. 2 ) then
       if ( inmoxy(izone) .eq. 2 ) then

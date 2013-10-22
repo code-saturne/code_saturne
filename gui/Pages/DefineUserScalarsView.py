@@ -516,6 +516,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             if s in l1: l1.remove(s)
         for label in l1:
             self.modelScalars.newItem(label)
+        for label in self.mdl.getThermalScalarLabelsList():
+            self.modelScalars.newItem(label)
         for label in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(label)
 

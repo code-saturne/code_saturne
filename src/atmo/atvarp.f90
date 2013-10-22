@@ -76,9 +76,9 @@ integer        isc
 ! 1.1  Dry atmosphere
 ! =====================
 
-if ( ippmod(iatmos).eq.1 ) then
+if ( ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2 ) then
 ! ---- Potential temperature
-  itempp = iscapp(1)
+  iscalt = iscapp(1)
 endif
 
 
@@ -86,8 +86,6 @@ endif
 ! =====================
 
 if ( ippmod(iatmos).eq.2 ) then
-  ! ---- liquid potential temperature
-  itempl = iscapp(1)
   ! ---- total water content
   itotwt = iscapp(2)
   ! ---- total number of droplets
@@ -98,7 +96,7 @@ endif
 !     ======================
 
 if (iihmpr.eq.1) then
-  call uiatsc (ippmod, iatmos, itempp, itempl, itotwt, intdrp)
+  call uiatsc (ippmod, iatmos, iscalt, itotwt, intdrp)
   !==========
 endif
 

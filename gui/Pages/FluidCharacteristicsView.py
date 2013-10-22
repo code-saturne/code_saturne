@@ -56,6 +56,7 @@ from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.ReferenceValuesModel import ReferenceValuesModel
 from Pages.CompressibleModel import CompressibleModel
 from Pages.CoalCombustionModel import CoalCombustionModel
@@ -176,10 +177,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     ('thermal_conductivity', 'Al')]
 
         self.list_scalars = []
-        self.m_sca = DefineUserScalarsModel(self.case)
-        s = self.m_sca.getThermalScalarLabel()
+        self.m_th = ThermalScalarModel(self.case)
+        s = self.m_th.getThermalScalarLabel()
         if s:
             self.list_scalars.append((s, self.tr("Thermal scalar")))
+
+        self.m_sca = DefineUserScalarsModel(self.case)
         for s in self.m_sca.getUserScalarLabelsList():
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
@@ -379,6 +382,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                 __model.setItem(str_model='variable')
                 __combo.setEnabled(False)
                 __button.setEnabled(False)
+                self.mdl.setPropertyMode(tag, 'variable')
             if mdl_joule == 'joule':
                 __model.setItem(str_model='variable')
                 __model.disableItem(str_model='constant')

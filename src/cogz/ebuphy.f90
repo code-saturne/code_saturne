@@ -274,7 +274,7 @@ do iel = 1, ncel
 ! ---- EBU Standard et modifie en conditions permeatiques (avec H)
     hgb = hgf
     if ( ygbm.gt.epsi ) then
-      hgb = ( rtp(iel,isca(ihm))-hgf*ygfm ) / ygbm
+      hgb = ( rtp(iel,isca(iscalt))-hgf*ygfm ) / ygbm
     endif
   endif
 

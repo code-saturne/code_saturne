@@ -198,7 +198,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 !    -- Valeurs de l'enthalpie
 
   do iel = 1, ncel
-    rtp(iel,isca(ihm)) = hinit
+    rtp(iel,isca(iscalt)) = hinit
   enddo
 
 

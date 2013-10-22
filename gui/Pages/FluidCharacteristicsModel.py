@@ -125,14 +125,10 @@ class FluidCharacteristicsModel(Variables, Model):
         Return node and model of choosen thermophysical model
         """
         modelList = []
-        node1 = self.node_models.xmlGetNode('gas_combustion',    'model')
-        node2 = self.node_models.xmlGetNode('solid_fuels',       'model')
-        node3 = self.node_models.xmlGetNode('joule_effect',      'model')
         node4 = self.node_models.xmlGetNode('thermal_scalar',    'model')
-        node5 = self.node_models.xmlGetNode('atmospheric_flows', 'model')
         node6 = self.node_models.xmlGetNode('compressible_model', 'model')
 
-        for node in (node1, node2, node3, node4, node5, node6):
+        for node in (node4, node6):
             if node:
                 if node['model'] == "":
                     node['model'] = "off"
@@ -163,9 +159,19 @@ class FluidCharacteristicsModel(Variables, Model):
         d['atmospheric_flows']  = 'off'
         d['compressible_model'] = 'off'
 
-        node, model = self.getThermalModel()
-        if node:
-            d[node.el.tagName] = model
+        node1 = self.node_models.xmlGetNode('gas_combustion',    'model')
+        node2 = self.node_models.xmlGetNode('solid_fuels',       'model')
+        node3 = self.node_models.xmlGetNode('joule_effect',      'model')
+        node4 = self.node_models.xmlGetNode('thermal_scalar',    'model')
+        node5 = self.node_models.xmlGetNode('atmospheric_flows', 'model')
+        node6 = self.node_models.xmlGetNode('compressible_model', 'model')
+
+        for node in (node1, node2, node3, node4, node5, node6):
+            if node:
+                if node['model'] == "":
+                    node['model'] = "off"
+                if node['model'] != 'off':
+                    d[node.el.tagName] = node['model']
 
         return d['atmospheric_flows'], \
                d['joule_effect'],      \

@@ -803,6 +803,12 @@ relxst = 0.7d0
 
 iptlro = 0
 
+! --- Thermique
+
+itherm =-999
+itpscl = 1
+iscalt =-1
+
 ! --- Turbulence
 !     Le modele de turbulence devra etre choisi par l'utilisateur
 !     En fait on n'a pas besoin d'initialiser ITYTUR (cf. varpos)
@@ -810,7 +816,7 @@ iptlro = 0
 
 iturb  =-999
 itytur =-999
-iscalt =-1
+
 ! Parfois, IGRHOK=1 donne des vecteurs non physiques en paroi
 !        IGRHOK = 1
 igrhok = 0
@@ -1258,7 +1264,7 @@ uref    = -grand*10.d0
 !         qu'on ne clippe pas les scalaires (sauf a +/-GRAND)
 
 do iscal = 1, nscamx
-  iscsth(iscal) =-10
+  iscacp(iscal) =-10
   iclvfl(iscal) = -1
   iscavr(iscal) = 0
   scamin(iscal) =-grand

@@ -610,8 +610,8 @@ if (.false.) then
   endif
 
   ! ---- Enthalpy
-  if (ihm.gt.0) then
-    ipp = ipprtp(isca(ihm))
+  if (iscalt.gt.0) then
+    ipp = ipprtp(isca(iscalt))
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1

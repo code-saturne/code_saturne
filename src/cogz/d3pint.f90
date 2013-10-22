@@ -236,7 +236,7 @@ if (ippmod(icod3p).eq.1) then
   !==========
   ( ncelet , ncel    , indpdf ,                                   &
     dirmin , dirmax  , fdeb   , ffin   , hrec   ,                 &
-    rtp(1,isca(ifm)) , rtp(1,isca(ihm)),                          &
+    rtp(1,isca(ifm)) , rtp(1,isca(iscalt)),                          &
     w1      )
 
 endif
@@ -653,7 +653,7 @@ do iel = 1, ncel
 
     if( ippmod(icod3p).eq.1 ) then
     propce(iel,iptsro) = propce(iel,iptsro)                             &
-         + (-rr/p0 * dtsmdhs)  * propce(iel,ipproc(iustdy(ihm)))
+         + (-rr/p0 * dtsmdhs)  * propce(iel,ipproc(iustdy(iscalt)))
 
       if( iirayo.ge.1 .and. abs(cotshs).gt.epzero ) then
         propce(iel,iptsro) = propce(iel,iptsro)                         &
@@ -669,9 +669,9 @@ do iel = 1, ncel
     ! arrays are re-initialize for source terms of next time step
     propce(iel,ipproc(iustdy(ifm  ))) = 0.d0
     propce(iel,ipproc(iustdy(ifp2m))) = 0.d0
-    ! array fo ihm is used to store enthalpy gap from adiabatic Hs
+    ! array fo iscalt is used to store enthalpy gap from adiabatic Hs
     ! to compute its diffusive term in tridim
-    if (ippmod(icod3p).ge.1) propce(iel,ipproc(iustdy(ihm  ))) = w1(iel)
+    if (ippmod(icod3p).ge.1) propce(iel,ipproc(iustdy(iscalt  ))) = w1(iel)
 
   endif
 

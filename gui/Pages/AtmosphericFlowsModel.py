@@ -41,6 +41,7 @@ import unittest
 
 from Base.XMLvariables import Model, Variables
 from Base.XMLmodel     import  ModelTest
+from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 
@@ -91,7 +92,12 @@ class AtmosphericFlowsModel(Model):
         if (model == "humid" or model == "dry"):
             NumericalParamGlobalModel(self.case).setHydrostaticPressure("on")
             NumericalParamGlobalModel(self.case).setWallPressureExtrapolation("extrapolation")
+            if (model == "dry"):
+                ThermalScalarModel(self.case).setThermalModel('potential_temperature')
+            else:
+                ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
         else:
+            ThermalScalarModel(self.case).setThermalModel('off')
             NumericalParamGlobalModel(self.case).setHydrostaticPressure("off")
             NumericalParamGlobalModel(self.case).setWallPressureExtrapolation("neumann")
 
@@ -165,18 +171,14 @@ class AtmosphericFlowsModel(Model):
         if model != AtmosphericFlowsModel.off:
 
             if model == AtmosphericFlowsModel.dry:
-                self.__removeScalar(node, 'liquid_potential_temperature')
                 self.__removeScalar(node, 'total_water')
                 self.__removeScalar(node, 'number_of_droplets')
                 self.__removeProperty(node, 'liquid_water')
-                self.__setScalar(node, 'PotTemp', 'potential_temperature', 'model')
                 self.__setProperty(node, 'RealTemp', 'real_temperature')
                 if self.__fluidProp.getPropertyMode('density') == 'constant':
                     self.__fluidProp.setPropertyMode('density', 'variable')
 
             elif model == AtmosphericFlowsModel.humid:
-                self.__removeScalar(node, 'potential_temperature')
-                self.__setScalar(node, 'LqPotTmp', 'liquid_potential_temperature', 'model')
                 self.__setScalar(node, 'TotWater', 'total_water', 'model')
                 self.__setScalar(node, 'TotDrop', 'number_of_droplets', 'model')
                 self.__setProperty(node, 'RealTemp', 'real_temperature')
@@ -185,16 +187,12 @@ class AtmosphericFlowsModel(Model):
                     self.__fluidProp.setPropertyMode('density', 'variable')
 
             elif model == AtmosphericFlowsModel.constant:
-                self.__removeScalar(node, 'potential_temperature')
-                self.__removeScalar(node, 'liquid_potential_temperature')
                 self.__removeScalar(node, 'total_water')
                 self.__removeScalar(node, 'number_of_droplets')
                 self.__removeProperty(node, 'liquid_water')
                 FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
 
         else:
-            self.__removeScalar(node, 'potential_temperature')
-            self.__removeScalar(node, 'liquid_potential_temperature')
             self.__removeScalar(node, 'total_water')
             self.__removeScalar(node, 'number_of_droplets')
             self.__removeProperty(node, 'liquid_water')
@@ -295,7 +293,6 @@ class AtmosphericFlowsTestCase(ModelTest):
 
         doc = """<atmospheric_flows model="dry">
                     <read_meteo_data status="on">
-                        <scalar label="Potential temp" name="potential_temperature" type="model"/>
                         <property label="Real temp" name="real_temperature"/>
                     </read_meteo_data>
                 </atmospheric_flows>
@@ -316,7 +313,6 @@ class AtmosphericFlowsTestCase(ModelTest):
 
         doc = """<atmospheric_flows model="humid">
                     <read_meteo_data status="on">
-                        <scalar label="Liq potential temp" name="liquid_potential_temperature" type="model"/>
                         <scalar label="total water" name="total_water" type="model"/>
                         <scalar label="number of droplets" name="number_of_droplets" type="model"/>
                         <property label="Real temp" name="real_temperature"/>

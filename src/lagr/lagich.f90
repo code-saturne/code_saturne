@@ -211,10 +211,10 @@ do npt = 1,nbpart
     ! Calcul du Prandtl et du Sherwood
     if (ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2) then
       xrkl = diftl0 / cromf(iel)
-    else if (ivisls(ihm).ge.1) then
-      xrkl = propce(iel,ipproc(ivisls(ihm))) / cromf(iel)
+    else if (ivisls(iscalt).ge.1) then
+      xrkl = propce(iel,ipproc(ivisls(iscalt))) / cromf(iel)
     else
-      xrkl = visls0(ihm) / cromf(iel)
+      xrkl = visls0(iscalt) / cromf(iel)
     endif
     prt   = xnul / xrkl
     sherw = 2 + 0.55d0 * rep**0.5d0 * prt**(d1s3)

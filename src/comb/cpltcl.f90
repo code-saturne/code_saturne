@@ -434,7 +434,7 @@ do ifac = 1, nfabor
     !==========
     ( mode  , h1(izone) , coefe  , f1mc   , f2mc   ,              &
       t1    )
-    rcodcl(ifac,isca(ihm),1) = h1(izone)
+    rcodcl(ifac,isca(iscalt),1) = h1(izone)
 
   endif
 

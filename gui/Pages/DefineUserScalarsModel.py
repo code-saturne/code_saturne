@@ -63,6 +63,8 @@ class DefineUserScalarsModel(Variables, Model):
         self.case = case
 
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
+        self.node_models = self.case.xmlGetNode('thermophysical_models')
+        self.node_therm  = self.node_models.xmlGetNode('thermal_scalar')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
 
 
@@ -235,6 +237,16 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
+    def getThermalScalarLabelsList(self):
+        """Public method.
+        Return the thermal scalar label """
+        lst = []
+        for node in self.node_therm.xmlGetNodeList('scalar'):
+            lst.append(node['label'])
+        return lst
+
+
+    @Variables.noUndo
     def getMeteoScalarsList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
@@ -311,7 +323,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
 
-        if l not in self.getScalarLabelsList():
+        if l not in self.getScalarLabelsList() and l not in self.getThermalScalarLabelsList():
             self.scalar_node.xmlInitNode('scalar', 'name', type="user", label=l)
 
             self.__setScalarDiffusivity(l, c)
@@ -360,20 +372,6 @@ class DefineUserScalarsModel(Variables, Model):
         for node in self.case.xmlGetNodeList('formula'):
             f = node.xmlGetTextNode().replace(old_label, new_label)
             node.xmlSetTextNode(f)
-
-
-    # FIXME: cette methode est a deplacer dans ThermalScalarmodel
-    @Variables.noUndo
-    def getThermalScalarLabel(self):
-        """
-        Get label for thermal scalar
-        """
-        label = ""
-        node = self.scalar_node.xmlGetNode('scalar', type='thermal')
-        if node:
-            label = node['label']
-
-        return label
 
 
     @Variables.noUndo
@@ -645,8 +643,11 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_label, self.getScalarLabelsList())
-        node = self.scalar_node.xmlGetNode('scalar', 'type', label=scalar_label)
+        self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
+        if scalar_label == self.getThermalScalarLabelsList()[0]:
+            node = self.node_therm.xmlGetNode('scalar', 'name', label=scalar_label)
+        else:
+            node = self.scalar_node.xmlGetNode('scalar', 'type', label=scalar_label)
         Model().isInList(node['type'], ('user', 'thermal'))
         return node['type']
 
@@ -656,8 +657,11 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_label, self.getScalarLabelsList())
-        node = self.scalar_node.xmlGetNode('scalar', 'name', label=scalar_label)
+        self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
+        if scalar_label == self.getThermalScalarLabelsList()[0]:
+            node = self.node_therm.xmlGetNode('scalar', 'name', label=scalar_label)
+        else:
+            node = self.scalar_node.xmlGetNode('scalar', 'name', label=scalar_label)
         return node['name']
 
 

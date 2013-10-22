@@ -102,6 +102,28 @@ _scalar_number(const char* model)
 }
 
 /*-----------------------------------------------------------------------------
+ * Return the activated thermal scalar
+ *----------------------------------------------------------------------------*/
+
+static int
+_thermal_scalar(void)
+{
+  char *path = NULL;
+  int   nb;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "thermophysical_models");
+  cs_xpath_add_element(&path, "thermal_scalar");
+  cs_xpath_add_element(&path, "scalar");
+
+  nb = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return nb;
+}
+
+/*-----------------------------------------------------------------------------
  * Return the label or the name from a specific physics scalar.
  *
  * parameters:
@@ -117,10 +139,37 @@ static char *_scalar_name_label(const char *physics, const char *kw)
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,
                         "thermophysical_models",
-                        physics,
+                         physics,
                         "scalar");
+
   cs_xpath_add_test_attribute(&path, "name", kw);
   cs_xpath_add_attribute(&path, "label");
+
+  str = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return str;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the name tor thermal scalar.
+ *
+ * parameters:
+ *   kw                   <--  scalar name
+ *----------------------------------------------------------------------------*/
+
+static char *_thermal_scalar_name_label(const char *kw)
+{
+  char *path = NULL;
+  char *str  = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "thermal_scalar",
+                        "scalar");
+  cs_xpath_add_attribute(&path, kw);
 
   str = cs_gui_get_attribute_value(path);
 
@@ -1680,6 +1729,9 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
     nscapp = _scalar_number(vars->model);
   }
 
+  /* take into account thermal scalar*/
+  nscapp += _thermal_scalar();
+
   vars->nscapp = nscapp;
 
 #if _XML_DEBUG_
@@ -2424,7 +2476,7 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
                                 const int *const icolwc,
                                 const int *const icoebu,
                                 const int *const icod3p,
-                                const int *const ihm,
+                                const int *const iscalt,
                                 const int *const ifm,
                                 const int *const ifp2m,
                                 const int *const iygfm,
@@ -2453,9 +2505,9 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
     BFT_FREE(label);
 
     if (ippmod[*icod3p-1] == 1 ) {
-      label = _scalar_name_label("gas_combustion", "Enthalpy");
-      BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
-      strcpy(vars->label[*ihm -1], label);
+      label = _thermal_scalar_name_label("label");
+      BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
+      strcpy(vars->label[*iscalt -1], label);
       BFT_FREE(label);
     }
   }
@@ -2474,9 +2526,9 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
     }
 
     if (ippmod[*icoebu-1] == 1 || ippmod[*icoebu-1] == 3) {
-      label = _scalar_name_label("gas_combustion", "Enthalpy");
-      BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
-      strcpy(vars->label[*ihm -1], label);
+      label = _thermal_scalar_name_label("label");
+      BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
+      strcpy(vars->label[*iscalt -1], label);
       BFT_FREE(label);
     }
   }
@@ -2509,13 +2561,13 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
     strcpy(vars->label[*icoyfp -1], label);
     BFT_FREE(label);
   }
+
   if (ippmod[*icolwc-1] == 1 || ippmod[*icolwc-1] == 3 || ippmod[*icolwc-1] == 5) {
-    label = _scalar_name_label("gas_combustion", "Enthalpy");
-    BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
-    strcpy(vars->label[*ihm -1], label);
+    label = _thermal_scalar_name_label("label");
+    BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
+    strcpy(vars->label[*iscalt -1], label);
     BFT_FREE(label);
   }
-
 
 #if _XML_DEBUG_
   bft_printf("==>UICPSC\n");
@@ -2770,7 +2822,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
                                 const int *const ieqco2,
                                 const int *const ihtco2,
                                 const int *const ihth2o,
-                                const int *const ihm,
+                                const int *const iscalt,
                                 const int *const inp,
                                 const int *const ixch,
                                 const int *const ixck,
@@ -2805,9 +2857,9 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   }
 
   /* IHM */
-  label = _scalar_name_label("solid_fuels", "Enthalpy");
-  BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
-  strcpy(vars->label[*ihm -1], label);
+  label = _thermal_scalar_name_label("label");
+  BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
+  strcpy(vars->label[*iscalt -1], label);
   BFT_FREE(label);
 
   /* Loop on classes IH2, INP, IXCH, IXCK */
@@ -3087,11 +3139,12 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
     vars->properties_ipp[n] = ipppro[ipproc[idjr[idimve] -1] -1];
     vars->propce[n] = ipproc[idjr[idimve] -1] -1;
     BFT_MALLOC(name, strlen("Cour_re") +1 + 1, char);
-    BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(name, "Cour_re");
     sprintf(snumpp,"%1.1i", idimve+1);
     strcat(name, snumpp);
+    BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
+    BFT_FREE(name);
   }
 
   if (ippmod[*ieljou - 1] == 2 || ippmod[*ieljou - 1] == 4)
@@ -3099,11 +3152,12 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
       vars->properties_ipp[n] = ipppro[ipproc[idji[idimve] -1] -1];
       vars->propce[n] = ipproc[idji[idimve] -1] -1;
       BFT_MALLOC(name, strlen("CouImag") +1 + 1, char);
-      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(name, "CouImag");
       sprintf(snumpp,"%1.1i", idimve+1);
       strcat(name, snumpp);
+      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
+      BFT_FREE(name);
     }
 
   if (ippmod[*ielarc - 1] >= 1) {
@@ -3111,11 +3165,12 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
       vars->properties_ipp[n] = ipppro[ipproc[ilapla[idimve] -1] -1];
       vars->propce[n] = ipproc[ilapla[idimve] -1] -1;
       BFT_MALLOC(name, strlen("For_Lap") +1 + 1, char);
-      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(name, "For_Lap");
       sprintf(snumpp,"%1.1i", idimve+1);
       strcat(name, snumpp);
+      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
+      BFT_FREE(name);
     }
 
     if (*ixkabe == 1) {
@@ -3131,7 +3186,6 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
     }
   }
 
-  BFT_FREE(name);
   BFT_FREE(snumpp);
 
   if (n != vars->nsalpp)
@@ -3159,7 +3213,7 @@ void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
                                 const int *const ieljou,
                                 const int *const ielarc,
                                 const int *const ngazg,
-                                const int *const ihm,
+                                const int *const iscalt,
                                 const int *const ipotr,
                                 const int *const iycoel,
                                 const int *const ipoti,
@@ -3175,11 +3229,11 @@ void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
   else
     BFT_MALLOC(vars->label, vars->nscapp, char*);
 
-  BFT_MALLOC(snumsca, 1 + 1, char);
+  BFT_MALLOC(snumsca, 2 + 1, char);
 
-  label = _scalar_name_label("joule_effect", "Enthalpy");
-  BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
-  strcpy(vars->label[*ihm -1], label);
+  label = _thermal_scalar_name_label("label");
+  BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
+  strcpy(vars->label[*iscalt -1], label);
   BFT_FREE(label);
 
   label = _scalar_name_label("joule_effect", "PotElecReal");
@@ -3208,7 +3262,7 @@ void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
 
   if (ippmod[*ielarc - 1] >= 2)
     for (int idimve = 0; idimve < 3; idimve++) {
-      BFT_MALLOC(name, strlen("POT_VEC") +1 + 1, char);
+      BFT_MALLOC(name, strlen("POT_VEC") +2 + 1, char);
       strcpy(name, "POT_VEC");
       sprintf(snumsca, "%2.2i", idimve +1);
       strcat(name, snumsca);
@@ -3378,16 +3432,14 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
  * *****************
  * integer         ippmod   -->   specific physics indicator array
  * integer         iatmos   -->   index for atmospheric flow
- * integer         itempp   -->   index for potential temperature
- * integer         itempl   -->   index for liquid potential temperature
+ * integer         iscalt   -->   index for thermal variable
  * integer         itotwt   -->   index for total water content
  * integer         intdrp   -->   index for total number of droplets
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
                                 const int *const iatmos,
-                                const int *const itempp,
-                                const int *const itempl,
+                                const int *const iscalt,
                                 const int *const itotwt,
                                 const int *const intdrp)
 {
@@ -3399,22 +3451,15 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
   else
     BFT_MALLOC(vars->label, vars->nscapp, char*);
 
-  if (ippmod[*iatmos -1] == 1)
+  if (ippmod[*iatmos -1] == 1 || ippmod[*iatmos -1] == 2)
   {
-    /* itempp */
-    label = _scalar_name_label("atmospheric_flows", "potential_temperature");
-    BFT_MALLOC(vars->label[*itempp -1], strlen(label)+1, char);
-    strcpy(vars->label[*itempp -1], label);
+    label = _thermal_scalar_name_label("label");
+    BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
+    strcpy(vars->label[*iscalt -1], label);
     BFT_FREE(label);
   }
-  else if (ippmod[*iatmos -1] == 2)
+  if (ippmod[*iatmos -1] == 2)
   {
-    /* itempl */
-    label = _scalar_name_label("atmospheric_flows", "liquid_potential_temperature");
-    BFT_MALLOC(vars->label[*itempl -1], strlen(label)+1, char);
-    strcpy(vars->label[*itempl -1], label);
-    BFT_FREE(label);
-
     /* itotwt */
     label = _scalar_name_label("atmospheric_flows", "total_water");
     BFT_MALLOC(vars->label[*itotwt -1], strlen(label)+1, char);

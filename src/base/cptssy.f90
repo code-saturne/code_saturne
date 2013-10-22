@@ -126,10 +126,8 @@ do inbcou = 1, nbccou
     ! Sanity check : only temperature in degree is possible when doing a
     ! volume coupling with SYRTHES
 
-    if (iscalt.eq.iscal) then
-      if (iscsth(iscalt).ne.-1) then
-        write(nfecra, 1000)
-      endif
+    if (itherm.ne.1 .or. itpscl.ne.2) then
+      write(nfecra, 1000)
     endif
 
     mode = 1 ! Volume coupling
@@ -215,7 +213,7 @@ return
 '@ @@ WARNING: SYRTHES VOLUME COUPLING:                       ',/,&
 '@      THE TEMPERATURE IS NOT CONFIGURED IN DEGREE C.        ',/,&
 '@    ========                                                ',/,&
-'@    The calculation continue.                               ',/,&
+'@    The calculation continues.                              ',/,&
 '@                                                            ')
 
 #endif

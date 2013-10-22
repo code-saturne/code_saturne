@@ -82,10 +82,6 @@ integer        is, icha, isc
 
 ! ---> Variables propres a la phase continue
 
-ihm   = iscapp(1)
-
-! ---> Variables propres a la phase continue
-
 do icha = 1, ncharb
   is          = 1+icha
   if1m(icha)  = iscapp(is)

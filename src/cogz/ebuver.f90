@@ -102,7 +102,7 @@ if( diftl0.lt.0d0) then
   WRITE(NFECRA,3010)'DIFTL0', DIFTL0
   iok = iok + 1
 else
-  visls0(ihm) = diftl0
+  visls0(iscalt) = diftl0
 endif
 
 ! --> Constante du modele EBU

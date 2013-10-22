@@ -90,7 +90,7 @@ if ( ippmod(icod3p).ge.0 ) then
   iscavr(ifp2m) = ifm
 
 ! ---- Enthalpie
-  if ( ippmod(icod3p).eq.1 ) ihm = iscapp(3)
+  if ( ippmod(icod3p).eq.1 ) iscalt = iscapp(3)
 
 ! Soot mass fraction and precursor number
   if (isoot.ge.1) ifsm = iscapp(4)
@@ -111,8 +111,8 @@ if ( ippmod(icoebu).ge.0 ) then
 ! ---- Taux de melange
     ifm   = iscapp(2)
   endif
-  if ( ippmod(icoebu).eq.1 ) ihm = iscapp(2)
-  if ( ippmod(icoebu).eq.3 ) ihm = iscapp(3)
+  if ( ippmod(icoebu).eq.1 ) iscalt = iscapp(2)
+  if ( ippmod(icoebu).eq.3 ) iscalt = iscapp(3)
 endif
 
 
@@ -136,9 +136,9 @@ if (ippmod(icolwc).ge.0 ) then
     icoyfp = iscapp(5)
   endif
 
-  if (ippmod(icolwc).eq.1 ) ihm = iscapp(5)
+  if (ippmod(icolwc).eq.1 ) iscalt = iscapp(5)
   if (ippmod(icolwc).eq.3 .or.                                    &
-      ippmod(icolwc).eq.5 ) ihm = iscapp(6)
+      ippmod(icolwc).eq.5 ) iscalt = iscapp(6)
 
 endif
 
@@ -147,7 +147,7 @@ endif
 !     Construction de l'indirection entre la numerotation du noyau et XML
 
 if (iihmpr.eq.1) then
-   call uicosc(ippmod, icolwc, icoebu, icod3p, ihm,               &
+   call uicosc(ippmod, icolwc, icoebu, icod3p, iscalt,            &
                ifm, ifp2m, iygfm, iyfm, iyfp2m, icoyfp)
 endif
 

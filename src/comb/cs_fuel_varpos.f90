@@ -71,19 +71,14 @@ integer        is, isc, icla
 ! 1. DEFINITION DES POINTEURS
 !===============================================================================
 
-! ---> Variables propres a la suspension gaz - particules
-
-is    = 1
-ihm   = iscapp(is)
-
 ! ---> Variables propres a la phase dispersee
 
 do icla = 1, nclafu
-  is          = 1+icla
+  is          = 1 + icla
   ing(icla)   = iscapp(is)
-  is          = 1+1*nclafu+icla
+  is          = 1 + 1*nclafu+icla
   iyfol(icla) = iscapp(is)
-  is          = 1+2*nclafu+icla
+  is          = 1 + 2*nclafu+icla
   ih2(icla)   = iscapp(is)
 enddo
 

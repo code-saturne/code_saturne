@@ -268,12 +268,12 @@ do ilelt = 1, nlelt
 
   ! --- Handle Scalars
 
-  ! Enthalpy in J/kg (ihm)
+  ! Enthalpy in J/kg (iscalt)
   ! On this example we impose the value of the enthalpy
   ! the arbitrary value of 1.d6 corresponds to a temperature of 2200 Kelvin
   ! for argon at atmospheric pressure (see dp_ELE)
 
-  ii = ihm
+  ii = iscalt
   icodcl(ifac,isca(ii))   = 1
   rcodcl(ifac,isca(ii),1) = 1.d6
 
@@ -579,7 +579,7 @@ do ilelt = 1, nlelt
   ! ---- Enthalpy (J/kg) :
   !      imposed heat transfer coefficient
 
-  ii=ihm
+  ii=iscalt
   icodcl(ifac,isca(ii))   = 1
   rcodcl(ifac,isca(ii),1) = 2.d4
   rcodcl(ifac,isca(ii),2) = 1.d5

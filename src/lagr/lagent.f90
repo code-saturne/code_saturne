@@ -1133,21 +1133,22 @@ do ii = 1,nfrtot
 
               ettp(ip,jtf) = propce(iel,ipproc(itemp)) -tkelvi
 
-! Kelvin
-            else if ( iscsth(iscalt).eq.1 ) then
+            else if (itherm.eq.1) then
 
-              ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
+              if (itpscl.eq.1) then !Kelvin
 
-! Celsius
-            else if ( iscsth(iscalt).eq.-1 ) then
+                ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
 
-              ettp(ip,jtf) = rtpa(iel,isca(iscalt))
+              else if (itpscl.eq.2) then ! Celsius
 
-            else if ( iscsth(iscalt).eq.2 ) then
+                ettp(ip,jtf) = rtpa(iel,isca(iscalt))
+
+              endif
+
+            else if (itherm.eq.2) then
 
               mode = 1
-              call usthht(mode, rtpa(iel,isca(iscalt)),    &
-                          ettp(ip,jtf))
+              call usthht(mode, rtpa(iel,isca(iscalt)), ettp(ip,jtf))
 
             endif
 

@@ -260,18 +260,16 @@ endif
 
 ! When solving the Temperature, we solve:
 !  cp*Vol*dT/dt + ...
-if (iscalt.gt.0) then
-  if (ivar.eq.isca(iscalt) .or. iscavr(iscal).eq.iscalt) then
-    if (abs(iscsth(iscalt)).eq.1) then
-      imucpp = 1
-    else
-      imucpp = 0
-    endif
-  else
-    imucpp = 0
+
+imucpp = 0
+if (iscavr(iscal).gt.0) then
+  if (abs(iscacp(iscavr(iscal))).eq.1) then
+    imucpp = 1
   endif
 else
-  imucpp = 0
+  if (abs(iscacp(iscal)).eq.1) then
+    imucpp = 1
+  endif
 endif
 
 allocate(xcpp(ncelet))
@@ -451,7 +449,7 @@ endif
 
 if (iilagr.eq.2 .and. ltsthe.eq.1)  then
 
-  if ((iscsth(iscal).eq.2).or.(abs(iscsth(iscal)).eq.1)) then
+  if (iscal.eq.iscalt .and. (itherm.eq.1 .or. itherm.eq.2)) then
 
     do iel = 1, ncel
       smbrs (iel) = smbrs(iel)  + tslagr(iel,itste)

@@ -473,10 +473,6 @@ if (ixmlpu.eq.0) then
 endif
 
 !----
-! Formats
-!----
-
-!----
 ! End
 !----
 
@@ -489,7 +485,7 @@ end subroutine usppmo
 
 subroutine usipph &
 !================
- ( ixmlpu, nfecra , iturb , irccor , icp )
+ ( ixmlpu, nfecra , iturb , irccor , itherm, icp )
 
 
 !===============================================================================
@@ -508,6 +504,7 @@ subroutine usipph &
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iturb            ! ia ! <-> ! turbulence model                               !
 ! irccor           ! ia ! <-> ! flag for rotation/curvature correction or not  !
+! itherm           ! ia ! <-> ! thermal model                                  !
 ! icp              ! ia ! <-> ! flag for uniform Cp or not                     !
 !__________________!____!_____!________________________________________________!
 
@@ -530,7 +527,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu, nfecra
-integer iturb, irccor, icp
+integer iturb, irccor, itherm, icp
 
 ! Local variables
 
@@ -625,6 +622,22 @@ endif
 if (.false.) then
 
   irccor = 1
+
+endif
+
+! --- Thermal model
+!      0: none
+!      1: temperature
+!      2: enthalpy
+!
+!  For temperature, the temperature scale may be set later using itpscl
+!  (1 for Kelvin, 2 for Celsius).
+!
+!  When using specific physics, this value is set automatically by the physics model.
+
+if (ixmlpu.eq.0) then
+
+  itherm = 0
 
 endif
 
@@ -1199,57 +1212,39 @@ endif
 
 ! --- Temperature or enthalpy
 
+!   When used without specific physics, if we have chosen to solve in temperature
+!     (that is if itherm = 1), the fluid temperature is considered to be in
+!     degrees Kelvin by default (be careful for boundary conditions an expression
+!     of physical properties depending on temperature)t.
 
-!   When specific physics are activated (coal, combustion, electric arcs)
-!     we DO NOT edit this section: we DO NOT modify 'iscalt' nor 'iscsth'
-!    (the test: if (nmodpp.eq.0) is used for this).
+!     If we wish for the fluid solver to work with a temperature in degrees Celsius,
+!     we must set itpscl = 2.
 
-
-!   On the other hand, if specific physics are NOT activated:
-
-!     If a USER scalar represents the temperature or enthalpy:
-!       we define the number of this scalar in iscalt and
-!       we set iscsth(iscalt) = 1 if it is the temperature
-!          or  iscsth(iscalt) = 2 if it is the enthalpy.
-
-!     If no scalar represents the temperature or enthalpy
-!       we set iscalt = -1
-!       and we do not define iscsth(iscalt).
-
-
-!     For the radiative module when used without specific physics, if we
-!      have chosen to solve in temperature (that is if
-!      iscsth(iscalt) = 1), the fluid temperature is considered to
-!      be in degrees KELVIN (be careful for boundary conditions an expression
-!      of physical properties depending on temperature).
-!      Nonetheless, even though it is not recommended, if we wish for the
-!      fluid solver to work with a temperature in degrees Celsius, we must set
-!      iscsth(iscalt) = -1.
-!      This choice is a source of user errors. Indeed, the boundary conditions
-!      for the fluid temperature will then be in degrees Celsius, while the
-!      boundary conditions for radiation in usray2 must still be in Kelvin.
-
-
-!    If specific physics are not activated
-!       (coal, combustion, electric arcs: see usppmo):
+!     This is recommended for Syrthes Coupling, but not recommended for the
+!     radiative model, as it is a source of user errors in this case:
+!     Indeed, the boundary conditions for the fluid temperature will then be
+!     in degrees Celsius, while the boundary conditions for radiation in
+!     usray2 must still be in Kelvin.
 
 if (.false.) then
 
-  if (nmodpp.eq.0 .and. nscaus.gt.0) then
+  if (nmodpp.eq.0) then
+    itpscl = 2
+  endif
 
-    ! Number of the scalar representing temperature or enthalpy,
-    !   or -1 if there is none.
-    ! When the choice is done by the Code_Saturne GUI, the scalar representing
-    !   the temperature or enthalpy is always the first.
+endif
 
-    iscalt = -1
+!   If a USER scalar behaves like a temperature (relative to Cp):
+!     we set iscacp(isca) = 1.
+!
+!   Otherwise, we do not modify iscacp(isca)
 
-    ! If there is a temperature or enthalpy variable:
-    if (iscalt.gt.0) then
-      ! we indicate if it is the temperature (=1) or the enthalpy (=2).
-      iscsth(iscalt) = 1
-    endif
+if (.false.) then
 
+  if (nscaus.gt.0) then
+    do ii = 1, nscaus
+      iscacp(isca(ii)) = 1
+    enddo
   endif
 
 endif

@@ -54,6 +54,10 @@ from Base.Toolbox import GuiParam
 from Pages.ThermalScalarForm import Ui_ThermalScalarForm
 import Base.QtPage as QtPage
 from Pages.ThermalScalarModel import ThermalScalarModel
+from Pages.ElectricalModel import ElectricalModel
+from Pages.CoalCombustionModel import CoalCombustionModel
+from Pages.GasCombustionModel import GasCombustionModel
+from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -93,6 +97,9 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
         self.modelThermal.addItem(self.tr("Temperature (Kelvin)"), 'temperature_kelvin')
         self.modelThermal.addItem(self.tr("Enthalpy (J/kg)"), 'enthalpy')
 
+        self.modelThermal.addItem(self.tr("Potential temperature"), 'potential_temperature')
+        self.modelThermal.addItem(self.tr("Liquid potential temperature"), 'liquid_potential_temperature')
+
         self.connect(self.comboBoxThermal, SIGNAL("activated(const QString&)"), self.slotThermalScalar)
 
         # Update the thermal scalar list with the calculation features
@@ -100,6 +107,21 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
         for sca in self.thermal.thermalModel:
             if sca not in self.thermal.thermalScalarModelsList():
                 self.modelThermal.disableItem(str_model=sca)
+
+        if ElectricalModel(self.case).getElectricalModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+
+        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+
+        if GasCombustionModel(self.case).getGasCombustionModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+
+        if AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+        else:
+            self.modelThermal.delItem(5)
+            self.modelThermal.delItem(4)
 
         # Select the thermal scalar model
 

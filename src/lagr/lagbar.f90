@@ -81,63 +81,64 @@ parameter (ncmax=2000)
 
 ! Determination of the temperature
 
-do ifac = 1,nfabor
-   iel = ifabor(ifac)
-   if (iscalt.gt.0) then
-      if (iscsth(iscalt).eq.-1) then
-         tempf = rtp(iel,isca(iscalt)) + tkelvi
-      else if (iscsth(iscalt).eq. 1) then
-         tempf = rtp(iel,isca(iscalt))
-      else if (iscsth(iscalt).eq.2) then
-         mode = 1
-         call usthht(mode,rtp(iel,isca(iscalt)),tempf)
+do ifac = 1, nfabor
+
+  iel = ifabor(ifac)
+
+  if (iscalt.gt.0) then
+    if (itherm.eq.1) then
+      if (itpscl.eq.2) then
+        tempf = rtp(iel,isca(iscalt)) + tkelvi
+      else if (itpscl.eq. 1) then
+        tempf = rtp(iel,isca(iscalt))
       endif
-   else
-      tempf = t0
-   endif
+    else if (itherm.eq.2) then
+      mode = 1
+      call usthht(mode,rtp(iel,isca(iscalt)),tempf)
+    endif
+  else
+    tempf = t0
+  endif
 
+  !Calculation of the Debye length
 
-   !Calculation of the Debye length
+  ldebye = ((2.d3 * cstfar**2 * fion) / (epseau * epsvid * rr * tempf))**(-0.5d0)
 
-   ldebye = ((2.d3 * cstfar**2 * fion) / (epseau * epsvid * rr * tempf))**(-0.5d0)
+  !Height of the energy barrier
 
+  aux1 = ldebye * exp(-1.d0) * phi1 * phi2
+  aux2 = cstham / (6.d0 * epsvid * epseau * 4.d0 * pi)
 
-   !Height of the energy barrier
+  if (aux1.lt.aux2) then
+    barr = 0.d1
+  else
+    ! Binary search for the maximum
+    bg = 1.d-30
+    bd = 2 * ldebye
 
-   aux1 = ldebye * exp(-1.d0) * phi1 * phi2
-   aux2 = cstham / (6.d0 * epsvid * epseau * 4.d0 * pi)
+    do cpt = 1,ncmax
 
-   if (aux1.lt.aux2)  then
-      barr = 0.d1
-   else
-      !Research for the maximum by dichotomy
-      bg = 1.d-30
-      bd = 2 * ldebye
+      cc = (bg + bd) * 0.5d0
 
-      do cpt = 1,ncmax
+      fg =    cstham / (6.d0 * bg **2) - epsvid * epseau * 4.d0 &
+            * pi * phi1 * phi2 * exp(-bg / ldebye) / ldebye
 
-         cc = (bg + bd) * 0.5d0
+      fc =   cstham / (6.d0 * cc **2) -epsvid * epseau * 4.d0 &
+           * pi * phi1 * phi2 * exp(-cc / ldebye) / ldebye
 
-         fg =  cstham / (6.d0 * bg **2) - epsvid * epseau * 4.d0 &
-              * pi * phi1 * phi2 * exp(-bg / ldebye) / ldebye
+      if (fg * fc.lt.0d1) then
+        bd = cc
+      else
+        bg = cc
+      endif
 
-         fc =  cstham / (6.d0 * cc **2) -epsvid * epseau * 4.d0 &
-              * pi * phi1 * phi2 * exp(-cc / ldebye) / ldebye
+    enddo
 
-         if (fg * fc.lt.0d1) then
-            bd = cc
-         else
-            bg = cc
-         endif
-
-      enddo
-
-      barr =  -cstham / (6.d0 * cc) + epsvid * epseau * 4.d0 &
+    barr =  -cstham / (6.d0 * cc) + epsvid * epseau * 4.d0 &
            * pi * phi1 * phi2 * exp(-cc / ldebye)
 
-   endif
-   energt (ifac) = barr
-
+  endif
+  energt (ifac) = barr
 
 enddo
 

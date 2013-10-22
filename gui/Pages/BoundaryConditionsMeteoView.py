@@ -165,14 +165,13 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
             self.checkBoxAutoNature.setChecked(False)
             self.__boundary.setAutomaticNatureStatus('off')
             self.checkBoxAutoNature.setEnabled(False)
+            self.scalarsWidget.showWidget(self.__b)
             if self.__boundary.getNature() == "meteo_inlet":
                 self.velocityWidget.showWidget(self.__b)
                 self.turbulenceWidget.showWidget(self.__b)
-                self.scalarsWidget.showWidget(self.__b)
             else:
                 self.velocityWidget.hideWidget()
                 self.turbulenceWidget.hideWidget()
-                self.scalarsWidget.showWidget(self.__b)
 
 
     def __slotAutoNature(self, bool):

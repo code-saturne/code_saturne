@@ -160,17 +160,17 @@ else if ( ippmod(icod3p).ge.0 .or.                                &
     tempf(iel) = propce(iel,ipproc(itemp)) - tkelvi
   enddo
 
-else if ( iscsth(iscalt).eq.-1 ) then
+else if (itherm.eq.1 .and. itpscl.eq.2) then
   do iel = 1,ncel
     tempf(iel) = rtp(iel,isca(iscalt))
   enddo
 
-else if ( iscsth(iscalt).eq.1 ) then
+else if (itherm.eq.1 .and. itpscl.eq.1) then
   do iel = 1,ncel
     tempf(iel) = rtp(iel,isca(iscalt)) - tkelvi
   enddo
 
-else if ( iscsth(iscalt).eq.2 ) then
+else if (itherm.eq.2) then
   do iel = 1,ncel
     call usthht (mode, rtp(iel,isca(iscalt)), tempf(iel))
     !==========
@@ -188,7 +188,7 @@ do npt = 1,nbpart
     iel = itepa(npt,jisor)
 
     if (itytur.eq.2 .or. itytur.eq.3 .or.           &
-         iturb.eq.50 .or. iturb.eq.60 ) then
+        iturb.eq.50 .or. iturb.eq.60) then
 
       if ( itytur.eq.2 .or. iturb.eq.50 ) then
 

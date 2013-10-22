@@ -168,7 +168,7 @@ if ( isuite.eq.0 ) then
 ! ----- Enthalpie
 
       if ( ippmod(icod3p).eq.1 ) then
-        rtp(iel,isca(ihm)) = hair
+        rtp(iel,isca(iscalt)) = hair
       endif
 
 ! ---- Soot
@@ -192,7 +192,7 @@ if ( isuite.eq.0 ) then
 ! ----- Enthalpie
 
       if ( ippmod(icod3p).eq.1 ) then
-        rtp(iel,isca(ihm)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
+        rtp(iel,isca(iscalt)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
       endif
 
 ! ---- Soot
@@ -220,7 +220,7 @@ if ( isuite.eq.0 ) then
       call synsca(rtp(1,isca(ifp2m)))
       !==========
       if ( ippmod(icod3p).eq.1 ) then
-        call synsca(rtp(1,isca(ihm)))
+        call synsca(rtp(1,isca(iscalt)))
         !==========
       endif
     endif

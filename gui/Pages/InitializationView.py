@@ -54,12 +54,10 @@ from Base.Toolbox import GuiParam
 from Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
 from Pages.TurbulenceModel import TurbulenceModel
 from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.GasCombustionModel import GasCombustionModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
 from Pages.InitializationModel import InitializationModel
 from Pages.CompressibleModel import CompressibleModel
-from Pages.ElectricalModel import ElectricalModel
 from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -95,7 +93,6 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.comp    = CompressibleModel(self.case)
-        self.elec    = ElectricalModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
 
         # create group to control hide/show options
@@ -850,13 +847,10 @@ nusa = (cmu * k)/eps;;"""
             item.hide()
 
         model = self.therm.getThermalScalarModel()
-        modelElec = self.elec.getElectricalModel()
 
-        if model != "off" or modelElec != "off":
+        if model != "off":
             for item in self.thermal_group:
                 item.show()
-            if modelElec != "off":
-                self.th_sca_label = 'Enthalpy'
             th_formula = self.init.getThermalFormula(zone, self.th_sca_label)
             if not th_formula:
                 th_formula = self.th_sca_label+""" = 0;\n"""

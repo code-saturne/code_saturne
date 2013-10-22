@@ -109,7 +109,7 @@ class CompressibleModel(Variables, Model):
                 self.node_ref.xmlRemoveChild('temperature')
             else :
                 for v in self.var_list:
-                    self.setNewModelScalar(self.node_comp, v)
+                    self.setNewScalar(self.node_comp, v, "model")
                 for p in self.prop_list:
                     self.setNewProperty(self.node_comp, p)
                 from Pages.TurbulenceModel import TurbulenceModel

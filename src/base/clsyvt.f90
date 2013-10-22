@@ -554,12 +554,13 @@ do ifac = 1, nfabor
         else
           ipccp = 0
         endif
-        if (iscsth(iscal).eq.0.or.iscsth(iscal).eq.2.or.iscsth(iscal).eq.3) then
-          cpp = 1.d0
-        elseif (abs(iscsth(iscal)).eq.1.and.(ipccp.gt.0)) then
-          cpp = propce(iel,ipccp)
-        elseif (abs(iscsth(iscal)).eq.1) then
-          cpp = cp0
+        cpp = 1.d0
+        if (iscacp(iscal).eq.1) then
+          if (ipccp.gt.0) then
+            cpp = propce(iel,ipccp)
+          else
+            cpp = cp0
+          endif
         endif
 
         ! --- Geometrical quantities

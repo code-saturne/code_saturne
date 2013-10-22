@@ -81,17 +81,30 @@ implicit none
 ! --> Flamme de diffusion
 
 if ( ippmod(icod3p).eq.0 ) nscapp = 2
-if ( ippmod(icod3p).eq.1 ) nscapp = 3
+if ( ippmod(icod3p).eq.1 ) then
+  nscapp = 3
+  itherm = 2
+endif
 
 if ( ippmod(icodeq).eq.0 ) nscapp = 2
-if ( ippmod(icodeq).eq.1 ) nscapp = 3
+if ( ippmod(icodeq).eq.1 ) then
+  nscapp = 3
+  itherm = 2
+endif
 
 ! --> Flamme de premelange (modele EBU)
 
 if ( ippmod(icoebu).eq.0 ) nscapp = 1
-if ( ippmod(icoebu).eq.1 ) nscapp = 2
+if ( ippmod(icoebu).eq.1 ) then
+  nscapp = 2
+  itherm = 2
+endif
+
 if ( ippmod(icoebu).eq.2 ) nscapp = 2
-if ( ippmod(icoebu).eq.3 ) nscapp = 3
+if ( ippmod(icoebu).eq.3 ) then
+  nscapp = 3
+  itherm = 2
+endif
 
 ! ---> Modele BML
 
@@ -106,6 +119,10 @@ if ( ippmod(icolwc).eq.2 ) nscapp = 5
 if ( ippmod(icolwc).eq.3 ) nscapp = 6
 if ( ippmod(icolwc).eq.4 ) nscapp = 5
 if ( ippmod(icolwc).eq.5 ) nscapp = 6
+
+if ( ippmod(icoebu).eq.1 .or.                                     &
+     ippmod(icoebu).eq.3 .or.                                     &
+     ippmod(icoebu).eq.5      ) itherm = 2
 
 ! ---nombre de Dirac pour le modele LWC
 
@@ -137,11 +154,11 @@ if (isoot.ge.1) nscapp = nscapp + 2
 if ( ippmod(iccoal).ge.0 ) then
 ! On ajoute les scalaires "iagcpl(icla)" en remplacant le term 4*nclacp par
 ! 5*nclacp. En total on considere:
-! - Enthalpie du melange
 ! - Phase disperse : (Np , Xch , Xck , h2, iagcpl  ) =f(icla)
 ! - Phase gaz      : ( F1 , F2 ) par charbon
 !                      F4 , F5 optionnel en fonction de Noxyd
 !                      F7 , Variance
+  itherm = 2
 
   nscapp = 1 + 4*nclacp + 2*ncharb + (noxyd-1) + 2
 
@@ -185,6 +202,9 @@ if ( ippmod(icompf).ge.0 ) nscapp = 2
 
 ! --> Effet Joule
 
+  if ( ippmod(ieljou).ge.1 ) itherm = 2
+  if ( ippmod(ielarc).ge.1 ) itherm = 2
+
   if ( ippmod(ieljou).eq.1 ) nscapp = 2 + ngazg-1
   if ( ippmod(ieljou).eq.2 ) nscapp = 3 + ngazg-1
 
@@ -204,9 +224,9 @@ if ( ippmod(icompf).ge.0 ) nscapp = 2
 ! 5. MODELES DE COMBUSTION FUEL (ICFUEL)
 !===============================================================================
 
-if ( ippmod(icfuel).ge.0 ) then
+if (ippmod(icfuel).ge.0) then
+  itherm = 2
 !
-! enthalpie du melange
 ! phase gaz      : fvap , fhtf , Variance
 !                  F4 , F5 optionnel en fonction de Noxyd
 ! phase disperse : ng , iyfol , ih2
@@ -223,9 +243,15 @@ endif
 ! 6. MODELE ATMOSPHERIQUE (IATMOS)
 !===============================================================================
 
-if ( ippmod(iatmos).eq.0 ) nscapp = 0
-if ( ippmod(iatmos).eq.1 ) nscapp = 1
-if ( ippmod(iatmos).eq.2 ) nscapp = 3
+if (ippmod(iatmos).eq.0) then
+  nscapp = 0
+else if (ippmod(iatmos).eq.1) then
+  itherm = 1
+  nscapp = 1
+else if( ippmod(iatmos).eq.2) then
+  itherm = 1
+  nscapp = 3
+endif
 
 !===============================================================================
 ! 8. MODELISATION DES AEROREFRIGERANTS (IAEROS)

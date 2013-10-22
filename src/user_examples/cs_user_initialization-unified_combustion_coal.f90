@@ -229,7 +229,7 @@ if (isuite.eq.0) then
  !============================
 
   do iel = 1, ncel
-    rtp(iel,isca(ihm)) = h1init
+    rtp(iel,isca(iscalt)) = h1init
   enddo
 
 ! ------ Transported variables for the mix (passive scalars, variance)

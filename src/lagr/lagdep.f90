@@ -210,13 +210,13 @@ endif
          tempf = propce(iel,ipproc(itemp))
 
       else if (iscalt.gt.0) then
-        if (iscsth(iscalt).eq.-1) then
-          tempf = rtpa(iel,isca(iscalt)) + tkelvi
-
-        else if ( iscsth(iscalt).eq.1 ) then
-          tempf = rtpa(iel,isca(iscalt))
-
-        else if ( iscsth(iscalt).eq.2 ) then
+        if (itherm.eq.1) then
+          if (itpscl.eq.2) then
+            tempf = rtpa(iel,isca(iscalt)) + tkelvi
+          else if (itpscl.eq.1 ) then
+            tempf = rtpa(iel,isca(iscalt))
+          endif
+        else if (itherm.eq.2) then
           mode = 1
           call usthht(mode,rtpa(iel,isca(iscalt)),tempf)
           !==========

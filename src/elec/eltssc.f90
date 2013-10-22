@@ -121,7 +121,7 @@ chaine = nomvar(ipprtp(ivar))
 !   2.1 Terme source pour l'enthalpie :
 !  ----------------------------------
 
-if ( ivar.eq.isca(ihm) ) then
+if ( ivar.eq.isca(iscalt) ) then
 
   if (iwarni(ivar).ge.1) then
     write(nfecra,1000) chaine(1:8)

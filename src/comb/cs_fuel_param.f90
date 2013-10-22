@@ -72,24 +72,6 @@ integer          isc
 double precision wmolme
 
 !===============================================================================
-! 0. VERIFICATION ISCALT, ISCSTH
-!===============================================================================
-!     L'utilisateur ne doit pas y avoir touche.
-
-if(iscalt.ne.-1) then
-  write(nfecra,1000)iscalt
-  call csexit (1)
-  !==========
-endif
-do ii = 1, nscapp
-  if(iscsth(iscapp(ii)).ne.-10) then
-    write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))
-    call csexit (1)
-    !==========
-  endif
-enddo
-
-!===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
@@ -97,8 +79,8 @@ enddo
 
 ! ---- Variables propres a la phase dispersee
 
-scamin(ihm) = -grand
-scamax(ihm) = +grand
+scamin(iscalt) = -grand
+scamax(iscalt) = +grand
 
 do icla=1,nclafu
   scamin(ing(icla))   = 0.d0
@@ -155,14 +137,14 @@ do isc = 1, nscapp
 !                                 -1 temperature en C
 !                                  2 enthalpie)
 !      La distinction -1/1 sert pour le rayonnement
-  iscsth(iscapp(isc)) = 0
+  iscacp(iscapp(isc)) = 0
 
 enddo
 
 ! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
 
-iscalt = ihm
-iscsth(ihm)   = 2
+itherm = 2
+iscacp(iscalt) = 0
 
 ! --> Donnees physiques ou numeriques propres aux scalaires CP
 
@@ -241,7 +223,7 @@ enddo
 
 ! ---- Variables propres a la suspension gaz - particules
 
-ipp = ipprtp(isca(ihm))
+ipp = ipprtp(isca(iscalt))
 NOMVAR(IPP)  = 'Enthalpy'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
@@ -498,7 +480,7 @@ srrom = 0.90d0
 !       recherche des informations sur les flux thermiques aux parois)
 
 diftl0      = 4.25d-5
-visls0(ihm) = diftl0
+visls0(iscalt) = diftl0
 
 ! ---> Masse volumique variable et viscosite constante (pour les suites)
 irovar = 1
@@ -528,47 +510,6 @@ else
 endif
 
 
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (FUEL) DEMANDEE                   ',/,&
-'@                                                            ',/,&
-'@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner, or              ',/,&
-'@    elle a ete affectee comme suit :                        ',/,&
-'@    ISCALT = ',I10                                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (FUEL) DEMANDEE                   ',/,&
-'@                                                            ',/,&
-'@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner, or             ',/,&
-'@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
-'@    physique particuliere ',I10   ,' on a                   ',/,&
-'@    ISCSTH(',I10   ,') = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9998 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&

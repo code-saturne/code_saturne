@@ -190,7 +190,7 @@ if ( isuite.eq.0 ) then
 
     if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
                              .or. ippmod(icolwc).eq.5 ) then
-      rtp(iel,isca(ihm)) = hinit
+      rtp(iel,isca(iscalt)) = hinit
     endif
 
   enddo

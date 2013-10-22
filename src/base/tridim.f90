@@ -119,7 +119,7 @@ integer          iiptot
 integer          nbccou
 integer          ntrela
 
-integer          isvhb , isvtb
+integer          isvhb
 integer          ii    , jj    , ippcp , ientha, ippcv
 integer          iterns, inslst, icvrge
 integer          iflmas, iflmab
@@ -172,7 +172,7 @@ ipass = ipass + 1
 ! --- Indicateur de stockage d'un scalaire et de son coef
 !     d'echange associe.
 !     Pour le moment, on stocke uniquement dans le cas couplage SYRTHES.
-!     ISVTB donne le numero du scalaire (on suppose qu'il n'y en a qu'un).
+!     ISVHB donne le numero du scalaire (on suppose qu'il n'y en a qu'un).
 !     Dans le cas ou on a un couplage avec le module thermique 1D en paroi,
 !     on utilise le meme scalaire que celui qui sert a Syrthes (s'il y a
 !     couplage Syrthes), sinon on stocke le scalaire thermique de la phase 1.
@@ -180,7 +180,6 @@ ipass = ipass + 1
 call nbcsyr (nbccou)
 !==========
 isvhb = 0
-isvtb = 0
 if (nbccou .ge. 1) then
   do iscal = 1, nscal
     if(icpsyr(iscal).eq.1) then
@@ -192,8 +191,6 @@ endif
 if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
   isvhb = iscalt
 endif
-
-if (iscalt.gt.0) isvtb = iscalt
 
 !     Si la distance a la paroi doit etre mise a jour, on l'initialise a GRAND
 !     des maintenant (pour le premier passage dans phyvar en k-omega)
@@ -899,14 +896,14 @@ do while (iterns.le.nterup)
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call cpvosy(isvtb, dt, rtp, rtpa, propce)
+    call cpvosy(iscalt, dt, rtp, rtpa, propce)
     !==========
 
     call coupbi(nfabor, nscal, icodcl, rcodcl)
     !==========
 
     if (nfpt1t.gt.0) then
-      call cou1di(nfabor, isvtb, icodcl, rcodcl)
+      call cou1di(nfabor, iscalt, icodcl, rcodcl)
       !==========
     endif
 
@@ -929,7 +926,7 @@ do while (iterns.le.nterup)
   call condli &
   !==========
 ( nvar   , nscal  , iterns ,                                     &
-  isvhb  , isvtb  ,                                              &
+  isvhb  ,                                                       &
   icodcl , isostd ,                                              &
   dt     , rtp    , rtpa   , propce ,                            &
   rcodcl ,                                                       &
@@ -955,17 +952,17 @@ do while (iterns.le.nterup)
 
   ! On indique si la variable couplee est l'enthalpie
   ientha = 0
-  if(isvtb.gt.0) then
-    if(iscsth(isvtb).eq.2) then
+  if(iscalt.gt.0) then
+    if(itherm.eq.2) then
       ientha = 1
     endif
   endif
 
   ! Compressible : on indique si la variable couple est l'energie
 
-  if ( ippmod(icompf).ge.0 ) then
-    if(isvtb.gt.0) then
-      if(iscsth(isvtb).eq.3) then
+  if (ippmod(icompf).ge.0) then
+    if(iscalt.gt.0) then
+      if(itherm.eq.3) then
         ientha = 2
       endif
     endif

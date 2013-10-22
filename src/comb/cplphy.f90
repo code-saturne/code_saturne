@@ -226,7 +226,7 @@ do iel = 1,ncel
   w4(iel) =  rtp(iel,isca(if3m))
   w5(iel) = 1.d0 - w2(iel) - w3(iel) -w4(iel)
   w7(iel) =  rtp(iel,isca(if4p2m))
-  w8(iel) = rtp(iel,isca(ihm))
+  w8(iel) = rtp(iel,isca(iscalt))
 enddo
 
 ! ------ Macro tableau d'entiers TBCPI : NTBCPI

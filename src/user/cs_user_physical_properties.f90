@@ -446,14 +446,14 @@ if (.false.) then
     call csexit (1)
   endif
 
-  ! if iscalt is not temperature
-  if (abs(iscsth(iscalt)).ne.1) then
+  ! if thermal variable is not temperature
+  if (iscacp(iscal).le.0) then
 
     ! --- Rank of the specific heat
     !     in 'propce', physical properties at element centers: 'ipccp'
 
     if (icp.gt.0) then
-      ipccp  = ipproc(icp   )
+      ipccp  = ipproc(icp)
     else
       ipccp  = 0
     endif
@@ -1678,7 +1678,7 @@ if (ippmod(ieljou).ge.1) then
 
   do iel = 1, ncel
     call usthht (mode,                                            &
-         rtp(iel,isca(ihm)),propce(iel,ipproc(itemp)))
+         rtp(iel,isca(iscalt)),propce(iel,ipproc(itemp)))
   enddo
 
 

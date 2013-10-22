@@ -90,16 +90,6 @@ class Model:
         return True
 
 
-#    def isStrictPositiveInt(self, ival):
-#        """This method verifies that ival is a int value > 0"""
-#        if self.isInt(ival):
-#            if ival <= 0:
-#                msg = "There is an error: this value " + str(ival) + "\n"\
-#                      "must not be neither negative neither 0\n"
-#                raise ValueError, msg
-#        return True
-
-
     def isIntEqual(self, ival1,  ival2):
         """This method verifies that val1 = val2"""
         if self.isInt(ival1) and self.isInt(ival2):
@@ -108,25 +98,6 @@ class Model:
                       "must be equal to " + str(ival2) + "\n"
                 raise ValueError(msg)
         return True
-
-##    def isStrictBetweenInt(self, ival,  imin, imax):
-##        """This method verifies that ival is in imin and imax"""
-##        if self.isInt(ival):
-##            if ival <= imin or ival >= imax:
-##                msg = "There is an error: this value " + str(ival) + "\n"\
-##                      "must be strictly between " + str(imin) + "and" + str(imax) + "\n"
-##                raise ValueError, msg
-##        return True
-##
-##
-##    def isBetweenInt(self, ival,  imin, imax):
-##        """This method verifies that ival is in imin and imax"""
-##        if self.isInt(ival):
-##            if ival < imin or ival > imax:
-##                msg = "There is an error: this value " + str(ival) + "\n"\
-##                      "must be between " + str(imin) + "and" + str(imax) + "\n"
-##                raise ValueError, msg
-##        return True
 
 
     def isIntInList(self, ival, list):
@@ -312,42 +283,6 @@ class Variables:
         return _wrapper3
 
 
-##    def defaultInitialValues(self):
-##        """
-##        Return in a dictionnary which contains default values.
-##        """
-##        default = {}
-##        #Initial values for thermal scalar: 20 deg C air at atmospheric pressure.
-##        default['temperature_celsius'] = 20.0
-##        default['temperature_kelvin'] = 293.15
-##        default['enthalpy'] = 297413.
-##
-##        #Initial values for properties: 20 degC air at atmospheric pressure.
-##        default['density'] = 1.17862
-##        default['molecular_viscosity'] = 1.83e-05
-##        default['diffusion_coefficient'] = 1.83e-05
-##        default['specific_heat'] = 1017.24
-##        default['thermal_conductivity'] = 0.02495
-##
-##        return default
-
-
-##    def setOutputControl(self, variable):
-##        """
-##        Update the output markups <probe_recording name="XX">,
-##        <postprocessing_recording status='on'> and
-##        <listing_printing status='on'> for the new 'variable' markup.
-##        """
-##        analysis_ctrl = self.case.xmlGetNode('analysis_control')
-##        node_output   = analysis_ctrl.xmlInitNode('output')
-##        for node in node_output.xmlGetNodeList('probe', 'name'):
-##            num = node['name']
-##            variable.xmlInitChildNode('probe_recording', name=num)
-
-##        variable.xmlInitChildNode('listing_printing', status='on')
-##        variable.xmlInitChildNode('postprocessing_recording', status='on')
-
-
     def updateLabel(self, vv):
         """
         """
@@ -362,8 +297,6 @@ class Variables:
         """
         if not node.xmlGetNode('variable', name=tag):
             n = node.xmlInitNode('variable', name=tag)
-##            n.xmlSetData('blending_factor', 0)
-##            n.xmlInitNode('order_scheme', choice='upwind')
 
             self.updateLabel(n)
 
@@ -378,87 +311,19 @@ class Variables:
             self.updateLabel(v1)
 
 
-##    def setNewThermalScalar(self, node, tag, zone):
-##        """
-##        Input a child node
-##        <scalar name="my_variable" label="ma_variable" type="thermal">
-##        to the argument node. Initial values are for air at
-##        atmospheric pressure.
-##        """
-##        if not node.xmlGetNode('scalar', type='thermal', name=tag):
-##            s1 = node.xmlInitNode('scalar', type='thermal', name=tag)
-##            s1.xmlInitChildNode('initial_value', zone=zone)
-##            if tag == "temperature_celsius":
-##                s1.xmlSetData('initial_value', self.defaultInitialValues()[tag])
-##            elif tag == "temperature_kelvin":
-##                s1.xmlSetData('initial_value', self.defaultInitialValues()[tag])
-##            elif tag == "enthalpy":
-##                s1.xmlSetData('initial_value', self.defaultInitialValues()[tag])
-##            else:
-##                print("Error in setNewThermalScalar:")
-##                print("the given tag is %s" % (tag))
-##                exit(0)
-##
-##            s1.xmlSetData('min_value', SMGRAND)
-##            s1.xmlSetData('max_value', SPGRAND)
-##
-####            self.setOutputControl(s1)
-##            self.updateLabel(s1)
-
-
-    def setNewModelScalar(self, node, tag):
+    def setNewScalar(self, node, tag, type_sca):
         """
-        Input a new <scalar label="ma_variable" type="model">
+        Input a new <scalar label="tag" type="type_sca">
         in the xmldoc.
         """
-        if not node.xmlGetNodeList('scalar', type="model", name=tag, label=tag):
-            s1 = node.xmlInitNode('scalar', type="model", name=tag, label=tag)
-##            self.setOutputControl(s1)
+
+        if not node.xmlGetNodeList('scalar', type=type_sca, name=tag, label=tag):
+            s1 = node.xmlInitNode('scalar', type=type_sca, name=tag, label=tag)
             self.updateLabel(s1)
         else:
-            s1 = node.xmlGetNode('scalar', type="model", name=tag, label=tag )
+            s1 = node.xmlGetNode('scalar', type=type_sca, name=tag, label=tag )
 
         return s1
-
-##
-##    def deleteAllModelScalars(self, node):
-##        """
-##        Input a new <scalar label="ma_variable" type="model">
-##        in the xmldoc.
-##        """
-##        nodeList = node.xmlGetNodeList('scalar')
-##        if nodeList != None:
-##            for node in nodeList :
-##                node.xmlRemoveNode()
-##
-
-##    def setWeightMatrixComponents(self, event=None):
-##        """
-##        Input a new <scalar label="ma_variable" type="user">
-##        in the xmldoc.
-##        """
-##        node_np = self.case.xmlInitNode('numerical_parameters')
-##        node_ipucou = node_np.xmlInitNode('velocity_pressure_coupling')
-##
-##        node_Tx = node_ipucou.xmlInitNode('variable', name='weight_matrix_X')
-##        node_Ty = node_ipucou.xmlInitNode('variable', name='weight_matrix_Y')
-##        node_Tz = node_ipucou.xmlInitNode('variable', name='weight_matrix_Z')
-##
-##        for (node, val) in [(node_Tx, 'weight_matrix_X'),
-##                            (node_Ty, 'weight_matrix_Y'),
-##                            (node_Tz, 'weight_matrix_Z')]:
-##            self.setOutputControl(node)
-##            if not node['label']: node['label'] = Toolbox.dicoLabel(val)
-
-##    def deleteAllModelProperties(self, modelNode):
-##        """
-##        Input a new <scalar label="ma_variable" type="model">
-##        in the xmldoc.
-##        """
-##        nodeList = modelNode.xmlGetNodeList('property')
-##        if nodeList != None:
-##            for node in nodeList :
-##                node.xmlRemoveNode()
 
 
     def setNewProperty(self, node, tag):
@@ -468,7 +333,6 @@ class Variables:
         """
         if not node.xmlGetNode('property', name=tag):
             p1 = node.xmlInitNode('property', name=tag)
-##            self.setOutputControl(p1)
             try :
                 self.updateLabel(p1)
             except:
@@ -487,21 +351,6 @@ class Variables:
         """
         if not node.xmlGetNode('property', name=tag):
             p1 = node.xmlInitNode('property', name=tag, choice='constant')
-##            if tag == "density":
-##                value = self.defaultInitialValues()[tag]
-##            elif tag == "molecular_viscosity" or tag == "diffusion_coefficient":
-##                value = self.defaultInitialValues()[tag]
-##            elif tag == "specific_heat":
-##                value = self.defaultInitialValues()[tag]
-##            elif tag == "thermal_conductivity":
-##                value = self.defaultInitialValues()[tag]
-##            else:
-##                print("Error in setNewFluidProperty:")
-##                print("the given tag is %s" % (tag))
-##                exit(0)
-
-##            p1.xmlSetData('initial_value', value)
-##            self.setOutputControl(p1)
             p1.xmlInitChildNode('listing_printing')['status'] = "off"
             p1.xmlInitChildNode('postprocessing_recording')['status'] = "off"
 
@@ -535,23 +384,6 @@ class ModelTestCase(unittest.TestCase):
         assert Model().isPositiveInt(ival) == True,\
         'Should be a positive integer value'
 
-
-#    def checkIsStrictPositiveInt(self):
-#        """Check whether the Model class could be verify value is a int value > or = 0"""
-#        ival = 3
-#        assert Model().isStrictPositiveInt(ival) == True,\
-#        'Should be a strict positive integer value'
-
-
-##    def checkIsIntbetween(self):
-##        """Check whether the Model class could be verify value is between min-max"""
-##        ival = 3
-##        imin = 1
-##        imax = 10
-##        assert Model().isBetweenInt(ival, imin, imax) == True,\
-##        'Could not verify value is between min and max integer values'
-##        assert Model().isStrictBetweenInt(ival, imin, imax) == True,\
-##        'Could not verify value is strictly between min and max integer values'
 
     def checkIsIntInList(self):
         """Check whether the Model class could be verify value is in list"""
@@ -610,7 +442,6 @@ def runTest():
     print("ModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite1())
-##    runner.run(suite2())
 
 #-------------------------------------------------------------------------------
 # Variables test case

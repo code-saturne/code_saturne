@@ -136,7 +136,7 @@ module optcal
   !>    - 0: false (default)
   integer, save ::          iviext
 
-  !> extrapolation of the scpecific heat field \f$ C_p \f$
+  !> extrapolation of the specific heat field \f$ C_p \f$
   !>    - 1: true
   !>    - 0: false (default)
   integer, save ::          icpext
@@ -492,6 +492,34 @@ module optcal
   !> \}
 
   !----------------------------------------------------------------------------
+  ! thermal model
+  !----------------------------------------------------------------------------
+
+  !> \defgroup thermal model
+
+  !> \addtogroup thermal
+  !> \{
+
+  !> thermal model
+  !>    - 0: no thermal model
+  !>    - 1: temperature
+  !>    - 2: enthalpy
+  !>    - 3: total energy (only for compressible module)
+  integer, save :: itherm
+
+  !> temperature scale
+  !>    - 0: none
+  !>    - 1: Kelvin
+  !>    - 2: Celsius
+  integer, save :: itpscl
+
+  !> index of the thermal scalar (temperature, energy of enthalpy),
+  !> the index of the corresponding variable is isca(iscalt)
+  integer, save :: iscalt
+
+  !> \}
+
+  !----------------------------------------------------------------------------
   ! turbulence
   !----------------------------------------------------------------------------
 
@@ -565,10 +593,6 @@ module optcal
   !>    - 1: true (default if \f$ \rho \f$ is variable)
   !>    - 0: false
   integer, save :: igrari
-
-  !> index of the thermal scalar (temperature, energy of enthalpy),
-  !> the index of the corresponding variable is isca(iscalt)
-  integer, save :: iscalt
 
   !> partially coupled version of \f$ k-\varepsilon \f$ (only for iturb=20)
   !>    - 1: true (default)
@@ -933,14 +957,10 @@ module optcal
   !> \addtogroup scalar_params
   !> \{
 
-  !> iscsth
-  !>   -1 : de type temperature en C (      Cp pour la loi de paroi)
-  !>    0 : scalaire passif      (ie pas de Cp pour la loi de paroi)
-  !>    1 : de type temperature en K (      Cp pour la loi de paroi)
-  !>    2 : enthalpie            (ie pas de Cp pour la loi de paroi)
-  !>    3 : energie (en compressible, pas de Cp pour la loi de paroi)
-  !>      la distinction C/K sert en rayonnement
-  integer, save ::          iscsth(nscamx)
+  !> iscacp : 0 : scalar does not behave like a temperature
+  !>          1 : scalar behaves like a temperature (use Cp for wall law)
+  !>        > 1 : not yet allowed, could be used for multiple Cp definitions
+  integer, save ::          iscacp(nscamx)
 
   !> ivisls : si positif strictement, indique que la viscosite associee
   !>            au scalaire est variable, et la valeur est le numero

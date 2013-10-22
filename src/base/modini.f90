@@ -350,14 +350,12 @@ endif
 
 if (iscalt.gt.0.and.iscalt.le.nscal) then
   if (nomvar(ipprtp(isca(iscalt))) .eq.' ') then
-    if (iscsth(iscalt).eq.2) then
+    if (itherm.eq.1) then
+      nomvar(ipprtp(isca(iscalt))) = 'Temperature'
+    else if (itherm.eq.2) then
       nomvar(ipprtp(isca(iscalt))) = 'Enthalpy'
-    else
-      if (iscalt.eq.ienerg) then
-        nomvar(ipprtp(isca(iscalt))) = 'Total Energy'
-      else if (iscalt.eq.itemp .or. itemp.lt.0) then
-        nomvar(ipprtp(isca(iscalt))) = 'Temperature'
-      endif
+    else if (itherm.eq.3) then
+      nomvar(ipprtp(isca(iscalt))) = 'Total Energy'
     endif
   endif
 endif
@@ -1084,27 +1082,20 @@ if (nscal.gt.0) then
 endif
 
 
-! ---> ISCSTH
-!      Si l'utilisateur n'a pas modifie ISCSTH, on prend par defaut :
+! ---> ISCACP
+!      Si l'utilisateur n'a pas modifie ISCACP, on prend par defaut :
 !        scalaire passif  pour les scalaires autres que ISCALT
 !      Les modifs adequates devront etre ajoutees pour les physiques
 !        particulieres
-!      Noter en outre que, par defaut, si on choisit temperature
-!        elle est en K (ceci n'est utile que pour le rayonnement et les pp)
 
-!         =-10: non renseigne
-!         =-1 : temperature en C
-!         = 0 : passif
-!         = 1 : temperature en K
-!         = 2 : enthalpie
-
-
+!         = 0 : passif, enthalpie, ou energie
+!         = 1 : temperature
 
 if (nscal.gt.0) then
   do ii = 1, nscal
-    if (iscsth(ii).eq.-10)then
+    if (iscacp(ii).eq.-10)then
       if (ii.ne.iscalt) then
-        iscsth(ii) = 0
+        iscacp(ii) = 0
       endif
     endif
   enddo

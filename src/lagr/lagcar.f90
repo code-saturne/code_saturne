@@ -255,18 +255,7 @@ do ip = 1,nbpart
 
 !     CALCUL DU NUSSELT LOCAL
 
-      if ( ippmod(iccoal).ge.0 .or.                               &
-           ippmod(icpl3c).ge.0 .or.                               &
-           ippmod(icod3p).ge.1 .or.                               &
-           ippmod(icoebu).eq.1 .or.                               &
-           ippmod(icoebu).eq.3 .or.                               &
-           ippmod(icfuel).ge.0 .or.                               &
-           ippmod(ielarc).ge.0 .or.                               &
-           ippmod(ieljou).ge.0      ) then
-        iscath = ihm
-      else
-        iscath = iscalt
-      endif
+      iscath = iscalt
 
 ! a priori en combustion gaz ou CP, la diffusvite est toujours constante
 

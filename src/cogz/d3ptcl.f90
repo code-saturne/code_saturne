@@ -414,7 +414,7 @@ do ifac = 1, nfabor
 
 !          - Enthalpie du melange gazeux
       if (ippmod(icod3p).eq.1) then
-        rcodcl(ifac,isca(ihm),1) = hinfue
+        rcodcl(ifac,isca(iscalt),1) = hinfue
       endif
 
       ! Soot model
@@ -435,7 +435,7 @@ do ifac = 1, nfabor
 
 !          - Enthalpie du melange gazeux
       if ( ippmod(icod3p).eq.1 ) then
-        rcodcl(ifac,isca(ihm),1) = hinoxy
+        rcodcl(ifac,isca(iscalt),1) = hinoxy
       endif
 
       ! Soot model

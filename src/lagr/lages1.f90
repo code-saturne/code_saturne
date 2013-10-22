@@ -316,8 +316,8 @@ do id = 1,3
 
       if ( lamvbr .eq. 1 ) then
 
-!             Calcul de la temperature du fluide en fonction du type
-!             d'ecoulement
+        !  Calcul de la temperature du fluide en fonction du type
+        !  d'ecoulement
 
         if ( ippmod(iccoal).ge.0 .or.                             &
              ippmod(icpl3c).ge.0      ) then
@@ -331,13 +331,13 @@ do id = 1,3
 
           tempf = propce(iel,ipproc(itemp))
 
-        else if ( iscsth(iscalt).eq.-1 ) then
+        else if (itherm.eq.1 .and. itpscl.eq.2) then
           tempf = rtpa(iel,isca(iscalt))
 
-        else if ( iscsth(iscalt).eq.1 ) then
+        else if (itherm.eq.1 .and. itpscl.eq.1) then
           tempf = rtpa(iel,isca(iscalt))
 
-        else if ( iscsth(iscalt).eq.2 ) then
+        else if (itherm.eq.2) then
           mode = 1
           call usthht(mode,rtpa(iel,isca(iscalt)),tempf)
           !==========

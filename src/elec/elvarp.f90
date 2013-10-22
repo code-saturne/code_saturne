@@ -79,10 +79,10 @@ integer        is, iesp , idimve, isc
 
 ! ---- Enthalpie
 is  = 1
-ihm = iscapp(is)
+iscalt = iscapp(is)
 
 ! ---- Potentiel reel
-is = is+1
+is  = is + 1
 ipotr = iscapp(is)
 
 ! 1.1 Effet Joule (cas potentiel imaginaire)
@@ -129,7 +129,7 @@ endif
 !     Construction de l'indirection entre la numerotation du noyau et XML
 
 if (iihmpr.eq.1) then
-   call uielsc(ippmod, ieljou, ielarc, ngazg, ihm,               &
+   call uielsc(ippmod, ieljou, ielarc, ngazg, iscalt,             &
                ipotr, iycoel, ipoti, ipotva)
 endif
 

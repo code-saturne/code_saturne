@@ -95,31 +95,22 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.connect(self.lineEditValuePotElec,   SIGNAL("textChanged(const QString &)"), self.slotPotElec)
         self.connect(self.lineEditValuePotElecIm, SIGNAL("textChanged(const QString &)"), self.slotPotElecIm)
         self.connect(self.lineEditValueSpecies,   SIGNAL("textChanged(const QString &)"), self.slotSpecies)
-        self.connect(self.lineEditValueThermal,   SIGNAL("textChanged(const QString &)"), self.slotValueThermal)
-        self.connect(self.lineEditExThermal,      SIGNAL("textChanged(const QString &)"), self.slotExThermal)
 
         self.connect(self.pushButtonPotVectorFormula, SIGNAL("clicked()"), self.slotPotVectorFormula)
-        self.connect(self.pushButtonThermalFormula,   SIGNAL("clicked()"), self.slotThermalFormula)
 
         self.connect(self.comboBoxTypePotElec,   SIGNAL("activated(const QString&)"), self.slotPotElecChoice)
         self.connect(self.comboBoxTypePotElecIm, SIGNAL("activated(const QString&)"), self.slotPotElecImChoice)
         self.connect(self.comboBoxTypePotVector, SIGNAL("activated(const QString&)"), self.slotPotVectorChoice)
         self.connect(self.comboBoxSpecies,       SIGNAL("activated(const QString&)"), self.slotSpeciesChoice)
-        self.connect(self.comboBoxThermal,       SIGNAL("activated(const QString&)"), self.slotThermalChoice)
-        self.connect(self.comboBoxTypeThermal,   SIGNAL("activated(const QString&)"), self.slotThermalTypeChoice)
 
         ## Validators
         validatorPotElec      = DoubleValidator(self.lineEditValuePotElec)
         validatorPotElecIm    = DoubleValidator(self.lineEditValuePotElecIm)
         validatorSpecies      = DoubleValidator(self.lineEditValueSpecies, min=0.)
-        validatorValueThermal = DoubleValidator(self.lineEditValueThermal)
-        validatorExThermal    = DoubleValidator(self.lineEditExThermal)
 
         self.lineEditValuePotElec.setValidator(validatorPotElec)
         self.lineEditValuePotElecIm.setValidator(validatorPotElecIm)
         self.lineEditValueSpecies.setValidator(validatorSpecies)
-        self.lineEditValueThermal.setValidator(validatorValueThermal)
-        self.lineEditExThermal.setValidator(validatorExThermal)
 
 
     def __setBoundary(self, boundary):
@@ -137,7 +128,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotElec   = ComboModel(self.comboBoxTypePotElec, 1, 1)
         self.modelPotElecIm = ComboModel(self.comboBoxTypePotElecIm, 1, 1)
         self.modelPotVector = ComboModel(self.comboBoxTypePotVector, 1, 1)
-        self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
 
         self.modelPotElec.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelPotElec.addItem(self.tr("Prescribed value  (user law)"), 'dirichlet_formula')
@@ -196,22 +186,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                     self.species = self.species_list[0]
                     self.modelSpecies.setItem(str_model = self.species)
 
-        self.modelTypeThermal.addItem(self.tr("Prescribed value"), 'dirichlet')
-        self.modelTypeThermal.addItem(self.tr("Prescribed value  (user law)"), 'dirichlet_formula')
-        if self.nature == 'outlet':
-            self.modelTypeThermal.addItem(self.tr("Prescribed flux"), 'neumann')
-        elif self.nature == 'wall':
-            self.modelTypeThermal.addItem(self.tr("Prescribed flux"), 'neumann')
-            self.modelTypeThermal.addItem(self.tr("Prescribed flux (user law)"), 'neumann_formula')
-            self.modelTypeThermal.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
-            self.modelTypeThermal.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
-
-        self.groupBoxThermal.show()
-        self.modelThermal = ComboModel(self.comboBoxThermal,1,1)
-        self.thermal = self.__model.getScalarLabel('Enthalpy')
-        self.modelThermal.addItem(self.tr(self.thermal),self.thermal)
-        self.modelThermal.setItem(str_model = self.thermal)
-
         self.initializeVariables()
 
 
@@ -269,41 +243,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             if self.species :
                 v = self.__b.getElecScalarValue(self.species, 'dirichlet')
                 self.lineEditValueSpecies.setText(str(v))
-
-        # Initialize exchange coef
-        self.lineEditExThermal.hide()
-        self.labelExThermal.hide()
-        self.lineEditValueThermal.hide()
-        self.labelValueThermal.hide()
-        self.pushButtonThermalFormula.setEnabled(False)
-        setGreenColor(self.pushButtonThermalFormula, False)
-
-        self.thermal_type = self.__b.getElecScalarChoice(self.thermal)
-        self.modelTypeThermal.setItem(str_model = self.thermal_type)
-
-        if self.thermal_type in ('dirichlet', 'exchange_coefficient', 'neumann'):
-            self.labelValueThermal.show()
-            self.lineEditValueThermal.show()
-
-            if self.thermal_type == 'exchange_coefficient':
-                self.lineEditExThermal.show()
-                self.labelExThermal.show()
-                v = self.__b.getElecScalarValue(self.thermal, 'dirichlet')
-                w = self.__b.getElecScalarValue(self.thermal, 'exchange_coefficient')
-                self.lineEditValueThermal.setText(str(v))
-                self.lineEditExThermal.setText(str(w))
-            else:
-                v = self.__b.getElecScalarValue(self.thermal, self.thermal_type)
-                self.lineEditValueThermal.setText(str(v))
-
-            if self.thermal_type == 'neumann':
-                self.labelValueThermal.setText('Flux')
-                if self.nature == 'outlet':
-                    self.groupBoxThermal.setTitle('Thermal for backflow')
-
-        elif self.thermal_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
-            self.pushButtonThermalFormula.setEnabled(True)
-            setGreenColor(self.pushButtonThermalFormula, True)
 
 
     @pyqtSignature("const QString&")
@@ -398,75 +337,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                                  examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
-            log.debug("slotThermalFormula -> %s" % str(result))
+            log.debug("slotPotVectorFormula -> %s" % str(result))
             self.__b.setElecScalarFormula(self.potVect, self.potVec_type, result)
             setGreenColor(self.pushButtonPotVectorFormula, False)
-
-
-    @pyqtSignature("const QString&")
-    def slotThermalChoice(self, text):
-        """
-        INPUT label for choice of zone
-        """
-        self.thermal = self.modelThermal.dicoV2M[str(text)]
-        self.initializeVariables()
-
-
-    @pyqtSignature("const QString&")
-    def slotThermalTypeChoice(self, text):
-        """
-        INPUT label for choice of zone
-        """
-        self.thermal_type = self.modelTypeThermal.dicoV2M[str(text)]
-        self.__b.setElecScalarChoice(self.thermal, self.thermal_type)
-        self.initializeVariables()
-
-
-    @pyqtSignature("")
-    def slotThermalFormula(self):
-        """
-        """
-        exp = self.__b.getElecScalarFormula(self.thermal, self.thermal_type)
-        exa = """#example: """
-        if self.thermal_type == 'dirichlet_formula':
-            req = [(self.thermal, str(self.thermal))]
-        elif self.thermal_type == 'neumann_formula':
-            req = [("flux", "flux")]
-        elif self.thermal_type == 'exchange_coefficient_formula':
-            req = [(self.thermal, str(self.thermal)),("hc", "heat coefficient")]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
-        dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotThermalFormula -> %s" % str(result))
-            self.__b.setElecScalarFormula(self.thermal, self.thermal_type, result)
-            setGreenColor(self.pushButtonThermal, False)
-
-
-    @pyqtSignature("const QString&")
-    def slotValueThermal(self, var):
-        """
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
-            if self.thermal_type in ('dirichlet', 'neumann'):
-                self.__b.setElecScalarValue(self.thermal, self.thermal_type, value)
-            elif self.thermal_type == 'exchange_coefficient':
-                self.__b.setElecScalarValue(self.thermal, 'dirichlet', value)
-
-
-    @pyqtSignature("const QString&")
-    def slotExThermal(self, var):
-        """
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
-            self.__b.setElecScalarValue(self.thermal, 'exchange_coefficient', value)
 
 
     def showWidget(self, b):

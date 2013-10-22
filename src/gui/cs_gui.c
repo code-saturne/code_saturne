@@ -187,12 +187,15 @@ cs_gui_scalar_variance(const int num_sca)
   return variance;
 }
 
-/*-----------------------------------------------------------------------------
- * Return the user thermal scalar indicator.
+/*----------------------------------------------------------------------------
+ * Get thermal scalar model.
+ *
+ * return:
+ *   value of itherm
  *----------------------------------------------------------------------------*/
 
 static int
-cs_gui_thermal_scalar(void)
+_gui_thermal_model(void)
 {
   char *model_name = NULL;
   int   test = 0;
@@ -203,11 +206,15 @@ cs_gui_thermal_scalar(void)
     test = 0;
   else {
     if (cs_gui_strcmp(model_name, "enthalpy"))
-      test =  2 ;
+      test = 20;
     else if (cs_gui_strcmp(model_name, "temperature_kelvin"))
-      test =  1 ;
+      test = 11;
     else if (cs_gui_strcmp(model_name, "temperature_celsius"))
-      test = -1 ;
+      test = 10;
+    else if (cs_gui_strcmp(model_name, "potential_temperature²"))
+      test = 12;
+    else if (cs_gui_strcmp(model_name, "liquid_potential_temperature"))
+      test = 13;
     else
       bft_error(__FILE__, __LINE__, 0,
           _("Invalid thermal model: %s\n"), model_name);
@@ -219,41 +226,34 @@ cs_gui_thermal_scalar(void)
 }
 
 /*----------------------------------------------------------------------------
- * Get thermal user scalar number if it is exist.
+ * Get thermal user scalar number if it exists.
  *
  * parameters:
- *   iscalt               -->  thermal scalar number order
- *   iscsth               -->  nature of the thermal scalar (C, K, J/kg)
+ *   iscalt  -->  thermal scalar number order
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_thermal_scalar_number(int *const iscalt,
-                             int *const iscsth)
+_gui_thermal_scalar_number(int  *iscalt)
 {
-  int ind_thermal;
   int i, index, size;
   char *path = NULL;
   char **name = NULL;
 
-  ind_thermal = cs_gui_thermal_scalar();
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models", "thermal_scalar", "/@type");
+  name = cs_gui_get_attribute_values(path, &size);
 
-  if (ind_thermal) {
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "additional_scalars", "/@type");
-    name = cs_gui_get_attribute_values(path, &size);
+  index = -1;
+  for (i=0; i < size; i++)
+    if (cs_gui_strcmp(name[i], "thermal"))
+      index = i;
 
-    index = -1;
-    for (i=0; i < size; i++)
-      if (cs_gui_strcmp(name[i], "thermal"))
-        index = i;
-
+  if (index > -1)
     *iscalt = index+1;
-    iscsth[index] = ind_thermal;
 
-    BFT_FREE(path);
-    for (i=0; i < size; i++) BFT_FREE(name[i]);
+  BFT_FREE(path);
+  for (i=0; i < size; i++) BFT_FREE(name[i]);
     BFT_FREE(name);
-  }
 }
 
 /*-----------------------------------------------------------------------------
@@ -1197,6 +1197,32 @@ static char *_scalar_name_label(const char *kw, const int scalar_num)
 }
 
 /*-----------------------------------------------------------------------------
+ * Return the name tor thermal scalar.
+ *
+ * parameters:
+ *   kw                   <--  scalar name
+ *----------------------------------------------------------------------------*/
+
+static char *_thermal_scalar_name_label(const char *kw)
+{
+  char *path = NULL;
+  char *str  = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "thermal_scalar",
+                        "scalar");
+  cs_xpath_add_attribute(&path, kw);
+
+  str = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return str;
+}
+
+/*-----------------------------------------------------------------------------
  * Return the name from a specific physic scalar.
  *
  * parameters:
@@ -1572,6 +1598,50 @@ void CS_PROCF (uiinit, UIINIT) (void)
 }
 
 /*----------------------------------------------------------------------------
+ * Thermal model.
+ *
+ * Fortran Interface:
+ *
+ * subroutine csther (itherm, itpscl)
+ * *****************
+ *
+ * integer          itherm  --> thermal model
+ * integer          itpscl  --> temperature scale if itherm = 1
+ *----------------------------------------------------------------------------*/
+
+
+void CS_PROCF (csther, CSTHER) (int  *itherm,
+                                int  *itpscl)
+{
+  switch(_gui_thermal_model()) {
+  case 10:
+    *itherm = 1;
+    *itpscl = 2;
+    break;
+  case 11:
+    *itherm = 1;
+    *itpscl = 1;
+    break;
+  case 12:
+    *itherm = 1;
+    *itpscl = 2;
+    break;
+  case 13:
+    *itherm = 1;
+    *itpscl = 2;
+    break;
+  case 20:
+    *itherm = 2;
+    *itpscl = 1;
+    break;
+  default:
+    *itherm = 0;
+    *itpscl = 0;
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Turbulence model.
  *
  * Fortran Interface:
@@ -1750,6 +1820,38 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
 }
 
 /*----------------------------------------------------------------------------
+ * User thermal scalar.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UITHSC
+ * *****************
+ *
+ * INTEGER          ISCALT     -->   thermal scalars number
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uithsc, UITHSC) (int *const iscalt)
+{
+  cs_var_t  *vars = cs_glob_var;
+  char *label = NULL;
+
+  if (vars->nscaus > 0) {
+    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
+  } else {
+    BFT_MALLOC(vars->label, vars->nscapp, char*);
+  }
+
+  label = _thermal_scalar_name_label("label");
+  BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
+  strcpy(vars->label[*iscalt -1], label);
+  BFT_FREE(label);
+
+  BFT_MALLOC(vars->model, strlen("thermal_scalar")+1, char);
+  strcpy(vars->model, "thermal_scalar");
+
+}
+
+/*----------------------------------------------------------------------------
  * User scalars which are variance.
  *
  * Fortran Interface:
@@ -1804,20 +1906,20 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSIVIS (ISCAVR, IVISLS, ISCALT, ISCSTH)
+ * subroutine csivis (iscavr, ivisls, iscalt, itherm, itempk)
  * *****************
  *
- * INTEGER          ISCAVR  <<--  number of the related variance if any
- * INTEGER          IVISLS  -->   indicator for the user scalar viscosity
- * INTEGER          ISCALT  <<--  number of the user thermal scalar if any
- * INTEGER          ISCSTH  <<--  type of the user thermal scalar
- * INTEGER          ITEMPK   <--  rtp index for temperature (in K)
+ * integer          iscavr  <-->  number of the related variance if any
+ * integer          ivisls  <--   indicator for the user scalar viscosity
+ * integer          iscalt  <-->  number of the user thermal scalar if any
+ * integer          itherm  <-->  type of thermal model
+ * integer          itempk   -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
                                 int *const ivisls,
                                 int *const iscalt,
-                                int *const iscsth,
+                                int *const itherm,
                                 int *const itempk)
 {
   int i;
@@ -1826,14 +1928,14 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
 
   cs_var_t  *vars = cs_glob_var;
 
-  if (vars->nscaus > 0) {
+  if (vars->nscapp > 0) {
 
-    if (cs_gui_thermal_scalar()) {
+    if (*itherm) {
       test1 = cs_gui_properties_choice("thermal_conductivity", &choice1);
       test2 = cs_gui_properties_choice("specific_heat", &choice2);
 
       if (test1 && test2) {
-        cs_gui_thermal_scalar_number(iscalt, iscsth);
+        _gui_thermal_scalar_number(iscalt);
 
         if (choice1 || choice2)
           ivisls[*iscalt-1] = 1;
@@ -1841,7 +1943,9 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
           ivisls[*iscalt-1] = 0;
       }
     }
+  }
 
+  if (vars->nscaus > 0) {
     for (i=0 ; i < vars->nscaus; i++) {
       if (iscavr[i] <= 0 ) {
         if (cs_gui_scalar_properties_choice(i+1, &choice1))
@@ -2005,7 +2109,8 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const ivma,
                                 const int *const iwma,
                                 const int *const isca,
-                                const int *const iscapp)
+                                const int *const iscapp,
+                                const int *const itherm)
 {
   int n = 0;
   int i, j, k;
@@ -2208,7 +2313,10 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     j = iscapp[i] -1;
     cs_glob_var->rtp[n++] = isca[j] -1;
 
-    name = _specific_physic_scalar_name_label(cs_glob_var->model, cs_glob_var->label[j]);
+    if (*itherm > 0 && i == 0)
+      name = _thermal_scalar_name_label("name");
+    else
+      name = _specific_physic_scalar_name_label(cs_glob_var->model, cs_glob_var->label[j]);
     BFT_MALLOC(cs_glob_var->name[k+j], strlen(name) +1, char);
     strcpy(cs_glob_var->name[k+j], name);
     BFT_FREE(name);
@@ -2357,35 +2465,6 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
     bft_printf("--coumax = %f\n", *coumax);
     bft_printf("--foumax = %f\n", *foumax);
     bft_printf("--varrdt = %f\n", *varrdt);
-  }
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Check if a users thermal scalar is defined.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSSCA1 (ISCALT, ISCSTH)
- * *****************
- *
- * INTEGER          ISCALT  -->   number of the user thermal scalar if any
- * INTEGER          ISCSTH  -->   type of the user thermal scalar
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
-                                int *const iscsth)
-{
-  cs_gui_thermal_scalar_number(iscalt, iscsth);
-
-#if _XML_DEBUG_
-  {
-    int i;
-    cs_var_t  *vars = cs_glob_var;
-    bft_printf("==>CSSCA1\n");
-    bft_printf("--iscalt[0]=%i \n", *iscalt);
-    for (i = 0 ; i < vars->nscaus ; i++)
-      bft_printf("--iscsth[%i]=%i \n", i, iscsth[i]);
   }
 #endif
 }
@@ -2774,8 +2853,8 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
  * Read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
-                                const    int *const iscsth,
+void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
+                                const    int *const iscalt,
                                 const    int *const iscavr,
                                 double *const visls0,
                                 double *const t0,
@@ -2786,9 +2865,9 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
 
   cs_var_t  *vars = cs_glob_var;
 
-  if (vars->nscaus > 0) {
+  if (vars->nscaus + vars->nscapp > 0) {
 
-    if (cs_gui_thermal_scalar()) {
+    if (_gui_thermal_model()) {
       result = 0;
       cs_gui_properties_value("specific_heat", &result);
       if (result <= 0)
@@ -2798,14 +2877,10 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
       i = *iscalt-1;
       cs_gui_properties_value("thermal_conductivity", &visls0[i]);
       /* for the Temperature, the diffusivity factor is not divided by Cp */
-      if (abs(iscsth[i]) != 1)
-      {
+      if (*itherm != 1)
         visls0[i] = visls0[i]/result;
-      }
       else
-      {
         visls0[i] = visls0[i];
-      }
     }
 
     /* User scalar
@@ -4641,6 +4716,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t  *const ncelet,
                               const cs_int_t  *const nscaus,
+                              const cs_int_t  *const itherm,
                               const cs_int_t         iviscl[],
                               const cs_int_t         icp[],
                               const cs_int_t         ivisls[],
@@ -4648,7 +4724,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t         ivivar[],
                               const cs_int_t         isca[],
                               const cs_int_t         iscalt[],
-                              const cs_int_t         iscsth[],
                               const cs_int_t         iscavr[],
                               const cs_int_t         ipproc[],
                               const cs_int_t         iviscv[],
@@ -4931,7 +5006,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     ev_la = mei_tree_new(law_la);
 
     /* for the Temperature, the diffusivity factor is not divided by Cp */
-    if (abs(iscsth[*iscalt-1]) != 1)
+    if (*itherm != 1)
     {
       mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]*(*cp0));
     }
@@ -4968,7 +5043,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         mei_evaluate(ev_la);
         /* for the Temperature, the diffusivity factor is not divided by Cp */
-        if (abs(iscsth[*iscalt - 1]) != 1)
+        if (*itherm != 1)
         {
           propce[ipcvsl * (*ncelet) + iel] =
           mei_tree_lookup(ev_la, "lambda") / propce[ipccp * (*ncelet) + iel];
@@ -4989,7 +5064,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         mei_evaluate(ev_la);
         /* for the Temperature, the diffusivity factor is not divided by Cp */
-        if (abs(iscsth[*iscalt - 1]) != 1) {
+        if (*itherm != 1) {
           propce[ipcvsl * (*ncelet) + iel] =
           mei_tree_lookup(ev_la, "lambda") / *cp0;
         }

@@ -198,42 +198,32 @@ endif
 !                           ou pas de variable thermique
 !       STOP.
 
-if(ippmod(iphpar).ge.2) then
+if (ippmod(iphpar).ge.2) then
 
-!     Il y a une seule phase ; si on rayonne
-    if (iirayo.eq.1 .or. iirayo.eq.2) then
-!        On cherche s'il y a un scalaire thermique
-      iscaok = 0
-      do iiscal = 1, nscal
-        if (iiscal.eq.iscalt) then
-          iscaok = 1
-!           Et on regarde si on a dit enthalpie
-          if (iscsth(iiscal).ne.2) then
-            write(nfecra,3000) iiscal,iiscal
-            iok = iok + 1
-          endif
-        endif
-      enddo
-      if (iscaok.eq.0) then
-        write(nfecra,3001)
-        iok = iok + 1
-      endif
+  ! Il y a une seule phase ; si on rayonne
+  if (iirayo.eq.1 .or. iirayo.eq.2) then
+    if (iscalt.le.0) then
+      write(nfecra,3001)
+      iok = iok + 1
+    else if (itherm.ne.2) then
+      write(nfecra,3000) itherm
+      iok = iok + 1
     endif
+  endif
 
 else
 
-!     Pour la phase qui rayonne
-    if (iirayo.eq.1 .or. iirayo.eq.2) then
+  ! Pour la phase qui rayonne
+  if (iirayo.eq.1 .or. iirayo.eq.2) then
 
-!        On cherche s'il y a un scalaire thermique
+      ! On cherche s'il y a un scalaire thermique
       iscaok = 0
       do iiscal = 1, nscal
         if (iiscal.eq.iscalt) then
           iscaok = 1
 
-!           Et on regarde si on a dit temp C, K ou enthalpie
-          if (abs(iscsth(iiscal)).ne.1.and.                       &
-                  iscsth(iiscal) .ne.2      ) then
+          !           Et on regarde si on a dit temp C, K ou enthalpie
+          if (itherm.ne.1 .and. itherm.ne.2) then
             write(nfecra,3010) iiscal,iiscal
             iok = iok + 1
           endif
@@ -297,13 +287,12 @@ endif
 '@    PHYSIQUE PARTICULIERE ACTIVEE : ENTHALPIE NECESSAIRE    ',/,&
 '@                                                            ',/,&
 '@  Avec rayonnement, il faut                                 ',/,&
-'@    preciser la variable energetique representee par le     ',/,&
-'@    scalaire ',I10   ,' en renseignant ISCSTH(',I10   ,')   ',/,&
+'@    preciser le modele thermique en renseignant ITHERM      ',/,&
 '@    soit :                                                  ',/,&
-'@               -1 temperature en C                          ',/,&
-'@                1 temperature en K                          ',/,&
+'@                1 temperature                               ',/,&
 '@                2 enthalpie                                 ',/,&
 '@                                                            ',/,&
+'@  Ici, ITHERM = ',I10,'                                     ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -327,8 +316,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Avec physique particuliere, cette initialisation aurait   ',/,&
-'@    du etre automatique.                           ~~~~~~   ',/,&
+'@  Cette initialisation aurait du etre automatique.          ',/,&
+'@                       ~~~~~~                               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

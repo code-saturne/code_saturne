@@ -53,7 +53,6 @@ from AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
 import Base.QtPage as QtPage
 
 from Pages.TurbulenceModel import TurbulenceModel
-from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.LagrangianModel import LagrangianModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.CompressibleModel import CompressibleModel
@@ -96,7 +95,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.lagr  = LagrangianModel(self.case)
         self.turb  = TurbulenceModel(self.case)
-        self.therm = ThermalScalarModel(self.case)
         self.gas   = GasCombustionModel(self.case)
         self.pcoal = CoalCombustionModel(self.case)
         self.elect = ElectricalModel(self.case)
@@ -399,14 +397,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('Atmospheric')
         self.atmo.setAtmosphericFlowsModel(model)
-        self.therm.setThermalModel('off')
-
-        # we inform that thermal scalar will be removed if it exists
-        th_label = self.scal.getThermalScalarLabel()
-        if th_label != '':
-            title = self.tr("Warning")
-            msg   = self.tr("This selection implies the destruction of the thermal scalar")
-            QMessageBox.warning(self, title, msg)
 
         if model != 'off':
             self.__disableComboBox()
@@ -425,14 +415,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('GasCombustionModel')
         self.gas.setGasCombustionModel(model)
-        self.therm.setThermalModel('off')
-
-        # we inform that thermal scalar will be removed if it exists
-        th_label = self.scal.getThermalScalarLabel()
-        if th_label != '':
-            title = self.tr("Warning")
-            msg   = self.tr("This selection implies the destruction of the thermal scalar")
-            QMessageBox.warning(self, title, msg)
 
         if model != 'off':
             self.__disableComboBox()
@@ -451,19 +433,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('PulverizedCoal')
         self.pcoal.setCoalCombustionModel(model)
-        self.therm.setThermalModel('off')
 
         if model == 'homogeneous_fuel_moisture_lagr':
             self.modelLagrangian.disableItem(str_model='single_phase')
         else:
             self.modelLagrangian.enableItem(str_model='single_phase')
-
-        # we inform that thermal scalar will be removed if it exists
-        th_label = self.scal.getThermalScalarLabel()
-        if th_label != '':
-            title = self.tr("Warning")
-            msg   = self.tr("This selection implies the destruction of the thermal scalar")
-            QMessageBox.warning(self, title, msg)
 
         if model != 'off':
             self.__disableComboBox()
@@ -482,14 +456,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('JouleEffect')
         self.elect.setElectricalModel(model)
-        self.therm.setThermalModel('off')
-
-         # we inform that thermal scalar will be removed if it exists
-        th_label = self.scal.getThermalScalarLabel()
-        if th_label != '':
-            title = self.tr("Warning")
-            msg   = self.tr("This selection implies the destruction of the thermal scalar")
-            QMessageBox.warning(self, title, msg)
 
         if model != 'off':
             self.__disableComboBox()

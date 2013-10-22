@@ -222,7 +222,7 @@ if ( isuite.eq.0 ) then
 
       if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.      &
           ippmod(icolwc).eq.5) then
-        rtp(iel,isca(ihm)) = hair
+        rtp(iel,isca(iscalt)) = hair
       endif
 
     enddo
@@ -292,7 +292,7 @@ if ( isuite.eq.0 ) then
 
       if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.       &
           ippmod(icolwc).eq.5 ) then
-        call synsca(rtp(1,isca(ihm)))
+        call synsca(rtp(1,isca(iscalt)))
         !==========
       endif
 

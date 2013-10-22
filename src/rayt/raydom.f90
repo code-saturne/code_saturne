@@ -339,9 +339,9 @@ endif
 if (idverl.ge.0) then
 
   !---> Temperature transport
-  if (abs(iscsth(iscalt)).eq.1) then
+  if (itherm.eq.1) then
 
-    if (iscsth(iscalt).eq.-1) then
+    if (itpscl.eq.1) then
       do iel = 1, ncel
         tempk(iel,1) = rtpa(iel,ivart) + tkelvi
       enddo
@@ -352,7 +352,7 @@ if (idverl.ge.0) then
     endif
 
   !---> Enthalpy transport (flurdb is a temporary array)
-  else if (iscsth(iscalt).eq.2) then
+  else if (itherm.eq.2) then
 
     mode = 1
 
@@ -400,7 +400,7 @@ if (idverl.ge.0) then
     endif
 
   else
-    write(nfecra,3500)iscalt,iscsth(iscalt)
+    write(nfecra,3500) itherm
     call csexit (1)
   endif
 
@@ -1158,8 +1158,8 @@ deallocate(flurds, flurdb)
 '@    =========                                               ',/,&
 '@    LE RAYONNEMENT EST ACTIVE.                              ',/,&
 '@                                                            ',/,&
-'@    Le scalaire ',I10   ,' devrait etre la temperature ou   ',/,&
-'@      l''enthalpie. On a ISCSTH = ',I10                      ,/,&
+'@    Le modele ITHERM devrait valoir 1 (temperature) ou      ',/,&
+'@      2 (enthalpie). On a ITHERM = ',i10                     ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&

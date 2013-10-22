@@ -261,7 +261,7 @@ if ( ippmod(ielarc).ge.1 ) then
     ym(1) = 1.d0
     mode = 1
     do iel = 1, ncel
-      call elthht(mode,ngazg,ym,rtp(iel,isca(ihm)),               &
+      call elthht(mode,ngazg,ym,rtp(iel,isca(iscalt)),               &
                                 propce(iel,ipproc(itemp)))
     enddo
   else
@@ -271,7 +271,7 @@ if ( ippmod(ielarc).ge.1 ) then
         ym(iesp) = rtp(iel,isca(iycoel(iesp)))
         ym(ngazg) = ym(ngazg) - ym(iesp)
       enddo
-      call elthht(mode,ngazg,ym,rtp(iel,isca(ihm)),               &
+      call elthht(mode,ngazg,ym,rtp(iel,isca(iscalt)),               &
                                 propce(iel,ipproc(itemp)))
     enddo
   endif

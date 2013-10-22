@@ -64,10 +64,9 @@ subroutine cou1di &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -104,7 +103,8 @@ double precision temper, enthal
 !===============================================================================
 
 
-!     Sans specification, une face couplee est une face de type paroi
+! Sans specification, une face couplee est une face de type paroi
+
 icldef = 5
 
 ivar = isca(isvtb)
@@ -125,7 +125,7 @@ enddo
 
 ! Conversion eventuelle temperature -> enthalpie
 
-if (iscsth(isvtb).eq.2) then
+if (isvtb.eq.iscalt .and. itherm.eq.2) then
 
   do ii = 1, nfpt1d
 

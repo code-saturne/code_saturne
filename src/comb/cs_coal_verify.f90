@@ -103,7 +103,7 @@ if( diftl0.lt.0d0) then
   write(nfecra,3010)'dift0', diftl0
   iok = iok + 1
 else
-  visls0(ihm) = diftl0
+  visls0(iscalt) = diftl0
 endif
 
 

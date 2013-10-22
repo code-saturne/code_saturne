@@ -162,17 +162,17 @@ if(ivivar.ne.1) then
   iok = iok + 1
 endif
 
-! --> Cp et visls (ihm) variables
+! --> Cp et visls (iscalt) variables
 if(icp.le.0) then
   WRITE(NFECRA,2012)'       ICP',    ICP,               &
                     '       ICP','la chaleur massique     ',   &
                     '       ICP'
   iok = iok + 1
 endif
-if(ivisls(ihm).le.0) then
-  WRITE(NFECRA,2012)'  IVISLS(IHM)',   IVISLS(IHM),               &
-                    '  IVISLS(IHM)','la propriete lambda/Cp  ',   &
-                    '  IVISLS(IHM)'
+if(ivisls(iscalt).le.0) then
+  WRITE(NFECRA,2012)'  IVISLS(ISCALT)',   IVISLS(ISCALT),               &
+                    '  IVISLS(ISCALT)','la propriete lambda/Cp  ',   &
+                    '  IVISLS(ISCALT)'
   iok = iok + 1
 endif
 

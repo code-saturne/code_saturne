@@ -495,8 +495,8 @@ if ( ippmod(iccoal) .ge. 1 ) then
   tmini   = tlimit*(1.d0-tlimit/(lv*xmeau))
 
   do iel = 1, ncel
-    if ( ivisls(ihm).gt.0 ) then
-      ipcvsl = ipproc(ivisls(ihm))
+    if ( ivisls(iscalt).gt.0 ) then
+      ipcvsl = ipproc(ivisls(iscalt))
       if ( icp.gt.0 ) then
         ipccp   = ipproc(icp)
         w1(iel) = propce(iel,ipcvsl) * propce(iel,ipccp)
@@ -506,9 +506,9 @@ if ( ippmod(iccoal) .ge. 1 ) then
     else
       if ( icp.gt.0 ) then
         ipccp   = ipproc(icp)
-        w1(iel) = visls0(ihm) * propce(iel,ipccp)
+        w1(iel) = visls0(iscalt) * propce(iel,ipccp)
       else
-        w1(iel) = visls0(ihm) * cp0
+        w1(iel) = visls0(iscalt) * cp0
       endif
     endif
   enddo

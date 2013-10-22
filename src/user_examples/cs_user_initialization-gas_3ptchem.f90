@@ -131,7 +131,7 @@ if ( isuite.eq.0 ) then
 
 ! ----- Enthalpy
     if ( ippmod(icod3p).eq.1 ) then
-      rtp(iel,isca(ihm)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
+      rtp(iel,isca(iscalt)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
     endif
 
   enddo

@@ -72,24 +72,6 @@ integer          ipp , ii
 integer          iok
 
 !===============================================================================
-!===============================================================================
-! 0. VERIFICATION ISCALT, ISCSTH
-!===============================================================================
-!     L'utilisateur ne doit pas y avoir touche.
-
-if(iscalt.ne.-1) then
-  write(nfecra,1000)iscalt
-  call csexit (1)
-  !==========
-endif
-do ii = 1, nscapp
-  if(iscsth(iscapp(ii)).ne.-10) then
-    write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))
-    call csexit (1)
-    !==========
-  endif
-enddo
-!===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
@@ -120,8 +102,8 @@ endif
 !                                  3 energie totale en J)
 !      La distinction -1/1 sert pour le rayonnement
 
-iscsth(ienerg) = 3
-iscsth(itempk) = 0
+iscacp(ienerg) = 0
+iscacp(itempk) = 0
 
 iscalt = ienerg
 
@@ -177,7 +159,6 @@ if( ipucou.ne.0 ) then
   write(nfecra,3000) ipucou
   call csexit (1)
 endif
-
 
 ! --- Estimateurs pour Navier-Stokes
 
@@ -254,47 +235,6 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (COMPRESSIBLE) DEMANDEE           ',/,&
-'@                                                            ',/,&
-'@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner, or              ',/,&
-'@    elle a ete affectee comme suit :                        ',/,&
-'@    ISCALT = ',I10                                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (COMPRESSIBLE) DEMANDEE           ',/,&
-'@                                                            ',/,&
-'@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner, or             ',/,&
-'@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
-'@    physique particuliere ',I10   ,' on a                   ',/,&
-'@    ISCSTH(',I10   ,') = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -378,47 +318,6 @@ endif
 
 #else
 
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
-'@    =========                                               ',/,&
-'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
-'@                                                            ',/,&
-'@  The value of ISCALT is set automatically.                 ',/,&
-'@                                                            ',/,&
-'@  The user should not give a value for it, however          ',/,&
-'@    it has been given the following value:                  ',/,&
-'@    ISCALT = ',I10                                           ,/,&
-'@                                                            ',/,&
-'@  The calculation could NOT run.                            ',/,&
-'@                                                            ',/,&
-'@  Check parameters.                                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
-'@    =========                                               ',/,&
-'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
-'@                                                            ',/,&
-'@  The values of ISCSTH are set automatically.               ',/,&
-'@                                                            ',/,&
-'@  The user should not set a value for them, however         ',/,&
-'@    for the scalar ',I10   ,' corresponding to the specific ',/,&
-'@    physics scalar ',I10   ,' we have                       ',/,&
-'@    ISCSTH(',I10   ,') = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  The calculation could NOT run.                            ',/,&
-'@                                                            ',/,&
-'@  Check parameters.                                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

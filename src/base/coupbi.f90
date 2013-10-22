@@ -193,7 +193,7 @@ do inbcou = 1, nbccou
 
         ! Possible temperature -> enthalpy conversion
 
-        if (iscsth(iscal).eq.2) then
+        if (iscal.eq.iscalt .and. itherm.eq.2) then
 
           do iloc = 1, nbfcou
 

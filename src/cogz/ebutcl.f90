@@ -454,7 +454,7 @@ do ifac = 1, nfabor
 !          - Enthalpie du melange gazeux
       if ( ippmod(icoebu) .eq. 1 .or.                             &
            ippmod(icoebu) .eq. 3        ) then
-        rcodcl(ifac,isca(ihm),1) = hgent(izone)
+        rcodcl(ifac,isca(iscalt),1) = hgent(izone)
       endif
 
     elseif ( ientgb(izone).eq.1 ) then
@@ -473,7 +473,7 @@ do ifac = 1, nfabor
 !          - Enthalpie du melange gazeux
       if ( ippmod(icoebu) .eq. 1 .or.                             &
            ippmod(icoebu) .eq. 3        ) then
-        rcodcl(ifac,isca(ihm),1) = hgent(izone)
+        rcodcl(ifac,isca(iscalt),1) = hgent(izone)
       endif
 
     endif

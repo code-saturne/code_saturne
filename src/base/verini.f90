@@ -194,6 +194,13 @@ if (nvar.lt.0.or.nvar.gt.nvarmx) then
   iok = iok + 1
 endif
 
+! --- Thermal model
+
+if (itherm.lt.0 .or. itherm.gt.3) then
+  write(nfecra,2050) itherm
+  iok = iok + 1
+endif
+
 ! --- Rho et visc constants ou variables
 
 if (irovar.ne.0.and.irovar.ne.1) then
@@ -549,32 +556,26 @@ if (iilagr .eq. 2) then
     write(nfecra,2147)thetsn,isno2t,thetst,isto2t
     iok = iok + 1
   endif
-  do iscal = 1, nscal
-    if (iscsth(iscal).eq.1.or.iscsth(iscal).eq.2) then
-      if ((    thetss(iscal)       .gt.0.d0 ).or.                 &
-          (    isso2t(iscal)       .gt.0    )) then
-        write(nfecra,2148)                                        &
-    'lagrangien ',iscal,thetss(iscal),isso2t(iscal),'uslag1'
-        iok = iok + 1
-      endif
+  if ((itherm.eq.1 .and. itpscl.eq.1) .or. itherm.eq.2) then
+    if (thetss(iscalt).gt.0.d0 .or. isso2t(iscalt).gt.0) then
+      write(nfecra,2148)                                           &
+        'lagrangian ',iscal,thetss(iscalt),isso2t(iscalt), 'uslag1'
+      iok = iok + 1
     endif
-  enddo
+  endif
 endif
 
 !     A priori, pour le moment, l'ordre 2 en temps
 !       n'est pas pris en compte pour les termes issus du rayonnement.
 !       On pourrait le signaler et continuer : on s'arrete.
 if (iirayo.gt.0) then
-  do iscal = 1, nscal
-    if (iscal.eq.iscalt) then
-      if ((    thetss(iscal)       .gt.0.d0 ).or.               &
-          (    isso2t(iscal)       .gt.0    )) then
-        write(nfecra,2148)                                      &
-             'rayonnement',iscal,thetss(iscal),isso2t(iscal),'usray1'
-        iok = iok + 1
-      endif
+  if (iscalt.gt.0) then
+    if (thetss(iscalt).gt.0.d0 .or. isso2t(iscalt).gt.0) then
+      write(nfecra,2148)                                           &
+        'rayonnement',iscal,thetss(iscal),isso2t(iscal),'usray1'
+      iok = iok + 1
     endif
-  enddo
+  endif
 endif
 
 ! --- Algorithme stationnaire
@@ -1178,44 +1179,44 @@ if (nscal.gt.0) then
   enddo
 endif
 
-!     On regarde s'il y a du couplage
+! On regarde s'il y a du couplage
 
 call nbcsyr (nbccou)
 !==========
 
-!     S'il n'y a pas de couplage
+! S'il n'y a pas de couplage
 if (nbccou.eq.0) then
 
-!       et qu'il n'y a pas zero scalaire couple, on s'arrete
+  !  et qu'il n'y a pas zero scalaire couple, on s'arrete
   if (nbsccp.ne.0) then
     write(nfecra,2660)nbsccp,nscal
     iok = iok + 1
   endif
 
-!     Sinon, s'il y a du couplage
+  ! Sinon, s'il y a du couplage
 else
 
-!       et qu'il n'y a pas un et un seul scalaire couple, on s'arrete
+  ! et qu'il n'y a pas un et un seul scalaire couple, on s'arrete
   if (nbsccp.ne.1) then
     write(nfecra,2661)nscal,nbsccp
     iok = iok + 1
   endif
 
-!          que le scalaire couple n'est pas la temperature, on s'arrete
-!          attention : tout est pret, mais il n'y a pas eu de valid.
-!          en outre, ca permet de bien verifier que l'utilisateur
-!          ne s'est pas trompe dans 99% des cas d'utilisation
-!         (en compressible, on couple l'energie)
+  ! que le scalaire couple n'est pas la temperature, on s'arrete
+  ! attention : tout est pret, mais il n'y a pas eu de valid.
+  ! en outre, ca permet de bien verifier que l'utilisateur
+  ! ne s'est pas trompe dans 99% des cas d'utilisation
+  ! (en compressible, on couple l'energie)
   do iscal = 1, nscal
     if (icpsyr(iscal).eq.1) then
       if (ippmod(icompf).lt.0) then
-        if (abs(iscsth(iscal)).ne.1) then
-          write(nfecra,2662)iscal,iscsth(iscal)
+        if (abs(iscacp(iscal)).ne.1) then
+          write(nfecra,2662)iscal,iscal,iscacp(iscal)
           iok = iok + 1
         endif
       else
-        if (iscsth(iscal).ne.3) then
-          write(nfecra,2663)iscal,iscal,iscsth(iscal)
+        if (iscal.eq.iscalt .and. itherm.ne.3) then
+          write(nfecra,2663)iscal,iscalt
           iok = iok + 1
         endif
       endif
@@ -1458,9 +1459,9 @@ if (nscal.gt.0) then
 
 !     Scalaire passif, temperature, enthalpie, energie
   do ii = 1, nscal
-    if (iscsth(ii).lt.-1.or.iscsth(ii).gt.3) then
+    if (iscacp(ii).lt.0.or.iscacp(ii).gt.1) then
       chaine=nomvar(ipprtp(isca(ii)))
-      write(nfecra,4300)chaine(1:16),ii,iscsth(ii)
+      write(nfecra,4300)chaine(1:16),ii,iscacp(ii)
       iok = iok + 1
     endif
   enddo
@@ -1590,7 +1591,7 @@ if (nscal.gt.0) then
     if (cp0.lt.0.d0) then
       iisct = 0
       do iis = 1, nscal
-        if (abs(iscsth(iis)).eq.1) then
+        if (iscacp(iis).eq.1) then
           iisct = 1
         endif
       enddo
@@ -1921,6 +1922,22 @@ endif
 '@      IROVAR = ', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute',                            /,&
+'@',                                                            /,&
+'@  Verifier les parametres donnes via l''interface',           /,&
+'@    ou cs_user_parameters.f90.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 2050 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@    ITHERM DOIT ETRE UN ENTIER EGAL A 0, 10, 11, 20,30',      /,&
+'@    IL VAUT ICI', i10,                                        /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
@@ -3461,7 +3478,7 @@ endif
 '@    etre la temperature.',                                    /,&
 '@  Le scalaire couple est ici le scalaire', i10,               /,&
 '@    Ce n''est pas une temperature car',                       /,&
-'@                    ISCSTH(',i10,   ') = ', i10,              /,&
+'@                    ISCCACP(',i10,   ') = ', i10,              /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -3485,7 +3502,7 @@ endif
 '@    scalaire couple doit etre l''energie.',                   /,&
 '@  Le scalaire couple est ici le scalaire', i10,               /,&
 '@    Ce n''est pas l''energie car',                            /,&
-'@                    ISCSTH(',i10,   ') = ', i10,              /,&
+'@                    ISCALT = ', i10,                          /,&
 '@',                                                            /,&
 '@  Contacter l''equipe de developpement.',                     /,&
 '@',                                                            /,&
@@ -3751,8 +3768,8 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
-'@    ISCSTH(',i10,   ') DOIT ETRE UN ENTIER EGAL A -1,0,1,2,3',/,&
+'@    SCALAIRE ', a16,                                          /,&
+'@    ISCACP(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 ou 1',    /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
@@ -3768,7 +3785,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    ISCAVR(',i10,   ') DOIT ETRE UN ENTIER',                  /,&
 '@      POSITIF OU NUL ET',                                     /,&
 '@      INFERIEUR OU EGAL A NSCAL = ', i10,                     /,&
@@ -4498,6 +4515,22 @@ endif
 '@      IROVAR = ', i10,                                        /,&
 '@',                                                            /,&
 '@  The calculation could NOT run.',                            /,&
+'@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 2050 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@    ITHERM MUST BE AN INTEGER EGAL TO 0, 10, 11, 20,30',      /,&
+'@   IT HAS VALUE', i10,                                        /,&
+'@',                                                            /,&
+'@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
@@ -6040,7 +6073,7 @@ endif
 '@',                                                            /,&
 '@  Here it is scalar number :', i10,                           /,&
 '@    which is not temperature because',                        /,&
-'@                    ISCSTH(',i10,   ') = ', i10,              /,&
+'@                    ISCACP(',i10,   ') = ', i10,              /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
@@ -6064,7 +6097,7 @@ endif
 '@    the coupled scalar must be energy.',                      /,&
 '@  here it is scalar',                      i10,               /,&
 '@    which is not the energy  here since',                     /,&
-'@                    ISCSTH(',i10,   ') = ', i10,              /,&
+'@                    ISCALT = ', i10,                          /,&
 '@',                                                            /,&
 '@',                                                            /,&
 '@',                                                            /,&
@@ -6331,8 +6364,8 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAR', a16,                                             /,&
-'@    ISCSTH(',i10,   ') MUST BE AN INTEGER  EGAL A -1,0,1,2,3',/,&
+'@    SCALAR ', a16,                                            /,&
+'@    ISCACP(',i10,   ') MUST BE AN INTEGER EQUAL TO 1 OR 0',   /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
@@ -6348,7 +6381,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    ISCAVR(',i10,   ') MUST BE AN INTEGER',                   /,&
 '@      POSITIVE or NUL AND',                                   /,&
 '@      LESS THAN or EGAL A NSCAL = ', i10,                     /,&

@@ -127,6 +127,9 @@ endif
 
 if (iihmpr.eq.1) then
 
+  call csther(itherm, itpscl)
+  !==========
+
   call csturb(iturb, ideuch, igrake, igrari, xlomlg)
   !==========
 
@@ -139,7 +142,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb , irccor , icp)
+call usipph(iihmpu , nfecra , iturb , irccor , itherm, icp)
 
 !===============================================================================
 ! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
@@ -228,6 +231,7 @@ call usray1
 ! --- Varpos
 !     Verification et construction de ISCAPP
 !      1ier passage
+
 call varpos(nmodpp)
 !==========
 
@@ -254,7 +258,7 @@ if (iihmpr.eq.1) then
   call  csisca(iscavr)
   !===========
 
-  call  csivis(iscavr, ivisls, iscalt, iscsth, itempk)
+  call  csivis(iscavr, ivisls, iscalt, itherm, itempk)
   !===========
 
 endif
@@ -285,7 +289,6 @@ endif
 !===============================================================================
 ! 3. INITIALISATION DE PARAMETRES "GLOBAUX"
 !===============================================================================
-
 
 ! --- Parametres globaux
 
@@ -376,13 +379,6 @@ call varpos(nmodpp)
 
 if (iihmpr.eq.1) then
 
-  ! Temperature ou enthalpie (hors physiques particulieres)
-  if(nmodpp.eq.0) then
-    call cssca1(iscalt, iscsth)
-    !==========
-
-  endif
-
   call csvnum                                                     &
   !==========
             (nvar,                                                &
@@ -393,7 +389,7 @@ if (iihmpr.eq.1) then
              iomg, iphi, ifb, ial,                                &
              inusa,                                               &
              iale, iuma, ivma, iwma,                              &
-             isca, iscapp)
+             isca, iscapp, itherm)
 
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
 
@@ -435,7 +431,7 @@ if (iihmpr.eq.1) then
   !==========
 
   ! Diffusivites
-  call cssca3(iscalt, iscsth, iscavr, visls0, t0, p0)
+  call cssca3(itherm, iscalt, iscavr, visls0, t0, p0)
   !==========
 
 !     Init turb (uref, almax) si necessaire (modele RANS)

@@ -726,7 +726,7 @@ Calculation management
         node7 = node0.xmlGetNode('compressible_model', 'model')
 
         if node1['model'] in ('ebu', 'd3p', 'lwp'):
-            self.setRowClose(self.tr('Thermal model'))
+            self.setRowOpen(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Gas combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
@@ -735,7 +735,7 @@ Calculation management
 
         elif node2['model'] in ('homogeneous_fuel', 'homogeneous_fuel_moisture',
                                 'homogeneous_fuel_moisture_lagr'):
-            self.setRowClose(self.tr('Thermal model'))
+            self.setRowOpen(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Pulverized fuel combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
@@ -743,22 +743,26 @@ Calculation management
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
         elif node3['model'] in ('joule', 'arc'):
-            self.setRowClose(self.tr('Thermal model'))
+            self.setRowOpen(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Electrical models'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
-        elif node6 and node6['model'] != 'off':
-            self.setRowClose(self.tr('Thermal model'))
+        elif node6['model'] and node6['model'] != 'off':
             self.setRowOpen(self.tr('Atmospheric flows'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
-        elif node7['model']!= 'off':
+            if node6 and node6['model'] in ('dry', 'humid'):
+                self.setRowOpen(self.tr('Thermal model'))
+            else:
+                self.setRowClose(self.tr('Thermal model'))
+
+        elif node7['model'] != 'off':
             self.setRowClose(self.tr('Thermal model'))
 
         else:

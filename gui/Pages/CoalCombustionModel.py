@@ -46,6 +46,7 @@ import Pages.IdentityAndPathesModel as IdentityAndPathesModel
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 from Pages.LocalizationModel import LocalizationModel
 from Pages.Boundary import Boundary
@@ -148,10 +149,6 @@ class CoalCombustionModel(Variables, Model):
         if self.node_lagr and self.node_lagr['model'] != 'off':
             coalCombustionList = ('off', 'homogeneous_fuel_moisture_lagr')
 
-        n, m = FluidCharacteristicsModel(self.case).getThermalModel()
-        if m != "off" and m not in coalCombustionList:
-            coalCombustionList = ('off',)
-
         if self.node_turb != None:
             if self.node_turb['model'] not in ('k-epsilon',
                                                'k-epsilon-PL',
@@ -209,8 +206,6 @@ class CoalCombustionModel(Variables, Model):
 
         lst = []
 
-        lst.append("Enthalpy")
-
         # list of coal variables
         baseNames = ["Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
@@ -266,8 +261,6 @@ class CoalCombustionModel(Variables, Model):
 
         lst = []
 
-        lst.append("Enthalpy")
-
         # list of class variables
         baseNames =  ["ENT_CP"]
         for baseName in baseNames:
@@ -298,7 +291,7 @@ class CoalCombustionModel(Variables, Model):
 
         for name in new_list:
             if name not in previous_list:
-                self.setNewModelScalar(self.node_fuel, name)
+                self.setNewScalar(self.node_fuel, name, "model")
 
 
     def __createModelPropertiesList(self):
@@ -422,12 +415,12 @@ class CoalCombustionModel(Variables, Model):
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
-                self.setNewModelScalar(self.node_fuel, name)
+                self.setNewScalar(self.node_fuel, name, "model")
 
         baseNames = ["Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
             name = '%s%2.2i' % (baseName, coalsNumber)
-            self.setNewModelScalar(self.node_fuel, name)
+            self.setNewScalar(self.node_fuel, name, "model")
 
 
     def __createCoalModelProperties(self, coalsNumber, coalClassesNumber, classesNumber):
@@ -493,7 +486,7 @@ class CoalCombustionModel(Variables, Model):
         # create new scalars
         for i in range(len(baseNames)):
             name = '%s%2.2i' % (baseNames[i], classNum)
-            self.setNewModelScalar(self.node_fuel, name)
+            self.setNewScalar(self.node_fuel, name, "model")
 
 
     @Variables.undoGlobal
@@ -505,6 +498,11 @@ class CoalCombustionModel(Variables, Model):
 
         self.node_fuel['model']  = model
         self.__updateScalarAndProperty(model)
+
+        if model == 'off':
+            ThermalScalarModel(self.case).setThermalModel('off')
+        else:
+            ThermalScalarModel(self.case).setThermalModel('enthalpy')
 
 
     def __updateScalarAndProperty(self, model):
@@ -1971,9 +1969,6 @@ class CoalCombustionModelTestCase(ModelTest):
         model.setCoalCombustionModel('coal_homo')
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="Enthalpy" name="Enthalpy" type="model">
-                            <flux_reconstruction status="off"/>
-                    </scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model">
                             <flux_reconstruction status="off"/>
                     </scalar>
@@ -2033,7 +2028,6 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -2103,7 +2097,6 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -2212,7 +2205,6 @@ class CoalCombustionModelTestCase(ModelTest):
         model.deleteCoalModelScalarsAndProperties(coalThermoChModel, 1)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -2303,7 +2295,6 @@ class CoalCombustionModelTestCase(ModelTest):
         model.deleteClassModelScalars(coalThermoChModel, 2, 1)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>

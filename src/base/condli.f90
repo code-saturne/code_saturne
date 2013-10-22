@@ -76,8 +76,6 @@
 !> \param[in]     isvhb         indicator to save exchange coeffient
 !>                               at the walls
 !> \param[in]     iterns        iteration number on Navier-Stokes equations
-!> \param[in]     isvtb         indicator to save the temperature at
-!>                               the walls
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet
@@ -125,7 +123,7 @@
 
 subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
-   isvhb  , isvtb  ,                                              &
+   isvhb  ,                                                       &
    icodcl , isostd ,                                              &
    dt     , rtp    , rtpa   , propce , rcodcl ,                   &
    coefa  , coefb  , visvdr , hbord  , theipb , frcxt  )
@@ -159,7 +157,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal , iterns
-integer          isvhb  , isvtb
+integer          isvhb
 
 integer          icodcl(nfabor,nvarcl)
 integer          isostd(nfabor+1)
@@ -545,10 +543,7 @@ allocate(grad(ncelet,3))
 !  Ici, il ne peut y avoir qu'un seul scalaire avec icpsyr = 1 et
 !    ce uniquement s'il y a effectivement couplage avec SYRTHES
 !    (sinon, on s'est arrete dans verini)
-!  Dans le cas du couplage avec le module 1D, on utilise le scalaire
-!    couple avec Syrthes s'il y a couplage, sinon iscalt.
-!  La valeur de isvtb a ete initialisee dans tridim
-!    au numero du scalaire couple.
+!  Dans le cas du couplage avec le module 1D, on utilise iscalt.
 
 !  Pour le rayonnement
 !  -------------------
@@ -559,27 +554,10 @@ allocate(grad(ncelet,3))
 !  On recherche l'unique scalaire qui convient
 !     (ce peut etre T, H, ou E (en compressible))
 
-iscat = 0
-
-! Si un scalaire est couple a SYRTHES ou au module 1D
-if (isvtb.ne.0) then
-  ! si ce n'est pas la variable thermique, ca ne va pas.
-  if(isvtb.ne.iscalt) then
-    write(nfecra,8000)isvtb,iscalt
-    call csexit (1)
-    !==========
-    !         sinon, on calcule le gradient.
-  else
-    iscat = isvtb
-  endif
-else
-  iscat = iscalt
-endif
-
 ! Compute the boundary value of the thermal scalar in I' if required
-if (iscat.gt.0) then
+if (iscalt.gt.0) then
 
-  ivar = isca(iscat)
+  ivar = isca(iscalt)
 
   if (ntcabs.gt.1 .and. itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
 
@@ -1939,11 +1917,7 @@ if (nscal.ge.1) then
       iscal = iscavr(ii)
     endif
 
-    if (iscsth(iscal).eq.0.or.             &
-        iscsth(iscal).eq.2.or.             &
-        iscsth(iscal).eq.3) then
-      ihcp = 0
-    elseif(abs(iscsth(iscal)).eq.1) then
+    if (iscacp(iscal).eq.1) then
       if(ipccp.gt.0) then
         ihcp = 2
       else
@@ -2099,7 +2073,7 @@ if (nscal.ge.1) then
           ! We compute the exchange coefficient in W/(m2 K)
 
           ! Enthalpy
-          if (iscsth(ii).eq.2) then
+          if (itherm.eq.2) then
             ! If Cp is variable
             if (ipccp.gt.0) then
               bhconv(ifac) = hint*propce(iel,ipccp )
@@ -2108,7 +2082,7 @@ if (nscal.ge.1) then
             endif
 
           ! Energie (compressible module)
-          elseif (iscsth(ii).eq.3) then
+          elseif (itherm.eq.3) then
             ! If Cv is variable
             if (ipccv.gt.0) then
               bhconv(ifac) = hint*propce(iel,ipccv)
@@ -2117,7 +2091,7 @@ if (nscal.ge.1) then
             endif
 
           ! Temperature
-          elseif(abs(iscsth(ii)).eq.1) then
+          elseif(iscacp(ii).eq.1) then
             bhconv(ifac) = hint
           endif
 
@@ -2152,7 +2126,7 @@ if (nscal.ge.1) then
           ! We compute the exchange coefficient in W/(m2 K)
 
           ! Enthalpy
-          if (iscsth(ii).eq.2) then
+          if (itherm.eq.2) then
             ! If Cp is variable
             if (ipccp.gt.0) then
               bhconv(ifac) = hint*propce(iel, ipccp)
@@ -2160,8 +2134,8 @@ if (nscal.ge.1) then
               bhconv(ifac) = hint*cp0
             endif
 
-          ! Energie (compressible module)
-          elseif (iscsth(ii).eq.3) then
+          ! Energy (compressible module)
+          elseif (itherm.eq.3) then
             ! If Cv is variable
             if (ipccv.gt.0) then
               bhconv(ifac) = hint*propce(iel,ipccv)
@@ -2170,7 +2144,7 @@ if (nscal.ge.1) then
             endif
 
           ! Temperature
-          elseif (abs(iscsth(ii)).eq.1) then
+          elseif (itherm.eq.1) then
             bhconv(ifac) = hint
           endif
 
@@ -2480,21 +2454,6 @@ if (allocated(rijipb)) deallocate(rijipb)
  3010 format(                                                           &
  'Debit entrant retenu en ',I10   ,                  &
                                       ' faces de sortie sur ',I10)
- 8000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : COND. LIM.                                  ',/,&
-'@    =========                                               ',/,&
-'@     Le scalaire ',I10   ,' est couple a SYRTHES            ',/,&
-'@      mais n''est pas la variable energetique               ',/,&
-'@         ISCALT = ',I10                               ,/,&
-'@                                                            ',/,&
-'@     Le calcul ne sera pas execute.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
 #else
 
  1000 format(                                                           &
@@ -2528,20 +2487,6 @@ if (allocated(rijipb)) deallocate(rijipb)
  3010 format(                                                           &
  'Incoming flow detained for ', I10   ,              &
                                           ' outlet faces on ',I10)
- 8000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: BOUNDARY CONDITIONS                            ',/,&
-'@    ========                                                ',/,&
-'@     The scalar ',I10   ,' is coupled with SYRTHES          ',/,&
-'@      but is not the energy variable                        ',/,&
-'@         ISCALT = ',I10                               ,/,&
-'@                                                            ',/,&
-'@     The calculation will not be run.                       ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 #endif
 

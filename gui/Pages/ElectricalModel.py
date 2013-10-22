@@ -44,6 +44,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Pages.ThermalRadiationModel import ThermalRadiationModel
+from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
 #-------------------------------------------------------------------------------
@@ -62,7 +63,6 @@ class ElectricalModel(Variables, Model):
         nModels         = self.case.xmlGetNode('thermophysical_models')
         self.node_gas   = nModels.xmlInitNode('gas_combustion',    'model')
         self.node_joule = nModels.xmlInitNode('joule_effect',      'model')
-        self.node_therm = nModels.xmlInitNode('thermal_scalar',    'model')
         self.node_atmo  = nModels.xmlInitNode('atmospheric_flows', 'model')
         self.node_coal  = nModels.xmlInitNode('solid_fuels',       'model')
         self.node_bc    = self.case.xmlGetNode('boundary_conditions')
@@ -107,36 +107,24 @@ class ElectricalModel(Variables, Model):
         return self.jouleModel
 
 
-    def electricalModelsList(self):
-        """
-        Create a tuple with the electrical models allowed
-        by the calculation features.
-        """
-        electricalList = self.electricalModel
-
-        n, m = FluidCharacteristicsModel(self.case).getThermalModel()
-        if m != "off" and m not in electricalList:
-            electricalList = ('off',)
-
-        return electricalList
-
-
     @Variables.undoGlobal
     def setElectricalModel(self, model):
         """
         Update the electrical model markup from the XML document.
         """
-        self.isInList(model, self.electricalModelsList())
+        self.isInList(model, self.electricalModel)
 
         if model == 'off':
             self.node_joule['model']   = 'off'
             ThermalRadiationModel(self.case).setRadiativeModel('off')
+            ThermalScalarModel(self.case).setThermalModel('off')
+
         else:
             self.node_gas['model']   = 'off'
             self.node_coal['model']  = 'off'
             self.node_joule['model'] = model
-            self.node_therm['model'] = 'off'
             self.node_atmo['model']  = 'off'
+            ThermalScalarModel(self.case).setThermalModel('enthalpy')
 
         self.__updateScalarAndProperty()
 #
@@ -154,7 +142,7 @@ class ElectricalModel(Variables, Model):
         Return the current electrical model.
         """
         model = self.node_joule['model']
-        if model not in self.electricalModelsList():
+        if model not in self.electricalModel:
             model = self.defaultElectricalValues()['model']
             self.setElectricalModel(model)
 
@@ -170,7 +158,7 @@ class ElectricalModel(Variables, Model):
         if model == 'off':
             self.__removeVariablesAndProperties([], [])
         else:
-            listV = ['Enthalpy', 'PotElecReal']
+            listV = ['PotElecReal']
             gasN = self.getGasNumber()
             if gasN > 1:
                 for gas in range(0, gasN - 1):
@@ -200,7 +188,7 @@ class ElectricalModel(Variables, Model):
                     listP.append('CouImag')
 
             for v in listV:
-                self.setNewModelScalar(self.node_joule, v)
+                self.setNewScalar(self.node_joule, v, "model")
             for v in listP:
                 self.setNewProperty(self.node_joule, v)
             self.__removeVariablesAndProperties(listV, listP)

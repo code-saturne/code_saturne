@@ -216,7 +216,7 @@ if ( isuite.eq.0 ) then
 ! ----- Enthalpie du melange
 
       if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-        rtp(iel,isca(ihm)) = hair
+        rtp(iel,isca(iscalt)) = hair
       endif
 
     enddo
@@ -273,7 +273,7 @@ if ( isuite.eq.0 ) then
 ! ----- Enthalpie du melange
 
       if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-        rtp(iel,isca(ihm)) = hinit
+        rtp(iel,isca(iscalt)) = hinit
       endif
 
     enddo
@@ -296,7 +296,7 @@ if ( isuite.eq.0 ) then
         !==========
       endif
       if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-        call synsca(rtp(1,isca(ihm)))
+        call synsca(rtp(1,isca(iscalt)))
         !==========
       endif
     endif

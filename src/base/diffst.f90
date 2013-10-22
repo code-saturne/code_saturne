@@ -123,18 +123,15 @@ do iscal = 1, nscal
   ! Index for variable
   ivar = isca(iscal)
 
-  if (iscalt.gt.0) then
-    if (ivar.eq.isca(iscalt) .or. iscavr(iscal).eq.iscalt) then
-      if (abs(iscsth(iscalt)).eq.1) then
-        imucpp = 1
-      else
-        imucpp = 0
-      endif
-    else
-      imucpp = 0
+  imucpp = 0
+  if (iscavr(iscal).gt.0) then
+    if (abs(iscacp(iscavr(iscal))).eq.1) then
+      imucpp = 1
     endif
   else
-    imucpp = 0
+    if (abs(iscacp(iscal)).eq.1) then
+      imucpp = 1
+    endif
   endif
 
   if (imucpp.eq.0) then
@@ -239,8 +236,7 @@ do iscal = 1, nscal
   ! adiabatic enthalpy has to be used. The last one is already considered
   ! through the mixture fraction contribution.
 
-  if (ippmod(icod3p).eq.1.and.iscal.eq.ihm) then
-  ! if (nscapp.gt.0.and.iscal.eq.ihm) then
+  if (ippmod(icod3p).eq.1.and.iscal.eq.iscalt) then
 
     ! Memory allocation
     allocate(coefap(nfabor), coefbp(nfabor))
@@ -249,8 +245,8 @@ do iscal = 1, nscal
 
     ! Hs is store in a local array and the source term is initialized
     do iel = 1, ncel
-      whsad(iel) = propce(iel,ipproc(iustdy(ihm)))
-      propce(iel,ipproc(iustdy(ihm))) = 0.d0
+      whsad(iel) = propce(iel,ipproc(iustdy(iscalt)))
+      propce(iel,ipproc(iustdy(iscalt))) = 0.d0
     enddo
 
     ! Parallel and periodic exchanges

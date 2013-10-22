@@ -73,28 +73,6 @@ integer          ipp , ii , iok
 integer          isc , ivar
 
 !===============================================================================
-!===============================================================================
-! 0. VERIFICATION ISCALT, ISCSTH
-!===============================================================================
-!     L'utilisateur ne doit pas y avoir touche.
-
-iok = 0
-
-if(iscalt.ne.-1) then
-  write(nfecra,1000)iscalt
-  iok = iok + 1
-endif
-do ii = 1, nscapp
-  if(iscsth(iscapp(ii)).ne.-10) then
-    write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))
-    iok = iok + 1
-  endif
-enddo
-
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -104,9 +82,6 @@ endif
 ! ==================================================================
 
 ! --> Dans toutes les versions electriques
-!     Enthalpie
-scamin(ihm)   = -grand
-scamax(ihm)   = +grand
 !     Potentiel reel
 scamin(ipotr) = -grand
 scamax(ipotr) = +grand
@@ -147,12 +122,12 @@ endif
 
 !     Par defaut, scalaire "passif"
 do isc = 1, nscapp
-  iscsth(iscapp(isc)) = 0
+  iscacp(iscapp(isc)) = 0
 enddo
 
 !     Pour l'enthalpie
-iscalt = ihm
-iscsth(ihm)   = 2
+itherm = 2
+iscacp(iscalt)   = 0
 
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires ELECTRIQUES
 ! =====================================================================
@@ -266,7 +241,7 @@ enddo
 
 ! --> Variables communes aux versions electriques
 
-ipp = ipprtp(isca(ihm))
+ipp = ipprtp(isca(iscalt))
 NOMVAR(IPP)  = 'Enthalpy'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
@@ -464,47 +439,6 @@ else
   write(nfecra,9998)
 endif
 
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (JOULE) DEMANDEE                  ',/,&
-'@                                                            ',/,&
-'@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner, or              ',/,&
-'@    elle a ete affectee comme suit :                        ',/,&
-'@    ISCALT = ',I10                                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (JOULE) DEMANDEE                  ',/,&
-'@                                                            ',/,&
-'@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner, or             ',/,&
-'@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
-'@    physique particuliere ',I10   ,' on a                   ',/,&
-'@    ISCSTH(',I10   ,') = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9998 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&

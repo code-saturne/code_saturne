@@ -177,7 +177,7 @@ if ( isuite.eq.0 ) then
 ! ----- Enthalpy
 
     if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-      rtp(iel,isca(ihm)) = hinit
+      rtp(iel,isca(iscalt)) = hinit
     endif
 
   enddo

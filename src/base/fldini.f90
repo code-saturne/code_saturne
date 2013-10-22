@@ -313,14 +313,12 @@ do ii = 1, nscal
   if (isca(ii) .gt. 0) then
     ivar = isca(ii)
     if (ii .eq. iscalt) then
-      if (iscsth(iscalt) .eq. 2) then
+      if (itherm .eq. 1) then
+        name = 'temperature'
+      else if (itherm .eq. 2) then
         name = 'enthalpy'
-      else
-        if (iscalt.eq.ienerg) then
-          name = 'total energy'
-        else
-          name = 'temperature'
-        endif
+      else if (itherm .eq. 3) then
+        name = 'total energy'
       endif
     else
       name = nomvar(ipprtp(ivar))
@@ -606,7 +604,7 @@ enddo
 if (iirayo .gt. 0) then
 
   if (     ippmod(icod3p).eq.1                                    &
-      .or. ippmod(iccoal).gt.0                                    &
+      .or. ippmod(iccoal).ge.0                                    &
       .or. (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3)         &
       .or. (     ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3     &
             .or. ippmod(icolwc).eq.5)) then

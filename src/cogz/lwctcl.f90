@@ -456,7 +456,7 @@ do ifac = 1, nfabor
       if ( ippmod(icolwc) .eq. 1 .or.                             &
            ippmod(icolwc) .eq. 3 .or.                             &
            ippmod(icolwc) .eq. 5    ) then
-        rcodcl(ifac,isca(ihm),1) = hgent(izone)
+        rcodcl(ifac,isca(iscalt),1) = hgent(izone)
       endif
 
     elseif ( ientgb(izone).eq.1 ) then
@@ -483,7 +483,7 @@ do ifac = 1, nfabor
       if ( ippmod(icolwc) .eq. 1 .or.                             &
            ippmod(icolwc) .eq. 3 .or.                             &
            ippmod(icolwc) .eq. 5    ) then
-        rcodcl(ifac,isca(ihm),1) = hgent(izone)
+        rcodcl(ifac,isca(iscalt),1) = hgent(izone)
       endif
 
     endif

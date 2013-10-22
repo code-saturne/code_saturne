@@ -314,15 +314,49 @@ write(nfecra,9900)
 
 #endif
 
+write(nfecra,2500) itherm, iscalt
+
+#if defined(_CS_LANG_FR)
+
+ 2500 format(                                                     &
+                                                                /,&
+' ** MODELE THERMIQUE',                                         /,&
+'    ----------------',                                         /,&
+' --- Phase continue :',                                        /,&
+                                                                /,&
+'   - Communs',                                                 /,&
+'       ITHERM = ',4x,i10,    ' (0:  pas de thermique        )',/,&
+'                               (10: temperature C           )',/,&
+'                               (11: temperature K           )',/,&
+'                               (20: enthalpie               )',/,&
+'                               (30: energie totale          )',/,&
+'       ISCALT = ',4x,i10,    ' (Numero du scalaire thermique)',/)
+
+#else
+
+ 2500 format(                                                     &
+                                                                /,&
+' ** THERMAL MODEL',                                            /,&
+'    -------------',                                            /,&
+' --- Continuous phase:',                                       /,&
+                                                                /,&
+'   - Commons',                                                 /,&
+'       ITHERM = ',4x,i10,    ' (0:  no thermal model        )',/,&
+'                               (10: temperature C           )',/,&
+'                               (11: temperature K           )',/,&
+'                               (20: enthalpy                )',/,&
+'                               (30: total energy            )',/,&
+'       ISCALT = ',4x,i10,    ' (Thermal scalar number       )',/)
+
+#endif
+
 ! --- Turbulence
 
 write(nfecra,2510)
 
 !   - Modeles
 
-write(nfecra,2515)                                              &
-     iturb,ideuch,iwallt,ypluli,ilogpo,                         &
-     igrhok,iscalt
+write(nfecra,2515) iturb, ideuch, iwallt, ypluli, ilogpo, igrhok
 if(iturb.eq.10) then
   write(nfecra,2516)                                            &
        xlomlg
@@ -501,8 +535,7 @@ write(nfecra,9900)
 '       ILOGPO = ',4x,i10,    ' (0: loi puissance (interdite',  /,&
 '                                              en k-epsilon) )',/,&
 '                               (1: loi log une echelle      )',/,&
-'       IGRHOK = ',4x,i10,    ' (1: Grad (rho k ) calcule    )',/,&
-'       ISCALT = ',4x,i10,    ' (Numero du scalaire temp     )',/)
+'       IGRHOK = ',4x,i10,    ' (1: Grad (rho k ) calcule    )',/)
  2516 format(                                                     &
 '   - Longueur de melange (ITURB = 10)',                        /,&
 '       XLOMLG = ', e14.5,    ' (Longueur caracteristique    )',/)
@@ -758,8 +791,7 @@ write(nfecra,9900)
 '       ILOGPO = ',4x,i10,    ' (0: power law (forbidden for',  /,&
 '                                              k-epsilon)    )',/,&
 '                               (1: one-scale log law        )',/,&
-'       IGRHOK = ',4x,i10,    ' (1: computed Grad(rho k)     )',/,&
-'       ISCALT = ',4x,i10,    ' (Temperature salar number    )',/)
+'       IGRHOK = ',4x,i10,    ' (1: computed Grad(rho k)     )',/)
  2516 format(                                                     &
 '   - Mixing length       (ITURB = 10)',                        /,&
 '       XLOMLG = ', e14.5,    ' (Characteristic length       )',/)
@@ -1032,7 +1064,7 @@ if (iirayo.gt.0) then
 
   write(nfecra,2630)
 
-  write(nfecra,2640) iirayo, iscalt, iscsth(iscalt)
+  write(nfecra,2640) iirayo
 
   write(nfecra,2650) isuird, nfreqr, i_quadrature,                &
                      idiver, imodak, iimpar, iimlum
@@ -1054,9 +1086,7 @@ endif
 '    -------------------------------',                          /)
  2640 format(                                                     &
 ' --- Phase continue :',                                        /,&
-'       IIRAYO = ',4x,i10,    ' (0 : non ; 1 : DOM ; 2 : P-1 )',/,&
-'       ICSALT = ',4x,i10,    ' (Num du sca thermique associe)',/,&
-'       ISCSTH = ',4x,i10,    ' (-1 : T(C) ; 1 : T(K) ; 2 : H)',/)
+'       IIRAYO = ',4x,i10,    ' (0 : non ; 1 : DOM ; 2 : P-1 )',/)
  2650 format(                                                     &
 ' --- Options :',                                               /,&
 '       ISUIRD = ',4x,i10,    ' (0 : pas de suite ; 1 : suite)',/,&
@@ -1079,9 +1109,7 @@ endif
 '    --------------------------',                               /)
  2640 format(                                                     &
 ' --- Continuous phase:',                                       /,&
-'       IIRAYO = ',4x,i10,    ' (0: no; 1: DOM; 2: P-1       )',/,&
-'       ICSALT = ',4x,i10,    ' (Assoc. thermal scalar num.  )',/,&
-'       ISCSTH = ',4x,i10,    ' (-1: T(C); 1: T(K); 2: H     )',/)
+'       IIRAYO = ',4x,i10,    ' (0: no; 1: DOM; 2: P-1       )',/)
  2650 format(                                                     &
 ' --- Options:',                                                /,&
 '       ISUIRD = ',4x,i10,    ' (0: no restart; 1: restart   )',/,&
@@ -2118,7 +2146,7 @@ if(nscal.ge.1) then
   write(nfecra,6011)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,6021) chaine(1:16),ii,iscsth(ii),      &
+    write(nfecra,6021) chaine(1:16),ii,iscacp(ii),      &
                        ivisls(ii),iturt(ii),visls0(ii),sigmas(ii)
   enddo
   write(nfecra,6031)
@@ -2162,7 +2190,7 @@ endif
 '       ITBRRB = ',4x,i10,    ' (Reconstruction T ou H au brd)',/)
  6011 format(                                                            &
 '---------------------------------------------------------------------',/,&
-' Variable         Numero ISCSTH IVISLS  ITURT      VISLS0      SIGMAS',/,&
+' Variable         Numero ISCACP IVISLS  ITURT      VISLS0      SIGMAS',/,&
 '---------------------------------------------------------------------'  )
  6021 format( &
  1x,    a16,    i7,    i7,    i7,    i7,      e12.4,      e12.4  )
@@ -2193,7 +2221,7 @@ endif
 '         scalaires physique particuliere sont a la fin, de',   /,&
 '         NSCAUS+1 a NSCAPP+NSCAUS=NSCAL.',                     /,&
                                                                 /,&
-'       ISCSTH = -1,0, 1 ou 2   (T (C), Passif, T (K) ou H   )',/,&
+'       ISCACP = 0 ou 1         (Utilisation de Cp ou non    )',/,&
 '       IVISLS = 0 ou >0        (Viscosite constante ou non  )',/,&
 '       VISLS0 = >0             (Viscosite de reference      )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
@@ -2232,7 +2260,7 @@ endif
 '       ITBRRB = ',4x,i10,    ' (T or H reconstruction at bdy)',/)
  6011 format(                                                     &
 '---------------------------------------------------------------------',/,&
-' Variable         Number ISCSTH IVISLS  ITURT      VISLS0      SIGMAS',/,&
+' Variable         Number ISCACP IVISLS  ITURT      VISLS0      SIGMAS',/,&
 '---------------------------------------------------------------------'  )
  6021 format( &
  1x,    a16,    i7,    i7,    i7,     i7,     e12.4,      e12.4  )
@@ -2263,13 +2291,13 @@ endif
 '         are placed at the end, from',                         /,&
 '         NSCAUS+1 to NSCAPP+NSCAUS=NSCAL.',                    /,&
                                                                 /,&
-'       ISCSTH = -1,0, 1 ou 2   (T (C), Passive, T (K) or H  )',/,&
-'       IVISLS = 0 ou >0        (Viscosity: constant or not  )',/,&
+'       ISCACP = 0 or 1     2   (use Cp or not               )',/,&
+'       IVISLS = 0 or >0        (Viscosity: constant or not  )',/,&
 '       VISLS0 = >0             (Reference viscosity         )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
-'       ISCAVR = 0 ou >0        (Associat. scalar if variance)',/,&
+'       ISCAVR = 0 or >0        (Associat. scalar if variance)',/,&
 '       RVARFL = >0             (Rf, cf variance dissipation )',/,&
-'       ICLVFL = 0, 1 ou 2      (Variance clipping mode      )',/,&
+'       ICLVFL = 0, 1 or 2      (Variance clipping mode      )',/,&
 '       SCAMIN =                (Min authorized value        )',/,&
 '       SCAMAX =                (Max authorized value        )',/,&
 '        For variances, SCAMIN is ignored and SCAMAX is used',  /,&

@@ -157,9 +157,9 @@ mbrom = 0
 if (iihmpr.eq.1) then
   call uiphyv &
   !===========
-( ncel, ncelet, nscaus,                                         &
+( ncel, ncelet, nscaus, itherm,                                 &
   iviscl, icp,    ivisls, irovar, ivivar,                       &
-  isca, iscalt, iscsth, iscavr, ipproc, iviscv, itempk,         &
+  isca, iscalt, iscavr, ipproc, iviscv, itempk,                 &
   p0  , t0    , ro0   , cp0   , viscl0, visls0, viscv0,         &
   rtp, propce)
 endif
@@ -190,7 +190,7 @@ if (idilat.eq.3) then
 
   ! Works only with enthalpy
   if (iscalt.le.0) call csexit(1)
-  if (iscsth(iscalt).ne.2) call csexit(1)
+  if (itherm.ne.2) call csexit(1)
   ivarh  = isca(iscalt)
   call field_get_val_s(icrom, crom)
 
@@ -723,8 +723,9 @@ if (icp.gt.0) then
   chaine = nomvar(ipppro(ipproc(icp   )))
   if (varmn(ii).lt.0.d0) then
     iisct = 0
+    if (itherm.ne.0) iisct = 1
     do iscal = 1, nscal
-      if (iscsth(iscal).ne.0) then
+      if (iscacp(iscal).ne.0) then
         iisct = 1
       endif
     enddo

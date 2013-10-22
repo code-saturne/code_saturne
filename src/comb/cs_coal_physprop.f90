@@ -288,7 +288,7 @@ do icla = 1, nclacp
   enddo
 enddo
 do iel = 1, ncel
-  enth1(iel) = (rtp(iel,isca(ihm))-enth1(iel))/ ( 1.d0-x2(iel) )
+  enth1(iel) = (rtp(iel,isca(iscalt))-enth1(iel))/ ( 1.d0-x2(iel) )
 enddo
 
 call cs_coal_physprop1 &

@@ -170,7 +170,8 @@ class OutputVolumicVariablesModel(Model):
         """
         Return node of thermal scalar (idem ds NumericalParamEquationModel)
         """
-        node = self.case.xmlGetNode('additional_scalars')
+        node_models = self.case.xmlGetNode('thermophysical_models')
+        node = node_models.xmlGetNode('thermal_scalar')
         return node.xmlGetNodeList('scalar', type='thermal')
 
 

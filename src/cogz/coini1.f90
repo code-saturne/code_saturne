@@ -76,24 +76,6 @@ integer          isc
 double precision wmolme
 
 !===============================================================================
-!===============================================================================
-! 0. VERIFICATION ISCALT, ISCSTH
-!===============================================================================
-!     L'utilisateur ne doit pas y avoir touche.
-
-if(iscalt.ne.-1) then
-  write(nfecra,1000)iscalt
-  call csexit (1)
-  !==========
-endif
-do ii = 1, nscapp
-  if(iscsth(iscapp(ii)).ne.-10) then
-    write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))
-    call csexit (1)
-    !==========
-  endif
-enddo
-!===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
@@ -127,8 +109,8 @@ if ( ippmod(icod3p).ge.0 ) then
 
 ! ---- Enthalpie
   if ( ippmod(icod3p).eq.1 ) then
-    scamin(ihm) = -grand
-    scamax(ihm) = +grand
+    scamin(iscalt) = -grand
+    scamax(iscalt) = +grand
   endif
 
 endif
@@ -152,8 +134,8 @@ if ( ippmod(icoebu).ge.0 ) then
 ! ---- Enthalpie
   if ( ippmod(icoebu).eq.1 .or.                                   &
        ippmod(icoebu).eq.3      ) then
-    scamin(ihm) = -grand
-    scamax(ihm) = +grand
+    scamin(iscalt) = -grand
+    scamax(iscalt) = +grand
   endif
 
 endif
@@ -189,7 +171,7 @@ do isc = 1, nscapp
 !                                 -1 temperature en C
 !                                  2 enthalpie)
 !      La distinction -1/1 sert pour le rayonnement
-  iscsth(iscapp(isc)) = 0
+  iscacp(iscapp(isc)) = 0
 
 enddo
 
@@ -207,8 +189,9 @@ if ( ippmod(icod3p).eq.1 .or.                                     &
      ippmod(icolwc).eq.3 .or.                                     &
      ippmod(icolwc).eq.5     ) then
 
-  iscalt = ihm
-  iscsth(ihm) = 2
+  itherm = 2
+
+  iscacp(iscalt) = 0
 
 endif
 
@@ -399,7 +382,7 @@ endif
       ippmod(icolwc).eq.1 .or.                                    &
       ippmod(icolwc).eq.3 .or.                                    &
       ippmod(icolwc).eq.5   ) then
-   ipp = ipprtp(isca(ihm))
+   ipp = ipprtp(isca(iscalt))
    nomvar(ipp)  = 'Enthalpy'
    ichrvr(ipp)  = 1
    ilisvr(ipp)  = 1
@@ -672,47 +655,6 @@ else if( ippmod(icolwc).ge.0 ) then
 
 endif
 
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (COMBUSTION) DEMANDEE             ',/,&
-'@                                                            ',/,&
-'@  La valeur de ISCALT est renseignee automatiquement.       ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas la renseigner, or              ',/,&
-'@    elle a ete affectee comme suit :                        ',/,&
-'@    ISCALT = ',I10                                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (COMBUSTION) DEMANDEE             ',/,&
-'@                                                            ',/,&
-'@  Les valeurs de ISCSTH sont renseignees automatiquement.   ',/,&
-'@                                                            ',/,&
-'@  L''utilisateur ne doit pas les renseigner, or             ',/,&
-'@    pour le scalaire ',I10   ,' correspondant au scalaire   ',/,&
-'@    physique particuliere ',I10   ,' on a                   ',/,&
-'@    ISCSTH(',I10   ,') = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9998 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&

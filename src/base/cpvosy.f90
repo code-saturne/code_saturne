@@ -114,7 +114,7 @@ do inbcou = 1, nbccou
     endif
 
     if (iscalt.eq.isvtf) then
-      if (abs(iscsth(iscalt)).ne.1) then
+      if (iscacp(iscalt).ne.1) then
         write(nfecra, 1000)
         call csexit(1)
       endif

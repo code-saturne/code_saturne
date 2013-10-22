@@ -618,20 +618,19 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
       if ( ippmod(iccoal).ge.0 .or.                               &
            ippmod(icpl3c).ge.0 .or.                               &
            ippmod(icfuel).ge.0      ) then
-         ettp(ip,jtf) = propce(iel,ipproc(itemp1)) -tkelvi
+        ettp(ip,jtf) = propce(iel,ipproc(itemp1)) -tkelvi
       else if ( ippmod(icod3p).ge.0 .or.                          &
                 ippmod(icoebu).ge.0 .or.                          &
                 ippmod(ielarc).ge.0 .or.                          &
                 ippmod(ieljou).ge.0      ) then
-         ettp(ip,jtf) = propce(iel,ipproc(itemp)) -tkelvi
-      else if ( iscsth(iscalt).eq.1 ) then
-         ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
-      else if ( iscsth(iscalt).eq.-1 ) then
-         ettp(ip,jtf) = rtpa(iel,isca(iscalt))
-      else if ( iscsth(iscalt).eq.2 ) then
-         mode = 1
-         call usthht(mode, rtpa(iel,isca(iscalt)),         &
-                     ettp(ip,jtf))
+        ettp(ip,jtf) = propce(iel,ipproc(itemp)) -tkelvi
+      else if (itherm.eq.1 .and. itpscl.eq.2) then
+        ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
+      else if (itherm.eq.1 .and. itpscl.eq.1) then
+        ettp(ip,jtf) = rtpa(iel,isca(iscalt))
+      else if (itherm.eq.2) then
+        mode = 1
+        call usthht(mode, rtpa(iel,isca(iscalt)), ettp(ip,jtf))
       endif
     enddo
 

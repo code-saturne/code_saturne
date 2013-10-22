@@ -73,13 +73,11 @@ double precision, allocatable, dimension(:) :: nebdia, nn
 
 !   Variables specific to the atmospheric physics:
 !   ippmod(iatmos) = 1 (Dry atmosphere):
-!                    itempp---> potential temperature
 !   ippmod(iatmos) = 2 (Humid atmosphere):
-!                    itempl---> liquid potential temperature
 !                    itotwt---> total water content
 !                    intdrp---> total number of droplets
 
-integer, save :: itempp, itempl, itotwt, intdrp
+integer, save :: itotwt, intdrp
 
 ! 1.3 Pointers for the positions of the properties for the specific phys.
 !      (ipproc in propce)

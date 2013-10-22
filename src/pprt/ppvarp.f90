@@ -18,9 +18,18 @@
 ! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-!-------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 
-subroutine ppvarp
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[out]    nmodpp        number of activated paricle physic models
+!______________________________________________________________________________
+
+subroutine ppvarp &
+( nmodpp )
 !================
 
 
@@ -63,15 +72,26 @@ use cpincl
 use ppincl
 use elincl
 use atincl
+use ihmpre
 
 !===============================================================================
 
 implicit none
 
+! Arguments
+
+integer       nmodpp
 
 !===============================================================================
 
 ! ---> Physique particuliere : Combustion Gaz
+
+if (itherm.ne.0 .and. nmodpp.eq.0) then
+  if (iihmpr.eq.1) then
+    call uithsc(iscalt)
+  endif
+
+endif
 
 if (  ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                &
                           .or. ippmod(icolwc).ge.0 ) then

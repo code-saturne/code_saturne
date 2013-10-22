@@ -39,10 +39,9 @@ subroutine ppini1
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -66,7 +65,31 @@ use ppincl
 
 implicit none
 
+! Local variables
+
+integer :: ii
+
 !===============================================================================
+
+!===============================================================================
+! 0. VERIFICATION ISCACP
+!===============================================================================
+
+! L'utilisateur ne doit pas y avoir touche.
+
+do ii = 1, nscapp
+  if(iscacp(iscapp(ii)).ne.-10) then
+    write(nfecra,1001) ii, iscapp(ii), iscapp(ii), iscacp(iscapp(ii))
+    call csexit (1)
+    !==========
+  endif
+enddo
+
+if (itherm .eq. 1) then
+  iscacp(iscalt) = 1
+else if (itherm .eq. 2) then
+  iscacp(iscalt) = 2
+endif
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -133,6 +156,60 @@ if ( ippmod(iaeros).ge.0) then
   call ctini1
   !==========
 endif
+
+!--------
+! FORMATS
+!--------
+
+#if defined(_CS_LANG_FR)
+
+ 1001 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@'                                                            ,/,&
+'@  Les valeurs de ISCACP pour les scalaires de modele'        ,/,&
+'@  (i.e. non_utilisateur) sont renseignees automatiquement.'  ,/,&
+'@'                                                            ,/,&
+'@  L''utilisateur ne doit pas les renseigner, or'             ,/,&
+'@    pour le scalaire ', i10,' correspondant au scalaire'     ,/,&
+'@    de modele ', i10,' on a'                                 ,/,&
+'@    ISCACP(', i10,') = ', i10                                ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne sera pas execute.'                            ,/,&
+'@'                                                            ,/,&
+'@  Verifier les parametres.'                                  ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#else
+
+ 1001 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP WHILE READING INPUT DATA'                  ,/,&
+'@    ======='                                                 ,/,&
+'@'                                                            ,/,&
+'@  The values of ISCACP are set automatically for model'      ,/,&
+'@  (i.e. non-user) scalars.'                                  ,/,&
+'@'                                                            ,/,&
+'@  The user should not set a value for them, however'         ,/,&
+'@    for the scalar ', i10,' corresponding to the model'      ,/,&
+'@    scalar ', i10,' we have'                                 ,/,&
+'@    iscacp(', i10,') = ', i10                                ,/,&
+'@'                                                            ,/,&
+'@  The calculation could NOT run.'                            ,/,&
+'@'                                                            ,/,&
+'@  Check parameters.'                                         ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#endif
 
 return
 end subroutine
