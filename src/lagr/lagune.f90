@@ -27,8 +27,7 @@ subroutine lagune &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   dt     , rtpa   , rtp    , propce ,                            &
-   coefa  , coefb  )
+   dt     , rtpa   , rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -62,8 +61,6 @@ subroutine lagune &
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -105,7 +102,6 @@ integer          ntersl , nvlsta , nvisbr
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
 
 ! Local variables
 
@@ -132,7 +128,8 @@ double precision, allocatable, dimension(:) :: tsfext
 double precision, allocatable, dimension(:) :: cpgd1, cpgd2, cpght
 double precision, allocatable, dimension(:,:) :: brgaus
 double precision, allocatable, dimension(:) :: terbru
-double precision, allocatable, dimension(:,:) :: gradpr, gradvf
+double precision, allocatable, dimension(:,:) :: gradpr
+double precision, allocatable, dimension(:,:,:) :: gradvf
 double precision, allocatable, dimension(:) :: croule
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:,:) :: auxl, auxl2
@@ -172,7 +169,7 @@ allocate(tsuf(nbpmax,3))
 allocate(tsup(nbpmax,3))
 allocate(bx(nbpmax,3,2))
 allocate(tsvar(nbpmax,nvp1))
-allocate(gradpr(ncelet,3))
+allocate(gradpr(3,ncelet))
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! Allocate other arrays depending on user options
@@ -188,7 +185,7 @@ if (iilagr.eq.2 .and. iphyla.eq.2 .and. ltsthe.eq.1) then
   allocate(cpght(nbpmax))
 endif
 if (modcpl.gt.0) then
-  allocate(gradvf(ncelet,9))
+  allocate(gradvf(3,3,ncelet))
 endif
 if (iroule.eq.1) then
   allocate(croule(ncelet))
@@ -216,9 +213,6 @@ if ((idepst.eq.1).and.(ipass.eq.1)) then
      vislen(ifac) = grand
    enddo
 endif
-
-
-
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -464,14 +458,14 @@ enddo
 ! Au premier pas de temps on calcul les gradient avec RTP et
 ! non RTPA car RTPA = initialisation (gradients nuls)
 
-if ( ntcabs.eq.1 ) then
+if (ntcabs.eq.1) then
 
-  call laggra(rtp, coefa, coefb, gradpr, gradvf)
+  call laggra(0, gradpr, gradvf)
   !==========
 
 else
 
-  call laggra(rtpa, coefa, coefb, gradpr, gradvf)
+  call laggra(1, gradpr, gradvf)
   !==========
 
 endif
@@ -532,7 +526,7 @@ endif
 
 if (nor.eq.2 .and. iilagr.ne.3) then
 
-  call laggra(rtp, coefa, coefb, gradpr, gradvf)
+  call laggra(0, gradpr, gradvf)
   !==========
 
 endif
@@ -575,7 +569,6 @@ endif
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     POSITION, VITESSE FLUIDE, VITESSE PARTICULE
 
-
 call lagesp                                                       &
 !==========
    ( nvar   , nscal  ,                                            &
@@ -593,7 +586,7 @@ call lagesp                                                       &
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES
 
-if ( iphyla.eq.1 .or. iphyla.eq.2 ) then
+if (iphyla.eq.1 .or. iphyla.eq.2) then
 
   if ( nor.eq.1 ) then
     call lagphy                                                   &

@@ -72,8 +72,9 @@ implicit none
 
 integer          imvisf
 
-double precision, target :: w1(6,ncelet)
-double precision viscf(3,3,nfac), viscb(nfabor)
+double precision, dimension(6, ncelet), target :: w1
+double precision, dimension(3,3,nfac)          :: viscf
+double precision, dimension(nfabor)            :: viscb
 
 ! Local variables
 

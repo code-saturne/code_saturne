@@ -58,7 +58,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     grdvit        tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
 !> \param[in]     produc        tableau de travail pour production
@@ -82,7 +81,7 @@ subroutine resrij &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , produc , gradro ,                            &
+   produc , gradro ,                                              &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
@@ -95,7 +94,6 @@ subroutine resrij &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -124,7 +122,6 @@ integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision produc(6,ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
@@ -138,7 +135,6 @@ double precision smbr(ncelet), rovsdt(ncelet)
 integer          iel
 integer          ii    , jj    , kk    , iiun
 integer          ipcvis, iflmas, iflmab
-integer          iclvar, iclvaf
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -166,7 +162,8 @@ double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer ::  crom, cromo
+double precision, dimension(:), pointer :: crom, cromo
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -193,8 +190,10 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-iclvar = iclrtp(ivar,icoef)
-iclvaf = iclrtp(ivar,icoeff)
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 deltij = 1.0d0
 if(isou.gt.3) then
@@ -643,8 +642,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &

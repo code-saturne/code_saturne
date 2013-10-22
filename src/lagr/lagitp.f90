@@ -177,7 +177,7 @@ endif
 
 call lagitg                                                       &
 !==========
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   ,                                     &
    jtp    ,                                                       &
    itepa(1,jisor)  , ibord  ,                                     &
    ettp   , ettpa  , auxl1  , auxl2  , tsvar  )

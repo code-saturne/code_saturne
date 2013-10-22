@@ -1525,7 +1525,6 @@ _where_are_you(cs_lnum_t            face_num,
   cs_lnum_t  colocalization = -1;
   cs_lnum_t  error = 0;
   cs_lnum_t  indian = -999; /* initialize to an incoherent value */
-  cs_lnum_t  perturbation = 0; /* No perturbation algorithm used */
 
   assert(sizeof(cs_real_t) == 8*sizeof(char));
 
@@ -1604,8 +1603,7 @@ _where_are_you(cs_lnum_t            face_num,
   face_orient = cs_lagrang_tetra_orientation(prev_location,
                                              face_cog,
                                              vtx1,
-                                             vtx2,
-                                             perturbation);
+                                             vtx2);
 
   /* Special treatment in case of periodicity  */
 
@@ -1617,8 +1615,7 @@ _where_are_you(cs_lnum_t            face_num,
     face_orient = cs_lagrang_tetra_orientation(cell_cen,
                                                face_cog,
                                                vtx1,
-                                               vtx2,
-                                               perturbation);
+                                               vtx2);
 
   if (face_orient == 0) { /* points are still coplanar */
 #if 1 && defined(DEBUG) && !defined(NDEBUG)
@@ -1640,8 +1637,7 @@ _where_are_you(cs_lnum_t            face_num,
   first_orient = cs_lagrang_tetra_orientation(prev_location,
                                               next_location,
                                               face_cog,
-                                              vtx1,
-                                              perturbation);
+                                              vtx1);
 
   first_orient *= face_orient;
 
@@ -1673,8 +1669,7 @@ _where_are_you(cs_lnum_t            face_num,
     orient = cs_lagrang_tetra_orientation(prev_location,
                                           next_location,
                                           face_cog,
-                                          vtx1,
-                                          perturbation);
+                                          vtx1);
 
     orient *= face_orient;
 
@@ -1711,8 +1706,7 @@ _where_are_you(cs_lnum_t            face_num,
       orient_test = cs_lagrang_tetra_orientation(prev_location,
                                                  next_location,
                                                  vtx2,
-                                                 vtx1,
-                                                 perturbation);
+                                                 vtx1);
 
       orient_test *= face_orient;
       orient_count += orient_test;
@@ -1777,8 +1771,6 @@ _where_are_you(cs_lnum_t            face_num,
 
   assert(orient_count == 2);
 
-  perturbation = 1;
-
   vtx_id1 = face_connect[ijkl_ref - 1] - 1;
   vtx_id2 = face_connect[ijkl_ref] - 1;
 
@@ -1790,8 +1782,7 @@ _where_are_you(cs_lnum_t            face_num,
   orient = cs_lagrang_tetra_orientation(next_location,
                                         face_cog,
                                         vtx1,
-                                        vtx2,
-                                        perturbation);
+                                        vtx2);
 
   if (orient == 0) { /* points are coplanar */
 #if 1 && defined(DEBUG) && !defined(NDEBUG)

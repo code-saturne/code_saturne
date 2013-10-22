@@ -82,7 +82,7 @@ subroutine lages2 &
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! auxl             ! tr ! --- ! tableau auxiliaire                             !
-! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
+! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
@@ -130,7 +130,7 @@ double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
 double precision tsfext(nbpmax)
 double precision vagaus(nbpmax,*) , auxl(nbpmax,7)
-double precision gradpr(ncelet,3)
+double precision gradpr(3,ncelet)
 double precision romp(nbpmax)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision fextla(nbpmax,3)
@@ -196,7 +196,7 @@ do id = 1,3
       rom = cromf(iel)
 
       auxl(ip,id) =                                               &
-        ( rom *gradpr(iel,id) /romp(ip)                           &
+        ( rom *gradpr(id,iel) /romp(ip)                           &
          +grav(id)+fextla(ip,id)       ) * taup(ip)
 
       if (nor.eq.1) then

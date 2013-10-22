@@ -297,8 +297,7 @@ contains
 
     ! Local variables
 
-    integer ifinra
-    integer iel, ii, iprop, ivar
+    integer iel, iprop, ivar
 
     double precision, allocatable, dimension(:) :: dt0
     double precision, allocatable, dimension(:,:) :: rtp0, rtpa0, proce0

@@ -66,7 +66,7 @@ subroutine lagesd &
 ! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
-! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
+! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! tempf            !  r ! <-- ! temperature of the fluid (K)                   !
 ! romf             !  r ! <-- ! density of the fluid                           !
@@ -115,7 +115,7 @@ double precision propce(ncelet,*)
 double precision taup(nbpmax)
 double precision piil(nbpmax,3)
 double precision vagaus(nbpmax,*)
-double precision gradpr(ncelet,3)
+double precision gradpr(3,ncelet)
 double precision romp(nbpmax)
 double precision ustar
 
@@ -271,7 +271,7 @@ call  lagprj                                                        &
 !===========
     ( isens                 ,                                       &
       rtpa(iel,iu)   , rtpa(iel,iv)   , rtpa(iel,iw)   ,            &
-      vflui(1)       , vflui1(2)      , vflui1(3)       ,            &
+      vflui(1)       , vflui1(2)      , vflui1(3)       ,           &
       dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
       dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
       dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
@@ -279,12 +279,12 @@ call  lagprj                                                        &
 ! 2.5 - pressure gradient
 
 call  lagprj                                                        &
-     !===========
-     ( isens          ,                                              &
-     gradpr(iel,1)  , gradpr(iel,2)  , gradpr(iel,3)  ,            &
-     gdpr(1)        , gdpr(2)        , gdpr(3)        ,            &
-     dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
-     dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
+!===========
+   ( isens          ,                                               &
+     gradpr(1,iel)  , gradpr(2,iel)  , gradpr(3,iel)  ,             &
+     gdpr(1)        , gdpr(2)        , gdpr(3)        ,             &
+     dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,             &
+     dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,             &
      dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13) )
 
 ! 2.6 - "piil" term

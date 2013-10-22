@@ -438,7 +438,7 @@ void CS_PROCF (ecrctw, ECRCTW)
  const cs_int_t   *const lngnom
 )
 {
-  cs_int_t  nbvent, ierror;
+  cs_int_t  nbvent;
   cs_int_t  ict;
 
   cs_restart_t         *suite;
@@ -451,8 +451,6 @@ void CS_PROCF (ecrctw, ECRCTW)
   cs_gnum_t       *g_elt_num     = NULL;
 
   cs_lnum_t n_g_elements, n_elements;
-
-  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
 
@@ -2304,11 +2302,11 @@ void cs_ctwr_bilanct
   const cs_real_t  *b_face_normal = mesh_quantities->b_face_normal;
   cs_int_t         icel_1, icel_2, ict, idim, i, j, ieau_Sup, ieau_inf, length;
   cs_int_t         icel = -1, ifac = -1;
-  cs_real_t   cpe, cpv, cpa, hv0;
+  cs_real_t        cpv, cpa, hv0;
   const cs_int_t   *i_face_cells = mesh->i_face_cells;
   const cs_int_t   *b_face_cells = mesh->b_face_cells;
   const cs_real_t  *coo_cen  = mesh_quantities->cell_cen;
-  cs_real_t        xsata,debit,hair,n_sortant[3],vitair[3],aux,
+  cs_real_t        debit,hair,n_sortant[3],vitair[3],aux,
                    surf,surf_e,surf_s;
 
   cs_lnum_t  *face_sup;      /* liste des faces  superieures de la ct */
@@ -2327,7 +2325,6 @@ void cs_ctwr_bilanct
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
     cpa    = ct_prop->cpa;
     cpv    = ct_prop->cpv;
-    cpe    = ct_prop->cpe;
     hv0    = ct_prop->hv0;
 
     nbr_fbr_air[0][0] = ct->nnpsct;
@@ -2455,7 +2452,6 @@ void cs_ctwr_bilanct
         debit = CS_ABS(flux_masse_fac[ifac]);
         surf  = CS_LOC_MODULE((i_face_normal + 3*ifac));
       }
-      xsata = cs_ctwr_xsath(temp[icel]);
       hair = (cpa+xa[icel]*cpv)*temp[icel]+xa[icel]*hv0;
       vitair[0] = vitx[icel];
       vitair[1] = vity[icel];

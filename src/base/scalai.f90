@@ -39,14 +39,11 @@
 !> \param[in,out] rtpa          calculated variables at cell centers
 !>                              (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     coefa         boundary conditions
-!> \param[in]     coefb         boundary conditions
 !______________________________________________________________________________
 
 subroutine scalai &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! Module files
@@ -58,6 +55,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
+use lagdim
 use pointe
 use parall
 use ppppar
@@ -78,10 +76,8 @@ implicit none
 
 integer          nvar   , nscal
 
-
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
@@ -132,8 +128,8 @@ if (ippmod(iphpar).ge.1) then
 
 !     On pourra eviter les bugs en initialisant aussi RTPA (sur NCELET)
 !     (d'ailleurs, on s'en sert ensuite dans le cpflux etc)
-  if(ipass.eq.1.and.isuite.eq.0) then
-    if(nscapp.gt.0) then
+  if (ipass.eq.1.and.isuite.eq.0) then
+    if (nscapp.gt.0) then
       do ii = 1, nscapp
         iscal = iscapp(ii)
         ivar  = isca(iscal)
@@ -188,7 +184,7 @@ if (ippmod(iphpar).ge.1) then
 
 ! ---> Pas de temps (avec facteur multiplicatif eventuel)
 
-    if(cdtvar(ivar).ne.1.d0) then
+    if (cdtvar(ivar).ne.1.d0) then
       do iel = 1, ncel
         dtr(iel) = dt(iel)*cdtvar(ivar)
       enddo
@@ -218,7 +214,7 @@ if (ippmod(iphpar).ge.1) then
 ! ---> Temperature     : n'est pas une variable transportee
 ! ---> Enthalpie       : a resoudre
 
-      if(ispecf.eq.2) then
+      if (ispecf.eq.2) then
 
         call cfener &
         !==========
@@ -227,7 +223,7 @@ if (ippmod(iphpar).ge.1) then
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 
@@ -240,7 +236,7 @@ if (ippmod(iphpar).ge.1) then
 !     Pour les autres physiques, on resout les scalaires dans l'ordre
 !       (pas de tests a faire)
 
-    if(ispecf.eq.0) then
+    if (ispecf.eq.0) then
 
 ! ---> Variances et scalaires
 
@@ -266,9 +262,9 @@ if (ippmod(iphpar).ge.1) then
 !         fin si
 
       iisc = iscal
-      if(iscavr(iisc).eq.0) then
+      if (iscavr(iisc).eq.0) then
         itspdv = 0
-      elseif(iscavr(iisc).gt.0.and.iscavr(iisc).le.nscal) then
+      elseif (iscavr(iisc).gt.0.and.iscavr(iisc).le.nscal) then
         itspdv = 1
       else
         write(nfecra,9000)iisc,iisc,nscal,iscavr(iisc)
@@ -285,7 +281,7 @@ if (ippmod(iphpar).ge.1) then
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dtr    , rtp    , rtpa   , propce , tslagr ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 
@@ -310,25 +306,25 @@ if (ippmod(iphpar).ge.1) then
 !            On peut y aller apres PotR si on est en arc
 !                                         ou en Joule sans PotI
 
-        if(ippmod(ielarc).ge.1.or.ippmod(ieljou).eq.1             &
+        if (ippmod(ielarc).ge.1.or.ippmod(ieljou).eq.1             &
              .or.ippmod(ieljou).eq.3) then
-          if(iscal.eq.ipotr) then
+          if (iscal.eq.ipotr) then
             icalc = 1
           endif
         endif
 !     On y va apres PotI si on est en Joule avec PotI
-        if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-          if(iscal.eq.ipoti) then
+        if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+          if (iscal.eq.ipoti) then
             icalc = 1
           endif
         endif
 
-        if(icalc.eq.1) then
+        if (icalc.eq.1) then
 
 !     Calcul de j, E et j.E
           iappel = 1
 
-          call elflux(iappel, rtp, propce, coefa, coefb)
+          call elflux(iappel, propce)
           !==========
 
 
@@ -365,7 +361,7 @@ if (ippmod(ielarc).ge.1) then
 !       apres la determination et le recalage de j
   iappel = 2
 
-  call elflux(iappel, rtp, propce, coefa, coefb)
+  call elflux(iappel, propce)
   !==========
 
 endif
@@ -378,15 +374,14 @@ endif
 !       physique particuliere le demande.
 !===============================================================================
 
-if(nscaus.gt.0) then
+if (nscaus.gt.0) then
 
 ! Atmospheric chemistry
 
   if (ichemistry.ge.1) then
     ! Computation of kinetics rates
-    call kinrates                                                    &
+    call kinrates(rtp, propce)
     !==========
-    (rtp    , propce)
   endif
 
 ! ---> Boucle sur les scalaires utilisateur.
@@ -398,7 +393,7 @@ if(nscaus.gt.0) then
 
 ! ---> Pas de temps (avec facteur multiplicatif eventuel)
 
-    if(cdtvar(ivar).ne.1.d0) then
+    if (cdtvar(ivar).ne.1.d0) then
       do iel = 1, ncel
         dtr(iel) = dt(iel)*cdtvar(ivar)
       enddo
@@ -433,9 +428,9 @@ if(nscaus.gt.0) then
 !         fin si
 
     iisc = iscal
-    if(iscavr(iisc).eq.0) then
+    if (iscavr(iisc).eq.0) then
       itspdv = 0
-    elseif(iscavr(iisc).gt.0.and.iscavr(iisc).le.nscal) then
+    elseif (iscavr(iisc).gt.0.and.iscavr(iisc).le.nscal) then
       itspdv = 1
     else
       write(nfecra,9000)iisc,iisc,nscal,iscavr(iisc)
@@ -452,7 +447,7 @@ if(nscaus.gt.0) then
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dtr    , rtp    , rtpa   , propce , tslagr ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 

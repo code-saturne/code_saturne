@@ -81,6 +81,7 @@ use radiat
 use cplsat
 use mesh
 use field
+use field_operator
 use post
 use turbomachinery
 

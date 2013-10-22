@@ -49,8 +49,6 @@
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term of the lagangian module
-!> \param[in]     coefa, coefb  boundary conditions
-!>
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
 !>                               mass source
@@ -61,7 +59,7 @@ subroutine turbkw &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   tslagr , coefa  , coefb  , ckupdc , smacel )
+   tslagr , ckupdc , smacel )
 
 !===============================================================================
 
@@ -70,7 +68,6 @@ subroutine turbkw &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstnum
@@ -81,6 +78,7 @@ use pointe, only: s2kw, divukw, ifapat, dispar
 use parall
 use mesh
 use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -98,18 +96,15 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
 character*80     chaine
-integer          iel   , ifac  , inc   , iccocg, ivar
+integer          iel   , ifac  , inc   , iprev,  iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
 integer          nswrgp, imligp
-integer          iclik , iclomg, iclikf, iclomf
-integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -118,7 +113,6 @@ integer          iwarnp, ipp
 integer          iptsta
 integer          ipcvto, ipcvlo
 integer          imucpp, idftnp, iswdyp
-integer          ipcliu
 
 integer          icvflb
 integer          ivoid(1)
@@ -152,6 +146,8 @@ double precision, allocatable, dimension(:) :: rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: bromo, cromo
+double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
+double precision, dimension(:), pointer :: coefa_o, coefb_o, coefaf_o, coefbf_o
 
 !===============================================================================
 
@@ -172,11 +168,6 @@ allocate(prodk(ncelet), prodw(ncelet))
 
 epz2 = epzero**2
 
-iclik  = iclrtp(ik ,icoef)
-iclomg = iclrtp(iomg,icoef)
-iclikf = iclrtp(ik ,icoeff)
-iclomf = iclrtp(iomg,icoeff)
-
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
 
@@ -189,6 +180,16 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ibrom, bromo)
+
+call field_get_coefa_s(ivarfl(ik), coefa_k)
+call field_get_coefb_s(ivarfl(ik), coefb_k)
+call field_get_coefaf_s(ivarfl(ik), coefaf_k)
+call field_get_coefbf_s(ivarfl(ik), coefbf_k)
+
+call field_get_coefa_s(ivarfl(iomg), coefa_o)
+call field_get_coefb_s(ivarfl(iomg), coefb_o)
+call field_get_coefaf_s(ivarfl(iomg), coefaf_o)
+call field_get_coefbf_s(ivarfl(iomg), coefbf_o)
 
 thets  = thetst
 
@@ -217,18 +218,17 @@ endif
 
 d2s3 = 2.d0/3.d0
 
-ipcliu = iclrtp(iu,icoef)
-
 !===============================================================================
 ! 2.1 Compute dk/dxj.dw/dxj
 !     stored in gdkgdw
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradk(ncelet,3), grado(ncelet,3))
+allocate(gradk(3,ncelet), grado(3,ncelet))
 
 iccocg = 1
 inc = 1
+iprev = 1
 
 nswrgp = nswrgr(ik)
 imligp = imligr(ik)
@@ -237,12 +237,9 @@ epsrgp = epsrgr(ik)
 climgp = climgr(ik)
 extrap = extrag(ik)
 
-call grdcel &
-!==========
- ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ik)   , coefa(1,iclik)  , coefb(1,iclik)  ,             &
-   gradk  )
+call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,          &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, gradk)
 
 nswrgp = nswrgr(iomg)
 imligp = imligr(iomg)
@@ -251,17 +248,14 @@ epsrgp = epsrgr(iomg)
 climgp = climgr(iomg)
 extrap = extrag(iomg)
 
-call grdcel &
-!==========
- ( iomg , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iomg)  , coefa(1,iclomg) , coefb(1,iclomg) ,            &
-   grado  )
+call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,        &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, grado)
 
 do iel = 1, ncel
-  gdkgdw(iel) = gradk(iel,1)*grado(iel,1) &
-              + gradk(iel,2)*grado(iel,2) &
-              + gradk(iel,3)*grado(iel,3)
+  gdkgdw(iel) = gradk(1,iel)*grado(1,iel) &
+              + gradk(2,iel)*grado(2,iel) &
+              + gradk(3,iel)*grado(3,iel)
 enddo
 
 ! Free memory
@@ -665,16 +659,16 @@ do ifac = 1, nfabor
   hint = (visclc+visctc/sigma)/distb(ifac)
 
   ! Translate coefa into cofaf and coefb into cofbf
-  coefa(ifac, iclikf) = -hint*coefa(ifac,iclik)
-  coefb(ifac, iclikf) = hint*(1.d0-coefb(ifac,iclik))
+  coefaf_k(ifac) = -hint*coefa_k(ifac)
+  coefbf_k(ifac) = hint*(1.d0-coefb_k(ifac))
 
   ! Omega
   sigma = xxf1*ckwsw1 + (1.d0-xxf1)*ckwsw2
   hint = (visclc+visctc/sigma)/distb(ifac)
 
   ! Translate coefa into cofaf and coefb into cofbf
-  coefa(ifac, iclomf) = -hint*coefa(ifac,iclomg)
-  coefb(ifac, iclomf) = hint*(1.d0-coefb(ifac,iclomg))
+  coefaf_o(ifac) = -hint*coefa_o(ifac)
+  coefbf_o(ifac) = hint*(1.d0-coefb_o(ifac))
 
 enddo
 
@@ -702,8 +696,6 @@ if (ikecou.eq.1) then
 
   ipp    = ipprtp(ivar)
 
-  iclvar = iclrtp(ivar,icoef )
-  iclvaf = iclrtp(ivar,icoeff)
   chaine = nomvar(ipp)
 
   if( idiff(ivar).ge. 1 ) then
@@ -759,8 +751,7 @@ if (ikecou.eq.1) then
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
@@ -778,8 +769,6 @@ if (ikecou.eq.1) then
 
   ipp    = ipprtp(ivar)
 
-  iclvar = iclrtp(ivar,icoef )
-  iclvaf = iclrtp(ivar,icoeff)
   chaine = nomvar(ipp)
 
   if( idiff(ivar).ge. 1 ) then
@@ -834,8 +823,7 @@ if (ikecou.eq.1) then
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
@@ -932,8 +920,6 @@ endif
 
 ! ---> turbulent kinetic (k) energy treatment
 ivar = ik
-iclvar = iclrtp(ivar,icoef )
-iclvaf = iclrtp(ivar,icoeff)
 
 ipp    = ipprtp(ivar)
 
@@ -1003,8 +989,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
@@ -1014,8 +999,6 @@ call codits &
 
 ! ---> Omega treatment
 ivar = iomg
-iclvar = iclrtp(ivar,icoef )
-iclvaf = iclrtp(ivar,icoeff)
 
 ipp    = ipprtp(ivar)
 
@@ -1084,8 +1067,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &

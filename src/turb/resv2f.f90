@@ -26,7 +26,7 @@ subroutine resv2f &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    prdv2f )
 
 !===============================================================================
@@ -57,8 +57,6 @@ subroutine resv2f &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -79,7 +77,6 @@ subroutine resv2f &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -89,6 +86,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -104,18 +102,14 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision prdv2f(ncelet)
 
 ! Local variables
 
-integer          init  , ifac  , iel   , inc   , iccocg
+integer          init  , ifac  , iel   , inc   , iprev , iccocg
 integer          ivar, ipp
 integer          iiun
-integer          iclvar, iclvaf
-integer          iclk  , iclphi, iclfb , iclal
-integer          iclkf , iclphf, iclfbf, iclalf
 integer          ipcvis, ipcvlo, ipcvst, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp
@@ -144,20 +138,13 @@ double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
-
-! Initializations to avoid compiler warnings
-iclalf = 0
-iclfbf = 0
-iclfb = 0
-iclal = 0
-iclvaf = 0
-iclvar = 0
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -175,24 +162,6 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
-
-! --- Gradient Boundary Conditions
-iclk = iclrtp(ik,icoef)
-iclphi = iclrtp(iphi,icoef)
-if(iturb.eq.50) then
-  iclfb = iclrtp(ifb,icoef)
-elseif(iturb.eq.51) then
-  iclal = iclrtp(ial,icoef)
-endif
-
-! --- Flux Boundary Conditions
-iclkf = iclrtp(ik,icoeff)
-iclphf = iclrtp(iphi,icoeff)
-if(iturb.eq.50) then
-  iclfbf = iclrtp(ifb,icoeff)
-elseif(iturb.eq.51) then
-  iclalf = iclrtp(ial,icoeff)
-endif
 
 if(isto2t.gt.0) then
   iptsta = ipproc(itstua)
@@ -213,48 +182,43 @@ endif
 !===============================================================================
 
 ! Allocate temporary arrays gradients calculation
-allocate(gradp(ncelet,3), gradk(ncelet,3))
+allocate(gradp(3,ncelet), gradk(3,ncelet))
 
 iccocg = 1
 inc = 1
+iprev = 1
 ivar = iphi
 
-nswrgp = nswrgr(ivar )
-imligp = imligr(ivar )
-iwarnp = iwarni(ivar )
-epsrgp = epsrgr(ivar )
-climgp = climgr(ivar )
-extrap = extrag(ivar )
+nswrgp = nswrgr(ivar)
+imligp = imligr(ivar)
+iwarnp = iwarni(ivar)
+epsrgp = epsrgr(ivar)
+climgp = climgr(ivar)
+extrap = extrag(ivar)
 
-call grdcel &
-!==========
- ( iphi , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iphi ) , coefa(1,iclphi) , coefb(1,iclphi) ,            &
-   gradp  )
+call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,      &
+                           iccocg, nswrgp, iwarnp, imligp,        &
+                           epsrgp, extrap, climgp, gradp)
 
 iccocg = 1
 inc = 1
 ivar = ik
 
-nswrgp = nswrgr(ivar )
-imligp = imligr(ivar )
-iwarnp = iwarni(ivar )
-epsrgp = epsrgr(ivar )
-climgp = climgr(ivar )
-extrap = extrag(ivar )
+nswrgp = nswrgr(ivar)
+imligp = imligr(ivar)
+iwarnp = iwarni(ivar)
+epsrgp = epsrgr(ivar)
+climgp = climgr(ivar)
+extrap = extrag(ivar)
 
-call grdcel &
-!==========
- ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra, epsrgp , climgp , extrap ,                    &
-   rtpa(1,ik)   , coefa(1,iclk) , coefb(1,iclk) ,                 &
-   gradk  )
+call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,        &
+                           iccocg, nswrgp, iwarnp, imligp,        &
+                           epsrgp, extrap, climgp, gradk)
 
 do iel = 1, ncel
-  w1(iel) = gradp(iel,1)*gradk(iel,1) &
-          + gradp(iel,2)*gradk(iel,2) &
-          + gradp(iel,3)*gradk(iel,3)
+  w1(iel) = gradp(1,iel)*gradk(1,iel) &
+          + gradp(2,iel)*gradk(2,iel) &
+          + gradp(3,iel)*gradk(3,iel)
 enddo
 
 ! Free memory
@@ -266,12 +230,8 @@ deallocate(gradp, gradk)
 
 if(iturb.eq.50) then
   ivar = ifb
-  iclvar = iclfb
-  iclvaf = iclfbf
 elseif(iturb.eq.51) then
   ivar = ial
-  iclvar = iclal
-  iclvaf = iclalf
 endif
 ipp    = ipprtp(ivar)
 
@@ -366,6 +326,12 @@ call viscfa                                                       &
    viscf  , viscb  )
 
 ! Translate coefa into cofaf and coefb into cofbf
+
+call field_get_coefa_s(ivarfl(iphi), coefap)
+call field_get_coefb_s(ivarfl(iphi), coefbp)
+call field_get_coefaf_s(ivarfl(iphi), cofafp)
+call field_get_coefbf_s(ivarfl(iphi), cofbfp)
+
 do ifac = 1, nfabor
 
   iel = ifabor(ifac)
@@ -373,8 +339,8 @@ do ifac = 1, nfabor
   hint = w3(iel)/distb(ifac)
 
   ! Translate coefa into cofaf and coefb into cofbf
-  coefa(ifac, iclphf) = -hint*coefa(ifac,iclphi)
-  coefb(ifac, iclphf) = hint*(1.d0-coefb(ifac,iclphi))
+  cofafp(ifac) = -hint*coefap(ifac)
+  cofbfp(ifac) = hint*(1.d0-coefbp(ifac))
 
 enddo
 
@@ -397,12 +363,10 @@ call itrgrp &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
    rtpa(1,iphi)    ,                                              &
-   coefa(1,iclphi) , coefb(1,iclphi) ,                            &
-   coefa(1,iclphf) , coefb(1,iclphf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    viscf  , viscb  ,                                              &
    w3     , w3     , w3     ,                                     &
    w2     )
-!        --
 
 !      On stocke T dans W3 et L^2 dans W4
 !      Dans le cas de l'ordre 2 en temps, T est calcule en n
@@ -484,11 +448,9 @@ do iel = 1, ncel
 enddo
 
 
-
 !===============================================================================
 ! 3.3 RESOLUTION EFFECTIVE DE L'EQUATION DE F_BARRE/ALPHA
 !===============================================================================
-
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
@@ -519,6 +481,11 @@ relaxp = relaxv(ivar)
 ! all boundary convective flux with upwind
 icvflb = 0
 
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
 call codits &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -528,8 +495,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
@@ -542,9 +508,7 @@ call codits &
 !===============================================================================
 
 ivar = iphi
-iclvar = iclphi
-iclvaf = iclphf
-ipp    = ipprtp(ivar)
+ipp  = ipprtp(ivar)
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1100) nomvar(ipp)
@@ -748,6 +712,11 @@ enddo
 !  -> on rajoute artificiellement de la diffusion (sachant que comme k=0 a
 !  la paroi, on se moque de la valeur de phi).
 
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
 if (idiff(ivar).ge.1) then
   do iel = 1, ncel
     if(iturb.eq.50) then
@@ -771,8 +740,8 @@ if (idiff(ivar).ge.1) then
     hint = w2(iel)/distb(ifac)
 
     ! Translate coefa into cofaf and coefb into cofbf
-    coefa(ifac, iclphf) = -hint*coefa(ifac,iclphi)
-    coefb(ifac, iclphf) = hint*(1.d0-coefb(ifac,iclphi))
+    cofafp(ifac) = -hint*coefap(ifac)
+    cofbfp(ifac) = hint*(1.d0-coefbp(ifac))
 
   enddo
 
@@ -785,8 +754,8 @@ else
     viscb(ifac) = 0.d0
 
     ! Translate coefa into cofaf and coefb into cofbf
-    coefa(ifac, iclphf) = 0.d0
-    coefb(ifac, iclphf) = 0.d0
+    cofafp(ifac) = 0.d0
+    cofbfp(ifac) = 0.d0
   enddo
 
 endif
@@ -831,6 +800,11 @@ relaxp = relaxv(ivar)
 ! all boundary convective flux with upwind
 icvflb = 0
 
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
 call codits &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -840,8 +814,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &

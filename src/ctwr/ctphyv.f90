@@ -128,7 +128,6 @@ double precision propce(ncelet,*)
 integer          iel
 integer          ipccp
 integer          ivart
-integer          iclvar
 
 double precision rho   , r     , cpa   , cpe , cpv , del
 double precision hv0 , hvti , rhoj , tti , xxi,  xsati , dxsati
@@ -159,10 +158,6 @@ ipass = ipass + 1
 !       (et de ses conditions limites)
 
 ivart = isca(itemp4)
-
-! --- Position des conditions limites de la variable IVART
-
-iclvar = iclrtp(ivart,icoef)
 
 ! --- Rang de la masse volumique
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM

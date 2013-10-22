@@ -199,8 +199,7 @@ if (iphyla.eq.1 .and. impvar.eq.1) then
 
   call lagimp                                                     &
   !==========
-  ( nvar   ,                                                      &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     itepa  , ibord  ,                                             &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
     tsvar  , auxl(1,1) , auxl(1,2)  )

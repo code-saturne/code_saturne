@@ -27,7 +27,7 @@ subroutine dttvar &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel )
+   ckupdc , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +59,6 @@ subroutine dttvar &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -78,7 +76,6 @@ subroutine dttvar &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use cplsat
 use cstnum
@@ -108,7 +105,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
@@ -132,15 +128,18 @@ double precision unpvdt, rom, dtloc
 double precision xyzmax(3), xyzmin(3), vmin(1), vmax(1)
 double precision dtsdtm
 double precision hint
+double precision mult
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: wcf
 double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
+double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
+
 !===============================================================================
 
 !===============================================================================
@@ -205,19 +204,18 @@ endif
 !     On commence par cela afin de disposer de VISCF VISCB comme
 !       tableaux de travail.
 
-  if (ippmod(icompf).ge.0) then
+if (ippmod(icompf).ge.0) then
 
-    call cfdttv                                                   &
-    !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
-   ckupdc , smacel ,                                              &
-   wcf    ,                                                       &
+  call cfdttv                                                   &
+  !==========
+ ( nvar   , nscal  , ncepdp , ncesmp ,                          &
+   icepdc , icetsm , itypsm ,                                   &
+   dt     , rtp    , rtpa   , propce ,                          &
+   ckupdc , smacel ,                                            &
+   wcf    ,                                                     &
    viscf  , viscb  , cofbft )
 
-  endif
-
+endif
 
 !===============================================================================
 ! 2. Compute the diffusivity at the faces
@@ -246,19 +244,40 @@ endif
 ! 3.  CONDITION LIMITE POUR MATRDT
 !===============================================================================
 
-do ifac = 1, nfabor
+if (idtvar.ge.0) then
 
-  if (bmasfl(ifac).lt.0.d0) then
-    iel = ifabor(ifac)
-    hint = idiff(iu)*(  propce(iel,ipcvis)                         &
-                      + idifft(iu)*propce(iel,ipcvst))/distb(ifac)
-    coefbt(ifac) = 0.d0
-    cofbft(ifac) = hint
-  else
-    coefbt(ifac) = 1.d0
-    cofbft(ifac) = 0.d0
-  endif
-enddo
+  do ifac = 1, nfabor
+
+    if (bmasfl(ifac).lt.0.d0) then
+      iel = ifabor(ifac)
+      hint = idiff(iu)*(  propce(iel,ipcvis)                         &
+                        + idifft(iu)*propce(iel,ipcvst))/distb(ifac)
+      coefbt(ifac) = 0.d0
+      cofbft(ifac) = hint
+    else
+      coefbt(ifac) = 1.d0
+      cofbft(ifac) = 0.d0
+    endif
+  enddo
+
+else
+
+  ! TODO for steady algorithm, check if using the third of the trace
+  !      is appropriate, or if a better solution is available
+  !      (algorithm was probably broken since velocity components are
+  !      coupled)
+
+  mult = 1.0d0 / 3.0d0
+
+  call field_get_coefb_v (ivarfl(iu), coefbv)
+  call field_get_coefbf_v(ivarfl(iu), cofbfv)
+
+  do ifac = 1, nfabor
+    coefbt(ifac) = (coefbv(1,1,ifac)+coefbv(2,2,ifac)+coefbv(3,3,ifac)) * mult
+    cofbft(ifac) = (cofbfv(1,1,ifac)+cofbfv(2,2,ifac)+cofbfv(3,3,ifac)) * mult
+  enddo
+
+endif
 
 !===============================================================================
 ! 4.  ALGORITHME INSTATIONNAIRE
@@ -925,13 +944,12 @@ else
   call matrdt &
   !==========
  ( iconv(iu), idiff(iu), isym,                                  &
-   coefb(1,iclrtp(iu,icoef)), coefb(1,iclrtp(iu,icoeff)),       &
+   coefbt, cofbft,                                              &
    imasfl, bmasfl,                                              &
    viscf, viscb, dt )
 
   do iel = 1, ncel
-    dt(iel) =  relaxv(iu)*crom(iel)                    &
-              *volume(iel)/max(dt(iel),epzero)
+    dt(iel) =  relaxv(iu)*crom(iel)*volume(iel)/max(dt(iel),epzero)
   enddo
 
 endif
@@ -939,36 +957,32 @@ endif
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(dam)
-deallocate(cofbft)
+deallocate(coefbt, cofbft)
 if (allocated(wcf)) deallocate(wcf)
 deallocate(w1, w2, w3)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1001 FORMAT (/,A8,' MAX= ',E11.4,                                     &
- ' EN ',E11.4,' ',E11.4,' ',E11.4)
- 1002 FORMAT (  A8,' MIN= ',E11.4,                                     &
- ' EN ',E11.4,' ',E11.4,' ',E11.4)
- 1003 FORMAT (/,'CLIPPINGS DE DT : ',                                  &
-                             I10,' A ',E11.4,', ',I10,' A ',E11.4)
+ 1001 format (/,a8,' MAX= ',e11.4, ' EN ',e11.4,' ',e11.4,' ',e11.4)
+ 1002 format (  a8,' MIN= ',E11.4, ' EN ',e11.4,' ',e11.4,' ',e11.4)
+ 1003 format (/,'CLIPPINGS DE DT : ',                                  &
+                             i10,' A ',e11.4,', ',i10,' A ',e11.4)
 
 #else
 
- 1001 FORMAT (/,A8,' MAX= ',E11.4,                                     &
- ' IN ',E11.4,' ',E11.4,' ',E11.4)
- 1002 FORMAT (  A8,' MIN= ',E11.4,                                     &
- ' IN ',E11.4,' ',E11.4,' ',E11.4)
- 1003 FORMAT (/,'DT CLIPPING : ',                                      &
-                             I10,' A ',E11.4,', ',I10,' A ',E11.4)
+ 1001 format (/,a8,' MAX= ',e11.4, ' IN ',e11.4,' ',e11.4,' ',e11.4)
+ 1002 format (  a8,' MIN= ',e11.4, ' IN ',e11.4,' ',e11.4,' ',e11.4)
+ 1003 format (/,'DT CLIPPING : ',                                      &
+                             i10,' A ',e11.4,', ',i10,' A ',e11.4)
 
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

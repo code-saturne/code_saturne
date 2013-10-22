@@ -23,8 +23,7 @@
 subroutine lagnew &
 !================
 
- ( lndnod ,                                                       &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npt    , nptnew , new    ,                                     &
    izone  ,                                                       &
    ifrlag , isorti , iworkp ,                                     &
@@ -48,8 +47,6 @@ subroutine lagnew &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-!                  !    !     !                                                !
-! lndnod           ! e  !  ->           ! longueur du tableau icocel
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -98,7 +95,6 @@ implicit none
 
 ! Arguments
 
-integer          lndnod
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npt    , nptnew , new
 integer          izone

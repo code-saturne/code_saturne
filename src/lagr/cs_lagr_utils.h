@@ -66,7 +66,6 @@ cs_lagrang_check_colocalization(const double  p[3],
  *   p2            <-- X, Y, Z coordinate of the second vertex
  *   p3            <-- X, Y, Z coordinate of the third vertex
  *   p4            <-- X, Y, Z coordinate of the fourth vertex
- *   perturbation  <-- an indicator if perturbation is used (1: true, 0: false)
  *
  * returns:
  *   an indicator on the orientation of the tetrahedron [p1, p2, p3, p4]
@@ -76,8 +75,7 @@ int
 cs_lagrang_tetra_orientation(const double  p1[3],
                              const double  p2[3],
                              const double  p3[3],
-                             const double  p4[3],
-                             int           perturbation);
+                             const double  p4[3]);
 
 /*----------------------------------------------------------------------------*/
 

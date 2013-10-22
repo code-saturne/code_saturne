@@ -49,8 +49,6 @@
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term of the lagangian module
-!> \param[in]     coefa, coefb  boundary conditions
-!>
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
 !>                               mass source
@@ -62,8 +60,7 @@ subroutine turbke &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
-   prdv2f )
+   tslagr , ckupdc , smacel , prdv2f )
 
 !===============================================================================
 
@@ -72,7 +69,6 @@ subroutine turbke &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstnum
@@ -99,7 +95,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision prdv2f(ncelet)
 
@@ -110,7 +105,6 @@ integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt
 integer          nswrgp, imligp
-integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -156,6 +150,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, bromo, cromo
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -381,7 +376,6 @@ if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
   !==========
  ( nscal  ,                                                       &
    rtpa   , propce ,                                              &
-   coefa  , coefb  ,                                              &
    tinstk ,                                                       &
    smbrk  , smbre  )
 
@@ -482,8 +476,10 @@ if (iturb.eq.51) then
   viscf  , viscb  )
 
   ivar = ik
-  iclvar = iclrtp(ivar,icoef)
-  iclvaf = iclrtp(ivar,icoeff)
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
   ! Translate coefa into cofaf and coefb into cofbf
   do ifac = 1, nfabor
@@ -493,8 +489,8 @@ if (iturb.eq.51) then
     hint = w3(iel)/distb(ifac)
 
     ! Translate coefa into cofaf and coefb into cofbf
-    coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
-    coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+    cofafp(ifac) = -hint*coefap(ifac)
+    cofbfp(ifac) = hint*(1.d0-coefbp(ifac))
 
   enddo
 
@@ -517,8 +513,7 @@ if (iturb.eq.51) then
   epsrgp , climgp , extrap ,                                     &
   rvoid  ,                                                       &
   rtpa(1,ivar)    ,                                              &
-  coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-  coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+  coefap , coefbp , cofafp , cofbfp ,                            &
   viscf  , viscb  ,                                              &
   w3     , w3     , w3     ,                                     &
   w10    )
@@ -883,9 +878,12 @@ if (ikecou.eq.1) then
   ! ---> Traitement de k
   ivar   = ik
   ipp    = ipprtp(ivar)
-  iclvar = iclrtp(ivar, icoef)
-  iclvaf = iclrtp(ivar, icoeff)
   chaine = nomvar(ipp)
+
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
   if (idiff(ivar).ge. 1) then
 
@@ -939,8 +937,7 @@ if (ikecou.eq.1) then
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
@@ -957,9 +954,12 @@ if (ikecou.eq.1) then
   ! ---> Traitement de epsilon
   ivar   = iep
   ipp    = ipprtp(ivar)
-  iclvar = iclrtp(ivar, icoef)
-  iclvaf = iclrtp(ivar, icoeff)
   chaine = nomvar(ipp)
+
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
   if (idiff(ivar).ge. 1) then
     do iel = 1, ncel
@@ -1012,8 +1012,7 @@ if (ikecou.eq.1) then
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
@@ -1115,9 +1114,12 @@ endif
 
 ! ---> turbulent kinetic (k) energy treatment
 ivar = ik
-iclvar = iclrtp(ivar,icoef )
-iclvaf = iclrtp(ivar,icoeff)
 ipp    = ipprtp(ivar)
+
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ! Face viscosity
 if (idiff(ivar).ge.1) then
@@ -1189,8 +1191,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
@@ -1200,9 +1201,12 @@ call codits &
 
 ! ---> Turbulent dissipation (epsilon) treatment
 ivar = iep
-iclvar = iclrtp(ivar,icoef )
-iclvaf = iclrtp(ivar,icoeff)
 ipp    = ipprtp(ivar)
+
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ! Face viscosity
 if (idiff(ivar).ge.1) then
@@ -1273,8 +1277,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &

@@ -149,6 +149,7 @@ use radiat
 use cplsat
 use mesh
 use field
+use field_operator
 use turbomachinery
 
 !===============================================================================
@@ -176,24 +177,12 @@ double precision hbord(nfabor),theipb(nfabor)
 integer          ifac  , iel   , ivar
 integer          isou  , jsou  , ii
 integer          ihcp  , iscal , iscat
-integer          inc   , iccocg
+integer          inc   , iprev , iccocg
 integer          iok   , iok1
 integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
-integer          iclpr , iclk  , iclep
-integer          iclnu
-integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
-integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
-integer          iclvrr
-integer          iclphi, iclfb , iclal , iclomg
-integer          iclvar
-integer          iclprf, iclkf , iclepf
-integer          iclnuf
-integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
-integer          iclphf, iclfbf, iclalf, iclomf
-integer          iclvaf
 integer          nswrgp, imligp, iwarnp
 integer          itplus, itstar
 integer          f_id  ,  iut  , ivt   , iwt, iflmab
@@ -223,6 +212,8 @@ double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: bfconv, bhconv
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: cofadp, cofbdp
 
 !===============================================================================
 
@@ -242,42 +233,7 @@ allocate(velipb(nfabor,3))
 
 ! Initialize variables to avoid compiler warnings
 
-iclep = 0
-iclk = 0
-iclomg = 0
-iclfb = 0
-iclphi = 0
-iclnu = 0
-icl11 = 0
-icl22 = 0
-icl33 = 0
-icl12 = 0
-icl13 = 0
-icl23 = 0
-icl11r = 0
-icl12r = 0
-icl13r = 0
-icl22r = 0
-icl23r = 0
-icl33r = 0
-icl11f = 0
-icl12f = 0
-icl13f = 0
-icl22f = 0
-icl23f = 0
-icl33f = 0
-iclal = 0
-iclalf= 0
-iclvar = 0
-iclvaf = 0
 ipccv = 0
-iclepf = 0
-iclfbf = 0
-iclkf = 0
-iclnuf = 0
-iclomf = 0
-iclphf = 0
-iclvrr = 0
 
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
@@ -434,73 +390,6 @@ xxp0   = xyzp0(1)
 xyp0   = xyzp0(2)
 xzp0   = xyzp0(3)
 
-! --- Gradient Boundary Conditions
-iclpr = iclrtp(ipr,icoef)
-if (itytur.eq.2) then
-  iclk  = iclrtp(ik ,icoef)
-  iclep = iclrtp(iep,icoef)
-elseif (itytur.eq.3) then
-  icl11 = iclrtp(ir11,icoef)
-  icl22 = iclrtp(ir22,icoef)
-  icl33 = iclrtp(ir33,icoef)
-  icl12 = iclrtp(ir12,icoef)
-  icl13 = iclrtp(ir13,icoef)
-  icl23 = iclrtp(ir23,icoef)
-  ! Boundary conditions for the momentum equation
-  icl11r = iclrtp(ir11,icoefr)
-  icl22r = iclrtp(ir22,icoefr)
-  icl33r = iclrtp(ir33,icoefr)
-  icl12r = iclrtp(ir12,icoefr)
-  icl13r = iclrtp(ir13,icoefr)
-  icl23r = iclrtp(ir23,icoefr)
-  iclep = iclrtp(iep,icoef)
-  if (iturb.eq.32) iclal = iclrtp(ial,icoef)
-elseif (itytur.eq.5) then
-  iclk   = iclrtp(ik ,icoef)
-  iclep  = iclrtp(iep,icoef)
-  iclphi = iclrtp(iphi,icoef)
-  if (iturb.eq.50) then
-    iclfb = iclrtp(ifb,icoef)
-  elseif (iturb.eq.51) then
-    iclal = iclrtp(ial,icoef)
-  endif
-elseif (iturb.eq.60) then
-  iclk   = iclrtp(ik ,icoef)
-  iclomg = iclrtp(iomg,icoef)
-elseif (iturb.eq.70) then
-  iclnu = iclrtp(inusa,icoef)
-endif
-
-! --- Flux Boundary Conditions
-iclprf = iclrtp(ipr,icoeff)
-if (itytur.eq.2) then
-  iclkf  = iclrtp(ik, icoeff)
-  iclepf = iclrtp(iep,icoeff)
-elseif (itytur.eq.3) then
-  icl11f = iclrtp(ir11,icoeff)
-  icl22f = iclrtp(ir22,icoeff)
-  icl33f = iclrtp(ir33,icoeff)
-  icl12f = iclrtp(ir12,icoeff)
-  icl13f = iclrtp(ir13,icoeff)
-  icl23f = iclrtp(ir23,icoeff)
-  iclepf = iclrtp(iep,icoeff)
-  if (iturb.eq.32) iclalf = iclrtp(ial,icoeff)
-elseif (itytur.eq.5) then
-  iclkf  = iclrtp(ik ,icoeff)
-  iclepf = iclrtp(iep,icoeff)
-  iclphf = iclrtp(iphi,icoeff)
-  if (iturb.eq.50) then
-    iclfbf = iclrtp(ifb,icoeff)
-  elseif (iturb.eq.51) then
-    iclalf = iclrtp(ial,icoeff)
-  endif
-elseif (iturb.eq.60) then
-  iclkf  = iclrtp(ik, icoeff)
-  iclomf = iclrtp(iomg,icoeff)
-elseif (iturb.eq.70) then
-  iclnuf = iclrtp(inusa,icoeff)
-endif
-
 ! --- Physical quantities
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
@@ -535,7 +424,7 @@ endif
 !===============================================================================
 
 ! Allocate a temporary array for the gradient reconstruction
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
 
 !  Pour le couplage SYRTHES ou module thermique 1D
 !  -----------------------------------------------
@@ -568,6 +457,7 @@ if (iscalt.gt.0) then
   if (ntcabs.gt.1 .and. itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
 
     inc = 1
+    iprev = 1
     iccocg = 1
     nswrgp = nswrgr(ivar)
     imligp = imligr(ivar)
@@ -575,22 +465,17 @@ if (iscalt.gt.0) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-    iclvar = iclrtp(ivar,icoef)
 
-    call grdcel &
-    !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   )
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
+                               iccocg, nswrgp, iwarnp, imligp,    &
+                               epsrgp, extrap, climgp, grad)
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
       theipb(ifac) = rtpa(iel,ivar) &
-                   + grad(iel,1)*diipb(1,ifac) &
-                   + grad(iel,2)*diipb(2,ifac) &
-                   + grad(iel,3)*diipb(3,ifac)
+                   + grad(1,iel)*diipb(1,ifac) &
+                   + grad(2,iel)*diipb(2,ifac) &
+                   + grad(3,iel)*diipb(3,ifac)
     enddo
 
   else
@@ -650,7 +535,6 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
     epsrgp = epsrgr(iu)
     climgp = climgr(iu)
     extrap = extrag(iu)
-    iclvar = iclrtp(iu,icoef)
 
     ilved = .false.
 
@@ -719,6 +603,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
     if(ntcabs.gt.1.and.irijrb.eq.1) then
 
       inc = 1
+      iprev = 1
       iccocg = 1
       nswrgp = nswrgr(ivar)
       imligp = imligr(ivar)
@@ -726,22 +611,17 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
       epsrgp = epsrgr(ivar)
       climgp = climgr(ivar)
       extrap = extrag(ivar)
-      iclvar = iclrtp(ivar,icoef)
 
-      call grdcel &
-      !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   )
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
+                                 iccocg, nswrgp, iwarnp, imligp,    &
+                                 epsrgp, extrap, climgp, grad)
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
         rijipb(ifac,isou) = rtpa(iel,ivar)            &
-                          + grad(iel,1)*diipb(1,ifac) &
-                          + grad(iel,2)*diipb(2,ifac) &
-                          + grad(iel,3)*diipb(3,ifac)
+                          + grad(1,iel)*diipb(1,ifac) &
+                          + grad(2,iel)*diipb(2,ifac) &
+                          + grad(3,iel)*diipb(3,ifac)
       enddo
 
     ! Nb: at the first time step, coefa and coefb are unknown, so the walue
@@ -1029,11 +909,13 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 9. Pressure: Dirichlet and Neumann and convectiv outlet
+! 9. Pressure: Dirichlet and Neumann and convective outlet
 !===============================================================================
 
-iclvar = iclpr
-iclvaf = iclprf
+call field_get_coefa_s(ivarfl(ipr), coefap)
+call field_get_coefb_s(ivarfl(ipr), coefbp)
+call field_get_coefaf_s(ivarfl(ipr), cofafp)
+call field_get_coefbf_s(ivarfl(ipr), cofbfp)
 
 do ifac = 1, nfabor
 
@@ -1121,8 +1003,8 @@ do ifac = 1, nfabor
 
     call set_dirichlet_scalar &
          !===================
-       ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-         coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+       ( coefap(ifac), cofafp(ifac),                         &
+         coefbp(ifac), cofbfp(ifac),                         &
          pimp              , hint             , hext )
 
   endif
@@ -1136,8 +1018,8 @@ do ifac = 1, nfabor
 
     call set_neumann_scalar &
          !=================
-       ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-         coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+       ( coefap(ifac), cofafp(ifac),                         &
+         coefbp(ifac), cofbfp(ifac),                         &
          qimp              , hint )
 
   ! Convective Boundary Conditions
@@ -1150,8 +1032,8 @@ do ifac = 1, nfabor
 
     call set_convective_outlet_scalar &
          !===========================
-       ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-         coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+       ( coefap(ifac), cofafp(ifac),                         &
+         coefbp(ifac), cofbfp(ifac),                         &
          pimp              , cfl               , hint )
 
   elseif (icodcl(ifac,ipr).eq.13) then
@@ -1161,8 +1043,8 @@ do ifac = 1, nfabor
 
     call set_dirichlet_conv_neumann_diff_scalar &
          !===========================
-       ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-         coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+       ( coefap(ifac), cofafp(ifac),                         &
+         coefbp(ifac), cofbfp(ifac),                         &
          pimp              , qimp )
 
   endif
@@ -1185,25 +1067,22 @@ if (itytur.eq.2.or.iturb.eq.60) then
     !     nul)
     if (ii.eq.1.and.itytur.eq.2) then
       ivar   = ik
-      iclvar = iclk
-      iclvaf = iclkf
       sigma  = sigmak
     elseif (ii.eq.1.and.iturb.eq.60) then
       ivar   = ik
-      iclvar = iclk
-      iclvaf = iclkf
       sigma  = ckwsk2 !FIXME it is not consistent with the model
     elseif (itytur.eq.2) then
       ivar   = iep
-      iclvar = iclep
-      iclvaf = iclepf
       sigma  = sigmae
     else
       ivar   = iomg
-      iclvar = iclomg
-      iclvaf = iclomf
       sigma  = ckwsw2 !FIXME it is not consistent with the model
     endif
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
     do ifac = 1, nfabor
 
@@ -1228,8 +1107,8 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
         call set_dirichlet_scalar &
              !====================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              pimp              , hint              , hext )
 
       endif
@@ -1243,8 +1122,8 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
         call set_neumann_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              qimp              , hint )
 
       ! Convective Boundary Conditions
@@ -1257,8 +1136,8 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
 
       endif
@@ -1276,35 +1155,24 @@ elseif (itytur.eq.3) then
 
     if(isou.eq.1) then
       ivar   = ir11
-      iclvar = icl11
-      iclvrr = icl11r
-      iclvaf = icl11f
     elseif(isou.eq.2) then
       ivar   = ir22
-      iclvar = icl22
-      iclvrr = icl22r
-      iclvaf = icl22f
     elseif(isou.eq.3) then
       ivar   = ir33
-      iclvar = icl33
-      iclvrr = icl33r
-      iclvaf = icl22f
     elseif(isou.eq.4) then
       ivar   = ir12
-      iclvar = icl12
-      iclvrr = icl12r
-      iclvaf = icl12f
     elseif(isou.eq.5) then
       ivar   = ir13
-      iclvar = icl13
-      iclvrr = icl13r
-      iclvaf = icl13f
     elseif(isou.eq.6) then
       ivar   = ir23
-      iclvar = icl23
-      iclvrr = icl23r
-      iclvaf = icl23f
     endif
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+    call field_get_coefad_s(ivarfl(ivar), cofadp)
+    call field_get_coefbd_s(ivarfl(ivar), cofbdp)
 
     do ifac = 1, nfabor
 
@@ -1375,13 +1243,13 @@ elseif (itytur.eq.3) then
 
         call set_dirichlet_scalar &
              !====================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              pimp              , hint              , hext )
 
         ! Boundary conditions for the momentum equation
-        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
-        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
+        cofadp(ifac) = coefap(ifac)
+        cofbdp(ifac) = coefbp(ifac)
       endif
 
       ! Neumann Boundary Conditions
@@ -1392,13 +1260,14 @@ elseif (itytur.eq.3) then
 
         call set_neumann_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              qimp              , hint )
 
         ! Boundary conditions for the momentum equation
-        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
-        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
+        cofadp(ifac) = coefap(ifac)
+        cofbdp(ifac) = coefbp(ifac)
+
       ! Convective Boundary Conditions
       !-------------------------------
 
@@ -1408,12 +1277,12 @@ elseif (itytur.eq.3) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
         ! Boundary conditions for the momentum equation
-        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
-        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
+        cofadp(ifac) = coefap(ifac)
+        cofbdp(ifac) = coefbp(ifac)
 
       endif
 
@@ -1424,8 +1293,11 @@ elseif (itytur.eq.3) then
   ! --> epsilon
 
   ivar   = iep
-  iclvar = iclep
-  iclvaf = iclepf
+
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
   do ifac = 1, nfabor
 
@@ -1498,8 +1370,8 @@ elseif (itytur.eq.3) then
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+         ( coefap(ifac), cofafp(ifac),                        &
+           coefbp(ifac), cofbfp(ifac),                        &
            pimp              , hint              , hext )
 
     endif
@@ -1513,8 +1385,8 @@ elseif (itytur.eq.3) then
 
       call set_neumann_scalar &
            !==================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+         ( coefap(ifac), cofafp(ifac),                        &
+           coefbp(ifac), cofbfp(ifac),                        &
            qimp              , hint )
 
       ! Convective Boundary Conditions
@@ -1527,8 +1399,8 @@ elseif (itytur.eq.3) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                      &
+             coefbp(ifac), cofbfp(ifac),                      &
              pimp              , cfl               , hint )
 
     endif
@@ -1539,9 +1411,11 @@ elseif (itytur.eq.3) then
 
   if (iturb.eq.32) then
     ivar   = ial
-    iclvar = iclal
-    iclvaf = iclalf
 
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
     do ifac = 1, nfabor
 
@@ -1561,8 +1435,8 @@ elseif (itytur.eq.3) then
 
         call set_dirichlet_scalar &
              !====================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              pimp              , hint              , hext )
 
       endif
@@ -1576,8 +1450,8 @@ elseif (itytur.eq.3) then
 
         call set_neumann_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              qimp              , hint )
 
       ! Convective Boundary Conditions
@@ -1590,8 +1464,8 @@ elseif (itytur.eq.3) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                        &
+             coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
 
       endif
@@ -1608,20 +1482,19 @@ elseif (itytur.eq.5) then
 
     if (ii.eq.1) then
       ivar   = ik
-      iclvar = iclk
-      iclvaf = iclkf
       sigma  = sigmak
     elseif (ii.eq.2) then
       ivar   = iep
-      iclvar = iclep
-      iclvaf = iclepf
       sigma  = sigmae
     else
       ivar   = iphi
-      iclvar = iclphi
-      iclvaf = iclphf
       sigma  = sigmak
     endif
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
     do ifac = 1, nfabor
 
@@ -1646,8 +1519,8 @@ elseif (itytur.eq.5) then
 
         call set_dirichlet_scalar &
              !====================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
 
       endif
@@ -1661,8 +1534,8 @@ elseif (itytur.eq.5) then
 
         call set_neumann_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
 
       ! Convective Boundary Conditions
@@ -1675,8 +1548,8 @@ elseif (itytur.eq.5) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
 
       endif
@@ -1690,8 +1563,11 @@ elseif (itytur.eq.5) then
     ! --> FB
 
     ivar   = ifb
-    iclvar = iclfb
-    iclvaf = iclfbf
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
     do ifac = 1, nfabor
 
@@ -1713,8 +1589,8 @@ elseif (itytur.eq.5) then
 
         call set_dirichlet_scalar &
              !====================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
 
       endif
@@ -1728,8 +1604,8 @@ elseif (itytur.eq.5) then
 
         call set_neumann_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
 
       ! Convective Boundary Conditions
@@ -1742,8 +1618,8 @@ elseif (itytur.eq.5) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
 
       endif
@@ -1755,8 +1631,11 @@ elseif (itytur.eq.5) then
     ! --> alpha
 
     ivar   = ial
-    iclvar = iclal
-    iclvaf = iclalf
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
     do ifac = 1, nfabor
 
@@ -1778,8 +1657,8 @@ elseif (itytur.eq.5) then
 
         call set_dirichlet_scalar &
              !====================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
 
       endif
@@ -1793,8 +1672,8 @@ elseif (itytur.eq.5) then
 
         call set_neumann_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
 
       ! Convective Boundary Conditions
@@ -1807,8 +1686,8 @@ elseif (itytur.eq.5) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
 
       endif
@@ -1822,8 +1701,11 @@ elseif (itytur.eq.5) then
 elseif (iturb.eq.70) then
 
   ivar   = inusa
-  iclvar = iclnu
-  iclvaf = iclnuf
+
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
   do ifac = 1, nfabor
 
@@ -1847,8 +1729,8 @@ elseif (iturb.eq.70) then
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+         ( coefap(ifac), cofafp(ifac),                         &
+           coefbp(ifac), cofbfp(ifac),                         &
            pimp              , hint              , hext )
 
     endif
@@ -1862,8 +1744,8 @@ elseif (iturb.eq.70) then
 
       call set_neumann_scalar &
            !==================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+         ( coefap(ifac), cofafp(ifac),                         &
+           coefbp(ifac), cofbfp(ifac),                         &
            qimp              , hint )
 
     ! Convective Boundary Conditions
@@ -1876,8 +1758,8 @@ elseif (iturb.eq.70) then
 
       call set_convective_outlet_scalar &
            !==================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+         ( coefap(ifac), cofafp(ifac),                         &
+           coefbp(ifac), cofbfp(ifac),                         &
            pimp              , cfl               , hint )
 
     endif
@@ -1896,8 +1778,6 @@ if (nscal.ge.1) then
   do ii = 1, nscal
 
     ivar   = isca(ii)
-    iclvar = iclrtp(ivar,icoef)
-    iclvaf = iclrtp(ivar,icoeff)
 
     isvhbl = 0
     if(ii.eq.isvhb) then
@@ -1930,6 +1810,11 @@ if (nscal.ge.1) then
         ihcp = 1
       endif
     endif
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
     do ifac = 1, nfabor
 
@@ -2023,8 +1908,8 @@ if (nscal.ge.1) then
 
         call set_dirichlet_scalar &
              !====================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
 
         ! ---> COUPLAGE : on stocke le hint (lambda/d      en temperature,
@@ -2103,8 +1988,7 @@ if (nscal.ge.1) then
 
           ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
           !  gain for the fluid) in W/m2
-          bfconv(ifac) = coefa(ifac,iclvaf)              &
-                                      + coefb(ifac,iclvaf)*theipb(ifac)
+          bfconv(ifac) = cofafp(ifac) + cofbfp(ifac)*theipb(ifac)
 
         endif
 
@@ -2119,8 +2003,8 @@ if (nscal.ge.1) then
 
         call set_neumann_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
 
         if (isvhbl.gt.0) hbord(ifac) = hint
@@ -2169,8 +2053,8 @@ if (nscal.ge.1) then
 
         call set_convective_outlet_scalar &
              !==================
-           ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-             coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
 
       endif

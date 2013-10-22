@@ -45,14 +45,12 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     coefa, coefb  boundary conditions
 !_______________________________________________________________________________
 
 
 subroutine phyvar &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 
@@ -84,10 +82,8 @@ implicit none
 
 integer          nvar   , nscal
 
-
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
@@ -139,7 +135,7 @@ endif
 ! Diffusion terms for weakly compressible algorithm
 if (idilat.eq.4.and.ipass.gt.1) then
 
-  call diffst(nscal, rtp, propce, coefa, coefb)
+  call diffst(nscal, rtp, propce)
   !==========
 
 endif
@@ -176,8 +172,7 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce )
 
 endif
 

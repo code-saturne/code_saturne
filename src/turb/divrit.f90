@@ -63,6 +63,7 @@ use cstphy
 use cstnum!
 use pointe
 use field
+use field_operator
 use mesh
 
 !===============================================================================
@@ -80,11 +81,11 @@ double precision smbrs(ncelet)
 
 ! Local variables
 
-integer          ifac, init, inc
+integer          ifac, init, inc, iprev
 integer          iccocg,iflmb0
 integer          nswrgp, imligp, iwarnp
 integer          itypfl
-integer          ivar , iclvar, iel, ii, jj
+integer          ivar , ivar0 , iel, ii, jj
 integer          itt
 integer          f_id
 
@@ -92,13 +93,9 @@ double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
 double precision grav(3),xrij(3,3), temp(3)
 
-logical          ilved
-
 character*80     fname
 
 double precision, dimension(:), pointer :: coefap, coefbp
-double precision, dimension(:,:), pointer :: coefav
-double precision, dimension(:,:,:), pointer :: coefbv
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: gradt
 double precision, allocatable, dimension(:,:) :: coefat
@@ -142,7 +139,6 @@ call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 
 call field_get_val_v(f_id, xut)
 
-
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
 iwarnp = iwarni(ivar)
@@ -154,15 +150,17 @@ extrap = extrag(ivar)
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
 
+ivar0 = 0
+
 call grdcel &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
    rtpa(1,ivar)    , coefap , coefbp ,                           &
    gradt  )
 
 ! Compute velocity gradient
-iccocg = 1
+iprev  = 0
 inc    = 1
 nswrgp = nswrgr(iu)
 imligp = imligr(iu)
@@ -170,23 +168,12 @@ iwarnp = iwarni(iu)
 epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
-iclvar = iclrtp(iu,icoef)
-
-! Boundary condition pointers for gradients and advection
-call field_get_coefa_v(ivarfl(iu), coefav)
-call field_get_coefb_v(ivarfl(iu), coefbv)
-
-
-ilved = .false.
 
 ! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved ,                                                        &
-  rtp(1,iu)       , coefav , coefbv ,                            &
-  gradv  )
+
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
+                           nswrgp, iwarnp, imligp,          &
+                           epsrgp, climgp, gradv)
 
 ! Find the variance of the thermal scalar
 itt = -1

@@ -66,7 +66,7 @@ subroutine lages1 &
 ! bx(nbpmax,3,2    ! tr ! <-- ! caracteristiques de la turbulence              !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
-! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
+! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
@@ -114,7 +114,7 @@ double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision vagaus(nbpmax,*)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
-double precision gradpr(ncelet,3)
+double precision gradpr(3,ncelet)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
 
@@ -189,7 +189,7 @@ do id = 1,3
       tci = piil(ip,id) * tlag(ip,id) + vitf
 
       force =                                                     &
-        ( rom * gradpr(iel,id) / romp(ip)                         &
+        ( rom * gradpr(id,iel) / romp(ip)                         &
          +grav(id)+ fextla(ip,id)        ) * taup(ip)
 
 !---> (2.2) Calcul des coefficients/termes deterministes :

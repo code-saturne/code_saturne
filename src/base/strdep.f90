@@ -26,7 +26,6 @@ subroutine strdep &
  ( itrale , italim , itrfin ,                                     &
    nvar   ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
-   coefa  , coefb  ,                                              &
    flmalf , flmalb , cofale , xprale )
 
 !===============================================================================
@@ -48,8 +47,6 @@ subroutine strdep &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !
 ! flmalb(nfabor    ! tr ! --> ! sauvegarde du flux de masse faces brd          !
 ! cofale           ! tr ! --> ! sauvegarde des cl de p et u                    !
@@ -69,7 +66,6 @@ subroutine strdep &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use ihmpre
 use cstphy
 use numvar
@@ -94,14 +90,13 @@ integer          itrale , italim , itrfin
 integer          nvar
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,11)
 
 ! Local variables
 
 integer          istr, ii, iel, ifac, ntab
-integer          iflmas, iflmab, iclp
+integer          iflmas, iflmab
 integer          indast
 integer          icvext, icvint, icv
 
@@ -109,6 +104,7 @@ double precision delta
 
 double precision, allocatable, dimension(:,:) :: forast
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: coefap, coefbp
 
 !===============================================================================
 
@@ -121,7 +117,8 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-iclp = iclrtp(ipr,icoef)
+call field_get_coefa_s(ivarfl(ipr), coefap)
+call field_get_coefb_s(ivarfl(ipr), coefbp)
 
 !===============================================================================
 ! 2.  CALCUL DES EFFORTS SUR LES STRUCTURES
@@ -311,11 +308,11 @@ if (itrfin.ne.-1) then
   enddo
   do ifac = 1, nfabor
      bmasfl(ifac) = flmalb(ifac)
-     coefa(ifac,iclp) = cofale(ifac,1)
+     coefap(ifac) = cofale(ifac,1)
      coefau(1, ifac) = cofale(ifac,2)
      coefau(2, ifac) = cofale(ifac,3)
      coefau(3, ifac) = cofale(ifac,4)
-     coefb(ifac,iclp) = cofale(ifac,5)
+     coefbp(ifac) = cofale(ifac,5)
      coefbu(1, 1, ifac) = cofale(ifac,6)
      coefbu(2, 2, ifac) = cofale(ifac,7)
      coefbu(3, 3, ifac) = cofale(ifac,8)

@@ -50,8 +50,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell centers
 !>                              (at current and previous time steps)
-!> \param[in]     coefa         boundary condition
-!> \param[in]     coefb         boundary condition
 !> \param[in]     rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -72,7 +70,7 @@ subroutine cscfbr &
  ( nscal  ,                                                       &
    icodcl , itypfb ,                                              &
    dt     , rtp    ,                                              &
-   coefa  , coefb  , rcodcl )
+   rcodcl )
 
 !===============================================================================
 ! Module files
@@ -101,7 +99,6 @@ integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -221,7 +218,6 @@ do numcpl = 1, nbrcpl
     nfbdis , numcpl , nvarto(numcpl) ,                            &
     locpts ,                                                      &
     rtp    ,                                                      &
-    coefa  , coefb  ,                                             &
     coopts , djppts , pndpts ,                                    &
     rvdis  , dofpts )
 
@@ -273,7 +269,7 @@ do numcpl = 1, nbrcpl
     icodcl , itypfb ,                                             &
     lfbcpl , lfbncp ,                                             &
     dt     , rtp    ,                                             &
-    coefa  , coefb  , rcodcl ,                                    &
+    rcodcl ,                                                      &
     rvfbr  , pndcpl , dofcpl )
 
     ! Free memory

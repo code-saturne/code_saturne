@@ -24,8 +24,7 @@ subroutine diffst &
 !================
 
  ( nscal  ,                                              &
-   rtp    , propce ,                                     &
-   coefa  , coefb  )
+   rtp    , propce )
 
 !===============================================================================
 ! Function :
@@ -42,14 +41,11 @@ subroutine diffst &
 ! rtp,             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  at current time step                          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -83,13 +79,12 @@ integer          nscal
 
 double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
 integer          ivar  , iel   , ifac  , iscal
 integer          ipcvst
-integer          nswrgp, imligp, iwarnp, iclvar, iclvaf
+integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
 integer          ischcp, isstpp, ippvar
@@ -105,11 +100,10 @@ integer          ivoid(1)
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: vistot, viscf, viscb
-double precision, allocatable, dimension(:) :: coefap, coefbp
-double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: whsad
 double precision, allocatable, dimension(:) :: xcpp
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -155,10 +149,6 @@ do iscal = 1, nscal
     call synsca(xcpp)
   endif
   !
-  ! Index for Boundary conditions
-  iclvar = iclrtp(ivar,icoef)
-  iclvaf = iclrtp(ivar,icoeff)
-
   iconvp = 0
   idiffp = 1
   nswrgp = nswrgr(ivar)
@@ -296,6 +286,12 @@ do iscal = 1, nscal
   else
 
     ! Diffusion term calculation
+
+    call field_get_coefa_s(ivarfl(ivar), coefap)
+    call field_get_coefb_s(ivarfl(ivar), coefbp)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
     call bilsca &
     !==========
   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
@@ -303,8 +299,7 @@ do iscal = 1, nscal
     ippvar , iwarnp , imucpp , idftnp ,                            &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
     rtp(1,ivar)     , rtp(1,ivar)     ,                            &
-    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+    coefap , coefbp , cofafp , cofbfp ,                            &
     imasfl , bmasfl ,                                              &
     viscf  , viscb  , rvoid  , xcpp   ,                            &
     rvoid  , rvoid  ,                                              &

@@ -251,7 +251,7 @@ do iiii = 1,nvls
 
   call lagitg                                                     &
   !==========
-   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
+   ( nbpmax , nvp    , nvp1   ,                                   &
      ipl    ,                                                     &
      itepa(1,jisor)  , ibord  ,                                   &
      ettp   , ettpa  , auxl1  , auxl2  , tsvar  )
@@ -346,8 +346,8 @@ subroutine uslafe &
 ! tsfext(nbpmax    ! ra ! <-- ! infos for the return coupling                  !
 ! vagaus           ! ra ! <-- ! Gaussian random variables                      !
 !  (nbpmax,nvgaus) !    !     !                                                !
-! gradpr(ncel,3)   ! ra ! <-- ! pressure gradient                              !
-! gradvf(ncel,3)   ! ra ! <-- ! gradient of the flow velocity                  !
+! gradpr(3,ncel)   ! ra ! <-- ! pressure gradient                              !
+! gradvf(3,3,ncel) ! ra ! <-- ! gradient of the flow velocity                  !
 ! romp             ! ra ! --- ! particle density                               !
 ! fextla(ncelet,3) ! ra ! --> ! user external force field (m/s^2)              !
 !__________________!____!_____!________________________________________________!
@@ -397,7 +397,7 @@ double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
 double precision tsfext(nbpmax)
 double precision vagaus(nbpmax,*)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+double precision gradpr(3,ncelet) , gradvf(3,3,ncelet)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
 

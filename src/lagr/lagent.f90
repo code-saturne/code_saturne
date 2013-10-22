@@ -922,11 +922,10 @@ do ii = 1,nfrtot
 
                call lagnew                                                   &
                !==========
-             ( lndnod ,                                                      &
-               nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-               npt    , nlocnew ,      iusloc(nc,nb,ijnbp)  ,                 &
+             ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+               npt    , nlocnew ,      iusloc(nc,nb,ijnbp)  ,                &
                nb     ,                                                      &
-               ifrlag , itepa(1,jisor)  , iwork  ,                           &
+               ifrlag , itepa(:,jisor)  , iwork  ,                           &
                ettp   )
 
             endif
@@ -935,11 +934,10 @@ do ii = 1,nfrtot
 
             call lagnpr                                                      &
             !==========
-           ( lndnod ,                                                      &
-             nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-             npt    , nlocnew ,  iusloc(nc,nb,ijnbp)   ,                    &
-             nb     ,                                                      &
-             ifrlag , itepa(1,jisor)  , iwork  ,                           &
+           ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                    &
+             npt    , nlocnew ,  iusloc(nc,nb,ijnbp)   ,                     &
+             nb     ,                                                        &
+             ifrlag , itepa(:,jisor)  , iwork  ,                             &
              ettp   )
          endif
 

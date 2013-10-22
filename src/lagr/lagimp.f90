@@ -23,8 +23,7 @@
 subroutine lagimp &
 !================
 
- ( nvar   ,                                                       &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    itepa  , ibord  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    tsvar  , auxl1  , auxl2  )
@@ -43,7 +42,6 @@ subroutine lagimp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -96,7 +94,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar
 integer          nbpmax , nvp , nvp1 , nvep , nivep
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
@@ -126,7 +123,7 @@ enddo
 
 call lagitg                                                       &
 !==========
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   ,                                     &
    jmp    ,                                                       &
    itepa(1,jisor)  , ibord ,                                      &
    ettp   , ettpa  , auxl1  , auxl2  , tsvar  )

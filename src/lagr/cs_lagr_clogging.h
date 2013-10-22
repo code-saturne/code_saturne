@@ -64,7 +64,7 @@ typedef struct {
   cs_real_t   cstham;
   cs_real_t   dcutof;
   cs_real_t   lambwl;
-  cs_real_t   kboltz
+  cs_real_t   kboltz;
 
 } cs_lagr_clog_param_t;
 

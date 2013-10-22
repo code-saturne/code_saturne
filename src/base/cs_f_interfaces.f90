@@ -167,7 +167,7 @@ module cs_f_interfaces
     subroutine turrij &
       (nvar, nscal, ncepdp, ncesmp, icepdc, icetsm, itypsm,                    &
       dt, rtp, rtpa, propce, tslagr,                                           &
-      coefa, coefb, ckupdc, smacel)
+      ckupdc, smacel)
       use dimens, only: ndimfb
       use lagdim, only: ntersl
       use mesh
@@ -178,7 +178,6 @@ module cs_f_interfaces
       double precision, dimension(ncelet) :: dt
       double precision, dimension(ncelet, *) ::rtp, rtpa, propce
       double precision, dimension(ncelet,ntersl), target :: tslagr
-      double precision, dimension(ndimfb, *) :: coefa, coefb
       double precision, dimension(ncepdp,6) :: ckupdc
       double precision, dimension(ncesmp,nvar), target ::  smacel
     end subroutine turrij

@@ -27,7 +27,7 @@ subroutine cfener &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 
@@ -57,8 +57,6 @@ subroutine cfener &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! work array for the head loss                   !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! variable value associated to the mass source   !
@@ -111,7 +109,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision smbrs(ncelet)
@@ -123,7 +120,6 @@ character*80     chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
-integer          iclvar, iclvaf
 integer          ipcvst, ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , icvflb
 integer          nswrgp, imligp, iwarnp
@@ -146,15 +142,18 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: wb
-double precision, allocatable, dimension(:) :: coefap, coefbp, dpvar
+double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: coefa_p, coefb_p
 
 !===============================================================================
+
 !===============================================================================
 ! 1. INITIALIZATION
 !===============================================================================
@@ -172,10 +171,6 @@ allocate(dpvar(ncelet))
 ! Computation number and post-treatment number of the scalar total energy
 ivar   = isca(iscal)
 ippvar = ipprtp(ivar)
-
-! Boundary conditions numbers
-iclvar = iclrtp(ivar,icoef)
-iclvaf = iclrtp(ivar,icoeff)
 
 ! Physical property numbers
 call field_get_val_s(icrom, crom)
@@ -267,16 +262,12 @@ enddo
 !     TERME DE DISSIPATION VISQUEUS   : >  ((SIGMA *U).n)  *S
 !     ==============================    --               ij  ij
 
-if( idiff(iu).ge. 1 ) then
-!                             ^^^
+if (idiff(iu).ge. 1) then
   call cfdivs                                                     &
   !==========
  ( rtpa   , propce ,                                              &
    smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw) )
-  !         ------
-
 endif
-
 
 !                              __   P        n+1
 ! PRESSURE TRANSPORT TERM  : - >  (---)  *(Q    .n)  *S
@@ -316,12 +307,6 @@ enddo
 !        coefap(ifac) = zero
 !        coefbp(ifac) = 1.d0
 !      enddo
-
-! En periodique et parallele, echange avant calcul du gradient
-!      if (irangp.ge.0.or.iperio.eq.1) then
-!        call synsca(w7)
-!        !==========
-!      endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
@@ -377,29 +362,25 @@ endif
 do ifac = 1, nfac
   iel1 = ifacel(1,ifac)
   iel2 = ifacel(2,ifac)
-  viscf(ifac) =                                                   &
-     - rtp(iel1,ipr)/w9(iel1)                              &
-     *0.5d0*( imasfl(ifac) +abs(imasfl(ifac)) )     &
-     - rtp(iel2,ipr)/w9(iel2)                              &
-     *0.5d0*( imasfl(ifac) -abs(imasfl(ifac)) )
+  viscf(ifac) =                                                                 &
+     - rtp(iel1,ipr)/w9(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))         &
+     - rtp(iel2,ipr)/w9(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
 enddo
 
 ! Boundary faces: for the faces where a flux (Rusanov or analytical) has been
 ! computed, the standard contribution is replaced by this flux in bilsc2.
 
+call field_get_coefa_s(ivarfl(ipr), coefa_p)
+call field_get_coefb_s(ivarfl(ipr), coefb_p)
+
 do ifac = 1, nfabor
   if (icvfli(ifac).eq.0) then
-
     iel = ifabor(ifac)
-    viscb(ifac) = - bmasfl(ifac)                         &
-                    * ( coefa(ifac,iclrtp(ipr,icoef))                           &
-                        + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )          &
+    viscb(ifac) = - bmasfl(ifac)                                                &
+                    * (coefa_p(ifac) + coefb_p(ifac)*rtp(iel,ipr))              &
                     / brom(ifac)
-
   else
-
     viscb(ifac) = 0.d0
-
   endif
 enddo
 
@@ -515,14 +496,8 @@ if( idiff(ivar).ge. 1 ) then
     coefbp(ifac) = 1.d0
   enddo
 
-  ! Communication before gradient computation in case of periodicity or parallelism
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(w7)
-    !==========
-  endif
-
-!  IVAR0 = 0 (indicates, for the rotation periodicity, that the variable is neither
-!     the velocity, nor Rij)
+!  IVAR0 = 0 (indicates, for the rotation periodicity,
+!  that the variable is not Rij)
   ivar0 = 0
   call grdcel                                                       &
   !==========
@@ -652,6 +627,11 @@ iswdyp = 0  ! no dynamic relaxation
 ! impose boundary convective at some faces (face indicator icvfli)
 icvflb = 1
 
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
 call codits                                                      &
 !==========
 ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -661,8 +641,7 @@ call codits                                                      &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-  coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-  coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+  coefap , coefbp , cofafp , cofbfp ,                            &
   imasfl, bmasfl,                                                &
   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
   rvoid  , rvoid  ,                                              &

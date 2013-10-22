@@ -54,8 +54,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell centers
 !>                              (at current time step)
-!> \param[in]     coefa         boundary conditions
-!> \param[in]     coefb         boundary conditions
 !> \param[out]    rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -80,7 +78,7 @@ subroutine csc2cl &
    icodcl , itypfb ,                                              &
    lfbcpl , lfbncp ,                                              &
    dt     , rtp    ,                                              &
-   coefa  , coefb  , rcodcl ,                                     &
+   rcodcl ,                                                       &
    rvcpfb , pndcpl , dofcpl )
 
 !===============================================================================
@@ -98,6 +96,7 @@ use period
 use cplsat
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -113,15 +112,14 @@ integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
 integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
 
 ! Local variables
 
-integer          ifac, iel
-integer          inc, iccocg, iclvar, nswrgp, imligp
+integer          ifac, iel, isou
+integer          inc, iccocg, iprev, nswrgp, imligp
 integer          iwarnp, ivar, iflmab
 integer          ipt
 
@@ -133,11 +131,11 @@ double precision xipf, yipf, zipf, ipf
 double precision xif, yif, zif, xopf, yopf, zopf
 double precision gradi, pondj, flumab
 
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl
 
 !===============================================================================
-
 
 !===============================================================================
 ! 1.  Translation of the coupling to boundary conditions
@@ -148,10 +146,11 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
 ! Allocate a temporary array for gradient computation
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
+allocate(gradv(3,3,ncelet))
 
 ! Reminder: variables are received in the order of VARPOS;
-! loopin on variables is thus sufficient.
+! looping on variables is thus sufficient.
 
 do ivar = 1, nvcp
 
@@ -159,25 +158,38 @@ do ivar = 1, nvcp
   !       Exchanges for parallelism and periodicity have already been
   !       done in CSCPFB. Non need to do them again.
 
+  iprev  = 0
   inc    = 1
   iccocg = 1
 
-  iclvar = iclrtp(ivar,icoef)
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
+  isou = 0 ! set for iu, iv, iw only
 
-  call grdcel                                                     &
-  !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-   grad   )
+  if (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw) then
 
+    nswrgp = nswrgr(ivar)
+    imligp = imligr(ivar)
+    iwarnp = iwarni(ivar)
+    epsrgp = epsrgr(ivar)
+    climgp = climgr(ivar)
+    extrap = extrag(ivar)
+
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,   &
+                               iccocg, nswrgp, iwarnp, imligp,     &
+                               epsrgp, extrap, climgp, grad)
+
+  else if (ivar.eq.iu) then
+
+    nswrgp = nswrgr(ivar)
+    imligp = imligr(ivar)
+    iwarnp = iwarni(ivar)
+    epsrgp = epsrgr(ivar)
+    climgp = climgr(ivar)
+
+    call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
+                               nswrgp, iwarnp, imligp,          &
+                               epsrgp, climgp, gradv)
+
+  endif
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -210,14 +222,16 @@ do ivar = 1, nvcp
 
       if (ivar.eq.ipr) then
 
-        ! --- We want to prescribe a Direchlet for pressure so as to conserve
+        ! --- We want to prescribe a Dirichlet for pressure so as to conserve
         !     the pressure gradient through the coupling and remain consistent
         !     with the resolution of the pressure gradient on an orthogonal mesh.
 
         xip = rtp(iel,ivar) &
-            + (grad(iel,1)*xiip + grad(iel,2)*yiip + grad(iel,3)*ziip)
+            + (grad(1,iel)*xiip + grad(2,iel)*yiip + grad(3,iel)*ziip)
 
       else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+
+        isou = ivar - iu + 1
 
         ! --- For all other variables, we want to prescribe a Dirichlet matching
         !     the convective fluxes at the center. We resrve a choice between
@@ -231,13 +245,17 @@ do ivar = 1, nvcp
 
         ! -- SOLU
 
-        !        xip =  rtp(iel,ivar) &
-        !            + (grad(iel,1)*xif + grad(iel,2)*yif + grad(iel,3)*zif)
+        !        xip =   rtp(iel,ivar)                &
+        !              + (   gradv(1,isou,iel)*xif    &
+        !                 +  gradv(2,isou,iel)*yif    &
+        !                 +  gradv(3,isou,iel)*zif)
 
         ! -- CENTERED
 
-        xip = rtp(iel,ivar) &
-            + (grad(iel,1)*xiip + grad(iel,2)*yiip + grad(iel,3)*ziip)
+        xip =   rtp(iel,ivar)                &
+              + (  gradv(1,isou,iel)*xiip    &
+                 + gradv(2,isou,iel)*yiip    &
+                 + gradv(3,isou,iel)*ziip)
 
       else
 
@@ -248,12 +266,12 @@ do ivar = 1, nvcp
         ! -- SOLU
 
         !        xip = rtp(iel,ivar) &
-        !            + (grad(iel,1)*xif + grad(iel,2)*yif + grad(iel,3)*zif)
+        !            + (grad(1,iel)*xif + grad(2,iel)*yif + grad(3,iel)*zif)
 
         ! -- CENTERED
 
         xip =  rtp(iel,ivar) &
-            + (grad(iel,1)*xiip + grad(iel,2)*yiip + grad(iel,3)*ziip)
+            + (grad(1,iel)*xiip + grad(2,iel)*yiip + grad(3,iel)*ziip)
 
       endif
 
@@ -343,20 +361,35 @@ do ivar = 1, nvcp
 
       ! Local information interpolated at I'/O'
 
-      xip =  rtp(iel,ivar) &
-          + grad(iel,1)*(xiip+xopf) &
-          + grad(iel,2)*(yiip+yopf) &
-          + grad(iel,3)*(ziip+zopf)
+      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+
+        xip =   rtp(iel,ivar)           &
+              + gradv(1,isou,iel)*xiip  &
+              + gradv(2,isou,iel)*yiip  &
+              + gradv(3,isou,iel)*ziip
+
+        gradi =  (  gradv(1,isou,iel)*xipf          &
+                  + gradv(2,isou,iel)*yipf          &
+                  + gradv(3,isou,iel)*zipf) / ipf
+
+      else
+
+        xip =   rtp(iel,ivar)            &
+              + grad(1,iel)*(xiip+xopf)  &
+              + grad(2,iel)*(yiip+yopf)  &
+              + grad(3,iel)*(ziip+zopf)
+
+        gradi = (grad(1,iel)*xipf+grad(2,iel)*yipf+grad(3,iel)*zipf)/ipf
+
+      endif
 
       ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)
 
 
-      gradi = (grad(iel,1)*xipf+grad(iel,2)*yipf+grad(iel,3)*zipf)/ipf
-
       itypfb(ifac)  = icscpl
 
-      if(ivar.ne.ipr) then
+      if (ivar.ne.ipr) then
         icodcl(ifac,ivar  ) = 1
         rcodcl(ifac,ivar,1) = 0.5d0*(xip+xjp)
       else
@@ -386,6 +419,7 @@ do ivar = 1, nvcp
 enddo
 
 ! Free memory
+deallocate(gradv)
 deallocate(grad)
 
 !----

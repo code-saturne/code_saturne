@@ -25,7 +25,6 @@ subroutine pptssc &
 
  ( iscal  ,                                                       &
    rtpa   , rtp    , propce ,                                     &
-   coefa  , coefb  ,                                              &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -71,8 +70,6 @@ subroutine pptssc &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
@@ -115,23 +112,12 @@ integer          iscal
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
 
 ! Local variables
 
 
-!===============================================================================
-
-!===============================================================================
-! 1. INITIALISATION
-!===============================================================================
-
-
-
-!===============================================================================
-! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
 !===============================================================================
 
 ! Soot model
@@ -164,7 +150,6 @@ if (ippmod(icolwc).ge.0) then
   !==========
  ( iscal  ,                                                       &
    rtpa   , propce ,                                              &
-   coefa  , coefb  ,                                              &
    smbrs  , rovsdt )
 endif
 
@@ -237,7 +222,7 @@ if (ippmod(iaeros).ge.0) then
 endif
 
 !----
-! FIN
+! End
 !----
 
 return

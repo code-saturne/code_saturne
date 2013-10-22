@@ -75,9 +75,9 @@ subroutine lagcar &
 ! statis(ncelet    ! tr ! <-- ! cumul des statistiques volumiques              !
 !    nvlsta)       !    !     !                                                !
 ! gradpr           ! tr ! <-- ! gradient de pression                           !
-! (ncelet,3)       !    !     !                                                !
+!   (3,ncelet)     !    !     !                                                !
 ! gradvf           ! tr ! <-- ! gradient de la vitesse du fluide               !
-! (ncelet,3)       !    !     !                                                !
+!   (3,3,ncelet)   !    !     !                                                !
 ! energi(ncelet    ! tr ! --- ! tableau de travail                             !
 ! dissip(ncelet    ! tr ! --- ! tableau de travail                             !
 ! romp(nbpmax)     ! tr ! --- ! tableau de travail                             !
@@ -126,12 +126,12 @@ double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tempct(nbpmax,2)
 double precision statis(ncelet,nvlsta)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+double precision gradpr(3,ncelet) , gradvf(3,3,ncelet)
 double precision energi(ncelet) , dissip(ncelet), romp(nbpmax)
 
 ! Local variables
 
-integer          iel , ip , id , igvx , igvy , igvz , iscath
+integer          iel , ip , id , iscath
 
 double precision cd1 , cd2 , rec , cl , c0 , cb , cbcb
 double precision upart , vpart , wpart
@@ -492,13 +492,9 @@ endif
 
 do id = 1,3
 
-  igvx = 3*(id-1)+1
-  igvy = 3*(id-1)+2
-  igvz = 3*(id-1)+3
-
   do ip = 1,nbpart
 
-    if ( itepa(ip,jisor).gt.0 ) then
+    if (itepa(ip,jisor).gt.0) then
 
 !--->   Calcul de II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) )
 !       ou
@@ -506,10 +502,10 @@ do id = 1,3
 
       iel = itepa(ip,jisor)
 
-      piil(ip,id) = gradpr(iel,id)
+      piil(ip,id) = gradpr(id,iel)
 
       if (modcpl.gt.0 .and. iplas.gt.modcpl) then
-        if ( statis(iel,ilpd) .gt. seuil ) then
+        if (statis(iel,ilpd) .gt. seuil) then
           vpmx = statis(iel,ilvx) / statis(iel,ilpd)
           vpmy = statis(iel,ilvy) / statis(iel,ilpd)
           vpmz = statis(iel,ilvz) / statis(iel,ilpd)
@@ -518,11 +514,10 @@ do id = 1,3
           vflui = rtp(iel,iv)
           wflui = rtp(iel,iw)
 
-          piil(ip,id) = gradpr(iel,id)                            &
-                       +gradvf(iel,igvx) * (vpmx-uflui)           &
-                       +gradvf(iel,igvy) * (vpmy-vflui)           &
-                       +gradvf(iel,igvz) * (vpmz-wflui)
-
+          piil(ip,id) = gradpr(id,iel)                            &
+                       +gradvf(1,id,iel) * (vpmx-uflui)           &
+                       +gradvf(2,id,iel) * (vpmy-vflui)           &
+                       +gradvf(3,id,iel) * (vpmz-wflui)
         endif
       endif
 

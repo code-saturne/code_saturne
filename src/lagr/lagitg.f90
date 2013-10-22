@@ -23,7 +23,7 @@
 subroutine lagitg &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   ,                                     &
    ivar   ,                                                       &
    isorti , ibord  ,                                              &
    ettp   , ettpa  , tcarac , pip    , tsvar  )
@@ -54,8 +54,6 @@ subroutine lagitg &
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ivar             ! e  ! <-- ! numero de la variable a integrer               !
 !                  !    !     ! dans le tableau ettp                           !
 ! isorti(nbpmax    ! te ! <-- ! pour chaque particule :                        !
@@ -99,7 +97,7 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp , nvp1 , nvep , nivep
+integer          nbpmax , nvp , nvp1
 integer          ivar
 integer          isorti(nbpmax) , ibord(nbpmax)
 

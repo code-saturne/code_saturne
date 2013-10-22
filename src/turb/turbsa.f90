@@ -26,7 +26,7 @@ subroutine turbsa &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    itypfb )
 
 !===============================================================================
@@ -55,8 +55,6 @@ subroutine turbsa &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -74,7 +72,6 @@ subroutine turbsa &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstnum
@@ -82,8 +79,9 @@ use cstphy
 use optcal
 use mesh
 use field
+use field_operator
 use parall
-use pointe, only: dispar, coefau, coefbu
+use pointe, only: dispar
 
 !===============================================================================
 
@@ -102,15 +100,13 @@ integer          ivoid(1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
-integer          iel   , ifac  , inc   , iccocg, ivar
+integer          iel   , ifac  , inc   , iccocg, iprev, ivar
 integer          iiun
 integer          nswrgp, imligp
-integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -120,8 +116,6 @@ integer          iptsta
 integer          ipcvto, ipcvlo
 integer          ipatrg
 integer          imucpp, idftnp, iswdyp
-
-logical          ilved
 
 double precision romvsd
 double precision visct , rom
@@ -148,6 +142,7 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: csab1r, rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -224,6 +219,7 @@ allocate(gradv(3, 3, ncelet))
 
 iccocg = 1
 inc = 1
+iprev = 1
 
 nswrgp = nswrgr(iu)
 imligp = imligr(iu)
@@ -232,16 +228,9 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved  ,                                                       &
-  rtpa(1,iu) ,  coefau , coefbu,                                 &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,       &
+                           nswrgp, iwarnp, imligp, epsrgp,       &
+                           climgp, gradv)
 
 ! vort = omega**2 = dudy**2 + dvdx**2 + dudz**2 + dwdx**2 + dvdz**2 + dwdy**2
 !                - 2*dudy*dvdx - 2*dudz*dwdx - 2*dvdz*dwdy
@@ -260,7 +249,7 @@ enddo
 deallocate(gradv)
 
 ! Allocate a temporary array for the gradient calculation
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
 
 ! Compute the gradient of nusa
 
@@ -271,18 +260,13 @@ epsrgp = epsrgr(inusa)
 climgp = climgr(inusa)
 extrap = extrag(inusa)
 
-iclvar = iclrtp(inusa,icoef)
-
-call grdcel &
-!==========
- ( inusa , imrgra , inc    , iccocg , nswrgp , imligp ,           &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,inusa)  , coefa(1,iclvar) , coefb(1,iclvar) ,           &
-   grad   )
+call field_gradient_scalar(ivarfl(inusa), iprev, imrgra, inc,       &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, grad)
 
 ! trgrdn = GRAD(nusa)**2
 do iel = 1, ncel
-  trgrdn(iel) = grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2
+  trgrdn(iel) = grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2
 enddo
 
 ! Free memory
@@ -308,11 +292,12 @@ ipatrg = 0
 dsa0 = -999.d0
 hssa = -999.d0
 
-iclvar = iclrtp(inusa,icoef)
+call field_get_coefb_s(ivarfl(inusa), coefbp)
+
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparug) then
     ipatrg = 1
-    cofbnu = coefb(ifac,iclvar)
+    cofbnu = coefbp(ifac)
     ! Roughness of the wall
     dsa0   = distb(ifac) *cofbnu/(1.d0-cofbnu)
     hssa   = exp(8.5d0*xkappa)*dsa0
@@ -539,8 +524,11 @@ endif
 !===============================================================================
 
 ivar = inusa
-iclvar = iclrtp(ivar,icoef )
-iclvaf = iclrtp(ivar,icoeff)
+
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ipp    = ipprtp(ivar)
 
@@ -581,7 +569,7 @@ if (idiff(ivar).ge.1) then
       rom = crom(iel)
 
       ! dsa0 is recomputed in case of many different roughness
-      cofbnu = coefb(ifac,iclvar)
+      cofbnu = coefbp(ifac)
 
       ! Roughness of the wall
       dsa0   = distb(ifac) *cofbnu/(1.d0-cofbnu)
@@ -648,8 +636,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
@@ -675,7 +662,7 @@ deallocate(tsexp)
 deallocate(dpvar)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -691,7 +678,7 @@ deallocate(dpvar)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -837,8 +837,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   dt     , rtpa   , rtp    , propce ,                            &
-   coefa  , coefb  )
+   dt     , rtpa   , rtp    , propce )
 
 endif
 

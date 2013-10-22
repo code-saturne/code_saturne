@@ -49,8 +49,6 @@
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term of the lagangian module
-!> \param[in]     coefa, coefb  boundary conditions
-!>
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
 !>                               mass source
@@ -62,7 +60,7 @@ subroutine turrij &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    tslagr ,                                                       &
-   coefa  , coefb  , ckupdc , smacel )
+   ckupdc , smacel )
 
 !===============================================================================
 
@@ -98,7 +96,6 @@ integer, dimension(ncesmp,nvar), target :: itypsm
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6)
 
 double precision, dimension(ncesmp,nvar), target ::  smacel
@@ -255,7 +252,7 @@ endif
 ! 3. Compute the density gradient for buoyant terms
 !===============================================================================
 
-if(igrari.eq.1) then
+if (igrari.eq.1) then
 
   ! Allocate a temporary array for the gradient calculation
   allocate(gradro(ncelet,3))
@@ -340,7 +337,7 @@ do isou = 1, 6
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , produc , gradro ,                            &
+   produc , gradro ,                                              &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
@@ -355,7 +352,7 @@ do isou = 1, 6
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , gradv  , gradro ,                            &
+   gradv  , gradro ,                                              &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
@@ -384,7 +381,7 @@ call reseps &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , gradv  , produc , gradro ,                   &
+   gradv  , produc , gradro ,                                     &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &

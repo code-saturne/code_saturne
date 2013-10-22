@@ -63,11 +63,9 @@ subroutine cfmsfp &
 ! flumab(nfabor    ! tr ! --> ! flux de masse aux faces de bord                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!-------------------------------------------------------------------------------
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -297,11 +295,8 @@ if (itsqdm.ne.0) then
           enddo
         enddo
 
-        call vistnv &
+        call vistnv (imvisf, viscce, viscf, viscb)
         !==========
-     ( imvisf ,                                                       &
-       viscce ,                                                       &
-       viscf  , viscb  )
 
      endif
 

@@ -25,8 +25,7 @@ subroutine ppphyv &
 
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -98,8 +97,6 @@ subroutine ppphyv &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
@@ -137,7 +134,6 @@ integer          mbrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
@@ -266,16 +262,13 @@ endif
 
 if (ippmod(iatmos).ge.1) then
 
-   call atphyv                                                    &
+   call atphyv(rtp, rtpa, propce )
    !==========
- ( rtp    , rtpa   ,                                              &
-   propce ,                                                       &
-   coefa  , coefb  )
 
 endif
 
 !----
-! FIN
+! End
 !----
 
 return

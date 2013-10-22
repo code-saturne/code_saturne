@@ -96,8 +96,8 @@ subroutine lagesp &
 ! tsfext(nbpmax    ! tr ! <-- ! infos pour le couplage retour                  !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
-! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
-! gradvf(ncel,3    ! tr ! <-- ! gradient de la vitesse du fluide               !
+! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
+! gradvf(3,3,ncel) ! tr ! <-- ! gradient de la vitesse du fluide               !
 ! romp             ! tr ! --- ! masse volumique des particules                 !
 ! auxl2            ! tr ! --- ! tableau de travail                             !
 !    (nbpmax,7)    !    !     !                                                !
@@ -148,7 +148,7 @@ double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
 double precision tsfext(nbpmax)
 double precision dlgeo(nfabor,ngeol)
 double precision vagaus(nbpmax,*)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+double precision gradpr(3,ncelet) , gradvf(3,3,ncelet)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision romp(nbpmax) , auxl2(nbpmax,7)
 double precision vislen(nfabor)
@@ -165,17 +165,11 @@ double precision, allocatable, dimension(:,:) :: fextla
 !===============================================================================
 
 !===============================================================================
-! 0.  Memory management
-!===============================================================================
-
-
-!===============================================================================
 ! 1.  Initialization
 !===============================================================================
 ! Initialize variables to avoid compiler warnings
 
 iifacl = 0
-
 
 ! Computation of particle density
 

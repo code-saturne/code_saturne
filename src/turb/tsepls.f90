@@ -52,7 +52,6 @@ subroutine tsepls &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstphy

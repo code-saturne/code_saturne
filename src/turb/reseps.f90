@@ -50,7 +50,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     gradv         tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
 !> \param[in]     produc        tableau de travail pour production
@@ -72,7 +71,7 @@ subroutine reseps &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , gradv  , produc , gradro ,                   &
+   gradv  , produc , gradro ,                                     &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
@@ -85,7 +84,6 @@ subroutine reseps &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -97,6 +95,7 @@ use lagran
 use pointe, only:visten
 use mesh
 use field
+use field_operator
 use cs_f_interfaces
 
 !===============================================================================
@@ -114,7 +113,6 @@ integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision produc(6,ncelet), gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
@@ -127,14 +125,12 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 integer          iel
 integer          iiun
-integer          iclvar, iclvaf
 integer          ipcvis, ipcvst, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          iclalp
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
@@ -155,6 +151,7 @@ double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer ::  crom, cromo
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -182,8 +179,10 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-iclvar = iclrtp(ivar,icoef)
-iclvaf = iclrtp(ivar,icoeff)
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ! Constante Ce2, qui vaut CE2 pour ITURB=30 et CSSGE2 pour ITRUB=31
 if (iturb.eq.30) then
@@ -349,8 +348,6 @@ endif
 
 ! EBRSM
 if (iturb.eq.32) then
-
-  iclalp = iclrtp(ial,icoeff)
 
   do iel = 1, ncel
     ! Demi-traces
@@ -519,8 +516,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce  , viscf  , viscb  , viscce  ,        &
    weighf , weighb ,                                              &

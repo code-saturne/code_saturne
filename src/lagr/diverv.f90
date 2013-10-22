@@ -112,8 +112,8 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-  ivar0 = 0
+!     n'est pas Rij)
+ivar0 = 0
 
 inc = 1
 iccocg = 1

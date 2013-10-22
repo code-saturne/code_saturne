@@ -84,10 +84,10 @@ double precision vela(3,ncelet)
 ! Local variables
 
 integer          ipt    , iel    , isou
-integer          inc    , iccocg , iclvar, nswrgp
+integer          inc    , iccocg , nswrgp
 integer          iwarnp , imligp
 
-double precision epsrgp , climgp , extrap
+double precision epsrgp , climgp
 double precision dx     , dy     , dz
 
 logical ilved
@@ -99,21 +99,13 @@ double precision, dimension(:,:,:), allocatable :: gradv
 ! Allocate a temporary array
 allocate(gradv(3,3,ncelet))
 
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvin(vela)
-  !==========
-endif
-
 inc    = 1
 iccocg = 1
-iclvar = iclrtp(ivar,icoef)
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
 iwarnp = iwarni(ivar)
 epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
-extrap = extrag(ivar)
 ilved  = .true.
 
 call grdvec &

@@ -24,8 +24,7 @@ subroutine resalp &
 !================
 
  ( nvar   ,                                                       &
-   rtp    , rtpa   , propce ,                                     &
-   coefa  , coefb  )
+   rtp    , rtpa   , propce )
 
 !===============================================================================
 ! Function :
@@ -45,8 +44,6 @@ subroutine resalp &
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -83,7 +80,6 @@ integer          nvar
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
@@ -111,7 +107,8 @@ double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -146,9 +143,12 @@ endif
 !===============================================================================
 
 ivar = ial
-iclvar = iclrtp(ial,icoef)
-iclvaf = iclrtp(ial,icoeff)
 ipp    = ipprtp(ivar)
+
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1100) nomvar(ipp)
@@ -264,8 +264,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &

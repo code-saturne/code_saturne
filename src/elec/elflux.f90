@@ -23,9 +23,7 @@
 subroutine elflux &
 !================
 
- ( iappel ,                                                       &
-   rtp    , propce ,                                              &
-   coefa  , coefb  )
+ ( iappel , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -44,14 +42,7 @@ subroutine elflux &
 ! iappel           ! e  ! <-- ! numero d'appel                                 !
 !                  !    !     ! 1 : j, e, j.e                                  !
 !                  !    !     ! 2 : b,    jxb                                  !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -65,7 +56,6 @@ subroutine elflux &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -78,6 +68,8 @@ use ppthch
 use ppincl
 use elincl
 use mesh
+use field
+use field_operator
 
 !===============================================================================
 
@@ -87,9 +79,7 @@ implicit none
 
 integer          iappel
 
-double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
@@ -98,8 +88,7 @@ integer          ipcefj, ipcsig, ipcsii
 integer          ipcla1, ipcla2, ipcla3
 integer          ipcdc1, ipcdc2, ipcdc3
 integer          ipcdi1, ipcdi2, ipcdi3
-integer          inc   , iccocg, nswrgp, imligp, iwarnp
-integer          ivar0 , iclimv
+integer          iprev , inc   , iccocg, nswrgp, imligp, iwarnp
 integer          ivar  , modntl
 
 double precision epsrgp, climgp, extrap, vrmin, vrmax, var
@@ -115,7 +104,7 @@ double precision, allocatable, dimension(:,:) :: grad
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -127,13 +116,10 @@ ipcla1 = 0
 ipcla2 = 0
 ipcla3 = 0
 
-! Memoire
-
-
 ! --- Numero des grandeurs physiques
 ipcsig = ipproc(ivisls(ipotr))
 
-if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   ipcsii = ipproc(ivisls(ipoti))
 endif
 
@@ -142,16 +128,16 @@ ipcdc1 = ipproc(idjr(1))
 ipcdc2 = ipproc(idjr(2))
 ipcdc3 = ipproc(idjr(3))
 
-if ( ippmod(ieljou).eq.4 ) then
+if (ippmod(ieljou).eq.4) then
   ipcdi1 = ipproc(idji(1))
   ipcdi2 = ipproc(idji(2))
   ipcdi3 = ipproc(idji(3))
 endif
 
 ! --- Necessite d'une impression (impression si MODNTL=0)
-if(ntlist.gt.0) then
+if (ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
-elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
+elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
   modntl = 0
 else
   modntl = 1
@@ -161,7 +147,7 @@ endif
 ! 1. PREMIER APPEL : J, E => J.E
 !===============================================================================
 
-if(iappel.eq.1) then
+if (iappel.eq.1) then
 
 !===============================================================================
 ! 1.1 PRISE EN COMPTE DES TERMES SOURCES ET VARIABLES STANDARD ET
@@ -178,8 +164,8 @@ if(iappel.eq.1) then
 !  ---------------------------
 
   ivar = isca(ipotr)
-  iclimv = iclrtp(ivar,icoef)
 
+  iprev = 0
   inc = 1
   iccocg = 1
   nswrgp = nswrgr(ivar)
@@ -189,24 +175,9 @@ if(iappel.eq.1) then
   climgp = climgr(ivar)
   extrap = extrag(ivar)
 
-  ! En periodique et parallele, echange avant calcul du gradient
-  !     C'est indispensable car on vient de calculer IVAR
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ivar))
-    !==========
-  endif
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-  ivar0 = 0
-
-  call grdcel                                                     &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-   grad   )
-
+  call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
+                             iccocg, nswrgp, iwarnp, imligp,      &
+                             epsrgp, extrap, climgp, grad)
 
 !   2.2 Calcul du champ electrique E = - grad (potR)
 !  -------------------------------------------------
@@ -216,11 +187,11 @@ if(iappel.eq.1) then
 !                                   PROPCE(IEL,IPCSIG)
 
 
-  if( ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1 ) then
+  if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
     do iel = 1, ncel
-      propce(iel,ipcdc1)= - propce(iel,ipcsig) * grad(iel,1)
-      propce(iel,ipcdc2)= - propce(iel,ipcsig) * grad(iel,2)
-      propce(iel,ipcdc3)= - propce(iel,ipcsig) * grad(iel,3)
+      propce(iel,ipcdc1)= - propce(iel,ipcsig) * grad(1,iel)
+      propce(iel,ipcdc2)= - propce(iel,ipcsig) * grad(2,iel)
+      propce(iel,ipcdc3)= - propce(iel,ipcsig) * grad(3,iel)
     enddo
   endif
 
@@ -229,23 +200,23 @@ if(iappel.eq.1) then
 !                                                           sig E.E
   do iel = 1, ncel
     propce(iel,ipcefj)=                                           &
-         propce(iel,ipcsig)*(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2)
+         propce(iel,ipcsig)*(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2)
   enddo
 
 
 !   2.5 On imprime les extrema de E et j
 !  -------------------------------------
 
-  if(modntl.eq.0) then
+  if (modntl.eq.0) then
 
     write(nfecra,1000)
 
-!     Grad PotR = -E
+    ! Grad PotR = -E
     var    = grad(1,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var    = grad(iel,1)
+      var    = grad(1,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -253,13 +224,13 @@ if(iappel.eq.1) then
       call parmin (vrmin)
       call parmax (vrmax)
     endif
-    WRITE(NFECRA,1010)'Gr_PotRX',VRMIN,VRMAX
+    write(nfecra,1010)'Gr_PotRX',vrmin,vrmax
 
-    var    = grad(1,2)
+    var    = grad(2,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var    = grad(iel,2)
+      var    = grad(2,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -267,13 +238,13 @@ if(iappel.eq.1) then
       call parmin (vrmin)
       call parmax (vrmax)
     endif
-    WRITE(NFECRA,1010)'Gr_PotRY',VRMIN,VRMAX
+    write(nfecra,1010)'Gr_PotRY',vrmin,vrmax
 
-    var    = grad(1,3)
+    var    = grad(3,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var    = grad(iel,3)
+      var    = grad(3,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -281,13 +252,13 @@ if(iappel.eq.1) then
       call parmin (vrmin)
       call parmax (vrmax)
     endif
-    WRITE(NFECRA,1010)'Gr_PotRZ',VRMIN,VRMAX
+    write(nfecra,1010)'Gr_PotRZ',vrmin,vrmax
 
     var    = -propce(1,ipcsig) * grad(1,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * grad(iel,1)
+      var = -propce(iel,ipcsig) * grad(1,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -295,13 +266,13 @@ if(iappel.eq.1) then
       call parmin (vrmin)
       call parmax (vrmax)
     endif
-    WRITE(NFECRA,1010)'Cour_ReX',VRMIN,VRMAX
+    write(nfecra,1010)'Cour_ReX',vrmin,vrmax
 
-    var    = -propce(1,ipcsig) * grad(1,2)
+    var    = -propce(1,ipcsig) * grad(2,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * grad(iel,2)
+      var = -propce(iel,ipcsig) * grad(2,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -309,13 +280,13 @@ if(iappel.eq.1) then
       call parmin (vrmin)
       call parmax (vrmax)
     endif
-    WRITE(NFECRA,1010)'Cour_ReY',VRMIN,VRMAX
+    write(nfecra,1010)'Cour_ReY',vrmin,vrmax
 
-    var    = -propce(1,ipcsig) * grad(1,3)
+    var    = -propce(1,ipcsig) * grad(3,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * grad(iel,3)
+      var = -propce(iel,ipcsig) * grad(3,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -323,7 +294,7 @@ if(iappel.eq.1) then
       call parmin (vrmin)
       call parmax (vrmax)
     endif
-    WRITE(NFECRA,1010)'Cour_ReZ',VRMIN,VRMAX
+    write(nfecra,1010)'Cour_ReZ',vrmin,vrmax
 
   endif
 
@@ -335,15 +306,15 @@ if(iappel.eq.1) then
 !                           CAS IELJOU = 2
 !===============================================================================
 
-  if(ippmod(ieljou).ge.2 .or. ippmod(ieljou).eq.4) then
+  if (ippmod(ieljou).ge.2 .or. ippmod(ieljou).eq.4) then
 
 
 !   3.1 Calcul du grad (potI) :
 !  ----------------------------
 
     ivar = isca(ipoti)
-    iclimv = iclrtp(ivar,icoef)
 
+    iprev = 0
     inc = 1
     iccocg = 1
     nswrgp = nswrgr(ivar)
@@ -353,24 +324,9 @@ if(iappel.eq.1) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    ! En periodique et parallele, echange avant calcul du gradient
-    !     C'est indispensable car on vient de calculer IVAR
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-      !==========
-    endif
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-    ivar0 = 0
-
-    call grdcel                                                   &
-    !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   )
-
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
+                               iccocg, nswrgp, iwarnp, imligp,       &
+                               epsrgp, extrap, climgp, grad)
 
 !   3.2 Calcul du champ electrique Ei = - grad (potI) :
 !  -------------------------------------------------
@@ -381,9 +337,9 @@ if(iappel.eq.1) then
 
   if ( ippmod(ieljou).eq.4 ) then
     do iel = 1, ncel
-      propce(iel,ipcdi1)= -propce(iel,ipcsig)*grad(iel,1)
-      propce(iel,ipcdi2)= -propce(iel,ipcsig)*grad(iel,2)
-      propce(iel,ipcdi3)= -propce(iel,ipcsig)*grad(iel,3)
+      propce(iel,ipcdi1)= -propce(iel,ipcsig)*grad(1,iel)
+      propce(iel,ipcdi2)= -propce(iel,ipcsig)*grad(2,iel)
+      propce(iel,ipcdi3)= -propce(iel,ipcsig)*grad(3,iel)
     enddo
   endif
 
@@ -395,7 +351,7 @@ if(iappel.eq.1) then
 
 !             ajout de la partie imaginaire et ...
       propce(iel,ipcefj) = propce(iel,ipcefj)                     &
-         + propce(iel,ipcsii)*(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2)
+         + propce(iel,ipcsii)*(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2)
 !             .    ..division par 2
       propce(iel,ipcefj) = 0.5d0*propce(iel,ipcefj)
 
@@ -406,14 +362,14 @@ if(iappel.eq.1) then
 !   3.5 On imprime les extrema de E et j
 !  -------------------------------------
 
-    if(modntl.eq.0) then
+    if (modntl.eq.0) then
 
 !     Grad PotI = -Ei
       var    = grad(1,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var    = grad(iel,1)
+        var    = grad(1,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -421,13 +377,13 @@ if(iappel.eq.1) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Gr_PotIX',VRMIN,VRMAX
+      write(nfecra,1010)'Gr_PotIX',vrmin,vrmax
 
-      var    = grad(1,2)
+      var    = grad(2,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var    = grad(iel,2)
+        var    = grad(2,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -435,13 +391,13 @@ if(iappel.eq.1) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Gr_PotIY',VRMIN,VRMAX
+      write(nfecra,1010)'Gr_PotIY',vrmin,vrmax
 
-      var    = grad(1,3)
+      var    = grad(3,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var    = grad(iel,3)
+        var    = grad(3,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -449,14 +405,14 @@ if(iappel.eq.1) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Gr_PotIZ',VRMIN,VRMAX
+      write(nfecra,1010)'Gr_PotIZ',vrmin,vrmax
 
 !     j=sigma E
       var    = -propce(1,ipcsii) * grad(1,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * grad(iel,1)
+        var = -propce(iel,ipcsii) * grad(1,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -464,13 +420,13 @@ if(iappel.eq.1) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Cour_ImX',VRMIN,VRMAX
+      write(nfecra,1010)'Cour_ImX',vrmin,vrmax
 
-      var    = -propce(1,ipcsii) * grad(1,2)
+      var    = -propce(1,ipcsii) * grad(2,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * grad(iel,2)
+        var = -propce(iel,ipcsii) * grad(2,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -478,13 +434,13 @@ if(iappel.eq.1) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Cour_ImY',VRMIN,VRMAX
+      write(nfecra,1010)'Cour_ImY',vrmin,vrmax
 
-      var    = -propce(1,ipcsii) * grad(1,3)
+      var    = -propce(1,ipcsii) * grad(3,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * grad(iel,3)
+        var = -propce(iel,ipcsii) * grad(3,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -492,7 +448,7 @@ if(iappel.eq.1) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Cour_ImZ',VRMIN,VRMAX
+      write(nfecra,1010)'Cour_ImZ',vrmin,vrmax
 
       write(nfecra,1001)
 
@@ -516,7 +472,7 @@ if (iappel.eq.2) then
 !===============================================================================
 
 
-  if(ippmod(ielarc).ge.1) then
+  if (ippmod(ielarc).ge.1) then
     ipcla1 = ipproc(ilapla(1))
     ipcla2 = ipproc(ilapla(2))
     ipcla3 = ipproc(ilapla(3))
@@ -529,7 +485,7 @@ if (iappel.eq.2) then
 !           COMPOSANTES DU POTENTIEL VECTEUR
 !          ----------------------------------
 
-  if( ippmod(ielarc).ge.2 ) then
+  if (ippmod(ielarc).ge.2) then
 
 ! --> Calcul des composantes du champ magnetique B = (W1, W2, W3)
 !===================================================
@@ -538,8 +494,8 @@ if (iappel.eq.2) then
 !    Sur Ax
 
     ivar = isca(ipotva(1))
-    iclimv = iclrtp(ivar,icoef)
 
+    iprev = 0
     inc = 1
     iccocg = 1
     nswrgp = nswrgr(ivar)
@@ -549,38 +505,23 @@ if (iappel.eq.2) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    ! En periodique et parallele, echange avant calcul du gradient
-    !     C'est indispensable car on vient de calculer IVAR
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-      !==========
-    endif
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
+                               iccocg, nswrgp, iwarnp, imligp,       &
+                               epsrgp, extrap, climgp, grad)
 
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-
-    ivar0 = 0
-
-    call grdcel                                                   &
-    !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-   grad   )
-
-!       B = rot A
+    ! B = rot A
 
     do iel = 1, ncel
       w1(iel)=  zero
-      w2(iel)=  grad(iel,3)
-      w3(iel)= -grad(iel,2)
+      w2(iel)=  grad(3,iel)
+      w3(iel)= -grad(2,iel)
     enddo
 
-!    Sur Ay
+    ! Sur Ay
 
     ivar = isca(ipotva(2))
-    iclimv = iclrtp(ivar,icoef)
 
+    iprev = 0
     inc = 1
     iccocg = 1
     nswrgp = nswrgr(ivar)
@@ -590,38 +531,23 @@ if (iappel.eq.2) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    ! En periodique et parallele, echange avant calcul du gradient
-    !     C'est indispensable car on vient de calculer IVAR
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-      !==========
-    endif
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
+                               iccocg, nswrgp, iwarnp, imligp,       &
+                               epsrgp, extrap, climgp, grad)
 
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-
-    ivar0 = 0
-
-    call grdcel                                                   &
-    !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   )
-
-!       B = rot A
+    ! B = rot A
 
     do iel = 1, ncel
-      w1(iel)= w1(iel) - grad(iel,3)
+      w1(iel)= w1(iel) - grad(3,iel)
       w2(iel)= w2(iel) + zero
-      w3(iel)= w3(iel) + grad(iel,1)
+      w3(iel)= w3(iel) + grad(1,iel)
     enddo
 
-!    Sur Az
+    ! Sur Az
 
     ivar = isca(ipotva(3))
-    iclimv = iclrtp(ivar,icoef)
 
+    iprev = 0
     inc = 1
     iccocg = 1
     nswrgp = nswrgr(ivar)
@@ -631,30 +557,15 @@ if (iappel.eq.2) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    ! En periodique et parallele, echange avant calcul du gradient
-    !     C'est indispensable car on vient de calculer IVAR
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-      !==========
-    endif
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
+                               iccocg, nswrgp, iwarnp, imligp,       &
+                               epsrgp, extrap, climgp, grad)
 
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-
-    ivar0 = 0
-
-    call grdcel                                                   &
-    !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   )
-
-!       B = rot A
+    ! B = rot A
 
     do iel = 1, ncel
-      w1(iel)= w1(iel) + grad(iel,2)
-      w2(iel)= w2(iel) - grad(iel,1)
+      w1(iel)= w1(iel) + grad(2,iel)
+      w2(iel)= w2(iel) - grad(1,iel)
       w3(iel)= w3(iel) + zero
     enddo
 
@@ -663,7 +574,7 @@ if (iappel.eq.2) then
 !         ON PEUT UTILISER LE THEOREME D'AMPERE
 !        ---------------------------------------
 
-  else if(ippmod(ielarc).eq.1) then
+  else if (ippmod(ielarc).eq.1) then
 
 !      Calcul du Champ magnetique calcule :
 !===========================================
@@ -687,7 +598,7 @@ if (iappel.eq.2) then
 !         POUR TOUS LES CAS D'ARCS ELECTRIQUES
 !        --------------------------------------
 
-  if( ippmod(ielarc) .ge. 1 ) then
+  if (ippmod(ielarc) .ge. 1) then
     do iel = 1, ncel
       propce(iel,ipcla1)= propce(iel,ipcdc2) * w3(iel)            &
                          -propce(iel,ipcdc3) * w2(iel)
@@ -702,9 +613,9 @@ if (iappel.eq.2) then
 !   4.4 Impression de B en arc electrique
 !  --------------------------------------
 
-  if( ippmod(ielarc) .ge. 2 ) then
+  if (ippmod(ielarc) .ge. 2) then
 
-    if(modntl.eq.0) then
+    if (modntl.eq.0) then
 
       write(nfecra,1000)
 
@@ -721,7 +632,7 @@ if (iappel.eq.2) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Ch_MagX ',VRMIN,VRMAX
+      write(nfecra,1010)'Ch_MagX ',vrmin,vrmax
 
       var    = w2(1)
       vrmin = var
@@ -735,7 +646,7 @@ if (iappel.eq.2) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Ch_MagY ',VRMIN,VRMAX
+      write(nfecra,1010)'Ch_MagY ',vrmin,vrmax
 
       var    = w3(1)
       vrmin = var
@@ -749,7 +660,7 @@ if (iappel.eq.2) then
         call parmin (vrmin)
         call parmax (vrmax)
       endif
-      WRITE(NFECRA,1010)'Ch_MagZ ',VRMIN,VRMAX
+      write(nfecra,1010)'Ch_MagZ ',vrmin,vrmax
 
       write(nfecra,1001)
 
@@ -765,9 +676,8 @@ deallocate(w1, w2, w3)
 deallocate(grad)
 
 !--------
-! FORMATS
+! Formats
 !--------
-
 
  1000 format(/,                                                   &
 '-----------------------------------------                    ',/,&
@@ -794,9 +704,8 @@ deallocate(grad)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-
 !----
-! FIN
+! End
 !----
 
 return

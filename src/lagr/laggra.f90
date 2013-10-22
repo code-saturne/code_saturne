@@ -23,8 +23,7 @@
 subroutine laggra &
 !================
 
- ( rtp    , coefa  , coefb  ,                                     &
-   gradpr , gradvf )
+ ( iprev, gradpr , gradvf )
 
 !===============================================================================
 ! FONCTION :
@@ -42,18 +41,15 @@ subroutine laggra &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! coefa,coefb      ! tr ! <-- ! tableaux des cond lim pour pvar                !
-!   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! gradpr(ncel,3    ! tr ! --> ! gradient de pression                           !
-! gradvf(ncel,9    ! tr ! --> ! gradient de vitesse fluide                     !
+! iprev            ! i  ! --> ! use value from previous time step              !
+! gradpr(3,ncelet) ! ra ! --> ! gradient de pression                           !
+! gradvf           ! ra ! --> ! gradient de vitesse fluide                     !
+!   (3,3,ncelet)   !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -61,7 +57,6 @@ subroutine laggra &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use entsor
@@ -76,6 +71,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -83,15 +79,12 @@ implicit none
 
 ! Arguments
 
-double precision coefa(ndimfb,*) , coefb(ndimfb,*)
-double precision rtp(ncelet,*)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+integer          iprev
+double precision gradpr(3,ncelet) , gradvf(3,3,ncelet)
 
 ! Local variables
 
-
-integer          inc , iccocg , iclipr
-integer          ipcliu , ipcliv , ipcliw
+integer          inc , iccocg
 integer          iel
 double precision unsrho
 
@@ -100,50 +93,20 @@ double precision, dimension(:), pointer :: cromf
 !===============================================================================
 
 !===============================================================================
-! 0. PARAMETRES
+! 0. Parameters for gradient computation
 !===============================================================================
-
-!-->Rappel de differents paramtrage possibles pour le calcul du gradient
-
-!     INC     = 1               ! 0 RESOL SUR INCREMENT 1 SINON
-!     ICCOCG  = 1               ! 1 POUR RECALCUL DE COCG 0 SINON
-!     NSWRGR  = 100             ! mettre 1 pour un maillage regulie (par defaut : 100)
-!     IMLIGR  = -1              ! LIMITATION DU GRADIENT : < 0 PAS DE LIMITATION
-!     IWARNI  = 1               ! NIVEAU D'IMPRESSION
-!     EPSRGR  = 1.D-8           ! PRECISION RELATIVE POUR LA REC GRA 97
-!     CLIMGR  = 1.5D0           ! COEF GRADIENT*DISTANCE/ECART
-!     EXTRAG  = 0               ! COEF GRADIENT*DISTANCE/ECART
-
-
-!-->Parametrage des calculs des gradients
 
 inc     = 1
 iccocg  = 1
 
 !===============================================================================
-! 1. CALCUL DE :  - (GRADIENT DE PRESSION)/ROM
+! 1. Compute pressure gradient / rho
 !===============================================================================
 
-iclipr = iclrtp(ipr,icoef)
-
-! Calcul du gradient de pression
-
-
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(1,ipr))
-  !==========
-endif
-
-call grdcel &
-!==========
- ( ipr , imrgra , inc    , iccocg ,                            &
-   nswrgr(ipr)  , imligr(ipr)  ,                               &
-   iwarni(ipr)  , nfecra ,                                     &
-   epsrgr(ipr)  , climgr(ipr)  , extrag(ipr)  ,                &
-   rtp(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
-   gradpr )
+call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,          &
+                           iccocg, nswrgr(ipr),                      &
+                           iwarni(ipr), imligr(ipr), epsrgr(ipr),    &
+                           extrag(ipr), climgr(ipr), gradpr)
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
@@ -157,68 +120,25 @@ endif
 
 do iel = 1,ncel
   unsrho = 1.d0 / cromf(iel)
-  gradpr(iel,1) = -gradpr(iel,1) * unsrho
-  gradpr(iel,2) = -gradpr(iel,2) * unsrho
-  gradpr(iel,3) = -gradpr(iel,3) * unsrho
+  gradpr(1,iel) = -gradpr(1,iel) * unsrho
+  gradpr(2,iel) = -gradpr(2,iel) * unsrho
+  gradpr(3,iel) = -gradpr(3,iel) * unsrho
 enddo
 
 !===============================================================================
-! 2. CALCUL DU GRADIENT DE VITESSE :
+! 2. Compute velocity gradient
 !===============================================================================
 
 if (modcpl.gt.0 .and. iplas.ge.modcpl) then
 
-  ipcliu = iclrtp(iu,icoef)
-  ipcliv = iclrtp(iv,icoef)
-  ipcliw = iclrtp(iw,icoef)
-
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
-    !==========
-  endif
-
-!     COMPOSANTE X
-!     ============
-
-  call grdcel &
-  !==========
- ( iu  , imrgra , inc    , iccocg ,                        &
-   nswrgr(iu)   , imligr(iu)  ,                            &
-   iwarni(iu)   , nfecra ,                                 &
-   epsrgr(iu)   , climgr(iu)  , extrag(iu)  ,              &
-   rtp(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,       &
-   gradvf(1,1) )
-
-!     COMPOSANTE Y
-!     ============
-
-  call grdcel &
-  !==========
- ( iv  , imrgra , inc    , iccocg ,                         &
-   nswrgr(iv)   , imligr(iv)  ,                             &
-   iwarni(iv)   , nfecra ,                                  &
-   epsrgr(iv)   , climgr(iv)  , extrag(iv)  ,               &
-   rtp(1,iv)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,        &
-   gradvf(1,4) )
-
-!     COMPOSANTE Z
-!     ============
-
-  call grdcel &
-  !==========
- ( iw  , imrgra , inc    , iccocg ,                         &
-   nswrgr(iw)   , imligr(iw)  ,                             &
-   iwarni(iw)   , nfecra ,                                  &
-   epsrgr(iw)   , climgr(iw)  , extrag(iw)  ,               &
-   rtp(1,iw)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,        &
-   gradvf(1,7) )
+  call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,          &
+                             nswrgr(iu), iwarni(iu), imligr(iu),      &
+                             epsrgr(iu), climgr(iu), gradvf)
 
 endif
 
 !----
-! FIN
+! End
 !----
 
 return

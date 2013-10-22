@@ -25,7 +25,6 @@ subroutine atprke &
 
  ( nscal  ,                                                       &
    rtpa   , propce ,                                              &
-   coefa  , coefb  ,                                              &
    tinstk ,                                                       &
    smbrk  , smbre )
 
@@ -44,8 +43,6 @@ subroutine atprke &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !              faces de bord                     !
 ! tinstk(ncelet)   ! tr ! --> ! Implicit part of the buoyancy term (for k)     !
 ! smbrk(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for k)     !
 ! smbre(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for eps)   !
@@ -63,7 +60,6 @@ subroutine atprke &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstnum
@@ -77,6 +73,7 @@ use ppincl
 use mesh
 use field
 use atincl
+use field_operator
 
 !===============================================================================
 
@@ -85,7 +82,6 @@ implicit none
 ! Arguments
 integer          nscal
 
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rtpa (ncelet,*)
 double precision propce(ncelet,*)
 double precision smbrk(ncelet), smbre(ncelet)
@@ -94,7 +90,7 @@ double precision tinstk(ncelet)
 ! Local variables
 integer         iel
 integer         ipcvto
-integer         itpp , iqw, icltpp,iclqw
+integer         itpp , iqw
 integer         ipcliq
 integer         iccocg, inc
 integer         iivar
@@ -118,7 +114,7 @@ double precision, dimension(:), pointer :: cromo
 !===============================================================================
 
 ! Allocate work arrays
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
 
 ! Pointer to density and turbulent viscosity
 call field_get_val_s(icrom, cromo)
@@ -163,7 +159,6 @@ subroutine dry_atmosphere()
 ! Computation of the gradient of the potential temperature
 
 itpp = isca(iscalt)
-icltpp = iclrtp(itpp,icoef)
 
 ! computational options:
 
@@ -182,12 +177,9 @@ iivar = itpp
 ! computes the turbulent production/destruction terms:
 ! dry atmo: (1/sigmas*theta)*(dtheta/dz)*gz
 
-call grdcel                                                       &
-!==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
-   grad   )
+call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, grad)
 
 ! Production and gravity terms
 ! TINSTK=P+G et TINSTE = P + (1-CE3)*G
@@ -206,7 +198,7 @@ if (itytur.eq.2) then
     xk   = rtpa(iel,ik )
     ttke = xk / xeps
 
-    gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
+    gravke = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
            / (rtpa(iel,itpp)*prdtur)
 
     ! Implicit part (no implicit part for epsilon because the source
@@ -246,9 +238,7 @@ allocate(gravke_qw(ncelet))
 ! Computation of the gradient of the potential temperature
 
 itpp = isca(iscalt)
-icltpp = iclrtp(itpp,icoef)
 iqw = isca(itotwt)
-iclqw = iclrtp(iqw,icoef)
 ipcliq = ipproc(iliqwt)
 
 ! compute the coefficients etheta,eq
@@ -284,12 +274,9 @@ iivar = itpp
 ! computes the turbulent production/destruction terms:
 ! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
 
-call grdcel &
-!==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
-   grad   )
+call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, grad)
 
 ! Production and gravity terms
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G
@@ -306,7 +293,7 @@ if (itytur.eq.2) then
     qw = rtpa(iel,iqw) ! total water content
     qldia = propce(iel,ipcliq) ! liquid water content
     theta_virt = rtpa(iel,itpp)*(1.d0 + (rvsra - 1)*qw - rvsra*qldia)
-    gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)            &
+    gravke = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz)            &
            / (theta_virt*prdtur)
     gravke_theta(iel) = gravke*etheta(iel)
   enddo
@@ -328,12 +315,9 @@ iivar = iqw
 ! computes the turbulent production/destruction terms:
 ! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
 
-call grdcel                                                       &
-!==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iqw), coefa(1,iclqw) , coefb(1,iclqw) ,                 &
-   grad   )
+call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, grad)
 
 ! Production and gravity terms
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G
@@ -351,7 +335,7 @@ if (itytur.eq.2) then
     qw = rtpa(iel,iqw) ! total water content
     qldia = propce(iel,ipcliq) !liquid water content
     theta_virt = rtpa(iel,itpp)*(1.d0 + (rvsra - 1.d0)*qw - rvsra*qldia)
-    gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)                 &
+    gravke = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz)                 &
            / (theta_virt*prdtur)
     gravke_qw(iel) = gravke*eq(iel)
   enddo

@@ -26,7 +26,6 @@ subroutine strpre &
  ( itrale , italim , ineefl ,                                     &
    impale ,                                                       &
    rtpa   ,                                                       &
-   coefa  , coefb  ,                                              &
    flmalf , flmalb , xprale , cofale , depale )
 
 !===============================================================================
@@ -47,8 +46,6 @@ subroutine strpre &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !
 ! flmalb(nfabor    ! tr ! --> ! sauvegarde du flux de masse faces brd          !
 ! cofale           ! tr ! --> ! sauvegarde des cl de p et u                    !
@@ -69,7 +66,6 @@ subroutine strpre &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use optcal
 use numvar
 use pointe
@@ -93,7 +89,6 @@ integer          itrale , italim , ineefl
 integer          impale(nnod)
 
 double precision rtpa(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,11)
 double precision depale(3,nnod)
@@ -101,10 +96,11 @@ double precision depale(3,nnod)
 ! Local variables
 
 integer          istr, ii, ifac, inod, iel, indast
-integer          iflmas, iflmab,iclp
+integer          iflmas, iflmab
 
 integer, allocatable, dimension(:) :: lstfac
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: coefap, coefbp
 
 !===============================================================================
 
@@ -118,7 +114,8 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-iclp = iclrtp(ipr,icoef)
+call field_get_coefa_s(ivarfl(ipr), coefap)
+call field_get_coefb_s(ivarfl(ipr), coefbp)
 
 !===============================================================================
 ! 2. PREDICTION DU DEPLACEMENT DES STRUCTURES
@@ -253,11 +250,11 @@ if (italim.eq.1) then
     enddo
     do ifac = 1, nfabor
       flmalb(ifac) = bmasfl(ifac)
-      cofale(ifac,1)  = coefa(ifac,iclp)
+      cofale(ifac,1)  = coefap(ifac)
       cofale(ifac,2)  = coefau(1, ifac)
       cofale(ifac,3)  = coefau(2, ifac)
       cofale(ifac,4)  = coefau(3, ifac)
-      cofale(ifac,5)  = coefb(ifac,iclp)
+      cofale(ifac,5)  = coefbp(ifac)
       ! the coefficient B is supposed to be symmetric
       cofale(ifac,6)  = coefbu(1, 1, ifac)
       cofale(ifac,7)  = coefbu(2, 2, ifac)

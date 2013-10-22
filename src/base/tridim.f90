@@ -104,10 +104,9 @@ integer          nvar   , nscal
 
 integer          isostd(nfabor+1)
 
-double precision coefa(nfabor,*), coefb(nfabor,*)
-
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+double precision , dimension(nfabor,*) :: coefa, coefb
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 
@@ -180,10 +179,9 @@ interface
 
     integer          isostd(nfabor+1)
 
-    double precision coefa(ndimfb,*), coefb(ndimfb,*)
-
     double precision, pointer, dimension(:)   :: dt
     double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+    double precision, dimension(nfabor,*) :: coefa, coefb
     double precision, pointer, dimension(:,:) :: frcxt
     double precision, pointer, dimension(:) :: prhyd
     double precision, pointer, dimension(:,:) :: trava, uvwk
@@ -500,15 +498,12 @@ if (nbrcpl.gt.0) call cscloc
 !        (VISCOSITES ET MASSE VOLUMIQUE)
 !===============================================================================
 
-if(iwarni(iu).ge.1) then
+if (iwarni(iu).ge.1) then
   write(nfecra,1010)
 endif
 
-call phyvar                                                       &
+call phyvar(nvar, nscal, dt, rtp, rtpa, propce)
 !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  )
 
 if (itrale.gt.0) then
   iappel = 2
@@ -583,12 +578,11 @@ endif
 
 call dttvar &
 !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
+ ( nvar   , nscal  , ncepdc , ncetsm ,                            &
    iwarni(iu)   ,                                                 &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , ckupdc , smacel )
+   ckupdc , smacel )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
@@ -847,7 +841,7 @@ do while (iterns.le.nterup)
   ( nscal  ,                                                       &
     icodcl , itypfb ,                                              &
     dt     , rtp    ,                                              &
-    coefa  , coefb  , rcodcl )
+    rcodcl )
 
   endif
 
@@ -920,7 +914,6 @@ do while (iterns.le.nterup)
     ( itrale , italim , ineefl ,                                     &
       impale ,                                                       &
       rtpa   ,                                                       &
-      coefa  , coefb  ,                                              &
       flmalf , flmalb , xprale , cofale , depale )
 
     endif
@@ -1056,12 +1049,11 @@ do while (iterns.le.nterup)
     if (nfpt1t.gt.0) then
       call cou1do &
       !==========
-    ( nvar   , nscal  , ncp    , nfpt1d ,                            &
-      ientha , ifpt1d , iclt1d ,                                     &
-      tppt1d , tept1d , hept1d ,                                     &
-      fept1d , xlmbt1 , rcpt1d , dtpt1d ,                            &
-      dt     , rtpa   , propce ,                                     &
-      cpcst  , propce(1,ippcp) , hbord  , theipb )
+    ( nvar   , nscal  , ncp    , nfpt1d ,                          &
+      ientha , ifpt1d , iclt1d ,                                   &
+      tppt1d , tept1d , hept1d , fept1d ,                          &
+      xlmbt1 , rcpt1d , dtpt1d , dt     , rtpa   ,                 &
+      cpcst  , propce(:,ippcp) , hbord  , theipb )
     endif
   endif
 
@@ -1267,8 +1259,6 @@ do while (iterns.le.nterup)
         inslst = 1
       endif
 
-
-
       !     On teste le flux de masse
       if ((istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
         iappel = 3
@@ -1313,7 +1303,6 @@ if (iccvfg.eq.0) then
   ( itrale , italim , itrfin ,                                     &
     nvar   ,                                                       &
     dt     , rtp    , rtpa   ,                                     &
-    coefa  , coefb  ,                                              &
     flmalf , flmalb , cofale , xprale )
 
     !     On boucle eventuellement sur de deplacement des structures
@@ -1363,7 +1352,7 @@ if (iccvfg.eq.0) then
     allocate(prdv2f(ncelet))
   endif
 
-  if( (itytur.eq.2) .or. (itytur.eq.5) ) then
+  if ((itytur.eq.2) .or. (itytur.eq.5)) then
 
     call turbke &
     !==========
@@ -1372,7 +1361,7 @@ if (iccvfg.eq.0) then
     icepdc , icetsm , itypsm ,                                     &
     dt     , rtp    , rtpa   , propce ,                            &
     tslagr ,                                                       &
-    coefa  , coefb  , ckupdc , smacel ,                            &
+    ckupdc , smacel ,                                              &
     prdv2f )
 
     if( itytur.eq.5 )  then
@@ -1383,7 +1372,7 @@ if (iccvfg.eq.0) then
       ncepdc , ncetsm ,                                              &
       icepdc , icetsm , itypsm ,                                     &
       dt     , rtp    , rtpa   , propce ,                            &
-      coefa  , coefb  , ckupdc , smacel ,                            &
+      ckupdc , smacel ,                                              &
       prdv2f )
 
       ! Free memory
@@ -1406,7 +1395,7 @@ if (iccvfg.eq.0) then
     ! Calcul de Alpha pour l'EBRSM
     if (iturb.eq.32) then
 
-      call resalp(nvar, rtp, rtpa, propce, coefa, coefb)
+      call resalp(nvar, rtp, rtpa, propce)
       !==========
 
     endif
@@ -1418,9 +1407,9 @@ if (iccvfg.eq.0) then
     icepdc , icetsm , itypsm ,                                     &
     dt     , rtp    , rtpa   , propce ,                            &
     tslagr ,                                                       &
-    coefa  , coefb  , ckupdc , smacel )
+    ckupdc , smacel )
 
-  else if( iturb.eq.60 ) then
+  else if (iturb.eq.60) then
 
     call turbkw &
     !==========
@@ -1429,15 +1418,15 @@ if (iccvfg.eq.0) then
     icepdc , icetsm , itypsm ,                                     &
     dt     , rtp    , rtpa   , propce ,                            &
     tslagr ,                                                       &
-    coefa  , coefb  , ckupdc , smacel )
+    ckupdc , smacel )
 
     !  RELAXATION DE K ET OMEGA SI IKECOU=0
     if (ikecou.eq.0 .and. idtvar.ge.0) then
       relaxk = relaxv(ik )
       relaxw = relaxv(iomg)
       do iel = 1,ncel
-        rtp(iel,ik)  = relaxk*rtp(iel,ik) +(1.d0-relaxk)*rtpa(iel,ik)
-        rtp(iel,iomg) = relaxw*rtp(iel,iomg)+(1.d0-relaxw)*rtpa(iel,iomg)
+        rtp(iel,ik)   = relaxk*rtp(iel,ik)   + (1.d0-relaxk)*rtpa(iel,ik)
+        rtp(iel,iomg) = relaxw*rtp(iel,iomg) + (1.d0-relaxw)*rtpa(iel,iomg)
       enddo
     endif
 
@@ -1449,7 +1438,7 @@ if (iccvfg.eq.0) then
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
     dt     , rtp    , rtpa   , propce ,                            &
-    coefa  , coefb  , ckupdc , smacel ,                            &
+    ckupdc , smacel ,                                              &
     itypfb )
 
     !  RELAXATION DE NUSA
@@ -1470,7 +1459,6 @@ endif  ! Fin si calcul sur champ de vitesse fige SUITE
 !===============================================================================
 ! 15.  RESOLUTION DES SCALAIRES
 !===============================================================================
-
 
 if (nscal.ge.1 .and. iirayo.gt.0) then
 
@@ -1497,8 +1485,7 @@ if (nscal.ge.1) then
   call scalai                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce )
 
 endif
 

@@ -54,7 +54,6 @@
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term for the Lagrangian module
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
@@ -77,7 +76,7 @@ subroutine covofi &
    iscal  , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce , tslagr ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 
@@ -88,7 +87,6 @@ subroutine covofi &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -105,12 +103,14 @@ use lagpar
 use lagran
 use radiat
 use field
+use field_operator
 use ihmpre, only: iihmpr
 use mesh
 use parall
 use period
 use cs_f_interfaces
 use atchem
+
 !===============================================================================
 
 implicit none
@@ -127,7 +127,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision smbrs(ncelet)
@@ -139,10 +138,9 @@ logical          lprev
 character*80     chaine
 integer          ivar
 integer          ifac  , iel
-integer          inc   , iccocg, isqrt, iii, iiun, ibcl
+integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
-integer          iclvar, iclvaf
 integer          ipcvst, ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , iptsca, ipcvso
 integer          nswrgp, imligp, iwarnp
@@ -178,6 +176,7 @@ double precision, allocatable, dimension(:) :: srcmas
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -222,10 +221,6 @@ if (iiscav.gt.0.and.iiscav.le.nscal) then
 else
   ivarsc = 0
 endif
-
-! --- Numero des conditions aux limites
-iclvar = iclrtp(ivar,icoef)
-iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
@@ -395,7 +390,6 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( iscal  ,                                                       &
    rtpa   , rtp    , propce ,                                     &
-   coefa  , coefb  ,                                              &
    smbrs  , rovsdt , tslagr )
 endif
 
@@ -508,7 +502,7 @@ if (itspdv.eq.1) then
   if (itytur.eq.2 .or. itytur.eq.3 .or. itytur.eq.5 .or. iturb.eq.60) then
 
     ! Allocate a temporary array for the gradient reconstruction
-    allocate(grad(ncelet,3))
+    allocate(grad(3,ncelet))
 
     ! Remarque : on a prevu la possibilite de scalaire associe non
     !  variable de calcul, mais des adaptations sont requises
@@ -520,6 +514,7 @@ if (itspdv.eq.1) then
       call csexit(1)
     endif
 
+    iprev = 1
     inc = 1
     iccocg = 1
     nswrgp = nswrgr(iii)
@@ -529,14 +524,9 @@ if (itspdv.eq.1) then
     climgp = climgr(iii)
     extrap = extrag(iii)
 
-    call grdcel &
-    !==========
-  ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-    iwarnp , nfecra ,                                              &
-    epsrgp , climgp , extrap ,                                     &
-    rtpa(1,iii) , coefa(1,iclrtp(iii,icoef)) ,                     &
-                  coefb(1,iclrtp(iii,icoef)) ,                     &
-    grad   )
+    call field_gradient_scalar(ivarfl(iii), iprev, imrgra, inc,   &
+                               iccocg, nswrgp, iwarnp, imligp,    &
+                               epsrgp, extrap, climgp, grad)
 
     ! Traitement de la production
     ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
@@ -566,9 +556,9 @@ if (itspdv.eq.1) then
 
         do iel = 1, ncel
           propce(iel,iptsca) = propce(iel,iptsca) -2.d0*xcpp(iel)*volume(iel) &
-                                                  *(xut(1,iel)*grad(iel,1)    &
-                                                   +xut(2,iel)*grad(iel,2)    &
-                                                   +xut(3,iel)*grad(iel,3) )
+                                                  *(xut(1,iel)*grad(1,iel)    &
+                                                   +xut(2,iel)*grad(2,iel)    &
+                                                   +xut(3,iel)*grad(3,iel) )
         enddo
       ! SGDH model
       else
@@ -576,7 +566,7 @@ if (itspdv.eq.1) then
           propce(iel,iptsca) = propce(iel,iptsca)                             &
                + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                  &
                *volume(iel)/sigmas(iscal)                                     &
-               *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
+               *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
     ! Sinon : dans SMBRS
@@ -598,9 +588,9 @@ if (itspdv.eq.1) then
 
         do iel = 1, ncel
           smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)   &
-                                  *(xut(1,iel)*grad(iel,1)      &
-                                   +xut(2,iel)*grad(iel,2)      &
-                                   +xut(3,iel)*grad(iel,3) )
+                                  *(xut(1,iel)*grad(1,iel)      &
+                                   +xut(2,iel)*grad(2,iel)      &
+                                   +xut(3,iel)*grad(3,iel) )
         enddo
 
       ! SGDH model
@@ -609,7 +599,7 @@ if (itspdv.eq.1) then
           smbrs(iel) = smbrs(iel)                                            &
                      + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)           &
                      * volume(iel)/sigmas(iscal)                             &
-                     * (grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
+                     * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
 
@@ -620,7 +610,7 @@ if (itspdv.eq.1) then
           propce(iel,ipproc(iustdy(iscal))) +                     &
                2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)        &
              *volume(iel)/sigmas(iscal)                           &
-             *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
+             *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
     endif
@@ -826,6 +816,7 @@ endif
 !===============================================================================
 ! 3. Solving
 !===============================================================================
+
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)
@@ -854,6 +845,11 @@ relaxp = relaxv(ivar)
 ! all boundary convective flux with upwind
 icvflb = 0
 
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
 call codits &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -863,8 +859,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &

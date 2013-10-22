@@ -25,7 +25,6 @@ subroutine lwctss &
 
  ( iscal  ,                                                       &
    rtpa   , propce ,                                              &
-   coefa  , coefb  ,                                              &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -71,8 +70,6 @@ subroutine lwctss &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -102,6 +99,8 @@ use cpincl
 use ppincl
 use mesh
 use field
+use field_operator
+
 !===============================================================================
 
 implicit none
@@ -112,13 +111,12 @@ integer          iscal
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer          ivar, iel, idirac, ivar0
-integer          inc , iccocg
+integer          ivar, iel, idirac
+integer          inc , iccocg, iprev
 integer          ipcvst
 integer          ii
 
@@ -131,6 +129,7 @@ double precision tsgrad, tschim, tsdiss
 double precision, allocatable, dimension(:,:) :: gradf, grady
 double precision, allocatable, dimension(:) :: w10, w11
 double precision, dimension(:), pointer ::  crom
+
 !===============================================================================
 
 !===============================================================================
@@ -160,7 +159,7 @@ enddo
 ! 2. PRISE EN COMPTE DES TERMES SOURCES
 !===============================================================================
 
-if ( ivar.eq.isca(iyfm) ) then
+if (ivar.eq.isca(iyfm)) then
 
 ! ---> Terme source pour la fraction massique moyenne de fuel
 
@@ -203,10 +202,10 @@ endif
 
 ! ---> Terme source pour la covariance
 
-if ( ivar.eq.isca(icoyfp)) then
+if (ivar.eq.isca(icoyfp)) then
 
   ! Allocate a temporary array for gradient computation
-  allocate(gradf(ncelet,3), grady(ncelet,3))
+  allocate(gradf(3,ncelet), grady(3,ncelet))
 
   ! Allocate work arrays
   allocate(w10(ncelet), w11(ncelet))
@@ -219,26 +218,14 @@ if ( ivar.eq.isca(icoyfp)) then
     w10(iel) = rtpa(iel,ii)
   enddo
 
-  ! En periodique et parallele, echange avant calcul du gradient
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(w10)
-    !==========
-  endif
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-  ivar0 = 0
+  iprev = 1
   inc = 1
   iccocg = 1
 
-  call grdcel                                                     &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
-   iwarni(ii) , nfecra ,                                          &
-   epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &
-   w10    , coefa(1,iclrtp(ii,icoef))  ,                          &
-            coefb(1,iclrtp(ii,icoef))  ,                          &
-   gradf  )
+  call field_gradient_scalar(ivarfl(ii), iprev, imrgra, inc,              &
+                             iccocg, nswrgr(ii), iwarni(ii), imligr(ii),  &
+                             epsrgr(ii), extrag(ii), climgr(ii),          &
+                             gradf)
 
 ! --- Calcul du gradient de Yfuel
 !     ===========================
@@ -248,27 +235,14 @@ if ( ivar.eq.isca(icoyfp)) then
     w11(iel) = rtpa(iel,ii)
   enddo
 
-  ! En periodique et parallele, echange avant calcul du gradient
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(w11)
-    !==========
-  endif
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-  ivar0 = 0
+  iprev = 1
   inc = 1
   iccocg = 1
 
-  call grdcel                                                     &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
-   iwarni(ii) , nfecra ,                                          &
-   epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &
-   w11    , coefa(1,iclrtp(ii,icoef))  ,                          &
-            coefb(1,iclrtp(ii,icoef))  ,                          &
-   grady  )
-
+  call field_gradient_scalar(ivarfl(ii), iprev, imrgra, inc,              &
+                             iccocg, nswrgr(ii), iwarni(ii), imligr(ii),  &
+                             epsrgr(ii), extrag(ii), climgr(ii),          &
+                             grady)
 
 ! --- Calcul du terme source
 !     ======================
@@ -330,9 +304,9 @@ if ( ivar.eq.isca(icoyfp)) then
 
     tsgrad =  (2.0d0                                              &
          * propce(iel,ipcvst)/(sigmas(iscal))                     &
-         * (  gradf(iel,1)*grady(iel,1)                           &
-            + gradf(iel,2)*grady(iel,2)                           &
-            + gradf(iel,3)*grady(iel,3) ))                        &
+         * (  gradf(1,iel)*grady(1,iel)                           &
+            + gradf(2,iel)*grady(2,iel)                           &
+            + gradf(3,iel)*grady(3,iel) ))                        &
          * volume(iel)
 
 

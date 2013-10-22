@@ -24,8 +24,7 @@ subroutine atphyv &
 !================
 
    ( rtp    , rtpa   ,                                              &
-     propce ,                                                       &
-     coefa  , coefb  )
+     propce )
 
 !===============================================================================
 ! FONCTION :
@@ -94,8 +93,6 @@ subroutine atphyv &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -109,7 +106,6 @@ subroutine atphyv &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstphy
@@ -123,6 +119,7 @@ use ppincl
 use mesh
 use atincl
 use field
+use field_operator
 
 !===============================================================================
 
@@ -132,11 +129,10 @@ implicit none
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
-integer          ivart, iclvar, iel
+integer          ivart, iel
 integer          ipctem, ipcliq
 
 double precision xrtp, rhum, rscp, pp, zent
@@ -187,10 +183,6 @@ else
   write(nfecra,9010) iscalt
   call csexit (1)
 endif
-
-! --- Position des conditions limites de la variable IVART
-
-iclvar = iclrtp(ivart,icoef)
 
 ! --- Masse volumique
 
@@ -382,22 +374,18 @@ double precision q1,qsup
 
 ! rvap = rair*rvsra
 
-allocate(dtlsd(ncelet,3))
-allocate(dqsd(ncelet,3))
+allocate(dtlsd(3,ncelet))
+allocate(dqsd(3,ncelet))
 
-! ---------------------------
 ! computation of grad(thetal)
-! ---------------------------
 call grad_thetal(dtlsd)
 
-! ---------------------------
 ! computation of grad(qw)
-! ---------------------------
 call grad_qw(dqsd)
 
 ! -------------------------------------------------------------
-! gradients are used for estimating standard deviations of the
-! subgrid fluctuations
+! Gradients are used for estimating standard deviations of the
+! subgrid fluctuations.
 ! -------------------------------------------------------------
 
 lrhum = rhum
@@ -406,10 +394,11 @@ a_const = 2.d0*cmu/2.3d0
 do iel = 1, ncel
 
   a_coeff = a_const*rtp(iel, ik )**3/rtp(iel,iep)**2 ! 2 cmu/c2 * k**3 / eps**2
-  var_tl= a_coeff*(dtlsd(iel,1)**2 + dtlsd(iel,2)**2 + dtlsd(iel,3)**2)
-  var_q = a_coeff*( dqsd(iel,1)**2 + dqsd(iel,2)**2 + dqsd(iel,3)**2)
-  cov_tlq = a_coeff*(dtlsd(iel,1)*dqsd(iel,1) + dtlsd(iel,2)*dqsd(iel,2)        &
-          + dtlsd(iel,3)*dqsd(iel,3))
+  var_tl= a_coeff*(dtlsd(1,iel)**2 + dtlsd(2,iel)**2 + dtlsd(3,iel)**2)
+  var_q = a_coeff*( dqsd(1,iel)**2 + dqsd(2,iel)**2 + dqsd(3,iel)**2)
+  cov_tlq = a_coeff*(  dtlsd(1,iel)*dqsd(iel,1)   &
+                     + dtlsd(2,iel)*dqsd(2,iel)   &
+                     + dtlsd(3,iel)*dqsd(3,iel))
 
   zent = xyzcen(3,iel)
 
@@ -417,9 +406,7 @@ do iel = 1, ncel
     call atmstd(zent,pp,dum,dum)
   else
     ! Pressure profile from meteo file:
-    call intprf &
-     ( nbmett, nbmetm,                                                          &
-       ztmet , tmmet , phmet , zent, ttcabs, pp )
+    call intprf(nbmett, nbmetm, ztmet , tmmet , phmet , zent, ttcabs, pp)
   endif
 
   xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
@@ -457,8 +444,7 @@ do iel = 1, ncel
       nebdia(iel) = 0.d0
       nn(iel) = 0.d0
     else ! saturated (ie. with liquid water) air parcel
-      qliq = deltaq                                                             &
-            /(1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
+      qliq = deltaq / (1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
       lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
       ! liquid water content
       propce(iel,ipcliq) = qliq
@@ -492,14 +478,13 @@ end subroutine gaussian
 ! *******************************************************************
 
 subroutine grad_thetal(dtlsd)
-double precision dtlsd(ncelet,3)
+double precision dtlsd(3,ncelet)
 
 double precision climgp
 double precision epsrgp
 double precision extrap
 
 integer    iccocg
-integer    icltpp
 integer    iivar
 integer    imligp
 integer    inc
@@ -510,7 +495,6 @@ integer    nswrgp
 ! Computation of the gradient of the potential temperature
 
 itpp = isca(iscalt)
-icltpp = iclrtp(itpp,icoef)
 
 ! options for gradient calculation
 
@@ -526,12 +510,9 @@ extrap = extrag(itpp)
 
 iivar = itpp
 
-call grdcel                                                         &
-!==========
-   ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
-     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-     rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
-     dtlsd  )
+call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, dtlsd)
 
 end subroutine grad_thetal
 
@@ -540,14 +521,13 @@ end subroutine grad_thetal
 ! *******************************************************************
 
 subroutine grad_qw(dqsd)
-double precision dqsd(ncelet,3)
+double precision dqsd(3,ncelet)
 
 double precision climgp
 double precision epsrgp
 double precision extrap
 
 integer    iccocg
-integer    iclqw
 integer    iivar
 integer    imligp
 integer    inc
@@ -563,7 +543,6 @@ iccocg = 1
 inc = 1
 
 iqw = isca(itotwt)
-iclqw = iclrtp(iqw,icoef)
 nswrgp = nswrgr(iqw)
 epsrgp = epsrgr(iqw)
 imligp = imligr(iqw)
@@ -573,12 +552,9 @@ extrap = extrag(iqw)
 
 iivar = iqw
 
-call grdcel                                                      &
-!==========
-    (iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,         &
-     iwarnp , nfecra , epsrgp , climgp , extrap ,                &
-     rtpa(1,iqw), coefa(1,iclqw) , coefb(1,iclqw) ,              &
-     dqsd   )
+call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
+                           iccocg, nswrgp, iwarnp, imligp,          &
+                           epsrgp, extrap, climgp, dqsd)
 
 end subroutine grad_qw
 end subroutine atphyv

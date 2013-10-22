@@ -58,7 +58,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     gradv         tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
 !> \param[in]     produc        tableau de travail pour production
@@ -82,7 +81,7 @@ subroutine resssg &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , gradv  , gradro ,                            &
+   gradv  , gradro ,                                              &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
@@ -95,7 +94,6 @@ subroutine resssg &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -107,6 +105,7 @@ use lagran
 use pointe, only: visten
 use mesh
 use field
+use field_operator
 use cs_f_interfaces
 
 !===============================================================================
@@ -124,7 +123,6 @@ integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
@@ -138,13 +136,12 @@ double precision smbr(ncelet), rovsdt(ncelet)
 integer          iel
 integer          ii    , jj    , kk    , iiun  , iii   , jjj
 integer          ipcvis, iflmas, iflmab
-integer          iclvar, iclvaf, iclal , iclalf
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          inc, iccocg, iphydp, ll
+integer          iprev , inc, iccocg, iphydp, ll
 integer          imucpp, idftnp, iswdyp
 integer          indrey(3,3)
 integer          icvflb
@@ -173,6 +170,7 @@ double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
 
@@ -188,7 +186,6 @@ allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
 ! Initialize variables to avoid compiler warnings
-iclal = 0
 iii = 0
 jjj = 0
 
@@ -202,14 +199,6 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
-
-if (iturb.eq.32) then
-  iclal  = iclrtp(ial,icoef)
-  iclalf = iclrtp(ial,icoeff)
-endif
-
-iclvar = iclrtp(ivar,icoef)
-iclvaf = iclrtp(ivar,icoeff)
 
 d1s2   = 1.d0/2.d0
 d1s3   = 1.d0/3.d0
@@ -366,9 +355,10 @@ endif
 
 ! EBRSM
 if (iturb.eq.32) then
-  allocate(grad(ncelet,3))
+  allocate(grad(3,ncelet))
 
   ! Compute the gradient of Alpha
+  iprev  = 1
   inc    = 1
   iccocg = 1
   nswrgp = nswrgr(ial)
@@ -379,12 +369,9 @@ if (iturb.eq.32) then
   extrap = extrag(ial)
   iphydp = 0
 
-  call grdcel &
-  !==========
- ( ial    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ial )    , coefa(1,iclal)  , coefb(1,iclal)  ,          &
-   grad   )
+  call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
+                             iccocg, nswrgp, iwarnp, imligp,      &
+                             epsrgp, extrap, climgp, grad)
 
 endif
 
@@ -426,9 +413,9 @@ do iel=1,ncel
   ! EBRSM
   if (iturb.eq.32) then
     ! Compute the magnitude of the Alpha gradient
-    xnoral = ( grad(iel,1)*grad(iel,1)          &
-           +   grad(iel,2)*grad(iel,2)          &
-           +   grad(iel,3)*grad(iel,3) )
+    xnoral = ( grad(1,iel)*grad(1,iel)          &
+           +   grad(2,iel)*grad(2,iel)          &
+           +   grad(3,iel)*grad(3,iel) )
     xnoral = sqrt(xnoral)
    ! Compute the unitary vector of Alpha
     if (xnoral.le.epzero) then
@@ -436,9 +423,9 @@ do iel=1,ncel
       xnal(2) = 0.d0
       xnal(3) = 0.d0
     else
-      xnal(1) = grad(iel,1)/xnoral
-      xnal(2) = grad(iel,2)/xnoral
-      xnal(3) = grad(iel,3)/xnoral
+      xnal(1) = grad(1,iel)/xnoral
+      xnal(2) = grad(2,iel)/xnoral
+      xnal(3) = grad(3,iel)/xnoral
     endif
   endif
 
@@ -655,12 +642,12 @@ do iel=1,ncel
 
 enddo
 
+deallocate(grad)
 
 if (isto2t.gt.0) then
 
   do iel = 1, ncel
-    propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1)         &
-         + w1(iel)
+    propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w1(iel)
   enddo
 
 else
@@ -773,6 +760,11 @@ relaxp = relaxv(ivar)
 ! all boundary convective flux with upwind
 icvflb = 0
 
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
 call codits &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -782,8 +774,7 @@ call codits &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
-   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
-   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &

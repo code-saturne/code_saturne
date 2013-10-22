@@ -226,6 +226,11 @@ do ii = 1, nfld
   icondl = iclrtp(ivar, icoef)
   icondf = iclrtp(ivar, icoeff)
   icondd = icondl
+  if (itytur.eq.3) then
+    if (ivar.ge.ir11 .and. ivar.le.ir23) then
+      icondd = iclrtp(ivar, icoefr)
+    endif
+  endif
   icondc = icondl
   call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (ipass .eq. 1) then

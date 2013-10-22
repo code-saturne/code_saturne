@@ -38,8 +38,6 @@
 !> \param[in]     locpts
 !> \param[in]     rtp           calculated variables at cell centers
 !>                              (at current and previous time steps)
-!> \param[in]     coefa         boundary conditions for boundary faces
-!> \param[in]     coefb         boundary conditions for boundary faces
 !> \param[in]     coopts
 !> \param[in]     djppts
 !> \param[in]     pndpts
@@ -52,7 +50,6 @@ subroutine cscpfb &
    nptdis , numcpl , nvcpto,                                      &
    locpts ,                                                       &
    rtp    ,                                                       &
-   coefa  , coefb  ,                                              &
    coopts , djppts , pndpts ,                                     &
    rvdis  , dofpts )
 
@@ -72,6 +69,8 @@ use period
 use cplsat
 use mesh
 use field
+use field_operator
+
 !===============================================================================
 
 implicit none
@@ -84,17 +83,15 @@ integer          nptdis , numcpl , nvcpto
 integer          locpts(nptdis)
 
 double precision rtp(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
 double precision rvdis(nptdis,nvcpto)
 
 ! Local variables
 
-
 integer          ipt    , iel    , isou
 integer          ivar   , iscal
-integer          inc    , iccocg , iclvar, nswrgp
+integer          inc    , iccocg , iprev  , nswrgp
 integer          iwarnp , imligp
 integer          ipos
 integer          itytu0
@@ -107,27 +104,32 @@ double precision xx, yy, zz
 double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
 double precision vitent, daxis2
 
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: trav1, trav2, trav3, trav4
 double precision, allocatable, dimension(:) :: trav5, trav6, trav7, trav8
 double precision, dimension(:), pointer :: crom
+
 !===============================================================================
 
 !=========================================================================
 ! 1.  INITIALISATIONS
 !=========================================================================
 
-! Allocate a temporary array
-allocate(grad(ncelet,3))
+! Gradient options for all operations here
+
+iprev  = 0
+inc    = 1
+iccocg = 1
 
 ! Initialize variables to avoid compiler warnings
 
 vitent = 0.d0
 
-! Memoire
-
-
 ! Allocate temporary arrays
+
+allocate(grad(3,ncelet))
+allocate(gradv(3,3,ncelet))
 
 allocate(trav1(nptdis))
 allocate(trav2(nptdis))
@@ -178,7 +180,7 @@ endif
 ! On part du principe que l'on envoie les bonnes variables à
 ! l'instance distante et uniquement celles-là.
 
-! De plus, les variables sont envoyées dans l'ordre de VARPOS :
+! De plus, les variables sont envoyées dans l'ordre:
 
 !     - pression (unique pour toute les phases)
 !     - vitesse
@@ -192,19 +194,9 @@ endif
 ipos = 1
 
 !=========================================================================
-! 1.  PREPARATION DE LA PRESSION
+! 1.  Prepare for pressure
 !=========================================================================
 
-! --- Calcul du gradient de la pression pour interpolation
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(1,ipr))
-  !==========
-endif
-
-inc    = 1
-iccocg = 1
-iclvar = iclrtp(ipr,icoef)
 nswrgp = nswrgr(ipr)
 imligp = imligr(ipr)
 iwarnp = iwarni(ipr)
@@ -212,13 +204,9 @@ epsrgp = epsrgr(ipr)
 climgp = climgr(ipr)
 extrap = extrag(ipr)
 
-call grdcel &
-!==========
-  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ipr) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   )
+call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,  &
+                           iccocg, nswrgp, iwarnp, imligp,   &
+                           epsrgp, extrap, climgp, grad)
 
 ! For a specific face to face coupling, geometric assumptions are made
 
@@ -237,7 +225,7 @@ if (ifaccp.eq.1) then
     zjjp = djppts(3,ipt)
 
     rvdis(ipt,ipos) = rtp(iel,ipr) &
-         + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+         + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     ! On prend en compte le potentiel centrifuge en repère relatif
     if (icormx(numcpl).eq.1) then
@@ -274,13 +262,13 @@ else
     yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
     zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
 
-    if(pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
+    if (pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
       jpf = -1.d0*sqrt(xjpf**2+yjpf**2+zjpf**2)
     else
       jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
     endif
 
-    rvdis(ipt,ipos) = (xjpf*grad(iel,1)+yjpf*grad(iel,2)+zjpf*grad(iel,3))  &
+    rvdis(ipt,ipos) = (xjpf*grad(1,iel)+yjpf*grad(2,iel)+zjpf*grad(3,iel))  &
          /jpf
 
   enddo
@@ -290,42 +278,24 @@ endif
 
 
 !=========================================================================
-! 2.  PREPARATION DE LA VITESSE
+! 2.  Prepare for velocity
 !=========================================================================
 
-! --- Calcul du gradient de la vitesse pour interpolation
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(iu)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
 
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
-  !==========
-endif
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
+                           nswrgp, iwarnp, imligp,          &
+                           epsrgp, climgp, gradv)
 
 do isou = 1, 3
 
   ipos = ipos + 1
 
-  if(isou.eq.1) ivar = iu
-  if(isou.eq.2) ivar = iv
-  if(isou.eq.3) ivar = iw
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(ivar,icoef)
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-
-  call grdcel                                                   &
-  !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   )
-
+  ivar = iu + isou - 1
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -335,11 +305,11 @@ do isou = 1, 3
 
       iel = locpts(ipt)
 
-! --- Pour la vitesse on veut imposer un dirichlet de vitesse qui "imite"
-!     ce qui se passe pour une face interne. On se donne le choix entre
-!     UPWIND, SOLU et CENTRE (parties commentées selon le choix retenu).
-!     Pour l'instant seul le CENTRE respecte ce qui se passerait pour la
-!     diffusion si on avait un seul domaine
+      ! Pour la vitesse on veut imposer un dirichlet de vitesse qui "imite"
+      ! ce qui se passe pour une face interne. On se donne le choix entre
+      ! UPWIND, SOLU et CENTRE (parties commentées selon le choix retenu).
+      ! Pour l'instant seul le CENTRE respecte ce qui se passerait pour la
+      ! diffusion si on avait un seul domaine
 
       ! -- UPWIND
 
@@ -356,7 +326,8 @@ do isou = 1, 3
       !        zjf = coopts(3,ipt) - xyzcen(3,iel)
 
       !        rvdis(ipt,ipos) = rtp(iel,ivar) &
-      !          + xjf*grad(iel,1) + yjf*grad(iel,2) + zjf*grad(iel,3)
+      !          + xjf*gradv(1,isou,iel) + yjf*gradv(2,isou,iel) &
+      !          + zjf*gradv(3,isou,iel)
 
       ! -- CENTRE
 
@@ -364,8 +335,10 @@ do isou = 1, 3
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      rvdis(ipt,ipos) = rtp(iel,ivar) &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+      rvdis(ipt,ipos) =   rtp(iel,ivar)            &
+                        + xjjp*gradv(1,isou,iel)   &
+                        + yjjp*gradv(2,isou,iel)   &
+                        + zjjp*gradv(3,isou,iel)
 
       ! On prend en compte la vitesse d'entrainement en repère relatif
       if (icormx(numcpl).eq.1) then
@@ -399,9 +372,10 @@ do isou = 1, 3
       yjjp = dofpts(2,ipt) + djppts(2,ipt)
       zjjp = dofpts(3,ipt) + djppts(3,ipt)
 
-
-      rvdis(ipt,ipos) = rtp(iel,ivar)                             &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+      rvdis(ipt,ipos) =   rtp(iel,ivar)            &
+                        + xjjp*gradv(1,isou,iel)   &
+                        + yjjp*gradv(2,isou,iel)   &
+                        + zjjp*gradv(3,isou,iel)
 
     enddo
 
@@ -410,13 +384,11 @@ do isou = 1, 3
 enddo
 !       Fin de la boucle sur les composantes de la vitesse
 
-
 !=========================================================================
 ! 3.  PREPARATION DES GRANDEURS TURBULENTES
 !=========================================================================
 
 itytu0 = iturcp(numcpl)/10
-
 
 !=========================================================================
 !       3.1 Turbulence dans l'instance locale : modèles k-epsilon
@@ -428,16 +400,6 @@ if (itytur.eq.2) then
 !          3.1.1. INTERPOLATION EN J'
 !=======================================================================
 
-!         Préparation des données: interpolation de k en J'
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ik))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(ik,icoef)
   nswrgp = nswrgr(ik)
   imligp = imligr(ik)
   iwarnp = iwarni(ik)
@@ -445,14 +407,9 @@ if (itytur.eq.2) then
   climgp = climgr(ik)
   extrap = extrag(ik)
 
-  call grdcel &
-  !==========
-  ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
+                             iccocg, nswrgp, iwarnp, imligp,      &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -467,7 +424,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       trav1(ipt) = rtp(iel,ik)                         &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -484,7 +441,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       trav1(ipt) = rtp(iel,ik)                         &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -492,14 +449,6 @@ if (itytur.eq.2) then
 
   !         Préparation des données: interpolation de epsilon en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iep))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(iep,icoef)
   nswrgp = nswrgr(iep)
   imligp = imligr(iep)
   iwarnp = iwarni(iep)
@@ -507,14 +456,9 @@ if (itytur.eq.2) then
   climgp = climgr(iep)
   extrap = extrag(iep)
 
-  call grdcel &
-  !==========
-  ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,     &
+                             iccocg, nswrgp, iwarnp, imligp,      &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -529,7 +473,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       trav2(ipt) = rtp(iel,iep)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -546,7 +490,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       trav2(ipt) = rtp(iel,iep)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -581,9 +525,9 @@ if (itytur.eq.2) then
 
   elseif (itytu0.eq.3) then
 
-    !           Tenseur Rij
-    !           ------------
-    !           Termes de la diagonal R11,R22,R33
+    ! Rij tensor
+    ! ------------
+    ! Diagonal R11,R22,R33
 
     do isou =1, 3
 
@@ -595,81 +539,58 @@ if (itytur.eq.2) then
 
     enddo
 
-    !           Termes R12,R13,R23
-
-    !           La synchronisation des halos a deja ete faite plus haut
+    ! Terms R12,R13,R23
 
     do isou = 1, 3
 
-      if(isou.eq.1) ivar = iu
-      if(isou.eq.2) ivar = iv
-      if(isou.eq.3) ivar = iw
+      ivar = iu + isou - 1
 
-      inc    = 1
-      iccocg = 1
-      iclvar = iclrtp(ivar,icoef)
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-
-      call grdcel                                               &
-      !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   )
-
+      ! Velocity gradient has already been computed above
 
       do ipt = 1, nptdis
 
         iel = locpts(ipt)
 
-        if(isou.eq.1) then
-          trav3(ipt) = grad(iel,2)
-          trav4(ipt) = grad(iel,3)
+        if (isou.eq.1) then
+          trav3(ipt) = gradv(2,isou,iel)
+          trav4(ipt) = gradv(3,isou,iel)
         elseif(isou.eq.2) then
-          trav5(ipt) = grad(iel,1)
-          trav6(ipt) = grad(iel,3)
+          trav5(ipt) = gradv(1,isou,iel)
+          trav6(ipt) = gradv(3,isou,iel)
         elseif(isou.eq.3) then
-          trav7(ipt) = grad(iel,1)
-          trav8(ipt) = grad(iel,2)
+          trav7(ipt) = gradv(1,isou,iel)
+          trav8(ipt) = gradv(2,isou,iel)
         endif
 
       enddo
 
-    enddo
-    !           Fin de la boucle sur les composantes de la vitesse
+    enddo ! loop on velocity components
 
-    !           R12
+    ! R12
     ipos = ipos + 1
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = -2.0d0*trav1(ipt)**2*cmu / max(1.0d-10, trav2(ipt)) &
-           *0.5d0*(trav3(ipt) + trav5(ipt))
+                        *0.5d0*(trav3(ipt) + trav5(ipt))
     enddo
 
-    !           R13
+    ! R13
     ipos = ipos + 1
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = -2.0d0*trav1(ipt)**2*cmu / max(1.0d-10, trav2(ipt)) &
-           *0.5d0*(trav4(ipt) + trav7(ipt))
+                        *0.5d0*(trav4(ipt) + trav7(ipt))
     enddo
 
-    !           R23
+    ! R23
     ipos = ipos + 1
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = -2.0d0*trav1(ipt)**2*cmu / max(1.0d-10,trav2(ipt)) &
-           *0.5d0*(trav6(ipt) + trav8(ipt))
+                        *0.5d0*(trav6(ipt) + trav8(ipt))
     enddo
 
-    !           Dissipation turbulente
-    !           ----------------------
+    ! Turbulente dissipation
     ipos = ipos + 1
 
     do ipt = 1, nptdis
@@ -719,15 +640,7 @@ elseif (itytur.eq.3) then
   !          3.2.1. INTERPOLATION EN J'
   !=======================================================================
 
-  !         Préparation des données: interpolation des Rij en J'
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synten &
-    !==========
-  ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),  &
-    rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),  &
-    rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
-  endif
+  ! Préparation des données: interpolation des Rij en J'
 
   do isou = 1, 6
 
@@ -738,9 +651,6 @@ elseif (itytur.eq.3) then
     if (isou.eq.5) ivar = ir13
     if (isou.eq.6) ivar = ir23
 
-    inc    = 1
-    iccocg = 1
-    iclvar = iclrtp(ivar,icoef)
     nswrgp = nswrgr(ivar)
     imligp = imligr(ivar)
     iwarnp = iwarni(ivar)
@@ -748,13 +658,9 @@ elseif (itytur.eq.3) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel                                                 &
-    !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   )
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,    &
+                               iccocg, nswrgp, iwarnp, imligp,      &
+                               epsrgp, extrap, climgp, grad)
 
     ! For a specific face to face coupling, geometric assumptions are made
 
@@ -770,22 +676,22 @@ elseif (itytur.eq.3) then
 
         if (isou.eq.1) then
           trav1(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.2) then
           trav2(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.3) then
           trav3(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.4) then
           trav4(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.5) then
           trav5(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.6) then
           trav6(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         endif
 
       enddo
@@ -804,22 +710,22 @@ elseif (itytur.eq.3) then
 
         if (isou.eq.1) then
           trav1(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.2) then
           trav2(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.3) then
           trav3(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.4) then
           trav4(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.5) then
           trav5(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.6) then
           trav6(ipt) = rtp(iel,ivar) &
-             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         endif
 
       enddo
@@ -828,16 +734,8 @@ elseif (itytur.eq.3) then
 
   enddo
 
-  !         Préparation des données: interpolation de epsilon en J'
+  ! Préparation des données: interpolation de epsilon en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iep))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(iep,icoef)
   nswrgp = nswrgr(iep)
   imligp = imligr(iep)
   iwarnp = iwarni(iep)
@@ -845,14 +743,9 @@ elseif (itytur.eq.3) then
   climgp = climgr(iep)
   extrap = extrag(iep)
 
-  call grdcel &
-  !==========
-  ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,     &
+                             iccocg, nswrgp, iwarnp, imligp,      &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -867,7 +760,7 @@ elseif (itytur.eq.3) then
       zjjp = djppts(3,ipt)
 
       trav7(ipt) = rtp(iel,iep)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -884,7 +777,7 @@ elseif (itytur.eq.3) then
       zjjp = djppts(3,ipt)
 
       trav7(ipt) = rtp(iel,iep)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1004,14 +897,6 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de k en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ik))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(ik,icoef)
   nswrgp = nswrgr(ik)
   imligp = imligr(ik)
   iwarnp = iwarni(ik)
@@ -1019,14 +904,9 @@ elseif (iturb.eq.50) then
   climgp = climgr(ik)
   extrap = extrag(ik)
 
-  call grdcel &
-  !==========
-  ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
+                             iccocg, nswrgp, iwarnp, imligp,      &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1041,7 +921,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       trav1(ipt) = rtp(iel,ik)                         &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1058,22 +938,14 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       trav1(ipt) = rtp(iel,ik)                         &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
   endif
 
-  !         Préparation des données: interpolation de epsilon en J'
+  ! Préparation des données: interpolation de epsilon en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iep))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(iep,icoef)
   nswrgp = nswrgr(iep)
   imligp = imligr(iep)
   iwarnp = iwarni(iep)
@@ -1081,14 +953,9 @@ elseif (iturb.eq.50) then
   climgp = climgr(iep)
   extrap = extrag(iep)
 
-  call grdcel &
-  !==========
-  ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,  &
+                             iccocg, nswrgp, iwarnp, imligp,   &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1103,7 +970,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       trav2(ipt) = rtp(iel,iep)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1120,7 +987,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       trav2(ipt) = rtp(iel,iep)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1128,14 +995,6 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de Phi en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iphi))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(iphi,icoef)
   nswrgp = nswrgr(iphi)
   imligp = imligr(iphi)
   iwarnp = iwarni(iphi)
@@ -1143,14 +1002,9 @@ elseif (iturb.eq.50) then
   climgp = climgr(iphi)
   extrap = extrag(iphi)
 
-  call grdcel &
-  !==========
-  ( iphi , imrgra , inc    , iccocg , nswrgp , imligp ,           &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,iphi) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(iphi), iprev, imrgra, inc,  &
+                             iccocg, nswrgp, iwarnp, imligp,    &
+                             epsrgp, extrap, climgp, grad)
 
   do ipt = 1, nptdis
 
@@ -1161,20 +1015,12 @@ elseif (iturb.eq.50) then
     zjjp = djppts(3,ipt)
 
     trav3(ipt) = rtp(iel,iphi)                        &
-         + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+         + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
   enddo
 
   !         Préparation des données: interpolation de F-barre en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ifb))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(ifb,icoef)
   nswrgp = nswrgr(ifb)
   imligp = imligr(ifb)
   iwarnp = iwarni(ifb)
@@ -1182,14 +1028,9 @@ elseif (iturb.eq.50) then
   climgp = climgr(ifb)
   extrap = extrag(ifb)
 
-  call grdcel &
-  !==========
-  ( ifb , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ifb) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(ifb), iprev, imrgra, inc,  &
+                             iccocg, nswrgp, iwarnp, imligp,   &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1204,7 +1045,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       trav4(ipt) = rtp(iel,ifb)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1221,7 +1062,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       trav4(ipt) = rtp(iel,ifb)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1286,14 +1127,6 @@ elseif (iturb.eq.60) then
 
   !         Préparation des données: interpolation de k en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ik))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(ik,icoef)
   nswrgp = nswrgr(ik)
   imligp = imligr(ik)
   iwarnp = iwarni(ik)
@@ -1301,14 +1134,9 @@ elseif (iturb.eq.60) then
   climgp = climgr(ik)
   extrap = extrag(ik)
 
-  call grdcel &
-  !==========
-  ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    grad   )
-
+  call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,  &
+                             iccocg, nswrgp, iwarnp, imligp,  &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1323,7 +1151,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       trav1(ipt) = rtp(iel,ik)                         &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1340,7 +1168,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       trav1(ipt) = rtp(iel,ik)                         &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1348,14 +1176,6 @@ elseif (iturb.eq.60) then
 
   !         Préparation des données: interpolation de omega en J'
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iomg))
-    !==========
-  endif
-
-  inc    = 1
-  iccocg = 1
-  iclvar = iclrtp(iomg,icoef)
   nswrgp = nswrgr(iomg)
   imligp = imligr(iomg)
   iwarnp = iwarni(iomg)
@@ -1363,13 +1183,9 @@ elseif (iturb.eq.60) then
   climgp = climgr(iomg)
   extrap = extrag(iomg)
 
-  call grdcel &
-  !==========
-  ( iomg , imrgra , inc    , iccocg , nswrgp , imligp ,           &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,iomg) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   )
+  call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,  &
+                             iccocg, nswrgp, iwarnp, imligp,    &
+                             epsrgp, extrap, climgp, grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1384,7 +1200,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       trav2(ipt) = rtp(iel,iomg)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1401,7 +1217,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       trav2(ipt) = rtp(iel,iomg)                        &
-           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
 
@@ -1474,42 +1290,23 @@ elseif (iturb.eq.60) then
 
     do isou = 1, 3
 
-      if(isou.eq.1) ivar = iu
-      if(isou.eq.2) ivar = iv
-      if(isou.eq.3) ivar = iw
+      ivar = iu + isou - 1
 
-      inc    = 1
-      iccocg = 1
-      iclvar = iclrtp(ivar,icoef)
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-
-      call grdcel                                               &
-      !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   )
-
+      ! Velocity gradient has already been computed above
 
       do ipt = 1, nptdis
 
         iel = locpts(ipt)
 
         if (isou.eq.1) then
-          trav3(ipt) = grad(iel,2)
-          trav4(ipt) = grad(iel,3)
+          trav3(ipt) = gradv(2,isou,iel)
+          trav4(ipt) = gradv(3,isou,iel)
         elseif (isou.eq.2) then
-          trav5(ipt) = grad(iel,1)
-          trav6(ipt) = grad(iel,3)
+          trav5(ipt) = gradv(1,isou,iel)
+          trav6(ipt) = gradv(3,isou,iel)
         elseif (isou.eq.3) then
-          trav7(ipt) = grad(iel,1)
-          trav8(ipt) = grad(iel,2)
+          trav7(ipt) = gradv(1,isou,iel)
+          trav8(ipt) = gradv(2,isou,iel)
         endif
 
       enddo
@@ -1522,7 +1319,7 @@ elseif (iturb.eq.60) then
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = -2.0d0*trav1(ipt) / max(1.0d-10, trav2(ipt))  &
-           *0.5d0*(trav3(ipt) + trav5(ipt))
+                        *0.5d0*(trav3(ipt) + trav5(ipt))
     enddo
 
     !           R13
@@ -1530,7 +1327,7 @@ elseif (iturb.eq.60) then
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = -2.0d0*trav1(ipt) / max(1.0d-10, trav2(ipt))  &
-           *0.5d0*(trav4(ipt) + trav7(ipt))
+                        *0.5d0*(trav4(ipt) + trav7(ipt))
     enddo
 
     !           R23
@@ -1538,7 +1335,7 @@ elseif (iturb.eq.60) then
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = -2.0d0*trav1(ipt) / max(1.0d-10, trav2(ipt))  &
-           *0.5d0*(trav6(ipt) + trav8(ipt))
+                        *0.5d0*(trav6(ipt) + trav8(ipt))
     enddo
 
     !           Dissipation turbulente
@@ -1549,14 +1346,13 @@ elseif (iturb.eq.60) then
       rvdis(ipt,ipos) = trav2(ipt)*cmu*trav1(ipt)
     enddo
 
-
     !=======================================================================
     !          3.3.4. Transfert de k-omega vers v2f
     !=======================================================================
 
   elseif (iturcp(numcpl).eq.50) then
 
-    !  ATTENTION: CAS NON PRIS EN COMPTE. ARRET DU CALCUL DANS CSCINI.F
+    !  ATTENTION: CAS NON PRIS EN COMPTE. ARRET DU CALCUL DANS cscini.f90
 
   endif
 
@@ -1576,14 +1372,6 @@ if (nscal.gt.0) then
 
 ! --- Calcul du gradient du scalaire pour interpolation
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iclvar = iclrtp(ivar,icoef)
     nswrgp = nswrgr(ivar)
     imligp = imligr(ivar)
     iwarnp = iwarni(ivar)
@@ -1591,13 +1379,9 @@ if (nscal.gt.0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel &
-    !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,         &
-    grad   )
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
+                               iccocg, nswrgp, iwarnp, imligp,    &
+                               epsrgp, extrap, climgp, grad)
 
     ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1622,7 +1406,7 @@ if (nscal.gt.0) then
 !        zjf = coopts(3,ipt) - xyzcen(3,iel)
 
 !        rvdis(ipt,ipos) = rtp(iel,ivar) &
-!          + xjf*grad(iel,1) + yjf*grad(iel,2) + zjf*grad(iel,3)
+!          + xjf*grad(1,iel) + yjf*grad(2,iel) + zjf*grad(3,iel)
 
 ! -- CENTRE
 
@@ -1631,7 +1415,7 @@ if (nscal.gt.0) then
         zjjp = djppts(3,ipt)
 
         rvdis(ipt,ipos) = rtp(iel,ivar) &
-          + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+          + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
       enddo
 
@@ -1648,7 +1432,7 @@ if (nscal.gt.0) then
         zjjp = djppts(3,ipt)
 
         rvdis(ipt,ipos) = rtp(iel,ivar)                             &
-          + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+          + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
       enddo
 
@@ -1659,7 +1443,10 @@ if (nscal.gt.0) then
 endif
 
 ! Free memory
+
+deallocate(gradv)
 deallocate(grad)
+
 deallocate(trav1, trav2, trav3, trav4)
 deallocate(trav5, trav6, trav7, trav8)
 

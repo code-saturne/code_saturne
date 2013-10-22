@@ -103,10 +103,9 @@ integer          nvar   , nscal  , iterns , icvrge , itrale
 
 integer          isostd(nfabor+1)
 
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
-
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+double precision, dimension(nfabor,*) :: coefa, coefb
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 double precision, pointer, dimension(:,:) :: trava, uvwk
