@@ -169,7 +169,7 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 ipcvis  = ipproc(iviscl)
 ipcvst  = ipproc(ivisct)
 call field_get_val_s(icrom, crom)
- call field_get_val_s(ibrom, brom)
+call field_get_val_s(ibrom, brom)
 ipccou  = ipproc(icour)
 ipcfou  = ipproc(ifour)
 
@@ -182,9 +182,9 @@ else
 endif
 
 if (                                                             &
-   .not. (iconv(iu).ge.1.and.                                    &
-           (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
-   .not. (idiff(iu).ge.1.and.                                    &
+   .not. (iconv(iu).ge.1 .and. ipccou.ge.1) .and.                &
+   .not. (idiff(iu).ge.1 .and. ipcfou.ge.1) .and.                &
+   .not. ((iconv(iu).ge.1 .or.idiff(iu).ge.1).and.               &
            (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
    .not. (ippmod(icompf).ge.0.and.                               &
            (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
@@ -637,7 +637,7 @@ if (idtvar.ge.0) then
 ! 4.2  CALCUL DU NOMBRE DE COURANT POUR AFFICHAGE
 !===============================================================================
 
-  if (iconv(iu).ge.1 .and. (iwarnp.ge.2.or.modntl.eq.0)) then
+  if (iconv(iu).ge.1 .and. ipccou.ge.1) then
 
     idiff0 = 0
     cnom   =' COURANT'
@@ -707,7 +707,7 @@ if (idtvar.ge.0) then
 ! 4.3  CALCUL DU NOMBRE DE FOURIER POUR AFFICHAGE
 !===============================================================================
 
-  if (idiff(iu).ge.1 .and. (iwarnp.ge.2.or.modntl.eq.0)) then
+  if (idiff(iu).ge.1 .and. ipcfou.ge.1) then
 
     iconv0 = 0
     CNOM   =' FOURIER'
