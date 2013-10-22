@@ -16,6 +16,9 @@ Changes:
 
 - Remove deprecated uncoupled velocity solver (ivelco=0).
 
+- Turbomachinery modeling:
+   * added a rotor-stator model based on mesh joining.
+
 - Particle tracking module:
    * add a modeling of the drying phase of the coal particle combustion 
    * add a new boundary condition to simulate coal fouling mechanism
