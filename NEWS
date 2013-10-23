@@ -16,6 +16,18 @@ Changes:
 
 - Remove deprecated uncoupled velocity solver (ivelco=0).
 
+- Thermal model:
+   * the thermal model is now defined by the "itherm" keyword/variable, which
+     replaces iscsth(iscalt). In the case of temperature, the scale used is
+     defined by a separate variable (itpscal). For additional user scalars,
+     a new array iscacp is defined, such that iscacp(iscal) defines whether the
+     scalar behaves like a temperature, so the possibility of modeling multiple
+     passive "temperatures" is not lost.
+     This change allows for better consistency between the standard and specific
+     physics, as the thermal variable is now always a "model" scalar, and user
+     scalars remain separate. It also allows querying the thermal model with one
+     less indirection.
+
 - Turbomachinery modeling:
    * added a rotor-stator model based on mesh joining.
 
