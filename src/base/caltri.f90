@@ -266,6 +266,10 @@ endif
 if (ncpdct.gt.0) then
   write(nfecra,2001) ncpdct
   write(nfecra,3000)
+  ! Add matching field if not already done
+  if (idtten.lt.0) then
+    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .true., .false., idtten)
+  endif
 endif
 
 ! -----------------
