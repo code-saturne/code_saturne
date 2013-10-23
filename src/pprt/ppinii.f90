@@ -87,6 +87,8 @@ do ipp = 1, nmodmx
   ippmod(ipp) = -1
 enddo
 
+ihm = 0 ! enthalpy, common to many models
+
 isoot = -1
 i_coal_drift = 0
 

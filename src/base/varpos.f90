@@ -255,6 +255,10 @@ if (ipass.eq.1) then
 
   nscal = iscal
 
+  if (itherm.eq.2 .and. iscalt.gt.0) then
+    ihm = iscalt
+  endif
+
   return
 
 endif

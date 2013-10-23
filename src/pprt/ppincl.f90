@@ -734,6 +734,13 @@ module ppincl
   !> \}
   !> \}
 
+  !> \defgroup enthalpy Enthalpic variables pointers
+
+  !> \addtogroup enthalpy
+  !> \{
+
+  !> enthalpy, if transported
+  integer, save :: ihm
 
   !> with gas combustion, pulverised coal or the electric module, \ref srrom
   !> is the sub-relaxation coefficient for the density, following the formula:
