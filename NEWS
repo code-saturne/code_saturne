@@ -43,11 +43,23 @@ Changes:
        and user-defined coal composition)
      - adapted the particles and trajectories export routines to be able to output variable
        information for a specific layer.
-    
+
+- Compressible module:
+   * change the compressible algorithm from a density formulation to a pressure formulation
+   * merge the compressible algorithm with the coupled velocity components algorithm
+   * adapt standard bricks (codits, bilsc*) in order to make them compatible with the
+     compressible algorithm
+   * implement analytical flux boundary condition
+     (plus a new total enthalpy / total pressure boundary condition with a fixed point algo,
+      generalization of the subsonic outlet)
+   * creation of a new set of BC coefficient for the convection operator for compressible flows
+   * remove density in the variables array (rtp) and keep it only in the properties array.
+
 - Coal combustion module:
   - added new NOx model for coal combustion;
   - introduction of the coal thermal conductivity
     (for the calculation of intra particle gradients in particle-tracking module)
+
 
 - Boundary conditions:
    * Fix in the wall boundary conditions for the viscous boundary term
