@@ -3830,7 +3830,7 @@ static mei_tree_t *_init_mei_tree(const char *formula,
  *
  * Fortran Interface:
  *
- * subroutine uiiniv (ncelet, isuite, isca, iscold, rtp)
+ * subroutine uiiniv
  * *****************
  *
  * integer          ncelet   <--  number of cells with halo
@@ -3839,16 +3839,16 @@ static mei_tree_t *_init_mei_tree(const char *formula,
  * integer          iscold   <--  scalar number for restart
  * integer          iccfth   <--  type of initialisation(compressible model)
  * integer          ipr      <--  rtp index for pressure
+ * integer          iscalt   <--  index of the thermal scalar
  * integer          itempk   <--  rtp index for temperature (in K)
  * integer          ienerg   <--  rtp index for energy total
  * double precision ro0      <--  value of density if IROVAR=0
  * double precision cp0      <--  value of specific heat if ICP=0
  * double precision viscl0   <--  value of viscosity if IVIVAR=0
- * double precision visls0   <--  value of reference molecular diffusivity
  * double precision uref     <--  value of reference velocity
  * double precision almax    <--  value of reference length
  * double precision xyzcen   <--  cell's gravity center
- * double precision rtp     -->   variables and scalars array
+ * double precision rtp      -->  variables and scalars array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
@@ -3857,6 +3857,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                               const int          *iscold,
                                     int          *iccfth,
                               const int *const    ipr,
+                              const int *const    iscalt,
                               const int *const    itempk,
                               const int *const    ienerg,
                               const cs_real_t    *ro0,
@@ -4143,6 +4144,58 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         }
       }
 
+      /* Thermal scalar initialization */
+      if (*iscalt > 0) {
+        path_sca = cs_xpath_init_path();
+        cs_xpath_add_elements(&path_sca, 3,
+                              "thermophysical_models",
+                              "thermal_scalar",
+                              "scalar");
+        cs_xpath_add_test_attribute(&path_sca, "label", vars->label[*iscalt-1]);
+        cs_xpath_add_element(&path_sca, "formula");
+        cs_xpath_add_test_attribute(&path_sca, "zone_id", zone_id);
+        cs_xpath_add_function_text(&path_sca);
+        formula_sca = cs_gui_get_text_value(path_sca);
+        BFT_FREE(path_sca);
+
+        if (formula_sca != NULL) {
+          ev_formula_sca = mei_tree_new(formula_sca);
+          mei_tree_insert(ev_formula_sca,"x",0.);
+          mei_tree_insert(ev_formula_sca,"y",0.);
+          mei_tree_insert(ev_formula_sca,"z",0.);
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula_sca))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula_sca->string, mei_tree_builder(ev_formula_sca));
+
+          if (mei_tree_find_symbol(ev_formula_sca, vars->label[*iscalt-1]))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"),
+                      vars->label[*iscalt-1]);
+
+          if (*isuite == 0 || (*isuite !=0 && iscold[*iscalt-1] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula_sca, "x", xyzcen[3 * iel + 0]);
+              mei_tree_insert(ev_formula_sca, "y", xyzcen[3 * iel + 1]);
+              mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
+              mei_evaluate(ev_formula_sca);
+              rtp[(isca[*iscalt-1]-1)*(*ncelet) + iel] =
+                mei_tree_lookup(ev_formula_sca,vars->label[*iscalt-1]);
+            }
+          }
+          mei_tree_destroy(ev_formula_sca);
+        } else {
+          if (*isuite == 0 || (*isuite !=0 && iscold[*iscalt-1] == 0)) {
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              rtp[(isca[*iscalt-1]-1)*(*ncelet) + iel] = 0.0;
+            }
+          }
+        }
+        BFT_FREE(formula_sca);
+      }
       /* User Scalars initialization */
       for (j=0; j < vars->nscaus; j++) {
         path_sca = cs_xpath_init_path();

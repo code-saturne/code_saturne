@@ -173,7 +173,7 @@ endif
 if (iihmpr.eq.1) then
 
   call uiiniv (ncelet, isuite, isca, iscold,       &
-               ithvar, ipr, itempk, ienerg,        &
+               ithvar, ipr, iscalt, itempk, ienerg,&
                ro0, cp0, viscl0, uref,             &
                almax, xyzcen, rtp)
 

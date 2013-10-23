@@ -539,7 +539,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
  *
  * Fortran Interface:
  *
- * subroutine uiiniv (ncelet, isuite, isca, iscold, rtp)
+ * subroutine uiiniv
  * *****************
  *
  * integer          ncelet   <--  number of cells with halo
@@ -548,33 +548,34 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
  * integer          iscold   <--  scalar number for restart
  * integer          iccfth   <--  type of initialisation(compressible model)
  * integer          ipr      <--  rtp index for pressure
+ * integer          iscalt   <--  index of the thermal scalar
  * integer          itempk   <--  rtp index for temperature (in K)
  * integer          ienerg   <--  rtp index for energy total
- * DOUBLE PRECISION RO0      <--  value of density if IROVAR=0
- * DOUBLE PRECISION CP0      <--  value of specific heat if ICP=0
- * DOUBLE PRECISION VISCL0   <--  value of viscosity if IVIVAR=0
- * DOUBLE PRECISION UREF     <--  value of reference velocity
- * DOUBLE PRECISION ALMAX    <--  value of reference length
- * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
- * double precision rtp     -->   variables and scalars array
- * double precision propce  -->   physical properties array
+ * double precision ro0      <--  value of density if IROVAR=0
+ * double precision cp0      <--  value of specific heat if ICP=0
+ * double precision viscl0   <--  value of viscosity if IVIVAR=0
+ * double precision uref     <--  value of reference velocity
+ * double precision almax    <--  value of reference length
+ * double precision xyzcen   <--  cell's gravity center
+ * double precision rtp      -->  variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
-                               const int         *isuite,
-                               const int         *isca,
-                               const int         *iscold,
-                                     int         *iccfth,
-                               const int *const   ipr,
-                               const int *const   itempk,
-                               const int *const   ienerg,
+void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
+                              const int          *isuite,
+                              const int          *isca,
+                              const int          *iscold,
+                                    int          *iccfth,
+                              const int *const    ipr,
+                              const int *const    iscalt,
+                              const int *const    itempk,
+                              const int *const    ienerg,
                               const cs_real_t    *ro0,
                               const cs_real_t    *cp0,
                               const cs_real_t    *viscl0,
                               const cs_real_t    *uref,
                               const cs_real_t    *almax,
                               const double *const xyzcen,
-                                    double       rtp[]);
+                                    double        rtp[]);
 
 /*----------------------------------------------------------------------------
  * User law for material Properties
