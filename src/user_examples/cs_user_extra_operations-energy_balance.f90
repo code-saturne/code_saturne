@@ -259,33 +259,6 @@ if (inpdt0.eq.0) then
 
     ! --- Compute temperature gradient
 
-    ! To compute the temperature gradient in a given cell, it is necessary
-    ! to have access to values at neighboring cells.  For this,
-
-    ! - in parallel calculations, it is necessary at cells on sub-domain
-    !   boundaries to know the value of these variables in cells from the
-    !   neighboring subdomain.
-    ! - in periodic calculations, it is necessary at cells on periodic
-    !   boundaries to know the value of these variables in matching
-    !   periodic cells.
-
-    ! To ensure that these values are up to date, it is necessary to use
-    ! the synchronization routines to update parallel and periodic ghost
-    ! values for the temperature before computing the gradient.
-
-    ! If the calculation is neither parallel nor periodic, the calls may be
-    ! kept, as tests on iperio and irangp ensure generality).
-
-    ! - Parallel and periodic update
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-      !==========
-    endif
-
-
-    ! - Compute gradient
-
     inc = 1
     iccocg = 1
     nswrgp = nswrgr(ivar)
