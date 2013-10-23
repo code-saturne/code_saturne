@@ -114,67 +114,15 @@ extern cs_boundary_t *boundaries;
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
-
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment
  *
+ * Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i]
+ *
  * Fortran Interface:
  *
- * SUBROUTINE UICLIM
+ * subroutine uiclim
  * *****************
- *
- * INTEGER          NTCABS  --> current iteration number
- * INTEGER          NFABOR  --> number of boundary faces
- * INTEGER          NOZPPM  --> max number of boundary conditions zone
- * INTEGER          NCHARM  --> maximal number of coals
- * INTEGER          NCHARB  --> number of simulated coals
- * INTEGER          NCLPCH  --> number of simulated class per coals
- * INTEGER          NGASG   --> number of simulated gas for electrical models
- * INTEGER          IINDEF  --> type of boundary: not defined
- * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
- * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
- * INTEGER          IEPHCF  --> type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
- * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
- * INTEGER          IPAROI  --> type of boundary: smooth wall
- * INTEGER          IPARUG  --> type of boundary: rough wall
- * INTEGER          ISYMET  --> type of boundary: symetry
- * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          ISCA    <-- indirection array for scalar number
- * INTEGER          IPR     <-- rtp index for pressure
- * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
- * INTEGER          IENERG  <-- rtp index for energy total
- * INTEGER          IQIMP   --> 1 if flow rate is applied
- * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
- * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
- * INTEGER          IENTCP  --> 1 for coal temperature boundary conditions (coal)
- * INTEGER          inmoxy  --> oxydant number (coal)
- * INTEGER          IENTOX  --> 1 for an air fow inlet (gas combustion)
- * INTEGER          IENTFU  --> 1 for fuel flow inlet (gas combustion)
- * INTEGER          IENTGB  --> 1 for burned gas inlet (gas combustion)
- * INTEGER          IENTGF  --> 1 for unburned gas inlet (gas combustion)
- * integer          iprofm  --> atmospheric flows: on/off for profile from data
- * DOUBLE PRECISION COEJOU  --> electric arcs
- * DOUBLE PRECISION DPOT    --> electric arcs : potential difference
- * DOUBLE PRECISION RTPA    --> rtpa for implicit flux
- * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number for each boundary face
- * INTEGER          ICODCL  --> boundary conditions array type
- * DOUBLE PRECISION DTREF   --> time step
- * DOUBLE PRECISION TTCABS  --> current time
- * DOUBLE PRECISION SURFBO  --> boundary faces surface
- * DOUBLE PRECISION CGDFBO  --> boundary faces center of gravity
- * DOUBLE PRECISION QIMP    --> inlet flow rate
- * DOUBLE PRECISION QIMPAT  --> inlet air flow rate (coal)
- * DOUBLE PRECISION QIMPCP  --> inlet coal flow rate (coal)
- * DOUBLE PRECISION DH      --> hydraulic diameter
- * DOUBLE PRECISION XINTUR  --> turbulent intensity
- * DOUBLE PRECISION TIMPAT  --> air temperature boundary conditions (coal)
- * DOUBLE PRECISION TIMPCP  --> inlet coal temperature (coal)
- * DOUBLE PRECISION TKENT   --> inlet temperature (gas combustion)
- * DOUBLE PRECISION FMENT   --> Mean Mixture Fraction at Inlet (gas combustion)
- * DOUBLE PRECISION DISTCH  --> ratio for each coal
- * DOUBLE PRECISION RCODCL  --> boundary conditions array value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
@@ -195,6 +143,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *isolib,
                                const int  *isca,
                                const int  *ipr,
+                               const int  *iscalt,
                                const int  *itempk,
                                const int  *ienerg,
                                int        *iqimp,

@@ -989,12 +989,13 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
  * Boundary conditions treatment: global structure initialization
  *
  * parameters:
- *   nfabor               <--  number of boundary faces
- *   nozppm               <--  max number of boundary conditions zone
- *   ncharb               <--  number of simulated coals
- *   nclpch               <--  number of simulated class per coals
- *   ncharb               <--  number of simulated gaz for electrical models
- *   izfppp               <--  zone number for each boundary face
+ *   nfabor               <-- number of boundary faces
+ *   nozppm               <-- max number of boundary conditions zone
+ *   iscalt               <-- index of the thermal scalar
+ *   ncharb               <-- number of simulated coals
+ *   nclpch               <-- number of simulated class per coals
+ *   ncharb               <-- number of simulated gaz for electrical models
+ *   izfppp               <-- zone number for each boundary face
  *   iesicf               <-- type of boundary: imposed inlet (compressible)
  *   isspcf               <-- type of boundary: supersonic outlet (compressible)
  *   iephcf               <-- type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
@@ -1004,6 +1005,7 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
 static void
 _init_boundaries(const int  *nfabor,
                  const int  *nozppm,
+                 const int  *iscalt,
                  const int  *ncharb,
                  const int  *nclpch,
                        int  *izfppp,
@@ -1290,6 +1292,10 @@ _init_boundaries(const int  *nfabor,
             _inlet_turbulence(choice, izone);
             BFT_FREE(choice);
 
+            /* Inlet: Thermal scalar */
+            if (*iscalt > 0)
+                _boundary_scalar("inlet", izone, *iscalt-1);
+
             /* Inlet: USER SCALARS */
             for (isca = 0; isca < vars->nscaus; isca++)
                 _boundary_scalar("inlet", izone, isca);
@@ -1315,6 +1321,10 @@ _init_boundaries(const int  *nfabor,
             /* Wall: ROUGH */
             _wall_roughness(label, izone);
 
+            /* Wall: Thermal scalar */
+            if (*iscalt > 0)
+                _boundary_scalar("wall", izone, *iscalt-1);
+
             /* Wall: USER SCALARS */
             for (isca = 0; isca < vars->nscaus; isca++)
                 _boundary_scalar("wall", izone, isca);
@@ -1333,6 +1343,10 @@ _init_boundaries(const int  *nfabor,
                 _boundary_status("outlet", label, "meteo_data", &boundaries->meteo[izone].read_data);
                 _boundary_status("outlet", label, "meteo_automatic", &boundaries->meteo[izone].automatic);
             }
+
+            /* Outlet: Thermal scalar */
+            if (*iscalt > 0)
+                _boundary_scalar("outlet", izone, *iscalt-1);
 
             /* Outlet: USER SCALARS */
             for (isca = 0; isca < vars->nscaus; isca++)
@@ -1583,61 +1597,62 @@ cs_gui_get_faces_list(int          izone,
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICLIM
+ * subroutine uiclim
  * *****************
  *
- * INTEGER          NTCABS  <-- current iteration number
- * INTEGER          NFABOR  <-- number of boundary faces
- * INTEGER          NOZPPM  <-- max number of boundary conditions zone
- * INTEGER          NCHARM  <-- maximal number of coals
- * INTEGER          NCHARB  <-- number of simulated coals
- * INTEGER          NCLPCH  <-- number of simulated class per coals
- * INTEGER          NGASG   <-- number of simulated gas for electrical models
- * INTEGER          IINDEF  <-- type of boundary: not defined
- * INTEGER          IENTRE  <-- type of boundary: inlet
- * INTEGER          IESICF  <-- type of boundary: imposed inlet (compressible)
- * INTEGER          ISSPCF  <-- type of boundary: supersonic outlet (compressible)
- * INTEGER          IEPHCF  <-- type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
- * INTEGER          ISOPCF  <-- type of boundary: subsonic outlet (compressible)
- * INTEGER          IPAROI  <-- type of boundary: smooth wall
- * INTEGER          IPARUG  <-- type of boundary: rough wall
- * INTEGER          ISYMET  <-- type of boundary: symetry
- * INTEGER          ISOLIB  <-- type of boundary: outlet
- * INTEGER          ISCA    <-- indirection array for scalar number
- * INTEGER          IPR     <-- rtp index for pressure
- * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
- * INTEGER          IENERG  <-- rtp index for energy total
- * INTEGER          IQIMP   <-- 1 if flow rate is applied
- * INTEGER          ICALKE  <-- 1 for automatic turbulent boundary conditions
- * INTEGER          IENTAT  <-- 1 for air temperature boundary conditions (coal)
- * INTEGER          IENTCP  <-- 1 for coal temperature boundary conditions (coal)
- * integer          inmoxy  <-- coal: number of oxydant for the current inlet
- * INTEGER          IENTOX  <-- 1 for an air fow inlet (gas combustion)
- * INTEGER          IENTFU  <-- 1 for fuel flow inlet (gas combustion)
- * INTEGER          IENTGB  <-- 1 for burned gas inlet (gas combustion)
- * INTEGER          IENTGF  <-- 1 for unburned gas inlet (gas combustion)
+ * integer          ntcabs  <-- current iteration number
+ * integer          nfabor  <-- number of boundary faces
+ * integer          nozppm  <-- max number of boundary conditions zone
+ * integer          ncharm  <-- maximal number of coals
+ * integer          ncharb  <-- number of simulated coals
+ * integer          nclpch  <-- number of simulated class per coals
+ * integer          ngasg   <-- number of simulated gas for electrical models
+ * integer          iindef  <-- type of boundary: not defined
+ * integer          ientre  <-- type of boundary: inlet
+ * integer          iesicf  <-- type of boundary: imposed inlet (compressible)
+ * integer          isspcf  <-- type of boundary: supersonic outlet (compressible)
+ * integer          iephcf  <-- type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
+ * integer          isopcf  <-- type of boundary: subsonic outlet (compressible)
+ * integer          iparoi  <-- type of boundary: smooth wall
+ * integer          iparug  <-- type of boundary: rough wall
+ * integer          isymet  <-- type of boundary: symetry
+ * integer          isolib  <-- type of boundary: outlet
+ * integer          isca    <-- indirection array for scalar number
+ * integer          ipr     <-- rtp index for pressure
+ * integer          iscalt  <-- index of the thermal scalar
+ * integer          itempk  <-- rtp index for temperature (in K)
+ * integer          ienerg  <-- rtp index for energy total
+ * integer          iqimp   <-- 1 if flow rate is applied
+ * integer          icalke  <-- 1 for automatic turbulent boundary conditions
+ * integer          ientat  <-- 1 for air temperature boundary conditions (coal)
+ * integer          ientcp  <-- 1 for coal temperature boundary conditions (coal)
+ * INTEGER          INMOXY  <-- coal: number of oxydant for the current inlet
+ * integer          ientox  <-- 1 for an air fow inlet (gas combustion)
+ * integer          ientfu  <-- 1 for fuel flow inlet (gas combustion)
+ * integer          ientgb  <-- 1 for burned gas inlet (gas combustion)
+ * integer          ientgf  <-- 1 for unburned gas inlet (gas combustion)
  * integer          iprofm  <-- atmospheric flows: on/off for profile from data
- * DOUBLE PRECISION COEJOU  <-- electric arcs
- * DOUBLE PRECISION DPOT    <-- electric arcs : potential difference
- * DOUBLE PRECISION RTPA    <-- rtpa for implicit flux
- * INTEGER          ITYPFB  <-- type of boundary for each face
- * INTEGER          IZFPPP  <-- zone number for each boundary face
- * INTEGER          ICODCL  <-- boundary conditions array type
- * DOUBLE PRECISION DTREF   <-- time step
- * DOUBLE PRECISION TTCABS  <-- current time
- * DOUBLE PRECISION SURFBO  <-- boundary faces surface
- * DOUBLE PRECISION CGDFBO  <-- boundary faces center of gravity
- * DOUBLE PRECISION QIMP    <-- inlet flow rate
- * DOUBLE PRECISION QIMPAT  <-- inlet air flow rate (coal)
- * DOUBLE PRECISION QIMPCP  <-- inlet coal flow rate (coal)
- * DOUBLE PRECISION DH      <-- hydraulic diameter
- * DOUBLE PRECISION XINTUR  <-- turbulent intensity
- * DOUBLE PRECISION TIMPAT  <-- air temperature boundary conditions (coal)
- * DOUBLE PRECISION TIMPCP  <-- inlet coal temperature (coal)
- * DOUBLE PRECISION TKENT   <-- inlet temperature (gas combustion)
- * DOUBLE PRECISION FMENT   <-- Mean Mixture Fraction at Inlet (gas combustion)
- * DOUBLE PRECISION DISTCH  <-- ratio for each coal
- * DOUBLE PRECISION RCODCL  <-- boundary conditions array value
+ * double precision coejou  <-- electric arcs
+ * double precision dpot    <-- electric arcs : potential difference
+ * double precision rtpa    <-- rtpa for implicit flux
+ * integer          itypfb  <-- type of boundary for each face
+ * integer          izfppp  <-- zone number for each boundary face
+ * integer          icodcl  <-- boundary conditions array type
+ * double precision dtref   <-- time step
+ * double precision ttcabs  <-- current time
+ * double precision surfbo  <-- boundary faces surface
+ * double precision cgdfbo  <-- boundary faces center of gravity
+ * double precision qimp    <-- inlet flow rate
+ * double precision qimpat  <-- inlet air flow rate (coal)
+ * double precision qimpcp  <-- inlet coal flow rate (coal)
+ * double precision dh      <-- hydraulic diameter
+ * double precision xintur  <-- turbulent intensity
+ * double precision timpat  <-- air temperature boundary conditions (coal)
+ * double precision timpcp  <-- inlet coal temperature (coal)
+ * double precision tkent   <-- inlet temperature (gas combustion)
+ * double precision fment   <-- Mean Mixture Fraction at Inlet (gas combustion)
+ * double precision distch  <-- ratio for each coal
+ * double precision rcodcl  <-- boundary conditions array value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
@@ -1658,6 +1673,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *isolib,
                                const int  *isca,
                                const int  *ipr,
+                               const int  *iscalt,
                                const int  *itempk,
                                const int  *ienerg,
                                int        *iqimp,
@@ -1721,7 +1737,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
   /* First iteration only: memory allocation */
 
   if (boundaries == NULL)
-    _init_boundaries(nfabor, nozppm, ncharb, nclpch,
+    _init_boundaries(nfabor, nozppm, iscalt, ncharb, nclpch,
                      izfppp, iesicf, isspcf, iephcf, isopcf);
 
   /* At each time-step, loop on boundary faces:

@@ -763,7 +763,7 @@ do while (iterns.le.nterup)
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, isca  ,                &
-    ipr   , itempk, ienerg,                                        &
+    ipr   , iscalt, itempk, ienerg,                                &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   rtpa,   ielcor,                                &
