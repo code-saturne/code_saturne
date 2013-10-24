@@ -389,7 +389,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
   else if (thermo_plane == CS_PHYS_PROP_PLANE_TX) {
     for (cs_lnum_t i = 0; i < n_vals; i++) {
       SteamState S0 = freesteam_set_Tx(var1[i], var2[i]);
-      switch (*property) {
+      switch (property) {
       case CS_PHYS_PROP_PRESSURE:
         val[i] = freesteam_p(S0);
         break;
