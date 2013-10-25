@@ -269,12 +269,12 @@
 !> \subsection comp_bcs Boundary condition types for compressible flows
 !>
 !> For compressible flows, only predefined boundary conditions may
-!> be assigned among: \c iparoi, \c isymet, \c iesicf, \c isspcf, \c isopcf, \c ierucf, \c ieqhcf
+!> be assigned among: \c iparoi, \c isymet, \c iesicf, \c isspcf, \c isopcf, \c iephcf, \c ieqhcf
 !>
 !>  - \c iparoi : standard wall
 !>  - \c isymet : standard symmetry
 !>
-!>  - \c iesicf, \c isspcf, \c isopcf, \c ierucf, \c ieqhcf : inlet/outlet
+!>  - \c iesicf, \c isspcf, \c isopcf, \c iephcf, \c ieqhcf : inlet/outlet
 !>
 !> For inlets/outlets, we can prescribe
 !> a value for turbulence and passive scalars in \c rcodcl(.,.,1)
@@ -287,8 +287,8 @@
 !>           the user does not prescribe anything
 !> - \c isopcf: subsonic outlet with prescribed pressure
 !>           the user presribes the pressure
-!> - \c ierucf: subsonic inlet with prescribed velocity and density
-!>           the user prescribes the velocity and density
+!> - \c iephcf: mixed inlet with prescribed total pressure and enthalpy
+!>           the user prescribes the total pressure and total enthalpy
 !> - \c ieqhcf: subsonic inlet with prescribed mass and enthalpy flow
 !>           to be implemented
 !>

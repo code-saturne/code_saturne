@@ -194,9 +194,6 @@ module paramx
   !> quantities.
   integer   isopcf
 
-  ! TODO : remove this boundary condition
-  integer   ierucf
-
   !> if \ref itypfb=isopcf: mixed inlet for compressible flow with given total pressure
   !>                        and total enthalpy (reservoir boundary conditions).
   !>  - Boundary values are obtained by solving a Riemann problem between an inner (values
@@ -224,8 +221,8 @@ module paramx
   integer   ifrent
 
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
-            iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10,      &
-            iephcf=11, ieqhcf=12, icscpl=13, ifrent=14)
+            iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,       &
+            ieqhcf=11, icscpl=12, ifrent=13)
 
   !> maximal number of valuators for Navier-Stokes
   integer    nestmx

@@ -204,8 +204,6 @@ endif
 icalgm = 0
 do ifac = 1, nfabor
   if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
-       ( itypfb(ifac).eq.isopcf ) .or.                    &
-       ( itypfb(ifac).eq.ierucf ) .or.                    &
        ( itypfb(ifac).eq.ieqhcf ) ) then
     icalgm = 1
   endif
@@ -609,62 +607,8 @@ do ifac = 1, nfabor
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
 
-
 !===============================================================================
-!     4.4 Entree à rho et U imposes
-!===============================================================================
-
-  elseif ( itypfb(ifac).eq.ierucf ) then
-
-!       Entree subsonique a priori (si c'est supersonique dans le
-!         domaine, ce n'est pas pour autant que c'est supersonique
-!         à l'entree, selon les valeurs que l'on a imposées)
-
-!     On utilise un scenario détente ou choc.
-!       On détermine les conditions sur l'interface
-!       selon la thermo et on passe dans Rusanov ensuite pour lisser.
-
-!     Si rho et u ne sont pas donnés, erreur
-
-!   FIXME: Implement Q,H boundary condition
-    if(rcodcl(ifac,iu ,1).lt.-rinfin*0.5d0.or.               &
-         rcodcl(ifac,iv ,1).lt.-rinfin*0.5d0.or.               &
-         rcodcl(ifac,iw ,1).lt.-rinfin*0.5d0) then
-      write(nfecra,1200)
-      call csexit (1)
-    endif
-
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       On traite d'abord les variables autres que la turbulence et les
-!       scalaires passifs : celles-ci sont traitees plus bas.
-    do iii = 1, nvarcf
-      ivar = ivarcf(iii)
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-        rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
-
-!     Valeurs de P, E, s
-    iccfth = 92
-
-    do ivar = 1, nvar
-      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
-    enddo
-
-    call cfther                                                   &
-    !==========
- ( nvar   ,                                                       &
-   iccfth , ifac   ,                                              &
-   rtp    ,                                                       &
-   w1     , w2     , w3     , bval   , rvoid )
-
-!     Rusanov, flux de masse et type de conditions aux limites :
-!       voir plus bas
-
-!===============================================================================
-!     4.5 Entree à P et H imposees
+!     4.4 Entree à P et H imposees
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.iephcf ) then
@@ -717,7 +661,7 @@ do ifac = 1, nfabor
 
 
 !===============================================================================
-!     4.6 Entree à rho*U et rho*U*H imposes
+!     4.5 Entree à rho*U et rho*U*H imposes
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.ieqhcf ) then
@@ -732,7 +676,7 @@ do ifac = 1, nfabor
 !       ensuite pour lisser.
 
 !     Si rho et u ne sont pas donnés, erreur
-! TODO implement the Q,H boundary condition
+! TODO to be implemented
     if(rcodcl(ifac,irunh,1).lt.-rinfin*0.5d0) then
       write(nfecra,1300)
       call csexit (1)
@@ -782,7 +726,6 @@ do ifac = 1, nfabor
        ( itypfb(ifac).eq.isspcf ) .or.                    &
        ( itypfb(ifac).eq.iephcf ) .or.                    &
        ( itypfb(ifac).eq.isopcf ) .or.                    &
-       ( itypfb(ifac).eq.ierucf ) .or.                    &
        ( itypfb(ifac).eq.ieqhcf ) ) then
 
 !===============================================================================
@@ -800,19 +743,6 @@ do ifac = 1, nfabor
                      ( bval(ifac,iu)*surfbo(1,ifac)                            &
                      + bval(ifac,iv)*surfbo(2,ifac)                            &
                      + bval(ifac,iw)*surfbo(3,ifac) )
-
-!     Entree subsonique
-
-    else if ( itypfb(ifac).eq.ierucf ) then
-
-!     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
-
-      bmasfl(ifac) = brom(ifac) *                                              &
-                     ( bval(ifac,iu)*surfbo(1,ifac)                            &
-                     + bval(ifac,iv)*surfbo(2,ifac)                            &
-                     + bval(ifac,iw)*surfbo(3,ifac) )
-
-
 
 !     Autres entrees/sorties :
     else

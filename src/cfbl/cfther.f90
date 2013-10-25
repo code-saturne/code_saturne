@@ -104,8 +104,8 @@ subroutine cfther &
 !     - compute partial derivative  --------------------|
 !                                   \partial(variable j)|variable k
 !               => iccfth = 100*i+10*j+k
-!     - compute boundary conditions, resp. symmetry, wall, inlet, outlet, inlet:
-!               => iccfth = 91, 92, 93, 94, 95
+!     - compute boundary conditions, resp. symmetry, wall, outlet, inlet, inlet:
+!               => iccfth = 90, 91, 93, 94, 95
 
 
 ! Values of iccfth
@@ -151,10 +151,9 @@ subroutine cfther &
 !   -> calculation of the boundary conditions:
 !     - symmetry                                   : iccfth =  90
 !     - wall                                       : iccfth =  91
-!     - inlet                                      : iccfth =  92
-!     - outlet                                     : iccfth =  93
-!     - different outlet,not implemented yet       : iccfth =  94
-!     - different inlet                            : iccfth =  95
+!     - generalized outlet                         : iccfth =  93
+!     - inlet (not yet implemented)                : iccfth =  94
+!     - inlet                                      : iccfth =  95
 !
 !   -> calculation of the variables at the faces for boundary conditions:
 !     - temperature and energy
@@ -700,84 +699,14 @@ if (ieos.eq.1) then
 
 
 !  -- Symmetry
+    ! A zero flux condition (homogeneous Neumann condition) is
+    !   prescribed by default.
+    ! No user input required
 
   elseif (iccfth.eq.90) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
-
-    ! A zero flux condition (homogeneous Neumann condition) is
-    !   prescribed by default.
-    ! No user input required
-
-
-!  -- Subsonic inlet with prescribed density and velocity
-
-    ! The subsonic nature of the inlet is postulated.
-
-    ! Further testing may be required here. Contrary to the initial
-    !   development, an explicit Dirichlet condition is prescribed for
-    !   pressure instead of a Neumann condition (however, the same
-    !   physical value for pressure is used).
-    ! The advantage of this approach is to allow the use of the Rusanov
-    !   scheme to stabilize the user defined inlet conditions.
-    ! Moreover, with this approach, coefb does not have to be filled in
-    !   here (it is not a major point, since coefb has to be filled in
-    !   for the wall boundary condition anyway)
-    ! Shall an oscillatory behavior (in time) be observed, it might be
-    !   worth trying to add a test to avoid switching between
-    !   rarefaction and shock from one time step to the other (just as
-    !   for the wall boundary condition).
-    ! The relevance of this approach remains to be demonstrated.
-
-  elseif (iccfth.eq.92) then
-
-    ifac = ifac0
-    iel  = ifabor(ifac)
-
-    ! Calculation of the Mach number at the boundary face, using the
-    !   cell center velocity projected on the vector normal to the boundary
-    xmachi =                                                      &
-         ( rtp(iel,iu)*surfbo(1,ifac)                             &
-         + rtp(iel,iv)*surfbo(2,ifac)                             &
-         + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)            &
-         / sqrt( gamagp * rtp(iel,ipr) / crom(iel) )
-      xmache =                                                   &
-           (  bval(ifac,iu)*surfbo(1,ifac)                       &
-            + bval(ifac,iv)*surfbo(2,ifac)                       &
-            + bval(ifac,iw)*surfbo(3,ifac) ) /surfbn(ifac)       &
-           / sqrt( gamagp * rtp(iel,ipr) / crom(iel) )
-    dxmach = xmachi - xmache
-
-    ! Pressure: rarefaction wave (Rusanov)
-    if (dxmach.le.0.d0) then
-
-      if (dxmach.gt.2.d0/(1.d0-gamagp)) then
-        bval(ifac,ipr) = rtp(iel,ipr)*                            &
-             ( (1.d0 + (gamagp-1.d0)*0.50d0*dxmach)               &
-               ** (2.d0*gamagp/(gamagp-1.d0))    )
-      elseif (dxmach.le.2.d0/(1.d0-gamagp) ) then
-        bval(ifac,ipr) = 0.d0
-      endif
-
-      ! Pressure: shock (Rusanov)
-    else
-      bval(ifac,ipr) = rtp(iel,ipr)*                              &
-           (  1.d0 + gamagp*dxmach                                &
-           *( (gamagp+1.d0)*0.25d0*dxmach                         &
-           + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*dxmach**2) )  )
-    endif
-
-    ! This choice overrides the previous Rusanov choice
-    bval(ifac,ipr) = rtp(iel,ipr)
-
-    ! Total energy
-    bval(ifac,ien) =                                           &
-         bval(ifac,ipr)/((gamagp-1.d0)*brom(ifac))             &
-         + 0.5d0*(bval(ifac,iu)**2                             &
-                  + bval(ifac,iv)**2 + bval(ifac,iw)**2)
-
-
 
 !  -- Subsonic inlet with prescribed mass and enthalpy flow rates
     ! The quantities prescribed are rho*u and rho*u*h
@@ -803,7 +732,7 @@ if (ieos.eq.1) then
     !==========
 
 
-!  -- Subsonic outlet
+!  -- Generalized outlet
   elseif (iccfth.eq.93) then
 
     ifac = ifac0

@@ -375,15 +375,6 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
     write(nfecra,6020) 'Sub. enth. inlet ', ii, inb
 #endif
 
-    ii = ierucf
-    inb = ifinty(ii)-idebty(ii)+1
-    if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree sub. dens.', ii, inb
-#else
-    write(nfecra,6020) 'Sub. dens. inlet ', ii, inb
-#endif
-
     ii = iephcf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
@@ -460,7 +451,6 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
       if (ii.ne.iesicf .and. &
            ii.ne.isspcf .and. &
            ii.ne.ieqhcf .and. &
-           ii.ne.ierucf .and. &
            ii.ne.iephcf .and. &
            ii.ne.isopcf .and. &
            ii.ne.iparoi .and. &
@@ -1486,18 +1476,6 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     write(nfecra,7020) 'Sub. enth. inlet ',ii,inb,flumty(ii)
 #endif
 
-    ii = ierucf
-    inb = ifinty(ii)-idebty(ii)+1
-    if (irangp.ge.0) then
-      call parcpt (inb)
-      call parsom (flumty(ii))
-    endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Entree subsonique',ii,inb,flumty(ii)
-#else
-    write(nfecra,7020) 'Subsonic inlet   ',ii,inb,flumty(ii)
-#endif
-
     ii = iephcf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
@@ -1586,7 +1564,6 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
       if (ii.ne.iesicf .and. &
            ii.ne.isspcf .and. &
            ii.ne.ieqhcf .and. &
-           ii.ne.ierucf .and. &
            ii.ne.iephcf .and. &
            ii.ne.isopcf .and. &
            ii.ne.iparoi .and. &
