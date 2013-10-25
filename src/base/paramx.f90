@@ -148,18 +148,74 @@ module paramx
   !> if \ref itypfb=iparug: rough solid wall face, impermeable and with friction.
   integer   iparug
 
-  ! TODO : mot absent de la doc
+  !> if \ref itypfb=iesicf: imposed inlet/outlet for compressible flow (for example, supersonic inlet).
+  !>  - A boundary value has to be given for the following quantities:
+  !>         - velocity
+  !>         - two of the four thermodynamical properties: density, pressure, total energy, temperature
+  !>         - all other variables.
+  !>  - Homogeneous Neumann boundary condition for the pressure (seen by the reconstruction
+  !> gradients and the diffusion operator).
+  !>  - Dirichlet condition for the velocity and the total energy.
+  !>  - The boundary convective fluxes of momentum and total energy are computed from a Rusanov scheme
+  !> for stability reasons. Note that the pressure boundary value is needed to compute those
+  !> two fluxes (seen by the pressure gradient of the momentum equation).
+  !>  - If the mass flow is coming in, Dirichlet condition for the scalars and the turbulent quantities
+  !> is used (or zero-flux condition if no Dirichlet value has been specified).
+  !>  - If the mass flow is going out, zero-flux condition are set for the scalars and the turbulent
+  !> quantities.
   integer   iesicf
-  ! TODO : mot absent de la doc
+
+  !> if \ref itypfb=isspcf: supersonic outlet for compressible flow.
+  !>  - Nothing needs to be given. The imposed state at the boundary is the upstream state
+  !> (values in boundary cells).
+  !>  - Homogeneous Neumann boundary condition for the pressure (seen by the reconstruction
+  !> gradients and the diffusion operator).
+  !>  - Dirichlet (\ref icodcl=1) for the velocity and the total energy.
+  !> (pressure boundary value seen by the pressure gradient of the momentum equation).
+  !>  - If the mass flow is coming in, Dirichlet condition for the scalars and the turbulent quantities
+  !> is used (or zero-flux condition if no Dirichlet value has been specified).
+  !>  - If the mass flow is going out, zero-flux condition are set for the scalars and the turbulent
+  !> quantities.
   integer   isspcf
-  ! TODO : mot absent de la doc
+
+  !> if \ref itypfb=isopcf: mixed outlet for compressible flow with a given pressure.
+  !>  - Boundary values are obtained by solving a Riemann problem between an inner (values
+  !> at boundary cells center) and an outer state. The given pressure is considered as an
+  !> outer value.
+  !>  - Homogeneous Neumann boundary condition for the pressure (seen by the reconstruction
+  !> gradients and the diffusion operator).
+  !>  - Dirichlet (\ref icodcl=1) for the velocity and the total energy.
+  !>  - Analytical boundary convective fluxes of momentum and total energy are computed.
+  !> Note that the pressure boundary value is needed to compute those two fluxes.
+  !> (seen by the pressure gradient of the momentum equation).
+  !>  - If the mass flow is coming in, Dirichlet condition for the scalars and the turbulent quantities
+  !> is used (or zero-flux condition if no Dirichlet value has been specified).
+  !>  - If the mass flow is going out, zero-flux condition are set for the scalars and the turbulent
+  !> quantities.
   integer   isopcf
-  ! TODO : mot absent de la doc
+
+  ! TODO : remove this boundary condition
   integer   ierucf
-  ! TODO : mot absent de la doc
+
+  !> if \ref itypfb=isopcf: mixed inlet for compressible flow with given total pressure
+  !>                        and total enthalpy (reservoir boundary conditions).
+  !>  - Boundary values are obtained by solving a Riemann problem between an inner (values
+  !> at boundary cells center) and an outer state.
+  !>  - Homogeneous Neumann boundary condition for the pressure (seen by the reconstruction
+  !> gradients and the diffusion operator).
+  !>  - Dirichlet (\ref icodcl=1) for velocity and total energy.
+  !>  - Analytical boundary convective fluxes of momentum and total energy are computed.
+  !> Note that the pressure boundary value is needed to compute those two fluxes
+  !> (seen by the pressure gradient of the momentum equation).
+  !>   - If the mass flow is coming in, Dirichlet condition for the scalars and the turbulent quantities
+  !> is used (or zero-flux condition if no Dirichlet value has been specified).
+  !>  - If the mass flow is going out, zero-flux condition are set for the scalars and the turbulent
+  !> quantities.
   integer   iephcf
-  ! TODO : mot absent de la doc
+
+  ! TODO : not available yet.
   integer   ieqhcf
+
   ! TODO : mot absent de la doc
   integer   icscpl
 
