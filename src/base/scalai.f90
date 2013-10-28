@@ -98,7 +98,7 @@ save             ipass
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the species resolution
@@ -106,43 +106,45 @@ allocate(dtr(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 
-
 ipass = ipass + 1
 
 !===============================================================================
-! 2. TRAITEMENT DES SCALAIRES A PHYSIQUE PARTICULIERE
-!    Cette section sera dediee aux traitement particuliers.
-!    On donne un exemple qui n'est que la recopie (a ISCAPP pres) de
-!      la section 3 sur les scalaires utilisateurs.
+! 2. Handle model or specific physics scalars.
 !===============================================================================
 
-if (ippmod(iphpar).ge.1) then
+if (nscapp.gt.0) then
 
-! ---> Initialisation des RTP  a partir des CL
+  ! Initialize variable values from BC's.
 
-!   On initialise RTP (et pas RTPA) car RTPA ne sert pas
-!      dans codits.
+  if (ippmod(iphpar).ge.1) then
 
-  call ppinv2(nvar, nscal, dt, rtp, propce)
-  !==========
+    call ppinv2(nvar, nscal, dt, rtp, propce)
+    !==========
 
-!     On pourra eviter les bugs en initialisant aussi RTPA (sur NCELET)
-!     (d'ailleurs, on s'en sert ensuite dans le cpflux etc)
-  if (ipass.eq.1.and.isuite.eq.0) then
-    if (nscapp.gt.0) then
-      do ii = 1, nscapp
-        iscal = iscapp(ii)
-        ivar  = isca(iscal)
-        do iel = 1, ncelet
-          rtpa (iel,ivar) = rtp (iel,ivar)
+    ! TODO: check that the following loop may be removed, as it is
+    !       handled in tridim.
+    !
+    !       For safety, current values are copied to previous values.
+    !       This should not be required, as it is handled before,
+    !       but may in fact used in cpflux and a few others.
+
+    if (ipass.eq.1.and.isuite.eq.0) then
+      if (nscapp.gt.0) then
+        do ii = 1, nscapp
+          iscal = iscapp(ii)
+          ivar  = isca(iscal)
+          do iel = 1, ncelet
+            rtpa (iel,ivar) = rtp(iel,ivar)
+          enddo
         enddo
-      enddo
+      endif
     endif
+
   endif
 
 ! ---> Calculs TS relatifs a la physique du charbon
 !      GMDEV1, GMDEV2, GMHET, GMDCH
-  if ( ippmod(iccoal).ne.-1 ) then
+  if (ippmod(iccoal).ne.-1) then
 
     call cs_coal_masstransfer &
     !=======================
@@ -154,7 +156,7 @@ if (ippmod(iphpar).ge.1) then
 ! ---> Calculs TS relatifs a la physique du fuel
 !      GAMEVA, GAMHTF
 
-  if ( ippmod(icfuel).ne.-1 ) then
+  if (ippmod(icfuel).ne.-1) then
 
     call cs_fuel_masstransfer &
     !=======================
@@ -182,7 +184,7 @@ if (ippmod(iphpar).ge.1) then
     iscal = iscapp(ii)
     ivar  = isca(iscal)
 
-! ---> Pas de temps (avec facteur multiplicatif eventuel)
+    ! ---> Pas de temps (avec facteur multiplicatif eventuel)
 
     if (cdtvar(ivar).ne.1.d0) then
       do iel = 1, ncel
