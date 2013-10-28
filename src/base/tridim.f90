@@ -155,6 +155,9 @@ double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpav
 
+double precision, dimension(1,1,1), target :: rvoid3
+double precision, dimension(1,1), target :: rvoid2
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -194,10 +197,6 @@ interface
 end interface
 
 !===============================================================================
-
-uvwk => null()
-trava => null()
-ximpav => null()
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -714,6 +713,12 @@ if (nterup.gt.1.or.isno2t.gt.0) then
   if (.not.associated(trava)) allocate(trava(ndim,ncelet))
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
+
+else
+
+  uvwk => rvoid2
+  trava => rvoid2
+  ximpav => rvoid3
 
 endif
 ! Compute the number of variable plus the number of turbulent fluxes
@@ -1283,7 +1288,7 @@ if (allocated(hbord)) deallocate(hbord)
 if (allocated(theipb)) deallocate(theipb)
 if (allocated(visvdr)) deallocate(visvdr)
 
-if (nterup.gt.1) then
+if (nterup.gt.1.or.isno2t.gt.0) then
   deallocate(uvwk, trava)
   deallocate(ximpav)
 endif

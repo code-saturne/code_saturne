@@ -163,6 +163,8 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: trav
 
+double precision, dimension(1,1), target :: rvoid2
+
 !===============================================================================
 
 !===============================================================================
@@ -186,7 +188,11 @@ allocate(vel(3,ncelet))
 allocate(coefap(ndimfb), coefbp(ndimfb))
 
 allocate(dfrcxt(3,ncelet))
-if (iphydr.eq.2) allocate(grdphd(ncelet,ndim))
+if (iphydr.eq.2) then
+  allocate(grdphd(ncelet,ndim))
+else
+  grdphd => rvoid2
+endif
 if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(ndimfb))
 if (idften(iu).eq.1) then
   if (itytur.eq.3.and.irijnu.eq.1) then
@@ -213,7 +219,11 @@ if (ivisse.eq.1) then
 endif
 
 ! Map some specific field arrays
-if (idtten.ge.0) call field_get_val_v(idtten, dttens)
+if (idtten.ge.0) then
+  call field_get_val_v(idtten, dttens)
+else
+  dttens => rvoid2
+endif
 
 ! Allocate work arrays
 allocate(w1(ncelet))
