@@ -642,7 +642,9 @@ do iel=1,ncel
 
 enddo
 
-deallocate(grad)
+if (iturb.eq.32) then
+  deallocate(grad)
+endif
 
 if (isto2t.gt.0) then
 
