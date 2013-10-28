@@ -202,12 +202,14 @@ if (ntcabs.eq.1) then
 
     itypfb(ifac) = ientre
 
-    rcodcl(ifac,iu,1) = fmprsc * surfbo(1,ifac) / surfbn(ifac)
-    rcodcl(ifac,iv,1) = fmprsc * surfbo(2,ifac) / surfbn(ifac)
-    rcodcl(ifac,iw,1) = fmprsc * surfbo(3,ifac) / surfbn(ifac)
+    rcodcl(ifac,iu,1) = - fmprsc * surfbo(1,ifac) / surfbn(ifac)
+    rcodcl(ifac,iv,1) = - fmprsc * surfbo(2,ifac) / surfbn(ifac)
+    rcodcl(ifac,iw,1) = - fmprsc * surfbo(3,ifac) / surfbn(ifac)
 
     if (iturb.eq.32 .or. itytur.eq.5) then
-      rcodcl(ifac,iu,1) = fmprsc/10.d0
+      if (mrkcel(iel) .eq. 1) then
+        rcodcl(ifac,iu,1) = fmprsc/10.d0
+      endif
     endif
 
     uref2 = rcodcl(ifac,iu,1)**2  &
@@ -339,9 +341,9 @@ else
 
     vnrm = sqrt(rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2)
 
-    rcodcl(ifac,iu,1) = fmul * vnrm * surfbo(1,ifac) / surfbn(ifac)
-    rcodcl(ifac,iv,1) = fmul * vnrm * surfbo(2,ifac) / surfbn(ifac)
-    rcodcl(ifac,iw,1) = fmul * vnrm * surfbo(3,ifac) / surfbn(ifac)
+    rcodcl(ifac,iu,1) = - fmul * vnrm * surfbo(1,ifac) / surfbn(ifac)
+    rcodcl(ifac,iv,1) = - fmul * vnrm * surfbo(2,ifac) / surfbn(ifac)
+    rcodcl(ifac,iw,1) = - fmul * vnrm * surfbo(3,ifac) / surfbn(ifac)
 
     if (itytur.eq.2) then
 
