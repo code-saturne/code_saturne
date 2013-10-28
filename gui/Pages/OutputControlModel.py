@@ -1100,8 +1100,8 @@ class OutputControlModel(Model):
         @param num: identifier of the monitoring point
         """
         self.isStr(num)
-        self.isGreater(float(num), 0.0)
-        self.isLowerOrEqual(float(num), self.getNumberOfMonitoringPoints())
+        self.isGreater(int(num), 0)
+        self.isLowerOrEqual(int(num), self.getNumberOfMonitoringPoints())
 
         # delete the node of the monitoring point
 

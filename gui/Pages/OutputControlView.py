@@ -2469,9 +2469,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         for index in selectionModel.selectedRows():
             name = str(index.row() + 1)
-            print name
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             new_name = str(probe_number + idx)
+            self.mdl.addMonitoringPoint(x=X, y=Y, z=Z)
             self.__insertMonitoringPoint(new_name, X, Y, Z)
 
             if self.case['salome']:
