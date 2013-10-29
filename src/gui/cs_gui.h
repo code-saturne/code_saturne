@@ -675,6 +675,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
  * DOUBLE PRECISION RTP      <--  variables and scalars array
  * DOUBLE PRECISION PROPCE   <--  property array
+ * INTEGER          IPPROC   <--  indirection array for cell properties
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
@@ -686,7 +687,8 @@ void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
                                const double *const ttpabs,
                                const double *const xyzcen,
                                const double *const rtp,
-                               const double *const propce);
+                               const double *const propce,
+                               const int    *const ipproc);
 
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.

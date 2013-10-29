@@ -3026,65 +3026,65 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     BFT_REALLOC(cs_glob_var->properties_name, cs_glob_var->nprop, char*);
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *irom-1 ]-1 ];
-    cs_glob_var->propce[n] = ipproc[ *irom -1] -1;
+    cs_glob_var->propce[n] = *irom -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("density")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "density");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iviscl-1 ]-1 ];
-    cs_glob_var->propce[n] = ipproc[ *iviscl -1] -1;
+    cs_glob_var->propce[n] = *iviscl -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("molecular_viscosity")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "molecular_viscosity");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ivisct-1 ]-1 ];
-    cs_glob_var->propce[n] = ipproc[*ivisct -1] -1;
+    cs_glob_var->propce[n] = *ivisct -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("turb_viscosity")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "turb_viscosity");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *icour-1 ]-1 ];
-    cs_glob_var->propce[n] = ipproc[ *icour -1] -1;
+    cs_glob_var->propce[n] = *icour -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("courant_number")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "courant_number");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ifour-1 ]-1 ];
-    cs_glob_var->propce[n] = ipproc[ *ifour -1] -1;
+    cs_glob_var->propce[n] = *ifour -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("fourier_number")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "fourier_number");
 
     if (*ismago != -1 ) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ismago-1 ]-1 ];
-      cs_glob_var->propce[n] = ipproc[ *ismago -1] -1;
+      cs_glob_var->propce[n] = *ismago -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("smagorinsky_constant")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "smagorinsky_constant");
     }
 
     if (*icp > 0) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *icp-1 ]-1 ];
-      cs_glob_var->propce[n] = ipproc[ *icp -1] -1;
+      cs_glob_var->propce[n] = *icp -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("specific_heat")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "specific_heat");
     }
 
     if (!cs_gui_strcmp(cs_glob_var->model, "compressible_model")) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iprtot-1 ]-1 ];
-      cs_glob_var->propce[n] = ipproc[ *iprtot -1] -1;
+      cs_glob_var->propce[n] = *iprtot -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("total_pressure")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "total_pressure");
     }
 
     if (*iale) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
-      cs_glob_var->propce[n] = ipproc[ivisma[0] -1] -1;
+      cs_glob_var->propce[n] = ivisma[0] -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_1")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_1");
 
       if (itype == 1) {
         cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[1]-1 ]-1 ];
-        cs_glob_var->propce[n] = ipproc[ivisma[1] -1] -1;
+        cs_glob_var->propce[n] = ivisma[1] -1;
         BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_2")+1, char);
         strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_2");
 
         cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[2]-1 ]-1 ];
-        cs_glob_var->propce[n] = ipproc[ivisma[2] -1] -1;
+        cs_glob_var->propce[n] = ivisma[2] -1;
         BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_3")+1, char);
         strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_3");
       }
@@ -3101,7 +3101,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
         if (iscavr[i] <= 0 && ivisls[i] > 0) {
 
           cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
-          cs_glob_var->propce[n] = ipproc[ *ivisls -1] -1;
+          cs_glob_var->propce[n] = *ivisls -1;
 
           if (*iscalt == i+1) {
             BFT_MALLOC(cs_glob_var->properties_name[n], strlen("thermal_conductivity")+1, char);
@@ -3226,7 +3226,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 
       for (j=0 ; j < cs_glob_var->nprop; j++) {
         if (cs_gui_strcmp(name, cs_glob_var->properties_name[j]))
-          idfmom[(imom-1)*(*ndgmox) + n] = -(cs_glob_var->propce[j]);
+          idfmom[(imom-1)*(*ndgmox) + n] = -(cs_glob_var->propce[j] +1);
       }
 
       BFT_FREE(name);
@@ -5391,6 +5391,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
  * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
  * DOUBLE PRECISION RTP      <--  variables and scalars array
  * DOUBLE PRECISION PROPCE   <--  property array
+ * INTEGER          IPPROC   <--  indirection array for cell properties
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
@@ -5402,7 +5403,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
                                 const double *const ttpabs,
                                 const double *const xyzcen,
                                 const double *const rtp,
-                                const double *const propce)
+                                const double *const propce,
+                                const int    *const ipproc)
 {
   FILE *file = NULL;
   char *filename = NULL;
@@ -5614,7 +5616,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
               for (j=0; j < vars->nprop; j++) {
                 if (cs_gui_strcmp(name, vars->properties_name[j]))
                   array[iii+4]
-                    = propce[vars->propce[j] * (*ncelet) + iel];
+                    = propce[ipproc[vars->propce[j]] * (*ncelet) + iel];
               }
 
               BFT_FREE(name);

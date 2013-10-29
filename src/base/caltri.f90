@@ -858,7 +858,7 @@ if (itrale.gt.0) then
     !==========
   ( ncelet , ncel,                                                &
     ntmabs, ntcabs, ttcabs, ttmabs, ttpabs,                       &
-    xyzcen, rtp, propce)
+    xyzcen, rtp, propce, ipproc)
   endif
 
   call cs_user_extra_operations                                   &

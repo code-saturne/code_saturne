@@ -729,16 +729,16 @@ if(nbmomt.gt.0) then
 !     Indicateur de calcul des bornes pour les cumuls non uniformes
   do imom = 1, nbmomt
     if(idtmom(imom).gt.0) then
-      ibormo(icdtmo(idtmom(imom))) =  0
-      vmomax(icdtmo(idtmom(imom))) = -grand
-      vmomin(icdtmo(idtmom(imom))) =  grand
+      ibormo(imom) =  0
+      vmomax(imom) = -grand
+      vmomin(imom) =  grand
     endif
   enddo
 
 !     Calcul des bornes des cumuls non uniformes
   do imom = 1, nbmomt
     if(idtmom(imom).gt.0) then
-      if(ibormo(icdtmo(idtmom(imom))).eq.0) then
+      if(ibormo(imom).eq.0) then
         idtcm  = ipproc(icdtmo(idtmom(imom)))
         vdtmax = -grand
         vdtmin =  grand
@@ -752,9 +752,9 @@ if(nbmomt.gt.0) then
           call parmin (vdtmin)
           !==========
         endif
-        vmomax(icdtmo(idtmom(imom))) = vdtmax
-        vmomin(icdtmo(idtmom(imom))) = vdtmin
-        ibormo(icdtmo(idtmom(imom))) = 1
+        vmomax(imom) = vdtmax
+        vmomin(imom) = vdtmin
+        ibormo(imom) = 1
       endif
     endif
   enddo
@@ -763,8 +763,8 @@ if(nbmomt.gt.0) then
   write(nfecra,2030)
   do imom = 1, nbmomt
     if(idtmom(imom).gt.0) then
-      write(nfecra,2040) imom,vmomin(icdtmo(idtmom(imom))),       &
-                              vmomax(icdtmo(idtmom(imom))),       &
+      write(nfecra,2040) imom,vmomin(imom),       &
+                              vmomax(imom),       &
                               'Variable'
     elseif(idtmom(imom).lt.0) then
 #if defined(_CS_LANG_FR)
@@ -783,8 +783,8 @@ if(nbmomt.gt.0) then
 !     On s'arrete si des cumuls sont negatifs
   do imom = 1, nbmomt
     if(idtmom(imom).gt.0) then
-      if(vmomin(icdtmo(idtmom(imom))).lt.zero) then
-        write(nfecra,3011) imom,vmomin(icdtmo(idtmom(imom)))
+      if(vmomin(imom).lt.zero) then
+        write(nfecra,3011) imom,vmomin(imom)
         iok = iok + 1
       endif
     elseif(idtmom(imom).lt.0) then
