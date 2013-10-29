@@ -503,6 +503,45 @@ if (isuite.eq.1) then
 
   endif
 
+  ! Using unsteady rotor/stator, geometric parameters must be recalculated
+  if (iturbo.eq.2) then
+
+    ! Update mesh
+
+    call turbomachinery_update_mesh(ttpmob, rvoid(1))
+    !==============================
+
+    ! Update arrays whose size could have changed (nfac, ncelet)
+
+    ! Main internal faces properties array
+    call turbomachinery_reinit_i_face_fields
+
+    if (irangp.ge.0 .or. iperio.eq.1) then
+
+      ! Main and auxiliary arrays
+      call resize_aux_arrays
+      call resize_main_real_array ( dt , rtp , rtpa , propce )
+
+      ! Turbo module
+      call turbomachinery_update
+
+      ! Fields
+      call fldtri(nproce, dt, rtpa, rtp, propce, coefa, coefb)
+
+      ! Other arrays, depending on user options
+      if (iilagr.gt.0) &
+           call resize_n_sca_real_arrays ( ntersl, tslagr )
+
+      if (iphydr.eq.1) then
+        call resize_vec_real_array_ni ( frcxt )
+      elseif (iphydr.eq.2) then
+        call resize_sca_real_array ( prhyd )
+      endif
+
+    endif
+
+  endif
+
 endif
 
 !===============================================================================

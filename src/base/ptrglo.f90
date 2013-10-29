@@ -328,7 +328,7 @@ contains
 
     deallocate(dt, rtp, rtpa, propce)
 
-    allocate(dt(ncel), rtp(ncel,nvar), rtpa(ncel,nvar))
+    allocate(dt(ncelet), rtp(ncelet,nvar), rtpa(ncelet,nvar))
     allocate(propce(ncelet,nproce))
 
     ! Update new main real array  : "real" cells

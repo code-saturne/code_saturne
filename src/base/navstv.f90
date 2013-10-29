@@ -527,7 +527,7 @@ if (iprco.le.0) then
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
-      if (irotce(iel1) .or. irotce(iel2)) then
+      if (irotce(iel1).ne.0 .or. irotce(iel2).ne.0) then
         dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
         rhofac = 0.5d0*(crom(iel1) + crom(iel2))
         vitbox = rotax(2)*cdgfac(3,ifac) - rotax(3)*cdgfac(2,ifac)
@@ -541,7 +541,7 @@ if (iprco.le.0) then
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      if (irotce(iel)) then
+      if (irotce(iel).ne.0) then
         dtfac  = dt(iel)
         rhofac = brom(ifac)
         vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
@@ -590,6 +590,10 @@ if (iturbo.eq.2) then
 
   call turbomachinery_update_mesh (ttcmob, ellap1)
   !==============================
+
+  do ifac = 1, nfabor
+    isympa(ifac) = 1
+  enddo
 
   ! Scratch and resize temporary internal faces arrays
 
@@ -1050,7 +1054,7 @@ if (iturbo.eq.1 .or. iturbo.eq.2) then
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
-    if (irotce(iel1) .or. irotce(iel2)) then
+    if (irotce(iel1).ne.0 .or. irotce(iel2).ne.0) then
       dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
       rhofac = 0.5d0*(crom(iel1) + crom(iel2))
       vitbox = rotax(2)*cdgfac(3,ifac) - rotax(3)*cdgfac(2,ifac)
@@ -1064,7 +1068,7 @@ if (iturbo.eq.1 .or. iturbo.eq.2) then
 
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    if (irotce(iel)) then
+    if (irotce(iel).ne.0) then
       dtfac  = dt(iel)
       rhofac = brom(ifac)
       vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)

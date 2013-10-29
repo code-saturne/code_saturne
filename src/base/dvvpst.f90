@@ -286,7 +286,7 @@ if (numtyp .eq. -1) then
 
       iel = lstcel(iloc)
 
-      if (irotce(iel)) then
+      if (irotce(iel).ne.0) then
         pcentr =  0.5d0*((rotax(2)*xyzcen(3,iel) - rotax(3)*xyzcen(2,iel))**2 &
                        + (rotax(3)*xyzcen(1,iel) - rotax(1)*xyzcen(3,iel))**2 &
                        + (rotax(1)*xyzcen(2,iel) - rotax(2)*xyzcen(1,iel))**2)
@@ -309,7 +309,7 @@ if (numtyp .eq. -1) then
 
       iel = lstcel(iloc)
 
-      if (irotce(iel)) then
+      if (irotce(iel).ne.0) then
 
         tracel(1 + (iloc-1)*idimt) = rtp(iel,iu) &
             - (rotax(2)*xyzcen(3,iel) - rotax(3)*xyzcen(2,iel))

@@ -37,7 +37,7 @@ module turbomachinery
 
   ! Flag on cells related to the rotor
 
-  logical, dimension(:), pointer :: irotce
+  integer, dimension(:), pointer :: irotce
 
   !=============================================================================
 

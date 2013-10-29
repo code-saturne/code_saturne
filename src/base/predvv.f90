@@ -308,7 +308,7 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   elseif (iturbo.eq.1) then
     ! "Coriolis-type" term if one solves the absolute velocity
     do iel = 1, ncel
-      if (irotce(iel)) then
+      if (irotce(iel).ne.0) then
         cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
         cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
         cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
@@ -881,7 +881,7 @@ elseif (iturbo.eq.1 .and. iphydr.eq.0) then
       call field_get_val_s(icrom, crom)
 
       do iel = 1, ncel
-        if (irotce(iel)) then
+        if (irotce(iel).ne.0) then
           cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
           cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
           cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
@@ -896,7 +896,7 @@ elseif (iturbo.eq.1 .and. iphydr.eq.0) then
     else
 
       do iel = 1, ncel
-        if (irotce(iel)) then
+        if (irotce(iel).ne.0) then
           cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
           cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
           cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)

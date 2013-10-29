@@ -86,6 +86,18 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
                    bool                transfer,
                    cs_io_t            *pp_out);
 
+/*----------------------------------------------------------------------------
+ * Reconstruct periodic faces info from mesh to builder.
+ *
+ * parameters:
+ *   mesh <-- pointer to mesh structure
+ *   mb   <-> pointer to mesh builder structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_to_builder_perio_faces(const cs_mesh_t    *mesh,
+                               cs_mesh_builder_t  *mb);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

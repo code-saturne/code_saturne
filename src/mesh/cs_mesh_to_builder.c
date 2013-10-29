@@ -986,63 +986,6 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Reconstruct periodic faces info from mesh to builder.
- *
- * parameters:
- *   mesh <-- pointer to mesh structure
- *   mb   <-> pointer to mesh builder structure
- *----------------------------------------------------------------------------*/
-
-static void
-_mesh_to_builder_perio_faces(const cs_mesh_t    *mesh,
-                             cs_mesh_builder_t  *mb)
-{
-  cs_lnum_t i;
-
-  /* Get periodic faces information if required */
-
-  mb->n_perio = mesh->n_init_perio;
-
-  if (mesh->n_init_perio < 1)
-    return;
-
-  cs_mesh_get_perio_faces(mesh,
-                          &(mb->n_per_face_couples),
-                          &(mb->per_face_couples));
-
-  /* In parallel, each periodic couple returned by
-     cs_mesh_get_perio_faces() should appear on one rank only,
-     so the global number of couples is simply the sum over all
-     ranks of the local counts. */
-
-  BFT_MALLOC(mb->n_g_per_face_couples, mesh->n_init_perio, cs_gnum_t);
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    cs_gnum_t *_n_l_perio_faces = NULL;
-
-    BFT_MALLOC(_n_l_perio_faces, mesh->n_init_perio, cs_gnum_t);
-
-    for (i = 0; i < mesh->n_init_perio; i++)
-      _n_l_perio_faces[i] = mb->n_per_face_couples[i];
-
-    MPI_Allreduce(_n_l_perio_faces, mb->n_g_per_face_couples, mesh->n_init_perio,
-                  CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
-
-    BFT_FREE(_n_l_perio_faces);
-  }
-
-#endif
-
-  if (cs_glob_n_ranks == 1) {
-    for (i = 0; i < mesh->n_init_perio; i++)
-      mb->n_g_per_face_couples[i] = mb->n_per_face_couples[i];
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Save a mesh as preprocessor data.
  *
  * parameters:
@@ -1410,7 +1353,7 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
 
   /* Get periodic faces information if required */
 
-  _mesh_to_builder_perio_faces(mesh, mb);
+  cs_mesh_to_builder_perio_faces(mesh, mb);
 
   /* Write metadata if output is required */
 
@@ -1476,6 +1419,64 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct periodic faces info from mesh to builder.
+ *
+ * \param[in]       mesh   pointer to mesh structure
+ * \param[in, out]  mb     pointer to mesh builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_to_builder_perio_faces(const cs_mesh_t    *mesh,
+                               cs_mesh_builder_t  *mb)
+{
+  cs_lnum_t i;
+
+  /* Get periodic faces information if required */
+
+  mb->n_perio = mesh->n_init_perio;
+
+  if (mesh->n_init_perio < 1)
+    return;
+
+  cs_mesh_get_perio_faces(mesh,
+                          &(mb->n_per_face_couples),
+                          &(mb->per_face_couples));
+
+  /* In parallel, each periodic couple returned by
+     cs_mesh_get_perio_faces() should appear on one rank only,
+     so the global number of couples is simply the sum over all
+     ranks of the local counts. */
+
+  BFT_MALLOC(mb->n_g_per_face_couples, mesh->n_init_perio, cs_gnum_t);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    cs_gnum_t *_n_l_perio_faces = NULL;
+
+    BFT_MALLOC(_n_l_perio_faces, mesh->n_init_perio, cs_gnum_t);
+
+    for (i = 0; i < mesh->n_init_perio; i++)
+      _n_l_perio_faces[i] = mb->n_per_face_couples[i];
+
+    MPI_Allreduce(_n_l_perio_faces, mb->n_g_per_face_couples, mesh->n_init_perio,
+                  CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+
+    BFT_FREE(_n_l_perio_faces);
+  }
+
+#endif
+
+  if (cs_glob_n_ranks == 1) {
+    for (i = 0; i < mesh->n_init_perio; i++)
+      mb->n_g_per_face_couples[i] = mb->n_per_face_couples[i];
+  }
 }
 
 /*----------------------------------------------------------------------------*/

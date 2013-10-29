@@ -106,7 +106,7 @@ do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-  if (irotce(iel)) then
+  if (irotce(iel).ne.0) then
 
     ! --- En turbomachine on connaît la valeur exacte de la vitesse de maillage
 

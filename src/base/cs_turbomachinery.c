@@ -58,6 +58,7 @@
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mesh_to_builder.h"
 #include "cs_multigrid.h"
 #include "cs_post.h"
 #include "cs_preprocess.h"
@@ -634,106 +635,6 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
   BFT_FREE(_cell_list);
 }
 
-/*----------------------------------------------------------------------------
- * Initializations for the unsteady rotor/stator model
- *
- * parameters:
- *   tbm <-> turbomachinery options structure
- *----------------------------------------------------------------------------*/
-
-static void
-_get_rotor(cs_turbomachinery_t  *tbm)
-{
-  cs_int_t  ivoset;
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-
-  cs_lnum_t *i_face_cells_ref = NULL;
-
-  /* Indicates we are in the framework of turbomachinery */
-
-  cs_glob_mesh->verbosity = 0;
-
-  /* Build the reference mesh that duplicates */
-  /* the global mesh before joining */
-
-  _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
-
-  /* Save the initial interior faces -> cells connectivity */
-
-  BFT_MALLOC(i_face_cells_ref, (2*cs_glob_mesh->n_i_faces), cs_lnum_t);
-  memcpy(i_face_cells_ref,
-         cs_glob_mesh->i_face_cells,
-         2*cs_glob_mesh->n_i_faces*sizeof(cs_lnum_t));
-
-  /* Initialize ghost cells */
-
-  CS_PROCF (haltyp, HALTYP) (&ivoset);
-  if (ivoset)
-    halo_type = CS_HALO_EXTENDED;
-
-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-
-  /* TODO: renumber mesh based on code options;
-           will require updating cell fields at least */
-
-  if (cs_glob_mesh->i_face_numbering != NULL)
-    cs_numbering_destroy(&(cs_glob_mesh->i_face_numbering));
-  if (cs_glob_mesh->b_face_numbering != NULL)
-    cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
-  cs_glob_mesh->i_face_numbering = cs_numbering_create_default(cs_glob_mesh->n_i_faces);
-  cs_glob_mesh->b_face_numbering = cs_numbering_create_default(cs_glob_mesh->n_b_faces);
-
-  /* Compute geometric quantities related to the mesh */
-
-  bft_printf_flush();
-  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
-
-  /* Initialize group classes */
-
-  cs_mesh_init_group_classes(cs_glob_mesh);
-  cs_mesh_init_selectors();
-
-  /* Update Fortran mesh sizes and quantities */
-
-  cs_preprocess_mesh_update_fortran();
-
-  /* User specification of the rotor cells flag array */
-  /* of the turbomachinery structure */
-
-  _select_rotor_cells(tbm);
-
-  if (cs_glob_mesh->halo != NULL)
-    cs_halo_sync_num(cs_glob_mesh->halo,
-                     CS_HALO_EXTENDED,
-                     tbm->cell_rotor_num);
-
-  /* Build the rotor vertices list, if necessary */
-
-  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT)
-    _update_rotor_vertices(tbm);
-
-  /* Re-initialize geometric quantities related to the mesh */
-
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
-
-  /* Destroy ghost cells (halo) and selector structures */
-
-  cs_mesh_free_rebuildable(cs_glob_mesh, true);
-
-  /* Re-initialize the interior faces -> cells connectivity */
-  /* (in order to properly build the halo of the joined mesh) */
-
-  memcpy(cs_glob_mesh->i_face_cells, i_face_cells_ref,
-         2*cs_glob_mesh->n_i_faces*sizeof(cs_lnum_t));
-  BFT_FREE(i_face_cells_ref);
-
-  /* Indicates we are not in the framework of turbomachinery anymore */
-
-  tbm->active = false;
-  cs_glob_mesh->verbosity = 1;
-}
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -929,9 +830,28 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
-  /* Update geometry */
+  /* Update geometry, if necessary */
 
-  _update_geometry(cs_glob_mesh, t_cur_mob);
+  if (cs_glob_turbomachinery->rotor_vtx != NULL)
+    _update_geometry(cs_glob_mesh, t_cur_mob);
+
+  /* Reset the interior faces -> cells connectivity */
+  /* (in order to properly build the halo of the joined mesh) */
+
+  cs_mesh_to_builder_perio_faces(cs_glob_mesh, cs_glob_mesh_builder);
+
+  {
+    int i;
+    cs_lnum_t f_id;
+    cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
+    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+    for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
+      for (i = 0; i < 2; i++) {
+        if (i_face_cells[f_id][i] > n_cells)
+          i_face_cells[f_id][i] = 0;
+      }
+    }
+  }
 
   /* Join meshes and build periodicity links */
 
@@ -1047,26 +967,40 @@ cs_turbomachinery_initialize(void)
   if (tbm->model == CS_TURBOMACHINERY_NONE)
     return;
 
-  /* Adapt postprocessing options if required;
-     must be called before cs_post_init_meshes(). */
-
-  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT)
-    cs_post_set_changing_connectivity();
-
   /* Define rotor(s) */
 
   cs_user_turbomachinery_rotor();
+  _select_rotor_cells(tbm);
 
-  /* The following can only be defined once the mesh is built */
+  /* Build the reference mesh that duplicates the global mesh before joining */
 
-  _get_rotor(tbm);
+  _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
+
+  /* Build the rotor vertices list, if required */
+
+  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT) {
+
+    if (cs_glob_mesh->halo != NULL)
+      cs_halo_sync_num(cs_glob_mesh->halo,
+                       CS_HALO_EXTENDED,
+                       tbm->cell_rotor_num);
+
+    _update_rotor_vertices(tbm);
+
+  }
 
   /* Complete the mesh with rotor-stator joining */
 
   cs_real_t t_elapsed;
   cs_turbomachinery_update_mesh(0.,&t_elapsed);
 
-  /* Destroy the reference mesh, if necessary */
+  /* Adapt postprocessing options if required;
+     must be called before cs_post_init_meshes(). */
+
+  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT)
+    cs_post_set_changing_connectivity();
+
+  /* Destroy the reference mesh, if required */
 
   if (tbm->model == CS_TURBOMACHINERY_FROZEN) {
     cs_mesh_destroy(tbm->reference_mesh);
@@ -1091,7 +1025,9 @@ cs_turbomachinery_finalize(void)
     BFT_FREE(tbm->rotor_cells_c);
 
     BFT_FREE(tbm->cell_rotor_num);
-    BFT_FREE(tbm->rotor_vtx);
+
+    if (tbm->rotor_vtx != NULL)
+      BFT_FREE(tbm->rotor_vtx);
 
     if (tbm->reference_mesh != NULL)
       cs_mesh_destroy(tbm->reference_mesh);

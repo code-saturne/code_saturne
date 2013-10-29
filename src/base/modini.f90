@@ -1488,7 +1488,7 @@ if (nbrcpl.ge.1) then
 endif
 
 !===============================================================================
-! 7bis. PARAMETRES DE turbo
+! 7bis. PARAMETRES DE turbomachinery
 !===============================================================================
 
 if (iturbo.eq.2)  call cs_post_set_deformable

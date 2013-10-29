@@ -1731,11 +1731,17 @@ if (imobil.eq.1 .or. iturbo.eq.2) then
     write(nfecra,9010) idtvar
     iok = iok + 1
   endif
-  ! ... nor with the space variable time steps
-  if (idtvar.eq.2) then
+  ! ... nor with the time/space variable time steps
+  if (idtvar.eq.1.or.idtvar.eq.2) then
     write(nfecra,9011) idtvar
     iok = iok + 1
   endif
+endif
+
+! Unsteady rotor/stator coupling is not compatible with the Lagrangian module
+if (iturbo.eq.2.and.iilagr.ne.0) then
+    write(nfecra,9012)
+    iok = iok + 1
 endif
 
 !===============================================================================
@@ -4325,12 +4331,26 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
 '@   LE COUPLAGE ROTOR/STATOR INSTATIONNAIRE N''EST PAS',       /,&
-'@     COMPATIBLE AVEC LES PAS DE TEMPS VARIABLES EN ESPACE'    /,&
+'@     COMPATIBLE AVEC LES PAS DE TEMPS VARIABLES EN ESPACE',   /,&
+'@     OU EN TEMPS',                                            /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@  L''indicateur IDTVAR a ete positionne a', i10,              /,&
 '@    par l''interface ou dans cs_user_parameter.f90',          /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9012  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@   LE COUPLAGE ROTOR/STATOR INSTATIONNAIRE N''EST PAS',       /,&
+'@     COMPATIBLE AVEC LE MODULE LAGRANGIEN',                   /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6923,12 +6943,25 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@   UNSTEADY ROTOR/STATOR COUPLING IS NOT COMPATIBLE',         /,&
-'@     WITH THE SPACE VARIABLE TIME STEPS',                     /,&
+'@     WITH THE SPACE OR TIME VARIABLE TIME STEPS',             /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@  Integer parameter IDTVAR was set to', i10,                  /,&
 '@    through the User Interface or in cs_user_parameters.f90.',/,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9012  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@   UNSTEADY ROTOR/STATOR COUPLING IS NOT COMPATIBLE',         /,&
+'@     WITH THE LAGRANGIAN MODULE',                             /,&
+'@',                                                            /,&
+'@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
