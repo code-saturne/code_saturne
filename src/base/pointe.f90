@@ -392,16 +392,22 @@ contains
     integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
-    integer                iok, ivar, iscal, iel
+    integer                iok, ivar, iscal, iel, ifac
 
     ! Boundary-face related arrays
 
     allocate(itrifb(nfabor), itypfb(nfabor))
     if (ippmod(iphpar).ge.1 .or. iihmpr.eq.1) then
       allocate(izfppp(nfabor))
+      do ifac = 1, nfabor
+        izfppp(ifac) = 0
+      enddo
     endif
     if (iirayo.gt.0) then
       allocate(izfrad(nfabor))
+      do ifac = 1, nfabor
+        izfrad(ifac) = 0
+      enddo
     endif
 
     ! ALE array for structure definition
