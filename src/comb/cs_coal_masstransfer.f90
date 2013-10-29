@@ -629,23 +629,24 @@ if ( ippmod(iccoal) .ge. 1 ) then
 
     enddo
 
+    npoint = ncel
+
     if ( irangp .ge. 0 ) then
-!
+
       call parmin(tmin)
       call parmax(tmax)
       call parmin(yvmin)
       call parmax(yvmax)
       call parcpt(npyv)
       call parmax(yymax)
-!
-      npoint = ncel
+
       call parcpt(npoint)
       call parcpt(npoin1)
       call parcpt(npoin2)
       call parcpt(npoin3)
       call parcpt(npoin4)
       call parcpt(npoin63)
-!
+
     endif
 
 
