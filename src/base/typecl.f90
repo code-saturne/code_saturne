@@ -119,7 +119,7 @@ integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
 integer          ityp, ii, jj, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          irangd, iclipr, iiptot
+integer          irangd, iiptot
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
 double precision pref, epsrgp, climgp, extrap, pipb
@@ -601,7 +601,6 @@ if (itbslb.gt.0) then
   epsrgp = epsrgr(ipr)
   climgp = climgr(ipr)
   extrap = extrag(ipr)
-  iclipr = iclrtp(ipr,icoef)
 
   call field_get_coefa_s(ivarfl(ipr), coefap)
   call field_get_coefb_s(ivarfl(ipr), coefbp)

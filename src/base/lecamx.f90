@@ -25,7 +25,7 @@ subroutine lecamx &
 
  ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
    dt     , propce ,                                              &
-   coefa  , coefb  , frcxt  , prhyd  )
+   frcxt  , prhyd  )
 
 !===============================================================================
 
@@ -55,8 +55,6 @@ subroutine lecamx &
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
 ! propce           ! tr ! --> ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! ra ! --> ! hydrostatic pressure predicted                 !
@@ -92,8 +90,9 @@ use cs_fuel_incl
 use elincl
 use ppcpfu
 use mesh, only: isympa
-use cs_c_bindings
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -105,7 +104,6 @@ integer          nvar   , nscal
 
 double precision dt(ncelet)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
@@ -126,7 +124,6 @@ integer          idecal, iclapc, icha  , icla
 integer          imom  , imold
 integer          jdtvar
 integer          jortvm, ipcvmx, ipcvmy, ipcvmz
-integer          iclvar, iclvaf
 integer          idtcm
 integer          iptsna, iptsta, iptsca
 integer          numero, ipcefj, ipcla1, ipcla2, ipcla3
@@ -1127,46 +1124,14 @@ if (nfabok.eq.1) then
     nomcli(iwma)='_vit_maillage_w'
   endif
 
-!     --Pour les variables
-  do ivar = 1, nvar
+  ! Variable BC coefficients
 
-    itysup = 3
-    nbval  = 1
-    irtyp  = 2
+  call restart_read_bc_coeffs(impamx)
 
-!              Coefficients numeros 1
-    iclvar = iclrtp(ivar,icoef)
-    RUBRIQ = 'cla1'//NOMCLI(IVAR)
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                coefa(1,iclvar),ierror)
-    nberro=nberro+ierror
+  ! Symmetry type (used for least squares gradients on extended
+  ! neighborhood, with extrapolation of gradient at boundary).
 
-    RUBRIQ = 'clb1'//NOMCLI(IVAR)
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                coefb(1,iclvar),ierror)
-    nberro=nberro+ierror
-
-!              Coefficients numeros 2
-    iclvaf = iclrtp(ivar,icoeff)
-    if (iclvar.ne.iclvaf) then
-
-      RUBRIQ = 'cla2'//NOMCLI(IVAR)
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,         &
-                  irtyp,coefa(1,iclvaf),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'clb2'//NOMCLI(IVAR)
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,         &
-                  irtyp,coefb(1,iclvaf),ierror)
-      nberro=nberro+ierror
-    endif
-
-  enddo
-
-!     Type symetrie (utilise pour les gradients par moindres carres
-!       sur support etendu, avec extrapolation du gradient au bord).
-
-  RUBRIQ = 'isympa_fb_phase'//CPHASE
+  rubriq = 'isympa_fb_phase01'
   itysup = 3
   nbval  = 1
   irtyp  = 1

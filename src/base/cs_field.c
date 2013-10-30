@@ -83,6 +83,14 @@ BEGIN_C_DECLS
        Explicit coefficient for flux
   \var cs_field_bc_coeffs_t::bf
        Implicit coefficient for flux
+  \var cs_field_bc_coeffs_t::ad
+       Explicit coefficient for divergence
+  \var cs_field_bc_coeffs_t::bd
+       Implicit coefficient for divergence
+  \var cs_field_bc_coeffs_t::ac
+       Explicit coefficient for convection
+  \var cs_field_bc_coeffs_t::bc
+       Implicit coefficient for convection
 
   \struct cs_field_t
 

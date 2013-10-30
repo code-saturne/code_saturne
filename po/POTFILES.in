@@ -87,6 +87,7 @@ src/base/cs_preprocessor_data.c
 src/base/cs_renumber.c
 src/base/cs_resource.c
 src/base/cs_restart.c
+src/base/cs_restart_default.c
 src/base/cs_sat_coupling.c
 src/base/cs_search.c
 src/base/cs_selector.c

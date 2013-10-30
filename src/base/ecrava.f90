@@ -27,7 +27,7 @@ subroutine ecrava &
    nvar   , nscal  ,                                              &
    xyzcen , cdgfbo ,                                              &
    dt     , rtp    , propce ,                                     &
-   coefa  , coefb  , frcxt  , prhyd  )
+   frcxt  , prhyd  )
 
 !===============================================================================
 
@@ -51,8 +51,6 @@ subroutine ecrava &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted                 !
@@ -89,6 +87,7 @@ use cplsat
 use field
 use atchem
 use mesh, only: isympa
+use cs_c_bindings
 
 !===============================================================================
 
@@ -99,16 +98,13 @@ implicit none
 integer          ndim   , ncelet , ncel   , nfabor
 integer          nvar   , nscal
 
-
 double precision xyzcen(ndim,ncelet)
 double precision cdgfbo(ndim,nfabor)
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
-
 
 integer          nbmom2
 parameter       (nbmom2=nbmomx*2)
@@ -128,7 +124,7 @@ integer          nphas
 integer          ivar  , iscal , imom, f_id
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers , idtm  , idtcm
-integer          iclvar, iclvaf, iptsna, iptsta, iptsca
+integer          iptsna, iptsta, iptsca
 integer          ierror, irtyp , itysup, nbval
 integer          nbctm , ipcefj, ipcla1, ipcla2, ipcla3
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
@@ -978,42 +974,12 @@ if (iecaux.eq.1) then
     nomcli(iwma)='_vit_maillage_w'
   endif
 
-  do ivar = 1, nvar
-
-    itysup = 3
-    nbval  = 1
-    irtyp  = 2
-
-!          Coefficients numeros 1
-    iclvar = iclrtp(ivar,icoef)
-    rubriq = 'cla1'//nomcli(ivar)
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                coefa(1,iclvar))
-
-    rubriq = 'clb1'//nomcli(ivar)
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                coefb(1,iclvar))
-
-!          Coefficients numeros 2
-    iclvaf = iclrtp(ivar,icoeff)
-    if (iclvar.ne.iclvaf) then
-
-      rubriq = 'cla2'//nomcli(ivar)
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  coefa(1,iclvaf))
-
-      rubriq = 'clb2'//nomcli(ivar)
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  coefb(1,iclvaf))
-    endif
-
-  enddo
-
+  call restart_write_bc_coeffs(impavx)
 
   ! Symmetry flag (used for least-squares gradients,
-  ! with extrapolation at boundar).
+  ! with extrapolation at boundary).
 
-  rubriq = 'isympa_fb_phase'//cphase
+  rubriq = 'isympa_fb_phase01'
   itysup = 3
   nbval  = 1
   irtyp  = 1

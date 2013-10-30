@@ -269,6 +269,42 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function reading a cs_real_3_t vector section from a
+    ! restart file, when that section may have used a different name and
+    ! been non-interleaved in a previous version.
+
+    function cs_f_restart_ptr(file_num) result(r)  &
+      bind(C, name='cs_f_restart_ptr')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: file_num
+      type(c_ptr)           :: r
+    end function cs_f_restart_ptr
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading BC coefficeints for all fields.
+
+    subroutine cs_restart_read_bc_coeffs(restart)  &
+      bind(C, name='cs_restart_read_bc_coeffs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: restart
+    end subroutine cs_restart_read_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function writing BC coefficeints for all fields.
+
+    subroutine cs_restart_write_bc_coeffs(restart)  &
+      bind(C, name='cs_restart_write_bc_coeffs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: restart
+    end subroutine cs_restart_write_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
@@ -640,6 +676,60 @@ contains
     ierror = c_ierror
 
   end subroutine restart_read_real_3_t_compat
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read boundary condition coefficients for all fields from
+  !>        checkpoint.
+
+  !> \param[in]   f_num     restart file number
+
+  subroutine restart_read_bc_coeffs(f_num)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)   :: f_num
+
+    ! Local variables
+
+    integer(c_int) :: c_f_num
+    type(c_ptr) :: r
+
+    c_f_num = f_num
+    r = cs_f_restart_ptr(c_f_num)
+
+    call cs_restart_read_bc_coeffs(r)
+
+  end subroutine restart_read_bc_coeffs
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Write boundary condition coefficients for all fields to
+  !>        checkpoint.
+
+  !> \param[in]   f_num     restart file number
+
+  subroutine restart_write_bc_coeffs(f_num)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)   :: f_num
+
+    ! Local variables
+
+    integer(c_int) :: c_f_num
+    type(c_ptr) :: r
+
+    c_f_num = f_num
+    r = cs_f_restart_ptr(c_f_num)
+
+    call cs_restart_write_bc_coeffs(r)
+
+  end subroutine restart_write_bc_coeffs
 
   !=============================================================================
 

@@ -484,7 +484,7 @@ if (isuite.eq.1) then
   !==========
  ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
    dt     , rtp    , propce ,                                     &
-   coefa  , coefb  , frcxt  , prhyd  )
+   frcxt  , prhyd  )
 
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
@@ -978,7 +978,7 @@ if (iisuit.eq.1) then
  ( ndim   , ncelet , ncel   , nfabor  , nvar   , nscal  ,         &
    xyzcen , cdgfbo ,                                              &
    dt     , rtp    , propce ,                                     &
-   coefa  , coefb  , frcxt  , prhyd  )
+   frcxt  , prhyd  )
 
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'

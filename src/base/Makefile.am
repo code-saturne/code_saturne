@@ -109,6 +109,7 @@ cs_prototypes.h \
 cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
+cs_restart_default.h \
 cs_sat_coupling.h \
 cs_search.h \
 cs_selector.h \
@@ -226,6 +227,7 @@ cs_preprocessor_data.c \
 cs_renumber.c \
 cs_resource.c \
 cs_restart.c \
+cs_restart_default.c \
 cs_sat_coupling.c \
 cs_search.c \
 cs_selector.c \

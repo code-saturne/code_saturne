@@ -187,6 +187,9 @@ cs_f_restart_read_real_3_t_compat(int           file_num,
                                   cs_real_3_t  *val,
                                   int          *ierror);
 
+void *
+cs_f_restart_ptr(int  file_num);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2086,6 +2089,35 @@ cs_f_restart_read_real_3_t_compat(int           file_num,
                                               old_name_z,
                                               location_id,
                                               val);
+}
+
+/*----------------------------------------------------------------------------
+ * Return pointer associated with a given Fortran restart file number
+ *
+ * parameters:
+ *   file_num  <-- associated restart file number
+ *
+ * returns:
+ *   pointer to associated restart file pointer
+ *----------------------------------------------------------------------------*/
+
+void *
+cs_f_restart_ptr(int  file_num)
+{
+  cs_restart_t  *r;
+
+  int ierror = CS_RESTART_SUCCESS;
+
+  _section_f_iso_c_to_c(file_num, &r, &ierror);
+
+  if (ierror != CS_RESTART_SUCCESS) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Restart file number <%d> does not match an open file."),
+               file_num);
+    r = NULL;
+  }
+
+  return (void *)r;
 }
 
 /*! \endcond (end ignore by Doxygen) */

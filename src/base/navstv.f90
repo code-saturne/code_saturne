@@ -116,7 +116,6 @@ double precision, pointer, dimension(:,:,:) :: ximpa
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt
 integer          ii    , inod, itypfl
 integer          isou, ivar, iitsm
-integer          iclipr, iclipf
 integer          init
 integer          iflmas, iflmab
 integer          iflmb0
@@ -873,10 +872,8 @@ if (ippmod(icompf).lt.0) then
         call synvin(frcxt)
         !==========
       endif
-      ! Update of the Direchlet boundary conditions on the
+      ! Update of the Dirichlet boundary conditions on the
       ! pressure for the outlet
-      iclipr = iclrtp(ipr,icoef)
-      iclipf = iclrtp(ipr,icoeff)
       !$omp parallel do if(nfabor > thr_n_min)
       call field_get_coefa_s(ivarfl(ipr), coefa_p)
       do ifac = 1, nfabor
