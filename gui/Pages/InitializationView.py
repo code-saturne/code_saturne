@@ -280,7 +280,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             exp = self.init.getTurbFormula(self.zone, turb_model)
             exa = """#example
 
-cmu = 0.42;
+cmu = 0.09;
 k = 1.5*(0.02*uref)^2;
 eps = k^1.5*cmu/almax;
 
@@ -313,7 +313,7 @@ eps = k^1.5*cmu/almax;
             exa = """#exemple :
 trii   = (0.02*uref)^2;
 
-cmu = 0.42;
+cmu = 0.09;
 
 r11 = trii;
 r22 = trii;
@@ -356,7 +356,7 @@ eps = k^1.5*cmu/almax;"""
             exa = """#exemple :
 trii   = (0.02*uref)^2;
 
-cmu = 0.42;
+cmu = 0.09;
 
 r11 = trii;
 r22 = trii;

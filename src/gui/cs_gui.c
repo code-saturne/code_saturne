@@ -1008,7 +1008,6 @@ static char *cs_gui_turbulence_initialization_choice(const char* zone_id)
                         "turbulence",
                         "initialization");
   cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-  cs_xpath_add_function_text(&path);
   cs_xpath_add_attribute(&path, "choice");
 
   initialization_choice = cs_gui_get_attribute_value(path);
@@ -3985,7 +3984,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                                 "turbulence",
                                 "initialization");
           cs_xpath_add_test_attribute(&path_turb, "zone_id", zone_id);
-          cs_xpath_add_element(&path, "formula");
+          cs_xpath_add_element(&path_turb, "formula");
           cs_xpath_add_function_text(&path_turb);
           formula_turb = cs_gui_get_text_value(path_turb);
           BFT_FREE(path_turb);
