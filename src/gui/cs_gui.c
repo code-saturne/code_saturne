@@ -225,37 +225,6 @@ _gui_thermal_model(void)
   return test;
 }
 
-/*----------------------------------------------------------------------------
- * Get thermal user scalar number if it exists.
- *
- * parameters:
- *   iscalt  -->  thermal scalar number order
- *----------------------------------------------------------------------------*/
-
-static void
-_gui_thermal_scalar_number(int  *iscalt)
-{
-  int i, index, size;
-  char *path = NULL;
-  char **name = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "thermophysical_models", "thermal_scalar", "/@type");
-  name = cs_gui_get_attribute_values(path, &size);
-
-  index = -1;
-  for (i=0; i < size; i++)
-    if (cs_gui_strcmp(name[i], "thermal"))
-      index = i;
-
-  if (index > -1)
-    *iscalt = index+1;
-
-  BFT_FREE(path);
-  for (i=0; i < size; i++) BFT_FREE(name[i]);
-    BFT_FREE(name);
-}
-
 /*-----------------------------------------------------------------------------
  * Return the name of the diffusion_coefficient property for a scalar
  *
@@ -1858,10 +1827,13 @@ void CS_PROCF (uithsc, UITHSC) (int *const iscalt)
  * SUBROUTINE CSISCA (ISCAVR)
  * *****************
  *
- * INTEGER          ISCAVR     -->   user scalars variance array
+ * INTEGER          ISCAVR  -->   user scalars variance array
+ * integer          itherm  <--  type of thermal model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csisca, CSISCA) (int *const iscavr)
+void CS_PROCF (csisca, CSISCA) (      int *const iscavr,
+                                      int *const itherm,
+                                const int *const iscapp)
 {
   int i;
   int j;
@@ -1887,6 +1859,15 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr)
             iscavr[i] = j + 1;
           }
         }
+
+        if (*itherm && iscavr[i] == 0) {
+          for (j=0; j < vars->nscapp; j++) {
+            if (cs_gui_strcmp(variance, vars->label[iscapp[j]-1])) {
+              iscavr[i] = iscapp[j];
+            }
+          }
+        }
+
         BFT_FREE(variance);
       }
     }
@@ -1897,6 +1878,7 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr)
       bft_printf("--iscavr[%i] = %i \n", i, iscavr[i]);
 #endif
   }
+
   return;
 }
 
@@ -1934,8 +1916,6 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
       test2 = cs_gui_properties_choice("specific_heat", &choice2);
 
       if (test1 && test2) {
-        _gui_thermal_scalar_number(iscalt);
-
         if (choice1 || choice2)
           ivisls[*iscalt-1] = 1;
         else
@@ -2888,7 +2868,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
        this coefficient by the density to remain coherent */
 
     for (i=0 ; i < vars->nscaus; i++) {
-      if (iscavr[i] <= 0 && i != *iscalt-1) {
+      if (iscavr[i] <= 0) {
 
         if (cs_gui_strcmp(vars->model, "solid_fuels")) {
           /* Air molar mass */
@@ -5347,7 +5327,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
   }
 
   for (j = 0; j < *nscaus; j++) {
-    if (j != *iscalt -1 && iscavr[j] <= 0 && ivisls[j] > 0) {
+    if (iscavr[j] <= 0 && ivisls[j] > 0) {
       ipcvsl = ipproc[ ivisls[j] -1 ] -1;
 
       path = cs_xpath_init_path();

@@ -154,9 +154,12 @@ void CS_PROCF (uithsc, UITHSC) (int *const iscalt);
  * *****************
  *
  * INTEGER          ISCAVR     -->   user scalars variance array
+ * integer          itherm     <--  type of thermal model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csisca, CSISCA) (int *const iscavr);
+void CS_PROCF (csisca, CSISCA) (      int *const iscavr,
+                                      int *const itherm,
+                                const int *const iscapp);
 
 /*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
