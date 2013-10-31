@@ -3625,11 +3625,11 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
 
   for (i=1; i < zones+1; i++) {
 
-    /* species or thermal source term */
+    /* species source term */
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
     cs_xpath_add_element_num(&path, "zone", i);
-    cs_xpath_add_attribute(&path, "scalar_source_term");//FIXME check if it is correct for the temperature
+    cs_xpath_add_attribute(&path, "scalar_source_term");
     status = cs_gui_get_attribute_value(path);
     BFT_FREE(path);
 
@@ -3653,8 +3653,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
         mei_tree_insert(ev_formula,"x",0.);
         mei_tree_insert(ev_formula,"y",0.);
         mei_tree_insert(ev_formula,"z",0.);
-//FIXME       labelS = cs_gui_variable_label("velocity_U");
-//FIXME       mei_tree_insert(ev_formula, labelS, 0.0);
+        mei_tree_insert(ev_formula, vars->label[*iscal-1], 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3671,7 +3670,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-//FIXME           mei_tree_insert(ev_formula, labelS, pvar[iel]);
+          mei_tree_insert(ev_formula, vars->label[*iscal-1], pvar[iel]);
           mei_evaluate(ev_formula);
           dS = mei_tree_lookup(ev_formula,"dS");
           tsimp[iel] = cell_vol[iel]*dS;
@@ -3687,6 +3686,117 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Thermal scalar source terms.
+ *
+ * Fortran Interface:
+ *
+ * subroutine uitsth (iscal, pvar, tsexp, tsimp)
+ * *****************
+ *
+ * integer          iscal    --> index of the corresponding scalar
+ * double precision pvar     -->  scalar
+ * double precision tsexp    <--  explicit source terms
+ * double precision tsimp    <--  implicit source terms
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
+                              const cs_real_t   *restrict pvar,
+                              cs_real_t         *restrict tsexp,
+                              cs_real_t         *restrict tsimp)
+{
+  const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  const cs_real_t *restrict cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
+  int i, icel, iel;
+  int zones = 0;
+  int cells = 0;
+  int *cells_list = NULL;
+  double dS;
+  double S;
+  char *path = NULL;
+  char *status = NULL;
+  char *zone_id = NULL;
+  char *formula = NULL;
+  char *labelS = NULL;
+
+  mei_tree_t *ev_formula  = NULL;
+
+  cs_var_t  *vars = cs_glob_var;
+
+  /* number of volumic zone */
+
+  zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
+
+#if _XML_DEBUG_
+  bft_printf("==>UITSSC\n");
+#endif
+
+  for (i=1; i < zones+1; i++) {
+
+    /* species source term */
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "thermal_source_term");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = cs_gui_get_cells_list(zone_id, n_cells_ext, &cells);
+
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "source_terms",
+                            "thermal_formula");
+      cs_xpath_add_test_attribute(&path, "label", vars->label[*iscal-1]);
+      cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      cs_xpath_add_function_text(&path);
+      formula = cs_gui_get_text_value(path);
+      BFT_FREE(path);
+
+      if (formula != NULL) {
+        ev_formula = mei_tree_new(formula);
+        mei_tree_insert(ev_formula,"x",0.);
+        mei_tree_insert(ev_formula,"y",0.);
+        mei_tree_insert(ev_formula,"z",0.);
+        mei_tree_insert(ev_formula, vars->label[*iscal-1], 0.0);
+        /* try to build the interpreter */
+        if (mei_tree_builder(ev_formula))
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error: can not interpret expression: %s\n %i"),
+                    ev_formula->string, mei_tree_builder(ev_formula));
+
+        const char *symbols[] = {"S","dS"};
+        if (mei_tree_find_symbols(ev_formula, 2, symbols))
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error: can not find the required symbol: %s\n"), "S or dS");
+
+        for (icel = 0; icel < cells; icel++) {
+          iel = cells_list[icel]-1;
+          mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+          mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+          mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
+          mei_tree_insert(ev_formula, vars->label[*iscal-1], pvar[iel]);
+          mei_evaluate(ev_formula);
+          dS = mei_tree_lookup(ev_formula,"dS");
+          tsimp[iel] = cell_vol[iel]*dS;
+          tsexp[iel] = mei_tree_lookup(ev_formula,"S") - dS*pvar[iel];
+          tsexp[iel] *= cell_vol[iel];
+        }
+        mei_tree_destroy(ev_formula);
+      }
+      BFT_FREE(cells_list);
+      BFT_FREE(zone_id);
+    }
+    BFT_FREE(status);
+  }
+}
 
 /*-----------------------------------------------------------------------------
  * Initialize mei tree and check for symbols existence

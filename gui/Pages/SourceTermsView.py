@@ -209,22 +209,23 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         """
         exp = self.mdl.getMomentumFormula(self.zone)
         if not exp:
-            exp = """Su = 0;\nSv = 0;\nSw = 0;\ndSudu = 0;\ndSudv = 0;\ndSudw = 0;\n
-                     dSvdu = 0;\ndSvdv = 0;\ndSvdw = 0;\n
-                     dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
+            exp = """Su = 0;\nSv = 0;\nSw = 0;\n
+dSudu = 0;\ndSudv = 0;\ndSudw = 0;\n
+dSvdu = 0;\ndSvdv = 0;\ndSvdw = 0;\n
+dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exa = """#example: """
         req = [('Su', "x velocity"),
-        ('Sv', "y velocity"),
-        ('Sw', "z velocity"),
-        ('dSudu', "x component x velocity derivative"),
-        ('dSudv', "x component y velocity derivative"),
-        ('dSudw', "x component z velocity derivative"),
-        ('dSvdu', "y component x velocity derivative"),
-        ('dSvdv', "y component y velocity derivative"),
-        ('dSvdw', "y component z velocity derivative"),
-        ('dSwdu', "z component x velocity derivative"),
-        ('dSwdv', "z component y velocity derivative"),
-        ('dSwdw', "z component z velocity derivative")]
+               ('Sv', "y velocity"),
+               ('Sw', "z velocity"),
+               ('dSudu', "x component x velocity derivative"),
+               ('dSudv', "x component y velocity derivative"),
+               ('dSudw', "x component z velocity derivative"),
+               ('dSvdu', "y component x velocity derivative"),
+               ('dSvdv', "y component y velocity derivative"),
+               ('dSvdw', "y component z velocity derivative"),
+               ('dSwdu', "z component x velocity derivative"),
+               ('dSwdv', "z component y velocity derivative"),
+               ('dSwdw', "z component z velocity derivative")]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -263,8 +264,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
 
-        label = self.m_out.getVariableLabel(self.scalar)
-        sym.append( (label, 'current species'))
+        sym.append( (self.scalar, 'current species'))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -316,6 +316,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+        sym.append( (self.th_sca_label, 'thermal scalar'))
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
