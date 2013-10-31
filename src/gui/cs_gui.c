@@ -4834,6 +4834,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     for (i = 0; i < *nscaus; i++)
       mei_tree_insert(ev_rho, vars->label[i], 0.0);
 
+    mei_tree_insert(ev_rho, vars->label[*iscalt -1], 0.0);
+
     /* try to build the interpreter */
 
     if (mei_tree_builder(ev_rho))
@@ -4853,6 +4855,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         mei_tree_insert(ev_rho,
                         vars->label[i],
                         rtp[(isca[i] -1) * (*ncelet) + iel]);
+      mei_tree_insert(ev_rho,
+                      vars->label[*iscalt -1],
+                      rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
       mei_evaluate(ev_rho);
       c_rho->val[iel] = mei_tree_lookup(ev_rho, "rho");
@@ -4903,6 +4908,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     for (i = 0; i < *nscaus; i++)
       mei_tree_insert(ev_mu, vars->label[i], 0.0);
 
+    mei_tree_insert(ev_rho, vars->label[*iscalt -1], 0.0);
+
     /* try to build the interpreter */
 
     if (mei_tree_builder(ev_mu))
@@ -4923,6 +4930,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         mei_tree_insert(ev_mu,
                         vars->label[i],
                         rtp[(isca[i] -1) * (*ncelet) + iel]);
+      mei_tree_insert(ev_rho,
+                      vars->label[*iscalt -1],
+                      rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
       mei_tree_insert(ev_mu, "rho", c_rho->val[iel]);
 
@@ -4974,6 +4984,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     for (i = 0; i < *nscaus; i++)
       mei_tree_insert(ev_cp, vars->label[i], 0.0);
 
+    mei_tree_insert(ev_rho, vars->label[*iscalt -1], 0.0);
+
     /* try to build the interpreter */
 
     if (mei_tree_builder(ev_cp))
@@ -4992,6 +5004,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         mei_tree_insert(ev_cp,
                         vars->label[i],
                         rtp[(isca[i] -1) * (*ncelet) + iel]);
+      mei_tree_insert(ev_rho,
+                      vars->label[*iscalt -1],
+                      rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
       mei_evaluate(ev_cp);
       propce[ipccp * (*ncelet) + iel] = mei_tree_lookup(ev_cp, "cp");
@@ -5051,6 +5066,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     for (i = 0; i < *nscaus; i++)
       mei_tree_insert(ev_la, vars->label[i], 0.0);
 
+    mei_tree_insert(ev_rho, vars->label[*iscalt -1], 0.0);
+
     /* try to build the interpreter */
 
     if (mei_tree_builder(ev_la))
@@ -5072,6 +5089,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
           mei_tree_insert(ev_la,
                           vars->label[i],
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
+        mei_tree_insert(ev_rho,
+                        vars->label[*iscalt -1],
+                        rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
         mei_evaluate(ev_la);
         /* for the Temperature, the diffusivity factor is not divided by Cp */
@@ -5093,6 +5113,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
           mei_tree_insert(ev_la,
                           vars->label[i],
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
+        mei_tree_insert(ev_rho,
+                        vars->label[*iscalt -1],
+                        rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
         mei_evaluate(ev_la);
         /* for the Temperature, the diffusivity factor is not divided by Cp */
