@@ -766,10 +766,11 @@ do ifac = 1, nfabor
 
     ! Gradient boundary conditions
     !-----------------------------
+    rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
-    coefau(1,ifac) = rcodcx
-    coefau(2,ifac) = rcodcy
-    coefau(3,ifac) = rcodcz
+    coefau(1,ifac) = (1.d0-cofimp)*(rcodcx - rcodcn*rnx) + rcodcn*rnx
+    coefau(2,ifac) = (1.d0-cofimp)*(rcodcy - rcodcn*rny) + rcodcn*rny
+    coefau(3,ifac) = (1.d0-cofimp)*(rcodcz - rcodcn*rnz) + rcodcn*rnz
 
     ! Projection in order to have the velocity parallel to the wall
     ! B = cofimp * ( IDENTITY - n x n )
@@ -786,7 +787,6 @@ do ifac = 1, nfabor
 
     ! Flux boundary conditions
     !-------------------------
-    rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
     cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
     cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny) - hint*rcodcn*rny

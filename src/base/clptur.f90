@@ -197,7 +197,7 @@ double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
-double precision cofimp, ypup, yptp, yp1
+double precision cofimp, ypup, yptp, ypth
 double precision bldr12
 double precision xkip
 double precision tplus
@@ -256,7 +256,7 @@ cofimp  = 0.d0
 ek = 0.d0
 rcprod = 0.d0
 uiptn = 0.d0
-yp1 = 0.d0
+ypth = 0.d0
 
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
@@ -751,10 +751,11 @@ do ifac = 1, nfabor
 
     ! Gradient boundary conditions
     !-----------------------------
+    rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
-    coefau(1,ifac) = rcodcx
-    coefau(2,ifac) = rcodcy
-    coefau(3,ifac) = rcodcz
+    coefau(1,ifac) = (1.d0-cofimp)*(rcodcx - rcodcn*rnx) + rcodcn*rnx
+    coefau(2,ifac) = (1.d0-cofimp)*(rcodcy - rcodcn*rny) + rcodcn*rny
+    coefau(3,ifac) = (1.d0-cofimp)*(rcodcz - rcodcn*rnz) + rcodcn*rnz
 
     ! Projection in order to have the velocity parallel to the wall
     ! B = cofimp * ( IDENTITY - n x n )
@@ -771,7 +772,6 @@ do ifac = 1, nfabor
 
     ! Flux boundary conditions
     !-------------------------
-    rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
     cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
     cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny) - hint*rcodcn*rny
@@ -1522,7 +1522,7 @@ do ifac = 1, nfabor
           ! Dirichlet on the scalar, with wall function
           if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
 
-            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,yp1)
+            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,ypth)
 
             ! Compute (y+-d+)/T+ *PrT
             yptp = hflui/prdtl
@@ -1531,7 +1531,7 @@ do ifac = 1, nfabor
 
           ! Neumann on the scalar, with wall function (for post-processing)
           elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
-            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,yp1)
+            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,ypth)
             ! y+/T+ *PrT
             yptp = hflui/prdtl
             hflui = hint
@@ -1561,15 +1561,15 @@ do ifac = 1, nfabor
             !      of u'T' is correcty computed
             if (ityturt(iscal).ge.1) then
               ! In the log layer
-              if (yplus.ge.yp1.and.iturb.ne.0) then
+              if (yplus.ge.ypth.and.iturb.ne.0) then
                 xmutlm = xkappa*visclc*yplus
                 rcprod = min(xkappa , max(und0,sqrt(xmutlm/visctc))/yplus)
 
                 cofimp = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
                                 (deuxd0*rcprod - und0/(deuxd0*yplus-dplus))
 
-                ! the term (rho*tet*uk) is implicit
-                pfac = 0.d0
+                ! the term (rho*tet*uk) is partially implicit
+                pfac = (1.d0 -cofimp)*pimp
 
               ! In the viscous sub-layer
               else
@@ -1624,7 +1624,7 @@ do ifac = 1, nfabor
               !-----------------------------
 
               ! Add rho*uk*Tet to T'v' in High Reynolds
-              if (yplus.ge.yp1) then
+              if (yplus.ge.ypth) then
                 do isou = 1, 3
                   pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
                 enddo
