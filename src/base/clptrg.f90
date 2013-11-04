@@ -790,12 +790,16 @@ do ifac = 1, nfabor
 
       ! Gradient boundary conditions
       !-----------------------------
+      ! (semi implicitation of the wall velocity due to wall functions
+      !  see the theory guide for more informations)
+      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
-      coefau(1,ifac) = rcodcx
-      coefau(2,ifac) = rcodcy
-      coefau(3,ifac) = rcodcz
+      coefau(1,ifac) = (1.d0-cofimp)*(rcodcx - rcodcn*rnx) + rcodcn*rnx
+      coefau(2,ifac) = (1.d0-cofimp)*(rcodcy - rcodcn*rny) + rcodcn*rny
+      coefau(3,ifac) = (1.d0-cofimp)*(rcodcz - rcodcn*rnz) + rcodcn*rnz
 
-      ! Projection in order to have the velocity parallel to the wall
+      ! Projection in order to have the implicit part of velocity
+      ! parallel to the wall
       ! B = cofimp * ( IDENTITY - n x n )
 
       coefbu(1,1,ifac) = cofimp*(1.d0-rnx**2)
@@ -810,25 +814,27 @@ do ifac = 1, nfabor
 
       ! Flux boundary conditions
       !-------------------------
-      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
+      ! (the tangential wall shear stress is modified by the wall functions,
+      !  whereas the normal components remains unchanged, for more details
+      !  see the theory guide)
 
-      cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx)
-      cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny)
-      cofafu(3,ifac)   = -hflui*(rcodcz - rcodcn*rnz)
+      cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
+      cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny) - hint*rcodcn*rny
+      cofafu(3,ifac)   = -hflui*(rcodcz - rcodcn*rnz) - hint*rcodcn*rnz
 
       ! Projection in order to have the shear stress parallel to the wall
       !  B = hflui*( IDENTITY - n x n )
 
-      cofbfu(1,1,ifac) = hflui*(1.d0-rnx**2)
-      cofbfu(2,2,ifac) = hflui*(1.d0-rny**2)
-      cofbfu(3,3,ifac) = hflui*(1.d0-rnz**2)
+      cofbfu(1,1,ifac) = hflui*(1.d0-rnx**2) + hint*rnx**2
+      cofbfu(2,2,ifac) = hflui*(1.d0-rny**2) + hint*rny**2
+      cofbfu(3,3,ifac) = hflui*(1.d0-rnz**2) + hint*rnz**2
 
-      cofbfu(1,2,ifac) = - hflui*rnx*rny
-      cofbfu(1,3,ifac) = - hflui*rnx*rnz
-      cofbfu(2,1,ifac) = - hflui*rny*rnx
-      cofbfu(2,3,ifac) = - hflui*rny*rnz
-      cofbfu(3,1,ifac) = - hflui*rnz*rnx
-      cofbfu(3,2,ifac) = - hflui*rnz*rny
+      cofbfu(1,2,ifac) = (hint - hflui)*rnx*rny
+      cofbfu(1,3,ifac) = (hint - hflui)*rnx*rnz
+      cofbfu(2,1,ifac) = (hint - hflui)*rny*rnx
+      cofbfu(2,3,ifac) = (hint - hflui)*rny*rnz
+      cofbfu(3,1,ifac) = (hint - hflui)*rnz*rnx
+      cofbfu(3,2,ifac) = (hint - hflui)*rnz*rny
 
     endif
 
