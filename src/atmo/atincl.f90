@@ -218,6 +218,9 @@ double precision, save:: w1ini,w2ini
 integer, save::  modsub,moddis,modnuc,modsedi
 double precision, save:: sigc
 
+!> force initilization in case of restart (this option is
+!> automatically set in lecamp)
+integer, save :: init_at_chem
 
 contains
 

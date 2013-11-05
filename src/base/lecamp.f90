@@ -76,7 +76,9 @@ use albase
 use parall
 use cplsat
 use field
-use atchem
+use atincl, only: init_at_chem
+use atchem, only: ichemistry
+use siream, only: iaerosol
 use turbomachinery
 
 !===============================================================================
@@ -1083,7 +1085,18 @@ endif
 ! 6. LECTURE D'INFORMATIONS COMPLEMENTAIRES LEGERES
 !================================================================
 
-!     Pour le moment, il n'y en a pas.
+if (ichemistry.gt.0.or.iaerosol.gt.0) then
+  rubriq = 'atmospheric_chem'
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+              init_at_chem,ierror)
+
+  if (ierror.eq.0.and.init_at_chem.gt.0) then
+    init_at_chem = 0
+  endif
+endif
 
 !================================================================
 ! 7. FERMETURE DU FICHIER SUITE PRINCIPAL

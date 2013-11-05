@@ -153,7 +153,7 @@ if (ifilechemistry.ge.1) then
 
   ! Volume initilization with profiles for species present
   ! in the chemical profiles file
-  if (isuite.eq.0) then
+  if (init_at_chem.eq.1) then
     do iel = 1, ncel
 
       zent = xyzcen(3,iel)
@@ -178,17 +178,17 @@ if (iaerosol.eq.1) then
   call atleca()
 
   ! Initialization
-if (isuite.eq.0) then
-  do iel = 1, ncel
-    do ii=1,nesp_aer*nbin_aer+nbin_aer
-     rtp(iel,isca(nespg_siream+ii))=dlconc0(ii)
+  if (init_at_chem.eq.1) then
+    do iel = 1, ncel
+      do ii = 1, nesp_aer*nbin_aer + nbin_aer
+       rtp(iel,isca(nespg_siream+ii)) = dlconc0(ii)
+      enddo
     enddo
-  enddo
-endif
+  endif
 
 endif
 
-!Verifications
+! Verifications
 if ((iatra1.eq.1.or.ichemistry.ge.1).and.(syear.eq.-999.or.squant.eq.-999.or.shour.eq.-999&
 .or.smin.eq.-999.or.ssec.eq.-999)) then
   if (iatra1.eq.1) write(nfecra,1000)

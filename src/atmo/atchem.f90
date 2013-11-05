@@ -64,9 +64,6 @@ integer, save :: iphotolysis
 integer, save :: nespg
 !> nrg: number of chemical reactions
 integer, save :: nrg
-!> force initilization in case of restart (this option is
-!> automatically set in lecamp)
-integer, save :: init_at_chem
 
 !> molar mass of chemical species (Kg/mol)
 double precision, allocatable, dimension(:) ::  dmmk
@@ -122,8 +119,6 @@ use numvar, only: nscaus
 implicit none
 
 integer imode, ii
-
-init_at_chem = 1
 
 ! First reading of concentration profiles file
 imode = 0

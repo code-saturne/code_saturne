@@ -59,7 +59,7 @@ implicit none
 
 ! Local variables
 
-integer jsp,jb
+integer jsp, jb
 
 !================================================================================
 ! READINGS
@@ -69,16 +69,16 @@ write(nfecra,*) ''
 write(nfecra,*) 'reading of aerosols numbers and concentrations'
 
 open(impmea,file=ficmea,status='old')
-  ! Reading aerosol numbers
-  do jb=1,nbin_aer
-    read(impmea,*) dlconc0(nesp_aer*nbin_aer+jb)
+! Reading aerosol numbers
+do jb = 1, nbin_aer
+  read(impmea,*) dlconc0(nesp_aer*nbin_aer+jb)
+enddo
+! Reading aerosol concentrations
+do jb = 1, nbin_aer
+  do jsp = 1, nesp_aer
+    read(impmea,*) dlconc0(jb+(jsp-1)*nbin_aer)
   enddo
-  ! Reading aerosol concentrations
-  do jb=1,nbin_aer
-    do jsp=1,nesp_aer
-      read(impmea,*) dlconc0(jb+(jsp-1)*nbin_aer)
-    enddo
-  enddo
+enddo
 close(impmea)
 
 !================================================================================
@@ -88,16 +88,16 @@ close(impmea)
 write(nfecra, *)
 write(nfecra, *) '==================================================='
 write(nfecra, *) 'printing aerosol numbers'
-do jb=1,nbin_aer
+do jb = 1, nbin_aer
   write(nfecra,1000) jb, dlconc0(nesp_aer*nbin_aer+jb)
 enddo
 1000 format("Bin ",I2," : ",ES10.2)
 write(nfecra, *)
 write(nfecra, *) '==================================================='
 write(nfecra, *) 'printing aerosol concentrations'
-do jb=1,nbin_aer
+do jb = 1, nbin_aer
   write(nfecra,*) "Bin ",jb
-  do jsp=1,nesp_aer
+  do jsp = 1, nesp_aer
     write(nfecra,1001) nomvar(ipprtp(isca(nespg_siream+jb+(jsp-1)*nbin_aer))),&
                        dlconc0(jb+(jsp-1)*nbin_aer)
   enddo

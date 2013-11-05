@@ -712,6 +712,9 @@ ivert = 0
 iqv0 = 0
 iatsoil = 0
 
+! --> Initialisation for the chemistry models:
+
+init_at_chem = 1
 
 ! --> Initialisation for the gaseous chemistry model:
 ichemistry = 0
@@ -743,13 +746,15 @@ icond_siream = 1
 inucl_siream = 1
 ! Flag to consider or not kelvin effect (1=yes, 0=no)
 ikelv_siream = 1
-! Cutting bin between equilibrium (1 to icut_siream) and dynamic bins (icut_siream to nbin_aer)
+! Cutting bin between equilibrium (1 to icut_siream)
+! and dynamic bins (icut_siream to nbin_aer)
 icut_siream = nbin_aer
 ! Sulfate condensation computation method (1=dynamic, 0=equilibrium)
 isulfcond_siream = 1
 ! Solver for dynamic condensation (1='etr', 2='ros2', 3='ebi')
 kdslv_siream = 2
-! Redistribution method of lagrangian bins (1=number conserving, 2=interpolation)
+! Redistribution method of lagrangian bins
+! (1=number conserving, 2=interpolation)
 iredist_siream = 1
 ! Nucleation model (0=binary, 1=ternary)
 itern_siream = 0

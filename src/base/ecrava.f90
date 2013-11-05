@@ -85,7 +85,9 @@ use elincl
 use ppcpfu
 use cplsat
 use field
-use atchem
+use atincl, only: init_at_chem
+use atchem, only: ichemistry
+use siream, only: iaerosol
 use mesh, only: isympa
 use cs_c_bindings
 
@@ -439,7 +441,7 @@ do iscal = 1, nscal
   endif
 enddo
 
-if (ichemistry.gt.0) then
+if (ichemistry.gt.0.or.iaerosol.gt.0) then
   rubriq = 'atmospheric_chem'
   itysup = 0
   nbval  = 1
