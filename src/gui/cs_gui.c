@@ -211,7 +211,7 @@ _gui_thermal_model(void)
       test = 11;
     else if (cs_gui_strcmp(model_name, "temperature_celsius"))
       test = 10;
-    else if (cs_gui_strcmp(model_name, "potential_temperature²"))
+    else if (cs_gui_strcmp(model_name, "potential_temperature"))
       test = 12;
     else if (cs_gui_strcmp(model_name, "liquid_potential_temperature"))
       test = 13;
