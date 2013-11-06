@@ -381,7 +381,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
 
   if (f_id .ge. 0) then
 
-    call field_get_val_v(iprpfl(iprop), val_v)
+    call field_get_val_v(f_id, val_v)
 
     do isou = 1, 3
 
