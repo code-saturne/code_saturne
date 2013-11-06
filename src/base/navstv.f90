@@ -148,7 +148,7 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:,:), allocatable :: mshvel
-double precision, dimension(:), allocatable :: coefap, coefbp
+double precision, dimension(:), allocatable :: coefa_dp, coefb_dp
 
 double precision, dimension(:,:), pointer :: grdphd
 double precision, dimension(:,:), pointer :: vel, vela
@@ -157,7 +157,7 @@ double precision, dimension(:), pointer :: viscbi
 double precision, dimension(:,:), pointer :: dttens
 double precision, dimension(:,:), pointer :: dfrcxt
 
-double precision, dimension(:), pointer :: coefa_p, coefb_p
+double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: trav
@@ -184,7 +184,7 @@ allocate(vel(3,ncelet))
 ! Allocate other arrays, depending on user options
 
 ! Array for delta p gradient boundary conditions
-allocate(coefap(ndimfb), coefbp(ndimfb))
+allocate(coefa_dp(ndimfb), coefb_dp(ndimfb))
 
 allocate(dfrcxt(3,ncelet))
 if (iphydr.eq.2) then
@@ -570,7 +570,7 @@ if (iprco.le.0) then
   !--------------
   deallocate(vel)
   deallocate(vela)
-  deallocate(coefap, coefbp)
+  deallocate(coefa_dp, coefb_dp)
 
   return
 
@@ -724,7 +724,7 @@ if (ippmod(icompf).lt.0) then
   icetsm , isostd ,                                              &
   dt     , rtp    , rtpa   , vel    ,                            &
   propce ,                                                       &
-  coefau , coefbu , coefap , coefbp ,                            &
+  coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel ,                                                       &
   frcxt  , dfrcxt , dttens , trav   ,                            &
   viscf  , viscb  ,                                              &
@@ -791,8 +791,6 @@ if (ippmod(icompf).lt.0) then
     climgp = climgr(ipr)
     extrap = extrag(ipr)
 
-    call field_get_coefb_s(ivarfl(ipr), coefb_p)
-
     !Allocation
     allocate(gradp(ncelet,3))
 
@@ -801,7 +799,7 @@ if (ippmod(icompf).lt.0) then
     ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
       iwarnp , epsrgp , climgp , extrap ,                            &
       dfrcxt ,                                                       &
-      drtp   , coefap , coefbp ,                                     &
+      drtp   , coefa_dp        , coefb_dp        ,                   &
       gradp  )
 
     thetap = thetav(ipr)
@@ -878,7 +876,7 @@ if (ippmod(icompf).lt.0) then
       call field_get_coefa_s(ivarfl(ipr), coefa_p)
       do ifac = 1, nfabor
         if (isostd(ifac).eq.1) then
-          coefa_p(ifac) = coefa_p(ifac) + coefap(ifac)
+          coefa_p(ifac) = coefa_p(ifac) + coefa_dp(ifac)
         endif
       enddo
 
@@ -1432,7 +1430,7 @@ enddo
 !--------------
 deallocate(vel)
 deallocate(vela)
-deallocate(coefap, coefbp)
+deallocate(coefa_dp, coefb_dp)
 
 !--------
 ! Formats
