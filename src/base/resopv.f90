@@ -2054,7 +2054,7 @@ if (idilat.eq.4) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefa_dp , coefb_p i     , coefaf_dp       , coefbf_p ,        &
+   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
