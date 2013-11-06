@@ -283,8 +283,8 @@ if (modhis.eq.0 .or. modhis.eq.1) then
         allocate(momtmp(ncel))
         val_s => momtmp
         call field_get_val_s(iprpfl(iprop), num_s)
-        call field_get_val_s(mom_id, div_s)
         if (mom_id.ge.0) then
+          call field_get_val_s(mom_id, div_s)
           do iel = 1, ncel
             momtmp(iel) = num_s(iel)/max(div_s(iel),epzero)
           enddo
