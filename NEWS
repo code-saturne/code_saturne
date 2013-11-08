@@ -91,7 +91,7 @@ Architectural changes
 - Added new all-to-all infrastructure, allowing alternative algorithms such as
   Crystal Router to MPI_Altoall/MPI_alltoallv as an option.
 
-- Move the convection-diffusion balance (bilsc2.f90) is moved to C.
+- Move the convection-diffusion balance (bilsc2.f90) to C.
 
 Release 3.1.0 (11 Jun 2013)
 ===========================
