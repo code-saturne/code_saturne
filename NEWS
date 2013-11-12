@@ -27,6 +27,9 @@ Changes:
      physics, as the thermal variable is now always a "model" scalar, and user
      scalars remain separate. It also allows querying the thermal model with one
      less indirection.
+- Atmospheric module:
+   * add gazeous chemistry models.
+   * plug the SIze REsolved Aerosol Model (SIREAM).
 
 - Turbomachinery modeling:
    * added a rotor-stator model based on mesh joining.
