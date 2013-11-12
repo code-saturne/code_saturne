@@ -409,7 +409,7 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
     f = (writer->fields[f_id])->f;
 
     if (   writer->fields[f_id]->mesh_id == mesh_id
-        && strcmp(fieldname, f->getName()) == 0) {
+        && strcmp(fieldname, f->getName().c_str()) == 0) {
 
       /* If field exists, check that dimensions and type are compatible */
 
@@ -727,7 +727,7 @@ _write_connect_block(fvm_element_t      type,
   int elt_buf[8];
   cs_lnum_t  i;
   int  j;
-  
+
   const int  stride = fvm_nodal_n_vertices_element[type];
   INTERP_KERNEL::NormalizedCellType med_type = _get_norm_elt_type(type);
 
@@ -766,7 +766,7 @@ _write_block_connect_g(fvm_element_t     type,
 {
   cs_lnum_t *_block_connect = NULL;
 
-  const int  stride = fvm_nodal_n_vertices_element[type]; 
+  const int  stride = fvm_nodal_n_vertices_element[type];
 
   cs_file_serializer_t *s = cs_file_serializer_create(sizeof(cs_lnum_t),
                                                       stride,
