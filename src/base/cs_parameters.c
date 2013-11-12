@@ -171,8 +171,8 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("drift_scalar_model", 0, 0);
   cs_field_define_key_int("scalar_class", 0, 0);
   cs_field_define_key_int("first_moment_id", -1, 0); // old iscavr(iscal)
-  cs_field_define_key_double("min_scalar_clipping", 0, 0);
-  cs_field_define_key_double("max_scalar_clipping", 0, 0);
+  cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
+  cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
 
   cs_field_define_key_struct("var_cal_opt",
                              &_var_cal_opt,

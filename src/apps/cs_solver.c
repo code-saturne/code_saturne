@@ -82,6 +82,7 @@
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
 #include "cs_io.h"
+#include "cs_join.h"
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"

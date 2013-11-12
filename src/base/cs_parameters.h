@@ -82,7 +82,7 @@ typedef enum {
   CS_INDEF = 1,
   CS_INLET = 2,
   CS_OUTLET = 3,
-  CS_iSYMMETRY = 4,
+  CS_SYMMETRY = 4,
   CS_SMOOTHWALL = 5,
   CS_ROUGHWALL = 6,
   CS_ESICF = 7,

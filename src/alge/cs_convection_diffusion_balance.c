@@ -401,10 +401,10 @@ cs_convection_diffusion_scalar(
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     cs_gradient_perio_init_rij(f, &tr_dim, grad);
-    snprintf(var_name, 31, f->name); var_name[31] = '\0';
-  } else {
-    snprintf(var_name, 31, "Var. %2d", f_id); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
+  else
+    snprintf(var_name, 31, "Var. 0"); var_name[31] = 'Var. 0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
