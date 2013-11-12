@@ -71,6 +71,12 @@ void
 cs_turbomachinery_set_model(cs_turbomachinery_model_t  model);
 
 /*----------------------------------------------------------------------------
+ * return rotor/stator model.
+ *----------------------------------------------------------------------------*/
+cs_turbomachinery_model_t
+cs_turbomachinery_get_model(void);
+
+/*----------------------------------------------------------------------------
  * Define a rotor by its axis and cell selection criteria.
  *
  * parameters:

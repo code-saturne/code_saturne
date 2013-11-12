@@ -709,6 +709,21 @@ cs_turbomachinery_set_model(cs_turbomachinery_model_t  model)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return rotor/stator model.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_turbomachinery_model_t
+cs_turbomachinery_get_model(void)
+{
+  if (cs_glob_turbomachinery == NULL)
+   return CS_TURBOMACHINERY_NONE;
+  else
+    return cs_glob_turbomachinery->model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a rotor by its axis and cell selection criteria.
  *
  * \param[in]  cell_criteria      cell selection criteria string
