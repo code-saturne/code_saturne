@@ -221,18 +221,17 @@ _1scale_log_law
 
     // Iterative solving
     for (iter = 0;   iter < niter_max
-                  && fabs(*ustar - ustaro) < eps * ustaro; iter++) {
+                  && fabs(*ustar - ustaro) > eps * ustaro; iter++) {
       ustaro = *ustar;
       *ustar = (xkappa * vel + ustaro)
              / (log(ydvisc * ustaro) + xkappa * cstlog + 1.);
     }
 
-
     if (iter>=niter_max) {
       bft_printf(_("WARNING: non-convergence in the computation\n"
                    "******** of the friction velocity\n\n"
                    "face number: %d \n"
-                   "friction vel: %f \n" ), ifac, ustar);
+                   "friction vel: %f \n" ), ifac, *ustar);
     }
 
     *uk = *ustar;
