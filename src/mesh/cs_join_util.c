@@ -270,46 +270,6 @@ _destroy_join_sync(cs_join_sync_t   **sync)
 }
 
 /*----------------------------------------------------------------------------
- * Destroy a cs_join_select_t structure.
- *
- * parameters:
- *   param       <-- user-defined joining parameters
- *   join_select <-- pointer to pointer to structure to destroy
- *---------------------------------------------------------------------------*/
-
-static void
-_join_select_destroy(cs_join_param_t     param,
-                     cs_join_select_t  **join_select)
-{
-  if (*join_select != NULL) {
-
-    cs_join_select_t *_js = *join_select;
-
-    BFT_FREE(_js->faces);
-    BFT_FREE(_js->compact_face_gnum);
-    BFT_FREE(_js->compact_rank_index);
-    BFT_FREE(_js->vertices);
-    BFT_FREE(_js->b_adj_faces);
-    BFT_FREE(_js->i_adj_faces);
-
-    BFT_FREE(_js->b_face_state);
-    BFT_FREE(_js->i_face_state);
-
-    if (param.perio_type != FVM_PERIODICITY_NULL)
-      BFT_FREE(_js->per_v_couples);
-
-    _destroy_join_sync(&(_js->s_vertices));
-    _destroy_join_sync(&(_js->c_vertices));
-    _destroy_join_sync(&(_js->s_edges));
-    _destroy_join_sync(&(_js->c_edges));
-
-    BFT_FREE(*join_select);
-    *join_select = NULL;
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Reduce numbering for the selected boundary faces.
  * After this function, we have a compact global face numbering for the
  * selected faces.
@@ -2029,8 +1989,6 @@ cs_join_destroy(cs_join_t  **join)
       cs_glob_join_log = NULL;
     }
 
-    _join_select_destroy(_join->param, &_join->selection);
-
     BFT_FREE(_join->criteria);
 
     BFT_FREE(_join);
@@ -2354,6 +2312,46 @@ cs_join_select_create(const char  *selection_criteria,
   bft_printf_flush();
 
   return  selection;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a cs_join_select_t structure.
+ *
+ * parameters:
+ *   param       <-- user-defined joining parameters
+ *   join_select <-- pointer to pointer to structure to destroy
+ *---------------------------------------------------------------------------*/
+
+void
+join_select_destroy(cs_join_param_t     param,
+                    cs_join_select_t  **join_select)
+{
+  if (*join_select != NULL) {
+
+    cs_join_select_t *_js = *join_select;
+
+    BFT_FREE(_js->faces);
+    BFT_FREE(_js->compact_face_gnum);
+    BFT_FREE(_js->compact_rank_index);
+    BFT_FREE(_js->vertices);
+    BFT_FREE(_js->b_adj_faces);
+    BFT_FREE(_js->i_adj_faces);
+
+    BFT_FREE(_js->b_face_state);
+    BFT_FREE(_js->i_face_state);
+
+    if (param.perio_type != FVM_PERIODICITY_NULL)
+      BFT_FREE(_js->per_v_couples);
+
+    _destroy_join_sync(&(_js->s_vertices));
+    _destroy_join_sync(&(_js->c_vertices));
+    _destroy_join_sync(&(_js->s_edges));
+    _destroy_join_sync(&(_js->c_edges));
+
+    BFT_FREE(*join_select);
+    *join_select = NULL;
+
+  }
 }
 
 /*----------------------------------------------------------------------------

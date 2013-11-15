@@ -1755,6 +1755,8 @@ cs_join_all(bool  preprocess)
 
     /* Free memory */
 
+    join_select_destroy(this_join->param, &(this_join->selection));
+
     if (join_param.preprocessing) {
       cs_join_destroy(&this_join);
       cs_glob_join_array[join_id] = NULL;

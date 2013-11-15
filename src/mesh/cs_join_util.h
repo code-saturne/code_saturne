@@ -339,6 +339,18 @@ cs_join_select_create(const char  *selection_criteria,
                       int          verbosity);
 
 /*----------------------------------------------------------------------------
+ * Destroy a cs_join_select_t structure.
+ *
+ * parameters:
+ *   param       <-- user-defined joining parameters
+ *   join_select <-- pointer to pointer to structure to destroy
+ *---------------------------------------------------------------------------*/
+
+void
+join_select_destroy(cs_join_param_t     param,
+                    cs_join_select_t  **join_select);
+
+/*----------------------------------------------------------------------------
  * Extract vertices from a selection of faces.
  *
  * parameters:
