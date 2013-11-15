@@ -68,6 +68,7 @@ double precision, dimension(*), target :: rtp(ncelet,*)
 ! Local variables
 
 character        nompre*300, nomhis*300
+logical          lprev
 integer          tplnum, ii, ii1, ii2, lpre, lnom, lng
 integer          icap, ncap, ipp, ivar, iprop
 integer          iel, isou, keymom, mom_id, f_id
@@ -273,16 +274,35 @@ if (modhis.eq.0 .or. modhis.eq.1) then
 
     if (ihisvr(ipp,1).ne.0) then
 
-      call field_get_key_int(iprpfl(iprop), keymom, mom_id)
+      f_id = iprpfl(iprop)
+      lprev = .false.
+
+      if (f_id .eq. -1 .and. iroma.gt.0) then
+        if (iprop.eq.ipproc(iroma)) then
+          f_id = iprpfl(ipproc(irom))
+          lprev = .true.
+        endif
+      endif
+      if (f_id.eq.-1) cycle
+
+      call field_get_key_int(f_id, keymom, mom_id)
 
       ! For moments, we must divide by the cumulative time
 
       if (mom_id.eq.-1) then
-        call field_get_val_s(iprpfl(iprop), val_s)
+        if (.not. lprev) then
+          call field_get_val_s(f_id, val_s)
+        else
+          call field_get_val_prev_s(f_id, val_s)
+        endif
       else
         allocate(momtmp(ncel))
         val_s => momtmp
-        call field_get_val_s(iprpfl(iprop), num_s)
+        if (.not. lprev) then
+          call field_get_val_s(f_id, num_s)
+        else
+          call field_get_val_prev_s(f_id, num_s)
+        endif
         if (mom_id.ge.0) then
           call field_get_val_s(mom_id, div_s)
           do iel = 1, ncel

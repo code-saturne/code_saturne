@@ -453,6 +453,7 @@ do iprop  = 1, npromx
 enddo
 
 irom   = 0
+iroma  = 0
 iviscl = 0
 ivisct = 0
 icour  = 0
