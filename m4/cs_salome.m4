@@ -78,6 +78,19 @@ if test "x$with_salome" != "xno" ; then
       fi
     fi
 
+    # Environment for EDF or "universal binaries" type build for Salome7.3
+    # Note that ROOT_SALOME is required but not exported in all cases.
+    if test "x$SALOMEENVCMD" = "x"; then
+      salome_env=$(find $with_salome -maxdepth 1 -name salome_modules.sh 2>/dev/null)
+      if test "x$salome_env" != "x"; then
+        salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequisites.sh 2>/dev/null)
+        if test "x$salome_pre" != "x"; then
+          SALOMEENVCMD=". $salome_pre; export ROOT_SALOME=$with_salome; . $salome_env"
+          SALOMEPRE="$salome_pre"
+        fi
+      fi
+    fi
+
     # Environment for EDF or "universal binaries" type build for Salome 6.4 to 7.0
     # Note that ROOT_SALOME is required but not exported in all cases.
     if test "x$SALOMEENVCMD" = "x"; then

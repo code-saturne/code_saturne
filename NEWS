@@ -9,6 +9,8 @@ Changes:
 - Improve mesh coherency test to avoid false error reports in some cases of
   rotational periodicity.
 
+- Updates for build with SALOME 7.3.
+
 Bug fixes:
 ----------
 

@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2011 EDF S.A.
+  Copyright (C) 1998-2013 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,6 +41,8 @@
 /*----------------------------------------------------------------------------
  * MED library headers
  *----------------------------------------------------------------------------*/
+
+#include <MED_version.h>
 
 #include <MEDCouplingUMesh.hxx>
 #include <MEDCouplingField.hxx>
@@ -408,8 +410,13 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
 
     f = (writer->fields[f_id])->f;
 
+#if (SALOMEMED_VERSION  >= 0x070300)
     if (   writer->fields[f_id]->mesh_id == mesh_id
         && strcmp(fieldname, f->getName()) == 0) {
+#else
+    if (   writer->fields[f_id]->mesh_id == mesh_id
+        && strcmp(fieldname, f->getName()) == 0) {
+#endif
 
       /* If field exists, check that dimensions and type are compatible */
 
