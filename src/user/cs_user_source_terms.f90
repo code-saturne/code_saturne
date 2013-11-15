@@ -775,7 +775,7 @@ pwatt = 100.d0
 ! calculation of volf
 
 volf  = 0.d0
-call getcel('x > 0.0 and x < 1.2 and y > 3.1 and'//               &
+call getcel('x > 0.0 and x < 1.2 and y > 3.1 and '//               &
             'y < 4.0',nlelt,lstelt)
 
 do ilelt = 1, nlelt
