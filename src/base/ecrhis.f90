@@ -420,23 +420,25 @@ if (modhis.eq.0 .or. modhis.eq.1) then
           endif
           if (irangp.ge.0) then
             lng = 1
-            call parbcr(irangp, lng, varcap(icap))
+            call parbcr(ndrcap(icap), lng, varcap(icap))
             !==========
           endif
         enddo
         ncap = ncapt
-      else
+      else if (ihisvr(ipp,1).gt.0) then
         do icap = 1, ihisvr(ipp,1)
           if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
             varcap(icap) = val_v(isou, nodcap(ihisvr(ipp,icap+1)))
           endif
           if (irangp.ge.0) then
             lng = 1
-            call parbcr(irangp, lng, varcap(icap))
+            call parbcr(ndrcap(icap), lng, varcap(icap))
             !==========
           endif
         enddo
         ncap = ihisvr(ipp,1)
+      else
+        ncap = 0
       endif
 
       if (irangp.le.0 .and. ncap.gt.0) then
