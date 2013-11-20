@@ -112,7 +112,7 @@ $(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo
 $(top_srcdir)/src/comb/cpincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
-$(top_srcdir)/src/elec/elincl.f90: paramx.lo ppthch.lo
+$(top_srcdir)/src/elec/elincl.f90: mesh.lo paramx.lo ppthch.lo
 $(top_srcdir)/src/lagr/lagran.f90: lagpar.lo cstnum.lo
 $(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo ppppar.lo
 $(top_srcdir)/src/pprt/ppincl.f90: ppppar.lo ppthch.lo
