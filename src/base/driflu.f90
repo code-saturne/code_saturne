@@ -192,10 +192,12 @@ allocate(viscf(nfac), viscb(nfabor))
 allocate(flumas(nfac), flumab(nfabor))
 
 do ifac = 1, nfac
+  viscf(ifac) = 0.d0
   flumas(ifac) = 0.d0
 enddo
 
 do ifac = 1, nfabor
+  viscb(ifac) = 0.d0
   flumab(ifac) = 0.d0
 enddo
 
