@@ -286,7 +286,7 @@ class Parser(object):
         Read N_PROCS and USER_INPUT_FILES in:
             <study label='STUDY' status='on'>
                 <case label='CASE1' run_id ="Grid 1" status='on' compute="on" post="on"/>
-                <case label='CASE2' status='on' compute="on" post="on"/>
+                <case label='CASE2' status='on' compute="on" post="on" compare="on"/>
             </study>
         @type l: C{String}
         @param l: label of a study
@@ -302,6 +302,11 @@ class Parser(object):
                 d['label']   = str(node.attributes["label"].value)
                 d['compute'] = str(node.attributes["compute"].value)
                 d['post'] = str(node.attributes["post"].value)
+
+                try:
+                    d['compare'] = str(node.attributes["compare"].value)
+                except:
+                    d['compare'] = "on"
 
                 try:
                     d['run_id'] = str(node.attributes["run_id"].value)

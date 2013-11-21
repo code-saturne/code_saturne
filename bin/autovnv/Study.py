@@ -79,6 +79,7 @@ class Case(object):
         self.compute    = data['compute']
         self.plot       = data['post']
         self.run_id     = data['run_id']
+        self.compare    = data['compare']
 
         self.is_compil  = "not done"
         self.is_run     = "not done"
@@ -349,7 +350,7 @@ class Case(object):
         return error
 
 
-    def compare(self, r, d, threshold, args):
+    def runCompare(self, r, d, threshold, args):
         home = os.getcwd()
 
         repo = os.path.join(self.__repo, self.label,
@@ -873,16 +874,17 @@ class Studies(object):
     def check_compare(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stop if you try to make a comparison with a file which does not exsist.
+        Stop if you try to make a comparison with a file which does not exist.
         """
         for l, s in self.studies:
             for case in s.Cases:
-                compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
-                for i in range(len(nodes)):
-                    if compare[i] and case.is_run != "KO":
-                        if destination == False:
-                            dest[i]= None
-                        self.__check_dirs(l, case.label, case.run_id, nodes[i], repo[i], dest[i])
+                if case.compare == 'on' and case.is_run != "KO":
+                    compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
+                    for i in range(len(nodes)):
+                        if compare[i]:
+                            if destination == False:
+                                dest[i]= None
+                            self.__check_dirs(l, case.label, case.run_id, nodes[i], repo[i], dest[i])
 
 
     def compare(self):
@@ -893,12 +895,13 @@ class Studies(object):
             for l, s in self.studies:
                 self.reporting('  o Compare study: ' + l)
                 for case in s.Cases:
-                    is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
-                    for i in range(len(nodes)):
-                        if is_compare[i] and case.is_run != "KO":
-                            case.is_compare = "done"
-                            self.reporting('    - compare %s (%s)' % (case.label, args[i]))
-                            case.diff_value += case.compare(repo[i], dest[i], t[i], args[i])
+                    if case.compare == 'on' and case.is_run != "KO":
+                        is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
+                        for i in range(len(nodes)):
+                            if is_compare[i]:
+                                case.is_compare = "done"
+                                self.reporting('    - compare %s (%s)' % (case.label, args[i]))
+                                case.diff_value += case.runCompare(repo[i], dest[i], t[i], args[i])
 
 
     def check_script(self, destination=True):
@@ -1100,32 +1103,33 @@ class Studies(object):
                                     doc2.addInput(ff)
 
                 # handle the input nodes that are inside postpro nodes
-                script, label, nodes, args = self.__parser.getPostPro(l)
-                doc2.appendLine("\\subsection{Results for post-processing cases}")
-                for i in range(len(label)):
-                    if script[i]:
-                        input_nodes = self.__parser.getChilds(nodes[i], "input")
-                        if input_nodes:
-                            for node in input_nodes:
-                                f, dest, repo = self.__parser.getInput(node)
-                                doc2.appendLine("\\subsubsection{%s}" % f)
+                if self.__postpro:
+                    script, label, nodes, args = self.__parser.getPostPro(l)
+                    doc2.appendLine("\\subsection{Results for post-processing cases}")
+                    for i in range(len(label)):
+                        if script[i]:
+                            input_nodes = self.__parser.getChilds(nodes[i], "input")
+                            if input_nodes:
+                                for node in input_nodes:
+                                    f, dest, repo = self.__parser.getInput(node)
+                                    doc2.appendLine("\\subsubsection{%s}" % f)
 
-                                if dest:
-                                    d = dest
-                                    dd = self.dest
-                                elif repo:
-                                    d = repo
-                                    dd = self.repo
-                                else:
-                                    d = ""
-                                    dd = ""
+                                    if dest:
+                                        d = dest
+                                        dd = self.dest
+                                    elif repo:
+                                        d = repo
+                                        dd = self.repo
+                                    else:
+                                        d = ""
+                                        dd = ""
 
-                                ff = os.path.join(dd, l, "POST", d, f)
+                                    ff = os.path.join(dd, l, "POST", d, f)
 
-                                if not os.path.isfile(ff):
-                                    print("\n\nWarning: this file does not exist: %s\n\n" % ff)
-                                else:
-                                    doc2.addInput(ff)
+                                    if not os.path.isfile(ff):
+                                        print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                                    else:
+                                        doc2.addInput(ff)
 
             attached_files.append(doc2.close())
 
