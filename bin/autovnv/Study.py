@@ -62,13 +62,14 @@ def nodot(item):
 #-------------------------------------------------------------------------------
 
 class Case(object):
-    def __init__(self, pkg, rlog, diff, study, data, repo, dest):
+    def __init__(self, pkg, rlog, diff, parser, study, data, repo, dest):
         """
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
         """
         self.__log      = rlog
         self.__diff     = diff
+        self.__parser   = parser
         self.__study    = study
         self.__data     = data
         self.__repo     = repo
@@ -396,6 +397,89 @@ class Case(object):
 
         return tab
 
+
+    def check_dir(self, studies, node, result, rep, attr):
+        """
+        Check coherency between xml file of parameters and repository or destination.
+        """
+        # 1. Check if the given result directory exists.
+        if rep != "":
+            rep_f = os.path.join(result, rep)
+            rep_e = os.path.join(result, rep, 'error')
+
+            if not os.path.isdir(rep_f):
+                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
+                    (self.__study, self.label, rep_f)
+                studies.reporting(msg)
+                sys.exit(1)
+
+            if os.path.isfile(rep_e):
+                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
+                    (self.__study, self.label, rep_f)
+                studies.reporting(msg)
+                sys.exit(1)
+
+        # 2. The result directory must be read automatically;
+        #    check if there is a single result directory.
+        elif rep == "":
+            if len(filter(nodot, os.listdir(result))) == 0:
+                msg = "Study %s case %s:\nthere is no result directory in %s\nStop.\n" % \
+                    (self.__study, self.label, result)
+                studies.reporting(msg)
+                sys.exit(1)
+
+            # if no run_id is specified in the xml file
+            # only one result directory allowed in RESU
+            if len(filter(nodot, os.listdir(result))) > 1 and self.run_id == "":
+                msg = "Study %s case %s:\nthere are several directories in %s\nStop.\n" % \
+                    (self.__study, self.label, result)
+                studies.reporting(msg)
+                sys.exit(1)
+
+            rep = self.run_id
+            # if no run_id is specified in the xml file
+            # the only result directory present in RESU is taken
+            if rep == "":
+                rep = filter(nodot, os.listdir(result))[0]
+
+            rep_f = os.path.join(result, rep)
+            if not os.path.isdir(rep_f):
+                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
+                    (self.__study, self.label, rep_f)
+                studies.reporting(msg)
+                sys.exit(1)
+
+            rep_e = os.path.join(result, rep, 'error')
+            if os.path.isfile(rep_e):
+                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
+                    (self.__study, self.label, rep_f)
+                studies.reporting(msg)
+                sys.exit(1)
+
+            # 3. Update the file of parameters with the name of the result directory
+            if node:
+                self.__parser.setAttribute(node, attr, rep)
+            return rep
+
+        else:
+            studies.reporting('Error: check compare/script/plot/probe/resu/input failed.')
+            sys.exit(1)
+
+
+    def check_dirs(self, studies, node, repo, dest):
+        """
+        Check coherency between xml file of parameters and repository and destination.
+        """
+        if repo != None:
+            # build path to RESU directory with path to study and case label in the repo
+            result = os.path.join(self.__repo, self.label, 'RESU')
+            self.check_dir(studies, node, result, repo, "repo")
+
+        if dest != None:
+            # build path to RESU directory with path to study and case label in the dest
+            result = os.path.join(self.__dest, self.label, 'RESU')
+            self.check_dir(studies, node, result, dest, "dest")
+
 #-------------------------------------------------------------------------------
 
 class Study(object):
@@ -444,6 +528,7 @@ class Study(object):
                 c = Case(pkg,
                          self.__log,
                          self.__diff,
+                         self.__parser,
                          self.__study,
                          data,
                          self.__repo,
@@ -790,87 +875,6 @@ class Studies(object):
                         self.__log.flush()
 
 
-    def __check_dir(self, study_label, case_label, run_id, node, result, rep, attr):
-        """
-        Check coherency between xml file of parameters and repository or destination.
-        """
-        # 1. Check if the given result directory exists.
-        if rep != "":
-            rep_f = os.path.join(result, rep)
-            rep_e = os.path.join(result, rep, 'error')
-
-            if not os.path.isdir(rep_f):
-                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
-                    (study_label, case_label, rep_f)
-                self.reporting(msg)
-                sys.exit(1)
-
-            if os.path.isfile(rep_e):
-                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
-                    (study_label, case_label, rep_f)
-                self.reporting(msg)
-                sys.exit(1)
-
-        # 2. The result directory must be read automatically;
-        #    check if there is a single result directory.
-        elif rep == "":
-            if len(filter(nodot, os.listdir(result))) == 0:
-                msg = "Study %s case %s:\nthere is no result directory in %s\nStop.\n" % \
-                    (study_label, case_label, result)
-                self.reporting(msg)
-                sys.exit(1)
-
-            # if no run_id is specified in the xml file
-            # only one result directory allowed in RESU
-            if len(filter(nodot, os.listdir(result))) > 1 and run_id == "":
-                msg = "Study %s case %s:\nthere are several directories in %s\nStop.\n" % \
-                    (study_label, case_label, result)
-                self.reporting(msg)
-                sys.exit(1)
-
-            rep = run_id
-            # if no run_id is specified in the xml file
-            # the only result directory present in RESU is taken
-            if rep == "":
-                rep = filter(nodot, os.listdir(result))[0]
-
-            rep_f = os.path.join(result, rep)
-            if not os.path.isdir(rep_f):
-                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
-                    (study_label, case_label, rep_f)
-                self.reporting(msg)
-                sys.exit(1)
-
-            rep_e = os.path.join(result, rep, 'error')
-            if os.path.isfile(rep_e):
-                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
-                    (study_label, case_label, rep_f)
-                self.reporting(msg)
-                sys.exit(1)
-
-        # 3. Update the file of parameters with the name of the result directory
-            if node:
-                self.__parser.setAttribute(node, attr, rep)
-            return rep
-
-        else:
-            self.reporting('Error: check compare/script/plot/probe/resu/input failed.')
-            sys.exit(1)
-
-
-    def __check_dirs(self, study_label, case_label, run_id, node, repo, dest):
-        """
-        Check coherency between xml file of parameters and repository and destination.
-        """
-        if repo != None:
-            result = os.path.join(self.repo, study_label, case_label, 'RESU')
-            self.__check_dir(study_label, case_label, run_id, node, result, repo, "repo")
-
-        if dest != None:
-            result = os.path.join(self.dest, study_label, case_label, 'RESU')
-            self.__check_dir(study_label, case_label, run_id, node, result, dest, "dest")
-
-
     def check_compare(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
@@ -884,7 +888,7 @@ class Studies(object):
                         if compare[i]:
                             if destination == False:
                                 dest[i]= None
-                            self.__check_dirs(l, case.label, case.run_id, nodes[i], repo[i], dest[i])
+                            case.check_dirs(self, nodes[i], repo[i], dest[i])
 
 
     def compare(self):
@@ -916,7 +920,7 @@ class Studies(object):
                     if script[i] and case.is_run != "KO":
                         if destination == False:
                             dest[i] = None
-                        self.__check_dirs(l, case.label, case.run_id, nodes[i], repo[i], dest[i])
+                        case.check_dirs(self, nodes[i], repo[i], dest[i])
 
 
     def scripts(self):
@@ -955,7 +959,7 @@ class Studies(object):
                 if case.is_run != "KO":
                     if case.run_dir == "":
                         resu = os.path.join(self.dest, l, case.label, 'RESU')
-                        rep = self.__check_dir(l, case.label, case.run_id, None, resu, "", "dest")
+                        rep = case.check_dir(self, None, resu, "", "dest")
                         case.run_id = rep
                         case.run_dir = os.path.join(resu, rep)
 
@@ -985,26 +989,26 @@ class Studies(object):
                         plots, file, dest, repo = self.__parser.getResult(node)
                         if destination == False:
                             dest = None
-                        self.__check_dirs(l, case.label, case.run_id, node, repo, dest)
+                        case.check_dirs(self, node, repo, dest)
 
                     for node in self.__parser.getChilds(case.node, "probes"):
                         file, dest, fig = self.__parser.getProbes(node)
                         if destination == False:
                             dest = None
                         repo = None
-                        self.__check_dirs(l, case.label, case.run_id, node, repo, dest)
+                        case.check_dirs(self, node, repo, dest)
 
                     for node in self.__parser.getChilds(case.node, "resu"):
                         plots, file, dest, repo = self.__parser.getResult(node)
                         if destination == False:
                             dest = None
-                        self.__check_dirs(l, case.label, case.run_id, node, repo, dest)
+                        case.check_dirs(self, node, repo, dest)
 
                     for node in self.__parser.getChilds(case.node, "input"):
                         file, dest, repo = self.__parser.getInput(node)
                         if destination == False:
                             dest = None
-                        self.__check_dirs(l, case.label, case.run_id, node, repo, dest)
+                        case.check_dirs(self, node, repo, dest)
 
 
     def plot(self):
