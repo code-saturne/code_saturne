@@ -376,9 +376,11 @@ class Case(object):
         if args != None:
             cmd += (" " + args)
             l = string.split(args)
-            i = l.find('--threshold')
-            if i > -1:
+            try:
+                i = l.index('--threshold')
                 self.threshold = l[i+1]
+            except:
+                pass
 
         l = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
         info = l.read().replace("\"", " ").replace(";", " ").replace(":", " ").split()
