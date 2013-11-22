@@ -351,20 +351,18 @@ class Case(object):
         return error
 
 
-    def runCompare(self, r, d, threshold, args):
+    def runCompare(self, studies, r, d, threshold, args):
         home = os.getcwd()
 
-        repo = os.path.join(self.__repo, self.label,
-                            'RESU', r, 'checkpoint', 'main')
-        if not os.path.isfile(repo):
-            msg = "In %s \nthe directory %s does not exist.\n" % (repo, r)
-            raise ValueError, msg
+        node = None
 
-        dest = os.path.join(self.__dest, self.label,
-                            'RESU', d, 'checkpoint', 'main')
-        if not os.path.isfile(dest):
-            msg = "In %s \nthe directory %s does not exist.\n" % (dest, d)
-            raise ValueError, msg
+        result = os.path.join(self.__repo, self.label, 'RESU')
+        repo = self.check_dir(studies, node, result, r, "repo")
+        repo = os.path.join(result, repo, 'checkpoint', 'main')
+
+        result = os.path.join(self.__dest, self.label, 'RESU')
+        dest = self.check_dir(studies, node, result, d, "dest")
+        dest = os.path.join(result, dest, 'checkpoint', 'main')
 
         cmd = self.__diff + ' ' + repo + ' ' + dest
 
@@ -420,6 +418,8 @@ class Case(object):
                     (self.__study, self.label, rep_f)
                 studies.reporting(msg)
                 sys.exit(1)
+
+            return rep
 
         # 2. The result directory must be read automatically;
         #    check if there is a single result directory.
@@ -886,16 +886,26 @@ class Studies(object):
             for case in s.Cases:
                 if case.compare == 'on' and case.is_run != "KO":
                     compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
-                    for i in range(len(nodes)):
-                        if compare[i]:
-                            if destination == False:
-                                dest[i]= None
-                            case.check_dirs(self, nodes[i], repo[i], dest[i])
+                    if compare:
+                        is_checked = False
+                        for i in range(len(nodes)):
+                            if compare[i]:
+                                is_checked = True
+                                if destination == False:
+                                    dest[i]= None
+                                case.check_dirs(self, nodes[i], repo[i], dest[i])
+                    if not compare or not is_checked:
+                        node = None
+                        repo = ""
+                        dest = ""
+                        if destination == False:
+                            dest = None
+                        case.check_dirs(self, node, repo, dest)
 
 
     def compare(self):
         """
-        Compare the results of the new computations with thoses from the Repository.
+        Compare the results of the new computations with those from the Repository.
         """
         if self.__compare:
             for l, s in self.studies:
@@ -903,17 +913,28 @@ class Studies(object):
                 for case in s.Cases:
                     if case.compare == 'on' and case.is_run != "KO":
                         is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
-                        for i in range(len(nodes)):
-                            if is_compare[i]:
-                                case.is_compare = "done"
-                                self.reporting('    - compare %s (%s)' % (case.label, args[i]))
-                                case.diff_value += case.runCompare(repo[i], dest[i], t[i], args[i])
+                        if is_compare:
+                            for i in range(len(nodes)):
+                                if is_compare[i]:
+                                    case.is_compare = "done"
+                                    self.reporting('    - compare %s (%s)' % (case.label, args[i]))
+                                    case.diff_value += case.runCompare(self, repo[i], dest[i], t[i], args[i])
+                        if not is_compare or case.is_compare != "done":
+                            repo = ""
+                            dest = ""
+                            t    = None
+                            args = None
+                            case.is_compare = "done"
+                            self.reporting('    - compare %s (%s)' % (case.label, args))
+                            case.diff_value += case.runCompare(self, repo, dest, t, args)
+
+
 
 
     def check_script(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
-        Stop if you try to run a script with a file which does not exsist.
+        Stop if you try to run a script with a file which does not exist.
         """
         for l, s in self.studies:
             for case in s.Cases:
@@ -1076,7 +1097,10 @@ class Studies(object):
 
                 for case in s.Cases:
                     if case.is_compare == "done":
-                        doc2.appendLine("\\subsection{Comparison for case %s}" % case.label)
+                        run_id = None
+                        if case.run_id != "":
+                            run_id = case.run_id
+                        doc2.appendLine("\\subsection{Comparison for case %s (run_id: %s)}" % (case.label, run_id))
                         if case.diff_value:
                             doc2.add_row(case.diff_value, l, case.label)
                         elif self.__compare:
