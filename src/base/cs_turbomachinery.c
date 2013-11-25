@@ -942,8 +942,6 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
                          sizeof(int),
                          cs_glob_turbomachinery->cell_rotor_num);
 
-    cs_gradient_perio_update_mesh();
-
   }
 
   /* Update linear algebra APIs relative to mesh */
