@@ -267,7 +267,7 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
   do iel = 1, ncel
 
-! variation de force (utilise dans resolp)
+    ! variation de force (utilise dans resopv)
     drom = (crom(iel)-ro0)
     dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
     dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
@@ -465,7 +465,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   endif
 
 !     On conserve XNORMP, on complete avec u* a la fin et
-!       on le transfere a resolp
+!       on le transfere a resopv
 
 endif
 
@@ -618,7 +618,7 @@ deallocate(grad)
 !       iter sur navsto ou pas)
 
 !     A la premiere iter sur navsto
-if(iterns.eq.1) then
+if (iterns.eq.1) then
 
     ! Si on   extrapole     les T.S. : -theta*valeur precedente
     if(isno2t.gt.0) then
@@ -657,6 +657,42 @@ if(iterns.eq.1) then
     endif
   endif
 
+endif
+
+!-------------------------------------------------------------------------------
+! Initialization of the implicit terms
+
+if (iappel.eq.1) then
+
+  ! Low Mach compressible Algos
+  if (idilat.gt.1.or.ippmod(icompf).ge.0) then
+    call field_get_val_prev_s(icrom, pcrom)
+
+  ! Standard algo
+  else
+
+    call field_get_val_s(icrom, pcrom)
+  endif
+
+  do iel = 1, ncel
+    do isou = 1, 3
+      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*volume(iel)
+      do jsou = 1, 3
+        if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
+      enddo
+    enddo
+  enddo
+
+!     Le remplissage de FIMP est toujours indispensable,
+!       meme si on peut se contenter de n'importe quoi pour IAPPEL=2.
+else
+  do iel = 1, ncel
+    do isou = 1, 3
+      do jsou = 1, 3
+        fimp(isou,jsou,iel) = 0.d0
+      enddo
+    enddo
+  enddo
 endif
 
 !-------------------------------------------------------------------------------
@@ -776,15 +812,16 @@ if (ivisse.eq.1) then
 endif
 
 !-------------------------------------------------------------------------------
-! ---> TERMES DE PERTES DE CHARGE
-!     SI IPHYDR=1 LE TERME A DEJA ETE PRIS EN COMPTE AVANT
+! ---> Head losses
+!      (if iphydr=1 this term has already been taken into account)
 
-if((ncepdp.gt.0).and.(iphydr.eq.0)) then
+! ---> Explicit part
+if ((ncepdp.gt.0).and.(iphydr.eq.0)) then
 
   ! Les termes diagonaux sont places dans TRAV ou TRAVA,
   !   La prise en compte de uvwk a partir de la seconde iteration
   !   est faite directement dans coditv.
-  if(iterns.eq.1) then
+  if (iterns.eq.1) then
 
     ! On utilise temporairement TRAV comme tableau de travail.
     ! Son contenu est stocke dans W7, W8 et W9 jusqu'apres tspdcv
@@ -798,16 +835,16 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
     enddo
 
     call tspdcv(ncepdp, icepdc, vela, ckupdc, trav)
-    !==========
 
     ! With porosity
     if (iporos.ge.1) then
       do iel = 1, ncel
-        trav(iel,1) = trav(iel,1)*porosi(iel)
-        trav(iel,2) = trav(iel,2)*porosi(iel)
-        trav(iel,3) = trav(iel,3)*porosi(iel)
+        trav(1, iel) = trav(1, iel)*porosi(iel)
+        trav(2, iel) = trav(2, iel)*porosi(iel)
+        trav(3, iel) = trav(3, iel)*porosi(iel)
       enddo
     endif
+
     ! Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
       do iel = 1, ncel
@@ -829,18 +866,51 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 
 endif
 
+! ---> Implicit part
+
+!  At the second call, fimp is not needed anymore
+if (iappel.eq.1) then
+  if (ncepdp.gt.0) then
+    ! The theta-scheme for the head loss is the same as the other terms
+    thetap = thetav(iu)
+    do ielpdc = 1, ncepdp
+      iel = icepdc(ielpdc)
+      romvom = crom(iel)*volume(iel)*thetap
+
+      ! With porosity
+      if (iporos.ge.1) romvom = romvom*porosi(iel)
+
+      ! Diagonal part
+      do isou = 1, 3
+        fimp(isou,isou,iel) = fimp(isou,isou,iel) + romvom*ckupdc(ielpdc,isou)
+      enddo
+      ! Extra-diagonal part
+      cpdc12 = ckupdc(ielpdc,4)
+      cpdc23 = ckupdc(ielpdc,5)
+      cpdc13 = ckupdc(ielpdc,6)
+
+      fimp(1,2,iel) = fimp(1,2,iel) + romvom*cpdc12
+      fimp(2,1,iel) = fimp(2,1,iel) + romvom*cpdc12
+      fimp(1,3,iel) = fimp(1,3,iel) + romvom*cpdc13
+      fimp(3,1,iel) = fimp(3,1,iel) + romvom*cpdc13
+      fimp(2,3,iel) = fimp(2,3,iel) + romvom*cpdc23
+      fimp(3,2,iel) = fimp(3,2,iel) + romvom*cpdc23
+    enddo
+  endif
+endif
+
 
 !-------------------------------------------------------------------------------
-! ---> TERMES DE CORIOLIS !FIXME with porosity
-!     SI IPHYDR=1 LE TERME A DEJA ETE PRIS EN COMPTE AVANT
+! ---> Coriolis force
+!     (if iphydr=1 then this term is already taken into account)
 
+! --->  Explicit part
 if (icorio.eq.1.and.iphydr.eq.0) then
 
-  ! A la premiere iter sur navsto, on ajoute la partie issue des
-  ! termes explicites
+  ! At the first iteration on PISO, the explicit part is added
   if (iterns.eq.1) then
 
-    ! Si on n'itere pas sur navsto : TRAV
+    ! If no iterations: directly in trav array
     if (nterup.eq.1) then
 
       do iel = 1, ncel
@@ -848,12 +918,16 @@ if (icorio.eq.1.and.iphydr.eq.0) then
         cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
         cz = omegax*vela(2,iel) - omegay*vela(1,iel)
         romvom = -2.d0*crom(iel)*volume(iel)
+
+        ! With porosity
+        if (iporos.ge.1) romvom = romvom*porosi(iel)
+
         trav(1,iel) = trav(1,iel) + romvom*cx
         trav(2,iel) = trav(2,iel) + romvom*cy
         trav(3,iel) = trav(3,iel) + romvom*cz
       enddo
 
-    ! Si on itere sur navsto : TRAVA
+    ! If iterations: in trava
     else
 
       do iel = 1, ncel
@@ -861,6 +935,10 @@ if (icorio.eq.1.and.iphydr.eq.0) then
         cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
         cz = omegax*vela(2,iel) - omegay*vela(1,iel)
         romvom = -2.d0*crom(iel)*volume(iel)
+
+        ! With porosity
+        if (iporos.ge.1) romvom = romvom*porosi(iel)
+
         trava(1,iel) = trava(1,iel) + romvom*cx
         trava(2,iel) = trava(2,iel) + romvom*cy
         trava(3,iel) = trava(3,iel) + romvom*cz
@@ -886,6 +964,10 @@ elseif (iturbo.eq.1 .and. iphydr.eq.0) then
           cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
           cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
           romvom = -crom(iel)*volume(iel)
+
+          ! With porosity
+          if (iporos.ge.1) romvom = romvom*porosi(iel)
+
           trav(1,iel) = trav(1,iel) + romvom*cx
           trav(2,iel) = trav(2,iel) + romvom*cy
           trav(3,iel) = trav(3,iel) + romvom*cz
@@ -901,6 +983,10 @@ elseif (iturbo.eq.1 .and. iphydr.eq.0) then
           cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
           cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
           romvom = -crom(iel)*volume(iel)
+
+          ! With porosity
+          if (iporos.ge.1) romvom = romvom*porosi(iel)
+
           trava(1,iel) = trava(1,iel) + romvom*cx
           trava(2,iel) = trava(2,iel) + romvom*cy
           trava(3,iel) = trava(3,iel) + romvom*cz
@@ -911,6 +997,30 @@ elseif (iturbo.eq.1 .and. iphydr.eq.0) then
   endif
 endif
 
+! --->  Implicit part
+
+!  At the second call, fimp is not needed anymore
+if(iappel.eq.1) then
+  if (icorio.eq.1) then
+    ! The theta-scheme for the Coriolis term is the same as the other terms
+    thetap = thetav(iu)
+
+    do iel = 1, ncel
+      romvom = crom(iel)*volume(iel)*thetap
+
+      ! With porosity
+      if (iporos.ge.1) romvom = romvom*porosi(iel)
+
+      fimp(1,2,iel) = fimp(1,2,iel) + 2.d0*romvom*omegaz
+      fimp(2,1,iel) = fimp(2,1,iel) - 2.d0*romvom*omegaz
+      fimp(1,3,iel) = fimp(1,3,iel) - 2.d0*romvom*omegay
+      fimp(3,1,iel) = fimp(3,1,iel) + 2.d0*romvom*omegay
+      fimp(2,3,iel) = fimp(2,3,iel) + 2.d0*romvom*omegax
+      fimp(3,2,iel) = fimp(3,2,iel) - 2.d0*romvom*omegax
+    enddo
+
+  endif
+endif
 
 !-------------------------------------------------------------------------------
 ! ---> - DIVERGENCE DE RIJ
@@ -1090,7 +1200,8 @@ if(iappel.eq.2) then
   enddo
 endif
 
-! ---> TERMES SOURCES UTILISATEURS
+!-------------------------------------------------------------------------------
+! ---> User source terms
 
 do iel = 1, ncel
   do isou = 1, 3
@@ -1102,10 +1213,9 @@ do iel = 1, ncel
 enddo
 
 ipp  = ipprtp(iu)
-!     Le calcul des parties implicite et explicite des termes sources
-!       utilisateurs est faite uniquement a la premiere iter sur navstv.
-! FIXME with porosity
-if(iterns.eq.1) then
+! The computation of esplicit and implicit source terms is performed 
+! at the first iter only.
+if (iterns.eq.1) then
 
   if (iihmpr.eq.1) then
     call uitsnv (vel, tsexp, tsimp)
@@ -1141,72 +1251,99 @@ if(iterns.eq.1) then
     endif
   endif
 
+  ! Porosity
+  if (iporos.ge.1) then
+    do iel = 1, ncel
+      do isou = 1, 3
+        tsexp(isou, iel) = porosi(iel)*tsexp(isou, iel)
+      enddo
+    enddo
+  endif
+
 endif
 
-
-!     On conserve la partie implicite pour les autres iter sur navsto
+! if PISO sweeps are expected, implicit user sources terms are stored in ximpa
 if (iterns.eq.1.and.nterup.gt.1) then
   do iel = 1, ncel
     do isou = 1, 3
-      do jsou =1, 3
+      do jsou = 1, 3
         ximpa(isou,jsou,iel) = tsimp(isou,jsou,iel)
       enddo
     enddo
   enddo
 endif
 
-!     On ajoute a TRAV ou TRAVA la partie issue des termes implicites
-!       en utilisant DRTP
-!       La prise en compte de UVWK a partir de la seconde iteration
-!       est faite directement dans coditv.
-!     En schema std en temps, on continue a mettre MAX(-DRTP,0) dans la matrice
-!     Avec termes sources a l'ordre 2, on implicite DRTP quel que soit son signe
-!       (si on le met dans la matrice ou non selon son signe, on risque de ne pas
-!        avoir le meme traitement d'un pas de temps au suivant)
-if (iterns.eq.1) then
-  if (nterup.gt.1) then
-    do iel = 1, ncel
-      do isou = 1, 3
-        do jsou = 1, 3
-          trava(isou,iel) = trava(isou,iel)             &
-                          + tsimp(isou,jsou,iel)*vela(jsou,iel)
+! ---> Explicit contribution due to implicit terms
+
+! Without porosity
+if (iporos.eq.0) then
+  if (iterns.eq.1) then
+    if (nterup.gt.1) then
+      do iel = 1, ncel
+        do isou = 1, 3
+          do jsou = 1, 3
+            trava(isou,iel) = trava(isou,iel)                                  &
+                            + tsimp(isou,jsou,iel)*vela(jsou,iel)
+          enddo
         enddo
       enddo
-    enddo
-  else
-    do iel = 1, ncel
-      do isou = 1, 3
-        do jsou = 1, 3
-          trav(isou,iel) = trav(isou,iel)                           &
-                         + tsimp(isou,jsou,iel)*vela(jsou,iel)
+    else
+      do iel = 1, ncel
+        do isou = 1, 3
+          do jsou = 1, 3
+            trav(isou,iel) = trav(isou,iel)                                    &
+                           + tsimp(isou,jsou,iel)*vela(jsou,iel)
+          enddo
         enddo
       enddo
-    enddo
+    endif
   endif
+
+! With porosity
+else
+  if (iterns.eq.1) then
+    if (nterup.gt.1) then
+      do iel = 1, ncel
+        do isou = 1, 3
+          do jsou = 1, 3
+            trava(isou,iel) = trava(isou,iel)                                  &
+                            + tsimp(isou,jsou,iel)*vela(jsou,iel)*porosi(iel)
+          enddo
+        enddo
+      enddo
+    else
+      do iel = 1, ncel
+        do isou = 1, 3
+          do jsou = 1, 3
+            trav(isou,iel) = trav(isou,iel)                                    &
+                           + tsimp(isou,jsou,iel)*vela(jsou,iel)*porosi(iel)
+          enddo
+        enddo
+      enddo
+    endif
+  endif
+
 endif
 
-!     A la premiere iter sur navsto, on ajoute la partie issue des
-!       termes explicites
+! At the first PISO iteration, explicit source terms are added
 if (iterns.eq.1.and.iphydr.ne.1) then
-!     Si on extrapole les termes source en temps :
-!       PROPCE recoit les termes explicites
+  ! If source terms are time-extrapolated, they are stored in propce
   if (isno2t.gt.0) then
     do iel = 1, ncel
       do isou = 1, 3
-        propce(iel,iptsna+isou-1 ) =                              &
-        propce(iel,iptsna+isou-1 ) + tsexp(isou,iel)
+        propce(iel,iptsna+isou-1) = propce(iel,iptsna+isou-1) + tsexp(isou,iel)
       enddo
     enddo
-!     Si on n'extrapole pas les termes source en temps :
+
   else
-!       si on n'itere pas sur navsto : TRAV
-    if(nterup.eq.1) then
+    ! If no PISO sweep
+    if (nterup.eq.1) then
       do iel = 1, ncel
         do isou = 1, 3
           trav(isou,iel) = trav(isou,iel) + tsexp(isou,iel)
         enddo
       enddo
-!       si on itere sur navsto : TRAVA
+    ! If PISO sweeps
     else
       do iel = 1, ncel
         do isou = 1, 3
@@ -1217,42 +1354,9 @@ if (iterns.eq.1.and.iphydr.ne.1) then
   endif
 endif
 
-if(iappel.eq.1) then
-
-  ! Low Mach compressible Algos
-  if (idilat.gt.1.or.ippmod(icompf).ge.0) then
-    call field_get_val_prev_s(icrom, pcrom)
-
-  ! Standard algo
-  else
-
-    call field_get_val_s(icrom, pcrom)
-  endif
-
-  do iel = 1, ncel
-    do isou = 1, 3
-      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*volume(iel)
-      do jsou = 1, 3
-        if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
-      enddo
-    enddo
-  enddo
-
-!     Le remplissage de FIMP est toujours indispensable,
-!       meme si on peut se contenter de n'importe quoi pour IAPPEL=2.
-else
-  do iel = 1, ncel
-    do isou = 1, 3
-      do jsou = 1, 3
-        fimp(isou,jsou,iel) = 0.d0
-      enddo
-    enddo
-  enddo
-endif
-
-! ---> TERMES SOURCES UTILISATEUR
-
+! ---> Implicit terms
 if (iappel.eq.1) then
+  ! If source terms are time-extrapolated
   if (isno2t.gt.0) then
     thetap = thetav(iu)
     if (iterns.gt.1) then
@@ -1297,61 +1401,8 @@ if (iappel.eq.1) then
   endif
 endif
 
-
-! ---> Head loss
-
-!  At the second call, fimp is not needed anymore
-if (iappel.eq.1) then
-  if (ncepdp.gt.0) then
-    ! The theta-scheme for the head loss is the same as the other terms
-    thetap = thetav(iu)
-    do ielpdc = 1, ncepdp
-      iel = icepdc(ielpdc)
-      romvom = crom(iel)*volume(iel)*thetap
-      ! Diagonal part
-      do isou = 1, 3
-        fimp(isou,isou,iel) = fimp(isou,isou,iel) +                     &
-                          romvom*ckupdc(ielpdc,isou)
-      enddo
-      ! Extra-diagonal part
-      cpdc12 = ckupdc(ielpdc,4)
-      cpdc23 = ckupdc(ielpdc,5)
-      cpdc13 = ckupdc(ielpdc,6)
-
-      fimp(1,2,iel) = fimp(1,2,iel) + romvom*cpdc12
-      fimp(2,1,iel) = fimp(2,1,iel) + romvom*cpdc12
-      fimp(1,3,iel) = fimp(1,3,iel) + romvom*cpdc13
-      fimp(3,1,iel) = fimp(3,1,iel) + romvom*cpdc13
-      fimp(2,3,iel) = fimp(2,3,iel) + romvom*cpdc23
-      fimp(3,2,iel) = fimp(3,2,iel) + romvom*cpdc23
-    enddo
-  endif
-endif
-
-
-! --->  Coriolis source terms
-
-!  At the second call, fimp is not needed anymore
-if(iappel.eq.1) then
-  if (icorio.eq.1) then
-    ! The theta-scheme for the Coriolis term is the same as the other terms
-    thetap = thetav(iu)
-
-    do iel = 1, ncel
-      romvom = crom(iel)*volume(iel)*thetap
-      fimp(1,2,iel) = fimp(1,2,iel) + 2.d0*romvom*omegaz
-      fimp(2,1,iel) = fimp(2,1,iel) - 2.d0*romvom*omegaz
-      fimp(1,3,iel) = fimp(1,3,iel) - 2.d0*romvom*omegay
-      fimp(3,1,iel) = fimp(3,1,iel) + 2.d0*romvom*omegay
-      fimp(2,3,iel) = fimp(2,3,iel) + 2.d0*romvom*omegax
-      fimp(3,2,iel) = fimp(3,2,iel) - 2.d0*romvom*omegax
-    enddo
-
-  endif
-endif
-
-
-! --->  TERMES DE SOURCE DE MASSE
+!-------------------------------------------------------------------------------
+! --->  Mass source terms
 
 if (ncesmp.gt.0) then
 
@@ -1361,15 +1412,15 @@ if (ncesmp.gt.0) then
 !       Gamma uinj a la premiere iteration est placee dans W1
 !       ROVSDT a chaque iteration recoit Gamma
   allocate(gavinj(3,ncelet))
-  if(nterup.eq.1) then
-    call catsmv                                                   &
+  if (nterup.eq.1) then
+    call catsmv &
     !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
     volume , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
     trav   , fimp , gavinj )
   else
-    call catsmv                                                   &
+    call catsmv &
     !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
@@ -1377,32 +1428,30 @@ if (ncesmp.gt.0) then
     trava  , fimp  , gavinj )
   endif
 
-!     A la premiere iter sur navsto, on ajoute la partie Gamma uinj
-  if(iterns.eq.1) then
-!     Si on extrapole les termes source en temps :
-!       PROPCE recoit les termes explicites
+  ! At the first PISO iteration, the explicit part "Gamma u^{in}" is added
+  if (iterns.eq.1) then
+    ! If source terms are extrapolated, stored in propce
     if(isno2t.gt.0) then
-      do iel = 1,ncel
+      do iel = 1, ncel
         do isou = 1, 3
           propce(iel,iptsna+isou-1 ) =                            &
           propce(iel,iptsna+isou-1 ) + gavinj(isou,iel)
         enddo
       enddo
-!     Si on n'extrapole pas les termes source en temps :
+
     else
-!       si on n'itere pas sur navsto : TRAV
-      if(nterup.eq.1) then
+      ! If no PISO iteration: in trav
+      if (nterup.eq.1) then
         do iel = 1,ncel
           do isou = 1, 3
             trav(isou,iel)  = trav(isou,iel) + gavinj(isou,iel)
           enddo
         enddo
-!       si on itere sur navsto : TRAVA
+      ! Otherwise, in trava
       else
         do iel = 1,ncel
           do isou = 1, 3
-            trava(isou,iel) =                               &
-            trava(isou,iel) + gavinj(isou,iel)
+            trava(isou,iel) = trava(isou,iel) + gavinj(isou,iel)
           enddo
         enddo
       endif
@@ -1413,42 +1462,42 @@ if (ncesmp.gt.0) then
 
 endif
 
-! ---> INITIALISATION DU SECOND MEMBRE
+! ---> Right Han Side initialization
 
-!     Si on extrapole les TS
-if(isno2t.gt.0) then
+! If source terms are extrapolated in time
+if (isno2t.gt.0) then
   thetp1 = 1.d0 + thets
-!       Si on n'itere pas sur navsto : TRAVA n'existe pas
-  if(nterup.eq.1) then
+  ! If no PISO iteration: trav
+  if (nterup.eq.1) then
     do iel = 1, ncel
       do isou = 1, 3
-        smbr(isou,iel) =  trav(isou,iel)                               &
-             + thetp1*propce(iel,iptsna+isou-1)
+        smbr(isou,iel) = trav(isou,iel) + thetp1*propce(iel,iptsna+isou-1)
       enddo
     enddo
-!       Si on   itere     sur navsto : tout existe
+
   else
     do iel = 1, ncel
       do isou = 1, 3
-        smbr(isou,iel) =  trav(isou,iel) + trava(isou,iel)       &
-             + thetp1*propce(iel,iptsna+isou-1)
+        smbr(isou,iel) = trav(isou,iel) + trava(isou,iel)       &
+                       + thetp1*propce(iel,iptsna+isou-1)
       enddo
     enddo
   endif
-!     Si on n'extrapole pas les TS : PROPCE n'existe pas
+
+! No time extrapolation
 else
-!       Si on n'itere pas sur navsto : TRAVA n'existe pas
-  if(nterup.eq.1) then
+  ! No PISO iteration
+  if (nterup.eq.1) then
     do iel = 1, ncel
       do isou = 1, 3
-        smbr(isou,iel) =  trav(isou,iel)
+        smbr(isou,iel) = trav(isou,iel)
       enddo
     enddo
-!       Si on   itere     sur navsto : TRAVA existe
+  ! PISO iterations
   else
     do iel = 1, ncel
       do isou = 1, 3
-        smbr(isou,iel) =  trav(isou,iel) + trava(isou,iel)
+        smbr(isou,iel) = trav(isou,iel) + trava(isou,iel)
       enddo
     enddo
   endif
@@ -1468,7 +1517,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1)  then
       smbr(isou,iel)   = smbr(isou,iel) + tslagr(iel,itsvx+isou-1)
     enddo
   enddo
-!  Au second appel, on n'a pas besoin de FIMP
+  ! At the second call, fimp is unused
   if(iappel.eq.1) then
     do iel = 1, ncel
       do isou = 1, 3
@@ -1479,14 +1528,13 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1)  then
 
 endif
 
-! ---> VERSIONS ELECTRIQUES : Arc Electrique (Force de Laplace)
-!     Pour le moment, pas d'ordre 2 en temps.
-
-if ( ippmod(ielarc) .ge. 1 ) then
-  do iel = 1,ncel
+! ---> Electric Arc (Laplace Force)
+!      (No 2nd order in time yet)
+if (ippmod(ielarc).ge.1) then
+  do iel = 1, ncel
     do isou = 1, 3
       smbr(isou,iel) = smbr(isou,iel)                               &
-                   + volume(iel)*propce(iel,ipproc(ilapla(isou)))
+                     + volume(iel)*propce(iel,ipproc(ilapla(isou)))
     enddo
   enddo
 endif
@@ -1502,8 +1550,7 @@ if (iporos.ge.1) then
   enddo
 endif
 
-! ---> PARAMETRES POUR LA RESOLUTION DU SYSTEME OU LE CALCUL DE l'ESTIMATEUR
-
+! Solver parameters
 iconvp = iconv (iu)
 idiffp = idiff (iu)
 ireslp = iresol(iu)
@@ -1541,16 +1588,14 @@ else
   icvflb = 0
 endif
 
-if(iappel.eq.1) then
+if (iappel.eq.1) then
 
   iescap = iescal(iespre)
 
-! ---> FIN DE LA CONSTRUCTION ET DE LA RESOLUTION DU SYSTEME
+  if (iterns.eq.1) then
 
-  if(iterns.eq.1) then
-
-!  Attention, dans le cas des estimateurs, eswork fournit l'estimateur
-!     des vitesses predites
+    ! Warning: in case of convergence estimators, eswork give the estimator
+    ! of the predicted velocity
     call coditv &
     !==========
  ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -1650,9 +1695,8 @@ if(iappel.eq.1) then
 
   endif
 
-! --->  ESTIMATEUR SUR LA VITESSE PREDITE : ON SOMME SUR LES COMPOSANTES
-
-  if(iescal(iespre).gt.0) then
+  ! ---> The estimator on the predicted velocity is summed up over the components
+  if (iescal(iespre).gt.0) then
     iesprp = ipproc(iestim(iespre))
     do iel = 1, ncel
       do isou = 1, 3
@@ -1662,13 +1706,12 @@ if(iappel.eq.1) then
   endif
 
 
-elseif(iappel.eq.2) then
-
-! ---> FIN DE LA CONSTRUCTION DE L'ESTIMATEUR
-!        RESIDU SECOND MEMBRE(Un+1,Pn+1) + RHO*VOLUME*( Un+1 - Un )/DT
+! ---> End of the construction of the total estimator: 
+!       RHS resiudal of (U^{n+1}, P^{n+1}) + rho*volume*(U^{n+1} - U^n)/dt
+elseif (iappel.eq.2) then
 
   inc = 1
-!     Pas de relaxation en stationnaire
+  ! Pas de relaxation en stationnaire
   idtva0 = 0
 
   ippu  = ipprtp(iu)
@@ -1678,7 +1721,7 @@ elseif(iappel.eq.2) then
   call bilscv &
   !==========
  ( idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , ivisep ,                   &
+   ischcp , isstpp , inc    , imrgra , ivisse ,                   &
    ippu   , iwarnp , idftnp ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    vel    , vel    ,                                              &
@@ -1690,28 +1733,24 @@ elseif(iappel.eq.2) then
   iestop = ipproc(iestim(iestot))
   do iel = 1, ncel
     do isou = 1, 3
-      propce(iel,iestop) =                                        &
-           propce(iel,iestop)+ (smbr(isou,iel)/volume(iel))**2
+      propce(iel,iestop) = propce(iel,iestop)+ (smbr(isou,iel)/volume(iel))**2
     enddo
   enddo
 endif
 
-
 !===============================================================================
-! 4.     FIN DU CALCUL DE LA NORME POUR RESOLP
+! 4. Finalize the norm of the pressure step (see resopv)
 !===============================================================================
-! --->  APRES LA BOUCLE SUR U, V, W,
 
-if(iappel.eq.1.and.irnpnw.eq.1) then
+if (iappel.eq.1.and.irnpnw.eq.1) then
 
-  ! Calcul de div(rho u*)
+  ! Compute div(rho u*)
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synvin(vel)
-    !==========
   endif
 
-  ! Pour gagner du temps, on ne reconstruit pas.
+  ! To save time, no space reconstruction
   itypfl = 1
   init   = 1
   inc    = 1
@@ -1737,58 +1776,54 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
                                 ifacel,ifabor,viscf,viscb,xnormp)
 
-  ! Calcul de la norme
-  ! RNORMP qui servira dans resolp
+  ! Compute the norm rnormp used in resopv
   isqrt = 1
   call prodsc(ncel,isqrt,xnormp,xnormp,rnormp)
 
 endif
 
-! --->  APRES LA BOUCLE SUR U, V, W,
-!        FIN DU CALCUL DES ESTIMATEURS ET IMPRESSION
+! ---> Finilaze estimators + Printings
 
-if(iappel.eq.1) then
+if (iappel.eq.1) then
 
-! --->  ESTIMATEUR SUR LA VITESSE PREDITE : ON PREND LA RACINE (NORME)
-!         SANS OU AVEC VOLUME (ET DANS CE CAS C'EST LA NORME L2)
-
-  if(iescal(iespre).gt.0) then
+  ! ---> Estimator on the predicted velocity:
+  !      square root (norm) or square root of the sum times the volume (L2 norm)
+  if (iescal(iespre).gt.0) then
     iesprp = ipproc(iestim(iespre))
-    if(iescal(iespre).eq.1) then
+    if (iescal(iespre).eq.1) then
       do iel = 1, ncel
-        propce(iel,iesprp) =  sqrt(propce(iel,iesprp)            )
+        propce(iel,iesprp) = sqrt(propce(iel,iesprp))
       enddo
-    elseif(iescal(iespre).eq.2) then
+    elseif (iescal(iespre).eq.2) then
       do iel = 1, ncel
-        propce(iel,iesprp) =  sqrt(propce(iel,iesprp)*volume(iel))
+        propce(iel,iesprp) = sqrt(propce(iel,iesprp)*volume(iel))
       enddo
     endif
   endif
 
-! ---> IMPRESSION DE NORME
-
+  ! ---> Norm printings
   if (iwarni(iu).ge.2) then
     rnorm = -1.d0
     do iel = 1, ncel
       vitnor = sqrt(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)
       rnorm = max(rnorm,vitnor)
     enddo
+
     if (irangp.ge.0) call parmax (rnorm)
-                     !==========
+
     write(nfecra,1100) rnorm
   endif
 
+! ---> Estimator on the whole Navier-Stokes:
+!      square root (norm) or square root of the sum times the volume (L2 norm)
 elseif (iappel.eq.2) then
 
-! --->  ESTIMATEUR SUR NAVIER-STOKES TOTAL : ON PREND LA RACINE (NORME)
-!         SANS OU AVEC VOLUME (ET DANS CE CAS C'EST LA NORME L2)
-
   iestop = ipproc(iestim(iestot))
-  if(iescal(iestot).eq.1) then
+  if (iescal(iestot).eq.1) then
     do iel = 1, ncel
-      propce(iel,iestop) = sqrt(propce(iel,iestop)            )
+      propce(iel,iestop) = sqrt(propce(iel,iestop))
     enddo
-  elseif(iescal(iestot).eq.2) then
+  elseif (iescal(iestot).eq.2) then
     do iel = 1, ncel
       propce(iel,iestop) = sqrt(propce(iel,iestop)*volume(iel))
     enddo
@@ -1800,10 +1835,10 @@ endif
 !------------
 deallocate(smbr)
 deallocate(fimp)
-
 deallocate(tsexp)
 deallocate(tsimp)
 if (allocated(viscce)) deallocate(viscce)
+
 !--------
 ! Formats
 !--------

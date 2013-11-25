@@ -832,30 +832,30 @@ if (ippmod(icompf).lt.0) then
           enddo
         enddo
 
-    ! Tensorial diffusion for the pressure
-    else if (idften(ipr).eq.6) then
-      !$omp parallel do private(unsrom)
-      do iel = 1, ncel
-        unsrom = thetap/crom(iel)
+      ! Tensorial diffusion for the pressure
+      else if (idften(ipr).eq.6) then
+        !$omp parallel do private(unsrom)
+        do iel = 1, ncel
+          unsrom = thetap/crom(iel)
 
-          vel(1, iel) = vel(1, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-               + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-               + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
-               )
-          vel(2, iel) = vel(2, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-               + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-               + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
-               )
-          vel(3, iel) = vel(3, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
-               + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
-               + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
-               )
+            vel(1, iel) = vel(1, iel)                                             &
+                 + unsrom*(                                                &
+                   dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+                 + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+                 + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+                 )
+            vel(2, iel) = vel(2, iel)                                             &
+                 + unsrom*(                                                &
+                   dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+                 + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+                 + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+                 )
+            vel(3, iel) = vel(3, iel)                                             &
+                 + unsrom*(                                                &
+                   dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
+                 + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
+                 + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
+                 )
         enddo
       endif
 
@@ -895,7 +895,8 @@ if (ippmod(icompf).lt.0) then
           vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
         enddo
        enddo
-        ! Tensorial diffusion for the pressure
+
+      ! Tensorial diffusion for the pressure
       else if (idften(ipr).eq.6) then
 
       !$omp parallel do private(unsrom)
@@ -903,23 +904,23 @@ if (ippmod(icompf).lt.0) then
         unsrom = thetap/crom(iel)
 
           vel(1, iel) = vel(1, iel)                              &
-               - unsrom*(                                 &
-                 dttens(1,iel)*(trav(1,iel))     &
-               + dttens(4,iel)*(trav(2,iel))     &
-               + dttens(6,iel)*(trav(3,iel))     &
-               )
+                      - unsrom*(                                 &
+                                 dttens(1,iel)*(trav(1,iel))     &
+                               + dttens(4,iel)*(trav(2,iel))     &
+                               + dttens(6,iel)*(trav(3,iel))     &
+                               )
           vel(2, iel) = vel(2, iel)                              &
-               - unsrom*(                                 &
-                 dttens(4,iel)*(trav(1,iel))     &
-               + dttens(2,iel)*(trav(2,iel))     &
-               + dttens(5,iel)*(trav(3,iel))     &
-               )
+                      - unsrom*(                                 &
+                                 dttens(4,iel)*(trav(1,iel))     &
+                               + dttens(2,iel)*(trav(2,iel))     &
+                               + dttens(5,iel)*(trav(3,iel))     &
+                               )
           vel(3, iel) = vel(3, iel)                              &
-               - unsrom*(                                 &
-                 dttens(6,iel)*(trav(1,iel))     &
-               + dttens(5,iel)*(trav(2,iel))     &
-               + dttens(3,iel)*(trav(3,iel))     &
-               )
+                      - unsrom*(                                 &
+                                 dttens(6,iel)*(trav(1,iel))     &
+                               + dttens(5,iel)*(trav(2,iel))     &
+                               + dttens(3,iel)*(trav(3,iel))     &
+                               )
         enddo
 
       endif

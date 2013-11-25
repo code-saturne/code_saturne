@@ -852,7 +852,7 @@ ivisse = 1
 iprco  = 1
 irevmc = 0
 arak   = 1.d0
-!     indicateur developpeur temporaire sur le test de conv resolp
+! indicateur developpeur temporaire sur le test de conv resopv
 irnpnw = 1
 
 ! --- Take porosity into account

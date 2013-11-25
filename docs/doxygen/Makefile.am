@@ -55,6 +55,12 @@ clean-local:
 distclean-local:
 	-rm -rf Makefile
 
+# Generate the documentation at dist stage so that the user do not need
+# to have Doxygen (and mandatory tools).
+
+dist-hook: html
+	\cp -R src/html $(distdir)
+
 install-html-local:
 	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen"
 	if test -d pre/html; \

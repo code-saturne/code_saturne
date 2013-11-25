@@ -170,7 +170,7 @@ endif
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
-  secvif (ifac) = 0.5d0*(secvis(ii)+secvis(jj))
+  secvif(ifac) = 0.5d0*(secvis(ii)+secvis(jj))
 enddo
 
 ! --- Boundary faces
