@@ -486,8 +486,23 @@ void cs_field_gradient_vector(const cs_field_t          *f,
                               double                     clip_coeff,
                               cs_real_33_t     *restrict grad)
 {
-  cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
-                                      : (cs_real_3_t *)(f->val);
+  cs_real_3_t *var;
+
+  if (f->interleaved)
+    var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
+                           : (cs_real_3_t *)(f->val);
+  else {
+    const int dim = f->dim;
+    const cs_real_t *s =  (use_previous_t) ? f->val_pre : f->val;
+    const cs_lnum_t *n_loc_elts
+      = cs_mesh_location_get_n_elts(f->location_id);
+    const cs_lnum_t _n_loc_elts = n_loc_elts[2];
+    BFT_MALLOC(var, _n_loc_elts, cs_real_3_t);
+    for (cs_lnum_t i = 0; i < _n_loc_elts; i++) {
+      for (int j = 0; j < dim; j++)
+        var[i][j] = s[j*_n_loc_elts + i];
+    }
+  }
 
   cs_gradient_vector(f->name,
                      gradient_type,
@@ -502,6 +517,9 @@ void cs_field_gradient_vector(const cs_field_t          *f,
                      (const cs_real_33_t *)(f->bc_coeffs->b),
                      var,
                      grad);
+
+  if (! f->interleaved)
+    BFT_FREE(var);
 }
 
 /*----------------------------------------------------------------------------*/
