@@ -13,6 +13,7 @@ Changes:
      - Fortran modules
      - user examples
      - Fortran routines
+   * install Doxygen documentation from tarball (as built by "make dist").
 
 - Remove deprecated uncoupled velocity solver (ivelco=0).
 

@@ -59,7 +59,13 @@ distclean-local:
 # to have Doxygen (and mandatory tools).
 
 dist-hook: html
-	\cp -R src/html $(distdir)
+	\cp -R src/html $(distdir)/src
+
+install-data-local:
+	if test -d $(srcdir)/src; then \
+	  $(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen/src"; \
+	  \cp -R $(srcdir)/src $(DESTDIR)$(htmldir)/doxygen/ ;\
+	fi
 
 install-html-local:
 	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen"
