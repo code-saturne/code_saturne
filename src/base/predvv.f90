@@ -1213,7 +1213,7 @@ do iel = 1, ncel
 enddo
 
 ipp  = ipprtp(iu)
-! The computation of esplicit and implicit source terms is performed 
+! The computation of esplicit and implicit source terms is performed
 ! at the first iter only.
 if (iterns.eq.1) then
 
@@ -1706,7 +1706,7 @@ if (iappel.eq.1) then
   endif
 
 
-! ---> End of the construction of the total estimator: 
+! ---> End of the construction of the total estimator:
 !       RHS resiudal of (U^{n+1}, P^{n+1}) + rho*volume*(U^{n+1} - U^n)/dt
 elseif (iappel.eq.2) then
 
