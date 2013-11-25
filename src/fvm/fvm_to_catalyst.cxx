@@ -32,7 +32,9 @@
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
 #define CS_FPE_TRAP
+#if !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
+#endif
 #endif
 
 #include "cs_defs.h"
@@ -149,6 +151,10 @@ typedef struct {
 
   vtkCPProcessor             *processor;      /* Co processor */
   vtkCPDataDescription       *datadesc;       /* Data description */
+
+  bool                        private_comm;   /* Use private communicator */
+  bool                        ensight_names;  /* Use EnSight rules for
+                                                 field names */
 
   bool                        modified;       /* Has output been added since
                                                  las coprocessing ? */
@@ -450,6 +456,10 @@ _get_catalyst_field_id(fvm_to_catalyst_t         *writer,
   for (i = 0; i < writer->n_fields; ++i){
 
     vtkFieldData *fData_ptr ;
+
+    if (writer->fields[i]->mesh_id != mesh_id)
+      continue;
+
     if (location == FVM_WRITER_PER_NODE)
       fData_ptr = (writer->fields[i])->f->GetPointData();
     else
@@ -515,7 +525,6 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
       f->GetPointData()->AllocateArrays(f->GetNumberOfPoints());
       vtkDataSetAttributes::SafeDownCast
         (f->GetPointData())->AddArray(vtkAbstractArray::SafeDownCast(tmp));
-
     }
     else {
       f->GetCellData()->AllocateArrays(f->GetNumberOfCells());
@@ -935,7 +944,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Initialize FVM to Catalyst object writer.
  *
- * No options are available for this format.
+ * Options are:
+ *   private_comm        use private MPI communicator (default: false)
+ *   names=<fmt>         use same naming rules as <fmt> format
+ *                       (default: ensight)
  *
  * parameters:
  *   name           <-- base output case name.
@@ -981,6 +993,9 @@ fvm_to_catalyst_init_writer(const char             *name,
   w->time_step  = -1;
   w->time_value = 0.0;
 
+  w->private_comm = false;
+  w->ensight_names = true;
+
   /* Writer name */
 
   if (name != NULL) {
@@ -993,21 +1008,49 @@ fvm_to_catalyst_init_writer(const char             *name,
     strcpy(w->name, _name);
   }
 
+  /* Parse options */
+
+  if (options != NULL) {
+
+    int i1, i2, l_opt;
+    int l_tot = strlen(options);
+
+    i1 = 0; i2 = 0;
+    while (i1 < l_tot) {
+
+      for (i2 = i1; i2 < l_tot && options[i2] != ' '; i2++);
+      l_opt = i2 - i1;
+
+      if ((l_opt == 12) && (strncmp(options + i1, "private_comm", l_opt) == 0))
+        w->private_comm = true;
+      else if ((l_opt == 6) && (strncmp(options + i1, "names=", l_opt) == 0)) {
+        if ((l_opt == 6+7) && (strncmp(options + i1 + 6, "ensight", 7) == 0))
+          w->ensight_names = true;
+        else
+          w->ensight_names = false;
+      }
+
+    }
+
+  }
+
   /* Parallel parameters */
 
 #if defined(HAVE_MPI)
-  {
+  if (w->private_comm) {
     int mpi_flag;
     MPI_Initialized(&mpi_flag);
 
     if (mpi_flag && comm != MPI_COMM_NULL) {
-      w->comm = comm;
+      MPI_Comm_dup(comm, &(w->comm));
       MPI_Comm_rank(w->comm, &(w->rank));
       MPI_Comm_size(w->comm, &(w->n_ranks));
     }
     else
       w->comm = MPI_COMM_NULL;
   }
+  else
+    w->comm = comm;
 #endif /* defined(HAVE_MPI) */
 
   /* Catalyst pipeline */
@@ -1112,6 +1155,13 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
   }
 
   BFT_FREE(w->fields);
+
+#if defined(HAVE_MPI)
+  {
+    if (w->private_comm && w->comm != MPI_COMM_NULL)
+      MPI_Comm_free(&(w->comm));
+  }
+#endif /* defined(HAVE_MPI) */
 
   /* Free fvm_to_catalyst_t structure */
 
@@ -1280,6 +1330,7 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
                              const void      *const field_values[])
 {
   int  mesh_id, field_id;
+  char _name[128];
 
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
@@ -1290,6 +1341,36 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
 
   mesh_id = _get_catalyst_mesh_id(w, mesh->name);
 
+  strncpy(_name, name, 127);
+  _name[127] = '\0';
+  if (w->ensight_names) {
+    for (int i = 0; i < 127 && _name[i] != '\0'; i++) {
+      switch (_name[i]) {
+      case '(':
+      case ')':
+      case ']':
+      case '[':
+      case '+':
+      case '-':
+      case '@':
+      case ' ':
+      case '\t':
+      case '!':
+      case '#':
+      case '*':
+      case '^':
+      case '$':
+      case '/':
+        _name[i] = '_';
+        break;
+      default:
+        break;
+      }
+      if (_name[i] == ' ')
+        _name[i] = '_';
+    }
+  }
+
   if (mesh_id < 0) {
     mesh_id = _add_catalyst_mesh(w, mesh);
     fvm_to_catalyst_export_nodal(w, mesh);
@@ -1298,7 +1379,7 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
   /* Get field id */
 
   field_id = _get_catalyst_field_id(w,
-                                    name,
+                                    _name,
                                     mesh_id,
                                     dimension,
                                     datatype,
@@ -1306,7 +1387,7 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
 
   if (field_id < 0)
     field_id = _add_catalyst_field(w,
-                                   name,
+                                   _name,
                                    mesh_id,
                                    dimension,
                                    datatype,
@@ -1321,7 +1402,7 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
 
   if (location == FVM_WRITER_PER_NODE)
     _export_field_values_n(mesh,
-                           name,
+                           _name,
                            dimension,
                            interlace,
                            n_parent_lists,
@@ -1336,7 +1417,7 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
 
   else if (location == FVM_WRITER_PER_ELEMENT)
     _export_field_values_e(mesh,
-                           name,
+                           _name,
                            dimension,
                            interlace,
                            n_parent_lists,

@@ -59,7 +59,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Initialize FVM to Catalyst object writer.
  *
- * No options are available for this format.
+ * Options are:
+ *   private_comm        use private MPI communicator (default: false)
+ *   names=<fmt>         use same naming rules as <fmt> format
+ *                       (default: ensight)
  *
  * parameters:
  *   name           <-- base output case name.
