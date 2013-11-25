@@ -1283,7 +1283,7 @@ _add_single_edges(cs_interface_set_t   *ifs,
                                           tmp_edges[2*j+1]+1,
                                           _s_vertices);
 
-          if (i0 > -1 && i1 > -1) {
+          if (i0 > -1 || i1 > -1) {
 
             if (last_found_rank != distant_rank) {
               s_edges->ranks[s_edges->n_ranks] = distant_rank;
