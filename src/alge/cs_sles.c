@@ -3078,6 +3078,8 @@ cs_sles_update_mesh(void)
   cs_mesh_t  *mesh = cs_glob_mesh;
 
   assert(mesh != NULL);
+  if (cs_glob_sles_native_matrix_struct == NULL)
+    return;
 
   /* Free then rebuid matrix structures */
 

@@ -4779,6 +4779,9 @@ cs_matrix_update_mesh(void)
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
 
+  if (cs_glob_matrix_default == NULL)
+    return;
+
   cs_matrix_destroy(&cs_glob_matrix_default);
   cs_matrix_structure_destroy(&cs_glob_matrix_default_struct);
 
