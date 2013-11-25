@@ -1210,9 +1210,11 @@ _add_single_edges(cs_interface_set_t   *ifs,
 
   }
 
-  /* Find the related ranks for synchronization */
+  /* Find the related ranks for synchronization
+     (if we have only single edges but not vertices, the situation is
+     not handled; this may happen with bad periodicity specifications) */
 
-  if (tmp_size > 0) {
+  if (tmp_size > 0 && selection->s_vertices->n_elts > 0) {
 
     int   n_entities, distant_rank;
 
