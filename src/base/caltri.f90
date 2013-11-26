@@ -115,10 +115,11 @@ integer, allocatable, dimension(:) :: isostd
 
 double precision, allocatable, dimension(:,:) :: coefa, coefb
 
-double precision, pointer, dimension(:,:) :: frcxt => null()
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:,:) :: rtp => null(), rtpa => null()
 double precision, pointer, dimension(:,:) :: propce => null()
+
+double precision, pointer, dimension(:,:) :: frcxt => null()
 double precision, pointer, dimension(:)   :: prhyd => null()
 
 !===============================================================================
@@ -375,10 +376,14 @@ allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
 allocate(isostd(nfabor+1))
 if (iphydr.eq.1) then
   allocate(frcxt(3, ncelet))
+else
+  frcxt => rvoid2
 endif
 
 if (iphydr.eq.2) then
   allocate(prhyd(ncelet))
+else
+  prhyd => rvoid1
 endif
 
 call init_aux_arrays(ncelet, nfabor)

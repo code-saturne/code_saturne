@@ -72,6 +72,23 @@ module pointe
 
   !=============================================================================
 
+  !> \defgroup dummy_arrays Dummy target arrays for null pointers
+
+  !> \addtogroup dummy_arrays
+  !> \{
+
+  integer, dimension(1),   target :: ivoid1
+  integer, dimension(1,1), target :: ivoid2
+
+  double precision, dimension(1),     target :: rvoid1
+  double precision, dimension(1,1),   target :: rvoid2
+  double precision, dimension(1,1,1), target :: rvoid3
+
+
+  !> \}
+
+  !=============================================================================
+
   !> \defgroup auxiliary Auxiliary variables
 
   !> \addtogroup auxiliary

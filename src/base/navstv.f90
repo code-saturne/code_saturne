@@ -162,8 +162,6 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: trav
 
-double precision, dimension(1,1), target :: rvoid2
-
 !===============================================================================
 
 !===============================================================================
@@ -872,8 +870,8 @@ if (ippmod(icompf).lt.0) then
       endif
       ! Update of the Dirichlet boundary conditions on the
       ! pressure for the outlet
-      !$omp parallel do if(nfabor > thr_n_min)
       call field_get_coefa_s(ivarfl(ipr), coefa_p)
+      !$omp parallel do if(nfabor > thr_n_min)
       do ifac = 1, nfabor
         if (isostd(ifac).eq.1) then
           coefa_p(ifac) = coefa_p(ifac) + coefa_dp(ifac)

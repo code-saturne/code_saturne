@@ -76,7 +76,7 @@ use entsor
 use cstphy
 use optcal
 use lagran
-use pointe, only: coefau, coefbu
+use pointe, only: coefau, coefbu, ivoid1, rvoid1
 use mesh
 use field
 
@@ -120,9 +120,8 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:,:) :: gradro
 
-integer,          pointer, dimension(:) :: itpsmp => null()
-double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
-double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
+integer,          pointer, dimension(:) :: itpsmp
+double precision, pointer, dimension(:) :: smcelp, gammap, tslage, tslagi
 double precision, dimension(:), pointer :: brom, crom
 
 !===============================================================================
@@ -130,6 +129,12 @@ double precision, dimension(:), pointer :: brom, crom
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+itpsmp => ivoid1
+smcelp => rvoid1
+gammap => rvoid1
+tslage => rvoid1
+tslagi => rvoid1
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))

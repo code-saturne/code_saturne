@@ -92,7 +92,7 @@ double precision visci(3,3), viscj(3,3)
 double precision viscis, viscjs, fikis, fjkjs, distfi, distfj
 double precision temp, eps
 
-double precision, pointer, dimension(:,:) :: viscce => null()
+double precision, pointer, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable, target :: w2
 
 !===============================================================================
@@ -101,6 +101,8 @@ nclipf = 0
 nclipb = 0
 
 eps = 1.d-1
+
+viscce => null()
 
 ! Without porosity
 if (iporos.eq.0) then

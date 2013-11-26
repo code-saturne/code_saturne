@@ -155,9 +155,6 @@ double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpav
 
-double precision, dimension(1,1,1), target :: rvoid3
-double precision, dimension(1,1), target :: rvoid2
-
 !===============================================================================
 ! Interfaces
 !===============================================================================

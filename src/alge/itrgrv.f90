@@ -152,7 +152,7 @@ double precision diippf(3), djjppf(3), pipp, pjpp
 double precision visci(3,3), viscj(3,3)
 double precision fikdvi, fjkdvi
 
-double precision, pointer, dimension(:,:) :: viscce => null()
+double precision, pointer, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable, target :: w2
 double precision, allocatable, dimension(:,:) :: grad
 
@@ -231,6 +231,8 @@ endif
 !===============================================================================
 
 if (nswrgp.gt.1) then
+
+  viscce => null()
 
   ! Without porosity
   if (iporos.eq.0) then

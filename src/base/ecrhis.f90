@@ -79,8 +79,8 @@ integer, dimension(:), allocatable :: lsttmp
 double precision, dimension(:), allocatable, target :: momtmp
 double precision, dimension(:,:), allocatable :: xyztmp
 
-double precision, dimension(:,:), pointer :: val_v => null()
-double precision, dimension(:), pointer :: val_s => null()
+double precision, dimension(:,:), pointer :: val_v
+double precision, dimension(:), pointer :: val_s
 double precision, dimension(:), pointer :: num_s, div_s
 
 ! Time plot number shift (in case multiple routines define plots)
