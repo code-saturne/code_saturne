@@ -34,6 +34,8 @@ Bug fixes:
 
 - When building with EOS, always link with C++ to avoid issues.
 
+- Fix crash on BlueGene/Q in some RSM turbulence cases due to argument-passing issue.
+
 Release 3.1.0 (11 Jun 2013)
 ===========================
 
