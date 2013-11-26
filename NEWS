@@ -58,6 +58,8 @@ Bug fixes:
 
 - Fix array bounds error in boundary face renumbering when using OpenMP.
 
+- Fix crash on BlueGene/Q in some RSM turbulence cases due to argument-passing issue.
+
 Release 3.0.1 (03 May 2013)
 ===========================
 

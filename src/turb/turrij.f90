@@ -119,21 +119,30 @@ double precision epsrgp, climgp, extrap
 
 logical          ilved
 
+integer,          dimension(1), target :: ivoid1
+double precision, dimension(1), target :: rvoid1
+
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:,:) :: grdvel
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, gradro
 
-integer,          pointer, dimension(:) :: itpsmp => null()
-double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
-double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
+integer,          pointer, dimension(:) :: itpsmp
+double precision, pointer, dimension(:) :: smcelp, gammap, tslage, tslagi
 
 !===============================================================================
 
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+itpsmp => ivoid1
+
+smcelp => rvoid1
+gammap => rvoid1
+tslage => rvoid1
+tslagi => rvoid1
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
