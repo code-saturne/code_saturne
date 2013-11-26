@@ -78,7 +78,7 @@ typedef struct {
  * Boundary condition types
  *----------------------------------------------------------------------------*/
 
-typedef enum {
+enum {
   CS_INDEF = 1,
   CS_INLET = 2,
   CS_OUTLET = 3,
