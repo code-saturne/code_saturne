@@ -119,8 +119,8 @@ double precision epsrgp, climgp, extrap
 
 logical          ilved
 
-integer,          dimension(1), target :: ivoid(1)
-double precision, dimension(1), target :: rvoid(1)
+integer,          dimension(1), target :: ivoid1
+double precision, dimension(1), target :: rvoid1
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
