@@ -27,9 +27,6 @@
 #  -e<pattern>, --error=<pattern>     : error file name pattern
 #  -J<jobname>, --job-name=<jobname>  : job name
 #
-# Warning: coupling with SYRTHES or other Code_Saturne domains is not available
-#          on Blue Gene/Q with the current drivers.
-#
 #-------------------------------------------------------------------------------
 
 # Change to submission directory
