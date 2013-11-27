@@ -2792,15 +2792,17 @@ void CS_PROCF (csphys, CSPHYS)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSSCA2 (ISCAVR, SCAMIN, SCAMAX)
+ * subroutine cssca2 (iscalt, iscavr, scamin, scamax)
  * *****************
  *
- * INTEGER          ISCAVR   <--  number of the related variance if any
- * DOUBLE PRECISION SCAMIN  -->   user scalar min array
- * DOUBLE PRECISION SCAMAX  -->   user scalar max array
+ * integer          iscalt  <--   index of the thermal scalar
+ * integer          iscavr  <--   number of the related variance if any
+ * double precision scamin  -->   user scalar min array
+ * double precision scamax  -->   user scalar max array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
+void CS_PROCF (cssca2, CSSCA2) (const    int *const iscalt,
+                                const    int *const iscavr,
                                       double *const scamin,
                                       double *const scamax)
 {
@@ -2809,22 +2811,34 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
   int i;
   cs_var_t  *vars = cs_glob_var;
 
-  if (vars->nscaus > 0 ) {
-    for (i=0 ; i < vars->nscaus; i++) {
-      if (iscavr[i] <= 0 ) {
-        cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
-        cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
-      }
+  for (i = 0; i < vars->nscaus; i++) {
+    if (iscavr[i] <= 0 ) {
+      cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
+      cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
     }
+  }
+
+  /* Clipping of the thermal scalar */
+  i = *iscalt-1;
+
+  if (i >= 0) {
+    cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
+    cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
+  }
 
 #if _XML_DEBUG_
-    bft_printf("==>CSSCA2\n");
-    for (i=0 ; i < vars->nscaus ; i++) {
-      bft_printf("--scamin[%i] = %f\n", i, scamin[i]);
-      bft_printf("--scamax[%i] = %f\n", i, scamax[i]);
-    }
-#endif
+  bft_printf("==>CSSCA2\n");
+  for (i=0 ; i < vars->nscaus ; i++) {
+    bft_printf("--scamin[%i] = %f\n", i, scamin[i]);
+    bft_printf("--scamax[%i] = %f\n", i, scamax[i]);
   }
+  i = *iscalt-1;
+
+  if (i >= 0) {
+    cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
+    cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
+  }
+#endif
 }
 
 

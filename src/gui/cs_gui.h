@@ -390,17 +390,23 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSSCA2
+ * subroutine cssca2 (iscalt, iscavr, scamin, scamax)
  * *****************
  *
- * INTEGER          ISCAVR   <--  number of the related variance if any
- * DOUBLE PRECISION SCAMIN  -->   user scalar min array
- * DOUBLE PRECISION SCAMAX  -->   user scalar max array
+ * integer          iscalt  <--   index of the thermal scalar
+ * integer          iscavr  <--   number of the related variance if any
+ * double precision scamin  -->   user scalar min array
+ * double precision scamax  -->   user scalar max array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) ( const    int *const iscavr,
-                                       double *const scamin,
-                                       double *const scamax);
+void CS_PROCF (cssca2, CSSCA2) (const    int *const iscalt,
+                                const    int *const iscavr,
+                                      double *const scamin,
+                                      double *const scamax);
+
+/*----------------------------------------------------------------------------
+ * Read reference dynamic and user scalar viscosity
+ *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
                                 const    int *const iscalt,

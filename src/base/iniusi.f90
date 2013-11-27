@@ -426,8 +426,8 @@ if (iihmpr.eq.1) then
               ro0, viscl0, viscv0, visls0, cp0, t0,                   &
               p0, xmasmr, itempk)
 
-!     Scamin, scamax
-  call cssca2(iscavr, scamin, scamax)
+  ! Scamin, scamax
+  call cssca2(iscalt, iscavr, scamin, scamax)
   !==========
 
   ! Diffusivites
