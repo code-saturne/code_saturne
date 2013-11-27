@@ -1525,7 +1525,8 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefa array of a given scalar field
+  !> \brief Return pointer to the coefad array of a given scalar field
+  !>        (used in the divergence operator such as div(Rij))
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
@@ -1556,6 +1557,7 @@ contains
   !=============================================================================
 
   !> \brief Return pointer to the coefa array of a given vector field
+  !>        (used in the divergence operator such as div(u'T'))
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
@@ -1976,6 +1978,7 @@ contains
   !=============================================================================
 
   !> \brief Return pointer to the coefbd array of a given scalar field
+  !>        (used in the divergence operator such as div(Rij))
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefb values
@@ -2006,6 +2009,7 @@ contains
   !=============================================================================
 
   !> \brief Return pointer to the coefbd array of a given coupled vector field
+  !>        (used in the divergence operator such as div(u'T'))
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values

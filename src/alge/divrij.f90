@@ -92,13 +92,13 @@ integer          nswrgp, imligp, iwarnp
 integer          imaspe, itypfl
 double precision epsrgp, climgp, extrap
 double precision, dimension(:), pointer :: crom, brom
-double precision, dimension(:), pointer :: cofac1, cofac2, cofac3
-double precision, dimension(:), pointer :: cofbc1, cofbc2, cofbc3
+double precision, dimension(:), pointer :: cofad1, cofad2, cofad3
+double precision, dimension(:), pointer :: cofbd1, cofbd2, cofbd3
 
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialisation
 !===============================================================================
 
 ! Initialization to avoid compiler warnings
@@ -127,16 +127,16 @@ endif
 
 ! --- Boundary conditions on the component Rij for the momentum equation
 
-call field_get_coefac_s(ivarfl(ivar1), cofac1)
-call field_get_coefac_s(ivarfl(ivar2), cofac2)
-call field_get_coefac_s(ivarfl(ivar3), cofac3)
+call field_get_coefad_s(ivarfl(ivar1), cofad1)
+call field_get_coefad_s(ivarfl(ivar2), cofad2)
+call field_get_coefad_s(ivarfl(ivar3), cofad3)
 
-call field_get_coefbc_s(ivarfl(ivar1), cofbc1)
-call field_get_coefbc_s(ivarfl(ivar2), cofbc2)
-call field_get_coefbc_s(ivarfl(ivar3), cofbc3)
+call field_get_coefbd_s(ivarfl(ivar1), cofbd1)
+call field_get_coefbd_s(ivarfl(ivar2), cofbd2)
+call field_get_coefbd_s(ivarfl(ivar3), cofbd3)
 
 !===============================================================================
-! 2.  CALCUL DE LA DIVERGENCE
+! 2. Calcul de la divergence
 !===============================================================================
 
 ! --- Options de calcul
@@ -162,7 +162,7 @@ call inimas                                                       &
    epsrgp , climgp , extrap ,                                     &
    crom   , brom   ,                                              &
    rtpa(1,ivar1)   , rtpa(1,ivar2)   , rtpa(1,ivar3)   ,          &
-   cofac1 , cofac2 , cofac3 , cofbc1 , cofbc2 , cofbc3 ,          &
+   cofad1 , cofad2 , cofad3 , cofbd1 , cofbd2 , cofbd3 ,          &
    viscf  , viscb  )
 
 !     Calcul des efforts aux bords (partie 5/5), si necessaire
