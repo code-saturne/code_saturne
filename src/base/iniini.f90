@@ -1402,7 +1402,7 @@ ifaccp = 0
 
 itepa => ivoid2
 
-ettp => rvoid2  
+ettp => rvoid2
 ettpa => rvoid2
 tepa => rvoid2
 statis => rvoid2
