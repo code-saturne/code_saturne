@@ -1097,17 +1097,26 @@ class syrthes_domain(base_domain):
         # Define syrthes case structure
 
         try:
-            if not os.getenv('SYRTHES4_HOME'):
+            import syrthes
+        except Exception:
+            # In case environment is not set, fallback to preferences file
+            try:
                 config = configparser.ConfigParser()
                 config.read([self.package.get_configfile(),
                              os.path.expanduser('~/.' + self.package.configfile)])
                 syr_profile = os.path.join(config.get('install', 'syrthes'),
                                            'bin', 'syrthes.profile')
                 source_shell_script(syr_profile)
-            import syrthes
-        except Exception:
-            raise RunCaseError("Cannot locate SYRTHES installation.\n")
-            sys.exit(1)
+                import syrthes
+            except Exception:
+                raise RunCaseError("Cannot locate SYRTHES installation.\n")
+            msg =  \
+                'Warning:\n' \
+                + '  SYRTHES environment was not set, so it was sourced from\n' \
+                + '  ' + str(syr_profile) + '\n' \
+                + '  as defined by: ' + str(self.package.get_configfiles()) \
+                + '\n\n'
+            sys.stderr.write(msg)
 
         self.syrthes_case = syrthes.process_cmd_line(args.split())
 
