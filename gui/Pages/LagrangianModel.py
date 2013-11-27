@@ -160,6 +160,9 @@ class LagrangianModel(Model):
         if status != 'off':
             OutputControlModel(self.case).addDefaultLagrangianWriter()
             OutputControlModel(self.case).addDefaultLagrangianMesh()
+        elif old_status:
+            OutputControlModel(self.case).deleteMesh(['-3'])
+            OutputControlModel(self.case).deleteWriter(['-3', '-4'])
         del OutputControlModel
 
 
