@@ -2760,8 +2760,7 @@ void CS_PROCF (csphys, CSPHYS)
       *ivivar = choice;
 
   /* T0 if necessary */
-
-  if (vars->model != NULL)
+  if (vars->model != NULL && !cs_gui_strcmp(vars->model, "thermal_scalar"))
     cs_gui_reference_initialization("temperature", t0);
   if (cs_gui_strcmp(vars->model, "compressible_model"))
     cs_gui_reference_initialization("mass_molar", xmasmr);
