@@ -297,10 +297,17 @@ _2scales_log_law(cs_real_t   xkappa,
                  cs_real_t  *ypup,
                  cs_real_t  *cofimp)
 {
-  double rcprod, ml_visc;
+  double rcprod, ml_visc, Re, g;
 
   /* Compute the friction velocity ustar */
-  *uk = cmu025 * sqrt(kinetic_en);
+
+  /* Blending for very low values of k */
+  Re = sqrt(kinetic_en) * y / l_visc;
+  g = exp(-Re/11.);
+
+  *uk = sqrt( (1.-g) * cmu025 * cmu025 * kinetic_en
+            + g * l_visc * vel / y);
+
   *yplus = *uk * y / l_visc;
 
   /* log layer */
@@ -378,7 +385,17 @@ _2scales_scalable_wallfunction(cs_real_t   xkappa,
                                cs_real_t  *cofimp
 )
 {
-  double rcprod, ml_visc;
+  double rcprod, ml_visc, Re, g;
+  /* Compute the friction velocity ustar */
+
+  /* Blending for very low values of k */
+  Re = sqrt(kinetic_en) * y / l_visc;
+  g = exp(-Re/11.);
+
+  *uk = sqrt( (1.-g) * cmu025 * cmu025 * kinetic_en
+            + g * l_visc * vel / y);
+
+  *yplus = *uk * y / l_visc;
 
   /* Compute the friction velocity ustar */
   *uk = cmu025 * sqrt(kinetic_en);

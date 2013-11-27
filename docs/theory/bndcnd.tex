@@ -554,8 +554,14 @@ Therefore, the value of $\frac{y^+}{u^+}$ in the two layers reads:
 \subsubsection{Two friction velocity scales}\label{sec:bndcnd:2velocityscales}
 
 The simplified momentum balance \eqref{eq:bndcnd:simplified_momentum_evm} still holds, but is non-dimensioned not only
-by the wall shear stress but also the turbulent kinetic energy. More precisely, let $u_k \equiv \sqrt{\sqrt{C_\mu} k }$ be the friction velocity based on 
+by the wall shear stress but also the turbulent kinetic energy. More precisely, let $u_k = \sqrt{\sqrt{C_\mu} k }$ be the friction velocity based on 
 the turbulent kinetic energy in the first cell.
+
+This definition is in fact valid only for high-$y^+$ values and a blending is performed in case of the intensity of turbulence is very low:
+\begin{equation}\label{eq:def_uk}
+u_k \equiv \sqrt{ g  \dfrac{\nu \norm{ \vect{u}^r_{\centip}}}{y} + \left(1-g\right)\sqrt{C_\mu}k },
+\end{equation}
+where $g$ is a blending factor defined by $g = \exp \left(- \dfrac{\sqrt{k} y}{11 \nu} \right)$ (see \cite{}).
 
 The friction velocity $u^\star $ is now defined by:
 \begin{equation}\label{eq:bndcnd:ustar_2scale2_def}
