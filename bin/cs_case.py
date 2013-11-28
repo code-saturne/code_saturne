@@ -863,7 +863,9 @@ export SALOME_INSTANCE=$3
             cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
             e.write(cmd)
             s_args = d.solver_command()
-            cmd = '#mpmdcmd ' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+            cmd = '#mpmdcmd ' + os.path.relpath(s_args[1], self.exec_dir) \
+                + s_args[2] \
+                + ' -w ' + os.path.basename(s_args[0]) + '\n'
             e.write(cmd)
             e.write('#mpmdend\n')
             rank_id += d.n_procs
@@ -872,7 +874,9 @@ export SALOME_INSTANCE=$3
             cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
             e.write(cmd)
             s_args = d.solver_command()
-            cmd = '#mpmdcmd ' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+            cmd = '#mpmdcmd ' + os.path.relpath(s_args[1], self.exec_dir) \
+                + s_args[2] \
+                + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
             e.write(cmd)
             e.write('#mpmdend\n')
             rank_id += d.n_procs
