@@ -160,6 +160,60 @@ double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+    !---------------------------------------------------------------------------
+
+   subroutine post_boundary_thermal_flux &
+     ( nfbrps , lstfbr ,                                              &
+       rtp    , propce , propfb ,                                     &
+       bflux ) 
+     use dimens, only: ndimfb
+     use mesh
+     integer, intent(in)                                        :: nfbrps
+     integer, dimension(nfbrps), intent(in)                     :: lstfbr
+     double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+     double precision, dimension(ndimfb, *), intent(in)         :: propfb
+     double precision, dimension(nfbrps), intent(out)           :: bflux
+   end subroutine post_boundary_thermal_flux
+
+    !---------------------------------------------------------------------------
+
+   subroutine post_boundary_temperature &
+     ( nfbrps , lstfbr ,                                              &
+       rtp    , propce , propfb ,                                     &
+       btemp )
+     use dimens, only: ndimfb
+     use mesh
+     integer, intent(in)                                        :: nfbrps
+     integer, dimension(nfbrps), intent(in)                     :: lstfbr
+     double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+     double precision, dimension(ndimfb, *), intent(in)         :: propfb
+     double precision, dimension(nfbrps), intent(out)           :: btemp
+   end subroutine post_boundary_temperature
+
+     !---------------------------------------------------------------------------
+
+   subroutine post_boundary_nusselt &
+    ( nfbrps , lstfbr ,                                              &
+      rtp    , propce , propfb ,                                     &
+      bnussl )
+     use dimens, only: ndimfb
+     use mesh
+     integer, intent(in)                                        :: nfbrps
+     integer, dimension(nfbrps), intent(in)                     :: lstfbr
+     double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+     double precision, dimension(ndimfb, *), intent(in)         :: propfb
+     double precision, dimension(nfbrps), intent(out)           :: bnussl
+   end subroutine post_boundary_nusselt
+
+     !---------------------------------------------------------------------------
+
+end interface
+
 
 ! Initialize variables to avoid compiler warnings
 
