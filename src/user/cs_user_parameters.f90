@@ -1363,6 +1363,18 @@ if (.false.) then
   imgr(ipr) = 1
 endif
 
+! --- Dynamic reconstruction sweeps to handle non-orthogonlaities
+!     This parameter computes automatically a dynamic relax factor,
+!     and can be activated for any variable.
+!      - iswdyn(ipr) = 1: means that the last increment is relaxed
+!      - iswdyn(ipr) = 2: means that the last two increments are used to
+!                         relax
+!     NB: when iswdyn is greater than 1, then the number of
+!         non-orthogonality sweeps is increased to 20.
+
+if (.false.) then
+  iswdyn(ipr) = 1
+endif
 
 !=========================================================================
 

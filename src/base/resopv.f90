@@ -1518,7 +1518,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     endif
 
     ! Writing
-    if (iwarnp.ge.3) then
+    if (iwarnp.ge.2) then
       write(nfecra,1200) chaine(1:16), isweep, alph, beta, &
                          paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
     endif
