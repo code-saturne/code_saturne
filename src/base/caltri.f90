@@ -130,6 +130,35 @@ double precision, allocatable, dimension(:,:) :: tslagr
 double precision, allocatable, dimension(:,:) :: dlgeo
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+    !---------------------------------------------------------------------------
+
+    subroutine ecrhis &
+      (ndim, ncelet, ncel, modhis, xyzcen, ra)
+      integer :: ndim, ncelet, ncel, modhis
+      double precision, dimension(ndim, ncelet) :: xyzcen
+      double precision, dimension(*), target :: ra
+    end subroutine ecrhis
+
+    !---------------------------------------------------------------------------
+
+    subroutine ecrlis &
+      (nvar, ndim, ncelet, ncel, irtp,      &
+       rtp, rtpa, dt, volume, xyzcen, ra)
+      integer :: nvar, ndim, ncelet, ncel, irtp
+      double precision, dimension(ncelet, nvar) :: rtpa, rtp
+      double precision, dimension(ncelet) :: dt, volume
+      double precision, dimension(ndim, ncelet) :: xyzcen
+      double precision, dimension(*), target :: ra
+    end subroutine ecrlis
+
+    !---------------------------------------------------------------------------
+
+end interface
 
 !===============================================================================
 ! Initialization
