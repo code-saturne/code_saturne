@@ -64,11 +64,11 @@
 !> \param[in]     dplus         dimensionless distance for scalable
 !>                              wall functions
 !> \param[out]    htur          corrected exchange coefficient
-!> \param[out]    yp1
+!> \param[out]    yplim         value of the limit for \f$ y^+ \f$
 !_______________________________________________________________________________
 
 subroutine hturbp &
- ( prl    , prt    , ckarm  , yplus  , dplus, htur , yp1 )
+ ( prl    , prt    , ckarm  , yplus  , dplus, htur , yplim )
 
 !===============================================================================
 
@@ -86,13 +86,13 @@ implicit none
 ! Arguments
 
 double precision htur
-double precision prl,ckarm,prt,yplus, dplus, yp1
+double precision prl,ckarm,prt,yplus, dplus, yplim
 
 ! Local variables
 
 double precision tplus
 double precision beta2,a2
-double precision yp0,yp2
+double precision yp2
 double precision prlm1
 
 !===============================================================================
@@ -107,32 +107,30 @@ htur = max(yplus-dplus, epzero)/max(yplus, epzero)
 
 prlm1 = 0.1d0
 
-yp0   = prt/(prl*ckarm)
-yp2   = ckarm*1000.d0/prt
-yp2   = sqrt(yp2)
-yp1   = (1000.d0/prl)**(1.d0/3.d0)
-
 !===============================================================================
 ! 2. Compute htur for small Prandtl numbers
 !===============================================================================
 
 if (prl.le.prlm1) then
-  if (yplus .gt. yp0) then
-    tplus = prl*yp0 + prt/ckarm * log(yplus/yp0)
+  yplim   = prt/(prl*ckarm)
+  if (yplus .gt. yplim) then
+    tplus = prl*yplim + prt/ckarm * log(yplus/yplim)
     htur = prl*(yplus-dplus)/tplus
   endif
-endif
 
 !===============================================================================
 ! 3. Compute htur for the model with three sub-layers
 !===============================================================================
 
-if (prl.gt.prlm1) then
+else
+  yp2   = ckarm*1000.d0/prt
+  yp2   = sqrt(yp2)
+  yplim   = (1000.d0/prl)**(1.d0/3.d0)
 
   a2 = 15.d0*(prl**(2.d0/3.d0))
   beta2 = a2 - 500.d0/ (yp2**2)
 
-  if ((yplus.ge.yp1).and.(yplus.lt.yp2)) then
+  if ((yplus.ge.yplim).and.(yplus.lt.yp2)) then
     tplus = a2 - 500.d0/(yplus*yplus)
     htur = prl*(yplus-dplus)/tplus
   endif

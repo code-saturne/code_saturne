@@ -161,7 +161,9 @@ The user generally gives standard boundary conditions, which are:
 and to a homogeneous Neumann on the pressure field. 
 
 \item[Outlet:] it correspond to a homogeneous Neumann boundary condition on all the transported variables.
-For the pressure field, a Dirichlet boundary condition which is expected to mimic $\displaystyle\frac{\partial^2 P}{\partial n \partial \tau}=0$ for any vector  $\vect{\tau}$ parallel to the outlet face. This condition means that the pressure
+For the pressure field, a Dirichlet boundary condition which is expected to mimic $\displaystyle\frac{\partial^2 P}{\partial n \partial \tau}=0$ for any vector  $\vect{\tau}$ parallel to the outlet face
+(see \S \ref{sec:bndcnd:outlet_pressure} for more details). 
+This condition means that the pressure
 profile does not vary in the normal direction of the outlet. Warning: if the outgoing mass-flux is negative, 
 \emph{i.e.} if the outlet becomes an inlet, then the mass-flux is clipped to zero. Moreover, since
  the pressure field is defined up to a constant, it is fixed to a reference pressure $P_0$
@@ -331,7 +333,7 @@ Both $\varia^{imp, \, ext} $ and $ h_{ext} $ must be specified by the user. The 
 \end{remark}
 
 %-------------------------------------------------------------------------------
-\subsection{Convective outlet boundary conditions}
+\subsection{Convective outlet boundary conditions}\label{sec:bndcnd:convective_outlet}
 
 If the user wishes to impose a convective outlet (also called radiative outlet) condition which reads:
 \begin{equation}
@@ -410,6 +412,7 @@ $\varia$   & scalar               & unit of ($\varia$)       &$K \,\grad \varia 
 This section is dedicated to wall boundary conditions 
  for the velocity, and any transported scalar (such as the temperature, the enthalpy, \emph{etc}.) 
 when a wall boundary value is prescribed and a wall function is set by the user. The dedicated boundary conditions of the turbulent variables ($k$, $\varepsilon$, $R_{ij}$) are detailed in \chaptername~ \ref{chapter:turbul}.
+ Here is a link to the \doxygenfile{clptur_8f90}{programmers reference of the dedicated subroutine}.
 
 Simplified balance analysis proves that the fluid velocity profile or the Temperature profile are 
 highly non-linear  for turbulent flows in the vicinity of walls.
@@ -592,8 +595,12 @@ The internal pair of boundary condition coefficient for the diffusive term for t
 \begin{equation}\label{eq:bndcnd:boundary_condition_wall_function}
 \left\lbrace
 \begin{array}{r c l}
-\vect{A}^f_\ib & = & -h_{fluid}  \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot  \vect{u}_{wall}, \\
-\tens{B}^f_\ib & = & h_{fluid}  \left(\tens{1} - \vect{n} \otimes \vect{n} \right),
+\vect{A}^f_\ib & = & -h_{fluid}  \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot  \vect{u}_{wall}
+ - h_{hint} \left( \vect{n} \cdot \vect{u}_{wall}  \right) \vect{n}
+, \\
+\tens{B}^f_\ib & = & h_{fluid}  \left(\tens{1} - \vect{n} \otimes \vect{n} \right)
++ h_{int} \vect{n} \otimes \vect{n}
+,
 \end{array}
 \right.
 \end{equation}
@@ -659,7 +666,7 @@ The internal pair of boundary condition coefficient for the diffusive term for t
 \begin{equation}
 \left\lbrace
 \begin{array}{r c l}
-\vect{A}^g_\ib & = & -cofimp \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot  \vect{u}_{wall}, \\
+\vect{A}^g_\ib & = & \left( 1-cofimp \right) \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot  \vect{u}_{wall} + \left(\vect{u}_{wall} \cdot \vect{n} \right) \vect{n}, \\
 \tens{B}^g_\ib & = & cofimp \left(\tens{1} - \vect{n} \otimes \vect{n} \right) ,
 \end{array}
 \right.
