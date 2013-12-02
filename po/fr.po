@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-10-30 15:41+0100\n"
+"POT-Creation-Date: 2013-12-02 10:21+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2935,6 +2935,24 @@ msgstr ""
 "Optimisation des matrices symétriques\n"
 "=====================================\n"
 
+#, c-format
+msgid " %s : Convection in centered blending with %f percent of upwind\n"
+msgstr ""
+
+#, c-format
+msgid " %s : Convection in 2nd order blending with %f percent of upwind\n"
+msgstr ""
+
+msgid "invalid value of ischcp"
+msgstr ""
+
+#, c-format
+msgid " %s : %lu Faces with upwind on %lu interior faces \n"
+msgstr ""
+
+msgid "invalid value of icvflb and f_id"
+msgstr ""
+
 msgid "Iterative reconstruction"
 msgstr "Reconstruction itérative"
 
@@ -3891,6 +3909,18 @@ msgstr ""
 "\n"
 " Destruction des structures et clôture du calcul\n"
 
+#, c-format
+msgid "Error calling dlsym: %s\n"
+msgstr "Erreur à l'appel de dlsym : %s\n"
+
+#, c-format
+msgid ""
+"Shared library support not available.\n"
+"Unable to load: %s\n"
+msgstr ""
+"Support de bibliothèques partagées non disponible.\n"
+"Impossible de charger : %s\n"
+
 msgid "MPI_Alltoall and MPI_Alltoallv"
 msgstr "MPI_Alltoall et MPI_Alltoallv"
 
@@ -4267,20 +4297,8 @@ msgid "[ok]\n"
 msgstr "[ok]\n"
 
 #, c-format
-msgid "Error calling dlsym: %s\n"
-msgstr "Erreur à l'appel de dlsym : %s\n"
-
-#, c-format
 msgid "Error loading %s: %s."
 msgstr "Erreur au chargement de %s : %s."
-
-#, c-format
-msgid ""
-"Shared library support not available.\n"
-"Unable to load: %s\n"
-msgstr ""
-"Support de bibliothèques partagées non disponible.\n"
-"Impossible de charger : %s\n"
 
 #, c-format
 msgid "   ignored: \"%s\"\n"
@@ -4787,6 +4805,12 @@ msgstr ""
 "Valeurs de clés définies par champ :\n"
 "------------------------------------\n"
 "\n"
+
+#, c-format
+msgid ""
+"%s: field enum %d is already mapped as non-indexed\n"
+"to field id %d (%s), so it cannot be mapped as indexed."
+msgstr ""
 
 msgid "default"
 msgstr "défaut"
@@ -5385,6 +5409,21 @@ msgstr ""
 msgid "Error loading parameter file \"%s\".\n"
 msgstr "Erreur à la lecture du fichier de paramètres \"%s\".\n"
 
+#, c-format
+msgid "      %-19s  %-4d\n"
+msgstr ""
+
+#, c-format
+msgid "      %-19s  %-12.3g\n"
+msgstr ""
+
+#, c-format
+msgid "bad choice: you chose to work in the %s plane."
+msgstr ""
+
+msgid "Freesteam support not available in this build."
+msgstr "Le support de Freesteam n'est pas disponible sur cette installation."
+
 msgid ""
 "\n"
 "Postprocessing output writers:\n"
@@ -5539,6 +5578,30 @@ msgstr ""
 
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
+
+#, c-format
+msgid ""
+"\n"
+" Cutting warped faces (%.3g s)\n"
+msgstr ""
+"\n"
+" Découpage des faces gauches (%.3g s)\n"
+
+msgid ""
+"\n"
+" Renumbering mesh:\n"
+msgstr ""
+"\n"
+" Renumérotation du maillage:\n"
+
+msgid "Mesh"
+msgstr "Maillage"
+
+#, c-format
+msgid ""
+"\n"
+" Computing geometric quantities (%.3g s)\n"
+msgstr ""
 
 #, c-format
 msgid "No \"%s\" file or directory found."

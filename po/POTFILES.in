@@ -41,6 +41,7 @@ preprocessor/util/ecs_tab.c
 preprocessor/util/ecs_timer.c
 src/alge/cs_benchmark.c
 src/alge/cs_blas.c
+src/alge/cs_convection_diffusion_balance.c
 src/alge/cs_gradient.c
 src/alge/cs_gradient_perio.c
 src/alge/cs_grid.c
@@ -51,6 +52,7 @@ src/alge/cs_sles.c
 src/apps/cs_check_syntax.c
 src/apps/cs_io_dump.c
 src/apps/cs_solver.c
+src/atmo/cs_at_plugin.c
 src/base/cs_ale.c
 src/base/cs_all_to_all.c
 src/base/cs_array_reduce.c
@@ -67,6 +69,7 @@ src/base/cs_defs.c
 src/base/cs_ext_neighborhood.c
 src/base/cs_field.c
 src/base/cs_field_operator.c
+src/base/cs_field_pointer.c
 src/base/cs_file.c
 src/base/cs_halo.c
 src/base/cs_halo_perio.c
@@ -80,9 +83,12 @@ src/base/cs_numbering.c
 src/base/cs_opts.c
 src/base/cs_order.c
 src/base/cs_parall.c
+src/base/cs_parameters.c
 src/base/cs_part_to_block.c
+src/base/cs_physical_properties.c
 src/base/cs_post.c
 src/base/cs_post_default.c
+src/base/cs_preprocess.c
 src/base/cs_preprocessor_data.c
 src/base/cs_renumber.c
 src/base/cs_resource.c
@@ -151,6 +157,7 @@ src/gui/cs_gui_particles.c
 src/gui/cs_gui_radiative_transfer.c
 src/gui/cs_gui_specific_physics.c
 src/gui/cs_gui_util.c
+src/lagr/cs_lagr_clogging.c
 src/lagr/cs_lagr_extract.c
 src/lagr/cs_lagr_perio.c
 src/lagr/cs_lagr_tracking.c
@@ -193,3 +200,4 @@ src/user/cs_user_mesh.c
 src/user/cs_user_performance_tuning.c
 src/user/cs_user_postprocess.c
 src/user/cs_user_solver.c
+src/user/cs_user_turbomachinery.c

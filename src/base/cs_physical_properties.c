@@ -104,14 +104,14 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       switch (property) {
       case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "ph");
+                  _("bad choice: you chose to work in the %s plane."), "ph");
         break;
       case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
         break;
       case CS_PHYS_PROP_ENTHALPY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "ph");
+                  _("bad choice: you chose to work in the %s plane."), "ph");
         break;
       case CS_PHYS_PROP_ENTROPY:
         val[i] = freesteam_s(S0);
@@ -152,11 +152,11 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       switch (property) {
       case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "pT");
+                  _("bad choice: you chose to work in the %s plane."), "pT");
         break;
       case CS_PHYS_PROP_TEMPERATURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "pT");
+                  _("bad choice: you chose to work in the %s plane."), "pT");
         break;
       case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
@@ -200,7 +200,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       switch (property) {
       case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "ps");
+                  _("bad choice: you chose to work in the %s plane."), "ps");
         break;
       case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
@@ -210,7 +210,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
         break;
       case CS_PHYS_PROP_ENTROPY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "ps");
+                  _("bad choice: you chose to work in the %s plane."), "ps");
         break;
       case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
@@ -248,7 +248,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       switch (property) {
       case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "pu");
+                  _("bad choice: you chose to work in the %s plane."), "pu");
         break;
       case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
@@ -273,7 +273,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "pu");
+                  _("bad choice: you chose to work in the %s plane."), "pu");
         break;
       case CS_PHYS_PROP_QUALITY:
         val[i] = freesteam_x(S0);
@@ -296,7 +296,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       switch (property) {
       case CS_PHYS_PROP_PRESSURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "pv");
+                  _("bad choice: you chose to work in the %s plane."), "pv");
         break;
       case CS_PHYS_PROP_TEMPERATURE:
         val[i] = freesteam_T(S0);
@@ -315,7 +315,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
         break;
       case CS_PHYS_PROP_SPECIFIC_VOLUME:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "pv");
+                  _("bad choice: you chose to work in the %s plane."), "pv");
         break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
@@ -347,14 +347,14 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
         break;
       case CS_PHYS_PROP_TEMPERATURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "Ts");
+                  _("bad choice: you chose to work in the %s plane."), "Ts");
         break;
       case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
         break;
       case CS_PHYS_PROP_ENTROPY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "Ts");
+                  _("bad choice: you chose to work in the %s plane."), "Ts");
         break;
       case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
         val[i] = freesteam_cp(S0);
@@ -395,7 +395,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
         break;
       case CS_PHYS_PROP_TEMPERATURE:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "Tx");
+                  _("bad choice: you chose to work in the %s plane."), "Tx");
         break;
       case CS_PHYS_PROP_ENTHALPY:
         val[i] = freesteam_h(S0);
@@ -420,7 +420,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
         break;
       case CS_PHYS_PROP_QUALITY:
         bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in %s plane\n"), "Tx");
+                  _("bad choice: you chose to work in the %s plane."), "Tx");
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
@@ -436,7 +436,7 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
   }
 #else
   bft_error(__FILE__, __LINE__, 0,
-            _("Freesteam support not available in this build.\n"));
+            _("Freesteam support not available in this build."));
 #endif
 }
 
