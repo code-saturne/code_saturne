@@ -174,7 +174,7 @@ void CS_PROCF(plug_aerosol, PLUG_AEROSOL)
 
   bft_error(__FILE__, __LINE__, 0,
             _("Shared library support not available.\n"
-              "Unable to load: libsiream.so\n"));
+              "Unable to load: %s\n"), "libsiream.so");
 
 #endif
 
@@ -216,7 +216,7 @@ void CS_PROCF(plug_compute_coagulation_coefficient,
 
   bft_error(__FILE__, __LINE__, 0,
             _("Shared library support not available.\n"
-              "Unable to load: libsiream.so\n"));
+              "Unable to load: %s\n"), "libsiream.so");
 
 #endif
 
