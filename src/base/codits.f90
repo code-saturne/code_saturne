@@ -384,7 +384,6 @@ if (imgrp.gt.0) then
 
   ! --- Building of the mesh hierarchy
 
-  iwarnp = iwarni(ivar)
   nagmax = nagmx0(ivar)
   npstmg = ncpmgr(ivar)
 
@@ -643,7 +642,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     endif
 
     ! Writing
-    if (iwarnp.ge.3) then
+    if (iwarnp.ge.2) then
       write(nfecra,1200) cnom, isweep, alph, beta, &
                          paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax
     endif
@@ -730,7 +729,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   nbivar(ipp) = nbivar(ipp) + niterf
 
   ! Writing
-  if (iwarnp.ge.3) then
+  if (iwarnp.ge.2) then
     write(nfecra,1000) cnom, isweep, residu, rnorm
     write(nfecra,1010) cnom, isweep, niterf
   endif
