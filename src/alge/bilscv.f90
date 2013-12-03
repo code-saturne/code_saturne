@@ -216,6 +216,7 @@ if (idftnp.eq.1) then
 ! Symmetric tensor diffusivity
 elseif (idftnp.eq.6) then
 
+  ! Nor diffusive part neither secodary viscosity or transpose of grandient
   idiflc = 0
   ! Convective part
   if (iconvp.eq.1) then
@@ -223,7 +224,7 @@ elseif (idftnp.eq.6) then
     call bilsc4 &
     !==========
      ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-       ischcp , isstpp , inc    , imrgra , ivisep ,                   &
+       ischcp , isstpp , inc    , imrgra , idiflc ,                   &
        ippu   , iwarnp ,                                              &
        blencp , epsrgp , climgp , relaxp , thetap ,                   &
        pvar   , pvara  ,                                              &
@@ -240,12 +241,12 @@ elseif (idftnp.eq.6) then
     call diftnv &
     !==========
    ( idtvar , ivar   , nswrgp , imligp , ircflp ,                   &
-     inc    , imrgra ,                                              &
+     inc    , imrgra , ivisep ,                                     &
      ippu   , iwarnp , epsrgp ,                                     &
      climgp , relaxp , thetap ,                                     &
      pvar   , pvara  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
-     viscf  , viscb  ,                                              &
+     viscf  , viscb  , secvif ,                                     &
      smbr   )
 
   endif

@@ -291,9 +291,6 @@ if (idftnp.eq.6) iesize = 3
 
 ! Allocate temporary arrays
 allocate(dam(3,3,ncelet))
-! be carefull here, xam is interleaved
-if (iesize.eq.1) allocate(xam(2,nfac))
-if (iesize.eq.3) allocate(xam(3*3*2,nfac))
 allocate(dpvar(3,ncelet), smbini(3,ncelet))
 if (iswdyp.ge.1) then
   allocate(adxk(3,ncelet), adxkm1(3,ncelet), dpvarm1(3,ncelet))
@@ -312,6 +309,9 @@ cnom= chaine(1:16)
 isym  = 1
 if (iconvp.gt.0) isym  = 2
 
+! be carefull here, xam is interleaved
+if (iesize.eq.1) allocate(xam(isym,nfac))
+if (iesize.eq.3) allocate(xam(3*3*isym,nfac))
 ! METHODE DE RESOLUTION ET DEGRE DU PRECOND DE NEUMANN
 !     0 SI CHOIX AUTOMATIQUE GRADCO OU BICGSTAB
 !     0 SI CHOIX AUTOMATIQUE JACOBI
