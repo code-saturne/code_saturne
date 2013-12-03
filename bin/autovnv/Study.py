@@ -351,12 +351,15 @@ class Case(object):
         return error
 
 
-    def runCompare(self, studies, r, d, threshold, args):
+    def runCompare(self, studies, r, d, threshold, args, reference=None):
         home = os.getcwd()
 
         node = None
 
-        result = os.path.join(self.__repo, self.label, 'RESU')
+        if reference:
+            result = os.path.join(reference, self.label, 'RESU')
+        else:
+            result = os.path.join(self.__repo, self.label, 'RESU')
         repo = self.check_dir(studies, node, result, r, "repo")
         repo = os.path.join(result, repo, 'checkpoint', 'main')
 
@@ -468,13 +471,16 @@ class Case(object):
             sys.exit(1)
 
 
-    def check_dirs(self, studies, node, repo, dest):
+    def check_dirs(self, studies, node, repo, dest, reference=None):
         """
         Check coherency between xml file of parameters and repository and destination.
         """
         if repo != None:
             # build path to RESU directory with path to study and case label in the repo
-            result = os.path.join(self.__repo, self.label, 'RESU')
+            if reference:
+                result = os.path.join(reference, self.label, 'RESU')
+            else:
+                result = os.path.join(self.__repo, self.label, 'RESU')
             self.check_dir(studies, node, result, repo, "repo")
 
         if dest != None:
@@ -505,7 +511,6 @@ class Study(object):
         """
         # Initialize attributes
         self.__parser   = parser
-        self.__study    = study
         self.__main_exe = exe
         self.__diff     = dif
         self.__log      = rlog
@@ -517,6 +522,8 @@ class Study(object):
             print("Error: the directory %s does not exist" % self.__repo)
             sys.exit(1)
 
+        self.label = study
+
         self.Cases = []
         self.matplotlib_figures = []
         self.vtk_figures = []
@@ -526,12 +533,12 @@ class Study(object):
         if not self.cases:
             print("\n\n\nWarning: no case defined in %s study\n\n\n" % study)
         else:
-            for data in self.__parser.getCasesKeywords(self.__study):
+            for data in self.__parser.getCasesKeywords(self.label):
                 c = Case(pkg,
                          self.__log,
                          self.__diff,
                          self.__parser,
-                         self.__study,
+                         self.label,
                          data,
                          self.__repo,
                          self.__dest)
@@ -625,7 +632,7 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, pkg, f, v, r, c, p, exe, dif):
+    def __init__(self, pkg, f, v, r, c, d, p, exe, dif):
         """
         Constructor.
           1. create if necessary the destination directory,
@@ -696,6 +703,7 @@ class Studies(object):
         self.__verbose = v
         self.__running = r
         self.__compare = c
+        self.__ref     = d
         self.__postpro = p
 
         # in case of restart
@@ -900,7 +908,10 @@ class Studies(object):
                         dest = ""
                         if destination == False:
                             dest = None
-                        case.check_dirs(self, node, repo, dest)
+                        ref = None
+                        if self.__ref:
+                            ref = os.path.join(self.__ref, s.label)
+                        case.check_dirs(self, node, repo, dest, reference=ref)
 
 
     def compare(self):
@@ -926,7 +937,10 @@ class Studies(object):
                             args = None
                             case.is_compare = "done"
                             self.reporting('    - compare %s (%s)' % (case.label, args))
-                            case.diff_value += case.runCompare(self, repo, dest, t, args)
+                            ref = None
+                            if self.__ref:
+                                ref = os.path.join(self.__ref, s.label)
+                            case.diff_value += case.runCompare(self, repo, dest, t, args, reference=ref)
 
 
 

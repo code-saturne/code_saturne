@@ -91,6 +91,9 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="compare", default=False,
                       help="compare results between repository and destination")
 
+    parser.add_option("-d", "--ref-dir", dest="reference", type="string",
+                      help="provide a reference directory to compare dest with")
+
     parser.add_option("-p", "--post",
                       action="store_true", dest="post", default=False,
                       help="postprocess results of computations")
@@ -102,7 +105,8 @@ def process_cmd_line(argv, pkg):
     (options, args) = parser.parse_args(argv)
 
     return  options.filename, options.verbose, options.update, \
-        options.runcase, options.compare, options.post, options.addresses
+        options.runcase, options.compare, options.reference, \
+        options.post, options.addresses
 
 #-------------------------------------------------------------------------------
 # Send the report.
@@ -179,7 +183,7 @@ def release():
 # Start point of Auto V & V script
 #-------------------------------------------------------------------------------
 
-def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
+def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_d, opt_p, opt_to):
     """
     Main function
       1. parse the command line,
@@ -216,7 +220,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
 
     # Read the file of parameters
 
-    studies = Studies(pkg, opt_f, opt_v, opt_r, opt_c, opt_p, exe, dif)
+    studies = Studies(pkg, opt_f, opt_v, opt_r, opt_c, opt_d, opt_p, exe, dif)
     os.chdir(studies.getDestination())
 
     # Print header
@@ -304,10 +308,10 @@ def main(argv, pkg):
 
     # Command line
 
-    opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, addresses = process_cmd_line(argv, pkg)
+    opt_f, opt_v, opt_u, opt_r, opt_c, opt_d, opt_p, addresses = process_cmd_line(argv, pkg)
     opt_to  = addresses.split()
 
-    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to)
+    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_d, opt_p, opt_to)
 
     sys.exit(retcode)
 
