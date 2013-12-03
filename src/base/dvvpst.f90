@@ -170,7 +170,7 @@ interface
    subroutine post_boundary_thermal_flux &
      ( nfbrps , lstfbr ,                                              &
        rtp    , propce , propfb ,                                     &
-       bflux ) 
+       bflux )
      use dimens, only: ndimfb
      use mesh
      integer, intent(in)                                        :: nfbrps
