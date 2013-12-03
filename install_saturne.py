@@ -378,6 +378,19 @@ class Package:
 
         os.chdir(os.path.join(build_dir, 'src'))
 
+        # Work around Ubuntu Metis build bug
+        ldflags_add = ''
+        try:
+            p = subprocess.Popen(self.cc + ' -Xlinker --help',
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            output = p.communicate()[0]
+            if output.find("--no-as-needed") > -1:
+                ldflags_add = '-Xlinker --no-as-needed'
+        except Exception:
+            pass
+
         if self.shared:
             fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2.shlib')
         else:
@@ -398,11 +411,15 @@ class Package:
             line = re.sub(re_intsize32, '', line)
             line = re.sub(re_intsize64, '', line)
             line = re.sub(re_idxsize64, '-DIDXSIZE64 -DINTSIZE64', line)
+            if ldflags_add and line[0:7] == 'LDFLAGS':
+                line += ' ' + ldflags_add
+
             fd.write(line)
 
         fdr.close()
         fd.close()
 
+        # Build and install
         for target in ['scotch', 'ptscotch']:
             run_command("make "+target, "Compile", self.name, self.log_file)
             run_command("make install prefix="+self.install_dir,
