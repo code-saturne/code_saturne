@@ -36,6 +36,10 @@
 !> \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
 !>      - \tens{\mu}_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
 !> \f]
+!> Remark:
+!> if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
+!> + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+!> the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
 !>
 !> Warning:
 !> - \f$ \vect{Rhs} \f$ has already been initialized before calling diftnv!
@@ -65,6 +69,10 @@
 !> \param[in]     imrgra        indicator
 !>                               - 0 iterative gradient
 !>                               - 1 least square gradient
+!> \param[in]     ivisep        indicator to take \f$ \divv
+!>                               \left(\mu \gradt \transpose{\vect{a}} \right)
+!>                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
+!>                               - 1 take into account,
 !> \param[in]     ippu          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     epsrgp        relative precision for the gradient
@@ -92,18 +100,18 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscb         \f$ \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
+!> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
 subroutine diftnv &
  ( idtvar , ivar   , nswrgp , imligp , ircflp ,          &
-   inc    , imrgra ,                                     &
-   ippu   , iwarnp ,                                     &
-   epsrgp ,                                              &
+   inc    , imrgra , ivisep ,                            &
+   ippu   , iwarnp , epsrgp ,                            &
    climgp , relaxp , thetap ,                            &
    pvar   , pvara  ,                                     &
    coefav , coefbv , cofafv , cofbfv ,                   &
-   viscf  , viscb  ,                                     &
+   viscf  , viscb  , secvif ,                            &
    rhs    )
 
 !===============================================================================
@@ -129,7 +137,7 @@ implicit none
 integer          idtvar
 integer          ivar   , nswrgp , imligp
 integer          ircflp
-integer          inc    , imrgra
+integer          inc    , imrgra , ivisep
 integer          iwarnp , ippu
 
 double precision epsrgp , climgp, relaxp , thetap
@@ -141,11 +149,14 @@ double precision cofafv(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
 double precision cofbfv(3,3,nfabor)
 double precision viscf (3,3,nfac)  , viscb (nfabor)
+double precision secvif(nfac)
 double precision rhs(3,ncelet)
 
 ! Local variables
 
 integer          ifac,ii,jj,infac,iel, ig, it,isou, jsou
+integer          ityp
+integer          i, j, k
 logical          ilved
 double precision pfacd,flux,fluxi,fluxj, pnd
 double precision pi, pj, pia, pja
@@ -154,8 +165,10 @@ double precision dpvf(3)
 double precision dijpfv(3)
 double precision diipfv(3), djjpfv(3), pip(3), pjp(3)
 double precision diipbv(3)
+double precision grdtrv, tgrdfl, secvis
 
 double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, dimension(:), allocatable :: bndcel
 
 !===============================================================================
 
@@ -181,7 +194,7 @@ pja = 0.d0
 ! ---> Compute the gradient of the current variable if needed
 ! ======================================================================
 
-if (ircflp.eq.1) then
+if (ircflp.eq.1.or.ivisep.eq.1) then
 
   ilved = .true.
 
@@ -459,6 +472,94 @@ else
   enddo
 
 endif ! idtvar
+
+!===============================================================================
+! 3.  Computation of the transpose grad(vel) term and grad(-2/3 div(vel))
+!===============================================================================
+
+if (ivisep.eq.1) then
+
+  ! We do not know what condition to put in the inlets and the outlets, so we
+  ! assume that there is an equilibrium. Moreover, cells containing a coupled
+  ! are removed.
+
+  ! Allocate a temporary array
+  allocate(bndcel(ncelet))
+
+  !$omp parallel do
+  do iel = 1, ncelet
+    bndcel(iel) = 1.d0
+  enddo
+
+  !$omp parallel do private(ityp) if(nfabor > thr_n_min)
+  do ifac = 1, nfabor
+    ityp = itypfb(ifac)
+    if (    ityp.eq.isolib                          &
+       .or. ityp.eq.ientre                          &
+       .or.(ifaccp.eq.1.and.ityp.eq.icscpl)) bndcel(ifabor(ifac)) = 0.d0
+  enddo
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(bndcel)
+    !==========
+  endif
+
+  ! ---> Interior faces
+
+  do ig = 1, ngrpi
+    !$omp parallel do private(ifac, ii, jj, isou, jsou, pnd, secvis,     &
+    !$omp                     grdtrv, tgrdfl, flux, i, j, k)
+    do it = 1, nthrdi
+      do ifac = iompli(1,ig,it), iompli(2,ig,it)
+
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+
+        pnd = pond(ifac)
+        secvis = secvif(ifac)
+
+        grdtrv =        pnd*(gradv(1,1,ii)+gradv(2,2,ii)+gradv(3,3,ii))   &
+               + (1.d0-pnd)*(gradv(1,1,jj)+gradv(2,2,jj)+gradv(3,3,jj))
+
+        do i = 1, 3
+
+          flux = secvis*grdtrv*surfac(i, ifac)
+
+          ! We need to compute (K grad(u)^T) .IJ
+          ! which is equal to IJ . (grad(u) . K^T)
+          ! But: (IJ . (grad(u) . K^T))_i = IJ_k grad(u)_kj K_ij
+          ! Warning, in FORTRAN K_ij = K(j, i)
+          do j = 1, 3
+            do k = 1, 3
+              flux = flux                                                      &
+                   + dijpf(k,ifac)*(        pnd*gradv(j, k, ii)                &
+                                   + (1.d0-pnd)*gradv(j, k, jj))               &
+                                   *viscf(j, i, ifac)
+            enddo
+          enddo
+
+          rhs(i,ii) = rhs(i,ii) + flux*bndcel(ii)
+          rhs(i,jj) = rhs(i,jj) - flux*bndcel(jj)
+
+        enddo
+
+      enddo
+    enddo
+  enddo
+
+  ! ---> Boundary FACES
+  !      the whole flux term of the stress tensor is already taken into account
+  !      (so, no corresponding term in forbr)
+  !TODO in theory we should take the normal component into account (the
+  ! tangential one is modeled by the wall law)
+
+  !Free memory
+  deallocate(bndcel)
+
+endif
+
+
+
 
 ! Free memory
 deallocate(gradv)
