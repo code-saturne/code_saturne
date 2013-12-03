@@ -33,6 +33,14 @@ cs_have_scotch_header=no
 cs_have_scotch=no
 cs_scotch_ge_6=no
 
+# Some recent Linux distributions require explicit exports
+# of all symbols in libraries
+cs_scotch_test_ladd=''
+$CC -Xlinker --help | grep "no-as-needed" > /dev/null 2>&1
+if test "$?" = "0" ; then
+  cs_scotch_test_ladd='-Xlinker --no-as-needed '
+fi
+
 # Common library dependencies for PT-SCOTCH
 cs_scotch_l0="-lm"
 cs_scotch_l1="-lz -lm"
@@ -136,7 +144,7 @@ if test "x$with_scotch" != "xno" ; then
     for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5" 
     do
       if test "x$cs_have_ptscotch" = "xno" ; then
-        LIBS="${SCOTCH_LIBS} ${cs_scotch_ladd} ${MPI_LIBS} ${saved_LIBS}"
+        LIBS="${cs_scotch_test_ladd}${SCOTCH_LIBS} ${cs_scotch_ladd} ${MPI_LIBS} ${saved_LIBS}"
         AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>
@@ -183,7 +191,7 @@ if test "x$with_scotch" != "xno" ; then
     for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5" 
     do
       if test "x$cs_have_scotch" = "xno" ; then
-        LIBS="${SCOTCH_LIBS} ${cs_scotch_ladd} ${saved_LIBS}"
+        LIBS="${cs_scotch_test_ladd}${SCOTCH_LIBS} ${cs_scotch_ladd} ${saved_LIBS}"
         AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>
