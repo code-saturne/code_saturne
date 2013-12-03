@@ -391,7 +391,7 @@ contains
 ( ncelet , nfabor )
 
     use paramx
-    use numvar, only: ipr, iu
+    use numvar, only: ipr, iu, ivarfl
     use parall
     use period
     use optcal
@@ -401,6 +401,7 @@ contains
     use radiat
     use albase
     use ihmpre
+    use field
 
     implicit none
 
@@ -410,6 +411,10 @@ contains
 
     ! Local variables
     integer                iok, ivar, iscal, iel, ifac
+    integer                kdiftn
+
+    ! Key id for diffusivity tensor
+    call field_get_key_id("diffusivity_tensor", kdiftn)
 
     ! Boundary-face related arrays
 
@@ -477,6 +482,8 @@ contains
     ! Also tensorial diffusion for the velocity in case of tensorial porosity
     if (iporos.eq.2) then
       idften(iu) = 6
+      ! Key word: tensorial diffusivity
+      call field_set_key_int(ivarfl(iu), kdiftn, idften(iu))
       iok = 1
     endif
 
