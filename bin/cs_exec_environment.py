@@ -993,9 +993,8 @@ class mpi_environment:
 
         if i > -1:
             suffix = mpiexec_path[i+1:]
-
-        if suffix in ['hydra', 'smpd', 'mpd', 'gforker', 'remshell']:
-            return suffix
+            if suffix in ['hydra', 'smpd', 'mpd', 'gforker', 'remshell']:
+                return suffix
 
         # Use mpichversion/mpich2version preferentially
 
@@ -1031,6 +1030,9 @@ class mpi_environment:
         # If MPICH2 / MPICH-3 info is not available, try
         # to determine this in another way
 
+        if os.path.islink(mpiexec_path):
+            if os.path.basename(os.path.realpath(mpiexec_path)) == 'mpiexec.py':
+                return 'mpd'
         info = get_command_outputs(mpiexec_path + ' -help')
         if info.find('Hydra') > -1:
             return 'hydra'
@@ -1116,6 +1118,8 @@ class mpi_environment:
         if (self.mpiexec == None):
             basename = 'mpiexec'
             self.mpiexec = 'mpiexec'
+        else:
+            basename = os.path.basename(self.mpiexec)
 
         # Determine if SMPD should be handled
 
@@ -1192,15 +1196,11 @@ class mpi_environment:
             if hostsfile != None:
                 self.mpiboot += ' --file=' + hostsfile
         elif pm == 'mpd':
-            if rm == 'SLURM':
-                # This requires linking with SLURM's implementation
-                # of the PMI library.
-                self.mpiexec = 'srun'
-                self.mpiexec_n = ' -n'
-                self.mpmd = MPI_MPMD_script
-                self.mpiboot = None
-                self.mpihalt = None
-            elif rm == 'PBS':
+            # For SLURM, srun can be used when linking with SLURM's
+            # implementation of the PMI library, but this is not always the
+            # case: as MPD is obsolete, users who want to use it with SLURM
+            # should define this with post-install settings (code_saturne.cfg).
+            if rm == 'PBS':
                 # Convert PBS to MPD format (based on MPICH2 documentation)
                 # before MPI boot.
                 if self.mpiboot != None:
