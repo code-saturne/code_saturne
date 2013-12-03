@@ -14,6 +14,15 @@ Changes:
 Bug fixes:
 ----------
 
+- Fixes in the wall boundary conditions (validation cases re-run for safety,
+  and were not impacted by these changes)
+  - for the velocity, when the wall velocity condition is non-zero,
+    the gradient BC was wrong.
+  - for the scalars, a term (proportional to the wall value) was missing
+    in the gradient BC
+  - for scalars with small molecular Prandtl number, the value in the viscous
+    sub-layer was not consistent between the gradient BC and the flux BC.
+
 - Improve robustness for cleanup stage of run script in the presence of
   symbolic links for directories.
 
@@ -94,7 +103,7 @@ Bug fixes:
 - Fix in the cell code-code coupling with coupled velocity components.
 
 - Lagrangian particle tracking fixes:
-  - Use time step value of dt(1) instead of dtref, to allow a varying time step.
+  - use time step value of dt(1) instead of dtref, to allow a varying time step.
   - fix management of the list of post-processed particles;
   - fix for writing of trajectories;
   - fix for trajectories of motionless particles.
