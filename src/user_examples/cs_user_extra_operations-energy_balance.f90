@@ -514,7 +514,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = surfbn(ifac) * dt(iel) * xcp                   &
+    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
            - flumab * dt(iel) * xcp                         &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
@@ -558,7 +558,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = surfbn(ifac) * dt(iel) * xcp                   &
+    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
            - flumab * dt(iel) * xcp                         &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
@@ -601,7 +601,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = surfbn(ifac) * dt(iel) * xcp                   &
+    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
            - flumab * dt(iel) * xcp                         &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
@@ -644,7 +644,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = surfbn(ifac) * dt(iel) * xcp                   &
+    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
            - flumab * dt(iel) * xcp                         &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
@@ -687,7 +687,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = surfbn(ifac) * dt(iel) * xcp                   &
+    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
            - flumab * dt(iel) * xcp                         &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
