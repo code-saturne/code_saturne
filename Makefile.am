@@ -86,6 +86,8 @@ build-aux/compile \
 build-aux/config.guess \
 build-aux/config.rpath \
 build-aux/config.sub \
+build-aux/cs_config_test.py \
+build-aux/cs_version.py \
 build-aux/depcomp \
 build-aux/install-sh \
 build-aux/ltmain.sh \
