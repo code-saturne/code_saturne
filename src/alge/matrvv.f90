@@ -223,8 +223,8 @@ else
     jj = ifacel(2,ifac)
     do isou = 1, 3
       do jsou = 1, 3
-        da(isou,isou,ii) = da(isou,isou,ii) -xa(isou,isou,1,ifac)
-        da(isou,isou,jj) = da(isou,isou,jj) -xa(isou,isou,1,ifac)
+        da(isou,jsou,ii) = da(isou,jsou,ii) -xa(isou,jsou,1,ifac)
+        da(isou,jsou,jj) = da(isou,jsou,jj) -xa(isou,jsou,1,ifac)
       enddo
     enddo
   enddo
