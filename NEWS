@@ -100,6 +100,21 @@ Architectural changes
 
 - Move the convection-diffusion balance (bilsc2.f90) to C.
 
+Bug fixes:
+----------
+
+- Fixes in the wall boundary conditions (validation cases re-run for safety,
+  and were not impacted by these changes)
+  - for the velocity, when the wall velocity condition is non-zero,
+    the gradient BC was wrong.
+  - for the scalars, a term (proportional to the wall value) was missing
+    in the gradient BC
+  - for scalars with small molecular Prandtl number, the value in the viscous
+    sub-layer was not consistent between the gradient BC and the flux BC.
+
+- Many bug fixes (see ChangeLog for details).
+
+
 Release 3.1.0 (11 Jun 2013)
 ===========================
 
