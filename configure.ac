@@ -856,13 +856,24 @@ fi
 #-----------------------
 
 cs_have_plugins=no
-if test "x$cs_have_dlloader" = "xdlopen" ; then
-  # Test for different plugins here
-  if test x$cs_have_medcoupling = xyes ; then
-    cs_have_plugins=yes
+cs_py_have_plugins=False
+if test "x$enable_shared" = "xyes" ; then
+  if test "x$cs_have_dlloader" = "xdlopen" ; then
+    # Test for different plugins here
+    if test x$cs_have_medcoupling = xyes ; then
+      cs_have_plugins=yes
+    elif test x$cs_have_catalyst = xyes ; then
+      cs_have_plugins=yes
+    fi
   fi
 fi
 
+if test "x$cs_have_plugins" = "xyes" ; then
+  cs_py_have_plugins=True
+  AC_DEFINE([HAVE_PLUGINS], 1, [plugins support])
+fi
+
+AC_SUBST(cs_py_have_plugins)
 AM_CONDITIONAL(HAVE_PLUGINS, test x$cs_have_plugins = xyes)
 
 #------------------------------------------------------------------------------
@@ -992,7 +1003,7 @@ if test x$cs_have_medcoupling = xyes ; then
 fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 echo " EOS support: "$cs_have_eos""
-echo " FREESTEAM support: "$cs_have_freesteam""
+echo " freesteam support: "$cs_have_freesteam""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
