@@ -37,14 +37,14 @@
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[in]     rtp           calculated variables at cell centers
+!> \param[in]     rtpa          calculated variables at cell centers
 !> \param[in]     propce        physical properties at cell centers
 !> \param[out]    bflux         boundary heat flux at selected faces
 !_______________________________________________________________________________
 
 subroutine post_boundary_thermal_flux &
  ( nfbrps , lstfbr ,                                              &
-   rtp    , propce ,                                              &
+   rtpa   , propce ,                                              &
    bflux )
 
 !===============================================================================
@@ -74,7 +74,7 @@ implicit none
 
 integer, intent(in)                                :: nfbrps
 integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: rtp, propce
+double precision, dimension(ncelet, *), intent(in) :: rtpa, propce
 double precision, dimension(nfbrps), intent(out)   :: bflux
 
 ! Local variables
@@ -123,12 +123,13 @@ if (iscalt.gt.0) then
 
   ! Compute variable values at boundary faces
 
-  if (ircflu(ivar) .gt. 0) then
+  ! Reconstructed fluxes
+  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
 
     ! Compute gradient of temperature / enthalpy
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
+      call synsca(rtpa(1,ivar))
     endif
 
     ! Allocate a temporary array for the gradient calculation
@@ -158,7 +159,7 @@ if (iscalt.gt.0) then
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
 
-      tcel =   rtp(iel,ivar)                                                  &
+      tcel =   rtpa(iel,ivar)                                                  &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
       if (ipcvsl.gt.0) then
@@ -186,7 +187,7 @@ if (iscalt.gt.0) then
       ifac = lstfbr(iloc)
       iel = ifabor(ifac)
 
-      tcel = rtp(iel,ivar)
+      tcel = rtpa(iel,ivar)
 
       if (ipcvsl.gt.0) then
         xvsl = propce(iel,ipcvsl)
@@ -238,12 +239,12 @@ end subroutine post_boundary_thermal_flux
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[in]     rtp           calculated variables at cell centers
+!> \param[in]     rtpa          calculated variables at cell centers
 !> \param[out]    btemp         boundary temperature at selected faces
 !_______________________________________________________________________________
 
 subroutine post_boundary_temperature &
- ( nfbrps , lstfbr , rtp ,                                        &
+ ( nfbrps , lstfbr , rtpa ,                                        &
    btemp )
 
 !===============================================================================
@@ -273,7 +274,7 @@ implicit none
 
 integer, intent(in)                                :: nfbrps
 integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: rtp
+double precision, dimension(ncelet, *), intent(in) :: rtpa
 double precision, dimension(nfbrps), intent(out)   :: btemp
 
 ! Local variables
@@ -304,7 +305,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   ! Compute variable values at boundary faces
 
-  if (ircflu(ivar) .gt. 0) then
+  ! Reconstructed fluxes
+  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
 
     ! Allocate a temporary array for the gradient calculation
     allocate(grad(3,ncelet))
@@ -334,7 +336,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      tcel =   rtp(iel,ivar)                                                 &
+      tcel =   rtpa(iel,ivar)                                                 &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
       btemp(iloc) = tcel - tplusp(ifac)*tstarp(ifac)
@@ -350,7 +352,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       ifac = lstfbr(iloc)
       iel = ifabor(ifac)
 
-      tcel = rtp(iel,ivar)
+      tcel = rtpa(iel,ivar)
 
       btemp(iloc) = tcel - tplusp(ifac)*tstarp(ifac)
 
@@ -390,14 +392,14 @@ end subroutine post_boundary_temperature
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[in]     rtp           calculated variables at cell centers
+!> \param[in]     rtpa          calculated variables at cell centers
 !> \param[in]     propce        physical properties at cell centers
 !> \param[out]    bnussl        Nusselt near boundary
 !_______________________________________________________________________________
 
 subroutine post_boundary_nusselt &
  ( nfbrps , lstfbr ,                                              &
-   rtp    , propce ,                                              &
+   rtpa   , propce ,                                              &
    bnussl )
 
 !===============================================================================
@@ -427,7 +429,7 @@ implicit none
 
 integer, intent(in)                                :: nfbrps
 integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: rtp, propce
+double precision, dimension(ncelet, *), intent(in) :: rtpa, propce
 double precision, dimension(nfbrps), intent(out)   :: bnussl
 
 ! Local variables
@@ -474,7 +476,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   ! Compute variable values at boundary faces
 
-  if (ircflu(ivar) .gt. 0) then
+  ! Reconstructed fluxes
+  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
 
     ! Boundary condition pointers for gradients and advection
 
@@ -484,7 +487,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     ! Compute gradient of temperature / enthalpy
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
+      call synsca(rtpa(1,ivar))
     endif
 
     ! Allocate a temporary array for the gradient calculation
@@ -513,7 +516,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      tcel =   rtp(iel,ivar)                                                 &
+      tcel =   rtpa(iel,ivar)                                                 &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
       if (ipcvsl.gt.0) then
@@ -546,7 +549,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       ifac = lstfbr(iloc)
       iel = ifabor(ifac)
 
-      tcel = rtp(iel,ivar)
+      tcel = rtpa(iel,ivar)
 
       if (ipcvsl.gt.0) then
         xvsl = propce(iel,ipcvsl)
