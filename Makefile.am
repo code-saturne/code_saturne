@@ -41,6 +41,7 @@ endif
 SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
 
 AUX_DIST = \
+build-aux/catalyst \
 build-aux/cs_config_test.py \
 build-aux/cs_version.py \
 m4/codeset.m4 \
