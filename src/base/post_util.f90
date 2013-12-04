@@ -111,7 +111,7 @@ if (iscalt.gt.0) then
 
   ! Pointers to fields and properties
 
-  call field_get_val_prev_s(ivarfl(iscalt), tscalp)
+  call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
   if (ivisls(iscalt).gt.0) then
     ipcvsl = ipproc(ivisls(iscalt))
