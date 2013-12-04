@@ -982,7 +982,11 @@ On the compute nodes, the IBM XL compilers produce static object files
 by default, so the \texttt{--disable-shared} option is not necessary
 for libraries using Autotools-based installs when using those compilers,
 though using \texttt{--build=ppc64 --host=bluegeneq} in this case ensures
-the cross-compiling environment is detected.
+the cross-compiling environment is detected. This environment
+is the suggested default, and prevents shared library builds.
+To allow building with shared libraries while still ensuring the
+cross-compiling environment is detected,
+use \texttt{--host=powerpc64-bgq-linux} instead.
 
 As the front-end nodes of Blue Gene/Q machines may be expected to run
 Red Hat EL 6.x linux variants, instead of 5.x for blue Gene/P, more
