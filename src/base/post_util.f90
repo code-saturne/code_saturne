@@ -92,6 +92,7 @@ double precision :: epsrgp, climgp, extrap
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:), pointer :: tscalp
 
 !===============================================================================
 
@@ -111,7 +112,9 @@ if (iscalt.gt.0) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-  ! Pointers to properties
+  ! Pointers to fields and properties
+
+  call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
   if (ivisls(iscalt).gt.0) then
     ipcvsl = ipproc(ivisls(iscalt))
@@ -123,13 +126,10 @@ if (iscalt.gt.0) then
 
   ! Compute variable values at boundary faces
 
-  if (ircflu(ivar) .gt. 0) then
+  ! Reconstructed fluxes
+  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
 
     ! Compute gradient of temperature / enthalpy
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-    endif
 
     ! Allocate a temporary array for the gradient calculation
     allocate(grad(ncelet,3))
@@ -147,7 +147,7 @@ if (iscalt.gt.0) then
     !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
+   epsrgp , climgp , extrap , tscalp , coefap , coefbp ,          &
    grad   )
 
     ! Compute diffusive and convective flux using reconstructed temperature
@@ -161,7 +161,7 @@ if (iscalt.gt.0) then
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
 
-      tcel =   rtp(iel,ivar)                                                  &
+      tcel =   tscalp(iel)                                                  &
              + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
 
       if (ipcvsl.gt.0) then
@@ -189,7 +189,7 @@ if (iscalt.gt.0) then
       ifac = lstfbr(iloc)
       iel = ifabor(ifac)
 
-      tcel = rtp(iel,ivar)
+      tcel = tscalp(iel)
 
       if (ipcvsl.gt.0) then
         xvsl = propce(iel,ipcvsl)
@@ -295,6 +295,7 @@ double precision :: epsrgp, climgp, extrap, tcel
 double precision, dimension(:), pointer :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:), pointer :: tscalp
 
 !===============================================================================
 
@@ -305,14 +306,17 @@ call field_get_id('tstar', itstar)
 
 if (itstar.ge.0 .and. itplus.ge.0) then
 
+  ivar = isca(iscalt)
+
+  call field_get_val_prev_s(ivarfl(ivar), tscalp)
+
   call field_get_val_s (itplus, tplusp)
   call field_get_val_s (itstar, tstarp)
 
-  ivar   = isca(iscalt)
-
   ! Compute variable values at boundary faces
 
-  if (ircflu(ivar) .gt. 0) then
+  ! Reconstructed fluxes
+  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
 
     ! Boundary condition pointers for gradients and advection
 
@@ -320,10 +324,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     call field_get_coefb_s(ivarfl(ivar), coefbp)
 
     ! Compute gradient of temperature / enthalpy
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-    endif
 
     ! Allocate a temporary array for the gradient calculation
     allocate(grad(ncelet,3))
@@ -341,7 +341,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
+   epsrgp , climgp , extrap , tscalp , coefap , coefbp ,          &
    grad   )
 
     ! Compute reconstructed value in boundary cells
@@ -354,7 +354,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      tcel =   rtp(iel,ivar)                                                 &
+      tcel =   tscalp(iel)                                                  &
              + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
 
       btemp(iloc) = tcel - tplusp(ifac)*tstarp(ifac)
@@ -370,7 +370,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       ifac = lstfbr(iloc)
       iel = ifabor(ifac)
 
-      tcel = rtp(iel,ivar)
+      tcel = tscalp(iel)
 
       btemp(iloc) = tcel - tplusp(ifac)*tstarp(ifac)
 
@@ -465,6 +465,7 @@ double precision :: epsrgp, climgp, extrap, numer, denom, tcel
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:), pointer :: tscalp
 
 !===============================================================================
 
@@ -475,10 +476,12 @@ call field_get_id('tstar', itstar)
 
 if (itstar.ge.0 .and. itplus.ge.0) then
 
+  ivar   = isca(iscalt)
+
+  call field_get_val_prev_s(ivarfl(ivar), tscalp)
+
   call field_get_val_s (itplus, tplusp)
   call field_get_val_s (itstar, tstarp)
-
-  ivar   = isca(iscalt)
 
   ! Boundary condition pointers for diffusion
 
@@ -496,7 +499,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   ! Compute variable values at boundary faces
 
-  if (ircflu(ivar) .gt. 0) then
+  ! Reconstructed fluxes
+  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
 
     ! Boundary condition pointers for gradients and advection
 
@@ -504,10 +508,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     call field_get_coefb_s(ivarfl(ivar), coefbp)
 
     ! Compute gradient of temperature / enthalpy
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-    endif
 
     ! Allocate a temporary array for the gradient calculation
     allocate(grad(ncelet,3))
@@ -525,7 +525,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
+   epsrgp , climgp , extrap , tscalp , coefap , coefbp ,          &
    grad   )
 
     ! Compute using reconstructed temperature value in boundary cells
@@ -538,7 +538,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      tcel =   rtp(iel,ivar)                                                 &
+      tcel =   tscalp(iel)                                                 &
              + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
 
       if (ipcvsl.gt.0) then
@@ -571,7 +571,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       ifac = lstfbr(iloc)
       iel = ifabor(ifac)
 
-      tcel =   rtp(iel,ivar)
+      tcel = tscalp(iel)
 
       if (ipcvsl.gt.0) then
         xvsl = propce(iel,ipcvsl)
