@@ -494,6 +494,7 @@ if __name__ == '__main__':
 
         defaults = version_from_news(srcdir)
         modified = ''
+        revision = ''
 
         if os.path.isdir(os.path.join(srcdir, ".svn")):
             major, minor, release, extra, revision \
