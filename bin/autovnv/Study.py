@@ -632,7 +632,7 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, pkg, f, v, r, c, d, p, exe, dif):
+    def __init__(self, pkg, f, v, r, n, c, d, p, exe, dif):
         """
         Constructor.
           1. create if necessary the destination directory,
@@ -702,6 +702,7 @@ class Studies(object):
 
         self.__verbose = v
         self.__running = r
+        self.__n_iter  = n
         self.__compare = c
         self.__ref     = d
         self.__postpro = p
@@ -860,6 +861,21 @@ class Studies(object):
                 self.prepro(l, s, case)
                 if self.__running:
                     if case.compute == 'on' and case.is_compil != "KO":
+
+                        if self.__n_iter:
+                            case_dir = os.path.join(self.dest, s.label, case.label, "DATA")
+                            os.chdir(case_dir)
+                            # Create a control_file in each case DATA
+                            if not os.path.exists('control_file'):
+                                control_file = open('control_file','w')
+                                control_file.write(str(self.__n_iter))
+                                # Flush to ensure that control_file content is seen
+                                # when control_file is copied to the run directory on all systems
+                                control_file.flush()
+                                control_file.close
+                            else:
+                                print("Warning: there is already a control_file in the DATA directory of case %s." % case.label)
+
                         self.reporting('    - running %s ...' % case.label, True)
                         error = case.run()
                         if not error:
