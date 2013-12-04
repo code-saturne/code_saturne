@@ -118,36 +118,36 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_thermal_flux &
-      (nfbrps, lstfbr, rtp, propce, bflux)
+      (nfbrps, lstfbr, rtpa, propce, bflux)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+      double precision, dimension(ncelet, *), intent(in), target :: rtpa, propce
       double precision, dimension(nfbrps), intent(out)           :: bflux
     end subroutine post_boundary_thermal_flux
 
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_temperature &
-      (nfbrps, lstfbr, rtp, propce, btemp)
+      (nfbrps, lstfbr, rtpa, propce, btemp)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+      double precision, dimension(ncelet, *), intent(in), target :: rtpa, propce
       double precision, dimension(nfbrps), intent(out)           :: btemp
     end subroutine post_boundary_temperature
 
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_nusselt &
-      (nfbrps, lstfbr, rtp, propce, bnussl)
+      (nfbrps, lstfbr, rtpa, propce, bnussl)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+      double precision, dimension(ncelet, *), intent(in), target :: rtpa, propce
       double precision, dimension(nfbrps), intent(out)           :: bnussl
     end subroutine post_boundary_nusselt
 

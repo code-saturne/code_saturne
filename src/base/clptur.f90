@@ -1719,7 +1719,7 @@ do ifac = 1, nfabor
               ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
               !  gain for the fluid) in W/m2
               bfconv(ifac) = coefa(ifac,iclvaf)              &
-                                          + coefb(ifac,iclvaf)*theipb(ifac)
+                           + coefb(ifac,iclvaf)*theipb(ifac)
             endif
 
           endif ! End of icodcl.eq.5
@@ -1738,9 +1738,9 @@ do ifac = 1, nfabor
               phit = 0.d0
             endif
 
-            tet = phit/(romc*cpp*max(uk,epzero))
+            tet = phit/(romc*cpp*max(yplus-dplus, epzero)*xnuii/distbf)
             ! T+ = (T_I - T_w) / Tet
-            tplus = (yplus-dplus)/yptp
+            tplus = max((yplus-dplus), epzero)/yptp
 
             if (itplus .ge. 0) tplusp(ifac) = tplus
             if (itstar .ge. 0) tstarp(ifac) = tet

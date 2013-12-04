@@ -277,6 +277,7 @@ _write_additional_vars(void                  *input,
                               &n_cells, &n_b_faces,
                               cell_list, b_face_list,
                               _input->rtp,
+                              _input->rtpa,
                               _input->propce,
                               cel_vals, b_face_vals);
 
