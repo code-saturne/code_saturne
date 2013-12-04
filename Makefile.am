@@ -41,6 +41,8 @@ endif
 SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
 
 AUX_DIST = \
+build-aux/cs_config_test.py \
+build-aux/cs_version.py \
 m4/codeset.m4 \
 m4/fcntl-o.m4 \
 m4/gettext.m4 \
@@ -86,8 +88,6 @@ build-aux/compile \
 build-aux/config.guess \
 build-aux/config.rpath \
 build-aux/config.sub \
-build-aux/cs_config_test.py \
-build-aux/cs_version.py \
 build-aux/depcomp \
 build-aux/install-sh \
 build-aux/ltmain.sh \
