@@ -38,7 +38,7 @@ cs_scotch_ge_6=no
 cs_scotch_test_ladd=''
 $CC -Xlinker --help | grep "no-as-needed" > /dev/null 2>&1
 if test "$?" = "0" ; then
-  cs_scotch_test_ladd='-Xlinker --no-as-needed '
+  cs_scotch_test_ladd='-Wl,--no-as-needed '
 fi
 
 # Common library dependencies for PT-SCOTCH
