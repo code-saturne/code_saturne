@@ -206,7 +206,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         except Exception:
             log.debug("VISU module not available.")
             pass
-
+        try :
+            import salome_kernel
+            orb, lcc, naming_service, cm = salome_kernel.salome_kernel_init()
+            self.myParavisEngine = lcc.FindOrLoadComponent("FactoryServer","PARAVIS")
+        except Exception:
+            log.debug("PARAVIS module not available.")
+            pass
 
     def createActions(self):
         """
@@ -389,13 +395,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         #export/convert actions
 
-        if (self.myVisu != None and self.myViewManager != None):
+        if self.myParavisEngine :
             action = sgPyQt.createAction(-1,
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TEXT"),
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TIP"),
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_SB"),
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_ICON"))
-            self.connect(action, SIGNAL("activated()"), self.slotExportInPostPro)
+            self.connect(action, SIGNAL("activated()"), self.slotExportInParavis)
             action_id = sgPyQt.actionId(action)
             self._ActionMap[action_id] = action
             self._CommonActionIdMap[ExportInPostProAction] = action_id
@@ -1203,6 +1209,21 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             i = i+1
         return liste_SObj
 
+    def slotExportInParavis(self):
+        """
+        Not used now, but will be used when PARAVIS API will run correctly
+        """
+
+        sobj = self._singleSelectedObject()
+        if not sobj == None:
+            path = CFDSTUDYGUI_DataModel._GetPath(sobj)
+            if re.match(".*\.med$", sobj.GetName()):
+                #export Med file
+                import paravisSM
+                paravisSM.ImportFile(path)
+            if salome.sg.hasDesktop():
+              salome.sg.updateObjBrowser(1)
+        QApplication.restoreOverrideCursor()
 
     def slotExportInPostPro(self):
         """

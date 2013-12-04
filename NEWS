@@ -11,6 +11,8 @@ Changes:
 
 - Updates for build with SALOME 7.3.
 
+- For CFDSTUDY, use PARAVIS instead of VISU.
+
 Bug fixes:
 ----------
 
