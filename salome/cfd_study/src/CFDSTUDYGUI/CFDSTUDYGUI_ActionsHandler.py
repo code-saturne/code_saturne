@@ -207,7 +207,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         except Exception:
             log.debug("VISU module not available.")
             pass
-
+        try :
+            import salome_kernel
+            orb, lcc, naming_service, cm = salome_kernel.salome_kernel_init()
+            self.myParavisEngine = lcc.FindOrLoadComponent("FactoryServer","PARAVIS")
+        except Exception:
+            log.debug("PARAVIS module not available.")
+            pass
 
     def createActions(self):
         """
@@ -390,13 +396,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         #export/convert actions
 
-        if (self.myVisu != None and self.myViewManager != None):
+        if self.myParavisEngine :
             action = sgPyQt.createAction(-1,
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TEXT"),
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TIP"),
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_SB"),
                                           ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_ICON"))
-            self.connect(action, SIGNAL("activated()"), self.slotExportInPostPro)
+            self.connect(action, SIGNAL("activated()"), self.slotExportInParavis)
             action_id = sgPyQt.actionId(action)
             self._ActionMap[action_id] = action
             self._CommonActionIdMap[ExportInPostProAction] = action_id
@@ -1204,24 +1210,20 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             i = i+1
         return liste_SObj
 
-
-    def slotExportInPostPro(self):
+    def slotExportInParavis(self):
         """
+        Not used now, but will be used when PARAVIS API will run correctly
         """
-        waitCursor = QCursor(Qt.WaitCursor)
-        QApplication.setOverrideCursor(waitCursor)
 
         sobj = self._singleSelectedObject()
         if not sobj == None:
-
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
             if re.match(".*\.med$", sobj.GetName()):
                 #export Med file
-                self.myVisu.ImportFile(path)
-            elif re.match(".*\.dat$", sobj.GetName()) or re.match(".*\.csv$", sobj.GetName()):
-                self.myVisu.ImportTables(path, True)
-            studyId = sgPyQt.getStudyId()
-            sgPyQt.updateObjBrowser(studyId,1)
+                import paravisSM
+                paravisSM.ImportFile(path)
+            if salome.sg.hasDesktop():
+              salome.sg.updateObjBrowser(1)
         QApplication.restoreOverrideCursor()
 
 
@@ -1823,10 +1825,15 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if not self.DialogCollector.CopyDialog.result() == QDialog.Accepted:
             return
 
+        # update Object Browser
         # aDirPath: path directory where the xml file is copied
         aDirPath = self.DialogCollector.CopyDialog.destCaseName()
         aDirObject = CFDSTUDYGUI_DataModel.findMaxDeepObject(aDirPath)
-        self.updateObjBrowser(aDirObject)
+
+        if aDirObject != None:
+            self.updateObjBrowser(CFDSTUDYGUI_DataModel.GetCase(aDirObject))
+
+        # BUG if direct call to self.updateObjBrowser(aDirObject)
 
 
     def slotCheckCompilation(self):
