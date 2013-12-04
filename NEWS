@@ -82,6 +82,8 @@ Changes:
 Architectural changes
 ---------------------
 
+- For CFDSTUDY, use PARAVIS instead of VISU.
+
 - Only search for SCOTCH/PT-SCOTCH, Metis/ParMetis, Catalyst, and EOS
   if explicitely required to avoid detection of incorrect versions
   on clusters.

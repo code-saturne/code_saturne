@@ -970,9 +970,7 @@ def _FillObject(theObject, theParent, theBuilder):
             elif name == "postprocessing":
                 objectId = dict_object["POSTPROFolder"]
         else:
-            if re.match(".*\.med$", name):
-                objectId = dict_object["RESMEDFile"]
-            elif re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
+            if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
                 objectId = dict_object["HISTFile"]
             elif re.match(".*\.xml$", name):
                 objectId = dict_object["RESXMLFile"]
@@ -982,6 +980,11 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["RESUFile"]
             elif re.match("error$", name):
                 objectId = dict_object["RESUFile"]
+
+    elif parentId == dict_object["POSTPROFolder"] :
+        if os.path.isfile(path):
+            if re.match(".*\.med$", name):
+                objectId = dict_object["RESMEDFile"]
 
     # parent is HIST folder
     elif parentId == dict_object["HISTFolder"]:
