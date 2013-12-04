@@ -433,14 +433,13 @@ def link_build(pkg, install=False):
         # So, assuming we always build on MinGW, here is a little trick!
         if sys.platform.startswith("win"):
             exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
+        dirname = os.path.dirname(exec_name)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
 
     print("Linking executable: " + exec_name)
 
     # Find files to compile in source path
-
-    dirname = os.path.dirname(exec_name)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
 
     p_libs = get_flags(pkg, 'libs', link_build = True)
 
