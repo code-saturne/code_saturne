@@ -38,7 +38,7 @@ AC_ARG_WITH(catalyst,
             [if test "x$withval" = "x"; then
                with_catalyst=no
              fi],
-            [with_catalyst=check])
+            [with_catalyst=no])
 
 # Check for CMake first
 #----------------------

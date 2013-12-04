@@ -56,7 +56,7 @@ AC_ARG_WITH(scotch,
             [if test "x$withval" = "x"; then
                with_scotch=yes
              fi],
-            [with_scotch=check])
+            [with_scotch=no])
 
 AC_ARG_WITH(scotch-include,
             [AS_HELP_STRING([--with-scotch-include=PATH],
