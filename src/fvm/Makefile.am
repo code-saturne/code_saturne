@@ -79,7 +79,7 @@ fvm_tesselation.h \
 fvm_to_ccm.h \
 fvm_to_cgns.h \
 fvm_to_med.h \
-fvm_catalyst.h \
+fvm_to_catalyst.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
 fvm_to_medcoupling.h \
