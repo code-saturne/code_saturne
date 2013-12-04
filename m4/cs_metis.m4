@@ -36,7 +36,7 @@ AC_ARG_WITH(metis,
             [if test "x$withval" = "x"; then
                with_metis=yes
              fi],
-            [with_metis=check])
+            [with_metis=no])
 
 AC_ARG_WITH(metis-include,
             [AS_HELP_STRING([--with-metis-include=PATH],

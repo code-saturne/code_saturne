@@ -36,7 +36,7 @@ AC_ARG_WITH(eos,
             [if test "x$withval" = "x"; then
                with_eos=yes
              fi],
-            [with_eos=check])
+            [with_eos=no])
 
 AC_ARG_WITH(eos-include,
             [AS_HELP_STRING([--with-eos-include=DIR],
