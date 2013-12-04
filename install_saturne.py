@@ -387,7 +387,7 @@ class Package:
                                  stderr=subprocess.PIPE)
             output = p.communicate()[0]
             if output.find("--no-as-needed") > -1:
-                ldflags_add = '-Xlinker --no-as-needed'
+                ldflags_add = '-Wl,--no-as-needed'
         except Exception:
             pass
 
