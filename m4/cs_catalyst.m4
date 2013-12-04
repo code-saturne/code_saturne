@@ -136,6 +136,7 @@ if test "x$with_catalyst" != "xno" ; then
 fi
 
 AM_CONDITIONAL(HAVE_CATALYST, test x$cs_have_catalyst = xyes)
+AM_CONDITIONAL(LINK_CATALYST, test x$cs_link_catalyst = xyes)
 
 AC_SUBST(cs_have_catalyst)
 AC_SUBST(CATALYST_CPPFLAGS)

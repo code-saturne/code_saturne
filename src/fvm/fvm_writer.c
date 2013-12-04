@@ -69,6 +69,12 @@
 #include "fvm_to_med.h"
 #include "fvm_to_ensight.h"
 
+#if !defined(HAVE_PLUGINS)
+#if defined(HAVE_CATALYST)
+#include "fvm_to_catalyst.h"
+#endif
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -195,7 +201,8 @@ static fvm_writer_format_t _fvm_writer_format_list[6] = {
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
-    FVM_WRITER_FIXED_MESH,
+    FVM_WRITER_TRANSIENT_CONNECT,
+#if !defined(HAVE_CATALYST) || defined(HAVE_PLUGINS)
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
     "fvm_catalyst",                    /* dynamic library name */
@@ -209,6 +216,21 @@ static fvm_writer_format_t _fvm_writer_format_list[6] = {
     NULL,
     NULL,
     NULL
+#else
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
+    NULL,                              /* n_version_strings_func */
+    NULL,                              /* version_string_func */
+    fvm_to_catalyst_init_writer,       /* init_func */
+    fvm_to_catalyst_finalize_writer,   /* finalize_func */
+    fvm_to_catalyst_set_mesh_time,     /* set_mesh_time_func */
+    NULL,                              /* needs_tesselation_func */
+    fvm_to_catalyst_export_nodal,      /* export_nodal_func */
+    fvm_to_catalyst_export_field,      /* export_field_func */
+    fvm_to_catalyst_flush              /* flush_func */
+#endif
   },
 
   /* MEDCoupling writer (plugin) */

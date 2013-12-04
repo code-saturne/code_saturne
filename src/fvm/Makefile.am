@@ -167,20 +167,39 @@ $(MEDCOUPLINGRUNPATH)
 
 endif
 
+# Catalyst (plugin or linked)
+
 if HAVE_CATALYST
+
+if HAVE_PLUGINS
 
 fvm_catalyst_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(CATALYST_CPPFLAGS) $(CATALYST_CXXFLAGS) $(MPI_CPPFLAGS)
-pkglib_LTLIBRARIES += fvm_catalyst.la
-
-fvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx
-fvm_catalyst_la_LDFLAGS = -module -avoid-version
 fvm_catalyst_la_LIBADD = \
 $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
 $(CATALYSTRUNPATH)
+fvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx
+pkglib_LTLIBRARIES += fvm_catalyst.la
+fvm_catalyst_la_LDFLAGS = -module -avoid-version
+
+else
+
+libfvm_catalyst_la_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(CATALYST_CPPFLAGS) $(CATALYST_CXXFLAGS) $(MPI_CPPFLAGS)
+libfvm_catalyst_la_LIBADD = \
+$(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
+$(CATALYSTRUNPATH)
+libfvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx
+noinst_LTLIBRARIES += libfvm_catalyst.la
+libfvm_filters_la_LIBADD += libfvm_catalyst.la
+
+endif
 
 endif
 
