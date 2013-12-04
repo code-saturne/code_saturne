@@ -44,8 +44,6 @@
 !> \param[in]     nfbrps        number of boundary faces
 !> \param[in]     lstcel        post-processing mesh cell numbers
 !> \param[in]     lstfbr        post-processing mesh boundary faces numbers
-!> \param[in]     rtpa          calculated variables at cell center
-!>                              (at current time step)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] tracel        post processing cell real values
 !> \param[in,out] trafbr        post processing boundary faces real values
@@ -56,7 +54,7 @@ subroutine dvvpst &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    ncelps , nfbrps ,                                              &
    lstcel , lstfbr ,                                              &
-   rtp    , rtpa   , propce ,                                     &
+   rtp    , propce ,                                              &
    tracel , trafbr )
 
 !===============================================================================
@@ -98,7 +96,6 @@ integer          ncelps , nfbrps
 integer          lstcel(ncelps), lstfbr(nfbrps)
 
 double precision rtp(ncelet,*)
-double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision tracel(ncelps*3)
 double precision trafbr(nfbrps*3)
@@ -593,7 +590,7 @@ else if (numtyp .eq. -2) then
 
     if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
 
-      call post_boundary_thermal_flux(nfbrps, lstfbr, rtpa, propce, trafbr)
+      call post_boundary_thermal_flux(nfbrps, lstfbr, propce, trafbr)
 
       idimt = 1        ! variable dimension
       ientla = .true.  ! interleaved values
@@ -617,7 +614,7 @@ else if (numtyp .eq. -2) then
 
     ! Compute variable on boundary faces
 
-    call post_boundary_temperature(nfbrps, lstfbr, rtpa, trafbr)
+    call post_boundary_temperature(nfbrps, lstfbr, trafbr)
 
     call post_write_var(nummai, 'Wall temperature', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
@@ -635,7 +632,7 @@ else if (numtyp .eq. -2) then
 
     ! Compute variable on boundary faces
 
-    call post_boundary_nusselt(nfbrps, lstfbr, rtpa, propce, trafbr)
+    call post_boundary_nusselt(nfbrps, lstfbr, propce, trafbr)
 
     call post_write_var(nummai, 'Wall law Nusselt', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)

@@ -85,7 +85,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
  const cs_real_t  rtp[],     /* <-- cell variables */
- const cs_real_t  rtpa[],    /* <-- cell variables at the previous time-step */
  const cs_real_t  propce[],  /* <-- cell physical properties */
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafbr[]   /* --- work array for output boundary faces */
