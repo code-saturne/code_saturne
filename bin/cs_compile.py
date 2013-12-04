@@ -438,6 +438,10 @@ def link_build(pkg, install=False):
 
     # Find files to compile in source path
 
+    dirname = os.path.dirname(exec_name)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+
     p_libs = get_flags(pkg, 'libs', link_build = True)
 
     cmd = [get_compiler(pkg, 'ld', link_build = True)]
