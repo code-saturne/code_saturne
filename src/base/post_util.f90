@@ -141,7 +141,7 @@ if (iscalt.gt.0) then
     extrap = extrag(ivar)
 
     call field_gradient_scalar                                             &
-      (ivarfl(ivar), 0, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
+      (ivarfl(ivar), 1, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
        epsrgp, climgp, extrap, grad)
 
     ! Compute diffusive and convective flux using reconstructed temperature
@@ -300,7 +300,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
   call field_get_val_s (itplus, tplusp)
   call field_get_val_s (itstar, tstarp)
 
-
   ! Compute variable values at boundary faces
 
   ! Reconstructed fluxes
@@ -321,7 +320,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     ! Compute gradient of temperature / enthalpy
 
     call field_gradient_scalar                                             &
-      (ivarfl(ivar), 0, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
+      (ivarfl(ivar), 1, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
        epsrgp, climgp, extrap, grad)
 
     ! Compute reconstructed value in boundary cells
@@ -498,7 +497,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     extrap = extrag(ivar)
 
     call field_gradient_scalar                                             &
-      (ivarfl(ivar), 0, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
+      (ivarfl(ivar), 1, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
        epsrgp, climgp, extrap, grad)
 
     ! Compute using reconstructed temperature value in boundary cells
