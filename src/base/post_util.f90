@@ -288,17 +288,18 @@ double precision, dimension(:), pointer :: tscalp
 
 ! pointers to T+ and T* if saved
 
-call field_get_id('tplus', itplus)
-call field_get_id('tstar', itstar)
+call field_get_id_try('tplus', itplus)
+call field_get_id_try('tstar', itstar)
 
 if (itstar.ge.0 .and. itplus.ge.0) then
 
-  call field_get_val_prev_s(ivarfl(iscalt), tscalp)
+  ivar = isca(iscalt)
+
+  call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
   call field_get_val_s (itplus, tplusp)
   call field_get_val_s (itstar, tstarp)
 
-  ivar   = isca(iscalt)
 
   ! Compute variable values at boundary faces
 
@@ -447,17 +448,17 @@ double precision, dimension(:), pointer :: tscalp
 
 ! pointers to T+ and T* if saved
 
-call field_get_id('tplus', itplus)
-call field_get_id('tstar', itstar)
+call field_get_id_try('tplus', itplus)
+call field_get_id_try('tstar', itstar)
 
 if (itstar.ge.0 .and. itplus.ge.0) then
 
-  call field_get_val_prev_s(ivarfl(iscalt), tscalp)
+  ivar   = isca(iscalt)
+
+  call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
   call field_get_val_s (itplus, tplusp)
   call field_get_val_s (itstar, tstarp)
-
-  ivar   = isca(iscalt)
 
   ! Boundary condition pointers for diffusion
 
