@@ -115,18 +115,30 @@ if test "x$with_salome" != "xno" ; then
 
   OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
 
-  # Make sure omniidl will work by forcing PYTHONPATH
-  # Note that we must ensure we are using SALOME's python here, so use "python" with the sourced
-  # environment and PATH ratther than $PYTHON here.
+  # SALOME prequisites root directory environment variable
+  salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUISITES_ROOT_DIR)
+  if test x"$salome_pre_rootdir" = x; then
+    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUIS_ROOT_DIR)
+  fi
+  if test x"$salome_pre_rootdir" = x; then
+    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $INST_ROOT)
+  fi
 
-  if test "x$OMNIIDLPYTHONPATH" = "x"; then
-   OMNIIDLPYTHONPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
-  fi
-  if test "x$OMNIIDLLDLIBPATH" = "x"; then
-    OMNIIDLLDLIBPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" ld_library_path_filter libpython*)
-  fi
+  # Make sure omniidl will correcly work by forcing PYTHONPATH
+  OMNIIDLPYTHONPATH=$(for d in `find $salome_pre_rootdir -name omniidl_be`
+do
+  dirname `ls $d/../_omniidlmodule.so 2>/dev/null` 2>/dev/null
+done)
+
+  # Make sure Python backend of omniidl will be found
+  OMNIIDLPYBE=$(for d in `find $salome_pre_rootdir -name omniidl_be`
+do
+  dirname `ls $d/python.py 2>/dev/null` 2>/dev/null
+done)
 
 fi
+
+unset salome_pre_rootdir
 
 AC_SUBST(OMNIIDLPYTHONPATH)
 AC_SUBST(OMNIIDLLDLIBPATH)
