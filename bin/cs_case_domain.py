@@ -1139,27 +1139,29 @@ class syrthes_domain(base_domain):
 
         # Define syrthes case structure
 
+        # Try to base Syrthes version on path used to import the syrthes module,
+        # for consistency with case creation parameters; it this is not enough,
+        # use existign environment or load one based on current configuration.
+
         try:
-            import syrthes
+            for p in sys.path:
+                if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
+                    syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
+                    if os.path.isfile(syr_profile):
+                        source_shell_script(syr_profile)
         except Exception:
-            # In case environment is not set, fallback to preferences file
-            try:
+            pass
+        try:
+            if not os.getenv('SYRTHES4_HOME'):
                 config = configparser.ConfigParser()
-                config.read([self.package.get_configfile(),
-                             os.path.expanduser('~/.' + self.package.configfile)])
+                config.read(self.package.get_configfiles())
                 syr_profile = os.path.join(config.get('install', 'syrthes'),
                                            'bin', 'syrthes.profile')
                 source_shell_script(syr_profile)
-                import syrthes
-            except Exception:
-                raise RunCaseError("Cannot locate SYRTHES installation.\n")
-            msg =  \
-                'Warning:\n' \
-                + '  SYRTHES environment was not set, so it was sourced from\n' \
-                + '  ' + str(syr_profile) + '\n' \
-                + '  as defined by: ' + str(self.package.get_configfiles()) \
-                + '\n\n'
-            sys.stderr.write(msg)
+            import syrthes
+        except Exception:
+            raise RunCaseError("Cannot locate SYRTHES installation.\n")
+            sys.exit(1)
 
         self.syrthes_case = syrthes.process_cmd_line(args.split())
 
