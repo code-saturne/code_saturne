@@ -1154,7 +1154,8 @@ class syrthes_domain(base_domain):
         try:
             if not os.getenv('SYRTHES4_HOME'):
                 config = configparser.ConfigParser()
-                config.read(self.package.get_configfiles())
+                config.read([self.package.get_configfile(),
+                             os.path.expanduser('~/.' + self.package.configfile)])
                 syr_profile = os.path.join(config.get('install', 'syrthes'),
                                            'bin', 'syrthes.profile')
                 source_shell_script(syr_profile)
