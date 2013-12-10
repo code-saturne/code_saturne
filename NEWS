@@ -4,7 +4,7 @@ Release 3.2.1 (10 Dec 2013)
 Bug fixes:
 ----------
 
-- Correctly handle handling of DESTDIR with \"make install\" target."
+- Correctly handle handling of DESTDIR with "make install" target."
 
 - Make selection of Syrthes environment more robust. The environment loaded at
   case creation time has priority over the currently selected environment.
