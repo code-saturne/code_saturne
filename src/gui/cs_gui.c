@@ -2292,7 +2292,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     j = iscapp[i] -1;
     cs_glob_var->rtp[n++] = isca[j] -1;
 
-    if (*itherm > 0 && i == 0)
+    if (*itherm > 0 && i == 0 && *itherm != 3)
       name = _thermal_scalar_name_label("name");
     else
       name = _specific_physic_scalar_name_label(cs_glob_var->model, cs_glob_var->label[j]);
