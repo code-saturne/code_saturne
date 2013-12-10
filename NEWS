@@ -1,5 +1,11 @@
-Release 3.1.2 (unreleased)
-==========================
+Release 3.1.2 (10 Dec 2013)
+===========================
+
+Bug fixes:
+----------
+
+- Make selection of Syrthes environment more robust. The environment loaded at
+  case creation time has priority over the currently selected environment.
 
 Release 3.1.1 (5 Dec 2013)
 ==========================
