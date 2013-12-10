@@ -231,11 +231,11 @@ elseif (idftnp.eq.6) then
        ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
          ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , ivisep , &
          iwarnp ,                                                       &
-       blencp , epsrgp , climgp , relaxp , thetap ,                   &
-       pvar   , pvara  ,                                              &
+         blencp , epsrgp , climgp , relaxp , thetap ,                   &
+         pvar   , pvara  ,                                              &
          itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
-       flumas , flumab , viscf  , viscb  , secvif ,                   &
-       smbr   )
+         flumas , flumab , viscf  , viscb  , secvif ,                   &
+         smbr   )
 
   endif
 
