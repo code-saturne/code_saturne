@@ -181,7 +181,8 @@ all-local: cs_solver$(EXEEXT)
 
 install-exec-hook: libsaturne.la
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin$${PYTHONPATH:+:$$PYTHONPATH} \
-	$(PYTHON) -B $(top_srcdir)/bin/cs_compile.py --mode=install
+	$(PYTHON) -B $(top_srcdir)/bin/cs_compile.py --mode=install \
+	--dest "$(DESTDIR)$(pkglibexecdir)"
 
 uninstall-local:
 	rm $(libexecdir)/$(PACKAGE)/cs_solver

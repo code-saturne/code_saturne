@@ -147,7 +147,12 @@ def process_cmd_line_build(argv, pkg):
                       metavar="<mode>",
                       help="'build' or 'install' mode")
 
+    parser.add_option("-d", "--dest", dest="dest_dir", type="string",
+                      metavar="<dest_dir>",
+                      help="choose executable file directory")
+
     parser.set_defaults(build_mode=False)
+    parser.set_defaults(dest_dir=None)
     parser.set_defaults(install_link=False)
 
     (options, args) = parser.parse_args(argv)
@@ -156,7 +161,7 @@ def process_cmd_line_build(argv, pkg):
         parser.print_help()
         sys.exit(1)
 
-    return options.mode
+    return options.mode, options.dest_dir
 
 #-------------------------------------------------------------------------------
 
@@ -418,7 +423,7 @@ def compile_and_link(pkg, srcdir, destdir,
 
 #-------------------------------------------------------------------------------
 
-def link_build(pkg, install=False):
+def link_build(pkg, install=False, destdir=None):
     """
     Link function for build process.
     """
@@ -427,7 +432,9 @@ def link_build(pkg, install=False):
     # Determine executable name
 
     exec_name = pkg.solver
-    if install:
+    if destdir:
+        exec_name = os.path.join(destdir, exec_name)
+    elif install:
         exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1], exec_name)
         # Strangely, on MinGW, Windows paths are not correctly handled here...
         # So, assuming we always build on MinGW, here is a little trick!
@@ -497,11 +504,11 @@ if __name__ == '__main__':
 
         from cs_exec_environment import set_modules, source_rcfile
 
-        mode = process_cmd_line_build(sys.argv[1:], pkg)
+        mode, destdir = process_cmd_line_build(sys.argv[1:], pkg)
         install = False
         if mode == 'install':
             install = True
-        retcode = link_build(pkg, mode)
+        retcode = link_build(pkg, mode, destdir)
 
         sys.exit(retcode)
 
