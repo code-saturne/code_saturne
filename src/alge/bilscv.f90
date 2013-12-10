@@ -159,7 +159,7 @@ subroutine bilscv &
 !===============================================================================
 
 use paramx
-use numvar
+use numvar, only: ivarfl
 use pointe
 use entsor
 use parall
@@ -194,23 +194,28 @@ double precision secvif(nfac), secvib(nfabor)
 double precision smbr(3,ncelet)
 
 ! Local variables
-integer          idiflc
+integer          idiflc, f_id
 
 !===============================================================================
+
+if (ivar.eq.0) then
+  f_id = -1
+else
+  f_id = ivarfl(ivar)
+endif
 
 ! Scalar diffusivity
 if (idftnp.eq.1) then
 
   call bilsc4 &
   !==========
-   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-     ippu   , iwarnp ,                                              &
+   ( idtvar , f_id   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , ivisep , &
+     iwarnp ,                                                       &
      blencp , epsrgp , climgp , relaxp , thetap ,                   &
      pvar   , pvara  ,                                              &
-     coefav , coefbv , cofafv , cofbfv ,                            &
+     itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
      flumas , flumab , viscf  , viscb  , secvif ,                   &
-     icvflb , icvfli ,                                              &
      smbr   )
 
 ! Symmetric tensor diffusivity
@@ -223,14 +228,13 @@ elseif (idftnp.eq.6) then
 
     call bilsc4 &
     !==========
-     ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-       ischcp , isstpp , inc    , imrgra , idiflc ,                   &
-       ippu   , iwarnp ,                                              &
+       ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
+         ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , ivisep , &
+         iwarnp ,                                                       &
        blencp , epsrgp , climgp , relaxp , thetap ,                   &
        pvar   , pvara  ,                                              &
-       coefav , coefbv , cofafv , cofbfv ,                            &
+         itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
        flumas , flumab , viscf  , viscb  , secvif ,                   &
-       icvflb , icvfli ,                                              &
        smbr   )
 
   endif

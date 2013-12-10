@@ -89,7 +89,6 @@ cs_sles.c \
 bilsca.f90 \
 bilsct.f90 \
 bilscv.f90 \
-bilsc4.f90 \
 diften.f90 \
 diftnv.f90 \
 divmas.f90 \
