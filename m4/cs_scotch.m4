@@ -234,11 +234,11 @@ if test "x$with_scotch" != "xno" ; then
     fi
   fi
 
-fi
+  CPPFLAGS="$saved_CPPFLAGS"
+  LDFLAGS="$saved_LDFLAGS"
+  LIBS="$saved_LIBS"
 
-CPPFLAGS="$saved_CPPFLAGS"
-LDFLAGS="$saved_LDFLAGS"
-LIBS="$saved_LIBS"
+fi
 
 unset saved_CPPFLAGS
 unset saved_LDFLAGS
