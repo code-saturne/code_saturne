@@ -1,5 +1,15 @@
-Release 3.0.3 (unreleased)
-==========================
+Release 3.0.3 (11 Dec 2013)
+===========================
+
+Bug fixes:
+----------
+
+- Fix build configuration bug leading to loss of user flags when (PT-)SCOTCH or
+  (Par)Metis tests were not active.
+
+- Fix automatic loading of SYRTHES environment during coupled run. The run
+  scripts insure in a more robust manner that the version used at run time
+  is the one used at case creation time.
 
 Release 3.0.2 (4 Dec 2013)
 ==========================
