@@ -4,6 +4,9 @@ Release 3.2.1 (10 Dec 2013)
 Bug fixes:
 ----------
 
+- Fix build configuration bug leading to loss of user flags when (PT-)SCOTCH or
+  (Par)Metis tests were not active.
+
 - Correctly handle handling of DESTDIR with "make install" target."
 
 - Make selection of Syrthes environment more robust. The environment loaded at
