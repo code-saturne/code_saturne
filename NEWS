@@ -4,6 +4,11 @@ Release 3.2.1 (10 Dec 2013)
 Bug fixes:
 ----------
 
+- Fix the increase of postprocessing joining meshes (when visualization 
+  level is > 0) in the case of non-preprocessing joinings (e.g.: Rotor-Stator 
+  with joining at each iteration). For now, only the first joining mesh is 
+  postprocessed.
+
 - Fix build configuration bug leading to loss of user flags when (PT-)SCOTCH or
   (Par)Metis tests were not active.
 
