@@ -1762,6 +1762,14 @@ cs_join_all(bool  preprocess)
       cs_glob_join_array[join_id] = NULL;
     }
 
+    /* Force joining visualization level to 0 when the joining is not
+       a part of preprocessing to avoid the increase of postprocessing
+       meshes during the computation */
+
+    if (!join_param.preprocessing) {
+      this_join->param.visualization = 0;
+    }
+
 #if defined(HAVE_MPI)   /* Synchronization */
     if (cs_glob_n_ranks > 1)
       MPI_Barrier(cs_glob_mpi_comm);
