@@ -190,8 +190,11 @@ endif
 ! 3. MODELE COMPRESSIBLE SANS CHOC : e, s
 !===============================================================================
 
-if ( ippmod(icompf).ge.0 ) nscapp = 2
-
+if ( ippmod(icompf).ge.0 ) then
+  nscapp = 2
+  ! total energy
+  itherm = 3
+endif
 
 !===============================================================================
 ! 4. MODELES ELECTRIQUES : Effet Joule        (IELJOU)

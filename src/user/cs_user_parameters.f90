@@ -629,6 +629,7 @@ endif
 !      0: none
 !      1: temperature
 !      2: enthalpy
+!      3: total energy (only for compressible module)
 !
 !  For temperature, the temperature scale may be set later using itpscl
 !  (1 for Kelvin, 2 for Celsius).
