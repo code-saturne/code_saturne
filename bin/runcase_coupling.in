@@ -67,13 +67,6 @@ APP_DICTS
 
 SCRATCHDIR = None
 
-# PSET_SIZE allows defining the size of a pset (set of processors sharing
-# an I/O node) on Blue Gene type machines. On Blue Gene/P, only one
-# executable per pset may be run. Typical pset sizes are 32 or 64, but
-# different partitions may have different pset sizes in some configurations.
-
-PSET_SIZE = 1
-
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
@@ -82,8 +75,7 @@ if __name__ == '__main__':
 
     case = coupling(package(),
                     domains,
-                    casedir,
-                    pset_size=PSET_SIZE)
+                    casedir)
 
     # Select run id
     # (usually date+time; defined automatically when preparing data, but we need

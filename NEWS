@@ -11,6 +11,14 @@ Bug fixes:
   scripts insure in a more robust manner that the version used at run time
   is the one used at case creation time.
 
+Architectural changes
+---------------------
+
+- Add options to redefine default MPI library and execution options in a
+  per-installation or per-user manner using the code_saturne.cfg file.
+  The per-case option using cs_user_scripts.py or runcase_coupling may
+  still be used, and overrides these settings.
+
 Release 3.0.2 (4 Dec 2013)
 ==========================
 
