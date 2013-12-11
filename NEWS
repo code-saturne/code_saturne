@@ -4,6 +4,8 @@ Release 3.2.1 (10 Dec 2013)
 Bug fixes:
 ----------
 
+- Set thermal model to total energy in compressible (itherm=3).
+
 - Fix the increase of postprocessing joining meshes (when visualization 
   level is > 0) in the case of non-preprocessing joinings (e.g.: Rotor-Stator 
   with joining at each iteration). For now, only the first joining mesh is 
