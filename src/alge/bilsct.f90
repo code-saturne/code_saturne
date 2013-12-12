@@ -172,7 +172,6 @@ double precision xcpp(ncelet)
 character*80     chaine
 character*8      cnom
 integer          ifac,ii,jj,infac,iel,iupwin, ig, it
-integer          idimtr
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz
 double precision pi, pj, pia, pja
@@ -350,11 +349,6 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
 
   if (irangp.ge.0 .or. iperio.eq.1) then
     call synvec(dpdxa, dpdya, dpdza)
-    !==========
-  endif
-
-  if (iperot.eq.1.and.ivar.gt.0) then
-    call pering(ivarfl(ivar), idimtr, dpdxa, dpdya, dpdza)
     !==========
   endif
 

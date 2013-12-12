@@ -1778,7 +1778,6 @@ cs_convection_diffusion_vector(
   char var_name[32];
 
   int face_id, ii, jj, n_upwind, cell_id, iupwin, g_id, t_id, n_g_upwind;
-  int tr_dim = 0;
   int isou, jsou, ityp;
   double pfac,pfacd,flui,fluj,flux,fluxi,fluxj;
   double vfac[3];
@@ -1826,7 +1825,6 @@ cs_convection_diffusion_vector(
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    cs_gradient_perio_init_rij(f, &tr_dim, (cs_real_3_t *)gradv);
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
