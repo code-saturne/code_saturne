@@ -1,3 +1,14 @@
+Release 3.2.2 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Print full version using "code_saturne info --version"
+
+- Avoid crash in "code_saturne info" command when Doxygen-generated
+  documentation is not installed.
+
 Release 3.2.1 (11 Dec 2013)
 ===========================
 
