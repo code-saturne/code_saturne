@@ -219,7 +219,27 @@ def get_flags(pkg, flag, link_build = False):
 
 #-------------------------------------------------------------------------------
 
-def get_build_flags(pkg, flag, install=False):
+def dest_subdir(destdir, d):
+
+    t = d
+
+    # Concatenate destdir and target subdirectory
+    
+    if sys.platform.startswith("win"):
+        i = t.find(':\\')
+        if i > -1:
+            t = t[i+1:]
+            while t[0] == '\\':
+                t = t[1:]
+    else:
+        while t[0] == '/':
+            t = t[1:]
+
+    return os.path.join(destdir, t)
+
+#-------------------------------------------------------------------------------
+
+def get_build_flags(pkg, flag, install=False, destdir=None):
 
     cmd_line = []
 
@@ -245,6 +265,8 @@ def get_build_flags(pkg, flag, install=False):
             # So, assuming we always build on MinGW, here is a little trick!
             if sys.platform.startswith("win"):
                 libdir = os.path.normpath('C:\\MinGW\\msys\\1.0' + libdir)
+            if destdir:
+                libdir = dest_subdir(destdir, libdir)
             cmd_line.insert(0, "-L" + libdir)
 
     return cmd_line
@@ -432,14 +454,14 @@ def link_build(pkg, install=False, destdir=None):
     # Determine executable name
 
     exec_name = pkg.solver
-    if destdir:
-        exec_name = os.path.join(destdir, exec_name)
-    elif install:
+    if install:
         exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1], exec_name)
         # Strangely, on MinGW, Windows paths are not correctly handled here...
         # So, assuming we always build on MinGW, here is a little trick!
         if sys.platform.startswith("win"):
             exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
+        if destdir:
+            exec_name = dest_subdir(destdir, exec_name)
         dirname = os.path.dirname(exec_name)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
@@ -452,7 +474,7 @@ def link_build(pkg, install=False, destdir=None):
 
     cmd = [get_compiler(pkg, 'ld', link_build = True)]
     cmd = cmd + ["-o", exec_name]
-    cmd = cmd + get_build_flags(pkg, 'ldflags', install)
+    cmd = cmd + get_build_flags(pkg, 'ldflags', install, destdir)
     cmd = cmd + p_libs
     if pkg.config.rpath != "":
         cmd += so_dirs_path(cmd, pkg)
