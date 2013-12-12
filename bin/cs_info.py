@@ -102,7 +102,7 @@ def print_version(pkg):
     Print Code_Saturne version.
     """
 
-    print(pkg.code_name + " version: " + pkg.version)
+    print(pkg.code_name + " version: " + pkg.version_full)
 
 
 #-------------------------------------------------------------------------------
@@ -117,10 +117,10 @@ def get_docs(pkg):
     if os.path.isdir(pkg.get_dir('docdir')):
         for docs in fnmatch.filter(os.listdir(pkg.get_dir('docdir')), '*.pdf'):
             l.append(docs[:-4])
-        for docs in fnmatch.filter(os.listdir(
-                          os.path.join(pkg.get_dir('docdir'),'doxygen', 'src')),
-                         'index.html'):
-            l.append('Doxygen')
+        doxy_dir = os.path.join(pkg.get_dir('docdir'),'doxygen', 'src')
+        if os.path.isdir(doxy_dir):
+            for docs in fnmatch.filter(os.listdir(doxy_dir), 'index.html'):
+                l.append('Doxygen')
     return l
 
 
