@@ -92,9 +92,9 @@
             <widget class="QLineEdit" name="lineEditPressure"/>
            </item>
            <item>
-            <widget class="QLabel" name="labelUnitDensity">
+            <widget class="QLabel" name="labelUnitPressure">
              <property name="text">
-              <string>kg/m&lt;sup&gt;3&lt;/sup&gt;</string>
+              <string>Pa</string>
              </property>
             </widget>
            </item>
