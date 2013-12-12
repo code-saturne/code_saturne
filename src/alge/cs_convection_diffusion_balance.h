@@ -380,13 +380,14 @@ cs_convection_diffusion_scalar(
   - blencp = 1: no upwind scheme except in the slope test
   - ischcp = 0: second order
   - ischcp = 1: centred
- -------------------------------------------------------------------------------*/
 
+*/
 /*-------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________!
+ ______________________________________________________________________________*/
+/*!
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
  * \param[in]     iconvp        indicator
