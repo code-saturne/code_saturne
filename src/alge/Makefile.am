@@ -87,10 +87,8 @@ cs_matrix_util.c \
 cs_multigrid.c \
 cs_sles.c \
 bilsca.f90 \
-bilsct.f90 \
 bilscv.f90 \
 diften.f90 \
-diftnv.f90 \
 divmas.f90 \
 divrij.f90 \
 grdcel.f90 \

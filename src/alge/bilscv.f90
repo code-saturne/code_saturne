@@ -228,14 +228,14 @@ elseif (idftnp.eq.6) then
 
     call bilsc4 &
     !==========
-       ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-         ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , ivisep , &
-         iwarnp ,                                                       &
-         blencp , epsrgp , climgp , relaxp , thetap ,                   &
-         pvar   , pvara  ,                                              &
-         itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
-         flumas , flumab , viscf  , viscb  , secvif ,                   &
-         smbr   )
+   ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , ivisep , &
+     iwarnp ,                                                       &
+     blencp , epsrgp , climgp , relaxp , thetap ,                   &
+     pvar   , pvara  ,                                              &
+     itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
+     flumas , flumab , viscf  , viscb  , secvif ,                   &
+     smbr   )
 
   endif
 
@@ -244,12 +244,12 @@ elseif (idftnp.eq.6) then
 
     call diftnv &
     !==========
-   ( idtvar , ivar   , nswrgp , imligp , ircflp ,                   &
-     inc    , imrgra , ivisep ,                                     &
-     ippu   , iwarnp , epsrgp ,                                     &
+   ( idtvar , f_id   , nswrgp , imligp , ircflp ,                   &
+     inc    , imrgra , ifaccp , ivisep ,                            &
+     iwarnp , epsrgp ,                                              &
      climgp , relaxp , thetap ,                                     &
      pvar   , pvara  ,                                              &
-     coefav , coefbv , cofafv , cofbfv ,                            &
+     itypfb , coefav , coefbv , cofafv , cofbfv ,                   &
      viscf  , viscb  , secvif ,                                     &
      smbr   )
 

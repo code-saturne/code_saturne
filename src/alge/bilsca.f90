@@ -229,11 +229,11 @@ if (idftnp.eq.1) then
 
     call bilsct &
     !==========
-   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ( idtvar , f_id   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
+     ifaccp , iwarnp ,                                              &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
+     pvar   , pvara  , itypfb , coefap , coefbp , cofafp , cofbfp , &
      flumas , flumab , viscf  , viscb  , xcpp   ,                   &
      smbrp  )
 
@@ -263,11 +263,11 @@ elseif (idftnp.eq.6) then
 
     call bilsct &
     !==========
-   ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
+   ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp ,                                              &
+     ifaccp , iwarnp ,                                              &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
+     pvar   , pvara  , itypfb , coefap , coefbp , cofafp , cofbfp , &
      flumas , flumab , viscf  , viscb  , xcpp   ,                   &
      smbrp  )
 
