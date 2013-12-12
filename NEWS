@@ -4,6 +4,8 @@ Release 3.2.2 (unreleased)
 Bug fixes:
 ----------
 
+- Correctly handle handling of DESTDIR with "make install" target."
+
 - Print full version using "code_saturne info --version"
 
 - Avoid crash in "code_saturne info" command when Doxygen-generated
@@ -24,8 +26,6 @@ Bug fixes:
 
 - Fix build configuration bug leading to loss of user flags when (PT-)SCOTCH or
   (Par)Metis tests were not active.
-
-- Correctly handle handling of DESTDIR with "make install" target."
 
 - Make selection of Syrthes environment more robust. The environment loaded at
   case creation time has priority over the currently selected environment.

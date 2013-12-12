@@ -86,7 +86,7 @@ ui_%.py: %.ui
 
 install-exec-local: $(PYUI_FILES)
 	for f in $^ ; do\
-		$(INSTALL) $$f $(salomepythondir)/$$f ; \
+		$(INSTALL) $$f "$(DESTDIR)$(salomepythondir)/$$f" ; \
 	done ;
 
 ## meta object implementation files generation (moc)
