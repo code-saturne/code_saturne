@@ -761,8 +761,8 @@ do ifac = 1, nfabor
 
       call set_dirichlet_vector &
            !====================
-         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+         ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+           coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
            pimpv           , hint            , rinfiv )
 
 
@@ -783,8 +783,8 @@ do ifac = 1, nfabor
 
       call set_neumann_vector &
            !==================
-         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+         ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+           coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
            qimpv           , hint )
 
     endif
@@ -839,8 +839,8 @@ do ifac = 1, nfabor
 
     call set_dirichlet_vector &
          !====================
-       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+       ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+         coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , hint            , hextv )
 
 
@@ -857,8 +857,8 @@ do ifac = 1, nfabor
 
     call set_neumann_vector &
          !==================
-       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+       ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+         coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          qimpv           , hint )
 
   ! Convective Boundary Conditions
@@ -877,8 +877,8 @@ do ifac = 1, nfabor
 
     call set_convective_outlet_vector &
          !==================
-       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+       ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+         coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , cflv            , hint )
 
   ! Convective Boundary For Marangoni Effects (generalized symmetry condition)
@@ -903,8 +903,8 @@ do ifac = 1, nfabor
 
     call set_generalized_sym_vector &
          !=========================
-       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+       ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+         coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , qimpv            , hint , normal )
 
   endif
@@ -2228,8 +2228,8 @@ if (iale.eq.1) then
 
       call set_dirichlet_vector &
            !====================
-         ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
-           clbale(1,1,ifac), cfbale(1,1,ifac),             &
+         ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
+           clbale(:,:,ifac), cfbale(:,:,ifac),             &
            pimpv           , hint            , hextv )
 
     ! Neumann Boundary Conditions
@@ -2245,8 +2245,8 @@ if (iale.eq.1) then
 
       call set_neumann_vector &
            !==================
-         ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
-           clbale(1,1,ifac), cfbale(1,1,ifac),             &
+         ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
+           clbale(:,:,ifac), cfbale(:,:,ifac),             &
            qimpv           , hint )
 
 
@@ -2266,8 +2266,8 @@ if (iale.eq.1) then
 
       call set_convective_outlet_vector &
            !==================
-         ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
-           clbale(1,1,ifac), cfbale(1,1,ifac),             &
+         ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
+           clbale(:,:,ifac), cfbale(:,:,ifac),             &
            pimpv           , cflv            , hint )
 
     endif
