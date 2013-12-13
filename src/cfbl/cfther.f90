@@ -231,7 +231,7 @@ integer          ierr
 integer          iel    , ifac
 integer          itk    , ien    , niter, nitermax
 double precision gamagp , xmasml , enint, norm, cosalp
-double precision xmach  , xmachi , xmache , dxmach
+double precision xmach
 double precision dir(3)
 double precision roi, ro1, pri, ei, uni, un1, y, uns, bc, pinf, ptot, eps, res, rhotot
 double precision ci, c1, mi, a, b, sigma1, utxi, utyi, utzi, bMach, old_pstat, pstat

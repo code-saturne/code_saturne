@@ -67,15 +67,13 @@
 !>                               of boundary cells
 !> \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
 !>                               of boundary cells
-!> \param[out]    coefa         explicit boundary condition coefficient
-!> \param[out]    coefb         implicit boundary condition coefficient
 !_______________________________________________________________________________
 
 
 subroutine clsyvt &
  ( nscal  , icodcl ,                                     &
    propce , rcodcl ,                                     &
-   velipb , rijipb , coefa  , coefb  )
+   velipb , rijipb )
 
 !===============================================================================
 
@@ -107,17 +105,12 @@ integer          icodcl(nfabor,nvarcl)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          ifac, ii, isou, jsou
-integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
-integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
-integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
-integer          iclvar, iel   , iclvrr, iclvaf
-integer          iscal , ipccp , ivar
-integer          f_id
+integer          ifac, ii, isou
+integer          iel
+integer          iscal , ivar
 
 double precision rnx, rny, rnz, rxnn
 double precision upx, upy, upz, usn
@@ -125,15 +118,25 @@ double precision tx, ty, tz, txn, t2x, t2y, t2z
 double precision clsyme
 double precision eloglo(3,3), alpha(6,6)
 double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
-double precision cpp,rkl
+double precision cpp
 double precision vismsh(3), hintv(3)
-double precision hintt(6)
 double precision visci(3,3), fikis, viscis, distfi
+double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
-character*80     fname
-
-double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
-double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
+double precision, dimension(:,:), pointer :: coefau, cofafu, cfaale, claale
+double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, cfbale, clbale
+double precision, dimension(:), pointer :: coefa_r11, coefaf_r11, coefad_r11
+double precision, dimension(:), pointer :: coefb_r11, coefbf_r11, coefbd_r11
+double precision, dimension(:), pointer :: coefa_r22, coefaf_r22, coefad_r22
+double precision, dimension(:), pointer :: coefb_r22, coefbf_r22, coefbd_r22
+double precision, dimension(:), pointer :: coefa_r33, coefaf_r33, coefad_r33
+double precision, dimension(:), pointer :: coefb_r33, coefbf_r33, coefbd_r33
+double precision, dimension(:), pointer :: coefa_r12, coefaf_r12, coefad_r12
+double precision, dimension(:), pointer :: coefb_r12, coefbf_r12, coefbd_r12
+double precision, dimension(:), pointer :: coefa_r13, coefaf_r13, coefad_r13
+double precision, dimension(:), pointer :: coefb_r13, coefbf_r13, coefbd_r13
+double precision, dimension(:), pointer :: coefa_r23, coefaf_r23, coefad_r23
+double precision, dimension(:), pointer :: coefb_r23, coefbf_r23, coefbd_r23
 
 !===============================================================================
 
@@ -141,48 +144,103 @@ double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 ! 1. Initializations
 !===============================================================================
 
-! Initialize variables to avoid compiler warnings
-
-icl11 = 0
-icl22 = 0
-icl33 = 0
-icl12 = 0
-icl13 = 0
-icl23 = 0
-icl11r = 0
-icl12r = 0
-icl13r = 0
-icl22r = 0
-icl23r = 0
-icl33r = 0
-iclvar = 0
-
 cpp = 0.d0
 
-! --- Gradient Boundary Conditions
-if (itytur.eq.3) then
-  icl11  = iclrtp(ir11,icoef)
-  icl22  = iclrtp(ir22,icoef)
-  icl33  = iclrtp(ir33,icoef)
-  icl12  = iclrtp(ir12,icoef)
-  icl13  = iclrtp(ir13,icoef)
-  icl23  = iclrtp(ir23,icoef)
-  icl11r = iclrtp(ir11,icoefr)
-  icl22r = iclrtp(ir22,icoefr)
-  icl33r = iclrtp(ir33,icoefr)
-  icl12r = iclrtp(ir12,icoefr)
-  icl13r = iclrtp(ir13,icoefr)
-  icl23r = iclrtp(ir23,icoefr)
-endif
+! Boundary Conditions
 
-! --- Flux Boundary Conditions
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+call field_get_coefaf_v(ivarfl(iu), cofafu)
+call field_get_coefbf_v(ivarfl(iu), cofbfu)
+
 if (itytur.eq.3) then
-  icl11f = iclrtp(ir11,icoeff)
-  icl22f = iclrtp(ir22,icoeff)
-  icl33f = iclrtp(ir33,icoeff)
-  icl12f = iclrtp(ir12,icoeff)
-  icl13f = iclrtp(ir13,icoeff)
-  icl23f = iclrtp(ir23,icoeff)
+
+  call field_get_coefa_s(ivarfl(ir11), coefa_r11)
+  call field_get_coefb_s(ivarfl(ir11), coefb_r11)
+  call field_get_coefaf_s(ivarfl(ir11), coefaf_r11)
+  call field_get_coefbf_s(ivarfl(ir11), coefbf_r11)
+  call field_get_coefad_s(ivarfl(ir11), coefad_r11)
+  call field_get_coefbd_s(ivarfl(ir11), coefbd_r11)
+
+  call field_get_coefa_s(ivarfl(ir22), coefa_r22)
+  call field_get_coefb_s(ivarfl(ir22), coefb_r22)
+  call field_get_coefaf_s(ivarfl(ir22), coefaf_r22)
+  call field_get_coefbf_s(ivarfl(ir22), coefbf_r22)
+  call field_get_coefad_s(ivarfl(ir22), coefad_r22)
+  call field_get_coefbd_s(ivarfl(ir22), coefbd_r22)
+
+  call field_get_coefa_s(ivarfl(ir33), coefa_r33)
+  call field_get_coefb_s(ivarfl(ir33), coefb_r33)
+  call field_get_coefaf_s(ivarfl(ir33), coefaf_r33)
+  call field_get_coefbf_s(ivarfl(ir33), coefbf_r33)
+  call field_get_coefad_s(ivarfl(ir33), coefad_r33)
+  call field_get_coefbd_s(ivarfl(ir33), coefbd_r33)
+
+  call field_get_coefa_s(ivarfl(ir12), coefa_r12)
+  call field_get_coefb_s(ivarfl(ir12), coefb_r12)
+  call field_get_coefaf_s(ivarfl(ir12), coefaf_r12)
+  call field_get_coefbf_s(ivarfl(ir12), coefbf_r12)
+  call field_get_coefad_s(ivarfl(ir12), coefad_r12)
+  call field_get_coefbd_s(ivarfl(ir12), coefbd_r12)
+
+  call field_get_coefa_s(ivarfl(ir13), coefa_r13)
+  call field_get_coefb_s(ivarfl(ir13), coefb_r13)
+  call field_get_coefaf_s(ivarfl(ir13), coefaf_r13)
+  call field_get_coefbf_s(ivarfl(ir13), coefbf_r13)
+  call field_get_coefad_s(ivarfl(ir13), coefad_r13)
+  call field_get_coefbd_s(ivarfl(ir13), coefbd_r13)
+
+  call field_get_coefa_s(ivarfl(ir23), coefa_r23)
+  call field_get_coefb_s(ivarfl(ir23), coefb_r23)
+  call field_get_coefaf_s(ivarfl(ir23), coefaf_r23)
+  call field_get_coefbf_s(ivarfl(ir23), coefbf_r23)
+  call field_get_coefad_s(ivarfl(ir23), coefad_r23)
+  call field_get_coefbd_s(ivarfl(ir23), coefbd_r23)
+
+else
+
+  coefa_r11 => null()
+  coefb_r11 => null()
+  coefaf_r11 => null()
+  coefbf_r11 => null()
+  coefad_r11 => null()
+  coefbd_r11 => null()
+
+  coefa_r22 => null()
+  coefb_r22 => null()
+  coefaf_r22 => null()
+  coefbf_r22 => null()
+  coefad_r22 => null()
+  coefbd_r22 => null()
+
+  coefa_r33 => null()
+  coefb_r33 => null()
+  coefaf_r33 => null()
+  coefbf_r33 => null()
+  coefad_r33 => null()
+  coefbd_r33 => null()
+
+  coefa_r12 => null()
+  coefb_r12 => null()
+  coefaf_r12 => null()
+  coefbf_r12 => null()
+  coefad_r12 => null()
+  coefbd_r12 => null()
+
+  coefa_r13 => null()
+  coefb_r13 => null()
+  coefaf_r13 => null()
+  coefbf_r13 => null()
+  coefad_r13 => null()
+  coefbd_r13 => null()
+
+  coefa_r23 => null()
+  coefb_r23 => null()
+  coefaf_r23 => null()
+  coefbf_r23 => null()
+  coefad_r23 => null()
+  coefbd_r23 => null()
+
 endif
 
 ! --- Begin the loop over boundary faces
@@ -384,88 +442,46 @@ do ifac = 1, nfabor
     if (itytur.eq.3) then
 
       do isou = 1, 6
-
-        if (isou.eq.1) then
-          iclvar = icl11
-          iclvrr = icl11r
-        elseif (isou.eq.2) then
-          iclvar = icl22
-          iclvrr = icl22r
-        elseif (isou.eq.3) then
-          iclvar = icl33
-          iclvrr = icl33r
-        elseif (isou.eq.4) then
-          iclvar = icl12
-          iclvrr = icl12r
-        elseif (isou.eq.5) then
-          iclvar = icl13
-          iclvrr = icl13r
-        elseif (isou.eq.6) then
-          iclvar = icl23
-          iclvrr = icl23r
-        endif
-
-        coefa(ifac,iclvar) = 0.0d0
-        coefa(ifac,iclvrr) = 0.0d0
-        coefb(ifac,iclvar) = 0.0d0
-        coefb(ifac,iclvrr) = 0.0d0
-
+        fcoefa(isou) = 0.d0
+        fcofad(isou) = 0.d0
+        fcoefb(isou) = 0.d0
+        fcofbd(isou) = 0.d0
       enddo
 
       do isou = 1,6
 
         if (isou.eq.1) then
           ivar = ir11
-          iclvar = icl11
-          iclvaf = icl11f
-          iclvrr = icl11r
         elseif (isou.eq.2) then
           ivar = ir22
-          iclvar = icl22
-          iclvaf = icl22f
-          iclvrr = icl22r
         elseif (isou.eq.3) then
           ivar = ir33
-          iclvar = icl33
-          iclvaf = icl33f
-          iclvrr = icl33r
         elseif (isou.eq.4) then
           ivar = ir12
-          iclvar = icl12
-          iclvaf = icl12f
-          iclvrr = icl12r
         elseif (isou.eq.5) then
           ivar = ir13
-          iclvar = icl13
-          iclvaf = icl13f
-          iclvrr = icl13r
         elseif (isou.eq.6) then
           ivar = ir23
-          iclvar = icl23
-          iclvaf = icl23f
-          iclvrr = icl23r
         endif
 
         ! IMPLICITATION PARTIELLE EVENTUELLE DES CL
         if (iclsyr.eq.1) then
           do ii = 1, 6
             if (ii.ne.isou) then
-              coefa(ifac,iclvar) = coefa(ifac,iclvar) +           &
-                   alpha(isou,ii) * rijipb(ifac,ii)
+              fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
             endif
           enddo
-          coefb(ifac,iclvar) = alpha(isou,isou)
+          fcoefb(isou) = alpha(isou,isou)
         else
           do ii = 1, 6
-            coefa(ifac,iclvar) = coefa(ifac,iclvar) +             &
-                 alpha(isou,ii) * rijipb(ifac,ii)
+            fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
           enddo
-          coefb(ifac,iclvar) = 0.d0
+          fcoefb(isou) = 0.d0
         endif
 
         ! Boundary conditions for the momentum equation
-        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
-        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
+        fcofad(isou) = fcoefa(isou)
+        fcofbd(isou) = fcoefb(isou)
 
         ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
         if (idften(ivar).eq.6) then
@@ -518,113 +534,56 @@ do ifac = 1, nfabor
         endif
 
         ! Translate into Diffusive flux BCs
-        coefa(ifac,iclvaf) = -hint*coefa(ifac,iclvar)
-        coefb(ifac,iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+        fcofaf(isou) = -hint*fcoefa(isou)
+        fcofbf(isou) = hint*(1.d0-fcoefb(isou))
+
+        if (isou.eq.1) then
+          coefa_r11(ifac) = fcoefa(isou)
+          coefb_r11(ifac) = fcoefb(isou)
+          coefaf_r11(ifac) = fcofaf(isou)
+          coefbf_r11(ifac) = fcofbf(isou)
+          coefad_r11(ifac) = fcofad(isou)
+          coefbd_r11(ifac) = fcofbd(isou)
+        else if (isou.eq.2) then
+          coefa_r22(ifac) = fcoefa(isou)
+          coefb_r22(ifac) = fcoefb(isou)
+          coefaf_r22(ifac) = fcofaf(isou)
+          coefbf_r22(ifac) = fcofbf(isou)
+          coefad_r22(ifac) = fcofad(isou)
+          coefbd_r22(ifac) = fcofbd(isou)
+        else if (isou.eq.3) then
+          coefa_r33(ifac) = fcoefa(isou)
+          coefb_r33(ifac) = fcoefb(isou)
+          coefaf_r33(ifac) = fcofaf(isou)
+          coefbf_r33(ifac) = fcofbf(isou)
+          coefad_r33(ifac) = fcofad(isou)
+          coefbd_r33(ifac) = fcofbd(isou)
+        else if (isou.eq.4) then
+          coefa_r12(ifac) = fcoefa(isou)
+          coefb_r12(ifac) = fcoefb(isou)
+          coefaf_r12(ifac) = fcofaf(isou)
+          coefbf_r12(ifac) = fcofbf(isou)
+          coefad_r12(ifac) = fcofad(isou)
+          coefbd_r12(ifac) = fcofbd(isou)
+        else if (isou.eq.5) then
+          coefa_r13(ifac) = fcoefa(isou)
+          coefb_r13(ifac) = fcoefb(isou)
+          coefaf_r13(ifac) = fcofaf(isou)
+          coefbf_r13(ifac) = fcofbf(isou)
+          coefad_r13(ifac) = fcofad(isou)
+          coefbd_r13(ifac) = fcofbd(isou)
+        else if (isou.eq.6) then
+          coefa_r23(ifac) = fcoefa(isou)
+          coefb_r23(ifac) = fcoefb(isou)
+          coefaf_r23(ifac) = fcofaf(isou)
+          coefbf_r23(ifac) = fcofbf(isou)
+          coefad_r23(ifac) = fcofad(isou)
+          coefbd_r23(ifac) = fcofbd(isou)
+        endif
 
       enddo
 
     endif
-
-    !===========================================================================
-    ! 3.bis Boundary conditions on u'T'
-    !===========================================================================
-
-    do iscal = 1, nscal
-
-      if (ityturt(iscal).eq.3) then
-        ivar = isca(iscal)
-        ! Name of the scalar ivar !TODO move outside of the loop
-        call field_get_name(ivarfl(ivar), fname)
-
-        ! Index of the corresponding turbulent flux
-        call field_get_id(trim(fname)//'_turbulent_flux', f_id)
-
-        call field_get_coefa_v(f_id,coefaut)
-        call field_get_coefb_v(f_id,coefbut)
-        call field_get_coefaf_v(f_id,cofafut)
-        call field_get_coefbf_v(f_id,cofbfut)
-        call field_get_coefad_v(f_id,cofarut)
-        call field_get_coefbd_v(f_id,cofbrut)
-
-        iel = ifabor(ifac)
-        ! --- Physical Propreties
-        visclc = propce(iel,ipproc(iviscl))
-        if (icp.gt.0) then
-          ipccp  = ipproc(icp)
-        else
-          ipccp = 0
-        endif
-        cpp = 1.d0
-        if (iscacp(iscal).eq.1) then
-          if (ipccp.gt.0) then
-            cpp = propce(iel,ipccp)
-          else
-            cpp = cp0
-          endif
-        endif
-
-        ! --- Geometrical quantities
-        distbf = distb(ifac)
-
-        if (ivisls(iscal).le.0) then
-          rkl = visls0(iscal)/cpp
-        else
-          rkl = propce(iel,ipproc(ivisls(iscal)))/cpp
-        endif
-
-        hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(1,iel)*ctheta(iscal)/distbf
-        hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(2,iel)*ctheta(iscal)/distbf
-        hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(3,iel)*ctheta(iscal)/distbf
-        hintt(4) = visten(4,iel)*ctheta(iscal)/distbf
-        hintt(5) = visten(5,iel)*ctheta(iscal)/distbf
-        hintt(6) = visten(6,iel)*ctheta(iscal)/distbf
-
-        ! Gradient BCs
-        coefaut(1,ifac) = 0.d0
-        coefaut(2,ifac) = 0.d0
-        coefaut(3,ifac) = 0.d0
-
-        coefbut(1,1,ifac) = 1.d0-rnx**2
-        coefbut(2,2,ifac) = 1.d0-rny**2
-        coefbut(3,3,ifac) = 1.d0-rnz**2
-
-        coefbut(1,2,ifac) = -rnx*rny
-        coefbut(1,3,ifac) = -rnx*rnz
-        coefbut(2,1,ifac) = -rny*rnx
-        coefbut(2,3,ifac) = -rny*rnz
-        coefbut(3,1,ifac) = -rnz*rnx
-        coefbut(3,2,ifac) = -rnz*rny
-
-        ! Flux BCs
-        cofafut(1,ifac) = 0.d0
-        cofafut(2,ifac) = 0.d0
-        cofafut(3,ifac) = 0.d0
-
-        cofbfut(1,1,ifac) = hintt(1)*rnx**2  + hintt(4)*rnx*rny + hintt(6)*rnx*rnz
-        cofbfut(2,2,ifac) = hintt(4)*rnx*rny + hintt(2)*rny**2  + hintt(5)*rny*rnz
-        cofbfut(3,3,ifac) = hintt(6)*rnx*rnz + hintt(5)*rny*rnz + hintt(3)*rnz**2
-
-        cofbfut(1,2,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
-        cofbfut(2,1,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
-        cofbfut(1,3,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
-        cofbfut(3,1,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
-        cofbfut(2,3,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
-        cofbfut(3,2,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
-
-        ! Boundary conditions for thermal transport equation
-        do isou = 1, 3
-          cofarut(isou,ifac) = coefaut(isou,ifac)
-          do jsou =1, 3
-            cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
-          enddo
-        enddo
-
-      endif
-
-    enddo
 
   endif
 ! --- Test sur la presence d'une condition de symetrie vitesse : fin
@@ -632,11 +591,31 @@ do ifac = 1, nfabor
 enddo
 ! ---  End of loop over boundary faces
 
+!===========================================================================
+! 3.bis Boundary conditions on u'T'
+!===========================================================================
+
+do iscal = 1, nscal
+
+  if (ityturt(iscal).eq.3) then
+
+    call clsyvt_scalar(iscal, icodcl, propce)
+    !=================
+
+  endif
+
+enddo
+
 !===============================================================================
 ! 4. Symmetry boundary conditions for mesh velocity (ALE module)
 !===============================================================================
 
 if (iale.eq.1) then
+
+  call field_get_coefa_v(ivarfl(iuma), claale)
+  call field_get_coefb_v(ivarfl(iuma), clbale)
+  call field_get_coefaf_v(ivarfl(iuma), cfaale)
+  call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
   do ifac = 1, nfabor
     if (icodcl(ifac,iuma).eq.4) then
@@ -719,6 +698,230 @@ endif
          ' IS NULL; COORDINATES: ',3E12.5)
 
 #endif
+
+!----
+! End
+!----
+
+return
+end subroutine
+
+!===============================================================================
+! Local functions
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iscal         scalar id
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!> \param[in]     propce        physical properties at cell centers
+!_______________________________________________________________________________
+
+subroutine clsyvt_scalar &
+ ( iscal  , icodcl ,                                     &
+   propce )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use pointe
+use entsor
+use albase
+use parall
+use ppppar
+use ppthch
+use ppincl
+use cplsat
+use mesh
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          iscal
+
+integer          icodcl(nfabor,nvarcl)
+
+double precision propce(ncelet,*)
+
+! Local variables
+
+integer          ivar, f_id
+integer          ifac, iel, isou, jsou
+integer          ipccp, ipccv
+
+double precision cpp, rkl, visclc
+double precision distbf, srfbnf
+double precision rnx, rny, rnz
+double precision hintt(6)
+
+character(len=80) :: fname
+
+double precision, dimension(:), pointer :: val_s, crom
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
+double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
+
+!===============================================================================
+
+if (ityturt(iscal).ne.3) return
+
+ivar = isca(iscal)
+f_id = ivarfl(ivar)
+
+call field_get_val_s(ivarfl(ivar), val_s)
+
+call field_get_coefa_s(f_id, coefap)
+call field_get_coefb_s(f_id, coefbp)
+call field_get_coefaf_s(f_id, cofafp)
+call field_get_coefbf_s(f_id, cofbfp)
+
+call field_get_val_s(icrom, crom)
+if (icp.gt.0) then
+  ipccp  = ipproc(icp)
+else
+  ipccp = 0
+endif
+
+ipccv = 0
+if (ippmod(icompf) .ge. 0) then
+  if (icv.gt.0) then
+    ipccv  = ipproc(icv)
+  else
+    ipccv = 0
+  endif
+endif
+
+! Turbulent diffusive flux of the scalar T
+! (blending factor so that the component v'T' have only
+!  mu_T/(mu+mu_T)* Phi_T)
+
+! Name of the scalar ivar
+call field_get_name(ivarfl(ivar), fname)
+
+! Index of the corresponding turbulent flux
+call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+call field_get_coefa_v(f_id,coefaut)
+call field_get_coefb_v(f_id,coefbut)
+call field_get_coefaf_v(f_id,cofafut)
+call field_get_coefbf_v(f_id,cofbfut)
+call field_get_coefad_v(f_id,cofarut)
+call field_get_coefbd_v(f_id,cofbrut)
+
+! --- Loop on boundary faces
+do ifac = 1, nfabor
+
+  ! Test on symmetry boundary condition: start
+  if (icodcl(ifac,iu).eq.4) then
+
+    iel = ifabor(ifac)
+    ! --- Physical Propreties
+    visclc = propce(iel,ipproc(iviscl))
+    if (icp.gt.0) then
+      ipccp  = ipproc(icp)
+    else
+      ipccp = 0
+    endif
+    cpp = 1.d0
+    if (iscacp(iscal).eq.1) then
+      if (ipccp.gt.0) then
+        cpp = propce(iel,ipccp)
+      else
+        cpp = cp0
+      endif
+    endif
+
+    ! --- Geometrical quantities
+    distbf = distb(ifac)
+    srfbnf = surfbn(ifac)
+
+    rnx = surfbo(1,ifac)/srfbnf
+    rny = surfbo(2,ifac)/srfbnf
+    rnz = surfbo(3,ifac)/srfbnf
+
+    if (ivisls(iscal).le.0) then
+      rkl = visls0(iscal)/cpp
+    else
+      rkl = propce(iel,ipproc(ivisls(iscal)))/cpp
+    endif
+
+    hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
+             + visten(1,iel)*ctheta(iscal)/distbf
+    hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
+             + visten(2,iel)*ctheta(iscal)/distbf
+    hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
+             + visten(3,iel)*ctheta(iscal)/distbf
+    hintt(4) = visten(4,iel)*ctheta(iscal)/distbf
+    hintt(5) = visten(5,iel)*ctheta(iscal)/distbf
+    hintt(6) = visten(6,iel)*ctheta(iscal)/distbf
+
+    ! Gradient BCs
+    coefaut(1,ifac) = 0.d0
+    coefaut(2,ifac) = 0.d0
+    coefaut(3,ifac) = 0.d0
+
+    coefbut(1,1,ifac) = 1.d0-rnx**2
+    coefbut(2,2,ifac) = 1.d0-rny**2
+    coefbut(3,3,ifac) = 1.d0-rnz**2
+
+    coefbut(1,2,ifac) = -rnx*rny
+    coefbut(1,3,ifac) = -rnx*rnz
+    coefbut(2,1,ifac) = -rny*rnx
+    coefbut(2,3,ifac) = -rny*rnz
+    coefbut(3,1,ifac) = -rnz*rnx
+    coefbut(3,2,ifac) = -rnz*rny
+
+    ! Flux BCs
+    cofafut(1,ifac) = 0.d0
+    cofafut(2,ifac) = 0.d0
+    cofafut(3,ifac) = 0.d0
+
+    cofbfut(1,1,ifac) = hintt(1)*rnx**2  + hintt(4)*rnx*rny + hintt(6)*rnx*rnz
+    cofbfut(2,2,ifac) = hintt(4)*rnx*rny + hintt(2)*rny**2  + hintt(5)*rny*rnz
+    cofbfut(3,3,ifac) = hintt(6)*rnx*rnz + hintt(5)*rny*rnz + hintt(3)*rnz**2
+
+    cofbfut(1,2,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
+    cofbfut(2,1,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
+    cofbfut(1,3,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
+    cofbfut(3,1,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
+    cofbfut(2,3,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
+    cofbfut(3,2,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
+
+    ! Boundary conditions for thermal transport equation
+    do isou = 1, 3
+      cofarut(isou,ifac) = coefaut(isou,ifac)
+      do jsou =1, 3
+        cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+      enddo
+    enddo
+
+  endif
+  ! Test on velocity symmetry condition: end
+
+enddo
 
 !----
 ! End

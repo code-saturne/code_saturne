@@ -128,46 +128,6 @@ module pointe
   !> \addtogroup coupled_case
   !> \{
 
-  !> boundary conditions for the velocity vector with
-  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
-  double precision, dimension(:,:),   allocatable :: coefau
-
-  !> boundary conditions for the velocity diffusion flux with
-  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
-  double precision, dimension(:,:),   allocatable :: cofafu
-
-  !> boundary conditions for the velocity convective flux (only for
-  !> compressible flows).
-  double precision, dimension(:,:),   allocatable :: cofacu
-
-  !> boundary conditions for the velocity vector with
-  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
-  double precision, dimension(:,:,:), allocatable :: coefbu
-
-  !> boundary conditions for the velocity diffusion flux with
-  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
-  double precision, dimension(:,:,:), allocatable :: cofbfu
-
-  !> boundary conditions for the velocity convective flux (only for
-  !> compressible flows).
-  double precision, dimension(:,:,:), allocatable :: cofbcu
-
-  !> explicit Boundary conditions for the mesh velocity.
-  !> dim = (3,nfabor)
-  double precision, dimension(:,:), allocatable ::   cfaale
-
-  !> explicit Boundary conditions for the mesh velocity.
-  !> dim = (3,nfabor)
-  double precision, dimension(:,:), allocatable ::   claale
-
-  !> implicit Boundary conditions for the mesh velocity.
-  !> dim = (3,3,nfabor)
-  double precision, dimension(:,:,:), allocatable :: cfbale
-
-  !> implicit Boundary conditions for the mesh velocity.
-  !> dim = (3,3,nfabor)
-  double precision, dimension(:,:,:), allocatable :: clbale
-
   !> boundary condition type at the boundary face \c ifac
   !> (see user subroutine \ref cs\_user\_boundary\_conditions)
   integer, allocatable, dimension(:) :: itypfb
@@ -436,17 +396,6 @@ contains
 
     if (iale.eq.1) then
       allocate(idfstr(nfabor))
-      allocate(cfaale(3,nfabor), claale(3,nfabor))
-      allocate(cfbale(3,3,nfabor), clbale(3,3,nfabor))
-    endif
-
-    ! Boundary condition for the velocity when components are coupled
-
-    allocate(coefau(3,nfabor),cofafu(3,nfabor))
-    allocate(coefbu(3,3,nfabor),cofbfu(3,3,nfabor))
-    if (ippmod(icompf).ge.0) then
-      allocate(cofacu(3,nfabor))
-      allocate(cofbcu(3,3,nfabor))
     endif
 
     ! Porosity array when needed
@@ -707,12 +656,8 @@ contains
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
-    if (allocated(coefau)) deallocate(coefau, cofafu,                   &
-                                      coefbu, cofbfu)
-    if (allocated(cofacu)) deallocate(cofacu, cofbcu)
     if (allocated(porosi)) deallocate(porosi)
     if (allocated(visten)) deallocate(visten)
-    if (allocated(cfaale)) deallocate(cfaale, cfbale, claale, clbale)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(ifapat)) deallocate(ifapat)

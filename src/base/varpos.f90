@@ -78,7 +78,6 @@ character     ficsui*32
 integer       ivar  , ipp   , iscal , irphas , iprop
 integer       ii    , jj    , kk    , ll
 integer       iok   , ippok , ipppst
-integer       icondl
 integer       iest  , ivisph, ipropp
 integer       imom  , jmom  , imold , jmold , jbmomt, jtcabs
 integer       iiplus, iimoin, jmomok, idto  , jdto
@@ -1699,68 +1698,12 @@ if(ipass.eq.3) then
   nproce = iprop
   nppmax = ipppst
 
-
-
-! ---> 3.4  POSITIONNEMENT DES CONDITIONS AUX LIMITES
-!      ---------------------------------------------------------------------
-
-! --- Numerotation des tableaux NFABOR de type COEFA/COEFB presents ici
-!       On suppose pour le moment que seules les variables de calcul
-!         disposent de conditions aux limites. Ceci pourra ensuite etre
-!         etendu aux variables pysiques en declarant un pointeur du type
-!         de ICLRTP (par exemple ICLPRO)
-!       On suppose que les seules variables qui ont 2 types de cl sont
-!         les variables vitesse en k-epsilon, k-omega et en LES, et la
-!         pression si IPHYDR=1
-
-  icondl = 0
-
-  ! Gradient Boundary conditions
-  do ivar = 1, nvar
-    icondl = icondl + 1
-    iclrtp(ivar,icoef ) = icondl
-  enddo
-
-  ! Diffusive flux Boundary conditions
-  do ivar = 1, nvar
-    icondl = icondl + 1
-    iclrtp(ivar,icoeff) = icondl
-  enddo
-
-  if (itytur.eq.3) then
-    ! Special treatment of divRij in the momentum equation
-    icondl = icondl + 1
-    iclrtp(ir11,icoefr) = icondl
-    icondl = icondl + 1
-    iclrtp(ir22,icoefr) = icondl
-    icondl = icondl + 1
-    iclrtp(ir33,icoefr) = icondl
-    icondl = icondl + 1
-    iclrtp(ir12,icoefr) = icondl
-    icondl = icondl + 1
-    iclrtp(ir13,icoefr) = icondl
-    icondl = icondl + 1
-    iclrtp(ir23,icoefr) = icondl
-  endif
-
-  if (ippmod(icompf).ge.0) then
-    icondl = icondl + 1
-    iclrtp(iu,icoefc) = icondl
-    icondl = icondl + 1
-    iclrtp(iv,icoefc) = icondl
-    icondl = icondl + 1
-    iclrtp(iw,icoefc) = icondl
-    icondl = icondl + 1
-    iclrtp(isca(ienerg),icoefc) = icondl
-  endif
-
-  ncofab = icondl
-
 !        En compressible, avec l'algorithme en pression, celle-ci est
 !        une grandeur instationnaire => istat = 1
   if (ippmod(icompf).ge.0) then
     istat(ipr) = 1
   endif
+
 ! ---> 3.5 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
 !      ---------------------------------------------------------------------
 

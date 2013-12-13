@@ -66,6 +66,8 @@ use pointe
 use parall
 use period
 use mesh
+use field
+use field_operator
 
 !===============================================================================
 
@@ -89,11 +91,13 @@ integer          inc
 
 logical          ilved
 
+double precision, dimension(:,:), pointer :: claale
+double precision, dimension(:,:,:), pointer :: clbale
+
 double precision, allocatable, dimension(:,:) :: dproj, meshv
 double precision, allocatable, dimension(:,:,:) :: gradm
 
 !===============================================================================
-
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -123,6 +127,9 @@ enddo
 
 ilved = .true.
 inc = 1
+
+call field_get_coefa_v(ivarfl(iuma), claale)
+call field_get_coefb_v(ivarfl(iuma), clbale)
 
 call grdvec &
 !==========

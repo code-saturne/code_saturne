@@ -84,7 +84,6 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          ivar  , iel
-integer          iclvar, iclvaf
 integer          ipcvis, ipcvlo, ipcvst
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, ipp

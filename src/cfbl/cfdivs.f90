@@ -73,7 +73,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
-use pointe, only:coefau, coefbu
+use field
 
 !===============================================================================
 
@@ -101,12 +101,17 @@ double precision sigma(3,3)
 double precision, allocatable, dimension(:) :: vistot
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: tempv
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 
 !===============================================================================
 
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 ! Allocate temporary arrays
 allocate(vistot(ncelet))

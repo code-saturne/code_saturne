@@ -35,20 +35,17 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ncofab        total number of couples coefa/b for bound cond
 !> \param[out]    dt            time step value
 !> \param[out]    rtp           calculation variables at cells center
 !> \param[out]    propce        physical properties at cell centers
-!> \param[out]    coefa         boundary conditions for boundary faces
-!> \param[out]    coefb         boundary conditions for boundary faces
 !> \param[out]    frcxt         external stress generating hydrostatic pressure
 !> \param[out]    prhyd         hydrostatic pressure predicted
 !______________________________________________________________________________
 
 subroutine iniva0 &
- ( nvar   , nscal  , ncofab ,                                     &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , propce ,                                     &
-   coefa  , coefb  , frcxt  , prhyd)
+   frcxt  , prhyd)
 
 !===============================================================================
 ! Module files
@@ -77,16 +74,15 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , ncofab
+integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
 integer          iis   , ivar  , iscal , imom
-integer          iel   , ifac  , isou  , jsou
+integer          iel   , ifac
 integer          iclip , ii    , jj    , idim
 integer          iivisl, iivist, iivisa, iivism
 integer          iicp  , iicpa
@@ -99,6 +95,7 @@ double precision xxk, xcmu, trii
 
 double precision rvoid(1)
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: cofbcp
 
 !===============================================================================
 
@@ -442,46 +439,15 @@ endif
 !===============================================================================
 
 ! Conditions aux limites
-do ii = 1, ncofab
-  do ifac = 1, nfabor
-    coefa(ifac,ii) = 0.d0
-    coefb(ifac,ii) = 1.d0
-  enddo
-enddo
 
 if (ienerg.gt.0) then
+  call field_get_coefbc_s(ivarfl(isca(ienerg)), cofbcp)
   do ifac = 1, nfabor
-    coefb(ifac,iclrtp(isca(ienerg),icoefc)) = 0.d0
+    cofbcp(ifac) = 0.d0
   enddo
 endif
 
-! Boundary conditions for the velocity if coupling of the components
-do ifac = 1, nfabor
-  do isou = 1, 3
-    coefau(isou,ifac) = 0.d0
-    cofafu(isou,ifac) = 0.d0
-    do jsou = 1, 3
-      if (jsou.eq.isou) then
-        coefbu(isou,jsou,ifac) = 1.d0
-        cofbfu(isou,jsou,ifac) = 0.d0
-      else
-        coefbu(isou,jsou,ifac) = 0.d0
-        cofbfu(isou,jsou,ifac) = 0.d0
-      endif
-    enddo
-  enddo
-enddo
-
-if (ippmod(icompf).ge.0) then
-  do ifac = 1, nfabor
-    do isou = 1, 3
-      cofacu(isou,ifac) = 0.d0
-      do jsou = 1, 3
-          cofbcu(isou,jsou,ifac) = 0.d0
-      enddo
-    enddo
-  enddo
-endif
+! Boundary conditions
 
 do ifac = 1, nfabor
   itypfb(ifac) = 0

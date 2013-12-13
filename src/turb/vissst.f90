@@ -67,7 +67,7 @@ subroutine vissst &
 
 use paramx
 use cstnum
-use pointe, only: s2kw, divukw, ifapat, dispar, coefau, coefbu
+use pointe, only: s2kw, divukw, ifapat, dispar
 use numvar
 use optcal
 use cstphy
@@ -99,6 +99,8 @@ logical          ilved
 
 double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:,:,:), allocatable :: gradv
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
 
 !===============================================================================
@@ -106,6 +108,9 @@ double precision, dimension(:), pointer :: crom
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvis = ipproc(iviscl)

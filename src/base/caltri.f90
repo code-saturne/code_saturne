@@ -113,8 +113,6 @@ character        ficsui*32
 
 integer, allocatable, dimension(:) :: isostd
 
-double precision, allocatable, dimension(:,:) :: coefa, coefb
-
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:,:) :: rtp => null(), rtpa => null()
 double precision, pointer, dimension(:,:) :: propce => null()
@@ -133,7 +131,7 @@ interface
   ( itrale , nvar   , nscal  ,                                     &
     isostd ,                                                       &
     dt     , rtpa   , rtp    , propce ,                            &
-    coefa  , coefb  , frcxt  , prhyd  )
+    frcxt  , prhyd  )
 
     use dimens, only: ndimfb
     use mesh, only: nfabor
@@ -142,8 +140,6 @@ interface
 
     integer                                   :: itrale, nvar, nscal
     integer, dimension(nfabor+1)              :: isostd
-
-    double precision, dimension (nfabor, *)   :: coefa, coefb
 
     double precision, pointer, dimension(:)   :: dt
     double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
@@ -371,7 +367,6 @@ allocate(dt(ncelet), rtp(ncelet,nvar), rtpa(ncelet,nvar))
 allocate(propce(ncelet,nproce))
 
 ! Allocate arrays on boundary faces
-allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
 
 allocate(isostd(nfabor+1))
 if (iphydr.eq.1) then
@@ -466,7 +461,7 @@ endif
 ! Default initializations
 !===============================================================================
 
-call fldtri(nproce, dt, rtpa, rtp, propce, coefa, coefb)
+call fldtri(nproce, dt, rtpa, rtp, propce)
 !==========
 
 call field_allocate_or_map_all
@@ -474,9 +469,8 @@ call field_allocate_or_map_all
 
 call iniva0 &
 !==========
- ( nvar   , nscal  , ncofab ,                                     &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , propce ,                                     &
-   coefa  , coefb  ,                                              &
    frcxt  , prhyd  )
 
 !===============================================================================
@@ -531,7 +525,7 @@ if (isuite.eq.1) then
       call turbomachinery_update
 
       ! Fields
-      call fldtri(nproce, dt, rtpa, rtp, propce, coefa, coefb)
+      call fldtri(nproce, dt, rtpa, rtp, propce)
 
       ! Other arrays, depending on user options
       if (iilagr.gt.0) &
@@ -861,7 +855,6 @@ call tridim                                                       &
    isostd ,                                                       &
    dt     , rtpa   , rtp    ,                                     &
    propce ,                                                       &
-   coefa  , coefb  ,                                              &
    frcxt  , prhyd  )
 
 !===============================================================================
@@ -1199,9 +1192,6 @@ endif
 
 ! Free main arrays
 deallocate(dt, rtp, rtpa, propce)
-
-! Free other main arrays
-deallocate(coefa, coefb)
 
 deallocate(isostd)
 if (iphydr.eq.1) then

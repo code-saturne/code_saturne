@@ -110,8 +110,6 @@
 !>                                 -# for a scalar \f$ cp \left( K +
 !>                                     \dfrac{K_T}{\sigma_T} \right)
 !>                                     \grad T \cdot \vect{n} \f$
-!> \param[out]    coefa         explicit boundary condition coefficient
-!> \param[out]    coefb         implicit boundary condition coefficient
 !> \param[out]    visvdr        viscosite dynamique ds les cellules
 !>                               de bord apres amortisst de v driest
 !> \param[out]    hbord         coefficients d'echange aux bords
@@ -126,14 +124,13 @@ subroutine condli &
    isvhb  ,                                                       &
    icodcl , isostd ,                                              &
    dt     , rtp    , rtpa   , propce , rcodcl ,                   &
-   coefa  , coefb  , visvdr , hbord  , theipb , frcxt  )
+   visvdr , hbord  , theipb , frcxt  )
 
 !===============================================================================
 ! Module files
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstphy
@@ -168,7 +165,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(3,ncelet)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),theipb(nfabor)
 
@@ -212,6 +208,8 @@ double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: bfconv, bhconv
+double precision, dimension(:,:), pointer :: coefau, cofafu, cfaale, claale
+double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, cfbale, clbale
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cofadp, cofbdp
 
@@ -269,6 +267,12 @@ if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
 if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 
 if (idtten.ge.0) call field_get_val_v(idtten, dttens)
+
+! Pointers to velcocity BC coefficients
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+call field_get_coefaf_v(ivarfl(iu), cofafu)
+call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 !===============================================================================
 ! 2. Treatment of types of BCs given by itypfb
@@ -677,7 +681,7 @@ if (ipatur.ne.0) then
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
    rtp    , propce , rcodcl ,                                     &
-   velipb , rijipb , coefa  , coefb  , visvdr ,                   &
+   velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
 endif
@@ -687,10 +691,9 @@ if (ipatrg.ne.0) then
   ! Rough wall laws
   call clptrg &
   !==========
- ( nscal  , isvhb  ,                                              &
-   icodcl ,                                                       &
+ ( nscal  , isvhb  , icodcl ,                                     &
    rtp    , propce , rcodcl ,                                     &
-   velipb , rijipb , coefa  , coefb  , visvdr ,                   &
+   velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
 endif
@@ -711,7 +714,7 @@ if (iclsym.ne.0) then
   !==========
  ( nscal  , icodcl ,                                              &
    propce , rcodcl ,                                              &
-   velipb , rijipb , coefa  , coefb  )
+   velipb , rijipb )
 
 endif
 
@@ -2187,10 +2190,15 @@ if (nscal.ge.1) then
 endif
 
 !===============================================================================
-! 13. Mesh velocity (ALE module): Dirichlet and Neumann and convectiv outlet
+! 13. Mesh velocity (ALE module): Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 if (iale.eq.1) then
+
+  call field_get_coefa_v(ivarfl(iuma), claale)
+  call field_get_coefb_v(ivarfl(iuma), clbale)
+  call field_get_coefaf_v(ivarfl(iuma), cfaale)
+  call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
   do ifac = 1, nfabor
 

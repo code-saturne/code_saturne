@@ -76,7 +76,7 @@ use entsor
 use cstphy
 use optcal
 use lagran
-use pointe, only: coefau, coefbu, ivoid1, rvoid1
+use pointe, only: ivoid1, rvoid1
 use mesh
 use field
 
@@ -122,6 +122,8 @@ double precision, allocatable, dimension(:,:) :: gradro
 
 integer,          pointer, dimension(:) :: itpsmp
 double precision, pointer, dimension(:) :: smcelp, gammap, tslage, tslagi
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: brom, crom
 
 !===============================================================================
@@ -135,6 +137,9 @@ smcelp => rvoid1
 gammap => rvoid1
 tslage => rvoid1
 tslagi => rvoid1
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))

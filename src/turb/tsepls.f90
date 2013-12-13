@@ -56,8 +56,8 @@ use numvar
 use optcal
 use cstphy
 use entsor
-use pointe, only: coefau, coefbu
 use mesh
+use field
 
 !===============================================================================
 
@@ -80,6 +80,9 @@ double precision pnd, flux, somsur, epsrgp
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:,:,:) :: gradv
 
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
+
 !===============================================================================
 
 !===============================================================================
@@ -91,6 +94,9 @@ allocate(gradv(3, 3, ncelet))
 
 ! Allocate work arrays
 allocate(w7(ncelet))
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 !===============================================================================
 ! 2. Calculation of the term d2Ui/dxkdxj*d2Ui/dxkdxj

@@ -262,29 +262,12 @@ module field
 
     ! Interface to C function initializing boundary condition coefficients
 
-    subroutine cs_field_init_bc_coeffs(f, have_flux_bc, have_mom_bc,      &
-                                       have_conv_bc)                      &
+    subroutine cs_field_init_bc_coeffs(f)                      &
       bind(C, name='cs_field_init_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), value           :: f
-      logical(c_bool), value       :: have_flux_bc
-      logical(c_bool), value       :: have_mom_bc
-      logical(c_bool), value       :: have_conv_bc
     end subroutine cs_field_init_bc_coeffs
-
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function mapping boundary condition coefficients
-
-    subroutine cs_field_map_bc_coeffs(f, a, b, af, bf, ad, bd, ac, bc)  &
-      bind(C, name='cs_field_map_bc_coeffs')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: f
-      real(kind=c_double), dimension(*) :: a, b, af, bf, ad, bd, ac, bc
-    end subroutine cs_field_map_bc_coeffs
 
     !---------------------------------------------------------------------------
 
@@ -816,14 +799,8 @@ contains
   !> \brief Initialize boundary condition coefficient arrays if applicable.
 
   !> \param[in]  id            field id
-  !> \param[in]  have_flux_bc  if .true., flux BC coefficients
-  !>                           (coefaf and coefbf) are initialize
-  !> \param[in]  have_mom_bc   if .true., BC coefficients used in divergence
-  !>                           term (coefad and coefbd) are initialized
-  !> \param[in]  have_conv_bc   if .true., BC coefficients used in convection
-  !>                           term (coefac and coefbc) are initialized
 
-  subroutine field_init_bc_coeffs(id, have_flux_bc, have_mom_bc, have_conv_bc)
+  subroutine field_init_bc_coeffs(id)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -831,54 +808,6 @@ contains
     ! Arguments
 
     integer, intent(in) :: id
-    logical, intent(in) :: have_flux_bc
-    logical, intent(in) :: have_mom_bc
-    logical, intent(in) :: have_conv_bc
-
-    ! Local variables
-
-    integer(c_int) :: c_id
-    logical(c_bool) :: c_have_flux_bc
-    logical(c_bool) :: c_have_mom_bc
-    logical(c_bool) :: c_have_conv_bc
-    type(c_ptr)     :: f
-
-    c_id = id
-
-    f = cs_field_by_id(c_id)
-    c_have_flux_bc = have_flux_bc
-    c_have_mom_bc = have_mom_bc
-    c_have_conv_bc = have_conv_bc
-    call cs_field_init_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, c_have_conv_bc)
-
-    return
-
-  end subroutine field_init_bc_coeffs
-
-
-  !=============================================================================
-
-  !> \brief  Map existing field boundary condition coefficient arrays.
-
-  !> \param[in]  id  field id
-  !> \param[in]  a   explicit BC coefficients array
-  !> \param[in]  b   implicit BC coefficients array
-  !> \param[in]  af  explicit flux BC coefficients array, if present
-  !> \param[in]  bf  implicit flux BC coefficients array, if present
-  !> \param[in]  ad  explicit div BC coefficients array, if present
-  !> \param[in]  bd  implicit div BC coefficients array, if present
-  !> \param[in]  ac  explicit conv BC coefficients array, if present
-  !> \param[in]  bc  implicit conv BC coefficients array, if present
-
-  subroutine field_map_bc_coeffs(id, a, b, af, bf, ad, bd, ac, bc)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)                        :: id
-    double precision, intent(in), dimension(*) :: a, b, af, bf, ad, bd, ac, bc
 
     ! Local variables
 
@@ -888,11 +817,11 @@ contains
     c_id = id
 
     f = cs_field_by_id(c_id)
-    call cs_field_map_bc_coeffs(f, a, b, af, bf, ad, bd, ac, bc)
+    call cs_field_init_bc_coeffs(f)
 
     return
 
-  end subroutine field_map_bc_coeffs
+  end subroutine field_init_bc_coeffs
 
   !=============================================================================
 

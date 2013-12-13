@@ -76,7 +76,6 @@ use cstphy
 use optcal
 use lagran
 use ppincl
-use pointe, only: coefau, coefbu
 use mesh
 use field
 
@@ -150,6 +149,8 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, bromo, cromo
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
@@ -177,6 +178,9 @@ endif
 if (iturb.eq.51) then
   allocate(w10(ncelet),w11(ncelet))
 endif
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)

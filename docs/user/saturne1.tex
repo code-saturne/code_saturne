@@ -2452,44 +2452,12 @@ although they concern only the wall boundary faces.
 %==================================
 
 The main numerical variables and ``pointers'' are displayed below.
-%\footnote{As for the
-%geometrical variables, some variables may be accessed to directly in
-%sections of the unidimensional macro-array \texttt{ra}
-%(for the real numbers) which is present as an argument to many
-%subroutines. The number of the first position of these sections in \texttt{ra}
-%is indicated by an integer stored in a the \texttt{pointe} Fortran module.
-%These integers are referred to as ``pointers''}
 
 \minititre{Boundary conditions}
 
-\variab{coefa}{coefa(nfabor,*)}{ra}{Boundary conditions: see note 2}
-
-\variab{coefau}{coefau(3,nfabor)}{ra}{Boundary conditions for the velocity vector with
-the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
-
-\variab{cofafu}{cofafu(3,nfabor)}{ra}{Boundary conditions for the velocity diffusion flux with
-the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
-
-\variab{coefb}{coefb(nfabor,*)}{ra}{Boundary conditions: see note 2}
-
-\variab{coefbu}{coefbu(3,nfabor)}{ra}{Boundary conditions for the velocity vector with
-the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
-
-\variab{cofbfu}{cofbfu(3,nfabor)}{ra}{Boundary conditions for the velocity diffusion flux with
-the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
-
 \variab{iclrtp}{iclrtp(nvarmx,3)}{ia}{For each variable \texttt{ivar}
-(1$\leqslant$ivar$\leqslant$nvar$\leqslant$nvarmx), rank in \texttt{coefa} and
-\texttt{coefb} of the boundary conditions. See note 2}
-
-\variab{icoef}{icoef}{i}{Rank in \texttt{iclrtp} of the rank in \texttt{coefa}
-and \texttt{coefb} of the gradient boundary conditions. See note 2}
-
-\variab{icoeff}{icoeff}{i}{Rank in \texttt{iclrtp} of the rank in \texttt{coefa}
-and \texttt{coefb} of the diffusive flux type boundary conditions. See note 2}
-
-\variab{icoefr}{icoefr}{i}{Rank in \texttt{iclrtp} of the rank in \texttt{coefa}
-and \texttt{coefb} of the divergence type boundary conditions (especially for Reynolds stresses in the momentum equation). See note 2}
+(1$\leqslant$ivar$\leqslant$nvar$\leqslant$nvarmx), rank in \texttt{icodcl} and
+\texttt{rcodcl} of the boundary conditions. See note 2}
 
 \variab{ifmfbr}{ifmfbr(nfabor)}{ia}{Family number of the boundary
 faces. See note 1}
@@ -2626,10 +2594,9 @@ perpendicular to the boundary face and crossing its center:
 \end{equation}
 
 For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^g , \, B_{\fib}^g$ is
-stored in \texttt{coefa(ifac,iclvar)} and
-\texttt{coefb(ifac,iclvar)}, where the integer \texttt{iclvar=iclrtp(ivar,icoef)}
-determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
-gradient conditions of the variable \texttt{ivar}.
+may be accessed using the \texttt{field\_get\_coefa\_s} and
+\texttt{field\_get\_coefb\_s} functions, replacing \texttt{s} with \texttt{v}
+for a vector.
 
 The \textbf{flux} boundary conditions in \CS boil down to determine the value of the diffusive
 flux of the
@@ -2642,11 +2609,10 @@ perpendicular to the boundary face and crossing its center:
 D_{\ib} \left(K_\fib, \, \varia \right) = A_{\fib}^f +B_{\fib}^f \varia_{\centip}.
 \end{equation}
 
-For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^f , \, B_{\fib}^f$ is
-stored in \texttt{coefa(ifac,iclvaf)} and
-\texttt{coefb(ifac,iclvaf)}, where the integer \texttt{iclvaf=iclrtp(ivar,icoeff)}
-determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
-diffusive flux conditions of the variable \texttt{ivar}.
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^f , \, B_{\fib}^f$
+may be accessed using the \texttt{field\_get\_coefaf\_s} and
+\texttt{field\_get\_coefbf\_s} functions, replacing \texttt{s} with \texttt{v}
+for a vector.
 
 The \textbf{divergence} boundary conditions in \CS boil down to determine a value for the
 current variable $\varia$ (mainly the Reynolds stress components, the divergence $\divv \left(\tens{R} \right)$ used in the calculation of the momentum equation) at the boundary faces $\fib$,
@@ -2658,11 +2624,10 @@ perpendicular to the boundary face and crossing its center:
 \varia_\fib=A_{\fib}^d +B_{\fib}^d \varia_{\centip}.
 \end{equation}
 
-For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^d , \, B_{\fib}^d$ is
-stored in \texttt{coefa(ifac,iclvrr)} and
-\texttt{coefb(ifac,iclvrr)}, where the integer \texttt{iclvrr=iclrtp(ivar,icoefr)}
-determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
-divergence conditions of the variable \texttt{ivar}.
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^d , \, B_{\fib}^d$
+may be accessed using the \texttt{field\_get\_coefad\_s} and
+\texttt{field\_get\_coefbd\_s} functions, replacing \texttt{s} with \texttt{v}
+for a vector.
 
 \clearpage
 %==================================

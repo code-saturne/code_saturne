@@ -74,8 +74,9 @@ use cstphy
 use cstnum
 use parall
 use period
-use pointe, only: coefau, coefbu, straio
+use pointe, only: straio
 use mesh
+use field
 
 !===============================================================================
 
@@ -107,6 +108,9 @@ double precision, allocatable, dimension(:,:) :: grdsij
 double precision, allocatable, dimension(:) :: coeas, coebs
 double precision, allocatable, dimension(:) :: brtild, eta1, eta2
 
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -125,6 +129,9 @@ if(ipass.eq.1) then
     enddo
   enddo
 endif
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 !===============================================================================
 ! 1. Preliminary calculations

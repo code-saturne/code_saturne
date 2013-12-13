@@ -218,7 +218,7 @@ cs_field_map_values(cs_field_t   *f,
  *   f            <-- pointer to field structure
  *   have_flux_bc <-- if true, flux BC coefficients (af and bf) are added
  *   have_mom_bc  <-- if true, div BC coefficients (ad and bd) are added
- *   have_conv_bc  <-- if true, convection BC coefficients (ac and bc) are added
+ *   have_conv_bc <-- if true, convection BC coefficients (ac and bc) are added
  *----------------------------------------------------------------------------*/
 
 void
@@ -246,61 +246,11 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
  * face is dim*dim instead of dim.
  *
  * parameters:
- *   f            <-> pointer to field structure
- *   have_flux_bc <-- if true, flux bc coefficients (af and bf)
- *                    are initialized
- *   have_mom_bc  <-- if true, div BC coefficients (ad and bd)
- *                    are initialized
- *   have_conv_bc <-- if true, convection BC coefficients (ac and bc)
- *                    are initialized
+ *   f <-> pointer to field structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_init_bc_coeffs(cs_field_t  *f,
-                        bool         have_flux_bc,
-                        bool         have_mom_bc,
-                        bool         have_conv_bc);
-
-/*----------------------------------------------------------------------------
- * Map existing field boundary condition coefficient arrays.
- *
- * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
- * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
- *
- * Boundary condition coefficients are not currently supported for other
- * locations (though support could be added by mapping a boundary->location
- * indirection array in the cs_mesh_location_t structure).
- *
- * For multidimensional fields, arrays are assumed to have the same
- * interleaving behavior as the field, unless components are coupled.
- *
- * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit coefficients arrays are arrays of block matrices,
- * not vectors, so the number of entris for each boundary face is
- * dim*dim instead of dim.
- *
- * parameters:
- *   f  <-> pointer to field structure
- *   a  <-- explicit BC coefficients array
- *   b  <-- implicit BC coefficients array
- *   af <-- explicit flux BC coefficients array, or NULL
- *   bf <-- implicit flux BC coefficients array, or NULL
- *   ad  explicit div BC coefficients array, or NULL
- *   bd  implicit div BC coefficients array, or NULL
- *   ac  explicit convection BC coefficients array, or NULL
- *   bc  implicit convection BC coefficients array, or NULL
- *----------------------------------------------------------------------------*/
-
-void
-cs_field_map_bc_coeffs(cs_field_t  *f,
-                       cs_real_t   *a,
-                       cs_real_t   *b,
-                       cs_real_t   *af,
-                       cs_real_t   *bf,
-                       cs_real_t   *ad,
-                       cs_real_t   *bd,
-                       cs_real_t   *ac,
-                       cs_real_t   *bc);
+cs_field_init_bc_coeffs(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------
  * Copy current field values to previous values if applicable.

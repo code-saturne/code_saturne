@@ -42,8 +42,6 @@
 !> \param[in,out] rtp           calculated variables at cell centers
 !>                              (at current and previous time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     coefa         boundary conditions
-!> \param[in]     coefb         boundary conditions
 !> \param[in]     frcxt         external force generating hydrostatic pressure
 !> \param[in]     prhyd         predicted hydrostatic pressure
 !______________________________________________________________________________
@@ -53,7 +51,7 @@ subroutine tridim &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
-   coefa  , coefb  , frcxt  , prhyd  )
+   frcxt  , prhyd  )
 
 !===============================================================================
 ! Module files
@@ -106,7 +104,6 @@ integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
-double precision , dimension(nfabor,*) :: coefa, coefb
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 
@@ -167,7 +164,7 @@ interface
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
     dt     , rtp    , rtpa   , propce ,                            &
-    coefa  , coefb  , frcxt  , prhyd  ,                            &
+    frcxt  , prhyd  ,                                              &
     trava  , ximpa  , uvwk   )
 
     use dimens, only: ndimfb
@@ -181,7 +178,6 @@ interface
 
     double precision, pointer, dimension(:)   :: dt
     double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
-    double precision, dimension(nfabor,*) :: coefa, coefb
     double precision, pointer, dimension(:,:) :: frcxt
     double precision, pointer, dimension(:) :: prhyd
     double precision, pointer, dimension(:,:) :: trava, uvwk
@@ -968,8 +964,7 @@ do while (iterns.le.nterup)
   icodcl , isostd ,                                              &
   dt     , rtp    , rtpa   , propce ,                            &
   rcodcl ,                                                       &
-  coefa  , coefb  , visvdr ,                                     &
-  hbord  , theipb ,                                              &
+  visvdr , hbord  , theipb ,                                     &
   frcxt  )
 
 !     ==============================================
@@ -1230,7 +1225,7 @@ do while (iterns.le.nterup)
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
     dt     , rtp    , rtpa   , propce ,                            &
-    coefa  , coefb  , frcxt  , prhyd  ,                            &
+    frcxt  , prhyd  ,                                              &
     trava  , ximpav , uvwk   )
 
 

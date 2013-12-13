@@ -1375,21 +1375,12 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
  * block matrices, not vectors, so the number of entries for each boundary
  * face is dim*dim instead of dim.
  *
- * \param[in, out]  f             pointer to field structure
- * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
- *                                are initialized
- * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
- *                                are initialized
- * \param[in]       have_conv_bc  if true, convection BC coefficients (ac and bc)
- *                                are initialized
+ * \param[in, out]  f  pointer to field structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_init_bc_coeffs(cs_field_t  *f,
-                        bool         have_flux_bc,
-                        bool         have_mom_bc,
-                        bool         have_conv_bc)
+cs_field_init_bc_coeffs(cs_field_t  *f)
 {
   /* Add boundary condition coefficients if required */
 
@@ -1416,19 +1407,19 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
         f->bc_coeffs->b[ifac] = 1.;
       }
 
-      if (have_flux_bc)
+      if (f->bc_coeffs->af != NULL)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->af[ifac] = 0.;
           f->bc_coeffs->bf[ifac] = 0.;
         }
 
-      if (have_mom_bc)
+      if (f->bc_coeffs->ad != NULL)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ad[ifac] = 0.;
           f->bc_coeffs->bd[ifac] = 1.;
         }
 
-      if (have_conv_bc)
+      if (f->bc_coeffs->ac != NULL)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ac[ifac] = 0.;
           f->bc_coeffs->bc[ifac] = 0.;
@@ -1455,7 +1446,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
         f->bc_coeffs->b[ifac*dim*dim + 8] = 0.;
       }
 
-      if (have_flux_bc)
+      if (f->bc_coeffs->af != NULL)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->af[ifac*dim] = 0.;
           f->bc_coeffs->af[ifac*dim + 1] = 0.;
@@ -1471,7 +1462,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
           f->bc_coeffs->bf[ifac*dim*dim + 8] = 0.;
         }
 
-      if (have_mom_bc)
+      if (f->bc_coeffs->ad != NULL)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ad[ifac*dim] = 0.;
           f->bc_coeffs->ad[ifac*dim + 1] = 0.;
@@ -1487,7 +1478,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
           f->bc_coeffs->bd[ifac*dim*dim + 8] = 0.;
         }
 
-      if (have_conv_bc)
+      if (f->bc_coeffs->ac != NULL)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ac[ifac*dim] = 0.;
           f->bc_coeffs->ac[ifac*dim + 1] = 0.;
@@ -1504,87 +1495,6 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
         }
 
     }
-
-  }
-
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("Field \"%s\"\n"
-                " has location %d, which does not support BC coefficients."),
-              f->name, f->location_id);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Map existing field boundary condition coefficient arrays.
- *
- * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
- * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
- *
- * Boundary condition coefficients are not currently supported for other
- * locations (though support could be added by mapping a boundary->location
- * indirection array in the cs_mesh_location_t structure).
- *
- * For multidimensional fields, arrays are assumed to have the same
- * interleaving behavior as the field, unless components are coupled.
- *
- * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit coefficients arrays are arrays of block matrices,
- * not vectors, so the number of entris for each boundary face is
- * dim*dim instead of dim.
- *
- * \param[in, out]  f   pointer to field structure
- * \param[in]       a   explicit BC coefficients array
- * \param[in]       b   implicit BC coefficients array
- * \param[in]       af  explicit flux BC coefficients array, or NULL
- * \param[in]       bf  implicit flux BC coefficients array, or NULL
- * \param[in]       ad  explicit div BC coefficients array, or NULL
- * \param[in]       bd  implicit div BC coefficients array, or NULL
- * \param[in]       ac  explicit convection BC coefficients array, or NULL
- * \param[in]       bc  implicit convection BC coefficients array, or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_map_bc_coeffs(cs_field_t  *f,
-                       cs_real_t   *a,
-                       cs_real_t   *b,
-                       cs_real_t   *af,
-                       cs_real_t   *bf,
-                       cs_real_t   *ad,
-                       cs_real_t   *bd,
-                       cs_real_t   *ac,
-                       cs_real_t   *bc)
-{
-  /* Add boundary condition coefficients if required */
-
-  if (f->location_id == CS_MESH_LOCATION_CELLS) {
-
-    const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
-
-    if (f->bc_coeffs == NULL) {
-      BFT_MALLOC(f->bc_coeffs, 1, cs_field_bc_coeffs_t);
-      f->bc_coeffs->location_id = location_id;
-    }
-    else {
-      BFT_FREE(f->bc_coeffs->a);
-      BFT_FREE(f->bc_coeffs->b);
-      BFT_FREE(f->bc_coeffs->af);
-      BFT_FREE(f->bc_coeffs->bf);
-      BFT_FREE(f->bc_coeffs->ad);
-      BFT_FREE(f->bc_coeffs->bd);
-      BFT_FREE(f->bc_coeffs->ac);
-      BFT_FREE(f->bc_coeffs->bc);
-    }
-
-    f->bc_coeffs->a = a;
-    f->bc_coeffs->b = b;
-    f->bc_coeffs->af = af;
-    f->bc_coeffs->bf = bf;
-    f->bc_coeffs->ad = ad;
-    f->bc_coeffs->bd = bd;
-    f->bc_coeffs->ac = ac;
-    f->bc_coeffs->bc = bc;
 
   }
 

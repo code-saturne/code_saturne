@@ -94,6 +94,9 @@ double precision rinfiv(3), pimpv(3)
 
 double precision rvoid(1)
 
+double precision, dimension(:,:), pointer :: cfaale, claale
+double precision, dimension(:,:,:), pointer :: cfbale, clbale
+
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:,:) :: smbr, meshv, meshva
 double precision, allocatable, dimension(:,:,:) :: fimp
@@ -128,6 +131,11 @@ call field_get_val_s(iflmab, bmasfl)
 if(iwarni(iuma).ge.1) then
   write(nfecra,1000)
 endif
+
+call field_get_coefa_v(ivarfl(iuma), claale)
+call field_get_coefb_v(ivarfl(iuma), clbale)
+call field_get_coefaf_v(ivarfl(iuma), cfaale)
+call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
 ! We compute the boundary condition on the mesh velocity at the free surface
 ! from the new mass flux.

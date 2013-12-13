@@ -213,35 +213,6 @@ module numvar
   !> \}
 
   !----------------------------------------------------------------------------
-  ! Boundary conditions coefficients
-  !----------------------------------------------------------------------------
-
-  !>\defgroup bc_coeffs Boundary conditions coefficients
-  !> \brief Boundary condition coefficient are stored in coefa and coefb.
-  !> See \ref condli and the theory guide for more information.
-
-  !> \addtogroup bc_coeffs
-  !> \{
-
-  !> Coefficients used for gradient terms and convective terms
-  integer, save :: icoef
-
-  !> Coefficients used for diffusive terms
-  integer, save :: icoeff
-
-  !> Coefficients used for divergence terms
-  !> (for example \f$ \tens{R}_{ij} \f$ in the momentum equation)
-  integer, save :: icoefr
-
-  !> Coefficients used for convection terms
-  integer, save :: icoefc
-
-  !> pointer to coefa and coefb arrays
-  integer, save :: iclrtp(nvarmx,4)
-
-  !> \}
-
-  !----------------------------------------------------------------------------
   ! Mapping to field structures
   !----------------------------------------------------------------------------
 

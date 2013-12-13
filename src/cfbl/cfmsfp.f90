@@ -77,7 +77,6 @@ use paramx
 use numvar
 use entsor
 use optcal
-use pointe, only: coefau, coefbu, cofafu, cofbfu
 use cstphy
 use cstnum
 use parall
@@ -132,11 +131,19 @@ double precision, allocatable, dimension(:) :: viscb
 double precision, allocatable, dimension(:) :: secvif, secvib
 double precision, allocatable, dimension(:,:,:) :: coefbv
 
+double precision, dimension(:,:), pointer :: coefau, cofafu
+double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+call field_get_coefaf_v(ivarfl(iu), cofafu)
+call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 ! Allocate work arrays
 allocate(w1(ncelet), w8(ncelet), w9(ncelet))

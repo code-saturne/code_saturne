@@ -65,9 +65,9 @@ use numvar
 use optcal
 use cstphy
 use entsor
-use pointe, only: coefau, coefbu
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -90,17 +90,21 @@ double precision xfil, xa  , xb  , radeux
 logical          ilved
 
 double precision, dimension(:,:,:), allocatable :: gradv
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
 
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet))
-
-! --- Memoire
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvst = ipproc(ivisct)

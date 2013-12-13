@@ -48,7 +48,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
 !> \param[in]     prhyd         hydrostatic pressure predicted at cell centers
@@ -62,7 +61,7 @@ subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
    dt     , rtp    , rtpa   , propce ,                            &
-   coefa  , coefb  , frcxt  , prhyd  ,                            &
+   frcxt  , prhyd  ,                                              &
    trava  , ximpa  , uvwk   )
 
 !===============================================================================
@@ -105,7 +104,6 @@ integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
-double precision, dimension(nfabor,*) :: coefa, coefb
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 double precision, pointer, dimension(:,:) :: trava, uvwk
@@ -156,6 +154,9 @@ double precision, dimension(:,:,:), pointer :: viscfi
 double precision, dimension(:), pointer :: viscbi
 double precision, dimension(:,:), pointer :: dttens
 double precision, dimension(:,:), pointer :: dfrcxt
+
+double precision, dimension(:,:), pointer :: coefau, cofafu, claale
+double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -366,6 +367,12 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
+! Pointers to BC coefficients
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+call field_get_coefaf_v(ivarfl(iu), cofafu)
+call field_get_coefbf_v(ivarfl(iu), cofbfu)
+
 call predvv &
 !==========
 ( iappel ,                                                       &
@@ -432,6 +439,9 @@ if (iprco.le.0) then
     iwarnp = iwarni(iuma)
     epsrgp = epsrgr(iuma)
     climgp = climgr(iuma)
+
+    call field_get_coefa_v(ivarfl(iuma), claale)
+    call field_get_coefb_v(ivarfl(iuma), clbale)
 
     call inimav &
     !==========
@@ -659,7 +669,7 @@ if (iturbo.eq.2) then
 
     ! Update field mappings ("owner" fields handled by update_turbomachinery)
 
-    call fldtri(nproce, dt, rtpa, rtp, propce, coefa, coefb)
+    call fldtri(nproce, dt, rtpa, rtp, propce)
     !==========
 
     ! Resize other arrays related to the velocity-pressure resolution
@@ -952,6 +962,9 @@ if (iale.eq.1) then
   iwarnp = iwarni(iuma)
   epsrgp = epsrgr(iuma)
   climgp = climgr(iuma)
+
+  call field_get_coefa_v(ivarfl(iuma), claale)
+  call field_get_coefb_v(ivarfl(iuma), clbale)
 
   call inimav &
   !==========

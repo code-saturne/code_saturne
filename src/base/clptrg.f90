@@ -97,20 +97,18 @@
 !>                               of boundary cells
 !> \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
 !>                               of boundary cells
-!> \param[out]    coefa         explicit boundary condition coefficient
-!> \param[out]    coefb         implicit boundary condition coefficient
 !> \param[out]    visvdr        viscosite dynamique ds les cellules
 !>                               de bord apres amortisst de v driest
 !> \param[out]    hbord         coefficients d'echange aux bords
 !>
-!> \param[out]    theipb        boundary temperature in \f$ \centip \f$
+!> \param[in]     theipb        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
 !_______________________________________________________________________________
 
 subroutine clptrg &
  ( nscal  , isvhb  , icodcl ,                                     &
    rtp    , propce , rcodcl ,                                     &
-   velipb , rijipb , coefa  , coefb  , visvdr ,                   &
+   velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
 !===============================================================================
@@ -144,8 +142,7 @@ implicit none
 
 ! Arguments
 
-integer          nscal
-integer          isvhb
+integer          nscal, isvhb
 
 integer          icodcl(nfabor,nvarcl)
 
@@ -153,61 +150,74 @@ double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),theipb(nfabor)
 
 ! Local variables
 
-integer          ifac, iel, ivar, isou, jsou, ii, jj, kk, isvhbl
+integer          ifac, iel, isou, ii, jj, kk
 integer          iscal
 integer          modntl
 integer          iuntur, iuiptn
-integer          iclk  , iclep
-integer          iclnu
-integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
-integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
-integer          iclphi, iclfb , iclal , iclomg
-integer          iclvar, iclvrr
-integer          iclkf , iclepf
-integer          iclnuf
-integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
-integer          iclphf, iclfbf, iclalf, iclomf
-integer          iclvaf
 integer          ipcvis, ipcvst, ipccp , ipccv
-integer          ipcvsl, itplus, itstar
-integer          f_id
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
-double precision uiptn, uiptnf, uiptmn, uiptmx
+double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
-double precision uk, uet, tet, yplus, uplus, phit, tplus
+double precision uk, uet, yplus, uplus, phit
 double precision gredu, rib, lmo, q0, e0
 double precision cfnnu, cfnns, cfnnk, cfnne
 double precision sqrcmu, clsyme, ek
 double precision xmutlm
 double precision rcprod, rcflux
-double precision cpp, rkl,  prdtl
-double precision hflui, hint, hext, pimp, heq, qimp
+double precision hflui, hint, pimp, qimp
 double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
-double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
+double precision visclc, visctc, romc  , distbf, srfbnf
 double precision cofimp
-double precision distb0, rugd  , rugt  , ydep  , act
+double precision distb0, rugd  , rugt  , ydep
 double precision dsa0
-double precision rinfiv(3), pimpv(3), hintt(6)
-double precision visci(3,3), fikis, viscis, distfi
+double precision rinfiv(3)
+double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
-character*80     fname
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), allocatable :: byplus, buk, buet, buplus, bcfnns
 
-double precision, dimension(:), pointer :: tplusp, tstarp, crom
-double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
-double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
-double precision, dimension(:), pointer :: bfconv, bhconv
+double precision, dimension(:,:), pointer :: coefau, cofafu
+double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
+double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
+double precision, dimension(:), pointer :: coefa_ep, coefaf_ep
+double precision, dimension(:), pointer :: coefb_ep, coefbf_ep
+double precision, dimension(:), pointer :: coefa_r11, coefaf_r11, coefad_r11
+double precision, dimension(:), pointer :: coefb_r11, coefbf_r11, coefbd_r11
+double precision, dimension(:), pointer :: coefa_r22, coefaf_r22, coefad_r22
+double precision, dimension(:), pointer :: coefb_r22, coefbf_r22, coefbd_r22
+double precision, dimension(:), pointer :: coefa_r33, coefaf_r33, coefad_r33
+double precision, dimension(:), pointer :: coefb_r33, coefbf_r33, coefbd_r33
+double precision, dimension(:), pointer :: coefa_r12, coefaf_r12, coefad_r12
+double precision, dimension(:), pointer :: coefb_r12, coefbf_r12, coefbd_r12
+double precision, dimension(:), pointer :: coefa_r13, coefaf_r13, coefad_r13
+double precision, dimension(:), pointer :: coefb_r13, coefbf_r13, coefbd_r13
+double precision, dimension(:), pointer :: coefa_r23, coefaf_r23, coefad_r23
+double precision, dimension(:), pointer :: coefb_r23, coefbf_r23, coefbd_r23
+double precision, dimension(:), pointer :: coefa_omg, coefaf_omg
+double precision, dimension(:), pointer :: coefb_omg, coefbf_omg
+double precision, dimension(:), pointer :: coefa_al, coefaf_al
+double precision, dimension(:), pointer :: coefb_al, coefbf_al
+double precision, dimension(:), pointer :: coefa_phi, coefaf_phi
+double precision, dimension(:), pointer :: coefb_phi, coefbf_phi
+double precision, dimension(:), pointer :: coefa_fb, coefaf_fb
+double precision, dimension(:), pointer :: coefb_fb, coefbf_fb
+double precision, dimension(:), pointer :: coefa_nu, coefaf_nu
+double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
+
+integer          ntlast , iaff
+data             ntlast , iaff /-1 , 0/
+save             ntlast , iaff
 
 !===============================================================================
 
@@ -216,43 +226,12 @@ double precision, dimension(:), pointer :: bfconv, bhconv
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
-iclep = 0
-iclk = 0
-iclomg = 0
-iclfb = 0
-iclphi = 0
-iclnu = 0
-icl11 = 0
-icl22 = 0
-icl33 = 0
-icl12 = 0
-icl13 = 0
-icl23 = 0
-iclvar = 0
 ipccv = 0
 
-icl11r = 0
-icl12r = 0
-icl13r = 0
-icl22r = 0
-icl23r = 0
-icl33r = 0
-iclal = 0
-iclalf = 0
-iclepf = 0
-iclfbf = 0
-iclkf = 0
-iclomf = 0
-iclphf = 0
-iuntur = 0
-
-cofimp = 0.d0
 ek = 0.d0
-hflui = 0.d0
 phit = 0.d0
 rugt = 0.d0
 uiptn = 0.d0
-uiptnf = 0.d0
 
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
@@ -272,69 +251,190 @@ cfnne=1.d0
 und0   = 1.d0
 deuxd0 = 2.d0
 
-! --- Gradient Boundary Conditions
-if (itytur.eq.2) then
-  iclk   = iclrtp(ik ,icoef)
-  iclep  = iclrtp(iep,icoef)
-elseif (itytur.eq.3) then
-  icl11  = iclrtp(ir11,icoef)
-  icl22  = iclrtp(ir22,icoef)
-  icl33  = iclrtp(ir33,icoef)
-  icl12  = iclrtp(ir12,icoef)
-  icl13  = iclrtp(ir13,icoef)
-  icl23  = iclrtp(ir23,icoef)
-  ! Boundary conditions for the momentum equation
-  icl11r = iclrtp(ir11,icoefr)
-  icl22r = iclrtp(ir22,icoefr)
-  icl33r = iclrtp(ir33,icoefr)
-  icl12r = iclrtp(ir12,icoefr)
-  icl13r = iclrtp(ir13,icoefr)
-  icl23r = iclrtp(ir23,icoefr)
-  iclep  = iclrtp(iep,icoef)
-  if (iturb.eq.32) iclal = iclrtp(ial,icoef)
-elseif (itytur.eq.5) then
-  iclk   = iclrtp(ik ,icoef)
-  iclep  = iclrtp(iep,icoef)
-  iclphi = iclrtp(iphi,icoef)
-  if (iturb.eq.50) then
-    iclfb  = iclrtp(ifb,icoef)
-  elseif (iturb.eq.51) then
-    iclal  = iclrtp(ial,icoef)
-  endif
-elseif (iturb.eq.60) then
-  iclk   = iclrtp(ik ,icoef)
-  iclomg = iclrtp(iomg,icoef)
-elseif (iturb.eq.70) then
-  iclnu  = iclrtp(inusa,icoef)
+! --- Gradient and flux Boundary Conditions
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+call field_get_coefaf_v(ivarfl(iu), cofafu)
+call field_get_coefbf_v(ivarfl(iu), cofbfu)
+
+if (ik.gt.0) then
+  call field_get_coefa_s(ivarfl(ik), coefa_k)
+  call field_get_coefb_s(ivarfl(ik), coefb_k)
+  call field_get_coefaf_s(ivarfl(ik), coefaf_k)
+  call field_get_coefbf_s(ivarfl(ik), coefbf_k)
+else
+  coefa_k => null()
+  coefb_k => null()
+  coefaf_k => null()
+  coefbf_k => null()
 endif
 
-! --- Flux Boundary Conditions
-if (itytur.eq.2) then
-  iclkf  = iclrtp(ik ,icoeff)
-  iclepf = iclrtp(iep,icoeff)
-elseif (itytur.eq.3) then
-  icl11f = iclrtp(ir11,icoeff)
-  icl22f = iclrtp(ir22,icoeff)
-  icl33f = iclrtp(ir33,icoeff)
-  icl12f = iclrtp(ir12,icoeff)
-  icl13f = iclrtp(ir13,icoeff)
-  icl23f = iclrtp(ir23,icoeff)
-  iclepf = iclrtp(iep,icoeff)
-  if (iturb.eq.32) iclalf = iclrtp(ial,icoeff)
-elseif (itytur.eq.5) then
-  iclkf  = iclrtp(ik ,icoeff)
-  iclepf = iclrtp(iep,icoeff)
-  iclphf = iclrtp(iphi,icoeff)
-  if (iturb.eq.50) then
-    iclfbf = iclrtp(ifb,icoeff)
-  elseif (iturb.eq.51) then
-    iclalf = iclrtp(ial,icoeff)
-  endif
-elseif (iturb.eq.60) then
-  iclkf  = iclrtp(ik ,icoeff)
-  iclomf = iclrtp(iomg,icoeff)
-elseif (iturb.eq.70) then
-  iclnuf = iclrtp(inusa,icoeff)
+if (iep.gt.0) then
+  call field_get_coefa_s(ivarfl(iep), coefa_ep)
+  call field_get_coefb_s(ivarfl(iep), coefb_ep)
+  call field_get_coefaf_s(ivarfl(iep), coefaf_ep)
+  call field_get_coefbf_s(ivarfl(iep), coefbf_ep)
+else
+  coefa_ep => null()
+  coefb_ep => null()
+  coefaf_ep => null()
+  coefbf_ep => null()
+endif
+
+if (ir11.gt.0) then ! Also have boundary conditions for the momentum equation
+
+  call field_get_coefa_s(ivarfl(ir11), coefa_r11)
+  call field_get_coefb_s(ivarfl(ir11), coefb_r11)
+  call field_get_coefaf_s(ivarfl(ir11), coefaf_r11)
+  call field_get_coefbf_s(ivarfl(ir11), coefbf_r11)
+  call field_get_coefad_s(ivarfl(ir11), coefad_r11)
+  call field_get_coefbd_s(ivarfl(ir11), coefbd_r11)
+
+  call field_get_coefa_s(ivarfl(ir22), coefa_r22)
+  call field_get_coefb_s(ivarfl(ir22), coefb_r22)
+  call field_get_coefaf_s(ivarfl(ir22), coefaf_r22)
+  call field_get_coefbf_s(ivarfl(ir22), coefbf_r22)
+  call field_get_coefad_s(ivarfl(ir22), coefad_r22)
+  call field_get_coefbd_s(ivarfl(ir22), coefbd_r22)
+
+  call field_get_coefa_s(ivarfl(ir33), coefa_r33)
+  call field_get_coefb_s(ivarfl(ir33), coefb_r33)
+  call field_get_coefaf_s(ivarfl(ir33), coefaf_r33)
+  call field_get_coefbf_s(ivarfl(ir33), coefbf_r33)
+  call field_get_coefad_s(ivarfl(ir33), coefad_r33)
+  call field_get_coefbd_s(ivarfl(ir33), coefbd_r33)
+
+  call field_get_coefa_s(ivarfl(ir12), coefa_r12)
+  call field_get_coefb_s(ivarfl(ir12), coefb_r12)
+  call field_get_coefaf_s(ivarfl(ir12), coefaf_r12)
+  call field_get_coefbf_s(ivarfl(ir12), coefbf_r12)
+  call field_get_coefad_s(ivarfl(ir12), coefad_r12)
+  call field_get_coefbd_s(ivarfl(ir12), coefbd_r12)
+
+  call field_get_coefa_s(ivarfl(ir13), coefa_r13)
+  call field_get_coefb_s(ivarfl(ir13), coefb_r13)
+  call field_get_coefaf_s(ivarfl(ir13), coefaf_r13)
+  call field_get_coefbf_s(ivarfl(ir13), coefbf_r13)
+  call field_get_coefad_s(ivarfl(ir13), coefad_r13)
+  call field_get_coefbd_s(ivarfl(ir13), coefbd_r13)
+
+  call field_get_coefa_s(ivarfl(ir23), coefa_r23)
+  call field_get_coefb_s(ivarfl(ir23), coefb_r23)
+  call field_get_coefaf_s(ivarfl(ir23), coefaf_r23)
+  call field_get_coefbf_s(ivarfl(ir23), coefbf_r23)
+  call field_get_coefad_s(ivarfl(ir23), coefad_r23)
+  call field_get_coefbd_s(ivarfl(ir23), coefbd_r23)
+
+  call field_get_coefa_s(ivarfl(iep), coefa_ep)
+  call field_get_coefb_s(ivarfl(iep), coefb_ep)
+  call field_get_coefaf_s(ivarfl(iep), coefaf_ep)
+  call field_get_coefbf_s(ivarfl(iep), coefbf_ep)
+
+else
+
+  coefa_r11 => null()
+  coefb_r11 => null()
+  coefaf_r11 => null()
+  coefbf_r11 => null()
+  coefad_r11 => null()
+  coefbd_r11 => null()
+
+  coefa_r22 => null()
+  coefb_r22 => null()
+  coefaf_r22 => null()
+  coefbf_r22 => null()
+  coefad_r22 => null()
+  coefbd_r22 => null()
+
+  coefa_r33 => null()
+  coefb_r33 => null()
+  coefaf_r33 => null()
+  coefbf_r33 => null()
+  coefad_r33 => null()
+  coefbd_r33 => null()
+
+  coefa_r12 => null()
+  coefb_r12 => null()
+  coefaf_r12 => null()
+  coefbf_r12 => null()
+  coefad_r12 => null()
+  coefbd_r12 => null()
+
+  coefa_r13 => null()
+  coefb_r13 => null()
+  coefaf_r13 => null()
+  coefbf_r13 => null()
+  coefad_r13 => null()
+  coefbd_r13 => null()
+
+  coefa_r23 => null()
+  coefb_r23 => null()
+  coefaf_r23 => null()
+  coefbf_r23 => null()
+  coefad_r23 => null()
+  coefbd_r23 => null()
+
+endif
+
+if (ial.gt.0) then
+  call field_get_coefa_s(ivarfl(ial), coefa_al)
+  call field_get_coefb_s(ivarfl(ial), coefb_al)
+  call field_get_coefaf_s(ivarfl(ial), coefaf_al)
+  call field_get_coefbf_s(ivarfl(ial), coefbf_al)
+else
+  coefa_al => null()
+  coefb_al => null()
+  coefaf_al => null()
+  coefbf_al => null()
+endif
+
+if (iomg.gt.0) then
+  call field_get_coefa_s(ivarfl(iomg), coefa_omg)
+  call field_get_coefb_s(ivarfl(iomg), coefb_omg)
+  call field_get_coefaf_s(ivarfl(iomg), coefaf_omg)
+  call field_get_coefbf_s(ivarfl(iomg), coefbf_omg)
+else
+  coefa_omg => null()
+  coefb_omg => null()
+  coefaf_omg => null()
+  coefbf_omg => null()
+endif
+
+if (iphi.gt.0) then
+  call field_get_coefa_s(ivarfl(iphi), coefa_phi)
+  call field_get_coefb_s(ivarfl(iphi), coefb_phi)
+  call field_get_coefaf_s(ivarfl(iphi), coefaf_phi)
+  call field_get_coefbf_s(ivarfl(iphi), coefbf_phi)
+else
+  coefa_phi => null()
+  coefb_phi => null()
+  coefaf_phi => null()
+  coefbf_phi => null()
+endif
+
+if (ifb.gt.0) then
+  call field_get_coefa_s(ivarfl(ifb), coefa_fb)
+  call field_get_coefb_s(ivarfl(ifb), coefb_fb)
+  call field_get_coefaf_s(ivarfl(ifb), coefaf_fb)
+  call field_get_coefbf_s(ivarfl(ifb), coefbf_fb)
+else
+  coefa_fb => null()
+  coefb_fb => null()
+  coefaf_fb => null()
+  coefbf_fb => null()
+endif
+
+if (inusa.gt.0) then
+  call field_get_coefa_s(ivarfl(inusa), coefa_nu)
+  call field_get_coefaf_s(ivarfl(inusa), coefaf_nu)
+  call field_get_coefb_s(ivarfl(inusa), coefb_nu)
+  call field_get_coefbf_s(ivarfl(inusa), coefbf_nu)
+else
+  coefa_nu => null()
+  coefb_nu => null()
+  coefaf_nu => null()
+  coefbf_nu => null()
 endif
 
 ! --- Physical quantities
@@ -389,29 +489,17 @@ if (itytur.eq.5) then
   uiptmn = 0.d0
 endif
 
-! pointers to T+ and T* if saved
-
-tplusp => null()
-tstarp => null()
-
-call field_get_id_try('tplus', itplus)
-if (itplus.ge.0) then
-  call field_get_val_s (itplus, tplusp)
-endif
-
-call field_get_id_try('tstar', itstar)
-if (itstar.ge.0) then
-  call field_get_val_s (itstar, tstarp)
-endif
-
 ! Pointers to specific fields
-if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
-if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+allocate(byplus(nfabor))
+allocate(buk(nfabor))
+allocate(buet(nfabor))
+allocate(buplus(nfabor))
+allocate(bcfnns(nfabor))
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
-  ! Test on the presence of a rought wall
+  ! Test on the presence of a rough wall
   if (icodcl(ifac,iu).eq.6) then
 
     iel = ifabor(ifac)
@@ -481,7 +569,7 @@ do ifac = 1, nfabor
     elseif (itytur.eq.3) then
 
       ! If the velocity is zero, vector T is normal and random;
-      !   we need it for the reference change for Rij, and we cancel the velocity.
+      ! we need it for the reference change for Rij, and we cancel the velocity.
 
       txn0 = 0.d0
 
@@ -592,11 +680,10 @@ do ifac = 1, nfabor
     !       seule la valeur stockee pour iu est utilisee
     rugd=rcodcl(ifac,iu,3)
 
-    ! NB: for rought walls, yplus is computed from the roughtness
-    !     and not uk.
+    ! NB: for rough walls, yplus is computed from the roughness and not uk.
     yplus=distbf/rugd
 
-    ! Pseudo decalage de la paroi de rugd ((distbf+rugd)/rugd)
+    ! Pseudo shift of wall by rugd ((distbf+rugd)/rugd)
     uet = utau/log(yplus+1.d0)*xkappa
 
     ! Dimensionless velocity
@@ -655,11 +742,11 @@ do ifac = 1, nfabor
     ! si le modele de depot de particules est active.
 
     if (itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac) = uet
+      uetbor(ifac) = uet !TODO remove, this information is in cofaf cofbf
       if (visvdr(iel).lt.-900.d0) then
         propce(iel,ipcvst) = propce(iel,ipcvst)
         ! FIXME amortissement de van Driest a revoir en rugueux :
-        !    &             *(1.D0-EXP(-YPLUS/CDRIES))**2
+        !    &             *(1.d0-exp(-yplus/cdries))**2
         visvdr(iel) = propce(iel,ipcvst)
         visctc = propce(iel,ipcvst)
       endif
@@ -667,8 +754,7 @@ do ifac = 1, nfabor
       uetbor(ifac) = uet
     endif
 
-
-    ! Save yplus is post-processed
+    ! Save yplus if post-processed
     if (ipstdv(ipstyp).ne.0) then
       yplbr(ifac) = yplus
     endif
@@ -679,8 +765,6 @@ do ifac = 1, nfabor
 
     ! uiptn respecte la production de k
     !  de facon conditionnelle --> Coef RCPROD
-    ! uiptnf respecte le flux
-    !  de facon conditionnelle --> Coef RCFLUX
 
     ! --> All turbulence models (except v2f and EBRSM)
     !-------------------------------------------------
@@ -705,7 +789,6 @@ do ifac = 1, nfabor
         ! modified for non neutral boundary layer (cfnnu)
         ! FIXME: it should be uet/xkappa and not uk!
         uiptn  = min(utau,max(utau - uk/xkappa*rcprod*cfnnu,0.d0))
-        uiptnf = utau - uet/xkappa*rcflux*cfnnu
         iuntur = 1
 
         ! Coupled solving of the velocity components
@@ -717,7 +800,6 @@ do ifac = 1, nfabor
       ! In the viscous sub-layer
       else
         uiptn  = 0.d0
-        uiptnf = 0.d0
         iuntur = 0
 
         ! Coupled solving of the velocity components
@@ -733,9 +815,7 @@ do ifac = 1, nfabor
       ! - Utau : la production turbulente ne peut etre nulle
       ! On empeche U_f,flux d'etre negatif
 
-      if (uiptnf.lt.epzero) uiptnf = 0.d0
-
-    ! --> v2f and EBRSM!FIXME EBRSM
+    ! --> v2f and EBRSM !FIXME EBRSM
     !------------------
     elseif (itytur.eq.5) then
 
@@ -743,7 +823,6 @@ do ifac = 1, nfabor
       ! et iuiptn qui sont nuls (valeur d'initialisation)
       iuntur = 0
       uiptn  = 0.d0
-      uiptnf = 0.d0
 
       ! Coupled solving of the velocity components
       hflui = (visclc + visctc) / distbf
@@ -817,23 +896,18 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on k
       !----------------------------------
 
-      iclvar = iclk
-      iclvaf = iclkf
-
       pimp = uk**2/sqrcmu*cfnnk
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_k(ifac), coefaf_k(ifac),             &
+           coefb_k(ifac), coefbf_k(ifac),             &
+           pimp         , hint          , rinfin )
+
 
       ! Neumann Boundary Condition on epsilon
       !--------------------------------------
-
-      iclvar = iclep
-      iclvaf = iclepf
 
       hint = (visclc+visctc/sigmae)/distbf
 
@@ -842,106 +916,116 @@ do ifac = 1, nfabor
 
       call set_neumann_scalar &
            !==================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           qimp              , hint )
+         ( coefa_ep(ifac), coefaf_ep(ifac),             &
+           coefb_ep(ifac), coefbf_ep(ifac),             &
+           qimp          , hint )
 
-    !===============================================================================
+    !===========================================================================
     ! 5. Boundary conditions on Rij-epsilon
-    !===============================================================================
+    !===========================================================================
 
     elseif (itytur.eq.3) then
 
       ! ---> Tensor Rij (Partially implicited)
 
       do isou = 1, 6
-
-        if (isou.eq.1) then
-          iclvar = icl11
-          iclvrr = icl11r
-        elseif (isou.eq.2) then
-          iclvar = icl22
-          iclvrr = icl22r
-        elseif (isou.eq.3) then
-          iclvar = icl33
-          iclvrr = icl33r
-        elseif (isou.eq.4) then
-          iclvar = icl12
-          iclvrr = icl12r
-        elseif (isou.eq.5) then
-          iclvar = icl13
-          iclvrr = icl13r
-        elseif (isou.eq.6) then
-          iclvar = icl23
-          iclvrr = icl23r
-        endif
-
-        coefa(ifac,iclvar) = 0.0d0
-        coefb(ifac,iclvar) = 0.0d0
-        coefa(ifac,iclvrr) = 0.0d0
-        coefb(ifac,iclvrr) = 0.0d0
-
+        fcoefa(isou) = 0.0d0
+        fcoefb(isou) = 0.0d0
+        fcofad(isou) = 0.0d0
+        fcofbd(isou) = 0.0d0
       enddo
 
       do isou = 1,6
 
         if (isou.eq.1) then
-          iclvar = icl11
-          iclvrr = icl11r
           jj = 1
           kk = 1
         else if (isou.eq.2) then
-          iclvar = icl22
-          iclvrr = icl22r
           jj = 2
           kk = 2
         else if (isou.eq.3) then
-          iclvar = icl33
-          iclvrr = icl33r
           jj = 3
           kk = 3
         else if (isou.eq.4) then
-          iclvar = icl12
-          iclvrr = icl12r
           jj = 1
           kk = 2
         else if (isou.eq.5) then
-          iclvar = icl13
-          iclvrr = icl13r
           jj = 1
           kk = 3
         else if (isou.eq.6) then
-          iclvar = icl23
-          iclvrr = icl23r
           jj = 2
           kk = 3
         endif
 
         if (iclptr.eq.1) then
           do ii = 1, 6
-            if(ii.ne.isou) then
-              coefa(ifac,iclvar) = coefa(ifac,iclvar) +           &
-                   alpha(isou,ii) * rijipb(ifac,ii)
+            if (ii.ne.isou) then
+              fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
             endif
           enddo
-          coefb(ifac,iclvar) = alpha(isou,isou)
+          fcoefb(isou) = alpha(isou,isou)
         else
           do ii = 1, 6
-            coefa(ifac,iclvar) = coefa(ifac,iclvar) +             &
-                 alpha(isou,ii) * rijipb(ifac,ii)
+            fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
           enddo
-          coefb(ifac,iclvar) = 0.d0
+          fcoefb(isou) = 0.d0
         endif
         ! Boundary conditions for the momentum equation
-        coefa(ifac,iclvrr) = coefa(ifac,iclvar)
-        coefb(ifac,iclvrr) = coefb(ifac,iclvar)
+        fcofad(isou) = fcoefa(isou)
+        fcofbd(isou) = fcoefb(isou)
 
-        coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                &
-                           (eloglo(jj,1)*eloglo(kk,2)+            &
-                            eloglo(jj,2)*eloglo(kk,1))*uet*uk*cfnnk
+        fcoefa(isou) = fcoefa(isou)                                 &
+                       - (  eloglo(jj,1)*eloglo(kk,2)               &
+                          + eloglo(jj,2)*eloglo(kk,1))*uet*uk*cfnnk
 
-        ! WARNING
-        ! Translate coefa into cofaf and coefb into cofbf Done in resssg.f90
+        ! Translate into Diffusive flux BCs
+        fcofaf(isou) = -hint*fcoefa(isou)
+        fcofbf(isou) = hint*(1.d0-fcofbf(isou))
+
+        if (isou.eq.1) then
+          coefa_r11(ifac) = fcoefa(isou)
+          coefb_r11(ifac) = fcoefb(isou)
+          coefaf_r11(ifac) = fcofaf(isou)
+          coefbf_r11(ifac) = fcofbf(isou)
+          coefad_r11(ifac) = fcofad(isou)
+          coefbd_r11(ifac) = fcofbd(isou)
+        else if (isou.eq.2) then
+          coefa_r22(ifac) = fcoefa(isou)
+          coefb_r22(ifac) = fcoefb(isou)
+          coefaf_r22(ifac) = fcofaf(isou)
+          coefbf_r22(ifac) = fcofbf(isou)
+          coefad_r22(ifac) = fcofad(isou)
+          coefbd_r22(ifac) = fcofbd(isou)
+        else if (isou.eq.3) then
+          coefa_r33(ifac) = fcoefa(isou)
+          coefb_r33(ifac) = fcoefb(isou)
+          coefaf_r33(ifac) = fcofaf(isou)
+          coefbf_r33(ifac) = fcofbf(isou)
+          coefad_r33(ifac) = fcofad(isou)
+          coefbd_r33(ifac) = fcofbd(isou)
+        else if (isou.eq.4) then
+          coefa_r12(ifac) = fcoefa(isou)
+          coefb_r12(ifac) = fcoefb(isou)
+          coefaf_r12(ifac) = fcofaf(isou)
+          coefbf_r12(ifac) = fcofbf(isou)
+          coefad_r12(ifac) = fcofad(isou)
+          coefbd_r12(ifac) = fcofbd(isou)
+        else if (isou.eq.5) then
+          coefa_r13(ifac) = fcoefa(isou)
+          coefb_r13(ifac) = fcoefb(isou)
+          coefaf_r13(ifac) = fcofaf(isou)
+          coefbf_r13(ifac) = fcofbf(isou)
+          coefad_r13(ifac) = fcofad(isou)
+          coefbd_r13(ifac) = fcofbd(isou)
+        else if (isou.eq.6) then
+          coefa_r23(ifac) = fcoefa(isou)
+          coefb_r23(ifac) = fcoefb(isou)
+          coefaf_r23(ifac) = fcofaf(isou)
+          coefbf_r23(ifac) = fcofbf(isou)
+          coefad_r23(ifac) = fcofad(isou)
+          coefbd_r23(ifac) = fcofbd(isou)
+        endif
+
       enddo
 
       ! ---> Epsilon
@@ -950,9 +1034,6 @@ do ifac = 1, nfabor
       ! Neumann Boundary Condition on epsilon
       !--------------------------------------
 
-      iclvar = iclep
-      iclvaf = iclepf
-
       hint = (visclc+visctc/sigmae)/distbf
 
       pimp = uk**3/(xkappa*ydep**2)*distbf*cfnne
@@ -960,9 +1041,9 @@ do ifac = 1, nfabor
 
       call set_neumann_scalar &
            !==================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           qimp              , hint )
+         ( coefa_ep(ifac), coefaf_ep(ifac),             &
+           coefb_ep(ifac), coefbf_ep(ifac),             &
+           qimp          , hint )
 
     !===========================================================================
     ! 6a.Boundary conditions on k, epsilon, f_bar and phi in the phi_Fbar model
@@ -973,62 +1054,50 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on k
       !----------------------------------
 
-      iclvar = iclk
-      iclvaf = iclkf
-
       pimp = 0.d0
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_k(ifac), coefaf_k(ifac),             &
+           coefb_k(ifac), coefbf_k(ifac),             &
+           pimp         , hint          , rinfin )
 
       ! Dirichlet Boundary Condition on epsilon
       !----------------------------------------
-
-      iclvar = iclep
-      iclvaf = iclepf
 
       pimp = 2.0d0*visclc/romc*rtp(iel,ik)/distbf**2
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_ep(ifac), coefaf_ep(ifac),             &
+           coefb_ep(ifac), coefbf_ep(ifac),             &
+           pimp          , hint          , rinfin )
 
       ! Dirichlet Boundary Condition on Phi
       !------------------------------------
-
-      iclvar = iclphi
-      iclvaf = iclphf
 
       pimp = 0.d0
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_phi(ifac), coefaf_phi(ifac),             &
+           coefb_phi(ifac), coefbf_phi(ifac),             &
+           pimp           , hint          , rinfin )
 
       ! Dirichlet Boundary Condition on Fb
       !-----------------------------------
-
-      iclvar = iclfb
-      iclvaf = iclfbf
 
       pimp = 0.d0
       hint = 1.d0/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_fb(ifac), coefaf_fb(ifac),             &
+           coefb_fb(ifac), coefbf_fb(ifac),             &
+           pimp          , hint           , rinfin )
 
     !===========================================================================
     ! 6b.Boundary conditions on k, epsilon, phi and alpha in the Bl-v2/k model
@@ -1039,61 +1108,50 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on k
       !----------------------------------
 
-      iclvar = iclk
-      iclvaf = iclkf
-
       pimp = 0.d0
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_k(ifac), coefaf_k(ifac),             &
+           coefb_k(ifac), coefbf_k(ifac),             &
+           pimp         , hint          , rinfin )
 
       ! Dirichlet Boundary Condition on epsilon
       !----------------------------------------
 
-      iclvar = iclep
-      iclvaf = iclepf
       pimp = visclc/romc*rtp(iel,ik)/distbf**2
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_ep(ifac), coefaf_ep(ifac),             &
+           coefb_ep(ifac), coefbf_ep(ifac),             &
+           pimp          , hint           , rinfin )
 
       ! Dirichlet Boundary Condition on Phi
       !------------------------------------
-
-      iclvar = iclphi
-      iclvaf = iclphf
 
       pimp = 0.d0
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_phi(ifac), coefaf_phi(ifac),             &
+           coefb_phi(ifac), coefbf_phi(ifac),             &
+           pimp           , hint            , rinfin )
 
       ! Dirichlet Boundary Condition on alpha
       !--------------------------------------
-
-      iclvar = iclal
-      iclvaf = iclalf
 
       pimp = 0.d0
       hint = 1.d0/distbf
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_al(ifac), coefaf_al(ifac),             &
+           coefb_al(ifac), coefbf_al(ifac),             &
+           pimp          , hint           , rinfin )
 
 
     !===========================================================================
@@ -1107,9 +1165,6 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on k
       !----------------------------------
 
-      iclvar = iclk
-      iclvaf = iclkf
-
       pimp = uk**2/sqrcmu
 
       !FIXME it is wrong because sigma is computed within the model
@@ -1118,15 +1173,12 @@ do ifac = 1, nfabor
 
       call set_dirichlet_scalar &
            !====================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           pimp              , hint              , rinfin )
+         ( coefa_k(ifac), coefaf_k(ifac),             &
+           coefb_k(ifac), coefbf_k(ifac),             &
+           pimp         , hint          , rinfin )
 
       ! Neumann Boundary Condition on omega
       !------------------------------------
-
-      iclvar = iclomg
-      iclvaf = iclomf
 
       !FIXME it is wrong because sigma is computed within the model
       ! see turbkw.f90 (So the flux is not the one we impose!)
@@ -1138,9 +1190,9 @@ do ifac = 1, nfabor
 
       call set_neumann_scalar &
            !==================
-         ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
-           coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
-           qimp              , hint )
+         ( coefa_omg(ifac), coefaf_omg(ifac),             &
+           coefb_omg(ifac), coefbf_omg(ifac),             &
+           qimp           , hint )
 
     !===========================================================================
     ! 7.1 Boundary conditions on the Spalart Allmaras turbulence model
@@ -1148,370 +1200,46 @@ do ifac = 1, nfabor
 
     elseif (iturb.eq.70) then
 
-      iclvar = iclnu
-      iclvaf = iclnuf
-
       dsa0 = rugd
 
-      coefa(ifac,iclvar) = 0.d0
-      coefb(ifac,iclvar) = dsa0/(dsa0+distbf) !TODO
+      coefa_nu(ifac) = 0.d0
+      coefb_nu(ifac) = dsa0/(dsa0+distbf) !TODO
 
     endif
 
-    !===========================================================================
-    ! 8. Boundary conditions on the other scalars
-    !    (Specific treatment for the variances of the scalars next to walls:
-    !     see condli)
-    !===========================================================================
-
-    if (nscal.ge.1) then
-
-      do iscal = 1, nscal
-
-        if (iscavr(iscal).le.0) then
-
-          ivar = isca(iscal)
-          iclvar = iclrtp(ivar,icoef)
-          iclvaf = iclrtp(ivar,icoeff)
-
-          isvhbl = 0
-          if (iscal.eq.isvhb) then
-            isvhbl = isvhb
-          endif
-
-          cpp = 1.d0
-          if (iscacp(iscal).eq.1) then
-            if (ipccp.gt.0) then
-              cpp = propce(iel,ipccp )
-            else
-              cpp = cp0
-            endif
-          endif
-
-          if (ivisls(iscal).gt.0) then
-            ipcvsl = ipproc(ivisls(iscal))
-          else
-            ipcvsl = 0
-          endif
-          if (ipcvsl.le.0) then
-            rkl = visls0(iscal)
-            prdtl = cpp*visclc/rkl
-          else
-            prdtl = cpp*visclc/rkl
-          endif
-
-          ! --> Compressible module:
-          ! On suppose que le nombre de Pr doit etre
-          ! defini de la meme facon que l'on resolve
-          ! en enthalpie ou en energie, soit Mu*Cp/Lambda.
-          ! Si l'on resout en energie, on a calcule ci-dessus
-          ! Mu*Cv/Lambda.
-
-          if (iscal.eq.iscalt .and. itherm.eq.3) then
-            if (ipccp.gt.0) then
-              prdtl = prdtl*propce(iel,ipccp)
-            else
-              prdtl = prdtl*cp0
-            endif
-            if (ipccv.gt.0) then
-              prdtl = prdtl/propce(iel,ipccv)
-            else
-              prdtl = prdtl/cv0
-            endif
-          endif
-
-          ! Scalar diffusivity
-          if (idften(ivar).eq.1) then
-            ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
-            if (ippmod(icompf) .ge. 0) then
-              if (ipccp.gt.0) then
-                cpscv = propce(iel,ipproc(icp))
-              else
-                cpscv = cp0
-              endif
-              if (ipccv.gt.0) then
-                cpscv = cpscv/propce(iel,ipproc(icv))
-              else
-                cpscv = cpscv/cv0
-              endif
-              hint = (rkl+idifft(ivar)*cpp*cpscv*visctc/sigmas(iscal))/distbf
-            else
-              hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(iscal))/distbf
-            endif
-
-          ! Symmetric tensor diffusivity (GGDH or AFM)
-          elseif (idften(ivar).eq.6) then
-            ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
-            if (ippmod(icompf) .ge. 0) then
-              if (ipccp.gt.0) then
-                cpscv = propce(iel,ipproc(icp))
-              else
-                cpscv = cp0
-              endif
-              if (ipccv.gt.0) then
-                cpscv = cpscv/propce(iel,ipproc(icv))
-              else
-                cpscv = cpscv/cv0
-              endif
-              visci(1,1) = rkl + idifft(ivar)*cpp*cpscv*visten(1,iel)*ctheta(iscal)
-              visci(2,2) = rkl + idifft(ivar)*cpp*cpscv*visten(2,iel)*ctheta(iscal)
-              visci(3,3) = rkl + idifft(ivar)*cpp*cpscv*visten(3,iel)*ctheta(iscal)
-              visci(1,2) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(iscal)
-              visci(2,1) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(iscal)
-              visci(2,3) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(iscal)
-              visci(3,2) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(iscal)
-              visci(1,3) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(iscal)
-              visci(3,1) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(iscal)
-            else
-              visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(iscal)
-              visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(iscal)
-              visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(iscal)
-              visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(iscal)
-              visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(iscal)
-              visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(iscal)
-              visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(iscal)
-              visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(iscal)
-              visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(iscal)
-            endif
-
-            ! ||Ki.S||^2
-            viscis = ( visci(1,1)*surfbo(1,ifac)       &
-                     + visci(1,2)*surfbo(2,ifac)       &
-                     + visci(1,3)*surfbo(3,ifac))**2   &
-                   + ( visci(2,1)*surfbo(1,ifac)       &
-                     + visci(2,2)*surfbo(2,ifac)       &
-                     + visci(2,3)*surfbo(3,ifac))**2   &
-                   + ( visci(3,1)*surfbo(1,ifac)       &
-                     + visci(3,2)*surfbo(2,ifac)       &
-                     + visci(3,3)*surfbo(3,ifac))**2
-
-            ! IF.Ki.S
-            fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
-                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
-                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
-                    )*surfbo(1,ifac)                              &
-                  + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
-                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
-                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
-                    )*surfbo(2,ifac)                              &
-                  + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
-                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
-                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
-                    )*surfbo(3,ifac)
-
-            distfi = distb(ifac)
-
-            ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-            ! NB: eps =1.d-1 must be consistent with vitens.f90
-            fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
-
-            hint = viscis/surfbn(ifac)/fikis
-          endif
-
-          ! Dirichlet on the scalar, with wall function
-          if (iturb.ne.0.and.icodcl(ifac,ivar).eq.6) then
-            rugt = rcodcl(ifac,iv,3)
-            act = xkappa/log((distbf+rugt)/rugt)
-            ! T+ = (T_I - T_w) / Tet
-            tplus = log((distbf+rugt)/rugt)/xkappa
-            hflui = romc*cpp*uet*act*cfnns
-          ! Neumann on the scalar, with wall function (for post-processing)
-          else
-            hflui = hint
-            ! T+ = (T_I - T_w) / Tet, we assume here rugt = rugd
-            tplus = uplus
-          endif
-
-          if (isvhbl.gt.0) hbord(ifac) = hflui
-
-          ! --->  C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
-
-          ! Si on a deux types de conditions aux limites (ICLVAR, ICLVAF)
-          !   il faut que le flux soit traduit par ICLVAF.
-          ! Si on n'a qu'un type de condition, peu importe (ICLVAF=ICLVAR)
-          ! Pour le moment, dans cette version compressible, on impose un
-          !   flux nul pour ICLVAR, lorsqu'il est different de ICLVAF (cette
-          !   condition ne sert qu'a la reconstruction des gradients et
-          !   s'applique a l'energie totale qui inclut l'energie cinetique :
-
-
-          if (icodcl(ifac,ivar).eq.6) then
-            hext = rcodcl(ifac,ivar,2)
-            pimp = rcodcl(ifac,ivar,1)
-
-            if (abs(hext).gt.rinfin*0.5d0) then
-              heq = hflui
-            else
-              heq = hflui*hext/(hflui+hext)
-            endif
-
-            ! Gradient BCs
-            coefa(ifac,iclvar) = pimp*heq/hint
-            coefb(ifac,iclvar) = 1.d0 - heq/hint
-
-            ! Flux BCs
-            coefa(ifac,iclvaf) = -heq*pimp
-            coefb(ifac,iclvaf) =  heq
-
-            !--> Turbulent heat flux
-            if (ityturt(iscal).eq.3) then
-
-              ! Name of the scalar ivar !TODO move outside of the loop
-              call field_get_name(ivarfl(ivar), fname)
-
-              ! Index of the corresponding turbulent flux
-              call field_get_id(trim(fname)//'_turbulent_flux', f_id)
-
-              call field_get_coefa_v(f_id,coefaut)
-              call field_get_coefb_v(f_id,coefbut)
-              call field_get_coefaf_v(f_id,cofafut)
-              call field_get_coefbf_v(f_id,cofbfut)
-              call field_get_coefad_v(f_id,cofarut)
-              call field_get_coefbd_v(f_id,cofbrut)
-
-              hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
-                       + visten(1,iel)*ctheta(iscal)/distbf/csrij
-              hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
-                       + visten(2,iel)*ctheta(iscal)/distbf/csrij
-              hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
-                       + visten(3,iel)*ctheta(iscal)/distbf/csrij
-              hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
-              hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
-              hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
-
-              ! Dirichlet Boundary Condition
-              !-----------------------------
-
-              ! Add rho*uk*Tet to T'v' in High Reynolds
-              do isou = 1, 3
-                pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
-              enddo
-
-              call set_dirichlet_vector_ggdh &
-                   !========================
-                 ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
-                   coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
-                   pimpv            , hintt            , rinfiv )
-
-              ! Boundary conditions used in the temperature equation
-              do isou = 1, 3
-                cofarut(isou,ifac) = 0.d0
-                do jsou = 1, 3
-                  cofbrut(isou,jsou,ifac) = 0.d0
-                enddo
-              enddo
-
-            endif
-
-            !--> Radiative module:
-
-            ! On stocke le coefficient d'echange lambda/distance
-            ! (ou son equivalent en turbulent) quelle que soit la
-            ! variable thermique transportee (temperature ou enthalpie)
-            ! car on l'utilise pour realiser des bilans aux parois qui
-            ! sont faits en temperature (on cherche la temperature de
-            ! paroi quelle que soit la variable thermique transportee pour
-            ! ecrire des eps sigma T4.
-
-!     donc :
-
-!       lorsque la variable transportee est la temperature
-!         ABS(ISCSTH(II)).EQ.1 : RA(IHCONV-1+IFAC) = HINT
-!         puisque HINT = VISLS * CP / DISTBR
-!                      = lambda/distance en W/(m2 K)
-
-!       lorsque la variable transportee est l'enthalpie
-!         ISCSTH(II).EQ.2 : RA(IHCONV-1+IFAC) = HINT*CPR
-!         avec
-!            IF (IPCCP.GT.0) THEN
-!              CPR = PROPCE(IEL,IPCCP )
-!            ELSE
-!              CPR = CP0
-!            ENDIF
-!         puisque HINT = VISLS / DISTBR
-!                      = lambda/(CP * distance)
-
-!       lorsque la variable transportee est l'energie (compressible)
-!         ISCSTH(II).EQ.3 :
-!         on procede comme pour l'enthalpie avec CV au lieu de CP
-!         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
-!               le flux est le bon et le coef d'echange aussi)
-
-!      De meme dans condli.
-
-!               Si on rayonne et que
-!                  le scalaire est la variable energetique
-
-            if (iirayo.ge.1 .and. iscal.eq.iscalt) then
-
-              ! We compute the exchange coefficient in W/(m2 K)
-
-              ! Enthalpy
-              if (itherm.eq.2) then
-                ! If Cp is variable
-                if (ipccp.gt.0) then
-                  bhconv(ifac) = hflui*propce(iel, ipccp)
-                else
-                  bhconv(ifac) = hflui*cp0
-                endif
-
-              ! Energie (compressible module)
-              elseif (itherm.eq.3) then
-                ! If Cv is variable
-                if (ipccv.gt.0) then
-                  bhconv(ifac) = hflui*propce(iel,ipccv)
-                else
-                  bhconv(ifac) = hflui*cv0
-                endif
-
-              ! Temperature
-              elseif (iscacp(iscal).eq.1) then
-                bhconv(ifac) = hflui
-              endif
-
-              ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
-              !  gain for the fluid) in W/m2
-              bfconv(ifac) = coefa(ifac,iclvaf)              &
-                                          + coefb(ifac,iclvaf)*theipb(ifac)
-            endif
-
-          endif ! End if icodcl=6
-
-          ! Save the value of T^star and T^+
-          if (iscal.eq.iscalt) then
-            ! Rough wall function
-            if (icodcl(ifac,ivar).eq.6) then
-              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*theipb(ifac)
-            ! Imposed flux with wall function for post-processing
-            elseif (icodcl(ifac,ivar).eq.3) then
-              phit = rcodcl(ifac,ivar,3)
-            else
-              phit = 0.d0
-            endif
-
-            tet = phit/(max(sqrt(uk*uet),epzero))
-
-            if (itplus .ge. 0) tplusp(ifac) = tplus
-            if (itstar .ge. 0) tstarp(ifac) = tet
-
-            tetmax = max(tet, tetmax)
-            tetmin = min(tet, tetmin)
-            tplumx = max(tplus,tplumx)
-            tplumn = min(tplus,tplumn)
-          endif
-
-        endif
-
-      enddo
-
-    endif
-
+    byplus(ifac) = yplus
+    buk(ifac) = uk
+    buet(ifac) = uet
+    buplus(ifac) = uplus
+    bcfnns(ifac) = cfnns
 
   endif
-  ! Test on the presence of a rought wall (End)
+  ! Test on the presence of a rough wall (End)
 
 enddo
 ! --- End of loop over faces
+
+!===========================================================================
+! 8. Boundary conditions on the other scalars
+!    (Specific treatment for the variances of the scalars next to walls:
+!     see condli)
+!===========================================================================
+
+do iscal = 1, nscal
+
+  if (iscavr(iscal).le.0) then
+
+    call clptrg_scalar &
+    !=================
+ ( iscal  , isvhb  , icodcl ,                                     &
+   propce , rcodcl ,                                              &
+   byplus , buk    , buet   , buplus , bcfnns ,                   &
+   hbord  , theipb ,                                              &
+   tetmax , tetmin , tplumx , tplumn )
+
+  endif
+
+enddo
 
 if (irangp.ge.0) then
   call parmin (uiptmn)
@@ -1530,6 +1258,12 @@ if (irangp.ge.0) then
     call parmax (tplumx)
   endif
 endif
+
+deallocate(byplus)
+deallocate(buk)
+deallocate(buet)
+deallocate(buplus)
+deallocate(bcfnns)
 
 !===============================================================================
 ! 9. Writings
@@ -1651,3 +1385,538 @@ endif
 
 return
 end subroutine
+
+!===============================================================================
+! Local functions
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iscal         scalar id
+!> \param[in]     isvhb         indicator to save exchange coeffient
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!> \param[in]     byplus        dimensionless distance to the wall
+!> \param[in]     buk           dimensionless velocity
+!> \param[in]     buet          boundary ustar value
+!> \param[in]     buplus        boundary uplus value
+!> \param[in]     bcfnns        boundary correction factor
+!> \param[in,out] hbord         exchange coefficient at boundary
+!> \param[in]     theipb        boundary temperature in \f$ \centip \f$
+!>                               (more exaclty the energetic variable)
+!> \param[out]    tetmax        maximum local ustar value
+!> \param[out]    tetmin        minimum local ustar value
+!> \param[out]    tplumx        maximum local tplus value
+!> \param[out]    tplumn        minimum local tplus value
+!_______________________________________________________________________________
+
+subroutine clptrg_scalar &
+ ( iscal  , isvhb  , icodcl ,                                     &
+   propce , rcodcl ,                                              &
+   byplus , buk    , buet   , buplus , bcfnns ,                   &
+   hbord  , theipb ,                                              &
+   tetmax , tetmin , tplumx , tplumn )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use pointe
+use entsor
+use albase
+use parall
+use ppppar
+use ppthch
+use ppincl
+use radiat
+use cplsat
+use mesh
+use field
+use lagran
+use turbomachinery
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          iscal, isvhb
+
+integer          icodcl(nfabor,nvarcl)
+
+double precision propce(ncelet,*)
+double precision rcodcl(nfabor,nvarcl,3)
+double precision byplus(nfabor)
+double precision hbord(nfabor), theipb(nfabor)
+double precision buk(nfabor), buet(nfabor), buplus(nfabor), bcfnns(nfabor)
+double precision tetmax, tetmin, tplumx, tplumn
+
+! Local variables
+
+integer          ivar, f_id, isvhbl
+integer          ifac, iel, isou, jsou
+integer          ipccp, ipccv, ipcvsl, itplus, itstar
+
+double precision cpp, rkl, prdtl, visclc, romc, tplus, cpscv
+double precision distfi, distbf, fikis, hint, heq, hflui, hext
+double precision yplus, phit, pimp, temp, tet, uk
+double precision viscis, visctc
+double precision act, rugt
+double precision rinfiv(3), pimpv(3)
+double precision visci(3,3), hintt(6)
+
+character(len=80) :: fname
+
+double precision, dimension(:), pointer :: val_s, crom
+double precision, dimension(:), pointer :: bfconv, bhconv
+double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
+double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
+
+!===============================================================================
+
+ivar = isca(iscal)
+f_id = ivarfl(ivar)
+
+call field_get_val_s(ivarfl(ivar), val_s)
+
+call field_get_coefa_s(f_id, coefap)
+call field_get_coefb_s(f_id, coefbp)
+call field_get_coefaf_s(f_id, cofafp)
+call field_get_coefbf_s(f_id, cofbfp)
+
+call field_get_val_s(icrom, crom)
+if (icp.gt.0) then
+  ipccp  = ipproc(icp)
+else
+  ipccp = 0
+endif
+
+ipccv = 0
+if (ippmod(icompf) .ge. 0) then
+  if (icv.gt.0) then
+    ipccv  = ipproc(icv)
+  else
+    ipccv = 0
+  endif
+endif
+
+isvhbl = 0
+if (iscal.eq.isvhb) then
+  isvhbl = isvhb
+endif
+
+if (iscal.eq.iscalt) then
+  ! min. and max. of wall friction of the thermal scalar
+  tetmax = -grand
+  tetmin =  grand
+  ! min. and max. of T+
+  tplumx = -grand
+  tplumn =  grand
+endif
+
+if (ityturt(iscal).eq.3) then
+
+  ! Name of the scalar ivar
+  call field_get_name(ivarfl(ivar), fname)
+
+  ! Index of the corresponding turbulent flux
+  call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+  call field_get_coefa_v(f_id,coefaut)
+  call field_get_coefb_v(f_id,coefbut)
+  call field_get_coefaf_v(f_id,cofafut)
+  call field_get_coefbf_v(f_id,cofbfut)
+  call field_get_coefad_v(f_id,cofarut)
+  call field_get_coefbd_v(f_id,cofbrut)
+
+endif
+
+! pointers to T+ and T* if saved
+
+tplusp => null()
+tstarp => null()
+
+if (iscal.eq.iscalt) then
+  call field_get_id_try('tplus', itplus)
+  if (itplus.ge.0) then
+    call field_get_val_s (itplus, tplusp)
+  endif
+  call field_get_id_try('tstar', itstar)
+  if (itstar.ge.0) then
+    call field_get_val_s (itstar, tstarp)
+  endif
+endif
+
+! Pointers to specific fields
+if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
+if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
+! --- Loop on boundary faces
+do ifac = 1, nfabor
+
+  yplus = byplus(ifac)
+  uk = buk(ifac)
+
+  ! Test on the presence of a rough wall condition (start)
+  if (icodcl(ifac,iu).eq.6) then
+
+    iel = ifabor(ifac)
+
+    ! Physical quantities
+
+    visclc = propce(iel,ipproc(iviscl))
+    visctc = propce(iel,ipproc(ivisct))
+    romc   = crom(iel)
+
+    ! Geometric quantities
+    distbf = distb(ifac)
+
+    cpp = 1.d0
+    if (iscacp(iscal).eq.1) then
+      if (ipccp.gt.0) then
+        cpp = propce(iel,ipccp)
+      else
+        cpp = cp0
+      endif
+    endif
+
+    if (ivisls(iscal).gt.0) then
+      ipcvsl = ipproc(ivisls(iscal))
+    else
+      ipcvsl = 0
+    endif
+    if (ipcvsl.le.0) then
+      rkl = visls0(iscal)
+      prdtl = cpp*visclc/rkl
+    else
+      rkl = propce(iel,ipcvsl)
+      prdtl = cpp*visclc/rkl
+    endif
+
+    ! --> Compressible module:
+    ! On suppose que le nombre de Pr doit etre
+    ! defini de la meme facon que l'on resolve
+    ! en enthalpie ou en energie, soit Mu*Cp/Lambda.
+    ! Si l'on resout en energie, on a calcule ci-dessus
+    ! Mu*Cv/Lambda.
+
+    if (iscal.eq.iscalt .and. itherm.eq.3) then
+      if (ipccp.gt.0) then
+        prdtl = prdtl*propce(iel,ipccp)
+      else
+        prdtl = prdtl*cp0
+      endif
+      if (ipccv.gt.0) then
+        prdtl = prdtl/propce(iel,ipccv)
+      else
+        prdtl = prdtl/cv0
+      endif
+    endif
+
+    ! Scalar diffusivity
+    if (idften(ivar).eq.1) then
+      ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
+      if (ippmod(icompf) .ge. 0) then
+        if (ipccp.gt.0) then
+          cpscv = propce(iel,ipproc(icp))
+        else
+          cpscv = cp0
+        endif
+        if (ipccv.gt.0) then
+          cpscv = cpscv/propce(iel,ipproc(icv))
+        else
+          cpscv = cpscv/cv0
+        endif
+        hint = (rkl+idifft(ivar)*cpp*cpscv*visctc/sigmas(iscal))/distbf
+      else
+        hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(iscal))/distbf
+      endif
+
+      ! Symmetric tensor diffusivity (GGDH or AFM)
+    elseif (idften(ivar).eq.6) then
+      ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
+      if (ippmod(icompf) .ge. 0) then
+        if (ipccp.gt.0) then
+          cpscv = propce(iel,ipproc(icp))
+        else
+          cpscv = cp0
+        endif
+        if (ipccv.gt.0) then
+          cpscv = cpscv/propce(iel,ipproc(icv))
+        else
+          cpscv = cpscv/cv0
+        endif
+        temp = idifft(ivar)*cpp*cpscv*ctheta(iscal)
+      else
+        temp = idifft(ivar)*cpp*ctheta(iscal)
+      endif
+      visci(1,1) = temp*visten(1,iel) + rkl
+      visci(2,2) = temp*visten(2,iel) + rkl
+      visci(3,3) = temp*visten(3,iel) + rkl
+      visci(1,2) = temp*visten(4,iel)
+      visci(2,1) = temp*visten(4,iel)
+      visci(2,3) = temp*visten(5,iel)
+      visci(3,2) = temp*visten(5,iel)
+      visci(1,3) = temp*visten(6,iel)
+      visci(3,1) = temp*visten(6,iel)
+
+      ! ||Ki.S||^2
+      viscis =   ( visci(1,1)*surfbo(1,ifac)       &
+                 + visci(1,2)*surfbo(2,ifac)       &
+                 + visci(1,3)*surfbo(3,ifac))**2   &
+               + ( visci(2,1)*surfbo(1,ifac)       &
+                 + visci(2,2)*surfbo(2,ifac)       &
+                 + visci(2,3)*surfbo(3,ifac))**2   &
+               + ( visci(3,1)*surfbo(1,ifac)       &
+                 + visci(3,2)*surfbo(2,ifac)       &
+                 + visci(3,3)*surfbo(3,ifac))**2
+
+      ! IF.Ki.S
+      fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+              )*surfbo(1,ifac)                              &
+            + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+              )*surfbo(2,ifac)                              &
+            + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+              )*surfbo(3,ifac)
+
+      distfi = distb(ifac)
+
+      ! Take I" so that I"F= eps*||FI||*Ki.n when I" is not in cell i
+      ! NB: eps =1.d-1 must be consistent with vitens.f90
+      fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+      hint = viscis/surfbn(ifac)/fikis
+    endif
+
+    ! Dirichlet on the scalar, with wall function
+    if (iturb.ne.0.and.icodcl(ifac,ivar).eq.6) then
+      rugt = rcodcl(ifac,iv,3)
+      act = xkappa/log((distbf+rugt)/rugt)
+      ! T+ = (T_I - T_w) / Tet
+      tplus = log((distbf+rugt)/rugt)/xkappa
+      hflui = romc*cpp*buet(ifac)*act*bcfnns(ifac)
+      ! Neumann on the scalar, with wall function (for post-processing)
+    else
+      hflui = hint
+      ! T+ = (T_I - T_w) / Tet, we assume here rugt = rugd
+      tplus = buplus(ifac)
+    endif
+
+    if (isvhbl.gt.0) hbord(ifac) = hflui
+
+    ! --->  C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+
+    ! Si on a deux types de conditions aux limites (ICLVAR, ICLVAF)
+    !   il faut que le flux soit traduit par ICLVAF.
+    ! Si on n'a qu'un type de condition, peu importe (ICLVAF=ICLVAR)
+    ! Pour le moment, dans cette version compressible, on impose un
+    !   flux nul pour ICLVAR, lorsqu'il est different de ICLVAF (cette
+    !   condition ne sert qu'a la reconstruction des gradients et
+    !   s'applique a l'energie totale qui inclut l'energie cinetique :
+
+    if (icodcl(ifac,ivar).eq.6) then
+      hext = rcodcl(ifac,ivar,2)
+      pimp = rcodcl(ifac,ivar,1)
+
+      if (abs(hext).gt.rinfin*0.5d0) then
+        heq = hflui
+      else
+        heq = hflui*hext/(hflui+hext)
+      endif
+
+      ! Gradient BCs
+      coefap(ifac) = pimp*heq/hint
+      coefbp(ifac) = 1.d0 - heq/hint
+
+      ! Flux BCs
+      cofafp(ifac) = -heq*pimp
+      cofbfp(ifac) =  heq
+
+      !--> Turbulent heat flux
+      if (ityturt(iscal).eq.3) then
+
+        phit = (cofafp(ifac) + cofbfp(ifac)*val_s(iel))
+
+        hintt(1) =   0.5d0*(visclc+rkl)/distbf                        &
+                   + visten(1,iel)*ctheta(iscal)/distbf/csrij
+        hintt(2) =   0.5d0*(visclc+rkl)/distbf                        &
+                   + visten(2,iel)*ctheta(iscal)/distbf/csrij
+        hintt(3) =   0.5d0*(visclc+rkl)/distbf                        &
+                   + visten(3,iel)*ctheta(iscal)/distbf/csrij
+        hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
+        hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
+        hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
+
+        ! Dirichlet Boundary Condition
+        !-----------------------------
+
+        ! Add rho*uk*Tet to T'v' in High Reynolds
+        do isou = 1, 3
+          pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
+        enddo
+
+        call set_dirichlet_vector_ggdh &
+             !========================
+           ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+             coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
+             pimpv            , hintt            , rinfiv )
+
+        ! Boundary conditions used in the temperature equation
+        do isou = 1, 3
+          cofarut(isou,ifac) = 0.d0
+          do jsou = 1, 3
+            cofbrut(isou,jsou,ifac) = 0.d0
+          enddo
+        enddo
+
+      endif
+
+      !--> Radiative module:
+
+      ! On stocke le coefficient d'echange lambda/distance
+      ! (ou son equivalent en turbulent) quelle que soit la
+      ! variable thermique transportee (temperature ou enthalpie)
+      ! car on l'utilise pour realiser des bilans aux parois qui
+      ! sont faits en temperature (on cherche la temperature de
+      ! paroi quelle que soit la variable thermique transportee pour
+      ! ecrire des eps sigma T4.
+
+      !     donc :
+
+      !       lorsque la variable transportee est la temperature
+      !         abs(iscsth(ii)).eq.1 : hconv(ifac) = hint
+      !         puisque hint = visls * cp / distbr
+      !                      = lambda/distance en W/(m2 K)
+
+      !       lorsque la variable transportee est l'enthalpie
+      !         iscsth(ii).eq.2 : hconv(ifac) = hint*cpr
+      !         avec
+      !            if (ipccp.gt.0) then
+      !              cpr = propce(iel,ipccp )
+      !            else
+      !              cpr = cp0
+      !            endif
+      !         puisque hint = visls / distbr
+      !                      = lambda/(cp * distance)
+
+      !       lorsque la variable transportee est l'energie (compressible)
+      !         iscsth(ii).eq.3 :
+      !         on procede comme pour l'enthalpie avec CV au lieu de CP
+      !         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
+      !               le flux est le bon et le coef d'echange aussi)
+
+      !      De meme dans condli.
+
+      !               Si on rayonne et que
+      !                  le scalaire est la variable energetique
+
+      if (iirayo.ge.1 .and. iscal.eq.iscalt) then
+
+        ! We compute the exchange coefficient in W/(m2 K)
+
+        ! Enthalpy
+        if (itherm.eq.2) then
+          ! If Cp is variable
+          if (ipccp.gt.0) then
+            bhconv(ifac) = hflui*propce(iel, ipccp)
+          else
+            bhconv(ifac) = hflui*cp0
+          endif
+
+          ! Energie (compressible module)
+        elseif (itherm.eq.3) then
+          ! If Cv is variable
+          if (ipccv.gt.0) then
+            bhconv(ifac) = hflui*propce(iel,ipccv)
+          else
+            bhconv(ifac) = hflui*cv0
+          endif
+
+          ! Temperature
+        elseif (iscacp(iscal).eq.1) then
+          bhconv(ifac) = hflui
+        endif
+
+        ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
+        !  gain for the fluid) in W/m2
+        bfconv(ifac) =   cofafp(ifac)              &
+                       + cofbfp(ifac)*theipb(ifac)
+      endif
+
+    endif ! End if icodcl=6
+
+    ! Save the value of T^star and T^+ for post-processing
+    if (iscal.eq.iscalt) then
+      ! Rough wall function
+      if (icodcl(ifac,ivar).eq.6) then
+        phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
+        ! Imposed flux with wall function for post-processing
+      elseif (icodcl(ifac,ivar).eq.3) then
+        phit = rcodcl(ifac,ivar,3)
+      else
+        phit = 0.d0
+      endif
+
+      tet = phit/(max(sqrt(uk*buet(ifac)),epzero))
+
+      if (itplus .ge. 0) tplusp(ifac) = tplus
+      if (itstar .ge. 0) tstarp(ifac) = tet
+
+      tetmax = max(tet, tetmax)
+      tetmin = min(tet, tetmin)
+      tplumx = max(tplus,tplumx)
+      tplumn = min(tplus,tplumn)
+    endif
+
+  endif ! rough wall condition
+
+enddo
+
+!----
+! End
+!----
+
+return
+end subroutine
+

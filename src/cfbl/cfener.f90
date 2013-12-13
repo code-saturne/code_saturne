@@ -92,7 +92,6 @@ use ppincl
 use cfpoin
 use mesh
 use field
-use pointe, only: coefau, coefbu
 
 !===============================================================================
 
@@ -149,6 +148,8 @@ double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 
@@ -546,6 +547,9 @@ if( idiff(ivar).ge. 1 ) then
   ! all is taken into account by the energy diffusion term.
   ! Hence the contribution of the terms in u2 and e-CvT shouldn't be taken into
   ! account when ifbet(ifac).ne.0
+
+  call field_get_coefa_v(ivarfl(iu), coefau)
+  call field_get_coefb_v(ivarfl(iu), coefbu)
 
   do ifac = 1, nfabor
 

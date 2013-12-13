@@ -57,9 +57,6 @@ implicit none
   !> Number of scalars with variable diffusivity
   integer, save :: nvisls
 
-  !> number of boundary coefficient for the boundary conditions
-  integer, save :: ncofab
-
   !> number of properties defined at the cells.
   !> They will be stored in the array \ref propce
   integer, save :: nproce

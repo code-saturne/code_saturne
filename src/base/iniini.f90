@@ -57,7 +57,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, ivar, iscal, iprop, iest, imom
+integer          ii, jj, iscal, iprop, iest, imom
 integer          istr
 
 !===============================================================================
@@ -395,11 +395,6 @@ nvar   = 0
 
 nproce = 0
 
-! --- Nombre de tableaux NFABOR de type COEFA (ou COEFB)
-
-ncofab = 0
-
-
 !===============================================================================
 ! 5. POSITION DES VARIABLES DE numvar.f90
 !===============================================================================
@@ -463,22 +458,6 @@ iprtot = 0
 
 do iscal = 1, nscamx
   ivisls(iscal) = -1
-enddo
-
-! --- Conditions aux limites (COEFA, COEFB)
-
-icoef  = 1
-icoeff = 2
-! Special treatment of divRij in the momentum equation
-icoefr = 3
-! Replacement of the convection flux
-icoefc = 4
-
-do ivar = 1, nvarmx
-  iclrtp(ivar,icoef ) = 0
-  iclrtp(ivar,icoeff) = 0
-  iclrtp(ivar,icoefr) = 0
-  iclrtp(ivar,icoefc) = 0
 enddo
 
 ! --- Ici tout numvar est initialise.

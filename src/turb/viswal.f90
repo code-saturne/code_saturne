@@ -70,7 +70,6 @@ use optcal
 use cstphy
 use entsor
 use parall
-use pointe, only: coefau, coefbu
 use mesh
 use field
 
@@ -97,6 +96,8 @@ double precision dudx(ndim,ndim), kdelta(ndim,ndim)
 logical          ilved
 
 double precision, dimension(:,:,:), allocatable :: gradv
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
 
 !===============================================================================
@@ -105,7 +106,8 @@ double precision, dimension(:), pointer :: crom
 ! 1.  INITIALISATION
 !===============================================================================
 
-! --- Memoire
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvis = ipproc(iviscl)
