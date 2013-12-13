@@ -224,7 +224,7 @@ def dest_subdir(destdir, d):
     t = d
 
     # Concatenate destdir and target subdirectory
-    
+
     if sys.platform.startswith("win"):
         i = t.find(':\\')
         if i > -1:
