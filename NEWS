@@ -8,6 +8,8 @@ Changes:
 Architectural changes
 ---------------------
 
+- Remove support for obsolete LAM and MPICH1 MPI libraries.
+
 - Finalized cleanup of handling of boundary condition coefficients. Fields now allocate
   their coefficients, rather than map them from a common array.
 

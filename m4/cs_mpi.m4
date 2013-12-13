@@ -200,9 +200,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   mpi_type=""
   if test "x$cs_ibm_bg_type" != "x" ; then
-    if test "x$cs_ibm_bg_type" = "xL" ; then
-      mpi_type=BGL_MPI
-    elif test "x$cs_ibm_bg_type" = "xP" ; then
+    if test "x$cs_ibm_bg_type" = "xP" ; then
       mpi_type=BGP_MPI
     elif test "x$cs_ibm_bg_type" = "xQ" ; then
       mpi_type=BGQ_MPI
@@ -261,16 +259,6 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                   [mpi_type=MPIBULL2])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([cs_lam_mpi],
-                 [
-                  #include <mpi.h>
-                  #ifdef LAM_MPI
-                  cs_lam_mpi
-                  #endif
-                  ],
-                  [mpi_type=LAM_MPI])
-  fi
-  if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([hp_mpi],
                  [
                   #include <mpi.h>
@@ -279,16 +267,6 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                   #endif
                   ],
                   [mpi_type=HP_MPI])
-  fi
-  if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([cs_mpich1],
-                 [
-                  #include <mpi.h>
-                  #ifdef MPICH
-                  cs_mpich1
-                  #endif
-                  ],
-                 [mpi_type=MPICH1])
   fi
 
   # Add a specific preprocessor directive to skip the MPI C++ bindings

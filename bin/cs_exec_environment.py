@@ -956,11 +956,9 @@ class mpi_environment:
                                'MSMPI':self.__init_msmpi__,
                                'OpenMPI':self.__init_openmpi__,
                                'BullxMPI':self.__init_openmpi__,
-                               'LAM_MPI':self.__init_lam__,
                                'BGP_MPI':self.__init_bgp__,
                                'BGQ_MPI':self.__init_bgq__,
                                'HP_MPI':self.__init_hp_mpi__,
-                               'MPICH1':self.__init_mpich1__,
                                'MPIBULL2':self.__init_mpibull2__}
             if self.type in mpi_env_by_type:
                 init_method = mpi_env_by_type[self.type]
@@ -1247,56 +1245,6 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_mpich1__(self, p, resource_info=None, wdir = None):
-
-        """
-        Initialize for MPICH1 environment.
-        """
-
-        # Determine base executable paths
-
-        launcher_names = ['mpirun.mpich',
-                          'mpirun.mpich-mpd',
-                          'mpirun.mpich-shmem',
-                          'mpirun']
-
-        for d in p:
-            for name in launcher_names:
-                absname = os.path.join(d, name)
-                if os.path.isfile(absname):
-                    if d == self.bindir:
-                        self.mpiexec = absname
-                    else:
-                        self.mpiexec = name
-                    break
-            if self.mpiexec != None:
-                break
-
-        # Determine processor count and MPMD handling
-
-        self.mpiexec_n = ' -np '
-        self.mpmd = MPI_MPMD_script
-
-        # MPD daemons must be launched using the ch_p4mpd device,
-        # but may not be automated as easily as with MPICH2's mpdboot,
-        # so it is not handled here, and must be managed explicitely
-        # by the user or environment.
-
-        # Other options to add
-
-        # Resource manager info
-
-        if resource_info != None:
-            hostsfile = resource_info.get_hosts_file(wdir)
-            if hostsfile != None:
-                self.mpiexec += ' -machinefile ' + hostsfile
-
-        # Info commands
-
-        self.info_cmds = ['mpichversion']
-
-    #---------------------------------------------------------------------------
-
     def __init_openmpi__(self, p, resource_info=None, wdir = None):
         """
         Initialize for OpenMPI environment.
@@ -1359,54 +1307,6 @@ class mpi_environment:
         # Info commands
 
         self.info_cmds = ['ompi_info -a']
-
-    #---------------------------------------------------------------------------
-
-    def __init_lam__(self, p, resource_info=None, wdir = None):
-        """
-        Initialize for LAM/MPI environment.
-        We choose to use the mpiexec command, which wraps lamboot,
-        mpirun, and lamhalt, and provides for a basically standard
-        mpiexec syntax.
-        """
-
-        # Determine base executable paths
-
-        launcher_names = ['mpiexec.lam', 'mpiexec']
-
-        for d in p:
-            for name in launcher_names:
-                absname = os.path.join(d, name)
-                if os.path.isfile(absname):
-                    if d == self.bindir:
-                        self.mpiexec = absname
-                    else:
-                        self.mpiexec = name
-                    break
-            if self.mpiexec != None:
-                break
-
-        # Determine processor count and MPMD handling
-
-        launcher_base = os.path.basename(self.mpiexec)
-
-        self.mpiexec_n = ' -n '
-        self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
-
-        # Resource manager info
-
-        hostsfile = None
-        if resource_info != None:
-            hostsfile = resource_info.get_hosts_file(wdir)
-
-        if hostsfile != None:
-            self.mpiexec += ' --machinefile ' + hostsfile
-        else:
-            self.mpiexec += ' --boot'
-
-        # Info commands
-
-        self.info_cmds = ['laminfo -all']
 
     #---------------------------------------------------------------------------
 
