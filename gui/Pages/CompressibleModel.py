@@ -72,7 +72,7 @@ class CompressibleModel(Variables, Model):
         self.node_ref    = self.node_thermo.xmlInitNode('reference_values')
 
         self.comp_choice = ['off', 'constant_gamma', 'variable_gamma', 'van_der_waals']
-        self.var_list   = ['EnergieT', 'TempK']
+        self.var_list   = ['TempK']
         self.prop_list   = ['Rho']
 
 
@@ -107,7 +107,9 @@ class CompressibleModel(Variables, Model):
                 self.node_fluid.xmlRemoveChild('property', name = 'volumic_viscosity')
                 self.node_ref.xmlRemoveChild('mass_molar')
                 self.node_ref.xmlRemoveChild('temperature')
+                ThermalScalarModel(self.case).setThermalModel('off')
             else :
+                ThermalScalarModel(self.case).setThermalModel('total_energy')
                 for v in self.var_list:
                     self.setNewScalar(self.node_comp, v, "model")
                 for p in self.prop_list:

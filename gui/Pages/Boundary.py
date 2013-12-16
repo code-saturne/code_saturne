@@ -100,7 +100,8 @@ class Boundary(object) :
                                    'temperature_kelvin',
                                    'enthalpy',
                                    'potential_temperature',
-                                   'liquid_potential_temperature')
+                                   'liquid_potential_temperature',
+                                   'total_energy')
 
         self.sca_model = DefineUserScalarsModel(self.case)
 

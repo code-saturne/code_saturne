@@ -57,6 +57,7 @@ from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.QMeiEditorView import QMeiEditorView
 from Pages.Boundary import Boundary
+from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -136,6 +137,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.nature  = boundary.getNature()
         self.therm   = ThermalScalarModel(self.__case)
         self.sca_mo  = DefineUserScalarsModel(self.__case)
+        self.comp    = CompressibleModel(self.__case)
 
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
@@ -203,7 +205,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.modelMeteo.setItem(str_model = self.meteo)
 
         self.model_th = self.therm.getThermalScalarModel()
-        if self.model_th != 'off':
+        if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
             self.groupBoxThermal.show()
             self.modelThermal = ComboModel(self.comboBoxThermal,1,1)
             self.thermal = self.therm.getThermalScalarLabel()
@@ -233,7 +235,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.pushButtonThermal.setEnabled(False)
         setGreenColor(self.pushButtonThermal, False)
 
-        if self.model_th != 'off':
+        if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
             self.thermal_type = self.__boundary.getScalarChoice(self.thermal)
             self.modelTypeThermal.setItem(str_model = self.thermal_type)
             self.labelValueThermal.setText('Value')

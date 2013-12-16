@@ -89,7 +89,8 @@ class InitializationModel(Model):
                              'TempK',
                              'Enthalpy',
                              'PotTemp',
-                             'LiqPotTemp')
+                             'LiqPotTemp',
+                             'TotEner')
 
 
     def __defaultValues(self):
@@ -332,7 +333,7 @@ omega = k^0.5/almax;"""
         """
         Return status of total energy for the initialisation
         """
-        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         status = n['status']
         if not status:
@@ -347,7 +348,7 @@ omega = k^0.5/almax;"""
         Put status of Energy for the initialisation
         """
         self.isOnOff(status)
-        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         n['status'] = status
 
@@ -483,7 +484,7 @@ omega = k^0.5/almax;"""
         Set the formula for totale energy.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -498,7 +499,7 @@ omega = k^0.5/almax;"""
         Return the formula for energy.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('scalar', name = 'EnergieT')
+        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)

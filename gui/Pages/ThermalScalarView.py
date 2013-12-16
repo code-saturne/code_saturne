@@ -58,6 +58,7 @@ from Pages.ElectricalModel import ElectricalModel
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -99,6 +100,7 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
 
         self.modelThermal.addItem(self.tr("Potential temperature"), 'potential_temperature')
         self.modelThermal.addItem(self.tr("Liquid potential temperature"), 'liquid_potential_temperature')
+        self.modelThermal.addItem(self.tr("Total energy (J/kg)"), 'total_energy')
 
         self.connect(self.comboBoxThermal, SIGNAL("activated(const QString&)"), self.slotThermalScalar)
 
@@ -116,6 +118,11 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
 
         if GasCombustionModel(self.case).getGasCombustionModel() != 'off':
             self.comboBoxThermal.setEnabled(False)
+
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+        else:
+            self.modelThermal.delItem(6)
 
         if AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel() != 'off':
             self.comboBoxThermal.setEnabled(False)

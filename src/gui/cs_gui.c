@@ -215,6 +215,8 @@ _gui_thermal_model(void)
       test = 12;
     else if (cs_gui_strcmp(model_name, "liquid_potential_temperature"))
       test = 13;
+    else if (cs_gui_strcmp(model_name, "total_energy"))
+      test = 30;
     else
       bft_error(__FILE__, __LINE__, 0,
           _("Invalid thermal model: %s\n"), model_name);
@@ -1602,6 +1604,10 @@ void CS_PROCF (csther, CSTHER) (int  *itherm,
     *itherm = 2;
     *itpscl = 1;
     break;
+  case 30:
+    *itherm = 3;
+    *itpscl = 1;
+    break;
   default:
     *itherm = 0;
     *itpscl = 0;
@@ -2292,7 +2298,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     j = iscapp[i] -1;
     cs_glob_var->rtp[n++] = isca[j] -1;
 
-    if (*itherm > 0 && i == 0 && *itherm != 3)
+    if (*itherm > 0 && i == 0)
       name = _thermal_scalar_name_label("name");
     else
       name = _specific_physic_scalar_name_label(cs_glob_var->model, cs_glob_var->label[j]);

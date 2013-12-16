@@ -73,6 +73,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.node_gas   = self.node_models.xmlGetChildNode('gas_combustion',     'model')
         self.node_ray   = self.node_models.xmlGetChildNode('radiative_transfer', 'model')
         self.node_atmo  = self.node_models.xmlGetChildNode('atmospheric_flows',  'model')
+        self.node_comp  = self.node_models.xmlGetChildNode('compressible_model',  'model')
 
         self.old_scaTh = "off"
 
@@ -81,7 +82,8 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                              'temperature_kelvin',
                              'enthalpy',
                              'potential_temperature',
-                             'liquid_potential_temperature')
+                             'liquid_potential_temperature',
+                             'total_energy')
 
 
     def _defaultThermalScalarValues(self):
@@ -129,7 +131,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         thermalScalarList = self.thermalModel
 
-        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo):
+        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo, self.node_comp):
             if node['model'] != 'off':
                 thermalScalarList = ('off',)
 
@@ -140,7 +142,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         """
         spec = False
-        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo):
+        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo, self.node_comp):
             if node != None:
                 if node['model'] != 'off':
                     spec = True

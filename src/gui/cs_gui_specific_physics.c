@@ -3072,7 +3072,7 @@ void CS_PROCF (uicfsc, UICFSC) (const int *const ienerg,
     BFT_MALLOC(vars->label, vars->nscapp, char*);
   }
 
-  label = _scalar_name_label("compressible_model", "EnergieT");
+  label = _thermal_scalar_name_label("label");
   BFT_MALLOC(vars->label[*ienerg -1], strlen(label)+1, char);
   strcpy(vars->label[*ienerg -1], label);
   BFT_FREE(label);

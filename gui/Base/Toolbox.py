@@ -296,6 +296,7 @@ def dicoLabel(name):
                             ('enthalpy',                      "Enthalpie",  "Enthalpy"),
                             ('potential_temperature',         "TempPot",    "PotTemp"),
                             ('liquid_potential_temperature',  "TempPotLiq", "LiqPotTemp"),
+                            ('total_energy',                  "EnerTot",    "TotEner"),
                             ('density',                       "MasseVol",   "Density"),
                             ('molecular_viscosity',           "ViscLam",    "LamVisc"),
                             ('specific_heat',                 "ChSpec",     "SpecHeat"),

@@ -848,7 +848,7 @@ nusa = (cmu * k)/eps;;"""
 
         model = self.therm.getThermalScalarModel()
 
-        if model != "off":
+        if model != "off" and self.comp.getCompressibleModel() == 'off':
             for item in self.thermal_group:
                 item.show()
             th_formula = self.init.getThermalFormula(zone, self.th_sca_label)

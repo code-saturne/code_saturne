@@ -287,16 +287,16 @@ class XMLinit(Variables):
             print("You must re-create them")
 
         # thermal scalar
-        for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows']:
+        for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows', 'compressible_model']:
             node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
             mdl = node['model']
             if mdl and mdl != 'off':
-                if phys != 'atmospheric_flows':
+                if phys != 'atmospheric_flows' and phys != 'compressible_model':
                     n = node.xmlGetNode('scalar', name="Enthalpy")
                     if n:
                         n.xmlRemoveNode()
                     ThermalScalarModel(self.case).setThermalModel('enthalpy')
-                else:
+                elif phys == 'atmospheric_flows':
                     if (mdl == "dry"):
                         n = node.xmlGetNode('scalar', name="potential_temperature")
                         if n:
@@ -307,6 +307,12 @@ class XMLinit(Variables):
                         if n:
                             n.xmlRemoveNode()
                         ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
+                else:
+                    n = node.xmlGetNode('scalar', name="EnergieT")
+                    if n:
+                        n.xmlRemoveNode()
+                    ThermalScalarModel(self.case).setThermalModel('total_energy')
+
         node = self.case.xmlGetNode('additional_scalars')
         n = node.xmlGetNode('scalar', type='thermal')
         if n:
