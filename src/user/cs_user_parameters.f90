@@ -1607,8 +1607,8 @@ if (.false.) then
     ! For scalars which are not variances
     if (iscavr(jj).le.0) then
       ! We define the min and max bounds
-      call field_set_key_id(ivarfl(isca(jj)), kscmin, -grand)
-      call field_set_key_id(ivarfl(isca(jj)), kscmax, +grand)
+      call field_set_key_double(ivarfl(isca(jj)), kscmin, -grand)
+      call field_set_key_double(ivarfl(isca(jj)), kscmax, +grand)
     endif
   enddo
 
