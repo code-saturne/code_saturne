@@ -133,6 +133,17 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
 void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
 
 /*----------------------------------------------------------------------------
+ * User scalars labels
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UISCAU
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiscau, UISCAU) (void);
+
+/*----------------------------------------------------------------------------
  * User thermal scalar.
  *
  * Fortran Interface:
@@ -390,23 +401,13 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
  *
  * Fortran Interface:
  *
- * subroutine cssca2 (iscalt, iscavr, scamin, scamax)
+ * subroutine cssca2
  * *****************
  *
- * integer          iscalt  <--   index of the thermal scalar
- * integer          iscavr  <--   number of the related variance if any
- * double precision scamin  -->   user scalar min array
- * double precision scamax  -->   user scalar max array
+ * integer          iscavr   <--  number of the related variance if any
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const    int *const iscalt,
-                                const    int *const iscavr,
-                                      double *const scamin,
-                                      double *const scamax);
-
-/*----------------------------------------------------------------------------
- * Read reference dynamic and user scalar viscosity
- *----------------------------------------------------------------------------*/
+void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr);
 
 void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
                                 const    int *const iscalt,
@@ -471,7 +472,7 @@ void CS_PROCF(fcnmva, FCNMVA)
 (
  const char      *const fstr,    /* Fortran string */
  int             *const len,     /* String Length  */
- int             *const var_id   /* Variable Id (1 to n) */
+ int             *const ipp      /* Post Id (1 to n) */
  CS_ARGF_SUPP_CHAINE
 );
 
@@ -479,7 +480,7 @@ void CS_PROCF(cfnmva, CFNMVA)
 (
  char          *const fstr,    /* Fortran string */
  int           *const len,     /* String Length  */
- int           *const var_id   /* Variable Id (1 to n) */
+ int           *const ipp      /* Post Id (1 to n) */
  CS_ARGF_SUPP_CHAINE
 );
 

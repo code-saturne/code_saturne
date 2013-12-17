@@ -70,7 +70,6 @@ subroutine lecamx &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use cstphy
 use cstnum
 use entsor
@@ -641,8 +640,8 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
 
   allocate(mflnum(nfld))
 
-  do f_id = 1, nfld
-    mflnum(f_id) = 0
+  do ii = 1, nfld
+    mflnum(ii) = 0
   enddo
 
   ! Name of flux associated with variable in previous calculation
@@ -830,8 +829,8 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
 
   ! Initialize work arrays
 
-  do f_id = 1, nfld
-    mflnum(f_id) = 0
+  do ii = 1, nfld
+    mflnum(ii) = 0
   enddo
 
   ! Name of flux associated with variable for previous calculation

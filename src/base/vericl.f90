@@ -89,6 +89,7 @@ use ppthch
 use ppincl
 use parall
 use mesh
+use field
 
 !===============================================================================
 
@@ -120,10 +121,6 @@ integer          icodcn
 integer          icodcp, icodcf, icodca, icodom
 integer          icor11, icor22, icor33, icor12, icor13, icor23
 integer          ipp, iokcod, iok
-integer          ippprp, ippuip, ippvip, ippwip, ippepp, ippkip
-integer          ipp11p, ipp22p, ipp33p, ipp12p, ipp13p, ipp23p
-integer          ippphp, ippfbp, ippalp, ippomg
-integer          ippnup
 integer          icodni(2), icodvi(3), icodpp(2), icodtb(8), icodsc(2)
 integer          icodvf(2), icoduv(3), icodct(11), icodus(4)
 
@@ -134,20 +131,6 @@ integer          icodvf(2), icoduv(3), icodct(11), icodus(4)
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
-
-ippalp = 0
-ippepp = 0
-ippkip = 0
-ippfbp = 0
-ippomg = 0
-ippphp = 0
-ippnup = 0
-ipp11p = 0
-ipp22p = 0
-ipp33p = 0
-ipp12p = 0
-ipp13p = 0
-ipp23p = 0
 
 do ipp = 1, 2
   icodni(ipp) = -1
@@ -222,60 +205,25 @@ do ivar = 1, nvar
 enddo
 
 ! --- Seconde boucle lente si pb plus haut
-if(iokcod.ne.0) then
-  do ipp = 2, nvppmx
-    if (itrsvr(ipp).ge.1) then
-      ivar = itrsvr(ipp)
-      do ifac = 1, nfabor
-        icode = icodcl(ifac,ivar)
-        if(icode.eq. 0) then
-          if (itypfb(ifac).gt.0) then
-            itypfb(ifac) = -itypfb(ifac)
-          endif
-          icodni(1) = ipp
-          icodni(2) = ifac
-          nstoni = nstoni + 1
+if (iokcod.ne.0) then
+  do ivar = 1, nvar
+    do ifac = 1, nfabor
+      icode = icodcl(ifac,ivar)
+      if(icode.eq. 0) then
+        if (itypfb(ifac).gt.0) then
+          itypfb(ifac) = -itypfb(ifac)
         endif
-      enddo
-    endif
+        icodni(1) = ivar
+        icodni(2) = ifac
+        nstoni = nstoni + 1
+      endif
+    enddo
   enddo
 endif
 
 
 ! 2.3 VERIFICATIONS DE L'ADMISSIBILITE DES CONDITIONS
 ! ====================================================
-
-ippprp = ipprtp(ipr)
-ippuip = ipprtp(iu )
-ippvip = ipprtp(iv )
-ippwip = ipprtp(iw )
-if(itytur.eq.2) then
-  ippkip = ipprtp(ik )
-  ippepp = ipprtp(iep)
-elseif(itytur.eq.3) then
-  ipp11p = ipprtp(ir11)
-  ipp22p = ipprtp(ir22)
-  ipp33p = ipprtp(ir33)
-  ipp12p = ipprtp(ir12)
-  ipp13p = ipprtp(ir13)
-  ipp23p = ipprtp(ir23)
-  ippepp = ipprtp(iep)
-  if (iturb.eq.32) ippalp = ipprtp(ial)
-elseif(itytur.eq.5) then
-  ippkip = ipprtp(ik )
-  ippepp = ipprtp(iep)
-  ippphp = ipprtp(iphi)
-  if(iturb.eq.50) then
-    ippfbp = ipprtp(ifb)
-  elseif(iturb.eq.51) then
-    ippalp = ipprtp(ial)
-  endif
-elseif(iturb.eq.60) then
-  ippkip = ipprtp(ik )
-  ippomg = ipprtp(iomg)
-elseif(iturb.eq.70) then
-  ippnup = ipprtp(inusa )
-endif
 
 ! --- Conditions admissibles pour les composantes de vitesse
 do ifac = 1, nfabor
@@ -290,7 +238,7 @@ do ifac = 1, nfabor
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
     endif
-    icodvi(1) = ippuip
+    icodvi(1) = iu
     icodvi(2) = icodcl(ifac,iu)
     icodvi(3) = -1
     nstvit = nstvit + 1
@@ -301,7 +249,7 @@ do ifac = 1, nfabor
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
     endif
-    icodvi(1) = ippvip
+    icodvi(1) = iv
     icodvi(2) = icodcl(ifac,iv)
     icodvi(3) = -1
     nstvit = nstvit + 1
@@ -312,7 +260,7 @@ do ifac = 1, nfabor
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
     endif
-    icodvi(1) = ippwip
+    icodvi(1) = iw
     icodvi(2) = icodcl(ifac,iw)
     icodvi(3) = -1
     nstvit = nstvit + 1
@@ -331,7 +279,7 @@ do ifac = 1, nfabor
 
   ! --- on interdit les parois rugueuses en compressible
   if (icodcu.eq.6 .and. ippmod(icompf).gt.0) then
-    icodvi(1) = ippuip
+    icodvi(1) = iu
     icodvi(2) = icodcl(ifac,iu)
     icodvi(3) = 1
     nstvit = nstvit + 1
@@ -347,7 +295,7 @@ do ifac = 1, nfabor
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
     endif
-    icodpp(1) = ippprp
+    icodpp(1) = ipr
     icodpp(2) = icodcl(ifac,ipr)
     nstopp = nstopp + 1
   endif
@@ -372,9 +320,9 @@ if (itytur.eq.2) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ippkip
+      icodtb(1) = ik
       icodtb(2) = icodcl(ifac,ik)
-      icodtb(3) = ippepp
+      icodtb(3) = iep
       icodtb(4) = icodcl(ifac,iep)
       nstoke = nstoke + 1
     endif
@@ -392,7 +340,7 @@ elseif(itytur.eq.3) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ipp11p
+      icodtb(1) = ivar
       icodtb(2) = icode
       nstrij = nstrij + 1
     endif
@@ -406,7 +354,7 @@ elseif(itytur.eq.3) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ipp22p
+      icodtb(1) = ivar
       icodtb(2) = icode
       nstrij = nstrij + 1
     endif
@@ -420,7 +368,7 @@ elseif(itytur.eq.3) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ipp33p
+      icodtb(1) = ivar
       icodtb(2) = icode
       nstrij = nstrij + 1
     endif
@@ -434,7 +382,7 @@ elseif(itytur.eq.3) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ipp12p
+      icodtb(1) = ivar
       icodtb(2) = icode
       nstrij = nstrij + 1
     endif
@@ -448,7 +396,7 @@ elseif(itytur.eq.3) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ipp13p
+      icodtb(1) = ivar
       icodtb(2) = icode
       nstrij = nstrij + 1
     endif
@@ -462,7 +410,7 @@ elseif(itytur.eq.3) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ipp23p
+      icodtb(1) = ivar
       icodtb(2) = icode
       nstrij = nstrij + 1
     endif
@@ -475,7 +423,7 @@ elseif(itytur.eq.3) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ippepp
+      icodtb(1) = iep
       icodtb(2) = icode
       icodtb(3) = -1
       nstrij = nstrij + 1
@@ -490,7 +438,7 @@ elseif(itytur.eq.3) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
         endif
-        icodtb(1) = ippalp
+        icodtb(1) = ial
         icodtb(2) = icode
         icodtb(3) = -1
         nstrij = nstrij + 1
@@ -501,7 +449,7 @@ elseif(itytur.eq.3) then
           if (itypfb(ifac).gt.0) then
             itypfb(ifac) = -itypfb(ifac)
           endif
-          icodtb(1) = ippalp
+          icodtb(1) = ial
           icodtb(2) = icode
           icodtb(3) = ivar
           nstrij = nstrij + 1
@@ -539,13 +487,13 @@ elseif (iturb.eq.50) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ippkip
+      icodtb(1) = ik
       icodtb(2) = icodcl(ifac,ik)
-      icodtb(3) = ippepp
+      icodtb(3) = iep
       icodtb(4) = icodcl(ifac,iep)
-      icodtb(5) = ippphp
+      icodtb(5) = iphi
       icodtb(6) = icodcl(ifac,iphi)
-      icodtb(7) = ippfbp
+      icodtb(7) = ifb
       icodtb(8) = icodcl(ifac,ifb)
       nstov2 = nstov2 + 1
 
@@ -582,13 +530,13 @@ elseif (iturb.eq.51) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ippkip
+      icodtb(1) = ik
       icodtb(2) = icodcl(ifac,ik)
-      icodtb(3) = ippepp
+      icodtb(3) = iep
       icodtb(4) = icodcl(ifac,iep)
-      icodtb(5) = ippphp
+      icodtb(5) = iphi
       icodtb(6) = icodcl(ifac,iphi)
-      icodtb(7) = ippalp
+      icodtb(7) = ial
       icodtb(8) = icodcl(ifac,ial)
       nstov2 = nstov2 + 1
 
@@ -615,9 +563,9 @@ elseif (iturb.eq.60) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ippkip
+      icodtb(1) = ik
       icodtb(2) = icodcl(ifac,ik)
-      icodtb(3) = ippomg
+      icodtb(3) = iomg
       icodtb(4) = icodcl(ifac,iomg)
       nstokw = nstokw + 1
 
@@ -639,7 +587,7 @@ elseif (iturb.eq.70) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodtb(1) = ippnup
+      icodtb(1) = inusa
       icodtb(2) = icodcl(ifac,inusa)
       nstonu = nstonu + 1
 
@@ -661,7 +609,7 @@ if(nscal.ge.1) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
         endif
-        icodsc(1) = ipprtp(ivar)
+        icodsc(1) = ivar
         icodsc(2) = icodcl(ifac,ivar)
         nstosc = nstosc + 1
       endif
@@ -670,7 +618,7 @@ if(nscal.ge.1) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
         endif
-        icodvf(1) = ipprtp(ivar)
+        icodvf(1) = ivar
         icodvf(2) = icodcl(ifac,ivar)
         nstovf = nstovf + 1
       endif
@@ -679,7 +627,7 @@ if(nscal.ge.1) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
         endif
-        icodvf(1) = ipprtp(ivar)
+        icodvf(1) = ivar
         icodvf(2) = icodcl(ifac,ivar)
         nstovf = nstovf + 1
       endif
@@ -719,38 +667,6 @@ endif
 ! 2.4 VERIFICATIONS DES COHERENCES INTER VARIABLES
 ! ================================================
 
-ippprp = ipprtp(ipr)
-ippuip = ipprtp(iu )
-ippvip = ipprtp(iv )
-ippwip = ipprtp(iw )
-if(itytur.eq.2) then
-  ippkip = ipprtp(ik )
-  ippepp = ipprtp(iep)
-elseif(itytur.eq.3) then
-  ipp11p = ipprtp(ir11)
-  ipp22p = ipprtp(ir22)
-  ipp33p = ipprtp(ir33)
-  ipp12p = ipprtp(ir12)
-  ipp13p = ipprtp(ir13)
-  ipp23p = ipprtp(ir23)
-  ippepp = ipprtp(iep)
-  if (iturb.eq.32) ippalp = ipprtp(ial)
-elseif(itytur.eq.5) then
-  ippkip = ipprtp(ik )
-  ippepp = ipprtp(iep)
-  ippphp = ipprtp(iphi)
-  if(iturb.eq.50) then
-    ippfbp = ipprtp(ifb)
-  elseif(iturb.eq.51) then
-    ippalp = ipprtp(ial)
-  endif
-elseif(iturb.eq.60) then
-  ippkip = ipprtp(ik )
-  ippomg = ipprtp(iomg)
-elseif(iturb.eq.70) then
-  ippnup = ipprtp(inusa)
-endif
-
 ! --- Coherence pour les composantes de vitesse
 do ifac = 1, nfabor
 
@@ -785,12 +701,11 @@ do ifac = 1, nfabor
   !        entree/sortie, mais cela ne semble pas imperatif. Le test
   !        est laisse en commentaire pour etre recupere si necessaire.
 
-  !          IF( ICODCU.EQ.9 .OR. ICODCV.EQ.9 .OR. ICODCW.EQ.9 ) THEN
-  !            IF( ICODCL(IFAC,IPRIPH).NE.1                    ) THEN
-  !              CHAINE=NOMVAR(IPPPRP)
-  !              NSTOUP = NSTOUP + 1
-  !            ENDIF
-  !          ENDIF
+  !        if (icodcu.eq.9 .or. icodcv.eq.9 .or. icodcw.eq.9) THEN
+  !          if (icodcl(ifac,ipriph).ne.1) then
+  !            nstoup = nstoup + 1
+  !          endif
+  !        endif
 
 enddo
 
@@ -813,9 +728,9 @@ if(itytur.eq.2) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippkip
+      icodct(1) = ik
       icodct(2) = icodcl(ifac,ik)
-      icodct(3) = ippepp
+      icodct(3) = iep
       icodct(4) = icodcl(ifac,iep)
       icodct(5) = icodcu
       icodct(6) = icodcv
@@ -830,9 +745,9 @@ if(itytur.eq.2) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippkip
+      icodct(1) = ik
       icodct(2) = icodcl(ifac,ik)
-      icodct(3) = ippepp
+      icodct(3) = iep
       icodct(4) = icodcl(ifac,iep)
       icodct(5) = icodcu
       icodct(6) = icodcv
@@ -1058,13 +973,13 @@ elseif(iturb.eq.50 ) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippkip
+      icodct(1) = ik
       icodct(2) = icodcl(ifac,ik)
-      icodct(3) = ippepp
+      icodct(3) = iep
       icodct(4) = icodcl(ifac,iep)
-      icodct(5) = ippphp
+      icodct(5) = iphi
       icodct(6) = icodcl(ifac,iphi)
-      icodct(7) = ippfbp
+      icodct(7) = ifb
       icodct(8) = icodcl(ifac,ifb)
       icodct(9) = icodcu
       icodct(10) = icodcv
@@ -1081,13 +996,13 @@ elseif(iturb.eq.50 ) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
         endif
-        icodct(1) = ippkip
+        icodct(1) = ik
         icodct(2) = icodcl(ifac,ik)
-        icodct(3) = ippepp
+        icodct(3) = iep
         icodct(4) = icodcl(ifac,iep)
-        icodct(5) = ippphp
+        icodct(5) = iphi
         icodct(6) = icodcl(ifac,iphi)
-        icodct(7) = ippfbp
+        icodct(7) = ifb
         icodct(8) = icodcl(ifac,ifb)
         icodct(9) = icodcu
         icodct(10) = icodcv
@@ -1122,13 +1037,13 @@ elseif(iturb.eq.51 ) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippkip
+      icodct(1) = ik
       icodct(2) = icodcl(ifac,ik)
-      icodct(3) = ippepp
+      icodct(3) = iep
       icodct(4) = icodcl(ifac,iep)
-      icodct(5) = ippphp
+      icodct(5) = iphi
       icodct(6) = icodcl(ifac,iphi)
-      icodct(7) = ippalp
+      icodct(7) = ial
       icodct(8) = icodcl(ifac,ial)
       icodct(9) = icodcu
       icodct(10) = icodcv
@@ -1145,13 +1060,13 @@ elseif(iturb.eq.51 ) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
         endif
-        icodct(1) = ippkip
+        icodct(1) = ik
         icodct(2) = icodcl(ifac,ik)
-        icodct(3) = ippepp
+        icodct(3) = iep
         icodct(4) = icodcl(ifac,iep)
-        icodct(5) = ippphp
+        icodct(5) = iphi
         icodct(6) = icodcl(ifac,iphi)
-        icodct(7) = ippalp
+        icodct(7) = ial
         icodct(8) = icodcl(ifac,ial)
         icodct(9) = icodcu
         icodct(10) = icodcv
@@ -1181,9 +1096,9 @@ elseif(iturb.eq.60 ) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippkip
+      icodct(1) = ik
       icodct(2) = icodcl(ifac,ik)
-      icodct(3) = ippomg
+      icodct(3) = iomg
       icodct(4) = icodcl(ifac,iomg)
       icodct(5) = icodcu
       icodct(6) = icodcv
@@ -1198,9 +1113,9 @@ elseif(iturb.eq.60 ) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippkip
+      icodct(1) = ik
       icodct(2) = icodcl(ifac,ik)
-      icodct(3) = ippomg
+      icodct(3) = iomg
       icodct(4) = icodcl(ifac,iomg)
       icodct(5) = icodcu
       icodct(6) = icodcv
@@ -1226,7 +1141,7 @@ elseif(iturb.eq.70 ) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippnup
+      icodct(1) = inusa
       icodct(2) = icodcl(ifac,inusa)
       icodct(3) = icodcu
       icodct(4) = icodcv
@@ -1241,7 +1156,7 @@ elseif(iturb.eq.70 ) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
-      icodct(1) = ippnup
+      icodct(1) = inusa
       icodct(2) = icodcl(ifac,inusa)
       icodct(3) = icodcu
       icodct(4) = icodcv
@@ -1267,7 +1182,7 @@ if( nscal.ge.1 ) then
           if (itypfb(ifac).gt.0) then
             itypfb(ifac) = -itypfb(ifac)
           endif
-          icodus(1) = ipprtp(ivar)
+          icodus(1) = ivar
           icodus(2) = iis
           icodus(3) = icodcl(ifac,ivar)
           icodus(4) = icodcu
@@ -1299,7 +1214,7 @@ if(iok.ne.0) then
 
   call sync_bc_err(nstoni, 2, icodni)
   if (nstoni.ne.0) then
-    chaine=nomvar(icodni(1))
+    call field_get_label(ivarfl(icodni(1)), chaine)
     write(nfecra,1000) nstoni, chaine, icodni(2)
   endif
 
@@ -1308,7 +1223,7 @@ if(iok.ne.0) then
     if (icodvi(1) .eq. -6) then
       chaine = 'rugosity'
     else
-      chaine=nomvar(icodvi(1))
+      call field_get_label(ivarfl(icodvi(1)), chaine)
     endif
     if (icodvi(3).eq.-1) then
       write(nfecra,1010) nstvit, chaine, icodvi(2)
@@ -1321,9 +1236,9 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstoke, 4, icodtb)
     if (nstoke.ne.0) then
-      chaine=nomvar(icodtb(1))
+      call field_get_label(ivarfl (icodtb(1)), chaine)
       write(nfecra,1010) nstoke, chaine, icodtb(2)
-      chaine=nomvar(icodtb(3))
+      call field_get_label(ivarfl (icodtb(3)), chaine)
       write(nfecra,1010) nstoke, chaine, icodtb(4)
     endif
 
@@ -1331,7 +1246,7 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstrij, 3, icodtb)
     if (nstrij.ne.0) then
-      chaine=nomvar(icodtb(1))
+      call field_get_label(ivarfl (icodtb(1)), chaine)
       write(nfecra,1010) nstrij, chaine, icodtb(2)
       if (iturb.eq.32 .and. icodtb(3) .ge. 0) then
         write(nfecra,2000)
@@ -1342,13 +1257,13 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstov2, 8, icodtb)
     if (nstov2.ne.0) then
-      chaine=nomvar(icodtb(1))
+      call field_get_label(ivarfl (icodtb(1)), chaine)
       write(nfecra,1010) nstov2, chaine, icodtb(2)
-      chaine=nomvar(icodtb(3))
+      call field_get_label(ivarfl (icodtb(3)), chaine)
       write(nfecra,1010) nstov2, chaine, icodtb(4)
-      chaine=nomvar(icodtb(5))
+      call field_get_label(ivarfl (icodtb(5)), chaine)
       write(nfecra,1010) nstov2, chaine, icodtb(6)
-      chaine=nomvar(icodtb(7))
+      call field_get_label(ivarfl (icodtb(7)), chaine)
       write(nfecra,1010) nstov2, chaine, icodtb(8)
     endif
 
@@ -1356,9 +1271,9 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstokw, 4, icodtb)
     if (nstokw.ne.0) then
-      chaine=nomvar(icodtb(1))
+      call field_get_label(ivarfl (icodtb(1)), chaine)
       write(nfecra,1010) nstokw, chaine, icodtb(2)
-      chaine=nomvar(icodtb(3))
+      call field_get_label(ivarfl (icodtb(3)), chaine)
       write(nfecra,1010) nstokw, chaine, icodtb(4)
     endif
 
@@ -1366,7 +1281,7 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstonu, 2, icodtb)
     if (nstonu.ne.0) then
-      chaine=nomvar(icodtb(1))
+      call field_get_label(ivarfl (icodtb(1)), chaine)
       write(nfecra,1000) nstonu, chaine, icodtb(2)
     endif
 
@@ -1377,14 +1292,14 @@ if(iok.ne.0) then
     if (icodsc(1) .eq. -6) then
       chaine = 'rugosity'
     else
-      chaine=nomvar(icodsc(1))
+      call field_get_label(ivarfl (icodsc(1)), chaine)
     endif
     write(nfecra,1010) nstosc, chaine, icodsc(2)
   endif
 
   call sync_bc_err(nstovf, 2, icodvf)
   if (nstovf.ne.0) then
-    chaine=nomvar(icodvf(1))
+    call field_get_label(ivarfl (icodvf(1)), chaine)
     write(nfecra,1010) nstovf, chaine, icodvf(2)
   endif
 
@@ -1397,10 +1312,10 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstuke, 7, icodct)
     if (nstuke.ne.0) then
-      chaine=nomvar(icodct(1))
+      call field_get_label(ivarfl (icodct(1)), chaine)
       write(nfecra,1030) nstuke,  chaine, icodct(2),             &
                          icodct(5), icodct(6), icodct(7)
-      chaine=nomvar(icodct(3))
+      call field_get_label(ivarfl (icodct(3)), chaine)
       write(nfecra,1030) nstuke, chaine, icodct(4),              &
                          icodct(5), icodct(6), icodct(7)
     endif
@@ -1429,16 +1344,16 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstuv2, 11, icodct)
     if (nstuv2.ne.0) then
-      chaine=nomvar(icodct(1))
+      call field_get_label(ivarfl (icodct(1)), chaine)
       write(nfecra,1030) nstuv2, chaine, icodct(2),              &
                          icodct(9), icodct(10), icodct(11)
-      chaine=nomvar(icodct(3))
+      call field_get_label(ivarfl (icodct(3)), chaine)
       write(nfecra,1030) nstuv2, chaine, icodct(4),              &
                          icodct(9), icodct(10), icodct(11)
-      chaine=nomvar(icodct(5))
+      call field_get_label(ivarfl (icodct(5)), chaine)
       write(nfecra,1030) nstuv2, chaine, icodct(6),              &
                          icodct(9), icodct(10), icodct(11)
-      chaine=nomvar(icodct(7))
+      call field_get_label(ivarfl (icodct(7)), chaine)
       write(nfecra,1030) nstuv2, chaine, icodct(8),              &
                          icodct(9), icodct(10), icodct(11)
     endif
@@ -1447,10 +1362,10 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstukw, 7, icodct)
     if (nstukw.ne.0) then
-      chaine=nomvar(icodct(1))
+      call field_get_label(ivarfl (icodct(1)), chaine)
       write(nfecra,1030) nstukw, chaine, icodct(2),              &
                          icodct(5), icodct(6), icodct(7)
-      chaine=nomvar(icodct(3))
+      call field_get_label(ivarfl (icodct(3)), chaine)
       write(nfecra,1030) nstukw, chaine, icodct(4),              &
                          icodct(5), icodct(6), icodct(7)
     endif
@@ -1459,7 +1374,7 @@ if(iok.ne.0) then
 
     call sync_bc_err(nstunu, 5, icodct)
     if (nstunu.ne.0) then
-      chaine=nomvar(icodct(1))
+      call field_get_label(ivarfl (icodct(1)), chaine)
       write(nfecra,1030) nstunu, chaine, icodct(2),              &
                          icodct(3), icodct(4), icodct(5)
     endif
@@ -1467,7 +1382,7 @@ if(iok.ne.0) then
 
   call sync_bc_err(nstusc, 4, icodus)
   if (nstusc.ne.0) then
-    chaine=nomvar(icodus(1))
+    call field_get_label(ivarfl (icodus(1)), chaine)
     write(nfecra,1050) nstusc, chaine,                           &
          icodus(2), icodus(3), icodus(4)
   endif

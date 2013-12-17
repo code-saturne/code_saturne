@@ -1074,7 +1074,7 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
     ttchis = ttcabs
 
-    call ecrhis(nvar, nproce, modhis, rtp)
+    call ecrhis(modhis)
     !==========
 
     if (iilagr.gt.0) then
@@ -1169,7 +1169,7 @@ call dmtmps(tecrf1)
 ! Ici on sauve les historiques (si on en a stocke)
 
 modhis = 2
-call ecrhis(nvar, nproce, modhis, rtp)
+call ecrhis(modhis)
 !==========
 
 if (iilagr.gt.0) then

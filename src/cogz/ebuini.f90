@@ -88,6 +88,7 @@ use coincl
 use cpincl
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -315,7 +316,7 @@ if ( isuite.eq.0 ) then
         valmax = max(valmax,rtp(iel,ivar))
         valmin = min(valmin,rtp(iel,ivar))
       enddo
-      chaine = nomvar(ipprtp(ivar))
+      call field_get_label(ivarfl(ivar), chaine)
       if (irangp.ge.0) then
         call parmin(valmin)
         !==========

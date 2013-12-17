@@ -226,7 +226,7 @@ if (ipass.eq.3) then
   !--> LUMINENCE
 
   ipp = ipppro(ipproc(ilumin))
-  nomvar(IPP)   = 'Lumin'
+  nomprp(ipproc(ilumin))   = 'Lumin'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -235,21 +235,21 @@ if (ipass.eq.3) then
 
   !       composante x
   ipp = ipppro(ipproc(iqx))
-  nomvar(IPP)   = 'Qxrad'
+  nomprp(ipproc(iqx))   = 'Qxrad'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
   !       composante y
   ipp = ipppro(ipproc(iqy))
-  nomvar(IPP)   = 'Qyrad'
+  nomprp(ipproc(iqy))   = 'Qyrad'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
   !       composante z
   ipp = ipppro(ipproc(iqz))
-  nomvar(IPP)   = 'Qzrad'
+  nomprp(ipproc(iqz))   = 'Qzrad'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -262,7 +262,7 @@ if (ipass.eq.3) then
     !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
     ipp = ipppro(ipproc(itsre(irphas)))
-    nomvar(ipp)   = 'Srad'//num
+    nomprp(ipproc(itsre(irphas)))   = 'Srad'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1
@@ -270,7 +270,7 @@ if (ipass.eq.3) then
     !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
     ipp = ipppro(ipproc(iabs(irphas)))
-    nomvar(ipp)   = 'Absorp'//num
+    nomprp(ipproc(iabs(irphas)))   = 'Absorp'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1
@@ -278,7 +278,7 @@ if (ipass.eq.3) then
     !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
     ipp = ipppro(ipproc(iemi(irphas)))
-    nomvar(ipp)   = 'Emiss'//num
+    nomprp(ipproc(iemi(irphas)))   = 'Emiss'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1
@@ -286,7 +286,7 @@ if (ipass.eq.3) then
     !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
     ipp = ipppro(ipproc(icak(irphas)))
-    nomvar(ipp)   = 'CoefAb_'//num
+    nomprp(ipproc(icak(irphas)))   = 'CoefAb_'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1

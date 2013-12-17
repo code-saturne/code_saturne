@@ -76,6 +76,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -213,7 +214,7 @@ if ( isuite.eq.0 ) then
       call parmin(valmin)
     endif
 
-    chaine = nomvar(ipprtp(ivar))
+    call field_get_label(ivarfl(ivar), chaine)
     write(nfecra,2010)chaine(1:8),valmin,valmax
   enddo
   write(nfecra,2020)

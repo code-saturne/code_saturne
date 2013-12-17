@@ -102,6 +102,11 @@ write(nfecra, 900)
 ! 0. Global field keys
 !===============================================================================
 
+call field_get_key_id("label", keylbl)
+call field_get_key_id('log', keylog)
+call field_get_key_id('post_vis', keyvis)
+call field_get_key_id("post_id", keyipp)
+
 call field_get_key_id("inner_mass_flux_id", kimasf)
 call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
@@ -228,6 +233,10 @@ nthist = 1
 frhist = -1.d0
 nthsav = -1
 
+do ii = 1, npromx
+  nomprp(ii) = ' '
+enddo
+
 do ii = 1, nvppmx
   do jj = 1, ncaptm+1
     ihisvr(ii ,jj) = -999
@@ -314,9 +323,7 @@ ippty        = 1
 ipptz        = 1
 
 do ii = 1, nvppmx
-  nomvar(ii)    = ' '
   ilisvr(ii)    = -999
-  itrsvr(ii)    = 0
 enddo
 
 ntlist = 1
@@ -1250,8 +1257,6 @@ do iscal = 1, nscamx
   iscacp(iscal) =-10
   iclvfl(iscal) = -1
   iscavr(iscal) = 0
-  scamin(iscal) =-grand
-  scamax(iscal) =+grand
   visls0(iscal) =-grand*10.d0
   sigmas(iscal) = 1.0d0
   wmolsp(iscal) = 0.0d0

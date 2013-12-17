@@ -60,61 +60,171 @@ use cpincl
 use cs_fuel_incl
 use ppincl
 use ppcpfu
+use field
 
 !===============================================================================
 
 implicit none
 
-integer        is, isc, icla
+integer        isc, icla
+
+integer          keyccl, kscmin, kscmax, f_id
+character*80     f_label, f_name
 
 !===============================================================================
-! 1. DEFINITION DES POINTEURS
+! 0. Definitions for fields
 !===============================================================================
+
+! Key id of the fuel scalar class
+call field_get_key_id("scalar_class", keyccl)
+
+! Key ids for clipping
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
+
+!===============================================================================
+! 1. Definition of fields
+!===============================================================================
+
+! Thermal model
+
+itherm = 2
+call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+iscalt = ihm
+
+! Set min and max clipping
+f_id = ivarfl(isca(iscalt))
+call field_set_key_double(f_id, kscmin, -grand)
+call field_set_key_double(f_id, kscmax, grand)
 
 ! ---> Variables propres a la phase dispersee
 
 do icla = 1, nclafu
-  is          = 1 + icla
-  ing(icla)   = iscapp(is)
-  is          = 1 + 1*nclafu+icla
-  iyfol(icla) = iscapp(is)
-  is          = 1 + 2*nclafu+icla
-  ih2(icla)   = iscapp(is)
+
+  write(f_name,'(a8,i2.2)') 'nd_fuel_', icla
+  write(f_label,'(a6,i2.2)') 'NG_FOL', icla
+  call add_model_scalar_field(f_name, f_label, ing(icla))
+  f_id = ivarfl(isca(inp(icla)))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, rinfin)
+
 enddo
 
-! ---> Variables propres a la phase gaz
+do icla = 1, nclafu
 
-is       = is + 1
-ifvap    = iscapp(is)
-! Oxydant 2
-if ( noxyd .ge. 2 ) then
-  is = is+1
-  if4m  = iscapp(is)
+  write(f_name,'(a10,i2.2)') 'yfol_fuel_', icla
+  write(f_label,'(a8,i2.2)') 'YFOL_FOL', icla
+  call add_model_scalar_field(f_name, f_label, iyfol(icla))
+  f_id = ivarfl(isca(iyfol(icla)))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 4.d-1)
+
+enddo
+
+do icla = 1, nclafu
+
+  write(f_name,'(a9,i2.2)') 'hlf_fuel_', icla
+  write(f_label,'(a7,i2.2)') 'HLF_FOL', icla
+  call add_model_scalar_field(f_name, f_label, ih2(icla))
+  f_id = ivarfl(isca(ih2(icla)))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+  ! min clipping is set later, as h02fol is known after reading fuel data
+  ! call field_set_key_double(f_id, kscmin, h02fol)
+  call field_set_key_double(f_id, kscmax, +grand)
+
+enddo
+
+! Variables specific to gas phase
+
+call add_model_scalar_field('vap_fraction', 'Fr_VAP', ifvap)
+f_id = ivarfl(isca(ifvap))
+
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 1.d0)
+
+! Oxydants
+
+if (noxyd .ge. 2) then
+
+  call add_model_scalar_field('oxyd2_fraction', 'Fr_OXYD2', if4m)
+  f_id = ivarfl(isca(if4m))
+
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
 endif
-! Oxydant 3
-if ( noxyd .ge. 3 ) then
-  is = is+1
-  if5m  = iscapp(is)
+
+if (noxyd .ge. 3) then
+
+  call add_model_scalar_field('oxyd3_fraction', 'Fr_OXYD3', if5m)
+  f_id = ivarfl(isca(if5m))
+
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
 endif
-! combustion heterogene
-is       = is + 1
-if7m   = iscapp(is)
+
+! Combustion heterogene
+
+call add_model_scalar_field('het_fraction', 'Fr_HET', if7m)
+f_id = ivarfl(isca(if7m))
+
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 1.d0)
+
 ! Variance
-is       = is + 1
-ifvp2m  = iscapp(is)
-! Transport du CO2
-if ( ieqco2 .ge. 1 ) then
-  is = is+1
-  iyco2 = iscapp(is)
+
+call add_model_scalar_field('cb_variance', 'Var_CB', ifvp2m)
+f_id = ivarfl(isca(ifvp2m))
+
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 0.25d0)
+
+! CO2 transport
+if (ieqco2 .ge. 1) then
+
+  call add_model_scalar_field('co2_fraction', 'FR_CO2', iyco2)
+  f_id = ivarfl(isca(iyco2))
+
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
 endif
-!  Transport du NOx : HCN, NOx et Hox
-if ( ieqnox .eq. 1 ) then
-  is = is+1
-  iyhcn = iscapp(is)
-  is = is+1
-  iyno  = iscapp(is)
-  is = is+1
-  ihox = iscapp(is)
+
+!  NOx transport: HCN, NOx and Hox
+
+if (ieqnox .eq. 1) then
+
+  call add_model_scalar_field('hcn_fraction', 'FR_HCN', iyhcn)
+  f_id = ivarfl(isca(iyhcn))
+
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
+  call add_model_scalar_field('no_fraction', 'FR_NO', iyno)
+  f_id = ivarfl(isca(iyno))
+
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
+  call add_model_scalar_field('ox_enthalpy', 'Enth_Ox', ihox)
+  f_id = ivarfl(isca(ihox))
+
+  call field_set_key_double(f_id, kscmin, -grand)
+  call field_set_key_double(f_id, kscmax, +grand)
+
 endif
 
 !===============================================================================

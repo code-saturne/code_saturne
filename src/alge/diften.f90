@@ -68,7 +68,6 @@
 !> \param[in]     iccocg        indicator
 !>                               - 1 re-compute cocg matrix (for iterativ gradients)
 !>                               - 0 otherwise
-!> \param[in]     ipp           index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
@@ -106,7 +105,7 @@
 
 subroutine diften &
  ( idtvar , ivar   , nswrgp , imligp , ircflp ,          &
-   inc    , imrgra , iccocg , ipp    , iwarnp , epsrgp , &
+   inc    , imrgra , iccocg , iwarnp , epsrgp ,          &
    climgp , extrap , relaxp , thetap ,                   &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp , &
    viscf  , viscb  , viscel ,                            &
@@ -139,7 +138,7 @@ integer          idtvar
 integer          ivar   , nswrgp , imligp
 integer          ircflp
 integer          inc    , imrgra , iccocg
-integer          iwarnp , ipp
+integer          iwarnp
 
 double precision epsrgp , climgp, extrap, relaxp , thetap
 

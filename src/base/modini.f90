@@ -34,6 +34,7 @@ subroutine modini
 use paramx
 use cstnum
 use dimens
+use field
 use numvar
 use optcal
 use cstphy
@@ -53,8 +54,9 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, ivar, iok, iest, imom, ikw
-integer          icompt, ipp, nbccou, nn
+integer          n_fields
+integer          ii, jj, ivar, iok, iest, imom, ikw, iprop
+integer          icompt, ipp, nbccou, nn, keyvar
 integer          nscacp, iscal
 double precision relxsp
 double precision omgnrm, cosdto, sindto
@@ -64,6 +66,10 @@ double precision ux, uy, uz
 
 ! Indicateur erreur (0 : pas d'erreur)
 iok = 0
+
+call field_get_n_fields(n_fields)
+
+call field_get_key_id("variable_id", keyvar)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
@@ -77,21 +83,19 @@ do ii = 1, nvarmx
   endif
 enddo
 
-!---> Variables de calcul ITRSVR = ivar. Sinon 0 (valeur d'initialisation).
-
-do ivar = 1, nvar
-  itrsvr(ipprtp(ivar)) = ivar
-enddo
-
 !---> sorties chrono?
 !     Sauf mention contraire de l'utilisateur, on sort a la fin les
 !        variables de calcul, la viscosite, rho, le pas de temps s'il
 !        est variable, les estimateurs s'ils sont actives, les moments
 !        s'il y en a et la viscosite de maillage en ALE.
 
-do ii = 2, nvppmx
-  if (itrsvr(ii).ge.1.and.ichrvr(ii).eq.-999) then
-    ichrvr(ii) = 1
+do ii = 0, n_fields-1
+  call field_get_key_int(ii, keyvar, ivar)
+  if (ivar.ge.1) then
+    call field_get_key_int(ii, keyipp, ipp)
+    if (ichrvr(ipp).eq.-999) then
+      ichrvr(ipp) = 1
+    endif
   endif
 enddo
 ipp = ipppro(ipproc(irom))
@@ -157,9 +161,13 @@ enddo
 !      NTHSAV =  0 : periode par defaut (voir caltri)
 !             > 0  : periode
 
-do ii = 2, nvppmx
-  if (itrsvr(ii).ge.1.and.ihisvr(ii,1).eq.-999) then
-    ihisvr(ii,1) = -1
+do ii = 0, n_fields-1
+  call field_get_key_int(ii, keyvar, ivar)
+  if (ivar.ge.1) then
+    call field_get_key_int(ii, keyipp, ipp)
+    if (ihisvr(ipp,1).eq.-999) then
+      ihisvr(ipp,1) = -1
+    endif
   endif
 enddo
 if (ihisvr(ippdt, 1).eq.-999) ihisvr(ippdt, 1) = -1
@@ -212,231 +220,98 @@ else
   endif
 endif
 
-! ---> Nom des variables
+! Variable labels
 
-if (nomvar(ipprtp(ipr)) .eq.' ') then
-  nomvar(ipprtp(ipr)) = 'Pressure'
-  if (icorio.eq.1) then
-    nomvar(ipprtp(ipr)) = 'Rel Pressure'
-  endif
-endif
-if (nomvar(ipprtp(iu)) .eq.' ') then
-  nomvar(ipprtp(iu))   = 'VelocityX'
-  if (icorio.eq.1) then
-    nomvar(ipprtp(iu)) = 'Rel VelocityX'
-  endif
-endif
-if (nomvar(ipprtp(iv)) .eq.' ') then
-  nomvar(ipprtp(iv))   = 'VelocityY'
-  if (icorio.eq.1) then
-    nomvar(ipprtp(iv)) = 'Rel VelocityY'
-  endif
-endif
-if (nomvar(ipprtp(iw)) .eq.' ') then
-  nomvar(ipprtp(iw))   = 'VelocityZ'
-  if (icorio.eq.1) then
-    nomvar(ipprtp(iw)) = 'Rel VelocityZ'
-  endif
-endif
-if (itytur.eq.2) then
-  if (nomvar(ipprtp(ik)) .eq.' ') then
-    nomvar(ipprtp(ik)) = 'Turb Kinetic Energy'
-  endif
-  if (nomvar(ipprtp(iep)) .eq.' ') then
-    nomvar(ipprtp(iep)) = 'Turb Dissipation'
-  endif
-elseif (itytur.eq.3) then
-  if (nomvar(ipprtp(ir11)) .eq.' ') then
-    nomvar(ipprtp(ir11)) =  'R11'
-  endif
-  if (nomvar(ipprtp(ir22)) .eq.' ') then
-    nomvar(ipprtp(ir22)) = 'R22'
-  endif
-  if (nomvar(ipprtp(ir33)) .eq.' ') then
-    nomvar(ipprtp(ir33)) = 'R33'
-  endif
-  if (nomvar(ipprtp(ir12)) .eq.' ') then
-    nomvar(ipprtp(ir12)) = 'R12'
-  endif
-  if (nomvar(ipprtp(ir13)) .eq.' ') then
-    nomvar(ipprtp(ir13)) = 'R13'
-  endif
-  if (nomvar(ipprtp(ir23)) .eq.' ') then
-    nomvar(ipprtp(ir23)) = 'R23'
-  endif
-  if (nomvar(ipprtp(iep)) .eq.' ') then
-    nomvar(ipprtp(iep)) = 'Turb Dissipation'
-  endif
-  if (iturb.eq.32) then
-    if (nomvar(ipprtp(ial)) .eq.' ') then
-      nomvar(ipprtp(ial)) = 'Alphap'
-    endif
-  endif
-elseif (itytur.eq.5) then
-  if (nomvar(ipprtp(ik)) .eq.' ') then
-    nomvar(ipprtp(ik)) = 'Turb Kinetic Energy'
-  endif
-  if (nomvar(ipprtp(iep)) .eq.' ') then
-    nomvar(ipprtp(iep)) = 'Turb Dissipation'
-  endif
-  if (nomvar(ipprtp(iphi)) .eq.' ') then
-    nomvar(ipprtp(iphi)) = 'Phi'
-  endif
-  if (iturb.eq.50) then
-    if (nomvar(ipprtp(ifb)) .eq.' ') then
-      nomvar(ipprtp(ifb)) = 'f_bar'
-    endif
-  elseif (iturb.eq.51) then
-    if (nomvar(ipprtp(ial)) .eq.' ') then
-      nomvar(ipprtp(ial)) = 'Alpha'
-    endif
-  endif
-elseif (iturb.eq.60) then
-  if (nomvar(ipprtp(ik)) .eq.' ') then
-    nomvar(ipprtp(ik)) = 'Turb Kinetic Energy'
-  endif
-  if (nomvar(ipprtp(iomg)) .eq.' ') then
-    nomvar(ipprtp(iomg)) = 'Omega'
-  endif
-elseif (iturb.eq.70) then
-  if (nomvar(ipprtp(inusa)) .eq.' ') then
-    nomvar(ipprtp(inusa)) = 'NuTilda'
-  endif
+if (icorio.eq.1) then
+  call field_set_key_str(ivarfl(ipr), keylbl, 'Rel Pressure')
+  call field_set_key_str(ivarfl(iu), keylbl, 'Rel Velocity')
 endif
 
-if (nomvar(ipppro(ipproc(irom))) .eq.' ') then
-  nomvar(ipppro(ipproc(irom))) = 'Density'
+if (nomprp(ipproc(irom)) .eq.' ') then
+  nomprp(ipproc(irom)) = 'Density'
 endif
-if (nomvar(ipppro(ipproc(ivisct))) .eq.' ') then
-  nomvar(ipppro(ipproc(ivisct))) = 'Turb Viscosity'
+if (nomprp(ipproc(ivisct)) .eq.' ') then
+  nomprp(ipproc(ivisct)) = 'Turb Viscosity'
 endif
-if (nomvar(ipppro(ipproc(iviscl))) .eq.' ') then
-  nomvar(ipppro(ipproc(iviscl))) = 'Laminar Viscosity'
+if (nomprp(ipproc(iviscl)) .eq.' ') then
+  nomprp(ipproc(iviscl)) = 'Laminar Viscosity'
 endif
 if (ismago.gt.0) then
-  if (nomvar(ipppro(ipproc(ismago))) .eq.' ') then
-    nomvar(ipppro(ipproc(ismago))) = 'Csdyn2'
+  if (nomprp(ipproc(ismago)) .eq.' ') then
+    nomprp(ipproc(ismago)) = 'Csdyn2'
   endif
 endif
 if (icp.gt.0) then
-  if (nomvar(ipppro(ipproc(icp))) .eq.' ') then
-    nomvar(ipppro(ipproc(icp))) = 'Specific Heat'
+  if (nomprp(ipproc(icp)) .eq.' ') then
+    nomprp(ipproc(icp)) = 'Specific Heat'
   endif
 endif
 if (iescal(iespre).gt.0) then
-  ipp = ipppro(ipproc(iestim(iespre)))
-  if (nomvar(ipp) .eq.' ') then
-    write(nomvar(ipp),'(a5,i1)') 'EsPre',iescal(iespre)
+  iprop = ipproc(iestim(iespre))
+  if (nomprp(iprop) .eq.' ') then
+    write(nomprp(iprop),'(a5,i1)') 'EsPre',iescal(iespre)
   endif
 endif
 if (iescal(iesder).gt.0) then
-  ipp = ipppro(ipproc(iestim(iesder)))
-  if (nomvar(ipp) .eq.' ') then
-    write(nomvar(ipp),'(a5,i1)') 'EsDer',iescal(iesder)
+  iprop = ipproc(iestim(iesder))
+  if (nomprp(iprop) .eq.' ') then
+    write(nomprp(iprop),'(a5,i1)') 'EsDer',iescal(iesder)
   endif
 endif
 if (iescal(iescor).gt.0) then
-  ipp = ipppro(ipproc(iestim(iescor)))
-  if (nomvar(ipp) .eq.' ') then
-    write(nomvar(ipp),'(a5,i1)') 'EsCor',iescal(iescor)
+  iprop = ipproc(iestim(iescor))
+  if (nomprp(iprop) .eq.' ') then
+    write(nomprp(iprop),'(a5,i1)') 'EsCor',iescal(iescor)
   endif
 endif
 if (iescal(iestot).gt.0) then
-  ipp = ipppro(ipproc(iestim(iestot)))
-  if (nomvar(ipp) .eq.' ') then
-    write(nomvar(ipp),'(a5,i1)') 'EsTot',iescal(iestot)
+  iprop = ipproc(iestim(iestot))
+  if (nomprp(iprop) .eq.' ') then
+    write(nomprp(iprop),'(a5,i1)') 'EsTot',iescal(iestot)
   endif
 endif
-
-if (iscalt.gt.0.and.iscalt.le.nscal) then
-  if (nomvar(ipprtp(isca(iscalt))) .eq.' ') then
-    if (itherm.eq.1) then
-      nomvar(ipprtp(isca(iscalt))) = 'Temperature'
-    else if (itherm.eq.2) then
-      nomvar(ipprtp(isca(iscalt))) = 'Enthalpy'
-    else if (itherm.eq.3) then
-      nomvar(ipprtp(isca(iscalt))) = 'Total Energy'
-    endif
-  endif
-endif
-
-do jj = 1, nscaus
-  ii = jj
-  if (nomvar(ipprtp(isca(ii))) .eq.' ') then
-    write(nomvar(ipprtp(isca(ii))),'(a5,i3.3)') 'Scaus', ii
-  endif
-enddo
-do jj = 1, nscapp
-  ii = iscapp(jj)
-  if (nomvar(ipprtp(isca(ii))) .eq.' ') then
-    write(nomvar(ipprtp(isca(ii))), '(a5,i3.3)') 'Scapp', ii
-  endif
-enddo
 
 if (nbmomt.gt.0) then
   do imom = 1, nbmomt
-    ipp = ipppro(ipproc(icmome(imom)))
-    if (nomvar(ipp) .eq.' ') then
-      write(nomvar(ipp), '(a6,i2.2)') 'MoyTps', imom
+    iprop = ipproc(icmome(imom))
+    if (nomprp(iprop) .eq.' ') then
+      write(nomprp(iprop), '(a6,i2.2)') 'MoyTps', imom
     endif
   enddo
 endif
 
 ! total pressure (not defined in compressible case)
 if (ippmod(icompf).lt.0) then
-  ipp = ipppro(ipproc(iprtot))
-  if (nomvar(ipp) .eq.' ') then
-    nomvar(ipp)   = 'Total Pressure'
+  iprop = ipproc(iprtot)
+  if (nomprp(iprop) .eq.' ') then
+    nomprp(iprop)   = 'Total Pressure'
   endif
 endif
 
-ipp = ipppro(ipproc(icour))
-if (nomvar(ipp) .eq.' ') then
-  nomvar(ipp) = 'CFL'
+iprop = ipproc(icour)
+if (nomprp(iprop) .eq.' ') then
+  nomprp(iprop) = 'CFL'
 endif
 
-ipp = ipppro(ipproc(ifour))
-if (nomvar(ipp) .eq.' ') then
-  nomvar(ipp) = 'Fourier Number'
-endif
-
-if (nomvar(ippdt) .eq.' ') then
-  nomvar(ippdt) = 'Local Time Step'
-endif
-
-if (nomvar(ipptx) .eq.' ') then
-  nomvar(ipptx) = 'Tx'
-endif
-if (nomvar(ippty) .eq.' ') then
-  nomvar(ippty) = 'Ty'
-endif
-if (nomvar(ipptz) .eq.' ') then
-  nomvar(ipptz) = 'Tz'
+iprop = ipproc(ifour)
+if (nomprp(iprop) .eq.' ') then
+  nomprp(iprop) = 'Fourier Number'
 endif
 
 if (iale.eq.1) then
-  if (nomvar(ipprtp(iuma)) .eq.' ') then
-    nomvar(ipprtp(iuma)) = 'Mesh VelocityX'
-  endif
-  if (nomvar(ipprtp(ivma)) .eq.' ') then
-    nomvar(ipprtp(ivma)) = 'Mesh VelocityY'
-  endif
-  if (nomvar(ipprtp(iwma)) .eq.' ') then
-    nomvar(ipprtp(iwma)) = 'Mesh VelocityZ'
-  endif
   if (iortvm.eq.0) then
-    if (nomvar(ipppro(ipproc(ivisma(1)))) .eq.' ') then
-      nomvar(ipppro(ipproc(ivisma(1)))) = 'Mesh ViscX'
+    if (nomprp(ipproc(ivisma(1))) .eq.' ') then
+      nomprp(ipproc(ivisma(1))) = 'Mesh ViscX'
     endif
   else
-    if (nomvar(ipppro(ipproc(ivisma(1)))) .eq.' ') then
-      nomvar(ipppro(ipproc(ivisma(1)))) = 'Mesh ViscX'
+    if (nomprp(ipproc(ivisma(1))) .eq.' ') then
+      nomprp(ipproc(ivisma(1))) = 'Mesh ViscX'
     endif
-    if (nomvar(ipppro(ipproc(ivisma(2)))) .eq.' ') then
-      nomvar(ipppro(ipproc(ivisma(2)))) = 'Mesh ViscY'
+    if (nomprp(ipproc(ivisma(2))) .eq.' ') then
+      nomprp(ipproc(ivisma(2))) = 'Mesh ViscY'
     endif
-    if (nomvar(ipppro(ipproc(ivisma(3)))) .eq.' ') then
-      nomvar(ipppro(ipproc(ivisma(3)))) = 'Mesh ViscZ'
+    if (nomprp(ipproc(ivisma(3))) .eq.' ') then
+      nomprp(ipproc(ivisma(3))) = 'Mesh ViscZ'
     endif
   endif
 endif
@@ -497,9 +372,13 @@ if (ipucou.ne.1 .or. idtvar.lt.0) then
   ilisvr(ipptz) = 0
 endif
 
-do ii = 2, nvppmx
-  if (itrsvr(ii).ge.1.and.ilisvr(ii).eq.-999) then
-    ilisvr(ii) = 1
+do ii = 0, n_fields-1
+  call field_get_key_int(ii, keyvar, ivar)
+  if (ivar.ge.1) then
+    call field_get_key_int(ii, keyipp, ipp)
+    if (ilisvr(ipp).eq.-999) then
+      ilisvr(ipp) = 1
+    endif
   endif
 enddo
 do ii = 1, nvppmx
@@ -1094,7 +973,9 @@ endif
 if (nscal.gt.0) then
   do ii = 1, nscal
     if (iscacp(ii).eq.-10)then
-      if (ii.ne.iscalt) then
+      if (ii.eq.iscalt .and. itherm.eq.1) then
+        iscacp(ii) = 1
+      else
         iscacp(ii) = 0
       endif
     endif

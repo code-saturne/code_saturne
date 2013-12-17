@@ -78,60 +78,10 @@ integer          isc , ivar
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
-! 1.1 Definition des scamin et des scamax des variables transportees
-! ==================================================================
-
-! --> Dans toutes les versions electriques
-!     Potentiel reel
-scamin(ipotr) = -grand
-scamax(ipotr) = +grand
-!     Fractions massiques des constituants
-if ( ngazg .gt. 1 ) then
-  do iesp = 1, ngazg-1
-    scamin(iycoel(iesp)) = 0.d0
-    scamax(iycoel(iesp)) = 1.d0
-  enddo
-endif
-
-! --> Effet Joule (cas potentiel imaginaire)
-!     Potentiel imaginaire
-
-if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
-  scamin(ipoti) = -grand
-  scamax(ipoti) = +grand
-endif
-
-! --> Arc electrique
-!     Potentiel vecteur
-if ( ippmod(ielarc).ge.2 ) then
-  do idimve = 1, ndimve
-    scamin(ipotva(idimve)) = -grand
-    scamax(ipotva(idimve)) = +grand
-  enddo
-endif
-
 ! --> Conduction ionique (a developper)
-
-! 1.2 Nature des scalaires transportes
-! ====================================
-
-! ---- Type de scalaire (0 passif, 1 temperature en K
-!                                 -1 temperature en C
-!                                  2 enthalpie)
-!      La distinction -1/1 sert pour le rayonnement
-
-!     Par defaut, scalaire "passif"
-do isc = 1, nscapp
-  iscacp(iscapp(isc)) = 0
-enddo
-
-!     Pour l'enthalpie
-itherm = 2
-iscacp(iscalt)   = 0
 
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires ELECTRIQUES
 ! =====================================================================
-
 
 ! --> Conditions associees aux potentiels
 !     (les autres variables ont des comportements par defaut)
@@ -143,7 +93,7 @@ idifft(ivar) = 0
 idircl(ivar) = 1
 imgr  (ivar) = 0
 
-if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   ivar = isca(ipoti)
   iconv (ivar) = 0
   istat (ivar) = 0
@@ -153,7 +103,7 @@ if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   imgr  (ivar) = 0
 endif
 
-if(ippmod(ielarc).ge.2) then
+if (ippmod(ielarc).ge.2) then
   do idimve = 1, ndimve
     ivar = isca(ipotva(idimve))
     iconv (ivar) = 0
@@ -167,7 +117,7 @@ endif
 
 ! --> "Viscosite" associee au potentiel vecteur
 !     (c'est la seule qui est constante)
-if ( ippmod(ielarc).ge.2 ) then
+if (ippmod(ielarc).ge.2) then
   visls0(ipotva(1)) = 1.d0
   visls0(ipotva(2)) = 1.d0
   visls0(ipotva(3)) = 1.d0
@@ -189,7 +139,7 @@ do isc = 1, nscapp
 !          Si = -10000 non modifie par l'utilisateur -> niveau 1
 
   ivar = isca(iscapp(isc))
-  if(iwarni(ivar).eq.-10000) then
+  if (iwarni(ivar).eq.-10000) then
     iwarni(ivar) = 1
   endif
 
@@ -220,101 +170,34 @@ do isc = 1, nscapp
 
 enddo
 
-
-! 1.5 Variable courante : nom, sortie chrono, suivi listing, sortie histo
-! =======================================================================
-
-!     Comme pour les autres variables,
-!       si l'on n'affecte pas les tableaux suivants,
-!       les valeurs par defaut seront utilisees
-
-!     NOMVAR( ) = nom de la variable
-!     ICHRVR( ) = sortie chono (oui 1/non 0)
-!     ILISVR( ) = suivi listing (oui 1/non 0)
-!     IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!     si IHISVR(.,1)  = -1 sortie sur toutes les sondes
-
-!     NB : Les 8 premiers caracteres du nom seront repris dans le
-!          listing 'developpeur'
-
-! =======================================================================
-
-! --> Variables communes aux versions electriques
-
-ipp = ipprtp(isca(iscalt))
-NOMVAR(IPP)  = 'Enthalpy'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-ipp = ipprtp(isca(ipotr))
-NOMVAR(IPP)  = 'POT_EL_R'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-if ( ngazg .gt. 1 ) then
-  do iesp = 1, ngazg-1
-    ipp = ipprtp(isca(iycoel(iesp)))
-    WRITE(NOMVAR(IPP),'(A6,I2.2)')'YM_ESL',IESP
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-endif
-
-! --> Version effet Joule
-
-if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-  ipp = ipprtp(isca(ipoti))
-  NOMVAR(IPP)  = 'POT_EL_I'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-! --> Version arc electrique
-
-if ( ippmod(ielarc).ge.2 ) then
-  do idimve = 1, ndimve
-    ipp = ipprtp(isca(ipotva(idimve)))
-    WRITE(NOMVAR(IPP),'(A7,I1.1)')'POT_VEC',IDIMVE
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-endif
-
-! --> Version conduction ionique
-
 !===============================================================================
 ! 2. VARIABLES ALGEBRIQUES OU D'ETAT
 !===============================================================================
 
-ipp = ipppro(ipproc(itemp) )
-NOMVAR(IPP)  = 'Temper'
+ipp = ipppro(ipproc(itemp))
+nomprp(ipproc(itemp))  = 'Temper'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-ipp = ipppro(ipproc(iefjou) )
-NOMVAR(IPP)  = 'PuisJoul'
+ipp = ipppro(ipproc(iefjou))
+nomprp(ipproc(iefjou))  = 'PuisJoul'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 do idimve = 1, ndimve
-  ipp = ipppro(ipproc(idjr(idimve)) )
-  WRITE(NOMVAR(IPP),'(A7,I1.1)')'Cour_re',IDIMVE
+  ipp = ipppro(ipproc(idjr(idimve)))
+  write(nomprp(ipproc(idjr(idimve))),'(A7,I1.1)')'Cour_re',idimve
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 enddo
 
-if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   do idimve = 1, ndimve
-    ipp = ipppro(ipproc(idji(idimve)) )
-    WRITE(NOMVAR(IPP),'(A7,I1.1)')'CouImag',IDIMVE
+    ipp = ipppro(ipproc(idji(idimve)))
+    write(nomprp(ipproc(idji(idimve))),'(A7,I1.1)')'CouImag',idimve
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
@@ -323,24 +206,24 @@ endif
 
 if ( ippmod(ielarc).ge.1 ) then
   do idimve = 1, ndimve
-    ipp = ipppro(ipproc(ilapla(idimve)) )
-    WRITE(NOMVAR(IPP),'(A7,I1.1)')'For_Lap',IDIMVE
+    ipp = ipppro(ipproc(ilapla(idimve)))
+    write(nomprp(ipproc(ilapla(idimve))),'(A7,I1.1)')'For_Lap',idimve
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   enddo
 
   if ( ixkabe .eq.1 ) then
-    ipp = ipppro(ipproc(idrad) )
-    NOMVAR(IPP)  = 'Coef_Abso'
+    ipp = ipppro(ipproc(idrad))
+    nomprp(ipproc(idrad))  = 'Coef_Abso'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
 
   if ( ixkabe .eq.2 ) then
-    ipp = ipppro(ipproc(idrad) )
-    NOMVAR(IPP)  = 'TS_radia'
+    ipp = ipppro(ipproc(idrad))
+    nomprp(ipproc(idrad))  = 'TS_radia'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
@@ -349,8 +232,8 @@ if ( ippmod(ielarc).ge.1 ) then
 endif
 
 if ( ippmod(ielion).ge.1 ) then
-  ipp = ipppro(ipproc(iqelec) )
-  NOMVAR(IPP)  = 'Charge'
+  ipp = ipppro(ipproc(iqelec))
+  nomprp(ipproc(iqelec))  = 'Charge'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -358,8 +241,8 @@ endif
 
 ! Conductivite Electrique
 
-ipp = ipppro(ipproc(ivisls(ipotr)) )
-NOMVAR(IPP)  = 'Sigma'
+ipp = ipppro(ipproc(ivisls(ipotr)))
+nomprp(ipproc(ivisls(ipotr)))  = 'Sigma'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1

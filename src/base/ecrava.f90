@@ -66,7 +66,6 @@ subroutine ecrava &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use cstphy
 use entsor
@@ -711,8 +710,8 @@ if (iecaux.eq.1) then
 
   nbflu = 0
 
-  do f_id = 1, nfld
-    mflnum(f_id) = 0
+  do ii = 1, nfld
+    mflnum(ii) = 0
   enddo
 
   nomflu(ipr)='fm_p_phase'//cphase
@@ -817,8 +816,8 @@ if (iecaux.eq.1) then
 
   nbflu = 0
 
-  do f_id = 1, nfld
-    mflnum(f_id) = 0
+  do ii = 1, nfld
+    mflnum(ii) = 0
   enddo
 
   nomflu(ipr)='fm_a_p_phase'//cphase

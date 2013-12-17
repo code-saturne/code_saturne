@@ -65,6 +65,8 @@ integer, save :: nespg
 !> nrg: number of chemical reactions
 integer, save :: nrg
 
+!> scalar id for chemical species
+integer, allocatable, dimension(:)          ::  isca_chem
 !> molar mass of chemical species (Kg/mol)
 double precision, allocatable, dimension(:) ::  dmmk
 !> conversion factors for reaction rates jaccobian matrix
@@ -113,8 +115,6 @@ contains
 subroutine init_chemistry
 
 use mesh, only: ncel
-use entsor, only: nfecra
-use numvar, only: nscaus
 
 implicit none
 
@@ -123,17 +123,7 @@ integer imode, ii
 ! First reading of concentration profiles file
 imode = 0
 
-call atlecc &
-     ( imode)
-
-! Verifying that the user has declared at least as many
-! user scalars as the number of chemical species nespg
-! The user can declare more user scalars than nespg. But only the first
-! nespg will be considered for chemistry resolution
-if (nscaus.lt.nespg) then
-  write(nfecra,2000) nscaus, nespg
-  call csexit (1)
-endif
+call atlecc(imode)
 
 ! Dynamical allocations
 
@@ -159,49 +149,6 @@ allocate(ychem(nbchim))
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
- 2000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    CHIMIE ATMOSPHERIQUE GAZEUSE DEMANDEE                   ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateurs declares doit etre    ',/,&
-'@  superieur ou egal au nombre d''especes chimiques          ',/,&
-'@                                                            ',/,&
-'@   Nombre de scalaires utilisateurs declares : ',I10         ,/,&
-'@   Nombre d''especes chimiques declarees : ',I10             ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
- 2000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-     '@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecc) ',/,&
-'@    =========                                               ',/,&
-'@    ATMOSPHERIC GASEOUS CHEMISTRY                           ',/,&
-'@                                                            ',/,&
-'@  The number of user scalars must be greater                ',/,&
-'@  than the number of chemical species                       ',/,&
-'@                                                            ',/,&
-'@   Number of user scalars declared: ',I10                    ,/,&
-'@   Number of chemical species declared : ',I10               ,/,&
-'@                                                            ',/,&
-'@  The computation will not be run                           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#endif
-
 end subroutine init_chemistry
 
 !=============================================================================
@@ -210,6 +157,7 @@ subroutine finalize_chemistry
 
 implicit none
 
+deallocate(isca_chem)
 deallocate(dmmk)
 deallocate(chempoint)
 deallocate(conv_factor_jac)

@@ -299,23 +299,27 @@ cs_map_name_to_id_try(const cs_map_name_to_id_t  *m,
 
   /* Use binary search to find entry */
 
-  start_id = 0;
-  end_id = m->size - 1;
-  mid_id = start_id + ((end_id -start_id) / 2);
+  if (m != NULL) {
 
-  while (start_id <= end_id) {
-    cmp_ret = strcmp(m->key[mid_id], key);
-    if (cmp_ret < 0)
-      start_id = mid_id + 1;
-    else if (cmp_ret > 0)
-      end_id = mid_id - 1;
-    else
-      break;
+    start_id = 0;
+    end_id = m->size - 1;
     mid_id = start_id + ((end_id -start_id) / 2);
-  }
 
-  if (cmp_ret == 0)
-    retval = m->id[mid_id];
+    while (start_id <= end_id) {
+      cmp_ret = strcmp(m->key[mid_id], key);
+      if (cmp_ret < 0)
+        start_id = mid_id + 1;
+      else if (cmp_ret > 0)
+        end_id = mid_id - 1;
+      else
+        break;
+      mid_id = start_id + ((end_id -start_id) / 2);
+    }
+
+    if (cmp_ret == 0)
+      retval = m->id[mid_id];
+
+  }
 
   return retval;
 }

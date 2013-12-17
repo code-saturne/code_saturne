@@ -290,7 +290,7 @@ endif
 if (ivar.gt.0) then
   call field_get_name(ivarfl(ivar), chaine)
 else
-  chaine = nomvar(ipp)
+  chaine = nomva0
 endif
 cnom= chaine(1:16)
 
@@ -417,7 +417,7 @@ if (abs(thetex).gt.epzero) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
    pvara  , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -465,7 +465,7 @@ call bilsca &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -588,7 +588,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     !==========
    ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp , imucpp , idftnp ,                            &
+     iwarnp , imucpp , idftnp ,                                     &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      dpvar  , dpvar  , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -714,7 +714,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -787,7 +787,7 @@ if (iescap.gt.0) then
   !==========
  ( idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &

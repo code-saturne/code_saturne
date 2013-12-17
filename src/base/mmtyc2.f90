@@ -62,7 +62,6 @@ subroutine mmtyc2 &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstnum

@@ -69,7 +69,6 @@ subroutine turrij &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use lagdim, only: ntersl
 use numvar
 use entsor

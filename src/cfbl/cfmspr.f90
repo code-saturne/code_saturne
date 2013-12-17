@@ -176,7 +176,7 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_s(icrom, crom)
 call field_get_val_prev_s(icrom, rhopre)
 
-chaine = nomvar(ippvar)
+call field_get_label(ivarfl(ivar), chaine)
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)

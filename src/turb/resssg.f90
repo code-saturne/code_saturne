@@ -161,6 +161,7 @@ double precision phiijw, epsijw
 
 double precision rvoid(1)
 
+character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w7
@@ -190,7 +191,8 @@ iii = 0
 jjj = 0
 
 if (iwarni(ivar).ge.1) then
-  write(nfecra,1000) nomvar(ipp)
+  call field_get_label(ivarfl(ivar), label)
+  write(nfecra,1000) label
 endif
 
 call field_get_val_s(icrom, crom)

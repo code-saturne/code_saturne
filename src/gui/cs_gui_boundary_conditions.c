@@ -111,6 +111,20 @@ cs_boundary_t *boundaries = NULL;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Return the label of a scalar field, given by its scalar Id
+ *
+ * parameters:
+ *   id <-- scalar field id
+ *----------------------------------------------------------------------------*/
+
+static inline const char *
+_scalar_label(const int id)
+{
+  cs_field_t  *f = cs_field_by_id(cs_glob_var->scal_f_id[id]);
+  return cs_field_get_label(f);
+}
+
 /*-----------------------------------------------------------------------------
  * Return the choice for the scalar of boundary condition type
  *
@@ -409,7 +423,7 @@ _boundary_scalar(const char  *nature,
   cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
   cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
   cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "label", vars->label[nsca]);
+  cs_xpath_add_test_attribute(&path, "label", _scalar_label(nsca));
 
   BFT_MALLOC(path_commun, strlen(path)+1, char);
   strcpy(path_commun, path);
@@ -445,7 +459,7 @@ _boundary_scalar(const char  *nature,
       cs_xpath_add_element(&path, "dirichlet_formula");
       cs_xpath_add_function_text(&path);
       if (cs_gui_get_text_value(path)){
-        const char *sym[] = {vars->label[nsca]};
+        const char *sym[] = {_scalar_label(nsca)};
         boundaries->type_code[vars->rtp[numvar]][izone] = DIRICHLET_FORMULA;
         boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
       }
@@ -461,7 +475,7 @@ _boundary_scalar(const char  *nature,
       cs_xpath_add_element (&path, "exchange_coefficient_formula");
       cs_xpath_add_function_text(&path);
       if (cs_gui_get_text_value(path)){
-        const char *sym[] = {vars->label[nsca],"hc"};
+        const char *sym[] = {_scalar_label(nsca),"hc"};
         boundaries->type_code[vars->rtp[numvar]][izone] = EXCHANGE_COEFF_FORMULA;
         boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 2);
       }
@@ -697,7 +711,7 @@ _boundary_elec(const char  *nature,
   cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
   cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
   cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "label", vars->label[nsca]);
+  cs_xpath_add_test_attribute(&path, "label", _scalar_label(nsca));
 
   BFT_MALLOC(path_commun, strlen(path)+1, char);
   strcpy(path_commun, path);
@@ -735,7 +749,7 @@ _boundary_elec(const char  *nature,
       cs_xpath_add_element(&path, "dirichlet_formula");
       cs_xpath_add_function_text(&path);
       if (cs_gui_get_text_value(path)){
-        const char *sym[] = {vars->label[nsca]};
+        const char *sym[] = {_scalar_label(nsca)};
         boundaries->type_code[vars->rtp[numvar]][izone] = DIRICHLET_FORMULA;
         boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
       }
@@ -751,7 +765,7 @@ _boundary_elec(const char  *nature,
       cs_xpath_add_element (&path, "exchange_coefficient_formula");
       cs_xpath_add_function_text(&path);
       if (cs_gui_get_text_value(path)){
-        const char *sym[] = {vars->label[nsca],"hc"};
+        const char *sym[] = {_scalar_label(nsca),"hc"};
         boundaries->type_code[vars->rtp[numvar]][izone] = EXCHANGE_COEFF_FORMULA;
         boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 2);
       }
@@ -1890,7 +1904,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_evaluate(boundaries->scalar[ivar][izone]);
             rcodcl[ivar * (*nfabor) + ifbr]
               = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                vars->label[scal_id]);
+                                _scalar_label(scal_id));
           }
           break;
         }
@@ -2425,7 +2439,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             icodcl[ivar *(*nfabor) + ifbr] = 5;
             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                vars->label[scal_id]);
+                                _scalar_label(scal_id));
           }
           break;
 
@@ -2452,7 +2466,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             icodcl[ivar *(*nfabor) + ifbr] = 5;
             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                vars->label[scal_id]);
+                                _scalar_label(scal_id));
             rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = mei_tree_lookup(boundaries->scalar[ivar][izone], "hc");
           }
@@ -2530,7 +2544,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             icodcl[ivar *(*nfabor) + ifbr] = 1;
             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
               = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                vars->label[scal_id]);
+                                _scalar_label(scal_id));
           }
           break;
         }

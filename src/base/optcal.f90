@@ -985,10 +985,6 @@ module optcal
   !>          1 : le scalaire associe est une espece
   integer, save ::          iscasp(nscamx)
 
-  !> scamin, scamax : min et max pour clipping des scalaires
-  !>                  on ne clippe que si scamin < scamax
-  double precision, save :: scamin(nscamx), scamax(nscamx)
-
   !> visls0 : viscosite des scalaires si constante
   double precision, save :: visls0(nscamx)
 

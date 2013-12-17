@@ -249,8 +249,10 @@ ierr   = 0
 
 ! Rank of the variables in their associated arrays
 if (iccfth.ge.0.or.iccfth.le.-2) then
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
+  if (icrom.ge.0) then
+    call field_get_val_s(icrom, crom)
+    call field_get_val_s(ibrom, brom)
+  endif
   itk = isca(itempk)
   ien = isca(ienerg)
 endif

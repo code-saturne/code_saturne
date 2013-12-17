@@ -55,6 +55,7 @@ subroutine atlecc &
 use paramx
 use pointe
 use entsor
+use field
 use cstnum
 use cstphy
 use ppppar
@@ -72,16 +73,16 @@ integer           imode
 
 ! Local variables
 
+integer f_id
 integer itp, ii, ios, k
 integer sjday,minute
 double precision second
 integer year, month, quant, hour, day, jday
-character*80     ccomnt
+character*80     ccomnt, label
 character*1      csaute
 
 ! altitudes and concentrations of every nespgi species
 double precision  zconctemp(nespgi+1)
-integer ipp
 ! names of species defined in the file in case of a user defined chemical scheme
 character*80, allocatable, dimension(:) ::      namespg
 
@@ -105,7 +106,6 @@ open ( unit=impmec, file=ficmec, status='old', iostat=ios, err=99 )
 rewind ( unit=impmec,err=99 )
 
 itp = 0
-
 
 !===============================================================================
 ! 1. loop on time
@@ -234,15 +234,14 @@ endif
 
  105  read(impmec,'(A80)',err=999,end=999) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 105
+if (ccomnt(1:1).eq.csaute) go to 105
 backspace(impmec)
 
 allocate(namespg(nespg))
 read(impmec,*,err=999,end=999) namespg(1:nespg)
 do k = 1, nespg
-  ! The first nespg user scalars are supposed to be chemical species
-  ipp = ipprtp(isca(k))
-  nomvar(ipp) = namespg(k)
+  f_id = ivarfl(isca(isca_chem(k)))
+  call field_set_key_str(f_id, keylbl, namespg(k))
 enddo
 deallocate (namespg)
 
@@ -269,14 +268,14 @@ endif ! End test on ifilechemistry
 
  107  read (impmec,'(a80)',err=999,end=999) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 107
+if (ccomnt(1:1).eq.csaute) go to 107
 backspace(impmec)
 
 
 if (imode.eq.0) then
   read (impmec,*,err=999,end=999) nespgi
-  if(nespgi.gt.nscaus) then
-    write(nfecra,8002) nscaus, nespgi
+  if (nespgi.gt.size(isca_chem)) then
+    write(nfecra,8002) size(isca_chem), nespgi
     call csexit (1)
     !==========
   endif
@@ -341,7 +340,7 @@ if (nespgi.ge.1) then
 endif ! fin test nespgi
 
 !================================================================================
-! 10. printings
+! 10. logging
 !================================================================================
 
 if (imode.eq.1) then
@@ -356,8 +355,16 @@ if (imode.eq.1) then
   write(nfecra, *) 'tchem(itp)'
   write(nfecra, 7996) tchem(itp)
 7996 format(1x, f10.2)
-  write(nfecra, *) 'zproc, ',                                              &
-  (trim(nomvar(ipprtp(isca(idespgi(ii)))))//', ', ii = 1, nespgi)
+  write(nfecra, '(a)', advance='no') 'zproc, '
+  do ii = 1, nespgi
+    f_id = ivarfl(isca(isca_chem(k)))
+    call field_get_label(f_id, label)
+    if (ii .lt. nespgi) then
+      write(nfecra, '(a)', advance='no') trim(label)//', '
+    else
+      write(nfecra, '(a)') trim(label)
+    endif
+  enddo
   do ii = 1, nbchmz
     write(nfecra, 7797) zproc(ii),                                         &
     (espnum(ii+(itp-1)*nbchmz+(k-1)*nbchmz*nbchim), k = 1, nespgi)
@@ -377,8 +384,9 @@ if (imode.eq.0) nbchim = itp-1
 close(unit=impmec)
 
 ! ---
-! END
+! End
 ! ---
+
 return
 
 !============================
@@ -443,9 +451,9 @@ call csexit (1)
 '@    MODULE DE CHIMIE (ICHEMISTRY) DEMANDE                   ',/,&
 '@                                                            ',/,&
 '@  Le nombre d''especes a initialiser avec le fichier chimie ',/,&
-'@  est superieur au nombre de scalaires utilisateurs         ',/,&
+'@  est superieur au nombre de scalaires chimie               ',/,&
 '@                                                            ',/,&
-'@   Nombre de scalaires utilisateurs declares : ',I10         ,/,&
+'@   Nombre de scalaires chimie       declares : ',I10         ,/,&
 '@   Nombre d''especes chimiques a initialiser : ',I10         ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -545,10 +553,10 @@ call csexit (1)
 '@      ATMOSPHERIC CHEMISTRY                                 ',/,&
 '@                                                            ',/,&
 '@  The number of species to initialize with the chemistry file  ',/,&
-'@  is larger than the number of user scalars                 ',/,&
+'@  is larger than the number of chemistry model scalars      ',/,&
 '@                                                            ',/,&
-'@   Number of user scalars : ',I10                            ,/,&
-'@   Number of species to initialize : ',I10                   ,/,&
+'@   Number of chemistry model scalars: ',I10                  ,/,&
+'@   Number of species to initialize: ',I10                    ,/,&
 '@                                                            ',/,&
 '@  The computation will not be run                           ',/,&
 '@                                                            ',/,&

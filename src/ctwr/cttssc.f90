@@ -66,6 +66,7 @@ use ppthch
 use ppincl
 use ctincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -96,8 +97,7 @@ integer          ivar
 ivar = isca(iscal)
 
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
-chaine = nomvar(ipprtp(ivar))
-
+call field_get_label(ivarfl(ivar), chaine)
 
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES ET VARIABLES STANDARDS

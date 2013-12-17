@@ -134,11 +134,6 @@ static double *_clips_vmin = NULL;
 static double *_clips_vmax = NULL;
 static cs_log_clip_t  *_clips = NULL;
 
-/* For naming of array dimension */
-
-static const char *_ext_3[] = {"[x]", "[y]", "[z]", ""};
-static const char *_ext_6[] = {"[11]", "[22]", "[33]", "[12]", "[13]", "[23]"};
-
 /* Additional variable for moments */
 
 static const cs_real_t  *_cumulative_mom_time = NULL;
@@ -429,12 +424,12 @@ _log_array_info(const char        *prefix,
   for (c_id = 0; c_id < _dim; c_id++) {
 
     if (dim == 3) {
-      snprintf(tmp_s[1], 63, "%s%s", name, _ext_3[c_id]);
+      snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_3[c_id]);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
     }
     else if (dim == 6) {
-      snprintf(tmp_s[1], 63, "%s%s", name, _ext_6[c_id]);
+      snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_6[c_id]);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
     }
@@ -502,7 +497,7 @@ _log_clip_info(const char        *prefix,
     }
 
     if (dim == 3) {
-      snprintf(tmp_s[1], 63, "%s%s", _name, _ext_3[c_id]);
+      snprintf(tmp_s[1], 63, "%s%s", _name, cs_glob_field_comp_name_3[c_id]);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
       if (c_id == dim) {
@@ -511,7 +506,7 @@ _log_clip_info(const char        *prefix,
       }
     }
     else if (dim == 6) {
-      snprintf(tmp_s[1], 63, "%s%s", _name, _ext_6[c_id]);
+      snprintf(tmp_s[1], 63, "%s%s", _name, cs_glob_field_comp_name_6[c_id]);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
     }

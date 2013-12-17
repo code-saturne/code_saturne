@@ -107,7 +107,6 @@ double precision, dimension(:), allocatable :: refrad
 double precision, dimension(:), pointer ::  crom
 
 !===============================================================================
-!===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
 
@@ -116,7 +115,7 @@ double precision, dimension(:), pointer ::  crom
 ivar = isca(iscal)
 
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
-chaine = nomvar(ipprtp(ivar))
+call field_get_name(ivarfl(ivar), chaine)
 
 ! --- Density
 call field_get_val_s(icrom, crom)

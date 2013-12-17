@@ -694,9 +694,7 @@ if (ikecou.eq.1) then
   ! ---> Traitement de k
   ivar   = ik
 
-  ipp    = ipprtp(ivar)
-
-  chaine = nomvar(ipp)
+  call field_get_label(ivarfl(ivar), chaine)
 
   if( idiff(ivar).ge. 1 ) then
 
@@ -748,7 +746,7 @@ if (ikecou.eq.1) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
@@ -766,10 +764,7 @@ if (ikecou.eq.1) then
 
   ! ---> Traitement de omega
   ivar   = iomg
-
-  ipp    = ipprtp(ivar)
-
-  chaine = nomvar(ipp)
+  call field_get_label(ivarfl(ivar), chaine)
 
   if( idiff(ivar).ge. 1 ) then
     do iel = 1, ncel
@@ -820,7 +815,7 @@ if (ikecou.eq.1) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &

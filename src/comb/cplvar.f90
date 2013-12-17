@@ -45,10 +45,9 @@ subroutine cplvar
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -67,33 +66,79 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use field
 
 !===============================================================================
 
 implicit none
 
-integer        is, icha, isc
+integer        icha, isc, f_id
+integer        kscmin, kscmax
+character*80   f_label, f_name
 
 !===============================================================================
 
 !===============================================================================
-! 1. DEFINITION DES POINTEURS
+! 0. Definitions for fields
 !===============================================================================
 
-! ---> Variables propres a la phase continue
+! Key ids for clipping
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
+
+!===============================================================================
+! 1. Define variable fields
+!===============================================================================
+
+! Thermal model
+
+itherm = 2
+call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+iscalt = ihm
+
+! Set min and max clipping
+f_id = ivarfl(isca(iscalt))
+call field_set_key_double(f_id, kscmin, -grand)
+call field_set_key_double(f_id, kscmax, grand)
+
+! Variables specific to continuous phase
 
 do icha = 1, ncharb
-  is          = 1+icha
-  if1m(icha)  = iscapp(is)
-  is          = 1+ncharb+icha
-  if2m(icha)  = iscapp(is)
+
+  write(f_name,'(a7,i2.2)') 'mv1_fraction', icha
+  write(f_label,'(a6,i2.2)') 'Fr_mv1', icha
+  call add_model_scalar_field(f_name, f_label, if1m(icha))
+  f_id = ivarfl(isca(if1m(icha)))
+
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
 enddo
 
-is = 1+ncharb*2
-is = is+1
-if3m  = iscapp(is)
-is = is+1
-if4p2m = iscapp(is)
+do icha = 1, ncharb
+
+  write(f_name,'(a7,i2.2)') 'mv2_fraction', icha
+  write(f_label,'(a6,i2.2)') 'Fr_mv2', icha
+  call add_model_scalar_field(f_name, f_label, if2m(icha))
+  f_id = ivarfl(isca(if2m(icha)))
+
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
+enddo
+
+call add_model_scalar_field('het_fraction', 'Fr_HET', if3m)
+f_id = ivarfl(isca(if3m))
+
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 1.d0)
+
+call add_model_scalar_field('air_variance', 'Var_AIR', if4p2m)
+
+f_id = ivarfl(isca(if4p2m))
+
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 0.25d0)
 
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
@@ -105,20 +150,16 @@ if4p2m = iscapp(is)
 
 do isc = 1, nscapp
 
-  if ( iscavr(iscapp(isc)).le.0 ) then
-
-! ---- Viscosite dynamique de reference relative au scalaire
-!      ISCAPP(ISC)
+  if (iscavr(iscapp(isc)).le.0) then
+    ! Reference dynamic viscosity relative to this scalar
     ivisls(iscapp(isc)) = 0
-
   endif
 
 enddo
 
-! ---- Bien que l on soit en enthalpie on conserve un CP constant
+! Although we are in enthalpy formulation, we keep Cp constant
 
-icp    = 0
-
+icp = 0
 
 return
 end subroutine

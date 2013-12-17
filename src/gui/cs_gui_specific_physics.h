@@ -122,40 +122,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel);
 
 /*----------------------------------------------------------------------------
- * Pointers definition for scalars and coal combustion
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
-                                const int *const nclass,
-                                const int *const noxyd,
-                                const int *const ippmod,
-                                const int *const iccoal,
-                                const int *const ieqnox,
-                                const int *const ieqco2,
-                                const int *const ihtco2,
-                                const int *const ihth2o,
-                                const int *const iscalt,
-                                const int *const inp,
-                                const int *const ixch,
-                                const int *const ixck,
-                                const int *const ixwt,
-                                const int *const ih2,
-                                const int *const if1m,
-                                const int *const if2m,
-                                const int *const if4m,
-                                const int *const if5m,
-                                const int *const if6m,
-                                const int *const if7m,
-                                const int *const if8m,
-                                const int *const ifvp2m,
-                                const int *const iyco2,
-                                const int *const if9m,
-                                const int *const iyhcn,
-                                const int *const iyno,
-                                const int *const ihox,
-                                const int *const iynh3);
-
-/*----------------------------------------------------------------------------
  * Defintion des pointeurs des proprietes pour la combustion gaz
  *----------------------------------------------------------------------------*/
 
@@ -205,13 +171,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const iboxygen,
                                 const int *const ibhydrogen);
 
-/*----------------------------------------------------------------------------
- * Pointers definition for scalars for compressible model
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicfsc, UICFSC) (const int *const ienerg,
-                                const int *const itempk);
-
 /*-----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics (electrical model)
@@ -230,23 +189,9 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
                                 const int *const idrad,
                                 const int *const ixkabe);
 
-/*------------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for the model scalar (electrical model)
- *----------------------------------------------------------------------------*/
-void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
-                                const int *const ieljou,
-                                const int *const ielarc,
-                                const int *const ngazg,
-                                const int *const iscalt,
-                                const int *const ipotr,
-                                const int *const iycoel,
-                                const int *const ipoti,
-                                const int *const ipotva);
-
 /*-----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
- * for physical properties of the activated specific physics (gaz combustion)
+ * for physical properties of the activated specific physics (gas combustion)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
@@ -269,23 +214,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
                                 const int *const iampl,
                                 const int *const itscl,
                                 const int *const imaml);
-
-/*------------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for the model scalar (gas combustion)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
-                                const int *const icolwc,
-                                const int *const icoebu,
-                                const int *const icod3p,
-                                const int *const iscalt,
-                                const int *const ifm,
-                                const int *const ifp2m,
-                                const int *const iygfm,
-                                const int *const iyfm,
-                                const int *const iyfp2m,
-                                const int *const icoyfp);
 
 /*----------------------------------------------------------------------------
  * Electrical model : read parameters
@@ -369,27 +297,6 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
                                 const int *const ipproc,
                                 const int *const itempc,
                                 const int *const iliqwt);
-
-/*----------------------------------------------------------------------------
- * Atmospheric flows: indirection between the solver numbering and the XML one
- * for models scalars.
- *
- * Fortran Interface:
- *
- * subroutine uiatsc
- * *****************
- * integer         ippmod   -->   specific physics indicator array
- * integer         iatmos   -->   index for atmospheric flow
- * integer         iscalt   -->   index for thermal variable
- * integer         itotwt   -->   index for total water content
- * integer         intdrp   -->   index for total number of droplets
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
-                                const int *const iatmos,
-                                const int *const iscalt,
-                                const int *const itotwt,
-                                const int *const intdrp);
 
 /*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
@@ -504,6 +411,49 @@ cs_gui_numerical_double_parameters(const char   *const param,
 
 int
 cs_gui_get_activ_thermophysical_model(void);
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the atmospheric module
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_atmospheric(void);
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the coal combustion module
+ *
+ * parameters:
+ *   n_coals   <-- number of coals
+ *   n_classes <-- number of coal classes
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_coal_combustion(int  n_coals,
+                              int  n_classes);
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the electric arcs module
+ *
+ * parameters:
+ *   n_gasses <-- number of constituent gasses
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_electric_arcs(int  n_gasses);
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the gas combustion variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_gas_combustion(void);
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the compressible model variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_compressible(void);
 
 /*----------------------------------------------------------------------------*/
 

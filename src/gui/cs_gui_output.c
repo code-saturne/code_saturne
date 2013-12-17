@@ -104,6 +104,24 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return the label of a scalar field, given by its scalar Id
+ *
+ * parameters:
+ *   id <-- scalar field id
+ *----------------------------------------------------------------------------*/
+
+static inline const char *
+_scalar_label(const int id)
+{
+  cs_field_t  *f = cs_field_by_id(cs_glob_var->scal_f_id[id]);
+  return cs_field_get_label(f);
+}
+
 /*----------------------------------------------------------------------------
  * Get output control value parameters.
  *
@@ -388,12 +406,32 @@ static char *cs_gui_variable_label (const char *const variable)
 static void
 _gui_copy_varname(const char *varname, int ipp)
 {
+  int i;
   size_t l;
 
   if (varname == NULL)
     return;
 
-  if (ipp < 1 || ipp > cs_glob_label->_cs_gui_last_var)
+  /* Resize array if necessary */
+
+  if (ipp > cs_glob_label->_cs_gui_max_vars) {
+
+    if (cs_glob_label->_cs_gui_max_vars == 0)
+      cs_glob_label->_cs_gui_max_vars = 16;
+
+    while (cs_glob_label->_cs_gui_max_vars <= ipp)
+      cs_glob_label->_cs_gui_max_vars *= 2;
+
+    BFT_REALLOC(cs_glob_label->_cs_gui_var_name,
+                cs_glob_label->_cs_gui_max_vars,
+                char *);
+    for (i = cs_glob_label->_cs_gui_last_var;
+         i < cs_glob_label->_cs_gui_max_vars;
+         i++)
+      cs_glob_label->_cs_gui_var_name[i] = NULL;
+  }
+
+  if (ipp < 2 || ipp > cs_glob_label->_cs_gui_max_vars)
     bft_error(__FILE__, __LINE__, 0,
               _("Variable index %d out of bounds (1 to %d)"),
               ipp, cs_glob_label->_cs_gui_last_var);
@@ -575,19 +613,17 @@ static void cs_gui_scalar_post(const int         num_sca,
   int iprob;
   int num_probe;
 
-  cs_var_t  *vars = cs_glob_var;
-
   ipp = ipprtp[isca[num_sca] -1];
 
   if (ipp == 1) return;
 
   /* EnSight outputs frequency */
-  cs_gui_scalar_attribute(vars->label[num_sca],
+  cs_gui_scalar_attribute(_scalar_label(num_sca),
                           "postprocessing_recording",
                           &ichrvr[ipp - 1]);
 
   /* Listing output frequency */
-  cs_gui_scalar_attribute(vars->label[num_sca],
+  cs_gui_scalar_attribute(_scalar_label(num_sca),
                           "listing_printing",
                           &ilisvr[ipp - 1]);
 
@@ -602,7 +638,7 @@ static void cs_gui_scalar_post(const int         num_sca,
     }
   }
 
-  _gui_copy_varname(vars->label[num_sca], ipp);
+  _gui_copy_varname(_scalar_label(num_sca), ipp);
 }
 
 /*----------------------------------------------------------------------------
@@ -734,35 +770,33 @@ static void cs_gui_model_scalar_post(const char  *const model,
   int iprob;
   int num_probe;
 
-  cs_var_t  *vars = cs_glob_var;
-
   ipp = ipprtp[isca[num_sca] -1];
 
   if (ipp == 1) return;
 
   /* EnSight outputs frequency */
-  cs_gui_model_scalar_output_status(model, vars->label[num_sca],
+  cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
                                     "postprocessing_recording",
                                     &ichrvr[ipp - 1]);
 
   /* Listing output frequency */
-  cs_gui_model_scalar_output_status(model, vars->label[num_sca],
+  cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
                                     "listing_printing",
                                     &ilisvr[ipp - 1]);
 
   /* Activated probes */
-  nb_probes = cs_gui_model_scalar_number_probes(model, vars->label[num_sca]);
+  nb_probes = cs_gui_model_scalar_number_probes(model, _scalar_label(num_sca));
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
     for (iprob =0; iprob < nb_probes; iprob++) {
-      num_probe = cs_gui_model_scalar_probe_name(model, vars->label[num_sca], iprob+1);
+      num_probe = cs_gui_model_scalar_probe_name(model, _scalar_label(num_sca), iprob+1);
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
   }
 
-  _gui_copy_varname(vars->label[num_sca], ipp);
+  _gui_copy_varname(_scalar_label(num_sca), ipp);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1551,6 +1585,152 @@ static mei_tree_t *_init_mei_tree(const int        num,
   return tree;
 }
 
+/*----------------------------------------------------------------------------
+ * Copy variable labels from fields to GUI labels
+ *----------------------------------------------------------------------------*/
+
+static void
+_field_labels_to_gui(void)
+{
+  int i;
+
+  const int n_fields = cs_field_n_fields();
+  const int k_post = cs_field_key_id("post_id");
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t *f = cs_field_by_id(f_id);
+    const int ipp = cs_field_get_key_int(f, k_post);
+
+    if (ipp < 2)
+      continue;
+
+    /* Loop on field components */
+
+    const int p_dim = CS_MIN(f->dim, 3);
+
+    for (int c_id = 0; c_id < p_dim; c_id++) {
+
+      int p_id = ipp - 1 + c_id;
+      char label[128];
+
+      /* Resize array if necessary */
+
+      if (p_id >= cs_glob_label->_cs_gui_max_vars) {
+
+        if (cs_glob_label->_cs_gui_max_vars == 0)
+          cs_glob_label->_cs_gui_max_vars = 16;
+        while (cs_glob_label->_cs_gui_max_vars <= p_id)
+          cs_glob_label->_cs_gui_max_vars *= 2;
+
+        BFT_REALLOC(cs_glob_label->_cs_gui_var_name,
+                    cs_glob_label->_cs_gui_max_vars,
+                    char *);
+        for (i = cs_glob_label->_cs_gui_last_var;
+             i < cs_glob_label->_cs_gui_max_vars;
+             i++)
+          cs_glob_label->_cs_gui_var_name[i] = NULL;
+
+      }
+
+      /* Build name */
+
+      const char *f_label = cs_field_get_label(f);
+
+      if (f->dim == 1)
+        strncpy(label, f_label, 127);
+      else if (f->dim == 3)
+        snprintf(label, 127, "%s%s", f_label, cs_glob_field_comp_name_3[c_id]);
+      else if (f->dim == 6)
+        snprintf(label, 127, "%s%s", f_label, cs_glob_field_comp_name_6[c_id]);
+      else if (f->dim == 9)
+        snprintf(label, 127, "%s%s", f_label, cs_glob_field_comp_name_9[c_id]);
+      else
+        snprintf(label, 127, "%s[%02d]", f_label, c_id);
+      label[127] = '\0';
+
+
+      BFT_REALLOC(cs_glob_label->_cs_gui_var_name[p_id],
+                  strlen(label) + 1,
+                  char);
+
+      strcpy(cs_glob_label->_cs_gui_var_name[p_id], label);
+
+      /* Update variable counter */
+
+      if (p_id + 1 > cs_glob_label->_cs_gui_last_var)
+        cs_glob_label->_cs_gui_last_var = p_id + 1;
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Copy variable labels to fields from GUI labels
+ *----------------------------------------------------------------------------*/
+
+static void
+_field_labels_from_gui(void)
+{
+  int i;
+
+  const int n_fields = cs_field_n_fields();
+  const int k_post = cs_field_key_id("post_id");
+  const int k_lbl = cs_field_key_id("label");
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t *f = cs_field_by_id(f_id);
+    const int ipp = cs_field_get_key_int(f, k_post);
+
+    if (ipp < 2)
+      continue;
+
+    /* Initial checks and label setup for a given field */
+
+    const int p_dim = CS_MIN(f->dim, 3);
+
+    int p_id = ipp - 1;
+    char label[128];
+
+    if (p_id > cs_glob_label->_cs_gui_max_vars)
+      continue;
+
+    if (cs_glob_label->_cs_gui_var_name[p_id] == NULL)
+      continue;
+
+    strcpy(label, cs_glob_label->_cs_gui_var_name[p_id]);
+
+    /* In case of multiple field components, keep common part */
+
+    for (int c_id = 1; c_id < p_dim; c_id++) {
+
+      p_id += 1;
+
+      if (p_id > cs_glob_label->_cs_gui_max_vars)
+        continue;
+      if (cs_glob_label->_cs_gui_var_name[p_id] == NULL)
+        continue;
+
+      for (i = 0;
+           (   label[i] == cs_glob_label->_cs_gui_var_name[p_id][i]
+            && label[i] != '\0');
+           i++);
+
+      if (i > 0)
+        label[i] = '\0';
+
+    }
+
+    /* Update field label */
+
+    cs_field_set_key_str(f, k_lbl, label);
+
+  }
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -1623,6 +1803,8 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   int ipp;
   cs_var_t  *vars = cs_glob_var;
   char fmtprb[16];
+
+  _field_labels_to_gui();
 
   _output_value("auxiliary_restart_file_writing", iecaux);
   _output_value("listing_printing_frequency", ntlist);
@@ -1718,6 +1900,8 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                              nvppmx);
   }
 
+  _field_labels_from_gui();
+
 #if _XML_DEBUG_
   bft_printf("==>CSENSO\n");
   bft_printf("--iecaux = %i\n", *iecaux);
@@ -1744,7 +1928,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   }
   for (i = 0; i < vars->nscaus + vars->nscapp ; i++) {
     ipp = ipprtp[isca[i] -1];
-    bft_printf("-->scalar ipprtp[%i]: %s\n", ipp, vars->label[i]);
+    bft_printf("-->scalar ipprtp[%i]: %s\n", ipp, _scalar_label(i));
     bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
     bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
     bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);

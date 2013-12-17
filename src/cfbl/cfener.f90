@@ -192,7 +192,7 @@ else
 endif
 
 ! Prints
-chaine = nomvar(ippvar)
+call field_get_label(ivarfl(ivar), chaine)
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)

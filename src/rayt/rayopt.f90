@@ -372,9 +372,9 @@ iok = 0
 if (iirayo.gt.0) then
 
 ! Positionnement des pointeurs
-! 4eme passage (les autres sont dans iniusi)
+! 3eme passage (les autres sont dans iniusi)
 
-  call varpos(nmodpp)
+  call varpos
   !==========
 
 ! --> ISUIRD
@@ -464,7 +464,7 @@ enddo
 !--> LUMINENCE
 
 ipp = ipppro(ipproc(ilumin))
-nomvar(ipp)   = 'Lumin'
+nomprp(ipproc(ilumin))   = 'Lumin'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 ilisvr(ipp)   = 0
@@ -473,21 +473,21 @@ ilisvr(ipp)   = 0
 
 !     composante x
 ipp = ipppro(ipproc(iqx))
-nomvar(ipp)   = 'Qxrad'
+nomprp(ipproc(iqx))   = 'Qxrad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
 
 !     composante y
 ipp = ipppro(ipproc(iqy))
-nomvar(ipp)   = 'Qyrad'
+nomprp(ipproc(iqy))   = 'Qyrad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
 
 !      composante z
 ipp = ipppro(ipproc(iqz))
-nomvar(ipp)   = 'Qzrad'
+nomprp(ipproc(iqz))   = 'Qzrad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -495,7 +495,7 @@ ilisvr(ipp)   = 0
 !--> TERME SOURCE IMPLICITE
 
 ipp = ipppro(ipproc(itsri(1)))
-nomvar(ipp)   = 'ITSRI'
+nomprp(ipproc(itsri(1)))   = 'ITSRI'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 ilisvr(ipp)   = 0
@@ -503,7 +503,7 @@ ilisvr(ipp)   = 0
 !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
 ipp = ipppro(ipproc(itsre(1)))
-nomvar(ipp)   = 'Srad'
+nomprp(ipproc(itsre(1)))   = 'Srad'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -511,7 +511,7 @@ ilisvr(ipp)   = 0
 !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
 ipp = ipppro(ipproc(iabs(1)))
-nomvar(ipp)   = 'Absorp'
+nomprp(ipproc(iabs(1)))   = 'Absorp'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -519,7 +519,7 @@ ilisvr(ipp)   = 0
 !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
 ipp = ipppro(ipproc(iemi(1)))
-nomvar(ipp)   = 'Emiss'
+nomprp(ipproc(iemi(1)))   = 'Emiss'
 ichrvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 ilisvr(ipp)   = 0
@@ -527,7 +527,7 @@ ilisvr(ipp)   = 0
 !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
 ipp = ipppro(ipproc(icak(1)))
-nomvar(ipp)   = 'CoefAb'
+nomprp(ipproc(icak(1)))   = 'CoefAb'
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
@@ -540,7 +540,7 @@ do irphas = 1, nrphas-1
 !--> TERME SOURCE IMPLICITE
 
   ipp = ipppro(ipproc(itsri(irphas)))
-  nomvar(ipp)   = 'ITSRI_'//num
+  nomprp(ipproc(itsri(irphas)))   = 'ITSRI_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = 0
   ilisvr(ipp)   = 0
@@ -549,7 +549,7 @@ do irphas = 1, nrphas-1
 !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
   ipp = ipppro(ipproc(itsre(irphas)))
-  nomvar(ipp)   = 'Srad_'//num
+  nomprp(ipproc(itsre(irphas)))   = 'Srad_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -557,7 +557,7 @@ do irphas = 1, nrphas-1
 !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
   ipp = ipppro(ipproc(iabs(irphas)))
-  nomvar(ipp)   = 'Absorp_'//num
+  nomprp(ipproc(iabs(irphas)))   = 'Absorp_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -565,7 +565,7 @@ do irphas = 1, nrphas-1
 !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
   ipp = ipppro(ipproc(iemi(irphas)))
-  nomvar(ipp)   = 'Emiss_'//num
+  nomprp(ipproc(iemi(irphas)))   = 'Emiss_'//num
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ilisvr(ipp)   = 0
@@ -573,7 +573,7 @@ do irphas = 1, nrphas-1
 !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
   ipp = ipppro(ipproc(icak(irphas)))
-  nomvar(ipp)   = 'CoefAb_'//num
+  nomprp(ipproc(icak(irphas)))   = 'CoefAb_'//num
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -603,8 +603,9 @@ if (iihmpr.eq.1) then
   enddo
 
   ! properties on cells
-  do ii = 1,nvppmx
-    call fcnmva (nomvar(ii), len(nomvar(ii)), ii)
+  do ii = 1, nproce
+    ipp = ipppro(ii)
+    call fcnmva (nomprp(ii), len(nomprp(ii)), ipp)
     !==========
   enddo
 
@@ -614,8 +615,9 @@ if (iihmpr.eq.1) then
        ipstdv, ichrvr, ilisvr, ihisvr, tplfmt, isca, iscapp,      &
        ipprtp, xyzcap )
 
-  do ii = 1,nvppmx
-    call cfnmva(nomvar(ii), len(nomvar(ii)), ii)
+  do ii = 1, nproce
+    ipp = ipppro(ii)
+    call cfnmva(nomprp(ii), len(nomprp(ii)), ipp)
     !==========
   enddo
 

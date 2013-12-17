@@ -84,13 +84,12 @@ integer          ipropp, ipppst
 
 integer          iprop, ige , icla, iprop2
 integer          f_id, itycat, ityloc, idim1
-integer          keylog
-integer          keyccl, keyvis, keylbl
+integer          keyccl
 integer          iopchr
 
 logical          ilved, iprev, inoprv
 
-character*80     f_name, name
+character*80     f_name
 
 
 !===============================================================================
@@ -102,15 +101,6 @@ ilved  = .false.   ! not interleaved by default
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! Postprocessing level for variables
-
-name = 'log'
-call field_get_key_id(name, keylog)
-
-name = 'post_vis'
-call field_get_key_id(name, keyvis)
-
-name = 'label'
-call field_get_key_id(name, keylbl)
 
 ! Key id of the coal scalar class
 call field_get_key_id("scalar_class", keyccl)

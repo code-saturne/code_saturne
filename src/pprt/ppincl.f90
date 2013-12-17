@@ -728,7 +728,7 @@ module ppincl
   !> pointer do define the air temperature in array isca(itemp4)
   integer, save :: itemp4
 
-  !> pointer do define the air humidity in array isca(itemp4)
+  !> pointer do define the air humidity in array isca(ihumid)
   integer, save :: ihumid
 
   !> \}

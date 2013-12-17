@@ -57,7 +57,6 @@ subroutine resalp &
 ! Module files
 !===============================================================================
 
-use dimens, only: ndimfb
 use paramx
 use numvar
 use entsor
@@ -101,6 +100,7 @@ double precision xllke, xllkmg, xlldrb
 
 double precision rvoid(1)
 
+character(len=80) :: label
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: w1
@@ -150,7 +150,8 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 if(iwarni(ivar).ge.1) then
-  write(nfecra,1100) nomvar(ipp)
+  call field_get_label(ivarfl(ivar), label)
+  write(nfecra,1100) label
 endif
 
 thetv  = thetav(ivar)

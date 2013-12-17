@@ -55,6 +55,8 @@
 #include "cs_gui.h"
 #include "cs_gui_variables.h"
 #include "cs_mesh.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 
@@ -127,14 +129,28 @@ _thermal_scalar(void)
  * Return the label or the name from a specific physics scalar.
  *
  * parameters:
- *   physics              -->  keyword: specific physic model required
- *   kw                   -->  keyword: name of scalar
+ *   f        <-- pointer to field structure
+ *   physics  <-- keyword: specific physic model required
+ *   kw       <-- keyword: name of scalar
  *----------------------------------------------------------------------------*/
 
-static char *_scalar_name_label(const char *physics, const char *kw)
+static void
+_set_scalar_name_label(cs_field_t  *f,
+                       const char  *physics,
+                       const char  *kw)
 {
   char *path = NULL;
-  char *str  = NULL;
+  char *label  = NULL;
+
+  cs_var_t  *vars = cs_glob_var;
+
+  const int keysca = cs_field_key_id("scalar_id");
+  const int klbl = cs_field_key_id("label");
+
+  int scal_id = cs_field_get_key_int(f, keysca);
+
+  if (scal_id > 0 && scal_id <= (vars->nscaus + vars->nscapp))
+    vars->scal_f_id[scal_id - 1] = f->id;
 
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,
@@ -145,24 +161,39 @@ static char *_scalar_name_label(const char *physics, const char *kw)
   cs_xpath_add_test_attribute(&path, "name", kw);
   cs_xpath_add_attribute(&path, "label");
 
-  str = cs_gui_get_attribute_value(path);
+  label = cs_gui_get_attribute_value(path);
 
   BFT_FREE(path);
 
-  return str;
+  cs_field_set_key_str(f, klbl, label);
+
+  BFT_FREE(label);
 }
 
 /*-----------------------------------------------------------------------------
  * Return the name tor thermal scalar.
  *
  * parameters:
- *   kw                   <--  scalar name
+ *   f  <-- pointer to field structure
+ *   kw <-- scalar name
  *----------------------------------------------------------------------------*/
 
-static char *_thermal_scalar_name_label(const char *kw)
+static void
+_set_thermal_scalar_name_label(cs_field_t  *f,
+                               const char  *kw)
 {
   char *path = NULL;
-  char *str  = NULL;
+  char *label  = NULL;
+
+  cs_var_t  *vars = cs_glob_var;
+
+  const int keysca = cs_field_key_id("scalar_id");
+  const int klbl = cs_field_key_id("label");
+
+  int scal_id = cs_field_get_key_int(f, keysca);
+
+  if (scal_id > 0 && scal_id <= (vars->nscaus + vars->nscapp))
+    vars->scal_f_id[scal_id - 1] = f->id;
 
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,
@@ -171,11 +202,13 @@ static char *_thermal_scalar_name_label(const char *kw)
                         "scalar");
   cs_xpath_add_attribute(&path, kw);
 
-  str = cs_gui_get_attribute_value(path);
+  label = cs_gui_get_attribute_value(path);
 
   BFT_FREE(path);
 
-  return str;
+  cs_field_set_key_str(f, klbl, label);
+
+  BFT_FREE(label);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1734,6 +1767,12 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
 
   vars->nscapp = nscapp;
 
+  /* Resize scal_f_id indirection array */
+
+  BFT_REALLOC(vars->scal_f_id, vars->nscapp + vars->nscaus, int);
+  for (int i = 0; i < vars->nscapp; i++)
+    vars->scal_f_id[i+vars->nscaus] = -1;
+
 #if _XML_DEBUG_
   bft_printf("==>UIPPMO\n");
   if (isactiv)
@@ -2468,115 +2507,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
 #endif
 }
 
-/*------------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for the model scalar (gas combustion)
- *----------------------------------------------------------------------------*/
-void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
-                                const int *const icolwc,
-                                const int *const icoebu,
-                                const int *const icod3p,
-                                const int *const iscalt,
-                                const int *const ifm,
-                                const int *const ifp2m,
-                                const int *const iygfm,
-                                const int *const iyfm,
-                                const int *const iyfp2m,
-                                const int *const icoyfp)
-{
-  cs_var_t  *vars = cs_glob_var;
-  char *label = NULL;
-
-  if (vars->nscaus > 0) {
-    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
-  } else {
-    BFT_MALLOC(vars->label, vars->nscapp, char*);
-  }
-  //   model D3P
-  if (ippmod[*icod3p-1] >=0) {
-    label = _scalar_name_label("gas_combustion", "Fra_MEL");
-    BFT_MALLOC(vars->label[*ifm -1], strlen(label)+1, char);
-    strcpy(vars->label[*ifm -1], label);
-    BFT_FREE(label);
-
-    label = _scalar_name_label("gas_combustion", "Var_FMe");
-    BFT_MALLOC(vars->label[*ifp2m -1], strlen(label)+1, char);
-    strcpy(vars->label[*ifp2m -1], label);
-    BFT_FREE(label);
-
-    if (ippmod[*icod3p-1] == 1 ) {
-      label = _thermal_scalar_name_label("label");
-      BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
-      strcpy(vars->label[*iscalt -1], label);
-      BFT_FREE(label);
-    }
-  }
-  // model EBU
-  if (ippmod[*icoebu-1] >= 0) {
-    label = _scalar_name_label("gas_combustion", "Fra_GF");
-    BFT_MALLOC(vars->label[*iygfm -1], strlen(label)+1, char);
-    strcpy(vars->label[*iygfm -1], label);
-    BFT_FREE(label);
-
-    if (ippmod[*icoebu-1] >= 2) {
-      label = _scalar_name_label("gas_combustion", "Fra_MEL");
-      BFT_MALLOC(vars->label[*ifm -1], strlen(label)+1, char);
-      strcpy(vars->label[*ifm -1], label);
-      BFT_FREE(label);
-    }
-
-    if (ippmod[*icoebu-1] == 1 || ippmod[*icoebu-1] == 3) {
-      label = _thermal_scalar_name_label("label");
-      BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
-      strcpy(vars->label[*iscalt -1], label);
-      BFT_FREE(label);
-    }
-  }
-  // model LWC
-  if (ippmod[*icolwc-1] >= 0) {
-    label = _scalar_name_label("gas_combustion", "Fra_MEL");
-    BFT_MALLOC(vars->label[*ifm -1], strlen(label)+1, char);
-    strcpy(vars->label[*ifm -1], label);
-    BFT_FREE(label);
-
-    label = _scalar_name_label("gas_combustion", "Var_FMe");
-    BFT_MALLOC(vars->label[*ifp2m -1], strlen(label)+1, char);
-    strcpy(vars->label[*ifp2m -1], label);
-    BFT_FREE(label);
-
-    label = _scalar_name_label("gas_combustion", "Fra_Mas");
-    BFT_MALLOC(vars->label[*iyfm -1], strlen(label)+1, char);
-    strcpy(vars->label[*iyfm -1], label);
-    BFT_FREE(label);
-
-    label = _scalar_name_label("gas_combustion", "Var_FMa");
-    BFT_MALLOC(vars->label[*iyfp2m -1], strlen(label)+1, char);
-    strcpy(vars->label[*iyfp2m -1], label);
-    BFT_FREE(label);
-  }
-
-  if (ippmod[*icolwc-1] >= 2) {
-    label = _scalar_name_label("gas_combustion", "COYF_PP4");
-    BFT_MALLOC(vars->label[*icoyfp -1], strlen(label)+1, char);
-    strcpy(vars->label[*icoyfp -1], label);
-    BFT_FREE(label);
-  }
-
-  if (ippmod[*icolwc-1] == 1 || ippmod[*icolwc-1] == 3 || ippmod[*icolwc-1] == 5) {
-    label = _thermal_scalar_name_label("label");
-    BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
-    strcpy(vars->label[*iscalt -1], label);
-    BFT_FREE(label);
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==>UICPSC\n");
-  for (i=0; i< vars->nscaus+vars->nscapp; i++)
-    bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
-#endif
-
-}
-
 /*----------------------------------------------------------------------------
  * Electrical model : read parameters
  *
@@ -2849,6 +2779,9 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   char *label = NULL;
 
   cs_var_t  *vars = cs_glob_var;
+
+  if (!cs_gui_file_is_loaded())
+    return;
 
   if (vars->nscaus > 0) {
     BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
@@ -3205,84 +3138,6 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
 #endif
 }
 
-/*------------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for the model scalar (electrical model)
- *----------------------------------------------------------------------------*/
-void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
-                                const int *const ieljou,
-                                const int *const ielarc,
-                                const int *const ngazg,
-                                const int *const iscalt,
-                                const int *const ipotr,
-                                const int *const iycoel,
-                                const int *const ipoti,
-                                const int *const ipotva)
-{
-  cs_var_t  *vars = cs_glob_var;
-  char *snumsca = NULL;
-  char *name = NULL;
-  char *label = NULL;
-
-  if (vars->nscaus > 0)
-    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
-  else
-    BFT_MALLOC(vars->label, vars->nscapp, char*);
-
-  BFT_MALLOC(snumsca, 2 + 1, char);
-
-  label = _thermal_scalar_name_label("label");
-  BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
-  strcpy(vars->label[*iscalt -1], label);
-  BFT_FREE(label);
-
-  label = _scalar_name_label("joule_effect", "PotElecReal");
-  BFT_MALLOC(vars->label[*ipotr -1], strlen(label)+1, char);
-  strcpy(vars->label[*ipotr -1], label);
-  BFT_FREE(label);
-
-  if (*ngazg > 1)
-    for (int iesp = 0; iesp < *ngazg - 1; iesp++) {
-      BFT_MALLOC(name, strlen("YM_ESL") +1 + 1, char);
-      strcpy(name, "YM_ESL");
-      sprintf(snumsca, "%2.2i", iesp +1);
-      strcat(name, snumsca);
-      label = _scalar_name_label("joule_effect", name);
-      BFT_MALLOC(vars->label[iycoel[iesp] -1], strlen(label) +1, char);
-      strcpy(vars->label[iycoel[iesp] -1], label);
-      BFT_FREE(label);
-    }
-
-  if (ippmod[*ieljou - 1] == 2 || ippmod[*ieljou - 1] == 4) {
-    label = _scalar_name_label("joule_effect", "POT_EL_I");
-    BFT_MALLOC(vars->label[*ipoti -1], strlen(label) +1, char);
-    strcpy(vars->label[*ipoti -1], label);
-    BFT_FREE(label);
-  }
-
-  if (ippmod[*ielarc - 1] >= 2)
-    for (int idimve = 0; idimve < 3; idimve++) {
-      BFT_MALLOC(name, strlen("POT_VEC") +2 + 1, char);
-      strcpy(name, "POT_VEC");
-      sprintf(snumsca, "%2.2i", idimve +1);
-      strcat(name, snumsca);
-      label = _scalar_name_label("joule_effect", name);
-      BFT_MALLOC(vars->label[ipotva[idimve] -1], strlen(label) +1, char);
-      strcpy(vars->label[ipotva[idimve] -1], label);
-      BFT_FREE(label);
-    }
-
-  BFT_FREE(snumsca);
-  BFT_FREE(name);
-
-#if _XML_DEBUG_
-  bft_printf("==>UICPSC\n");
-  for (i=0; i< vars->nscaus+vars->nscapp; i++)
-    bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
-#endif
-
-}
-
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
  *
@@ -3423,67 +3278,6 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
 }
 
 /*----------------------------------------------------------------------------
- * Atmospheric flows: indirection between the solver numbering and the XML one
- * for models scalars.
- *
- * Fortran Interface:
- *
- * subroutine uiatsc
- * *****************
- * integer         ippmod   -->   specific physics indicator array
- * integer         iatmos   -->   index for atmospheric flow
- * integer         iscalt   -->   index for thermal variable
- * integer         itotwt   -->   index for total water content
- * integer         intdrp   -->   index for total number of droplets
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
-                                const int *const iatmos,
-                                const int *const iscalt,
-                                const int *const itotwt,
-                                const int *const intdrp)
-{
-  cs_var_t  *vars = cs_glob_var;
-  char *label = NULL;
-
-  if (vars->nscaus > 0)
-    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
-  else
-    BFT_MALLOC(vars->label, vars->nscapp, char*);
-
-  if (ippmod[*iatmos -1] == 1 || ippmod[*iatmos -1] == 2)
-  {
-    label = _thermal_scalar_name_label("label");
-    BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
-    strcpy(vars->label[*iscalt -1], label);
-    BFT_FREE(label);
-  }
-  if (ippmod[*iatmos -1] == 2)
-  {
-    /* itotwt */
-    label = _scalar_name_label("atmospheric_flows", "total_water");
-    BFT_MALLOC(vars->label[*itotwt -1], strlen(label)+1, char);
-    strcpy(vars->label[*itotwt -1], label);
-    BFT_FREE(label);
-
-    /* intdrp */
-    label = _scalar_name_label("atmospheric_flows", "number_of_droplets");
-    BFT_MALLOC(vars->label[*intdrp -1], strlen(label)+1, char);
-    strcpy(vars->label[*intdrp -1], label);
-    BFT_FREE(label);
-  }
-#if _XML_DEBUG_
-  {
-    int i;
-    bft_printf("==>UIATSC\n");
-    for (i=0; i< vars->nscaus+vars->nscapp; i++)
-      bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
-  }
-#endif
-}
-
-
-/*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics
  * (pulverized solid fuels)
@@ -3580,20 +3374,20 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
   cs_var_t  *vars = cs_glob_var;
 
   if (*iihmpr != 1)
-  {
     cs_gui_load_file("dp_FCP.xml");
 
+  else {
     if (ippmod[*iccoal - 1] == 0)
     {
       BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel")+1, char);
-      strcpy(vars->model, "homogeneous_fuel");
+      strcpy(vars->model_value, "homogeneous_fuel");
     } else if (ippmod[*iccoal - 1] == 1) {
       if (ippmod[*icpl3c - 1] > 0) {
         BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel_moisture_lagr")+1, char);
-        strcpy(vars->model, "homogeneous_fuel_moisture_lagr");
+        strcpy(vars->model_value, "homogeneous_fuel_moisture_lagr");
       } else {
         BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel_moisture")+1, char);
-        strcpy(vars->model, "homogeneous_fuel_moisture");
+        strcpy(vars->model_value, "homogeneous_fuel_moisture");
       }
     }
   }
@@ -4010,6 +3804,255 @@ cs_gui_get_activ_thermophysical_model(void)
   }
 
   return isactiv;
+}
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the atmospheric module
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_atmospheric(void)
+{
+  cs_field_t *f = NULL;
+
+  f = CS_F_(pot_t); /* Thermal scalar should be potential Temperature */
+  if (f != NULL)
+    _set_thermal_scalar_name_label(f, "label");
+
+  f = CS_F_(totwt);
+  if (f != NULL)
+    _set_scalar_name_label(f, "atmospheric_flows", "total_water");
+
+  f = CS_F_(ntdrp);
+  if (f != NULL)
+    _set_scalar_name_label(f, "atmospheric_flows", "number_of_droplets");
+}
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the coal combustion module
+ *
+ * parameters:
+ *   n_coals   <-- number of coals
+ *   n_classes <-- number of coal classes
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_coal_combustion(int  n_coals,
+                              int  n_classes)
+{
+  int i;
+  char name[64];
+  cs_field_t *f = NULL;
+
+  f = CS_F_(h); /* Thermal scalar should be Enthalpy */
+  if (f != NULL)
+    _set_thermal_scalar_name_label(f, "label");
+
+  for (i = 0; i < n_classes; i++) {
+    f = CS_FI_(h2, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "ENT_CP", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "solid_fuels", name);
+    }
+  }
+
+  for (i = 0; i < n_classes; i++) {
+    f = CS_FI_(np, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "NP_CP", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "solid_fuels", name);
+    }
+  }
+
+  for (i = 0; i < n_classes; i++) {
+    f = CS_FI_(xch, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "XCH_CP", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "solid_fuels", name);
+    }
+  }
+
+  for (i = 0; i < n_classes; i++) {
+    f = CS_FI_(xck, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "XCK_CP", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "solid_fuels", name);
+    }
+  }
+
+  for (i = 0; i < n_classes; i++) {
+    f = CS_FI_(xwt, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "XWT_CP", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "solid_fuels", name);
+    }
+  }
+
+  for (i = 0; i < n_coals; i++) {
+    f = CS_FI_(f1m, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "Fr_MV1", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "solid_fuels", name);
+    }
+  }
+
+  for (i = 0; i < n_coals; i++) {
+    f = CS_FI_(f2m, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "Fr_MV2", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "solid_fuels", name);
+    }
+  }
+
+  f = CS_F_(f4m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "FR_OXYD2");
+
+  f = CS_F_(f5m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "FR_OXYD3");
+
+  f = CS_F_(f6m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "FR_H20");
+
+  f = CS_F_(f7m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "Fr_HET_O2");
+
+  f = CS_F_(f8m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "Fr_HET_CO2");
+
+  f = CS_F_(f9m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "Fr_HET_H2O");
+
+  f = CS_F_(fvp2m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "Var_F1F2");
+
+  f = CS_F_(yco2);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "FR_CO2");
+
+  f = CS_F_(yhcn);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "FR_HCN");
+
+  f = CS_F_(yno);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "FR_NO");
+
+  f = CS_F_(ynh3);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "FR_NH3");
+
+  f = CS_F_(hox);
+  if (f != NULL)
+    _set_scalar_name_label(f, "solid_fuels", "Enth_Ox");
+}
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the compressible model variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_compressible(void)
+{
+  cs_field_t *f = NULL;
+
+  f = CS_F_(energy);
+  if (f != NULL)
+    _set_thermal_scalar_name_label(f, "label");
+
+  f = CS_F_(t_kelvin);
+  if (f != NULL)
+    _set_scalar_name_label(f, "compressible_model", "TempK");
+
+}
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the electric arcs variables
+ *
+ * parameters:
+ *   n_gasses <-- number of constituent gasses
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_electric_arcs(int  n_gasses)
+{
+  int i;
+  char name[64];
+  cs_field_t *f = NULL;
+
+  f = CS_F_(h); /* Thermal scalar should be Enthalpy */
+  if (f != NULL)
+    _set_thermal_scalar_name_label(f, "label");
+
+  f = CS_F_(potr);
+  if (f != NULL)
+    _set_scalar_name_label(f, "joule_effect", "PotElecReal");
+
+  f = CS_F_(poti);
+  if (f != NULL)
+    _set_scalar_name_label(f, "joule_effect", "POT_EL_I");
+
+  for (i = 0; i < 3; i++) {
+    f = CS_FI_(potva, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "POT_VEC", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "joule_effect", name);
+    }
+  }
+
+  for (i = 0; i < n_gasses - 1; i++) {
+    f = CS_FI_(ycoel, i);
+    if (f != NULL) {
+      snprintf(name, 63, "%s%2.2i", "YM_ESL", i+1); name[63] = '\0';
+      _set_scalar_name_label(f, "joule_effect", name);
+    }
+  }
+}
+
+/*------------------------------------------------------------------------------
+ * Set GUI-defined labels for the gas combustion variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_labels_gas_combustion(void)
+{
+  cs_field_t *f = NULL;
+
+  f = CS_F_(h); /* Thermal scalar should be Enthalpy */
+  if (f != NULL)
+    _set_thermal_scalar_name_label(f, "label");
+
+  f = CS_F_(fm);
+  if (f != NULL)
+    _set_scalar_name_label(f, "gas_combustion", "Fra_MEL");
+
+  f = CS_F_(fp2m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "gas_combustion", "Var_FMe");
+
+  /* TODO: handle labels for "fsm" and "npm" key pointers */
+
+  f = CS_F_(ygfm);
+  if (f != NULL)
+    _set_scalar_name_label(f, "gas_combustion", "Fra_GF");
+
+  f = CS_F_(yfm);
+  if (f != NULL)
+    _set_scalar_name_label(f, "gas_combustion", "Fra_Mas");
+
+  f = CS_F_(yfp2m);
+  if (f != NULL)
+    _set_scalar_name_label(f, "gas_combustion", "Var_FMa");
+
+  f = CS_F_(coyfp);
+  if (f != NULL)
+    _set_scalar_name_label(f, "gas_combustion", "COYF_PP4");
 }
 
 /*----------------------------------------------------------------------------*/

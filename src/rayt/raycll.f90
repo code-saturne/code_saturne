@@ -28,7 +28,6 @@ subroutine raycll &
 
  ( itypfb ,                                                       &
    izfrdp ,                                                       &
-   rtp    , rtpa   ,                                              &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    tparoi , qincid , eps    ,  ck   , ckmel  )
@@ -76,8 +75,6 @@ subroutine raycll &
 ! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! coefap, coefbp   ! ra ! --> ! boundary conditions for intensity or P-1 model !
 !  cofafp,cofbfp   !    !     !                                                !
 ! tparoi(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
@@ -121,12 +118,9 @@ implicit none
 
 ! Arguments
 
-integer          iappel
-
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision tparoi(nfabor), qincid(nfabor)

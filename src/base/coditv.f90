@@ -301,7 +301,7 @@ endif
 if (ivar.gt.0) then
   call field_get_name(ivarfl(ivar), chaine)
 else
-  chaine = nomvar(ippu)
+  chaine = nomva0
 endif
 cnom= chaine(1:16)
 

@@ -153,6 +153,8 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer ::  crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
+character(len=80) :: label
+
 !===============================================================================
 
 !===============================================================================
@@ -168,7 +170,8 @@ allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
 if(iwarni(ivar).ge.1) then
-  write(nfecra,1000) nomvar(ipp)
+  call field_get_label(ivarfl(ivar), label)
+  write(nfecra,1000) label
 endif
 
 call field_get_val_s(icrom, crom)

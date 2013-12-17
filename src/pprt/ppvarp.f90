@@ -28,10 +28,8 @@
 !> \param[out]    nmodpp        number of activated paricle physic models
 !______________________________________________________________________________
 
-subroutine ppvarp &
-( nmodpp )
+subroutine ppvarp ( nmodpp )
 !================
-
 
 !===============================================================================
 !  FONCTION  :
@@ -48,10 +46,9 @@ subroutine ppvarp &
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -71,6 +68,9 @@ use coincl
 use cpincl
 use ppincl
 use elincl
+use cs_coal_incl
+use cs_fuel_incl
+use ppcpfu
 use atincl
 use ihmpre
 
@@ -84,49 +84,56 @@ integer       nmodpp
 
 !===============================================================================
 
-! ---> Physique particuliere : Combustion Gaz
+! 1. Gas combustion
+!------------------
 
-if (itherm.ne.0 .and. nmodpp.eq.0) then
-  if (iihmpr.eq.1) then
-    call uithsc(iscalt)
-  endif
-
-endif
-
-if (  ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                &
-                          .or. ippmod(icolwc).ge.0 ) then
+if (     ippmod(icod3p).ge.0   &
+    .or. ippmod(icoebu).ge.0   &
+    .or. ippmod(icolwc).ge.0) then
   call covarp
   !==========
 endif
 
-if ( ippmod(iccoal).ge.0 ) then
+! Number of Diracs for LWC model
+
+if (     ippmod(icolwc).eq.0  &
+    .or. ippmod(icolwc).eq.1) then
+  ndirac = 2
+
+else if (      ippmod(icolwc).eq.2  &
+         .or.  ippmod(icolwc).eq.3) then
+  ndirac = 3
+
+else if (     ippmod(icolwc).eq.4  &
+         .or. ippmod(icolwc).eq.5) then
+  ndirac = 4
+endif
+
+! 2. Coal combustion
+!-------------------
+
+if (ippmod(iccoal).ge.0) then
   call cs_coal_varpos
   !==================
 endif
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-!      Couplee Transport Lagrangien des particules de charbon
+! Pulverized coal combustion coupled with Lagrangian model
 
-if ( ippmod(icpl3c).ge.0 ) then
+if (ippmod(icpl3c).ge.0) then
   call cplvar
   !==========
 endif
 
-! ---> Physique particuliere :  Combustion Fuel
+! 3. Compressible model
+!----------------------
 
-if ( ippmod(icfuel).ge.0 ) then
-  call cs_fuel_varpos
-  !==================
-endif
-
-! ---> Physique particuliere : Compressible
-
-if ( ippmod(icompf).ge.0) then
+if (ippmod(icompf).ge.0) then
   call cfvarp
   !==========
 endif
 
-! ---> Physique particuliere : Versions Electriques
+! 4. Electric arcs model
+!-----------------------
 
 if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
@@ -135,16 +142,26 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
 endif
 
-! ---> Physique particuliere : Version Atmospherique
+! 5. Fuel combustion model
+!-------------------------
 
-if ( ippmod(iatmos).ge.1 ) then
+if (ippmod(icfuel).ge.0) then
+  call cs_fuel_varpos
+  !==================
+endif
+
+! 6. Atmospheric model
+!---------------------
+
+if (ippmod(iatmos).ge.1) then
   call atvarp
   !==========
 endif
 
-! ---> Physique particuliere : Aerorefrigerants
+! 7. Cooling towers model
+!------------------------
 
-if ( ippmod(iaeros).ge.0 ) then
+if (ippmod(iaeros).ge.0) then
   call ctvarp
   !==========
 endif

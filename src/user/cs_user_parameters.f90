@@ -1129,6 +1129,7 @@ use ppincl
 use coincl
 use cpincl
 use elincl
+use field
 
 !===============================================================================
 
@@ -1140,7 +1141,7 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, jj, imom
+integer ii, jj, imom, kscmin, kscmax
 
 !===============================================================================
 
@@ -1580,12 +1581,11 @@ if (.false.) then
   ivivar = 1
 endif
 
-! --- Minimum (scamin) and maximum (scamax) admissible values for
-!        each USER scalar:
+! --- Minimum and maximum admissible values for each USER scalar:
 
 !      Results are clipped at the end of each time step.
 
-!      If scamin > scamax, we do not clip.
+!      If min > max, we do not clip.
 
 !      For a scalar jj representing the variance of another, we may
 !        abstain from defining these values
@@ -1595,17 +1595,20 @@ endif
 !      For non-user scalars relative to specific physics (coal, combustion,
 !        electric arcs: see usppmo) implicitly defined according to the
 !        model, the information is automatically set elsewhere: we
-!        do not set scamin or scamax.
+!        do not set min or max values here.
 
 if (.false.) then
+
+  call field_get_key_id("min_scalar_clipping", kscmin)
+  call field_get_key_id("max_scalar_clipping", kscmax)
 
   ! Loop on user scalars:
   do jj = 1, nscaus
     ! For scalars which are not variances
     if (iscavr(jj).le.0) then
       ! We define the min and max bounds
-      scamin(jj) =-grand
-      scamax(jj) =+grand
+      call field_set_key_id(ivarfl(isca(jj)), kscmin, -grand)
+      call field_set_key_id(ivarfl(isca(jj)), kscmax, +grand)
     endif
   enddo
 
@@ -1810,6 +1813,7 @@ use numvar
 use optcal
 use cstphy
 use entsor
+use field
 use parall
 use period
 use ihmpre
@@ -1930,16 +1934,16 @@ endif
 if (.false.) then
 
   if (isca(1).gt.0.and.nscaus.ge.1) then
+    call field_set_key_str(ivarfl(isca(1)), keylbl, 'Scalar 1')
     ipp = ipprtp(isca(1))
-    nomvar(ipp)  = 'Scalar 1'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
 
   if (isca(2).gt.0.and.nscaus.ge.2) then
+    call field_set_key_str(ivarfl(isca(2)), keylbl, 'Scalar 1')
     ipp = ipprtp(isca(2))
-    nomvar(ipp)  = 'Scalar 2'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
@@ -2010,7 +2014,7 @@ implicit none
 ! Local variables
 
 logical       ilved, inoprv
-integer       f_id, keyvis, idim1, iflpst, itycat, ityloc, iscdri, iscal
+integer       f_id, idim1, iflpst, itycat, ityloc, iscdri, iscal
 integer       keydri
 
 
@@ -2081,17 +2085,13 @@ endif
 
 if (.false.) then
 
-  call field_get_key_id('post_vis', keyvis)
-
   f_id = ivarfl(iu)
-  call field_get_key_int(f_id, keyvis, iflpst)
   if (iand(iflpst, 2) .eq. 0) then
     iflpst = ior(iflpst, 2)
     call field_set_key_int(f_id, keyvis, iflpst)
   endif
 
   f_id = ivarfl(ipr)
-  call field_get_key_int(f_id, keyvis, iflpst)
   if (iand(iflpst, 2) .eq. 0) then
     iflpst = ior(iflpst, 2)
     call field_set_key_int(f_id, keyvis, iflpst)

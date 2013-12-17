@@ -1956,7 +1956,7 @@ if (idilat.eq.4) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtp(1,ipr)      , rtp(1,ipr)      ,                            &
    coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &

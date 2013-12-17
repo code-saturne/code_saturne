@@ -130,6 +130,7 @@ double precision hint
 
 double precision rvoid(1)
 
+character(len=80) :: label
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:) :: gradp, gradk
@@ -236,7 +237,8 @@ endif
 ipp    = ipprtp(ivar)
 
 if(iwarni(ivar).ge.1) then
-  write(nfecra,1100) nomvar(ipp)
+  call field_get_label(ivarfl(ivar), label)
+  write(nfecra,1100) label
 endif
 
 !     S pour Source, V pour Variable
@@ -511,7 +513,8 @@ ivar = iphi
 ipp  = ipprtp(ivar)
 
 if(iwarni(ivar).ge.1) then
-  write(nfecra,1100) nomvar(ipp)
+  call field_get_label(ivarfl(ivar), label)
+  write(nfecra,1100) label
 endif
 
 !     S pour Source, V pour Variable

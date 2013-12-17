@@ -38,10 +38,9 @@ subroutine elvarp
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -60,6 +59,7 @@ use ppthch
 use ppincl
 use elincl
 use ihmpre
+use field
 
 !===============================================================================
 
@@ -67,9 +67,45 @@ implicit none
 
 ! Local variables
 
-integer        is, iesp , idimve, isc
+integer        iesp , idimve, isc
+integer        f_id
+integer        kscmin, kscmax
+
+character(len=80) :: f_name, f_label
+integer(c_int) :: n_gasses
 
 !===============================================================================
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_field_pointer_map_electric_arcs(n_gasses)  &
+    bind(C, name='cs_field_pointer_map_electric_arcs')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value        :: n_gasses
+  end subroutine cs_field_pointer_map_electric_arcs
+
+  subroutine cs_gui_labels_electric_arcs(n_gasses)  &
+    bind(C, name='cs_gui_labels_electric_arcs')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value        :: n_gasses
+  end subroutine cs_gui_labels_electric_arcs
+
+end interface
+
+!===============================================================================
+! 0. Definitions for fields
+!===============================================================================
+
+! Key ids for clipping
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
+
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
 !===============================================================================
@@ -77,34 +113,44 @@ integer        is, iesp , idimve, isc
 ! 1.0 Dans toutes les versions electriques
 ! ========================================
 
-! ---- Enthalpie
-is  = 1
-iscalt = iscapp(is)
+! Thermal model
 
-! ---- Potentiel reel
-is  = is + 1
-ipotr = iscapp(is)
+itherm = 2
+call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+iscalt = ihm
+iscacp(iscalt)   = 0
+
+! Real potential
+call add_model_scalar_field('elec_pot_r', 'POT_EL_R', ipotr)
+
+f_id = ivarfl(isca(ipotr))
+call field_set_key_double(f_id, kscmin, -grand)
+call field_set_key_double(f_id, kscmax, +grand)
 
 ! 1.1 Effet Joule (cas potentiel imaginaire)
 ! ==========================================
 
-if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-
-! ---- Potentiel imaginaire
-  is = is+1
-  ipoti  = iscapp(is)
-
+if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+  ! Imaginary potential
+  call add_model_scalar_field('elec_pot_i', 'POT_EL_I', ipoti)
+  f_id = ivarfl(isca(ipoti))
+  call field_set_key_double(f_id, kscmin, -grand)
+  call field_set_key_double(f_id, kscmax, +grand)
 endif
 
 ! 1.2 Arc electrique
 ! ==================
 
-if ( ippmod(ielarc).ge.2 ) then
+if (ippmod(ielarc).ge.2) then
 
-! ---- Potentiel vecteur
+  ! Vector potential
   do idimve = 1, ndimve
-    is = is+1
-    ipotva(idimve) = iscapp(is)
+    write(f_name,'(a14,i1.1)') 'vec_potential_',idimve
+    write(f_label,'(a7,i1.1)') 'POT_VEC',idimve
+    call add_model_scalar_field(f_name, f_label, ipotva(idimve))
+    f_id = ivarfl(isca(ipotva(idimve)))
+    call field_set_key_double(f_id, kscmin, -grand)
+    call field_set_key_double(f_id, kscmax, +grand)
   enddo
 endif
 
@@ -117,22 +163,28 @@ endif
 
 ! ---- Fractions massiques des constituants
 
-if ( ngazg .gt. 1 ) then
+if (ngazg .gt. 1) then
   do iesp = 1, ngazg-1
-    is = is+1
-    iycoel(iesp)=iscapp(is)
+    write(f_name,'(a13,i2.2)') 'esl_fraction_',iesp
+    write(f_label,'(a6,i2.2)') 'YM_ESL',iesp
+    call add_model_scalar_field(f_name, f_label, iycoel(iesp))
+    f_id = ivarfl(isca(iycoel(iesp)))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
   enddo
 endif
 
-!   - Interface Code_Saturne
-!     ======================
-!     Construction de l'indirection entre la numerotation du noyau et XML
+! Map to field pointers
+
+n_gasses = ngazg
+
+call cs_field_pointer_map_electric_arcs(n_gasses)
+
+! Map labels for GUI
 
 if (iihmpr.eq.1) then
-   call uielsc(ippmod, ieljou, ielarc, ngazg, iscalt,             &
-               ipotr, iycoel, ipoti, ipotva)
+  call cs_gui_labels_electric_arcs(n_gasses)
 endif
-
 
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
@@ -142,7 +194,7 @@ endif
 
 do isc = 1, nscapp
 
-  if ( iscavr(iscapp(isc)).le.0 ) then
+  if (iscavr(iscapp(isc)).le.0) then
 
 ! ---- Viscosite dynamique moleculaire variable pour les
 !                                              scalaires ISCAPP(ISC)
@@ -156,7 +208,7 @@ enddo
 
 ! ---- "Viscosite dynamique moleculaire" = 1
 !                                  pour le potentiel vecteur en Arc
-if ( ippmod(ielarc).ge.2 ) then
+if (ippmod(ielarc).ge.2) then
   do idimve = 1, ndimve
     ivisls(ipotva(idimve)) = 0
   enddo

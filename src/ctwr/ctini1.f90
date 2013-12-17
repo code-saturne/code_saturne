@@ -64,7 +64,7 @@ implicit none
 
 ! Local variables
 
-integer ii, jj, isc, ipp
+integer jj, isc
 double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
 
 !===============================================================================
@@ -72,12 +72,6 @@ double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
 !===============================================================================
 ! 1. Transported variables
 !===============================================================================
-
-itherm = 1
-iscacp(itemp4) = 1
-iscacp(ihumid) = 0
-
-iscalt = itemp4
 
 irovar = 1
 ivivar = 0
@@ -95,18 +89,6 @@ do isc = 1, nscapp
   blencv(isca(jj)) = 1.d0
 
 enddo
-
-ipp = ipprtp(isca(itemp4))
-nomvar(ipp)  = 'Temperature'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-ipp = ipprtp(isca(ihumid))
-nomvar(ipp)  = 'Humidity'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
 
 ! Postprocessing output
 

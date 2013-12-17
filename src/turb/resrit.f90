@@ -117,7 +117,7 @@ double precision d1s2
 
 double precision rvoid(1)
 
-character*80     fname
+character*80     fname, name
 
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:) :: viscb
@@ -161,7 +161,8 @@ call field_get_val_s(iflmab, bmasfl)
 ivar = isca(iscal)
 ipput = ipprtp(ivar)
 if (iwarni(ivar).ge.1) then
-  write(nfecra,1000) nomvar(ipput)//'_turbulent_flux'!FIXME
+  call field_get_label(ivarfl(ipput), name)
+  write(nfecra,1000) trim(name)//'_turbulent_flux'!FIXME
 endif
 
 ! S pour Source, V pour Variable

@@ -23,8 +23,7 @@
 subroutine raysol &
 !================
 
- ( rtp    , rtpa   ,                                              &
-   coefap , coefbp ,                                              &
+ ( coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
@@ -78,8 +77,6 @@ subroutine raysol &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! coefap,coefbp    ! tr ! --- ! conditions aux limites aux                     !
 !  cofafp, cofbfp  !    !     !    faces de bord pour la luminance             !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
@@ -125,8 +122,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-double precision rtp(ncelet,*), rtpa(ncelet,*)
 
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
@@ -292,7 +287,7 @@ enddo
 !      la position numero 1 qui est une poubelle.
 
 ipp  = 1
-NOMVAR(IPP) = 'RayonXXX'
+nomva0 = 'RayonXXX'
 
 !===============================================================================
 ! 5. RESOLUTION DE L'EQUATION DES TRANSFERTS RADIATIFS
@@ -316,10 +311,10 @@ do ii = -1,1,2
 
         kdir = kdir + 1
 
-        CNOM = ' '
-        WRITE(CNOM,'(A5,I3.3)')'Rayon',KDIR
+        cnom = ' '
+        write(cnom,'(a5,i3.3)')'Rayon',kdir
         inum = ipp
-        nomvar(inum) = cnom
+        nomva0 = cnom
 
 !===============================================================================
 ! 5.2 DISCRETISATION SPATIALE

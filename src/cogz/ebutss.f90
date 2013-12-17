@@ -129,7 +129,7 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 ivar = isca(iscal)
 
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
-chaine = nomvar(ipprtp(ivar))
+call field_get_label(ivarfl(ivar), chaine)
 
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
 call field_get_val_s(icrom, crom)

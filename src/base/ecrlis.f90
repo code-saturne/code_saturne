@@ -71,6 +71,7 @@ use parall
 use ppppar
 use ppthch
 use ppincl
+use field
 
 !===============================================================================
 
@@ -82,7 +83,8 @@ double precision dt(ncelet), volume(ncelet)
 
 ! Local variables
 
-integer          ic, icel, ivar, ipp
+integer          ic, icel, ivar, ipp, f_id, f_id_prv, c_id, f_dim
+logical          interleaved
 character*200    chain, chainc
 
 !==================================================================
@@ -119,13 +121,36 @@ write(nfecra,1010)
 write(nfecra,1011)
 write(nfecra,1010)
 
+f_id = -1
+c_id = 1
+
 do ivar = 1, nvar
+
   ipp = ipprtp(ivar)
+
+  f_id_prv = f_id
+  f_id = ivarfl(ivar)
+  if (f_id.eq.f_id_prv) then
+    c_id = c_id + 1
+  else
+    c_id = 1
+  endif
+
   if (ilisvr(ipp).gt.0) then
     chainc = 'c'
     chain = ' '
     ic = 4
-    chain = nomvar(ipp)
+    call field_get_dim (f_id, f_dim, interleaved)
+    call field_get_label(f_id, chain)
+    if (f_dim.gt.1) then
+      if (c_id.eq.1) then
+        chain = trim(chain) // 'X'
+      else if (c_id.eq.2) then
+        chain = trim(chain) // 'Y'
+      else if (c_id.eq.2) then
+        chain = trim(chain) // 'Z'
+      endif
+    endif
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
     chain = ' '
@@ -146,6 +171,7 @@ do ivar = 1, nvar
     ic=ic+12
     write(nfecra,'(a)') chainc(1:ic)
   endif
+
 enddo
 
 write(nfecra,1010)

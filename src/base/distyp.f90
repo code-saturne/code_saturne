@@ -523,7 +523,7 @@ do isweep = 1, ntcmxy
   nitmfp = 10
   ! La case 1 est une poubelle
   ipp    = 1
-  nomvar(ipp) = 'YplusPar'
+  nomva0 = 'YplusPar'
   ! Ordre 1 en temps (etat stationnaire cherche)
   thetap = 1.d0
   ! Pas de stationnaire ni de relaxation -> a modifier eventuellement

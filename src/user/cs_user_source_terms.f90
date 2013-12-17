@@ -147,7 +147,7 @@ double precision, dimension(:), pointer ::  crom
 ! Local variables
 
 character*80     chaine
-integer          iel,  ipp
+integer          iel
 double precision ckp, qdm
 
 integer, allocatable, dimension(:) :: lstelt
@@ -169,10 +169,8 @@ if (1.eq.1) return
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-ipp    = ipprtp(ivar)
-
 if (iwarni(ivar).ge.1) then
-  chaine = nomvar(ipp)
+  call field_get_label(ivarfl(ivar), chaine)
   write(nfecra,1000) chaine(1:8)
 endif
 
@@ -383,6 +381,7 @@ use parall
 use period
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -411,6 +410,7 @@ double precision tauf, prodf, volf, pwatt
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  crom
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -434,7 +434,7 @@ allocate(lstelt(ncel))
 ivar = isca(iscal)
 
 ! --- Name of the the variable associated to scalar iscal
-chaine = nomvar(ipprtp(ivar))
+call field_get_label(ivarfl(ivar), chaine)
 
 ! --- Indicateur of variance scalars
 !         If iscavr(iscal) = 0:

@@ -91,6 +91,7 @@ use numvar
 use optcal
 use cstphy
 use entsor
+use field
 use parall
 use period
 use ihmpre
@@ -439,16 +440,16 @@ if (.false.) then
 
 !< [init_06]
   if (isca(1).gt.0.and.nscaus.ge.1) then
+    call field_set_key_str(ivarfl(isca(1)), keylbl, 'Scalar 1')
     ipp = ipprtp(isca(1))
-    nomvar(ipp)  = 'Scalar 1'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
 
   if (isca(2).gt.0.and.nscaus.ge.2) then
+    call field_set_key_str(ivarfl(isca(2)), keylbl, 'Scalar 1')
     ipp = ipprtp(isca(2))
-    nomvar(ipp)  = 'Scalar 2'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
@@ -515,7 +516,7 @@ if (.false.) then
   if (nbmomt.gt.0) then
     imom = 1
     ipp = ipppro(ipproc(icmome(imom)))
-    nomvar(ipp) = 'Time Average 01'
+    nomprp(ipproc(icmome(imom))) = 'Time Average 01'
     ichrvr(ipp) = 1
     ilisvr(ipp) = 1
     ihisvr(ipp,1) = -1
@@ -929,43 +930,43 @@ if (.false.) then
   do idirac = 1, ndirac
 
     ipp = ipppro(ipproc(irhol(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'RHOL', idirac
+    write(nomprp(ipproc(icmome(imom))),'(a4,i1)') 'RHOL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iteml(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'TEML', idirac
+    write(nomprp(ipproc(iteml(idirac))),'(a4,i1)') 'TEML', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmel(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'FMEL', idirac
+    write(nomprp(ipproc(ifmel(idirac))),'(a4,i1)') 'FMEL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmal(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'FMAL', idirac
+    write(nomprp(ipproc(ifmal(idirac))),'(a4,i1)') 'FMAL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iampl(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'AMPL', idirac
+    write(nomprp(ipproc(iampl(idirac))),'(a4,i1)') 'AMPL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(itscl(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'TSCL', idirac
+    write(nomprp(ipproc(itscl(idirac))),'(a4,i1)') 'TSCL', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(imaml(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'MAML', idirac
+    write(nomprp(ipproc(imaml(idirac))),'(a4,i1)') 'MAML', idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
@@ -1306,7 +1307,7 @@ implicit none
 ! Local variables
 
 logical       ilved, inoprv
-integer       fldid, keyvis, idim1, iflpst, itycat, ityloc
+integer       fldid, idim1, iflpst, itycat, ityloc
 
 !===============================================================================
 
@@ -1319,17 +1320,13 @@ integer       fldid, keyvis, idim1, iflpst, itycat, ityloc
 !          field_get_id returns -1 if field does not exist
 
 !< [example_1]
-call field_get_key_id('post_vis', keyvis)
-
 fldid = ivarfl(iu)
-call field_get_key_int(fldid, keyvis, iflpst)
 if (iand(iflpst, 2) .eq. 0) then
   iflpst = ior(iflpst, 2)
   call field_set_key_int(fldid, keyvis, iflpst)
 endif
 
 fldid = ivarfl(ipr)
-call field_get_key_int(fldid, keyvis, iflpst)
 if (iand(iflpst, 2) .eq. 0) then
   iflpst = ior(iflpst, 2)
   call field_set_key_int(fldid, keyvis, iflpst)

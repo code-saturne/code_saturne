@@ -102,7 +102,7 @@ ippvar = ipprtp(ivar)
 ! --- Numero du scalaire eventuel associe dans le cas fluctuation
 iiscav = iscavr(iscal)
 
-! Key id for scamin and scamax
+! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 

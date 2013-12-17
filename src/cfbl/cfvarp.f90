@@ -39,10 +39,9 @@ subroutine cfvarp
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -67,28 +66,49 @@ implicit none
 
 ! Local variables
 
-integer          ii, iprop, iccfth, imodif
+integer          ii, iccfth, imodif
 double precision dblpre(1)
 
 !===============================================================================
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_field_pointer_map_compressible()  &
+    bind(C, name='cs_field_pointer_map_compressible')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_field_pointer_map_compressible
+
+  subroutine cs_gui_labels_compressible()  &
+    bind(C, name='cs_gui_labels_compressible')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_labels_compressible
+
+end interface
+
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
 !===============================================================================
 
 
-if ( ippmod(icompf).ge.0 ) then
+if (ippmod(icompf).ge.0) then
 
-  iprop =0
+  ! Total energy
 
-! ---- Energie totale
-  iprop = iprop + 1
-  ienerg = iscapp(iprop)
-!     Alias pour les C.L.
+  itherm = 3
+  call add_model_scalar_field('total_energy', 'EnergieT', ienerg)
+  iscalt = ienerg
+
+  ! Alias for B.C.
   irunh = ienerg
 
-! ---- Temperature (post)
-  iprop = iprop + 1
-  itempk = iscapp(iprop)
+  ! Temperature (post)
+  call add_model_scalar_field('temperature', 'TempK', itempk)
 
 ! ---- Viscosite dynamique de reference relative au scalaire ITEMPK
   ivisls(itempk) = 0
@@ -102,6 +122,13 @@ if ( ippmod(icompf).ge.0 ) then
   iviscv = 0
   viscv0 = 0.d0
 
+! MAP to C API
+call cs_field_pointer_map_compressible
+
+! Mapping for GUI
+if (iihmpr.eq.1) then
+  call cs_gui_labels_compressible
+endif
 
 !===============================================================================
 ! 2. OPTIONS DE CALCUL
@@ -125,18 +152,15 @@ if ( ippmod(icompf).ge.0 ) then
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTILISATEUR
 !===============================================================================
-!   - Interface Code_Saturne
-!     ======================
-!     Construction de l'indirection entre la numerotation du noyau et XML
+
   if (iihmpr.eq.1) then
-    call uicfsc(ienerg, itempk)
     call csvvva(iviscv)
   endif
 
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 

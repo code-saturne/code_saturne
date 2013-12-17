@@ -89,6 +89,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -121,7 +122,7 @@ double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ivar = isca(iscal)
-chaine = nomvar(ipprtp(ivar))
+call field_get_label(ivarfl(ivar), chaine)
 call field_get_val_s(icrom, crom)
 
 !===============================================================================

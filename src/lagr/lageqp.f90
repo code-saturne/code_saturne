@@ -278,7 +278,7 @@ iescap = 0
 icvflb = 0
 
 ipp  = 1
-NOMVAR(IPP) = 'PoissonL'
+nomva0 = 'PoissonL'
 
 !  IVAR = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)

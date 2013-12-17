@@ -39,7 +39,7 @@ module cs_f_interfaces
 
     subroutine diften &
       (idtvar, ivar, nswrgp, imligp, ircflp,                                   &
-      inc, imrgra, iccocg, ipp, iwarnp, epsrgp,                                &
+      inc, imrgra, iccocg, iwarnp, epsrgp,                                     &
       climgp, extrap, relaxp, thetap,                                          &
       pvar, pvara, coefap, coefbp, cofafp, cofbfp,                             &
       viscf, viscb, viscel,                                                    &
@@ -47,7 +47,7 @@ module cs_f_interfaces
       smbrp)
       use mesh
       integer :: idtvar, ivar, nswrgp, imligp, ircflp
-      integer :: inc, imrgra, iccocg, iwarnp, ipp
+      integer :: inc, imrgra, iccocg, iwarnp
       double precision :: epsrgp, climgp, extrap, relaxp, thetap
       double precision, dimension(ncelet) :: pvar, pvara
       double precision, dimension(nfabor) :: coefap, coefbp, cofafp, cofbfp
@@ -58,15 +58,6 @@ module cs_f_interfaces
       double precision, dimension(nfabor) :: weighb
       double precision, dimension(ncelet) :: smbrp
     end subroutine diften
-
-    !---------------------------------------------------------------------------
-
-    subroutine ecrhis &
-      (nvar, nproce, modhis, rtp)
-      use mesh
-      integer :: nvar, nproce, modhis
-      double precision, dimension(ncelet,*), target :: rtp
-    end subroutine ecrhis
 
     !---------------------------------------------------------------------------
 

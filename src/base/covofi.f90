@@ -248,7 +248,7 @@ endif
 thets  = thetss(iscal)
 thetv  = thetav(ivar )
 
-chaine = nomvar(ippvar)
+call field_get_name(ivarfl(ivar), chaine)
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:16)

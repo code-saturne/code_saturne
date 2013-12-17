@@ -78,87 +78,6 @@ double precision wmolme
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
-! --> Definition des scamin et des scamax des variables transportees
-
-! ---- Variables propres a la suspension gaz - particules
-
-scamin(iscalt)   = -grand
-scamax(iscalt)   = +grand
-
-! ---- Variables propres a la phase dispersee
-
-do icla = 1, nclacp
-  scamin(ih2(icla)) = -grand
-  scamax(ih2(icla)) = +grand
-  scamin(inp(icla)) = 0.d0
-  scamax(inp(icla)) = +rinfin
-  scamin(ixch(icla)) = 0.d0
-  scamax(ixch(icla)) = 1.d0
-  scamin(ixck(icla)) = 0.d0
-  scamax(ixck(icla)) = 1.d0
-  if ( ippmod(iccoal) .eq. 1 ) then
-    scamin(ixwt(icla)) = 0.d0
-    scamax(ixwt(icla)) = 1.d0
-  endif
-enddo
-do icha = 1, ncharb
-  scamin(if1m(icha)) = 0.d0
-  scamax(if1m(icha)) = 1.d0
-  scamin(if2m(icha)) = 0.d0
-  scamax(if2m(icha)) = 1.d0
-enddo
-
-! ---- Variables propres a la phase continue
-if ( noxyd .ge. 2 ) then
-  ! Oxydant 2
-  scamin(if4m) = 0.d0
-  scamax(if4m) = 1.d0
-endif
-!
-if ( noxyd .eq. 3 ) then
-  ! Oxydant 3
-  scamin(if5m) = 0.d0
-  scamax(if5m) = 1.d0
-endif
-! eau libre
-if ( ippmod(iccoal) .ge. 1 ) then
-  scamin(if6m) = 0.d0
-  scamax(if6m) = 1.d0
-endif
-! Produits de la combustion du coke par O2
-scamin(if7m) = 0.d0
-scamax(if7m) = 1.d0
-! Produits de la combustion du coke par CO2
-if ( ihtco2 .eq. 1 ) then
-  scamin(if8m) = 0.d0
-  scamax(if8m) = 1.d0
-endif
-! Produits de la combustion du coke par H2O
-if ( ihth2o .eq. 1 ) then
-  scamin(if9m) = 0.d0
-  scamax(if9m) = 1.d0
-endif
-! Variance
-scamin(ifvp2m) = 0.d0
-scamax(ifvp2m) = 0.25d0
-!    Modele de CO
-if ( ieqco2 .eq. 1 ) then
-  scamin(iyco2) = 0.d0
-  scamax(iyco2) = 1.d0
-endif
-if ( ieqnox .ge. 1 ) then
-  scamin(iyhcn) = 0.d0
-  scamax(iyhcn) = 1.d0
-! On donne les limites de la variable transportee qui represente le NH3.
-  scamin(iynh3) = 0.d0
-  scamax(iynh3) = 1.d0
-
-  scamin(iyno) = 0.d0
-  scamax(iyno) = 1.d0
-  scamin(ihox) = -grand
-  scamax(ihox) = +grand
-endif
-
 ! --> Nature des scalaires transportes
 
 do isc = 1, nscapp
@@ -267,407 +186,262 @@ if (iihmpr.ne.1) then
 !     NB : Les 8 premiers caracteres du noms seront repris dans le
 !          listing 'developpeur'
 
-
-! ---- Variables propres a la suspension gaz - particules
-
-  ipp = ipprtp(isca(iscalt))
-  nomvar(ipp)  = 'Enthalpy'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!TODO remove once the field are totally deployed, up to now
-!     it is used to not create twice the same field.
-! ---- Variables propres a la phase dispersee
-
-  do icla = 1, nclacp
-    ipp = ipprtp(isca(ixck(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'xck_cp' ,icla
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    ipp = ipprtp(isca(ixch(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Xch_CP' ,icla
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    ipp = ipprtp(isca(inp(icla)))
-    write(nomvar(ipp),'(a5,i2.2)')'Np_CP' ,icla
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    ipp = ipprtp(isca(ih2(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Ent_CP' ,icla
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    if (ippmod(iccoal) .eq. 1) then
-      ipp = ipprtp(isca(ixwt(icla)))
-      write(nomvar(ipp),'(a6,i2.2)')'Xwt_CP' ,icla
-      ichrvr(ipp)  = 1
-      ilisvr(ipp)  = 1
-      ihisvr(ipp,1)= -1
-    endif
-    if (i_coal_drift.eq.1) then
-      ipp = ipprtp(isca(iagecp_temp(icla)))
-      write(nomvar(ipp),'(a8,i2.2)')'X_Age_CP' ,icla
-      ichrvr(ipp)  = 1
-      ilisvr(ipp)  = 1
-      ihisvr(ipp,1)=-1
-    endif
-  enddo
-  do icha = 1, ncharb
-    ipp = ipprtp(isca(if1m(icha)))
-    write(nomvar(ipp),'(a6,i2.2)')'Fr_mv1' ,icha
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    ipp = ipprtp(isca(if2m(icha)))
-    write(nomvar(ipp),'(a6,i2.2)')'Fr_mv2' ,icha
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-! ---- Variables propres a la phase continue
-  if (i_coal_drift.eq.1) then
-    ipp = ipprtp(isca(iaggas_temp))
-    nomvar(ipp)  = 'X_Age_Gas'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if ( noxyd .ge. 2 ) then
-    ipp = ipprtp(isca(if4m))
-    nomvar(ipp)  = 'FR_OXYD2'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if ( noxyd .eq. 3 ) then
-    ipp = ipprtp(isca(if5m))
-    nomvar(ipp)  = 'FR_OXYD3'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if ( ippmod(iccoal) .ge. 1 ) then
-    ipp = ipprtp(isca(if6m))
-    nomvar(ipp)  = 'FR_H2O'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  ipp = ipprtp(isca(if7m))
-  nomvar(ipp)  = 'FR_HET_O2'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-  if ( ihtco2 .eq. 1 ) then
-    ipp = ipprtp(isca(if8m))
-    nomvar(ipp)  = 'FR_HET_CO2'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if ( ihth2o .eq. 1 ) then
-    ipp = ipprtp(isca(if9m))
-    nomvar(ipp)  = 'FR_HET_H2O'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-!
-  ipp = ipprtp(isca(ifvp2m))
-  NOMVAR(IPP)  = 'Var_F1F2'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-!
-  if ( ieqco2 .eq. 1 ) then
-    ipp = ipprtp(isca(iyco2))
-    NOMVAR(IPP)  = 'FR_CO2'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if ( ieqnox .ge. 1 ) then
-    ipp = ipprtp(isca(iyhcn))
-    NOMVAR(IPP)  = 'FR_HCN'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-
-    ipp = ipprtp(isca(iynh3))
-    NOMVAR(IPP)  = 'FR_NH3'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-
-    ipp = ipprtp(isca(iyno))
-    NOMVAR(IPP)  = 'FR_NO'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    ipp = ipprtp(isca(ihox))
-    NOMVAR(IPP)  = 'Enth_Ox'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
 !===============================================================================
 ! 2. VARIABLES ALGEBRIQUES OU D'ETAT
 !===============================================================================
+
 ! ---> Variables algebriques propres a la suspension gaz - particules
   ipp = ipppro(ipproc(immel))
-  NOMVAR(IPP)   = 'XM'
+  nomprp(ipproc(immel))   = 'XM'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 ! ---> Variables algebriques propres a la phase dispersee
   do icla = 1, nclacp
     ipp = ipppro(ipproc(itemp2(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Tem_CP' ,icla
+    write(nomprp(ipproc(itemp2(icla))),'(a6,i2.2)')'Tem_CP' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(irom2(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Rho_CP' ,icla
+    write(nomprp(ipproc(irom2(icla))),'(a6,i2.2)')'Rho_CP' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(idiam2(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Dia_CK' ,icla
+    write(nomprp(ipproc(idiam2(icla))),'(a6,i2.2)')'Dia_CK' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(igmdch(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Ga_DCH' ,icla
+    write(nomprp(ipproc(igmdch(icla))),'(a6,i2.2)')'Ga_DCH' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(igmdv1(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Ga_DV1' ,icla
+    write(nomprp(ipproc(igmdv1(icla))),'(a6,i2.2)')'Ga_DV1' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(igmdv2(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Ga_DV2' ,icla
+    write(nomprp(ipproc(igmdv2(icla))),'(a6,i2.2)')'Ga_DV2' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(igmhet(icla)))
-    write(nomvar(ipp),'(a9,i2.2)')'Ga_HET_O2' ,icla
+    write(nomprp(ipproc(igmhet(icla))),'(a9,i2.2)')'Ga_HET_O2' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     if ( ihtco2 .eq. 1 ) then
       ipp = ipppro(ipproc(ighco2(icla)))
-      write(nomvar(ipp),'(a10,i2.2)')'Ga_HET_CO2' ,icla
+      write(nomprp(ipproc(ighco2(icla))),'(a10,i2.2)')'Ga_HET_CO2' ,icla
       ichrvr(ipp)   = 1
       ilisvr(ipp)   = 1
       ihisvr(ipp,1) = -1
     endif
     if ( ihth2o .eq. 1 ) then
       ipp = ipppro(ipproc(ighh2o(icla)))
-      write(nomvar(ipp),'(a10,i2.2)')'Ga_HET_H2O' ,icla
+      write(nomprp(ipproc(ighh2o(icla))),'(a10,i2.2)')'Ga_HET_H2O' ,icla
       ichrvr(ipp)   = 1
       ilisvr(ipp)   = 1
       ihisvr(ipp,1) = -1
     endif
     if ( ippmod(iccoal) .eq. 1 ) then
       ipp = ipppro(ipproc(igmsec(icla)))
-      write(nomvar(ipp),'(a6,i2.2)')'Ga_SEC' ,icla
+      write(nomprp(ipproc(igmsec(icla))),'(a6,i2.2)')'Ga_SEC' ,icla
       ichrvr(ipp)   = 1
       ilisvr(ipp)   = 1
       ihisvr(ipp,1) = -1
     endif
     ipp = ipppro(ipproc(ix2(icla)))
-    write(nomvar(ipp),'(a6,i2.2)')'Frm_CP' ,icla
+    write(nomprp(ipproc(ix2(icla))),'(a6,i2.2)')'Frm_CP' ,icla
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
   enddo
 ! ---> Variables algebriques propres a la phase continue
   ipp = ipppro(ipproc(itemp1))
-  nomvar(IPP)   = 'Temp_GAZ'
+  nomprp(ipproc(itemp1))   = 'Temp_GAZ'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(irom1))
-  NOMVAR(IPP)   = 'ROM_GAZ'
+  nomprp(ipproc(irom1))   = 'ROM_GAZ'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(1)))
-  NOMVAR(IPP)   = 'YM_CHx1m'
+  nomprp(ipproc(iym1(1)))   = 'YM_CHx1m'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(2)))
-  NOMVAR(IPP)   = 'YM_CHx2m'
+  nomprp(ipproc(iym1(2)))   = 'YM_CHx2m'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(3)))
-  NOMVAR(IPP)   = 'YM_CO'
+  nomprp(ipproc(iym1(3)))   = 'YM_CO'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(4)))
-  NOMVAR(IPP)   = 'YM_H2S'
+  nomprp(ipproc(iym1(4)))   = 'YM_H2S'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(5)))
-  NOMVAR(IPP)   = 'YM_H2'
+  nomprp(ipproc(iym1(5)))   = 'YM_H2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(6)))
-  NOMVAR(IPP)   = 'YM_HCN'
+  nomprp(ipproc(iym1(6)))   = 'YM_HCN'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(7)))
-  NOMVAR(IPP)   = 'YM_NH3'
+  nomprp(ipproc(iym1(7)))   = 'YM_NH3'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(8)))
-  NOMVAR(IPP)   = 'YM_O2'
+  nomprp(ipproc(iym1(8)))   = 'YM_O2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(9)))
-  NOMVAR(IPP)   = 'YM_CO2'
+  nomprp(ipproc(iym1(9)))   = 'YM_CO2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(10)))
-  NOMVAR(IPP)   = 'YM_H2O'
+  nomprp(ipproc(iym1(10)))   = 'YM_H2O'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(11)))
-  NOMVAR(IPP)   = 'YM_SO2'
+  nomprp(ipproc(iym1(11)))   = 'YM_SO2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym1(12)))
-  NOMVAR(IPP)   = 'YM_N2'
+  nomprp(ipproc(iym1(12)))   = 'YM_N2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   if ( ieqnox .eq. 1 ) then
     ipp = ipppro(ipproc(ighcn1))
-    nomvar(IPP)   = 'EXP1'
+    nomprp(ipproc(ighcn1))   = 'EXP1'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ighcn2))
-    nomvar(IPP)   = 'EXP2'
+    nomprp(ipproc(ighcn2))   = 'EXP2'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ignoth))
-    nomvar(IPP)   = 'EXP3'
+    nomprp(ipproc(ignoth))   = 'EXP3'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ignh31))
-    nomvar(IPP)   = 'EXP4'
+    nomprp(ipproc(ignh31))   = 'EXP4'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ignh32))
-    nomvar(IPP)   = 'EXP5'
+    nomprp(ipproc(ignh32))   = 'EXP5'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifhcnd))
-    nomvar(IPP)   = 'F_HCN_DEV'
+    nomprp(ipproc(ifhcnd))   = 'F_HCN_DEV'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifhcnc))
-    nomvar(IPP)   = 'F_HCN_HET'
+    nomprp(ipproc(ifhcnc))   = 'F_HCN_HET'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifnh3d))
-    nomvar(IPP)   = 'F_NH3_DEV'
+    nomprp(ipproc(ifnh3d))   = 'F_NH3_DEV'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifnh3c))
-    nomvar(IPP)   = 'F_NH3_HET'
+    nomprp(ipproc(ifnh3c))   = 'F_NH3_HET'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifnohc))
-    nomvar(IPP)   = 'F_NO_HCN'
+    nomprp(ipproc(ifnohc))   = 'F_NO_HCN'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifnonh))
-    nomvar(IPP)   = 'F_NO_NH3'
+    nomprp(ipproc(ifnonh))   = 'F_NO_NH3'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifnoch))
-    nomvar(IPP)   = 'F_NO_HET'
+    nomprp(ipproc(ifnoch))   = 'F_NO_HET'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifnoth))
-    nomvar(IPP)   = 'F_NO_THE'
+    nomprp(ipproc(ifnoth))   = 'F_NO_THE'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(icnohc))
-    nomvar(IPP)   = 'C_NO_HCN'
+    nomprp(ipproc(icnohc))   = 'C_NO_HCN'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(icnonh))
-    nomvar(IPP)   = 'C_NO_NH3'
+    nomprp(ipproc(icnonh))   = 'C_NO_NH3'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ifhcnr))
-    nomvar(IPP)   = 'F_HCN_RB'
+    nomprp(ipproc(ifhcnr))   = 'F_HCN_RB'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(icnorb))
-    nomvar(IPP)   = 'C_NO_RB'
+    nomprp(ipproc(icnorb))   = 'C_NO_RB'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(igrb))
-    nomvar(IPP)   = 'EXP_RB'
+    nomprp(ipproc(igrb))   = 'EXP_RB'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
   endif
 !
   ipp = ipppro(ipproc(ibcarbone))
-  NOMVAR(IPP)   = 'Bilan_C'
+  nomprp(ipproc(ibcarbone))   = 'Bilan_C'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iboxygen))
-  NOMVAR(IPP)   = 'Bilan_O'
+  nomprp(ipproc(iboxygen))   = 'Bilan_O'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(ibhydrogen))
-  NOMVAR(IPP)   = 'Bilan_H'
+  nomprp(ipproc(ibhydrogen))   = 'Bilan_H'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 !
 endif
+
 !===============================================================================
 ! 3. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================

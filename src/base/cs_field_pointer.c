@@ -209,40 +209,35 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
 
   v = _field_pointer[e];
 
-  if (v.f != NULL) {
+  /* Check also that we did not already use in incompatible mapping */
 
-    /* Check also that we did not already use in incompatible mapping */
-    if (! _is_sublist[e]) {
-      cs_field_t *_f = v.f;
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s: field enum %d is already mapped as non-indexed\n"
-                  "to field id %d (%s), so it cannot be mapped as indexed."),
-                __func__, (int)e, _f->id, _f->name);
-    }
-
-    else {
-
-      a = v.a;
-      _sub_size_prev = a->n;
-
-      if (_sub_size_prev < _sub_size) {
-        /* BFT_MALLOC does not directly handle C flexible array members,
-           (which we use here to minimize type width), so use bytes */
-        void *p = a;
-        size_t _s =   sizeof(struct cs_field_pointer_array_t)
-                    + sizeof(cs_field_t *) * _sub_size;
-        BFT_REALLOC(p, _s, unsigned char);
-        a = p;
-        v.a = a;
-        for (i = _sub_size_prev; i < index; i++)
-          a->p[i] = NULL;
-      }
-
-      _is_sublist[e] = true;
-
-    }
-
+  if (v.f != NULL && ! _is_sublist[e]) {
+    cs_field_t *_f = v.f;
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field enum %d is already mapped as non-indexed\n"
+                "to field id %d (%s), so it cannot be mapped as indexed."),
+              __func__, (int)e, _f->id, _f->name);
   }
+
+  a = v.a;
+
+  if (a != NULL)
+    _sub_size_prev = a->n;
+
+  if (_sub_size_prev < _sub_size) {
+    /* BFT_MALLOC does not directly handle C flexible array members,
+       (which we use here to minimize type width), so use bytes */
+    void *p = a;
+    size_t _s =   sizeof(struct cs_field_pointer_array_t)
+                + sizeof(cs_field_t *) * _sub_size;
+    BFT_REALLOC(p, _s, unsigned char);
+    a = p;
+    v.a = a;
+    for (i = _sub_size_prev; i < index; i++)
+      a->p[i] = NULL;
+  }
+
+  _is_sublist[e] = true;
 
   v.a->p[index] = f;
   _field_pointer[e] = v;
@@ -257,15 +252,222 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
 void
 cs_field_pointer_map_base(void)
 {
+  cs_field_pointer_map(CS_ENUMF_(dt),
+                       cs_field_by_name_try("dt"));
+
   cs_field_pointer_map(CS_ENUMF_(p),
-                       cs_field_by_name("pressure"));
+                       cs_field_by_name_try("pressure"));
   cs_field_pointer_map(CS_ENUMF_(u),
-                       cs_field_by_name("velocity"));
+                       cs_field_by_name_try("velocity"));
+
+  cs_field_pointer_map(CS_ENUMF_(k),
+                       cs_field_by_name_try("k"));
+  cs_field_pointer_map(CS_ENUMF_(eps),
+                       cs_field_by_name_try("epsilon"));
+
+  cs_field_pointer_map(CS_ENUMF_(r11), cs_field_by_name_try("r11"));
+  cs_field_pointer_map(CS_ENUMF_(r22), cs_field_by_name_try("r22"));
+  cs_field_pointer_map(CS_ENUMF_(r33), cs_field_by_name_try("r33"));
+  cs_field_pointer_map(CS_ENUMF_(r12), cs_field_by_name_try("r12"));
+  cs_field_pointer_map(CS_ENUMF_(r23), cs_field_by_name_try("r23"));
+  cs_field_pointer_map(CS_ENUMF_(r13), cs_field_by_name_try("r13"));
+
+  cs_field_pointer_map(CS_ENUMF_(phi), cs_field_by_name_try("phi"));
+  cs_field_pointer_map(CS_ENUMF_(f_bar), cs_field_by_name_try("f_bar"));
+  cs_field_pointer_map(CS_ENUMF_(alpha), cs_field_by_name_try("alpha"));
+
+  cs_field_pointer_map(CS_ENUMF_(omg), cs_field_by_name_try("omega"));
+  cs_field_pointer_map(CS_ENUMF_(nusa), cs_field_by_name_try("nu_tilda"));
+
+  cs_field_pointer_map(CS_ENUMF_(mesh_u),
+                       cs_field_by_name_try("mesh_velocity"));
+
+  cs_field_pointer_map(CS_ENUMF_(h),
+                       cs_field_by_name_try("enthalpy"));
+  cs_field_pointer_map(CS_ENUMF_(t),
+                       cs_field_by_name_try("temperature"));
 
   cs_field_pointer_map(CS_ENUMF_(rho),
-                       cs_field_by_name("density"));
+                       cs_field_by_name_try("density"));
   cs_field_pointer_map(CS_ENUMF_(rho_b),
-                       cs_field_by_name("boundary_density"));
+                       cs_field_by_name_try("boundary_density"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for atmospheric models
+ *
+ * \param[in]  n_chem_species  number of chemical species
+ * \param[in]  species_f_if    field id for each chemical species
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_atmospheric(int        n_chem_species,
+                                 const int  species_f_id[])
+{
+  cs_field_pointer_map(CS_ENUMF_(pot_t),
+                       cs_field_by_name_try("pot_temperature"));
+
+  cs_field_pointer_map(CS_ENUMF_(totwt),
+                       cs_field_by_name_try("total_water"));
+  cs_field_pointer_map(CS_ENUMF_(ntdrp),
+                       cs_field_by_name_try("total_drop"));
+
+  for (int i = 0; i < n_chem_species; i++)
+    cs_field_pointer_map_indexed(CS_ENUMF_(chemistry),
+                                 i,
+                                 cs_field_by_id(species_f_id[i]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for atmospheric models
+ *
+ * \param[in]  n_coals    number of coals
+ * \param[in]  n_classes  number of coal classes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_coal_combustion(int  n_coals,
+                                     int  n_classes)
+{
+  char s[64];
+
+  cs_field_pointer_map(CS_ENUMF_(h),
+                       cs_field_by_name_try("enthalpy"));
+
+  for (int i = 0; i < n_classes; i++) {
+    snprintf(s, 63, "np_coal_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(np), i, cs_field_by_name_try(s));
+  }
+
+  for (int i = 0; i < n_classes; i++) {
+    snprintf(s, 63, "x_coal_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(xch), i, cs_field_by_name_try(s));
+  }
+
+  for (int i = 0; i < n_classes; i++) {
+    snprintf(s, 63, "xck_coal_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(xck), i, cs_field_by_name_try(s));
+  }
+
+  for (int i = 0; i < n_classes; i++) {
+    snprintf(s, 63, "xwt_coal_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(xwt), i, cs_field_by_name_try(s));
+  }
+
+  for (int i = 0; i < n_classes; i++) {
+    snprintf(s, 63, "h2_coal_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(h2), i, cs_field_by_name_try(s));
+  }
+
+  for (int i = 0; i < n_coals; i++) {
+    snprintf(s, 63, "mv1_fraction_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(f1m), i, cs_field_by_name_try(s));
+  }
+
+  for (int i = 0; i < n_coals; i++) {
+    snprintf(s, 63, "mv2_fraction_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(f2m), i, cs_field_by_name_try(s));
+  }
+
+  cs_field_pointer_map(CS_ENUMF_(f4m), cs_field_by_name_try("oxyd2_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(f5m), cs_field_by_name_try("oxyd3_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(f6m), cs_field_by_name_try("h2o_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(f7m), cs_field_by_name_try("het_o2_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(f8m), cs_field_by_name_try("het_co2_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(f9m), cs_field_by_name_try("het_h2o_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(fvp2m), cs_field_by_name_try("f1f2_variance"));
+
+  cs_field_pointer_map(CS_ENUMF_(yco2), cs_field_by_name_try("co2_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(yhcn), cs_field_by_name_try("hcn_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(yno), cs_field_by_name_try("no_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(ynh3), cs_field_by_name_try("nh3_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(hox), cs_field_by_name_try("ox_enthalpy"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for compressible model
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_compressible(void)
+{
+  cs_field_pointer_map(CS_ENUMF_(energy),
+                       cs_field_by_name_try("total_energy"));
+
+  cs_field_pointer_map(CS_ENUMF_(t_kelvin),
+                       cs_field_by_name_try("temperature"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for electric arcs
+ *
+ * \param[in]  n_gasses    number of gasses
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_electric_arcs(int  n_gasses)
+{
+  char s[64];
+
+  cs_field_pointer_map(CS_ENUMF_(h),
+                       cs_field_by_name_try("enthalpy"));
+
+  cs_field_pointer_map(CS_ENUMF_(potr), cs_field_by_name_try("elec_pot_r"));
+  cs_field_pointer_map(CS_ENUMF_(poti), cs_field_by_name_try("elec_pot_i"));
+
+  for (int i = 0; i < 3; i++) {
+    snprintf(s, 63, "vec_potential_%1d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(potva), i, cs_field_by_name_try(s));
+  }
+
+  for (int i = 0; i < n_gasses - 1; i++) {
+    snprintf(s, 63, "esl_fraction_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(ycoel), i, cs_field_by_name_try(s));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for gas combustion.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_gas_combustion(void)
+{
+  cs_field_pointer_map(CS_ENUMF_(h),
+                       cs_field_by_name_try("enthalpy"));
+
+  cs_field_pointer_map(CS_ENUMF_(fm),
+                       cs_field_by_name_try("mixture_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(fp2m),
+                       cs_field_by_name_try("mixture_fraction_variance"));
+
+  cs_field_pointer_map(CS_ENUMF_(fsm),
+                       cs_field_by_name_try("soot_mass_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(npm),
+                       cs_field_by_name_try("soot_precursor_number"));
+
+  cs_field_pointer_map(CS_ENUMF_(ygfm),
+                       cs_field_by_name_try("fresh_gas_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(yfm),
+                       cs_field_by_name_try("mass_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(yfp2m),
+                       cs_field_by_name_try("mass_fraction_variance"));
+  cs_field_pointer_map(CS_ENUMF_(coyfp),
+                       cs_field_by_name_try("mass_fraction_covariance"));
 }
 
 /*----------------------------------------------------------------------------*/

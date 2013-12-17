@@ -49,7 +49,7 @@ implicit none
 ! Local variables
 
 double precision  vec(10), poids(5), vect(3)
-integer           ii, jj, nray
+integer           ii, jj
 integer           nquad, nbpoint, niv, ntri, int1, tri
 
 double precision, dimension(:,:), allocatable :: x3d, y3d, z3d

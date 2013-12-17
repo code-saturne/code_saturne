@@ -108,6 +108,14 @@ allocate(smbrs(ncelet), rovsdt(ncelet))
 
 ipass = ipass + 1
 
+! Atmospheric chemistry
+
+if (ichemistry.ge.1 .and. nscal.gt.0) then
+  ! Computation of kinetics rates
+  call kinrates(rtp, propce)
+  !==========
+endif
+
 !===============================================================================
 ! 2. Handle model or specific physics scalars.
 !===============================================================================
@@ -378,14 +386,6 @@ endif
 
 if (nscaus.gt.0) then
 
-! Atmospheric chemistry
-
-  if (ichemistry.ge.1) then
-    ! Computation of kinetics rates
-    call kinrates(rtp, propce)
-    !==========
-  endif
-
 ! ---> Boucle sur les scalaires utilisateur.
 
   do ii = 1, nscaus
@@ -457,16 +457,17 @@ if (nscaus.gt.0) then
 ! ---> Fin de la Boucle sur les scalaires utilisateurs.
   enddo
 
-  ! Atmospheric gaseous chemistry
-  ! Resolution of chemical evolution of species
-  if (ichemistry.ge.1) then
-    call compute_gaseous_chemistry(dt, rtpa, rtp)
-  endif
+endif
 
-  ! Atmospheric aerosol chemistry
-  if (iaerosol.eq.1) then
-    call compute_siream(dt, rtp, propce)
-  endif
+! Atmospheric gaseous chemistry
+! Resolution of chemical evolution of species
+if (ichemistry.ge.1 .and. nscal.gt.0) then
+  call compute_gaseous_chemistry(dt, rtpa, rtp)
+endif
+
+! Atmospheric aerosol chemistry
+if (iaerosol.eq.1 .and. nscal.gt.0) then
+  call compute_siream(dt, rtp, propce)
 endif
 
 ! Free memory

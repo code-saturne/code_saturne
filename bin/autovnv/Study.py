@@ -41,8 +41,14 @@ import fnmatch
 
 from autovnv.Parser import Parser
 from autovnv.TexMaker import Report1, Report2
-from autovnv.Drawing import Plotter
-from autovnv.PlotVTK import PlotVTK
+try:
+    from autovnv.Drawing import Plotter
+except Exception:
+    pass
+try:
+    from autovnv.PlotVTK import PlotVTK
+except Exception:
+    pass
 from autovnv.Command import run_autovnv_command
 
 #-------------------------------------------------------------------------------
@@ -680,8 +686,14 @@ class Studies(object):
         # create a new parser, which is definitive and the plotter
 
         self.__parser  = Parser(file)
-        self.__plotter = Plotter(self.__parser)
-        self.__plotvtk = PlotVTK(self.__parser)
+        try:
+            self.__plotter = Plotter(self.__parser)
+        except Exception:
+            self.__plotter = None
+        try:
+            self.__plotvtk = PlotVTK(self.__parser)
+        except Exception:
+            self.__plotvtk = None
 
         # build the list of the studies
 
@@ -1068,12 +1080,14 @@ class Studies(object):
         """
         Plot data.
         """
-        for l, s in self.studies:
-            self.reporting('  o Plot study: ' + l)
-            self.__plotter.plot_study(l, s)
+        if self.__plotter:
+            for l, s in self.studies:
+                self.reporting('  o Plot study: ' + l)
+                self.__plotter.plot_study(l, s)
 
-        for l, s in self.studies:
-            self.__plotvtk.plot_study(l, s)
+        if self.__plotvtk:
+            for l, s in self.studies:
+                self.__plotvtk.plot_study(l, s)
 
 
     def build_reports(self, report1, report2):

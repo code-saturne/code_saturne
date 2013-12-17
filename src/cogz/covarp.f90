@@ -40,10 +40,9 @@ subroutine covarp
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -63,6 +62,7 @@ use coincl
 use cpincl
 use ppincl
 use ihmpre
+use field
 
 !===============================================================================
 
@@ -70,51 +70,115 @@ implicit none
 
 ! Local variables
 
-integer        isc
+integer        isc, f_id
+integer        kscmin, kscmax
 
 !===============================================================================
+
 !===============================================================================
-! 1. DEFINITION DES POINTEURS
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_field_pointer_map_gas_combustion()  &
+    bind(C, name='cs_field_pointer_map_gas_combustion')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_field_pointer_map_gas_combustion
+
+  subroutine cs_gui_labels_gas_combustion()  &
+    bind(C, name='cs_gui_labels_gas_combustion')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_labels_gas_combustion
+
+end interface
+
+!===============================================================================
+! 0. Definitions for fields
+!===============================================================================
+
+! Key ids for clipping
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
+
+!===============================================================================
+! 1. Define variable fields
 !===============================================================================
 
 ! 1.1 Flamme de diffusion : chimie 3 points
 ! =========================================
 
-if ( ippmod(icod3p).ge.0 ) then
+if (ippmod(icod3p).ge.0) then
 
-! ---- Taux de melange
-  ifm = iscapp(1)
+  ! Mixture fraction and its variance
 
-! ---- Variance du taux de melange
-  ifp2m = iscapp(2)
+  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
+  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
   iscavr(ifp2m) = ifm
 
-! ---- Enthalpie
-  if ( ippmod(icod3p).eq.1 ) iscalt = iscapp(3)
+  f_id = ivarfl(isca(ifp2m))
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
-! Soot mass fraction and precursor number
-  if (isoot.ge.1) ifsm = iscapp(4)
-  if (isoot.ge.1) inpm = iscapp(5)
+  ! Enthalpy
+
+  if (ippmod(icod3p).eq.1) then
+    itherm = 2
+    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+    iscalt = ihm
+    ! Set min and max clipping
+    f_id = ivarfl(isca(iscalt))
+    call field_set_key_double(f_id, kscmin, -grand)
+    call field_set_key_double(f_id, kscmax, grand)
+  endif
+
+  ! Soot mass fraction and precursor number
+  if (isoot.ge.1) then
+
+    call add_model_scalar_field('soot_mass_fraction', 'Fra_Soot', ifsm)
+    f_id = ivarfl(isca(ifsm))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
+
+    call add_model_scalar_field('soot_precursor_number', 'NPr_Soot', inpm)
+    f_id = ivarfl(isca(inpm))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
+
+  endif
+
 endif
-
 
 ! 1.2 Flamme de premelange : modele EBU
 ! =====================================
 
-if ( ippmod(icoebu).ge.0 ) then
+if (ippmod(icoebu).ge.0) then
 
-! ---- Fraction massique des gaz frais
-  iygfm   = iscapp(1)
-  if ( ippmod(icoebu).eq.2 .or.                                   &
-       ippmod(icoebu).eq.3      ) then
+  ! Fraction massique des gaz frais
+  call add_model_scalar_field('fresh_gas_fraction', 'Fra_GF', iygfm)
 
-! ---- Taux de melange
-    ifm   = iscapp(2)
+  f_id = ivarfl(isca(iygfm))
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
+  if (ippmod(icoebu).eq.2 .or.ippmod(icoebu).eq.3) then
+    ! Taux de melange
+    call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
+    f_id = ivarfl(isca(ifm))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
   endif
-  if ( ippmod(icoebu).eq.1 ) iscalt = iscapp(2)
-  if ( ippmod(icoebu).eq.3 ) iscalt = iscapp(3)
+  if (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3) then
+    itherm = 2
+    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+    iscalt = ihm
+    f_id = ivarfl(isca(iscalt))
+    call field_set_key_double(f_id, kscmin, -grand)
+    call field_set_key_double(f_id, kscmax,  grand)
+  endif
 endif
-
 
 ! 1.3 Flamme de premelange : modele BML A DEVELOPPER
 ! ==================================================
@@ -124,31 +188,45 @@ endif
 
 if (ippmod(icolwc).ge.0 ) then
 
-  ifm           = iscapp(1)
-  ifp2m         = iscapp(2)
+  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
+  f_id = ivarfl(isca(ifm))
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
+  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
   iscavr(ifp2m) = ifm
 
-  iyfm          = iscapp(3)
-  iyfp2m        = iscapp(4)
+  call add_model_scalar_field('mass_fraction', 'Fra_Mas', iyfm)
+  f_id = ivarfl(isca(iyfm))
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+
+  call add_model_scalar_field('mass_fraction_variance', 'Var_FMa', iyfp2m)
   iscavr(iyfp2m)= iyfm
 
   if (ippmod(icolwc).ge.2 ) then
-    icoyfp = iscapp(5)
+    call add_model_scalar_field('mass_fraction_covariance', 'COYF_PP4', icoyfp)
+    f_id = ivarfl(isca(icoyfp))
+    call field_set_key_double(f_id, kscmin, -0.25d0)
+    call field_set_key_double(f_id, kscmax, 0.25d0)
   endif
 
-  if (ippmod(icolwc).eq.1 ) iscalt = iscapp(5)
-  if (ippmod(icolwc).eq.3 .or.                                    &
-      ippmod(icolwc).eq.5 ) iscalt = iscapp(6)
+  if (ippmod(icolwc).eq.1 .or. &
+      ippmod(icolwc).eq.3 .or. &
+      ippmod(icolwc).eq.5) then
+    itherm = 2
+    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+    iscalt = ihm
+  endif
 
 endif
 
-!   - Interface Code_Saturne
-!     ======================
-!     Construction de l'indirection entre la numerotation du noyau et XML
+! MAP to C API
+call cs_field_pointer_map_gas_combustion
 
+! Mapping for GUI
 if (iihmpr.eq.1) then
-   call uicosc(ippmod, icolwc, icoebu, icod3p, iscalt,            &
-               ifm, ifp2m, iygfm, iyfm, iyfp2m, icoyfp)
+  call cs_gui_labels_gas_combustion
 endif
 
 !===============================================================================
@@ -159,27 +237,23 @@ endif
 
 do isc = 1, nscapp
 
-  if ( iscavr(iscapp(isc)).le.0 ) then
-
-! ---- Viscosite dynamique de reference relative au scalaire
-!      ISCAPP(ISC)
+  if (iscavr(iscapp(isc)).le.0) then
+    ! Reference dynamic viscosity relative to this scalar
     ivisls(iscapp(isc)) = 0
-
   endif
 
 enddo
 
-if ( ippmod(icod3p).eq.1 .or.                                     &
-     ippmod(icoebu).eq.1 .or.                                     &
-     ippmod(icoebu).eq.3 .or.                                     &
-     ippmod(icolwc).eq.1 .or.                                     &
-     ippmod(icolwc).eq.3 .or.                                     &
-     ippmod(icolwc).eq.5   ) then
+if (ippmod(icod3p).eq.1 .or.   &
+    ippmod(icoebu).eq.1 .or.   &
+    ippmod(icoebu).eq.3 .or.   &
+    ippmod(icolwc).eq.1 .or.   &
+    ippmod(icolwc).eq.3 .or.   &
+    ippmod(icolwc).eq.5) then
 
+  ! Although we are in enthalpy formulation, we keep Cp constant
 
-! ---- Bien que l on soit en enthalpie on conserve un CP constant
-
-  icp    = 0
+  icp = 0
 
 endif
 

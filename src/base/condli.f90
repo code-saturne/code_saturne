@@ -172,7 +172,7 @@ double precision hbord(nfabor),theipb(nfabor)
 
 integer          ifac  , iel   , ivar
 integer          isou  , jsou  , ii
-integer          ihcp  , iscal , iscat
+integer          ihcp  , iscal
 integer          inc   , iprev , iccocg
 integer          iok   , iok1
 integer          icodcu

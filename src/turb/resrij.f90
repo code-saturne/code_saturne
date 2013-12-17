@@ -155,6 +155,7 @@ double precision matrot(3,3)
 
 double precision rvoid(1)
 
+character(len=80) :: label
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8
 double precision, allocatable, dimension(:) :: dpvar
@@ -179,8 +180,9 @@ allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
-if(iwarni(ivar).ge.1) then
-  write(nfecra,1000) nomvar(ipp)
+if (iwarni(ivar).ge.1) then
+  call field_get_label(ivarfl(ivar), label)
+  write(nfecra,1000) label
 endif
 
 call field_get_val_s(icrom, crom)

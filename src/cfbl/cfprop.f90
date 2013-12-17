@@ -146,28 +146,28 @@ if ( ippmod(icompf).ge.0 ) then
 !       si l'on n'affecte pas les tableaux suivants,
 !       les valeurs par defaut seront utilisees
 
-!     NOMVAR( ) = nom de la variable
-!     ICHRVR( ) = sortie chono (oui 1/non 0)
-!     ILISVR( ) = suivi listing (oui 1/non 0)
-!     IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!     si IHISVR(.,1)  = -1 sortie sur toutes les sondes
+!     nomprp( ) = nom de la propriete
+!     ichrvr( ) = sortie chono (oui 1/non 0)
+!     ilisvr( ) = suivi listing (oui 1/non 0)
+!     ihisvr( ) = sortie historique (nombre de sondes et numeros)
+!     si ihisvr(.,1)  = -1 sortie sur toutes les sondes
 
 !     NB : Seuls les 8 premiers caracteres du nom seront repris dans le
 !          listing le plus detaille
 
   !-->  chaleur specifique a volume constant
-  if(icv   .gt.0) then
-    ipp = ipppro(ipproc(icv   ))
-    nomvar(ipp)   = 'Specific Heat Cst Vol'
+  if (icv   .gt.0) then
+    ipp = ipppro(ipproc(icv))
+    nomprp(ipproc(icv))   = 'Specific Heat Cst Vol'
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = 0
   endif
 
   !-->  viscosite laminaire
-  if(iviscv.gt.0) then
+  if (iviscv.gt.0) then
     ipp = ipppro(ipproc(iviscv))
-    nomvar(ipp)   = 'Volume Viscosity'
+    nomprp(ipproc(iviscv))   = 'Volume Viscosity'
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = 0

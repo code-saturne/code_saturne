@@ -82,119 +82,25 @@ double precision wmolme
 ! 1.1 Definition des scamin et des scamax des variables transportees
 ! ==================================================================
 
-! --> Soot
-
-if (isoot.eq.1) then
-  scamin(ifsm) = 0.d0
-  scamax(ifsm) = 1.d0
-  scamin(inpm) = 0.d0
-  scamax(inpm) = 1.d0
-endif
-
-
 ! --> Flamme de diffusion : chimie 3 points
 
 if ( ippmod(icod3p).ge.0 ) then
 
-! ---- Taux de melange
-  scamin(ifm) = 0.d0
-  scamax(ifm) = 1.d0
-
-! ---- Variance du taux de melange
-!        Type de clipping superieur pour la variance
-!        0 pas de clipping, 1 clipping var max de fm, 2 clipping a SCAMAX
- iclvfl(ifp2m) = 1
-!        SCAMIN(IFP2M) = 0.D0
-!        SCAMAX(IFP2M) = 0.25D0
-
-! ---- Enthalpie
-  if ( ippmod(icod3p).eq.1 ) then
-    scamin(iscalt) = -grand
-    scamax(iscalt) = +grand
-  endif
+  ! ---- Variance du taux de melange
+  !        Type de clipping superieur pour la variance
+  !        0 pas de clipping, 1 clipping var max de fm, 2 clipping a SCAMAX
+  iclvfl(ifp2m) = 1
+  !        scamin(ifp2m) = 0.d0
+  !        scamax(ifp2m) = 0.25D0
 
 endif
-
-
-! --> Flamme de premelange : modele EBU
-
-if ( ippmod(icoebu).ge.0 ) then
-
-! ---- Fraction massique des gaz frais
-  scamin(iygfm) = 0.d0
-  scamax(iygfm) = 1.d0
-
-! ---- Taux de melange
-  if ( ippmod(icoebu).eq.2 .or.                                   &
-       ippmod(icoebu).eq.3       ) then
-    scamin(ifm) = 0.d0
-    scamax(ifm) = 1.d0
-  endif
-
-! ---- Enthalpie
-  if ( ippmod(icoebu).eq.1 .or.                                   &
-       ippmod(icoebu).eq.3      ) then
-    scamin(iscalt) = -grand
-    scamax(iscalt) = +grand
-  endif
-
-endif
-
 
 ! --> Flamme de premelange : modele LWC
 
 if ( ippmod(icolwc).ge.0 ) then
-  scamin(ifm) = 0.d0
-  scamax(ifm) = 1.d0
-
   iclvfl(ifp2m) = 0
-
-  scamin(iyfm) = 0.d0
-  scamax(iyfm) = 1.d0
-
   iclvfl(iyfp2m) = 0
-
-  if ( ippmod(icolwc).ge.2 ) then
-    scamin(icoyfp) =-0.25d0
-    scamax(icoyfp) = 0.25d0
-  endif
-
 endif
-
-! 1.2 Nature des scalaires transportes
-! ====================================
-
-do isc = 1, nscapp
-
-
-! ---- Type de scalaire (0 passif, 1 temperature en K
-!                                 -1 temperature en C
-!                                  2 enthalpie)
-!      La distinction -1/1 sert pour le rayonnement
-  iscacp(iscapp(isc)) = 0
-
-enddo
-
-
-! 1.3 L'utilisation de la variable enthalpie necessite un traitement
-!     particulier
-! ==================================================================
-
-
-! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
-if ( ippmod(icod3p).eq.1 .or.                                     &
-     ippmod(icoebu).eq.1 .or.                                     &
-     ippmod(icoebu).eq.3 .or.                                     &
-     ippmod(icolwc).eq.1 .or.                                     &
-     ippmod(icolwc).eq.3 .or.                                     &
-     ippmod(icolwc).eq.5     ) then
-
-  itherm = 2
-
-  iscacp(iscalt) = 0
-
-endif
-
 
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires COMBUSTION
 ! ====================================================================
@@ -256,140 +162,6 @@ do isc = 1, nscapp
 
 enddo
 
-
-! 1.5 Variable courante : nom, sortie chrono, suivi listing, sortie histo
-
-!     Comme pour les autres variables,
-!       si l'on n'affecte pas les tableaux suivants,
-!       les valeurs par defaut seront utilisees
-
-!     NOMVAR( ) = nom de la variable
-!     ICHRVR( ) = sortie chono (oui 1/non 0)
-!     ILISVR( ) = suivi listing (oui 1/non 0)
-!     IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!     si IHISVR(.,1)  = -1 sortie sur toutes les sondes
-
-!     NB : Les 8 premiers caracteres du noms seront repris dans le
-!          listing 'developpeur'
-
-! =======================================================================
-
-! ---> Soot model
-
-if (isoot.eq.1) then
-
-  ! --- Soot mass fraction
-  ipp = ipprtp(isca(ifsm))
-  nomvar(IPP)  = 'Fra_Soot'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-  ! --- Soot precursor number
-  ipp = ipprtp(isca(inpm))
-  nomvar(IPP)  = 'NPr_Soot'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-
-! --> Flamme de diffusion : chimie 3 points - chmie equilibre
-
-if ( ippmod(icod3p).ge.0 ) then
-
-! ---- Taux de melange
-  ipp = ipprtp(isca(ifm))
-  nomvar(ipp)  = 'Fra_MEL'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-! ---- Variance du taux melange
-  ipp = ipprtp(isca(ifp2m))
-  nomvar(ipp)  = 'Var_FrMe'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-endif
-
-
-! --> Flamme de premelange : Modele EBU
-
-if ( ippmod(icoebu).ge.0 ) then
-
-! ---- Fraction massique des gaz frais
-  ipp = ipprtp(isca(iygfm))
-  nomvar(ipp)  = 'Fra_GF'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-! ---- Taux de melange
-if ( ippmod(icoebu).ge.2 ) then
-  ipp = ipprtp(isca(ifm))
-  nomvar(ipp)  = 'Fra_MEL'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-
-! --> Flamme de premelange : Modeles BML et LWC
-
-if ( ippmod(icolwc).ne.-1 ) then
-! --- Taux de melange
-  ipp = ipprtp(isca(ifm))
-  nomvar(ipp) = 'Fra_Mel'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-! --- Variance du taux de melange
-  ipp = ipprtp(isca(ifp2m))
-  nomvar(ipp) = 'Var_FMe'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-! --- Fraction massique
-  ipp = ipprtp(isca(iyfm))
-  nomvar(ipp) = 'Fra_Mas'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-! --- Variance de la fraction massique
-  ipp = ipprtp(isca(iyfp2m))
-  nomvar(ipp) = 'Var_FMa'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-! --- Covariance
-  if (ippmod(icolwc).ge.2) then
-    ipp = ipprtp(isca(icoyfp))
-    nomvar(ipp) = 'COYF_PP4'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-
-endif
-! --> Si Transport de l'enthalpie
-
- if ( ippmod(icod3p).eq.1 .or.                                    &
-      ippmod(icoebu).eq.1 .or.                                    &
-      ippmod(icoebu).eq.3 .or.                                    &
-      ippmod(icolwc).eq.1 .or.                                    &
-      ippmod(icolwc).eq.3 .or.                                    &
-      ippmod(icolwc).eq.5   ) then
-   ipp = ipprtp(isca(iscalt))
-   nomvar(ipp)  = 'Enthalpy'
-   ichrvr(ipp)  = 1
-   ilisvr(ipp)  = 1
-   ihisvr(ipp,1)= -1
-  endif
-
-
 !===============================================================================
 ! 2. VARIABLES ALGEBRIQUES OU D'ETAT
 !===============================================================================
@@ -398,22 +170,22 @@ endif
 
 if ( ippmod(icod3p).ge.0 ) then
   ipp = ipppro(ipproc(itemp))
-  nomvar(ipp)   = 'Temperature'
+  nomprp(ipproc(itemp))   = 'Temperature'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(1)))
-  nomvar(ipp)   = 'YM_Fuel'
+  nomprp(ipproc(iym(1)))   = 'YM_Fuel'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(2)))
-  nomvar(ipp)   = 'YM_Oxyd'
+  nomprp(ipproc(iym(2)))   = 'YM_Oxyd'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(3)))
-  nomvar(ipp)   = 'YM_Prod'
+  nomprp(ipproc(iym(3)))   = 'YM_Prod'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -423,22 +195,22 @@ endif
 
 if ( ippmod(icoebu).ge.0 ) then
   ipp = ipppro(ipproc(itemp))
-  nomvar(ipp)   = 'Temperature'
+  nomprp(ipproc(itemp))   = 'Temperature'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(1)))
-  nomvar(ipp)   = 'YM_Fuel'
+  nomprp(ipproc(iym(1)))   = 'YM_Fuel'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(2)))
-  nomvar(ipp)   = 'YM_Oxyd'
+  nomprp(ipproc(iym(2)))   = 'YM_Oxyd'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(3)))
-  nomvar(ipp)   = 'YM_Prod'
+  nomprp(ipproc(iym(3)))   = 'YM_Prod'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -448,70 +220,70 @@ endif
 
 if ( ippmod(icolwc).ge. 0 ) then
   ipp = ipppro(ipproc(itsc))
-  nomvar(ipp)   = 'Source Term'
+  nomprp(ipproc(itsc))   = 'Source Term'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(itemp))
-  nomvar(ipp)   = 'Temperature'
+  nomprp(ipproc(itemp))   = 'Temperature'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(1)))
-  nomvar(ipp)   = 'YM_Fuel'
+  nomprp(ipproc(iym(1)))   = 'YM_Fuel'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(2)))
-  nomvar(ipp)   = 'YM_Oxyd'
+  nomprp(ipproc(iym(2)))   = 'YM_Oxyd'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(3)))
-  nomvar(ipp)   = 'YM_Prod'
+  nomprp(ipproc(iym(3)))   = 'YM_Prod'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   do idirac = 1, ndirac
     ipp = ipppro(ipproc(irhol(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'RHOL',idirac
+    write(nomprp(ipproc(irhol(idirac))),'(A4,I1)') 'RHOL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iteml(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'TEML',idirac
+    write(nomprp(ipproc(iteml(idirac))),'(A4,I1)') 'TEML',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmel(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'FMEL',idirac
+    write(nomprp(ipproc(ifmel(idirac))),'(A4,I1)') 'FMEL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmal(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'FMAL',idirac
+    write(nomprp(ipproc(ifmal(idirac))),'(A4,I1)') 'FMAL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iampl(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'AMPL',idirac
+    write(nomprp(ipproc(iampl(idirac))),'(A4,I1)') 'AMPL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(itscl(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'TSCL',idirac
+    write(nomprp(ipproc(itscl(idirac))),'(A4,I1)') 'TSCL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(imaml(idirac)))
-    write(nomvar(ipp),'(A4,I1)') 'MAML',idirac
+    write(nomprp(ipproc(imaml(idirac))),'(A4,I1)') 'MAML',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
@@ -530,17 +302,17 @@ if ( ( ippmod(icod3p).eq.1 .or.                                   &
        ippmod(icolwc).eq.5 )                                      &
       .and. (iirayo.ge.1) ) then
   ipp = ipppro(ipproc(ickabs))
-  nomvar(ipp)   = 'KABS'
+  nomprp(ipproc(ickabs))   = 'KABS'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(it4m))
-  nomvar(ipp)   = 'TEMP4'
+  nomprp(ipproc(it4m))   = 'TEMP4'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(it3m))
-  nomvar(ipp)   = 'TEMP3'
+  nomprp(ipproc(it3m))   = 'TEMP3'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1

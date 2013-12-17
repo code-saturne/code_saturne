@@ -8,6 +8,12 @@ Changes:
 Architectural changes
 ---------------------
 
+- Fields representing variables are now declared in fldvar, previously call 1 of varpos.
+  The nomvar array is replaced by field labels for variables, nomva0 for temporaries,
+  and nomprp for properties. Field pointers for all variables are accessible from C
+  using the macros in cs_field_pointer.h. The scamin and scamax arrays are also replaced
+  by field keywords.
+
 - Remove support for obsolete LAM and MPICH1 MPI libraries.
 
 - Finalized cleanup of handling of boundary condition coefficients. Fields now allocate

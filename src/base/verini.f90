@@ -80,13 +80,19 @@ integer          iok
 ! Local variables
 
 character        chaine*80, chain2*80
+logical          interleaved
 integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
 integer          nbsccp
+integer          c_id, f_id, f_dim, n_fields, ippf
 integer          ipp   , imgrok, nbccou
 integer          iokpre, indest, iiidef, istop
 integer          iresop, ipolop, kscmin, kscmax
+integer          keyvar, keysca
 double precision arakfr, scmaxp, scminp
+
+character*3, dimension(3) :: nomext3
+character*4, dimension(3) :: nomext63
 
 !===============================================================================
 
@@ -94,7 +100,15 @@ double precision arakfr, scmaxp, scminp
 
 jj = 0
 
-! Key id for scamin and scamax
+nomext3 = (/'[X]', '[Y]', '[Z]'/)
+nomext63 = (/'[11]', '[22]', '[33]'/)
+
+call field_get_n_fields(n_fields)
+
+call field_get_key_id("scalar_id", keysca)
+call field_get_key_id("variable_id", keyvar)
+
+! Key ids for clippings
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 
@@ -102,15 +116,7 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 ! 1. ENTREES SORTIES entsor : formats 1000
 !===============================================================================
 
-! --- Suite, Chrono, Historiques, Listing
-
-do ipp = 2, nvppmx
-  if (ichrvr(ipp).ne.1.and.ichrvr(ipp).ne.0) then
-    chaine=nomvar(ipp)
-    write(nfecra,1220)chaine(1:16),ipp,ichrvr(ipp)
-    iok = iok + 1
-  endif
-enddo
+! --- Suite, Historiques, Listing
 
 if (ncapt.lt.0.or.ncapt.gt.ncaptm) then
   write(nfecra,1230)ncaptm,ncapt
@@ -127,43 +133,56 @@ if (nthsav.lt.-1) then
   iok = iok + 1
 endif
 
-do ipp = 2, nvppmx
-  if (ihisvr(ipp,1).gt.ncapt.or.                                  &
-     (ihisvr(ipp,1).lt.0.and.ihisvr(ipp,1).ne.-1) ) then
-    chaine=nomvar(ipp)
-    write(nfecra,1240)chaine(1:16),ipp,ncapt,ihisvr(ipp,1)
-    iok = iok + 1
-  endif
-enddo
-
-do ipp = 2, nvppmx
-  if ((ihisvr(ipp,1).gt.0.and.ihisvr(ipp,1).lt.ncapt)) then
-    do jj = 1, ihisvr(ipp,1)
-      if (ihisvr(ipp,jj+1).le.0.or.ihisvr(ipp,jj+1).gt.ncapt) then
-        chaine=nomvar(ipp)
-        write(nfecra,1250)                                        &
-          chaine(1:16),ipp,jj+1,ncapt,ihisvr(ipp,jj+1)
-        iok = iok + 1
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyipp, ippf)
+  if (ippf.le.1) cycle
+  call field_get_dim (f_id, f_dim, interleaved)
+  do c_id = 1, min(f_dim, 3)
+    ipp = ippf + c_id - 1
+    if (ihisvr(ipp,1).gt.ncapt.or.                                  &
+      (ihisvr(ipp,1).lt.0.and.ihisvr(ipp,1).ne.-1) ) then
+      call field_get_label(f_id, chaine)
+      if (f_dim .eq. 3) then
+        chaine = trim(chaine) // nomext3(c_id)
+      else if (f_dim .eq. 6) then
+        chaine = trim(chaine) // nomext63(c_id)
       endif
-    enddo
-  endif
-enddo
-
-do ipp = 2, nvppmx
-  if (ilisvr(ipp).ne.0.and.ilisvr(ipp).ne.1) then
-    chaine=nomvar(ipp)
-    write(nfecra,1260)chaine(1:16),ipp,ilisvr(ipp)
-    iok = iok + 1
-  endif
-enddo
-
-do ipp = 2, nvppmx
-  if (itrsvr(ipp).ne.0) then
-    if (itrsvr(ipp).le.0.or.itrsvr(ipp).gt.nvar) then
-      chaine=nomvar(ipp)
-      write(nfecra,1270)chaine(1:16),ipp,nvar,itrsvr(ipp)
+      write(nfecra,1240)chaine(1:16),ipp,ncapt,ihisvr(ipp,1)
       iok = iok + 1
     endif
+  enddo
+enddo
+
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyipp, ippf)
+  if (ippf.le.1) cycle
+  call field_get_dim (f_id, f_dim, interleaved)
+  do c_id = 1, min(f_dim, 3)
+    ipp = ippf + c_id - 1
+    if ((ihisvr(ipp,1).gt.0.and.ihisvr(ipp,1).lt.ncapt)) then
+      do jj = 1, ihisvr(ipp,1)
+        if (ihisvr(ipp,jj+1).le.0.or.ihisvr(ipp,jj+1).gt.ncapt) then
+          call field_get_label(f_id, chaine)
+          if (f_dim .eq. 3) then
+            chaine = trim(chaine) // nomext3(c_id)
+          else if (f_dim .eq. 6) then
+            chaine = trim(chaine) // nomext63(c_id)
+          endif
+          write(nfecra,1250) chaine(1:16),ipp,jj+1,ncapt,ihisvr(ipp,jj+1)
+          iok = iok + 1
+        endif
+      enddo
+    endif
+  enddo
+enddo
+
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyipp, ipp)
+  if (ipp.le.1) cycle
+  if (ilisvr(ipp).ne.0.and.ilisvr(ipp).ne.1) then
+    call field_get_label(f_id, chaine)
+    write(nfecra,1260)chaine(1:16),ipp,ilisvr(ipp)
+    iok = iok + 1
   endif
 enddo
 
@@ -215,8 +234,8 @@ endif
 
 ! --- Definition des equations, schema en temps, schema convectif
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if ((iconv (ii).ne.0.and.iconv (ii).ne.1).or.                 &
         (istat (ii).ne.0.and.istat (ii).ne.1).or.                 &
@@ -226,7 +245,7 @@ do ipp = 2, nvppmx
         (blencv(ii).gt.1.d0.or.blencv(ii).lt.0.d0).or.            &
         (ischcv(ii).ne.0.and.ischcv(ii).ne.1).or.                 &
         (isstpc(ii).ne.0.and.isstpc(ii).ne.1)   ) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2100) chaine(1:16),                             &
                          istat(ii),iconv(ii),                     &
                          idiff(ii),idifft(ii),                    &
@@ -261,8 +280,7 @@ endif
 !       On conserve quand meme le test pour plus tard puisqu'il est ecrit.
 jj = ipr
 if (abs(thetav(jj)-1.0d0).gt.epzero) then
-  ipp    = ipprtp(jj)
-  chaine=nomvar(ipp)
+  call field_get_label(ivarfl(jj), chaine)
   write(nfecra,2112) thetav(jj)
   iok = iok + 1
 endif
@@ -276,8 +294,8 @@ if (itytur.eq.4) then
     if (ii.eq.1) jj = iu
     if (ii.eq.2) jj = iv
     if (ii.eq.3) jj = iw
-    ipp    = ipprtp(jj)
-    chaine=nomvar(ipp)
+    call field_get_label(ivarfl(iu), chaine)
+    chaine = trim(chaine) // nomext3(ii)
     if (abs(thetav(jj)-0.5d0).gt.epzero) then
       write(nfecra,2121) chaine(1:16),thetav(jj)
     endif
@@ -297,16 +315,15 @@ if (itytur.eq.4.or.ischtp.eq.2) then
     if (ii.eq.1) jj = iu
     if (ii.eq.2) jj = iv
     if (ii.eq.3) jj = iw
-    ipp    = ipprtp(jj)
-    chaine=nomvar(ipp)
+    call field_get_label(ivarfl(iu), chaine)
+    chaine = trim(chaine) // nomext3(ii)
     iiidef = 10
     if (nswrsm(jj).ne.iiidef) then
       write(nfecra,2125) chaine(1:16),iiidef,nswrsm(jj)
     endif
   enddo
   jj = ipr
-  ipp    = ipprtp(jj)
-  chaine=nomvar(ipp)
+  call field_get_label(ivarfl(jj), chaine)
   iiidef = 5
   if (nswrsm(jj).ne.iiidef) then
     write(nfecra,2125) chaine(1:16),iiidef,nswrsm(jj)
@@ -315,8 +332,7 @@ endif
 do ii = 1, nscal
   if (itytur.eq.4) then
     jj    = isca(ii)
-    ipp   = ipprtp(jj)
-    chaine=nomvar(ipp)
+    call field_get_label(ivarfl(jj), chaine)
     if (abs(thetav(jj)-0.5d0).gt.epzero) then
       write(nfecra,2121) chaine(1:16),thetav(jj)
     endif
@@ -581,11 +597,11 @@ endif
 
 ! --- Algorithme stationnaire
 if (idtvar.lt.0) then
-  do ipp = 2, nvppmx
-    ii = itrsvr(ipp)
+  do f_id = 0, n_fields-1
+    call field_get_key_int(f_id, keyvar, ii)
     if (ii.ge.1) then
       if (relaxv(ii).gt.1d0.or.relaxv(ii).lt.0d0) then
-        chaine=nomvar(ipp)
+        call field_get_label(f_id, chaine)
         write(nfecra,2149) chaine(1:16),relaxv(ii)
         iok = iok + 1
       endif
@@ -639,33 +655,33 @@ endif
 !  ce sont simplement des entiers (negatifs si on veut etre sur de ne
 !  *jamais* entrer dans les boucles)
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (imligr(ii).gt.1) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2300) chaine(1:16),ii,imligr(ii)
       iok = iok + 1
     endif
   endif
 enddo
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (ircflu(ii).ne.1.and.ircflu(ii).ne.0) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2310) chaine(1:16),ii,ircflu(ii)
       iok = iok + 1
     endif
   endif
 enddo
 ! Non reconstruction des flux en SOLU n'a pas de sens pour la convection
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (ircflu(ii).eq.0.and.ischcv(ii).eq.0.and.blencv(ii).ne.0.d0) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2311) chaine(1:16),ii,ircflu(ii),ii,ischcv(ii)
       iok = iok + 1
     endif
@@ -677,11 +693,11 @@ enddo
 !   Une valeur negative indique qu'on veut atteindre
 !   le nombre d'iterations maximal
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (climgr(ii).lt.1.d0) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2320) chaine(1:16),ii,climgr(ii)
       iok = iok + 1
     endif
@@ -691,21 +707,21 @@ enddo
 
 ! EXTRAG non nul permis uniquement pour la pression.
 !        et dans ce cas egal a 1
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (abs(extrag(ii)     ).ge.epzero) then
       iokpre = 0
       if (ii.eq.ipr) then
         iokpre = 1
         if (abs(extrag(ii)-1.d0).ge.epzero) then
-          chaine=nomvar(ipp)
+          call field_get_label(f_id, chaine)
           write(nfecra,2330) chaine(1:16),ii,extrag(ii)
           iok = iok + 1
         endif
       endif
       if (iokpre.eq.0) then
-        chaine=nomvar(ipp)
+        call field_get_label(f_id, chaine)
         write(nfecra,2331) chaine(1:16),ii,extrag(ii)
         iok = iok + 1
       endif
@@ -724,8 +740,8 @@ enddo
 !   Ce sont simplement des entiers
 !   Une valeur negative indique qu'on veut sortir de suite
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (iresol(ii).ne.-1) then
       iresop = mod(iresol(ii)+10000,1000)
@@ -733,28 +749,28 @@ do ipp = 2, nvppmx
       iresop = mod(iresop,100)
       if ((iresop.lt.0.or.iresop.gt.3).or.                       &
           (iresop.eq.1.and.ipolop.ne.0)) then
-        chaine=nomvar(ipp)
+        call field_get_label(f_id, chaine)
         write(nfecra,2400) chaine(1:16),ii,iresol(ii)
         iok = iok + 1
       endif
     endif
     if (idircl(ii).ne.0.and.idircl(ii).ne.1) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2401) chaine(1:16),ii,idircl(ii)
       iok = iok + 1
     endif
   endif
 enddo
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (iresol(ii).eq.0.and.iconv(ii).eq.1) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2410) chaine(1:16),ii,iresol(ii),iconv(ii)
     endif
     if (iresol(ii).eq.1.and.iconv(ii).eq.0) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2411) chaine(1:16),ii,iresol(ii),iconv(ii)
     endif
   endif
@@ -812,11 +828,11 @@ if (dtmin.le.0.d0 .or. dtmax.le.0.d0 .or. dtmin.gt.dtmax) then
   endif
 endif
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (cdtvar(ii).le.0.d0) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,2530) chaine(1:16),ii,cdtvar(ii)
       iok = iok + 1
     endif
@@ -1165,7 +1181,7 @@ endif
 if (nscal.gt.0) then
   do iscal = 1, nscal
     if (icpsyr(iscal).ne.0.and.icpsyr(iscal).ne.1) then
-      chaine=nomvar(ipprtp(isca(iscal)))
+      call field_get_label(ivarfl(isca(iscal)), chaine)
       write(nfecra,2650)chaine(1:16),'ICPSYR',iscal,icpsyr(iscal)
       iok = iok + 1
     endif
@@ -1322,7 +1338,7 @@ enddo
 
 do ivar = 1, nvar
   if (nswrsm(ivar).le.0) then
-    chaine = nomvar(ipp)
+    call field_get_label(ivarfl(ivar), chaine)
     write(nfecra,2747) chaine(1:16), nswrsm(ivar), 1
     nswrsm(ivar) = 1
   endif
@@ -1334,11 +1350,11 @@ enddo
 
 ! --- Options generales
 
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (imgr(ii).ne.0.and.imgr(ii).ne.1) then
-      chaine=nomvar(ipp)
+      call field_get_label(f_id, chaine)
       write(nfecra,3000) chaine(1:16),'IMGR  ',ii,imgr(ii)
       iok = iok + 1
     endif
@@ -1359,8 +1375,8 @@ do ipp = 2, nvppmx
   endif
 enddo
 imgrok = 0
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     if (imgr(ii).eq.1) then
       imgrok = 1
@@ -1461,7 +1477,7 @@ if (nscal.gt.0) then
 !     Scalaire passif, temperature, enthalpie, energie
   do ii = 1, nscal
     if (iscacp(ii).lt.0.or.iscacp(ii).gt.1) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4300)chaine(1:16),ii,iscacp(ii)
       iok = iok + 1
     endif
@@ -1470,7 +1486,7 @@ if (nscal.gt.0) then
 !     Scalaire associe dans le cas des variances
   do ii = 1, nscal
     if (iscavr(ii).gt.nscal.or.iscavr(ii).lt.0) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4320)chaine(1:16),ii,nscal,iscavr(ii)
       iok = iok + 1
     endif
@@ -1481,8 +1497,8 @@ if (nscal.gt.0) then
   do ii = 1, nscal
     if (iscavr(ii).gt.0) then
       if (iscavr(iscavr(ii)).gt.0) then
-        chaine=nomvar(ipprtp(isca(ii)))
-        chain2=nomvar(ipprtp(isca(iscavr(ii))))
+        call field_get_label(ivarfl(isca(ii)), chaine)
+        call field_get_label(ivarfl(isca(iscavr(ii))), chain2)
         write(nfecra,4321)chaine(1:16),chain2(1:16),ii,iscavr(ii),  &
              iscavr(ii),iscavr(iscavr(ii))
         iok = iok + 1
@@ -1498,13 +1514,13 @@ if (nscal.gt.0) then
     if (iscavr(ii).le.nscal.and.iscavr(ii).gt.0) then
       if (iclvfl(ii).ne.0.and.                                     &
          iclvfl(ii).ne.1.and.iclvfl(ii).ne.2) then
-        chaine=nomvar(ipprtp(isca(ii)))
+        call field_get_label(ivarfl(isca(ii)), chaine)
         write(nfecra,4330)chaine(1:16),ii,iclvfl(ii)
         iok = iok + 1
       endif
     elseif (iscavr(ii).eq.0) then
       if (iclvfl(ii).ne.-1) then
-        chaine=nomvar(ipprtp(isca(ii)))
+        call field_get_label(ivarfl(isca(ii)), chaine)
         write(nfecra,4331)chaine(1:16),ii,iclvfl(ii)
         iok = iok + 1
       endif
@@ -1515,7 +1531,7 @@ if (nscal.gt.0) then
 !        si pas cste, on verifiera apres usphyv
   do ii = 1, nscal
     if (ivisls(ii).le.0.and.visls0(ii).lt.0d0) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4340)chaine(1:16),ii,ii,ivisls(ii),visls0(ii)
       iok = iok + 1
     endif
@@ -1524,7 +1540,7 @@ if (nscal.gt.0) then
 !     Valeur du sigma positif
   do ii = 1, nscal
     if (sigmas(ii).le.0d0) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4350)chaine(1:16),ii,sigmas(ii)
       iok = iok + 1
     endif
@@ -1539,7 +1555,7 @@ if (nscal.gt.0) then
 
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
        iclvfl(ii).ne.2.and.abs(scminp+grand).ge.epzero) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4360)chaine(1:16),ii,scminp,ii,iclvfl(ii)
       iok = iok + 1
     endif
@@ -1554,7 +1570,7 @@ if (nscal.gt.0) then
 
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
        iclvfl(ii).ne.2.and.abs(scmaxp-grand).ge.epzero) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4361)chaine(1:16),ii,scmaxp,ii,iclvfl(ii)
       iok = iok + 1
     endif
@@ -1567,7 +1583,7 @@ if (nscal.gt.0) then
 
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
        iclvfl(ii).eq.2.and.scmaxp.le.0.d0) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4370)chaine(1:16),ii,scmaxp
       iok = iok + 1
     endif
@@ -1577,7 +1593,7 @@ if (nscal.gt.0) then
   do ii = 1, nscal
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
                            rvarfl(ii).le.0.d0) then
-      chaine=nomvar(ipprtp(isca(ii)))
+      call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4380)chaine(1:16),ii,rvarfl(ii)
       iok = iok + 1
     endif
@@ -1784,25 +1800,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 1220 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                            /,&
-'@    ICHRVR(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  ICHRVR indique si la variable doit etre incluse dans les',  /,&
-'@    fichiers de post-traitement',                             /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1230 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1881,25 +1878,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 1270 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    ITRSVR(',i10,   ') DOIT ETRE UN ENTIER COMPRIS ENTRE',    /,&
-'@      0 ET NVAR=',i10,                                        /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
  2000 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4391,25 +4369,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 1220 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    ICHRVR(',i10,   ') MUST BE AN INTEGER EQUAL  0  OR 1',    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  ICHRVR defines whether the variable should be included in', /,&
-'@    post-processing files',                                   /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1230 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4488,25 +4447,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 1270 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    ITRSVR(',i10,   ') MUST BE AN INTEGER',                   /,&
-'@    BETWEEN  0 and  NVAR=',i10,                               /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
  2000 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

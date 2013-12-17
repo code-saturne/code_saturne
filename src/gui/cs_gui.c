@@ -130,6 +130,20 @@ cs_label_t  *cs_glob_label = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Return the label of a scalar field, given by its scalar Id
+ *
+ * parameters:
+ *   id <-- scalar field id
+ *----------------------------------------------------------------------------*/
+
+static inline const char *
+_scalar_label(const int id)
+{
+  cs_field_t  *f = cs_field_by_id(cs_glob_var->scal_f_id[id]);
+  return cs_field_get_label(f);
+}
+
+/*----------------------------------------------------------------------------
  * Turbulence model parameters.
  *
  * parameters:
@@ -1197,20 +1211,42 @@ static char *_thermal_scalar_name_label(const char *kw)
  *
  * parameters:
  *   physics              <--  keyword: specific physic model required
- *   kw                   <--  scalar name
+ *   scalar_id            <--  scalar id
  *----------------------------------------------------------------------------*/
 
-static char *_specific_physic_scalar_name_label(const char *physics, const char *kw)
+static char *_specific_physic_scalar_name_label(const char *physics,
+                                                int         scalar_id)
 {
   char *path = NULL;
   char *str  = NULL;
+  char *_label = NULL;
+
+  static int start_id = 0; /* Scalar fields decalared in order,
+                              so accelerate search using previous
+                              searches */
+
+  /* Search for field with scalar id */
+
+  const int n_fields = cs_field_n_fields();
+  const int keysca = cs_field_key_id("scalar_id");
+
+  for (int f_id = start_id; f_id < n_fields; f_id++) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    int _s_id = cs_field_get_key_int(f, keysca);
+    if (_s_id == scalar_id) {
+      _label = cs_field_get_label(f);
+      break;
+    }
+  }
+
+  assert(_label != NULL);
 
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,
                         "thermophysical_models",
                         physics,
                         "scalar");
-  cs_xpath_add_test_attribute(&path, "label", kw);
+  cs_xpath_add_test_attribute(&path, "label", _label);
   cs_xpath_add_attribute(&path, "name");
 
   str = cs_gui_get_attribute_value(path);
@@ -1411,8 +1447,9 @@ static char *_get_profile_label_name(const int id, const int nm)
 
   for (j=0 ; j < vars->nscaus + vars->nscapp; j++) {
     if (cs_gui_strcmp(name, vars->name[j+shift])) {
-      BFT_MALLOC(label, strlen(vars->label[j])+1, char);
-      strcpy(label, vars->label[j]);
+      const char *f_lbl = _scalar_label(j);
+      BFT_MALLOC(label, strlen(f_lbl)+1, char);
+      strcpy(label, f_lbl);
     }
   }
 
@@ -1548,7 +1585,7 @@ void CS_PROCF (uiinit, UIINIT) (void)
   cs_glob_var->head            = NULL;
   cs_glob_var->type            = NULL;
   cs_glob_var->name            = NULL;
-  cs_glob_var->label           = NULL;
+  cs_glob_var->scal_f_id       = NULL;
   cs_glob_var->rtp             = NULL;
   cs_glob_var->nvar            = 0;
   cs_glob_var->nscaus          = 0;
@@ -1767,8 +1804,7 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv)
 
 void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
 {
-  int   i     = 0;
-  char *label = NULL;
+  int  i;
 
   cs_var_t *vars = cs_glob_var;
 
@@ -1776,21 +1812,54 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
 
   cs_glob_var->nscaus = *nscaus;
 
-  BFT_MALLOC(vars->label, *nscaus, char*);
-
-  for (i=0; i < vars->nscaus; i++) {
-    label = _scalar_name_label("label", i+1);
-    BFT_MALLOC(cs_glob_var->label[i], strlen(label)+1, char);
-    strcpy(cs_glob_var->label[i], label);
-    BFT_FREE(label);
-  }
-
 #if _XML_DEBUG_
   bft_printf("==>CSNSCA\n");
-  bft_printf("--user scalars number: %i\n", vars->nscaus);
-  for (i=0; i<*nscaus; i++)
-    bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
+  bft_printf("--number of user scalars: %i\n", vars->nscaus);
 #endif
+
+  BFT_MALLOC(vars->scal_f_id, *nscaus, int);
+
+  for (i = 0; i < *nscaus; i++)
+    vars->scal_f_id[i] = -1;
+}
+
+/*----------------------------------------------------------------------------
+ * User scalars labels
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UISCAU
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiscau, UISCAU) (void)
+{
+  int   i     = 0;
+  char *label = NULL;
+
+  const int n_fields = cs_field_n_fields();
+  const int keysca = cs_field_key_id("scalar_id");
+  const int keylbl = cs_field_key_id("label");
+
+  cs_var_t *vars = cs_glob_var;
+
+#if _XML_DEBUG_
+  bft_printf("==>UISCAU\n");
+#endif
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    i = cs_field_get_key_int(f, keysca) - 1;
+    if (i >= 0 && i < vars->nscaus) {
+      vars->scal_f_id[i] = f_id;
+      label = _scalar_name_label("label", i+1);
+      cs_field_set_key_str(f, keylbl, label);
+#if _XML_DEBUG_
+      bft_printf("--label of scalar[%i]: %s\n", i, label);
+#endif
+      BFT_FREE(label);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1809,20 +1878,34 @@ void CS_PROCF (uithsc, UITHSC) (int *const iscalt)
   cs_var_t  *vars = cs_glob_var;
   char *label = NULL;
 
-  if (vars->nscaus > 0) {
-    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
-  } else {
-    BFT_MALLOC(vars->label, vars->nscapp, char*);
-  }
+  const int n_fields = cs_field_n_fields();
+  const int keysca = cs_field_key_id("scalar_id");
+  const int keylbl = cs_field_key_id("label");
+
+  BFT_REALLOC(vars->scal_f_id, vars->nscapp + vars->nscaus, int);
+
+  for (int j = 0; j < vars->nscapp; j++)
+    vars->scal_f_id[j+vars->nscaus] = -1;
 
   label = _thermal_scalar_name_label("label");
-  BFT_MALLOC(vars->label[*iscalt -1], strlen(label)+1, char);
-  strcpy(vars->label[*iscalt -1], label);
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    int i = cs_field_get_key_int(f, keysca) - 1;
+    if (i == *iscalt - 1) {
+#if _XML_DEBUG_
+      bft_printf("--label of thermal scalar: %s\n", label);
+#endif
+      vars->scal_f_id[i] = f_id;
+      cs_field_set_key_str(f, keylbl, label);
+      break;
+    }
+  }
+
   BFT_FREE(label);
 
   BFT_MALLOC(vars->model, strlen("thermal_scalar")+1, char);
   strcpy(vars->model, "thermal_scalar");
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1856,7 +1939,7 @@ void CS_PROCF (csisca, CSISCA) (      int *const iscavr,
 
         for (j=0 ; j < vars->nscaus ; j++) {
 
-          if (cs_gui_strcmp(variance, vars->label[j])) {
+          if (cs_gui_strcmp(variance, _scalar_label(j))) {
 
             if (i == j)
               bft_error(__FILE__, __LINE__, 0,
@@ -1868,7 +1951,7 @@ void CS_PROCF (csisca, CSISCA) (      int *const iscavr,
 
         if (*itherm && iscavr[i] == 0) {
           for (j=0; j < vars->nscapp; j++) {
-            if (cs_gui_strcmp(variance, vars->label[iscapp[j]-1])) {
+            if (cs_gui_strcmp(variance, _scalar_label(iscapp[j]-1))) {
               iscavr[i] = iscapp[j];
             }
           }
@@ -2301,7 +2384,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     if (*itherm > 0 && i == 0)
       name = _thermal_scalar_name_label("name");
     else
-      name = _specific_physic_scalar_name_label(cs_glob_var->model, cs_glob_var->label[j]);
+      name = _specific_physic_scalar_name_label(cs_glob_var->model, j+1);
     BFT_MALLOC(cs_glob_var->name[k+j], strlen(name) +1, char);
     strcpy(cs_glob_var->name[k+j], name);
     BFT_FREE(name);
@@ -2554,12 +2637,12 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   if (vars->nscaus > 0 ) {
     for (i=0 ; i < vars->nscaus; i++) {
       j = isca[i]-1;
-      cs_gui_scalar_value(vars->label[i], "blending_factor", &blencv[j]);
-      cs_gui_scalar_value(vars->label[i], "solver_precision", &epsilo[j]);
+      cs_gui_scalar_value(_scalar_label(i), "blending_factor", &blencv[j]);
+      cs_gui_scalar_value(_scalar_label(i), "solver_precision", &epsilo[j]);
 
       imgr[j] = 0;
 
-      algo_choice = cs_gui_variable_choice(vars->label[i], "solver_choice");
+      algo_choice = cs_gui_variable_choice(_scalar_label(i), "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         iresol[j] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
@@ -2573,15 +2656,15 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       else //default value
         iresol[j] = -1;
 
-      cs_gui_scalar_value(vars->label[i], "time_step_factor", &cdtvar[j]);
+      cs_gui_scalar_value(_scalar_label(i), "time_step_factor", &cdtvar[j]);
       tmp = (double) nitmax[j];
-      cs_gui_scalar_value(vars->label[i], "max_iter_number", &tmp);
+      cs_gui_scalar_value(_scalar_label(i), "max_iter_number", &tmp);
       nitmax[j] = (int) tmp;
-      cs_gui_scalar_attribute(vars->label[i], "order_scheme", &ischcv[j]);
-      cs_gui_scalar_attribute(vars->label[i], "slope_test", &isstpc[j]);
-      cs_gui_scalar_attribute(vars->label[i], "flux_reconstruction", &ircflu[j]);
+      cs_gui_scalar_attribute(_scalar_label(i), "order_scheme", &ischcv[j]);
+      cs_gui_scalar_attribute(_scalar_label(i), "slope_test", &isstpc[j]);
+      cs_gui_scalar_attribute(_scalar_label(i), "flux_reconstruction", &ircflu[j]);
       tmp = (double) nswrsm[j];
-      cs_gui_scalar_value(vars->label[i], "rhs_reconstruction", &tmp);
+      cs_gui_scalar_value(_scalar_label(i), "rhs_reconstruction", &tmp);
       nswrsm[j] = (int) tmp;
     }
   }
@@ -2592,13 +2675,13 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     for (i=0 ; i < vars->nscapp ; i++) {
       j = iscapp[i] -1;
       jj = isca[j]-1;
-      cs_gui_model_scalar_value(vars->model, vars->label[j], "blending_factor", &blencv[jj]);
-      cs_gui_model_scalar_value(vars->model, vars->label[j], "solver_precision", &epsilo[jj]);
-      cs_gui_model_scalar_value(vars->model, vars->label[j], "time_step_factor", &cdtvar[jj]);
+      cs_gui_model_scalar_value(vars->model, _scalar_label(j), "blending_factor", &blencv[jj]);
+      cs_gui_model_scalar_value(vars->model, _scalar_label(j), "solver_precision", &epsilo[jj]);
+      cs_gui_model_scalar_value(vars->model, _scalar_label(j), "time_step_factor", &cdtvar[jj]);
 
       imgr[jj] = 0;
 
-      algo_choice = cs_gui_model_variable_choice(vars->label[j], "solver_choice");
+      algo_choice = cs_gui_model_variable_choice(_scalar_label(j), "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         iresol[jj] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
@@ -2613,13 +2696,13 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
         iresol[jj] = -1;
 
       tmp = (double) nitmax[jj];
-      cs_gui_model_scalar_value(vars->model, vars->label[j], "max_iter_number", &tmp);
+      cs_gui_model_scalar_value(vars->model, _scalar_label(j), "max_iter_number", &tmp);
       nitmax[jj] = (int) tmp;
-      cs_gui_model_scalar_output_status(vars->model, vars->label[j], "order_scheme", &ischcv[jj]);
-      cs_gui_model_scalar_output_status(vars->model, vars->label[j], "slope_test", &isstpc[jj]);
-      cs_gui_model_scalar_output_status(vars->model, vars->label[j], "flux_reconstruction", &ircflu[jj]);
+      cs_gui_model_scalar_output_status(vars->model, _scalar_label(j), "order_scheme", &ischcv[jj]);
+      cs_gui_model_scalar_output_status(vars->model, _scalar_label(j), "slope_test", &isstpc[jj]);
+      cs_gui_model_scalar_output_status(vars->model, _scalar_label(j), "flux_reconstruction", &ircflu[jj]);
       tmp = (double) nswrsm[jj];
-      cs_gui_model_scalar_value(vars->model, vars->label[j], "rhs_reconstruction", &tmp);
+      cs_gui_model_scalar_value(vars->model, _scalar_label(j), "rhs_reconstruction", &tmp);
       nswrsm[jj] = (int) tmp;
     }
   }
@@ -2640,7 +2723,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     bft_printf("--iresol = %i\n", iresol[vars->rtp[i]]);
   }
   for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
-    bft_printf("-->scalar[%i]: %s\n", isca[i]-1, vars->label[i]);
+    bft_printf("-->scalar[%i]: %s\n", isca[i]-1, _scalar_label(i));
     bft_printf("--blencv = %f\n", blencv[isca[i]-1]);
     bft_printf("--epsilo = %g\n", epsilo[isca[i]-1]);
     bft_printf("--cdtvar = %g\n", cdtvar[isca[i]-1]);
@@ -2800,50 +2883,41 @@ void CS_PROCF (csphys, CSPHYS)
  * subroutine cssca2 (iscalt, iscavr, scamin, scamax)
  * *****************
  *
- * integer          iscalt  <--   index of the thermal scalar
- * integer          iscavr  <--   number of the related variance if any
- * double precision scamin  -->   user scalar min array
- * double precision scamax  -->   user scalar max array
+ * integer          iscavr   <--  number of the related variance if any
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const    int *const iscalt,
-                                const    int *const iscavr,
-                                      double *const scamin,
-                                      double *const scamax)
+void CS_PROCF (cssca2, CSSCA2) (const int  *iscavr)
 {
-  /* Specific physics: the min max of the model scalar are not given */
+#if _XML_DEBUG_
+  bft_printf("==>CSSCA2\n");
+#endif
 
   int i;
   cs_var_t  *vars = cs_glob_var;
 
-  for (i = 0; i < vars->nscaus; i++) {
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+
+  /* Specific physics: the min max of the model scalar are not given */
+
+  int max_scal_id = vars->nscaus;
+  if (vars->nscapp == 1) /* thermal model with no specific physics */
+    max_scal_id += 1;
+
+  for (i=0 ; i < max_scal_id; i++) {
     if (iscavr[i] <= 0 ) {
-      cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
-      cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
+      double scal_min, scal_max;
+      cs_field_t *f = cs_field_by_id(vars->scal_f_id[i]);
+      cs_gui_scalar_value(_scalar_label(i), "min_value", &scal_min);
+      cs_gui_scalar_value(_scalar_label(i), "max_value", &scal_max);
+      cs_field_set_key_double(f, kscmin, scal_min);
+      cs_field_set_key_double(f, kscmax, scal_max);
+#if _XML_DEBUG_
+      bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
+      bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
+#endif
     }
   }
-
-  /* Clipping of the thermal scalar */
-  i = *iscalt-1;
-
-  if (i >= 0) {
-    cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
-    cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==>CSSCA2\n");
-  for (i=0 ; i < vars->nscaus ; i++) {
-    bft_printf("--scamin[%i] = %f\n", i, scamin[i]);
-    bft_printf("--scamax[%i] = %f\n", i, scamax[i]);
-  }
-  i = *iscalt-1;
-
-  if (i >= 0) {
-    cs_gui_scalar_value(vars->label[i], "min_value", &scamin[i]);
-    cs_gui_scalar_value(vars->label[i], "max_value", &scamax[i]);
-  }
-#endif
 }
 
 
@@ -3246,23 +3320,23 @@ void CS_PROCF(fcnmva, FCNMVA)
   (
     const char          *const fstr,    /* <-- Fortran string */
     int                 *const len,     /* <-- String Length  */
-    int                 *const var_id   /* <-- Variable Id (1 to n) */
+    int                 *const ipp      /* <-- Post Id (1 to n) */
     CS_ARGF_SUPP_CHAINE
   )
 {
   int i, i1, i2, l;
   char *cstr = NULL;
 
-  assert(*var_id > 0);
+  assert(*ipp > 1);
 
   /* Resize array if necessary */
 
-  if (*var_id > cs_glob_label->_cs_gui_max_vars) {
+  if (*ipp > cs_glob_label->_cs_gui_max_vars) {
 
     if (cs_glob_label->_cs_gui_max_vars == 0)
       cs_glob_label->_cs_gui_max_vars = 16;
 
-    while (cs_glob_label->_cs_gui_max_vars <= *var_id)
+    while (cs_glob_label->_cs_gui_max_vars <= *ipp)
       cs_glob_label->_cs_gui_max_vars *= 2;
 
     BFT_REALLOC(cs_glob_label->_cs_gui_var_name, cs_glob_label->_cs_gui_max_vars, char *);
@@ -3283,7 +3357,7 @@ void CS_PROCF(fcnmva, FCNMVA)
   l = i2 - i1 + 1;
 
   /* Should be called once per variable only */
-  assert(cs_glob_label->_cs_gui_var_name[*var_id - 1] == NULL);
+  assert(cs_glob_label->_cs_gui_var_name[*ipp - 1] == NULL);
 
   if (l > 0) {
 
@@ -3295,12 +3369,12 @@ void CS_PROCF(fcnmva, FCNMVA)
 
     cstr[l] = '\0';
 
-    cs_glob_label->_cs_gui_var_name[*var_id - 1] = cstr;
+    cs_glob_label->_cs_gui_var_name[*ipp - 1] = cstr;
 
   }
 
   /* Update variable counter */
-  cs_glob_label->_cs_gui_last_var = *var_id;
+  cs_glob_label->_cs_gui_last_var = *ipp - 1;
 
 }
 
@@ -3312,7 +3386,7 @@ void CS_PROCF(cfnmva, CFNMVA)
   (
     char          *const fstr,    /* <-- Fortran string */
     int           *const len,     /* <-- String Length  */
-    int           *const var_id   /* <-- Variable Id (1 to n) */
+    int           *const ipp      /* <-- Post Id (1 to n) */
     CS_ARGF_SUPP_CHAINE
   )
 {
@@ -3320,15 +3394,15 @@ void CS_PROCF(cfnmva, CFNMVA)
   int l = 0;
   char *cstr = NULL;
 
-  /* Check that variable name was set */
+  /* If that variable name was not set in the GUI reader,
+     do not modify the defaults. */
 
-  if (*var_id < 1 || *var_id > cs_glob_label->_cs_gui_last_var)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Name of variable %i was never set.\n"), *var_id);
+  if (*ipp < 2 || *ipp - 1 > cs_glob_label->_cs_gui_last_var)
+    return;
 
   /* Copy string */
 
-  cstr = cs_glob_label->_cs_gui_var_name[*var_id - 1];
+  cstr = cs_glob_label->_cs_gui_var_name[*ipp - 1];
 
   if (cstr != NULL) {
 
@@ -3607,8 +3681,6 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
 
   mei_tree_t *ev_formula  = NULL;
 
-  cs_var_t  *vars = cs_glob_var;
-
   /* number of volumic zone */
 
   zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
@@ -3636,7 +3708,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
                             "thermophysical_models",
                             "source_terms",
                             "scalar_formula");
-      cs_xpath_add_test_attribute(&path, "label", vars->label[*iscal-1]);
+      cs_xpath_add_test_attribute(&path, "label", _scalar_label(*iscal-1));
       cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
       cs_xpath_add_function_text(&path);
       formula = cs_gui_get_text_value(path);
@@ -3647,7 +3719,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
         mei_tree_insert(ev_formula,"x",0.);
         mei_tree_insert(ev_formula,"y",0.);
         mei_tree_insert(ev_formula,"z",0.);
-        mei_tree_insert(ev_formula, vars->label[*iscal-1], 0.0);
+        mei_tree_insert(ev_formula, _scalar_label(*iscal-1), 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3664,7 +3736,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, vars->label[*iscal-1], pvar[iel]);
+          mei_tree_insert(ev_formula, _scalar_label(*iscal-1), pvar[iel]);
           mei_evaluate(ev_formula);
           dS = mei_tree_lookup(ev_formula,"dS");
           tsimp[iel] = cell_vol[iel]*dS;
@@ -3717,8 +3789,6 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
 
   mei_tree_t *ev_formula  = NULL;
 
-  cs_var_t  *vars = cs_glob_var;
-
   /* number of volumic zone */
 
   zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
@@ -3746,7 +3816,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
                             "thermophysical_models",
                             "source_terms",
                             "thermal_formula");
-      cs_xpath_add_test_attribute(&path, "label", vars->label[*iscal-1]);
+      cs_xpath_add_test_attribute(&path, "label", _scalar_label(*iscal-1));
       cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
       cs_xpath_add_function_text(&path);
       formula = cs_gui_get_text_value(path);
@@ -3757,7 +3827,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
         mei_tree_insert(ev_formula,"x",0.);
         mei_tree_insert(ev_formula,"y",0.);
         mei_tree_insert(ev_formula,"z",0.);
-        mei_tree_insert(ev_formula, vars->label[*iscal-1], 0.0);
+        mei_tree_insert(ev_formula, _scalar_label(*iscal-1), 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3774,7 +3844,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, vars->label[*iscal-1], pvar[iel]);
+          mei_tree_insert(ev_formula, _scalar_label(*iscal-1), pvar[iel]);
           mei_evaluate(ev_formula);
           dS = mei_tree_lookup(ev_formula,"dS");
           tsimp[iel] = cell_vol[iel]*dS;
@@ -4149,7 +4219,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                               "thermophysical_models",
                               "thermal_scalar",
                               "scalar");
-        cs_xpath_add_test_attribute(&path_sca, "label", vars->label[*iscalt-1]);
+        cs_xpath_add_test_attribute(&path_sca, "label", _scalar_label(*iscalt-1));
         cs_xpath_add_element(&path_sca, "formula");
         cs_xpath_add_test_attribute(&path_sca, "zone_id", zone_id);
         cs_xpath_add_function_text(&path_sca);
@@ -4167,10 +4237,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                       _("Error: can not interpret expression: %s\n %i"),
                       ev_formula_sca->string, mei_tree_builder(ev_formula_sca));
 
-          if (mei_tree_find_symbol(ev_formula_sca, vars->label[*iscalt-1]))
+          if (mei_tree_find_symbol(ev_formula_sca, _scalar_label(*iscalt-1)))
             bft_error(__FILE__, __LINE__, 0,
                       _("Error: can not find the required symbol: %s\n"),
-                      vars->label[*iscalt-1]);
+                      _scalar_label(*iscalt-1));
 
           if (*isuite == 0 || (*isuite !=0 && iscold[*iscalt-1] == 0)) {
             for (icel = 0; icel < cells; icel++) {
@@ -4180,7 +4250,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
               mei_evaluate(ev_formula_sca);
               rtp[(isca[*iscalt-1]-1)*(*ncelet) + iel] =
-                mei_tree_lookup(ev_formula_sca,vars->label[*iscalt-1]);
+                mei_tree_lookup(ev_formula_sca,_scalar_label(*iscalt-1));
             }
           }
           mei_tree_destroy(ev_formula_sca);
@@ -4200,7 +4270,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         cs_xpath_add_elements(&path_sca, 2,
                               "additional_scalars",
                               "scalar");
-        cs_xpath_add_test_attribute(&path_sca, "label", vars->label[j]);
+        cs_xpath_add_test_attribute(&path_sca, "label", _scalar_label(j));
         cs_xpath_add_element(&path_sca, "formula");
         cs_xpath_add_test_attribute(&path_sca, "zone_id", zone_id);
         cs_xpath_add_function_text(&path_sca);
@@ -4218,10 +4288,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                       _("Error: can not interpret expression: %s\n %i"),
                       ev_formula_sca->string, mei_tree_builder(ev_formula_sca));
 
-          if (mei_tree_find_symbol(ev_formula_sca, vars->label[j]))
+          if (mei_tree_find_symbol(ev_formula_sca, _scalar_label(j)))
             bft_error(__FILE__, __LINE__, 0,
                       _("Error: can not find the required symbol: %s\n"),
-                      vars->label[j]);
+                      _scalar_label(j));
 
           if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
             for (icel = 0; icel < cells; icel++) {
@@ -4231,7 +4301,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
               mei_evaluate(ev_formula_sca);
               rtp[(isca[j]-1)*(*ncelet) + iel] =
-                mei_tree_lookup(ev_formula_sca,vars->label[j]);
+                mei_tree_lookup(ev_formula_sca,_scalar_label(j));
             }
           }
           mei_tree_destroy(ev_formula_sca);
@@ -4253,7 +4323,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                                  "thermophysical_models",
                                  "atmospheric_flows",
                                  "scalar");
-          cs_xpath_add_test_attribute(&path_meteo, "label", vars->label[j]);
+          cs_xpath_add_test_attribute(&path_meteo, "label", _scalar_label(j));
           cs_xpath_add_element(&path_meteo, "formula");
           cs_xpath_add_test_attribute(&path_meteo, "zone_id", zone_id);
           cs_xpath_add_function_text(&path_meteo);
@@ -4270,10 +4340,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                         _("Error: can not interpret expression: %s\n %i"),
                         ev_formula_meteo->string, mei_tree_builder(ev_formula_meteo));
 
-            if (mei_tree_find_symbol(ev_formula_meteo, vars->label[j]))
+            if (mei_tree_find_symbol(ev_formula_meteo, _scalar_label(j)))
               bft_error(__FILE__, __LINE__, 0,
                         _("Error: can not find the required symbol: %s\n"),
-                        vars->label[j]);
+                        _scalar_label(j));
 
             if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
               for (icel = 0; icel < cells; icel++) {
@@ -4283,7 +4353,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                 mei_tree_insert(ev_formula_meteo, "z", xyzcen[3 * iel + 2]);
                 mei_evaluate(ev_formula_meteo);
                 rtp[(isca[j]-1)*(*ncelet) + iel] =
-                         mei_tree_lookup(ev_formula_meteo,vars->label[j]);
+                         mei_tree_lookup(ev_formula_meteo,_scalar_label(j));
               }
             }
             mei_tree_destroy(ev_formula_meteo);
@@ -4851,9 +4921,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     mei_tree_insert(ev_rho, "p0", *p0);
 
     for (i = 0; i < *nscaus; i++)
-      mei_tree_insert(ev_rho, vars->label[i], 0.0);
+      mei_tree_insert(ev_rho, _scalar_label(i), 0.0);
 
-    mei_tree_insert(ev_rho, vars->label[*iscalt -1], 0.0);
+    mei_tree_insert(ev_rho, _scalar_label(*iscalt - 1), 0.0);
 
     /* try to build the interpreter */
 
@@ -4872,10 +4942,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     {
       for (i = 0; i < *nscaus; i++)
         mei_tree_insert(ev_rho,
-                        vars->label[i],
+                        _scalar_label(i),
                         rtp[(isca[i] -1) * (*ncelet) + iel]);
       mei_tree_insert(ev_rho,
-                      vars->label[*iscalt -1],
+                      _scalar_label(*iscalt - 1),
                       rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
       mei_evaluate(ev_rho);
@@ -4925,9 +4995,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
       mei_tree_insert(ev_mu, "t0", 0.0);
 
     for (i = 0; i < *nscaus; i++)
-      mei_tree_insert(ev_mu, vars->label[i], 0.0);
+      mei_tree_insert(ev_mu, _scalar_label(i), 0.0);
 
-    mei_tree_insert(ev_mu, vars->label[*iscalt -1], 0.0);
+    mei_tree_insert(ev_mu, _scalar_label(*iscalt - 1), 0.0);
 
     /* try to build the interpreter */
 
@@ -4947,10 +5017,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
       for (i = 0; i < *nscaus; i++)
         mei_tree_insert(ev_mu,
-                        vars->label[i],
+                        _scalar_label(i),
                         rtp[(isca[i] -1) * (*ncelet) + iel]);
       mei_tree_insert(ev_mu,
-                      vars->label[*iscalt -1],
+                      _scalar_label(*iscalt - 1),
                       rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
       mei_tree_insert(ev_mu, "rho", c_rho->val[iel]);
@@ -5001,9 +5071,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     mei_tree_insert(ev_cp, "p0", *p0);
 
     for (i = 0; i < *nscaus; i++)
-      mei_tree_insert(ev_cp, vars->label[i], 0.0);
+      mei_tree_insert(ev_cp, _scalar_label(i), 0.0);
 
-    mei_tree_insert(ev_cp, vars->label[*iscalt -1], 0.0);
+    mei_tree_insert(ev_cp, _scalar_label(*iscalt - 1), 0.0);
 
     /* try to build the interpreter */
 
@@ -5021,10 +5091,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     for (iel = 0; iel < *ncel; iel++) {
       for (i = 0; i < *nscaus; i++)
         mei_tree_insert(ev_cp,
-                        vars->label[i],
+                        _scalar_label(i),
                         rtp[(isca[i] -1) * (*ncelet) + iel]);
       mei_tree_insert(ev_cp,
-                      vars->label[*iscalt -1],
+                      _scalar_label(*iscalt - 1),
                       rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
       mei_evaluate(ev_cp);
@@ -5083,9 +5153,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     mei_tree_insert(ev_la, "p0", *p0);
 
     for (i = 0; i < *nscaus; i++)
-      mei_tree_insert(ev_la, vars->label[i], 0.0);
+      mei_tree_insert(ev_la, _scalar_label(i), 0.0);
 
-    mei_tree_insert(ev_la, vars->label[*iscalt -1], 0.0);
+    mei_tree_insert(ev_la, _scalar_label(*iscalt - 1), 0.0);
 
     /* try to build the interpreter */
 
@@ -5106,10 +5176,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
       {
         for (i = 0; i < *nscaus; i++)
           mei_tree_insert(ev_la,
-                          vars->label[i],
+                          _scalar_label(i),
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
         mei_tree_insert(ev_la,
-                        vars->label[*iscalt -1],
+                        _scalar_label(*iscalt - 1),
                         rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
         mei_evaluate(ev_la);
@@ -5130,10 +5200,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
       for (iel = 0; iel < *ncel; iel++) {
         for (i = 0; i < *nscaus; i++)
           mei_tree_insert(ev_la,
-                          vars->label[i],
+                          _scalar_label(i),
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
         mei_tree_insert(ev_la,
-                        vars->label[*iscalt -1],
+                        _scalar_label(*iscalt - 1),
                         rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
 
         mei_evaluate(ev_la);
@@ -5180,7 +5250,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
       mei_tree_insert(ev_la, "rho0", *ro0);
 
       for (i = 0; i < *nscaus; i++)
-        mei_tree_insert(ev_la, vars->label[i], 0.0);
+        mei_tree_insert(ev_la, _scalar_label(i), 0.0);
 
       /* try to build the interpreter */
 
@@ -5198,7 +5268,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
       for (iel = 0; iel < *ncel; iel++) {
         for (i = 0; i < *nscaus; i++)
           mei_tree_insert(ev_la,
-                          vars->label[i],
+                          _scalar_label(i),
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
 
         mei_tree_insert(ev_la, "T", rtp[(isca[*itempk -1] -1) * (*ncelet) + iel]);
@@ -5247,7 +5317,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
       ev_Ds = mei_tree_new(law_Ds);
       BFT_FREE(law_Ds);
       for (i = 0; i < *nscaus; i++)
-        mei_tree_insert(ev_Ds, vars->label[i], 0.0);
+        mei_tree_insert(ev_Ds, _scalar_label(i), 0.0);
 
       /* try to build the interpreter */
 
@@ -5267,7 +5337,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         for (iel = 0; iel < *ncel; iel++) {
           for (i = 0; i < *nscaus; i++)
             mei_tree_insert(ev_Ds,
-                            vars->label[i],
+                            _scalar_label(i),
                             rtp[(isca[i] -1) * (*ncelet) + iel]);
 
           mei_evaluate(ev_Ds);
@@ -5279,7 +5349,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         for (iel = 0; iel < *ncel; iel++) {
           for (i = 0; i < *nscaus; i++)
             mei_tree_insert(ev_Ds,
-                            vars->label[i],
+                            _scalar_label(i),
                             rtp[(isca[i] -1) * (*ncelet) + iel]);
 
           mei_evaluate(ev_Ds);
@@ -5381,7 +5451,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
       law_Ds = cs_gui_get_text_value(path);
       bft_printf("--law for the coefficient of diffusity of the scalar %s: %s\n",
-                 vars->label[j], law_Ds);
+                 _scalar_label(j), law_Ds);
       BFT_FREE(path);
       BFT_FREE(law_Ds);
     }
@@ -6026,10 +6096,7 @@ cs_gui_clean_memory(void)
       BFT_FREE(cs_glob_var->name[i]);
   BFT_FREE(cs_glob_var->name);
 
-  if (cs_glob_var->label != NULL)
-    for (i = 0; i < cs_glob_var->nscaus + cs_glob_var->nscapp; i++)
-      BFT_FREE(cs_glob_var->label[i]);
-  BFT_FREE(cs_glob_var->label);
+  BFT_FREE(cs_glob_var->scal_f_id);
 
   if (cs_glob_var->properties_name != NULL)
     for (i = 0; i < cs_glob_var->nprop; i++)

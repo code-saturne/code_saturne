@@ -50,6 +50,7 @@ cs_at_plugin.h
 
 noinst_LTLIBRARIES = libcsatmo.la
 libcsatmo_la_SOURCES = \
+atini0.f90 \
 atini1.f90 \
 atiniv.f90 \
 atleca.f90 \

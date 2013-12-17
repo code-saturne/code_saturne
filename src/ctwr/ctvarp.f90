@@ -69,34 +69,37 @@ implicit none
 integer        isc
 
 !===============================================================================
-!===============================================================================
-! 1. DEFINITION DES POINTEURS
-!===============================================================================
-
-! ---- Temperature
-itemp4 = iscapp(1)
-
-! ---- Humidite
-ihumid = iscapp(2)
-
 
 !===============================================================================
-! 2. PROPRIETES PHYSIQUES
-!    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!      IVISLS, ICP
+! 1. Definition of fields
+!===============================================================================
+
+! Thermal model
+
+itherm = 1
+itpscl = 2
+
+call add_model_scalar_field('temperature', 'Temperature', itemp4)
+iscalt = itemp4
+
+iscacp(itemp4) = 1
+
+call add_model_scalar_field('humidity', 'Humidity', ihumid)
+
+!===============================================================================
+! 2. Physical properties
 !===============================================================================
 
 do isc = 1, nscapp
 
-  if ( iscavr(iscapp(isc)).le.0 ) then
-
-! ---- Viscosite dynamique moleculaire variable pour les
-!                                              scalaires ISCAPP(ISC)
+  if (iscavr(iscapp(isc)).le.0) then
+    ! Reference dynamic viscosity relative to this scalar
     ivisls(iscapp(isc)) = 0
-
   endif
 
 enddo
+
+! Cp is variable
 
 icp = 1
 

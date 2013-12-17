@@ -82,31 +82,6 @@ double precision wmolme
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
-! --> Definition des scamin et des scamax des variables transportees
-
-! ---- Variables euleriennes transportees dont les termes sources
-!      sont alimentes par le module Langrangien
-
-scamin(iscalt)   = -grand
-scamax(iscalt)   = +grand
-
-do icha = 1, ncharb
-
-  scamin(if1m(icha)) = 0.d0
-  scamax(if1m(icha)) = 1.d0
-
-  scamin(if2m(icha)) = 0.d0
-  scamax(if2m(icha)) = 1.d0
-
-enddo
-
-scamin(if3m) = 0.d0
-scamax(if3m) = 1.d0
-
-scamin(if4p2m) = 0.d0
-scamax(if4p2m) = 0.25d0
-
-
 ! --> Nature des scalaires transportes
 
 do isc = 1, nscapp
@@ -118,12 +93,6 @@ do isc = 1, nscapp
   iscacp(iscapp(isc)) = 0
 
 enddo
-
-
-! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
-
-itherm = 2
-iscacp(iscalt) = 0
 
 ! --> Donnees physiques ou numeriques propres aux scalaires CP
 
@@ -183,59 +152,6 @@ do isc = 1, nscapp
 
 enddo
 
-
-!---> Variable courante : nom, sortie chrono, suivi listing, sortie histo
-
-!     Comme pour les autres variables,
-!       si l'on n'affecte pas les tableaux suivants,
-!       les valeurs par defaut seront utilisees
-
-!     NOMVAR( ) = nom de la variable
-!     ICHRVR( ) = sortie chono (oui 1/non 0)
-!     ILISVR( ) = suivi listing (oui 1/non 0)
-!     IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!     si IHISVR(.,1)  = -1 sortie sur toutes les sondes
-
-!     NB : Les 8 premiers caracteres du noms seront repris dans le
-!          listing 'developpeur'
-
-
-! ---- Variables propres a la suspension gaz - particules
-
-ipp = ipprtp(isca(iscalt))
-NOMVAR(IPP)  = 'Enthalpy'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-do icha = 1, ncharb
-
-  ipp = ipprtp(isca(if1m(icha)))
-  WRITE(NOMVAR(IPP),'(A6,I2.2)')'Fr_MV1' ,ICHA
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-  ipp = ipprtp(isca(if2m(icha)))
-  WRITE(NOMVAR(IPP),'(A6,I2.2)')'Fr_MV2' ,ICHA
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-enddo
-
-ipp = ipprtp(isca(if3m))
-NOMVAR(IPP)  = 'Fr_HET'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-ipp = ipprtp(isca(if4p2m))
-NOMVAR(IPP)  = 'Var_AIR'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
 !===============================================================================
 ! 2. VARIABLES ALGEBRIQUES OU D'ETAT
 !===============================================================================
@@ -244,7 +160,7 @@ ihisvr(ipp,1)= -1
 ! ---> Variables algebriques propres a la suspension gaz - particules
 
 ipp = ipppro(ipproc(immel))
-NOMVAR(IPP)   = 'XM'
+nomprp(ipproc(immel))   = 'XM'
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
@@ -252,51 +168,50 @@ ihisvr(ipp,1) = -1
 ! ---> Variables algebriques propres a la phase continue
 
 ipp = ipppro(ipproc(itemp1))
-NOMVAR(IPP)   = 'Temp_GAZ'
+nomprp(ipproc(itemp1))   = 'Temp_GAZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(irom1))
-NOMVAR(IPP)   = 'ROM_GAZ'
+nomprp(ipproc(irom1))   = 'ROM_GAZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(iym1(1)))
-NOMVAR(IPP)   = 'YM_CHx1m'
+nomprp(ipproc(iym1(1)))   = 'YM_CHx1m'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(iym1(2)))
-NOMVAR(IPP)   = 'YM_CHx2m'
+nomprp(ipproc(iym1(2)))   = 'YM_CHx2m'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(iym1(3)))
-NOMVAR(IPP)   = 'YM_CO'
+nomprp(ipproc(iym1(3)))   = 'YM_CO'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(iym1(4)))
-NOMVAR(IPP)   = 'YM_O2'
+nomprp(ipproc(iym1(4)))   = 'YM_O2'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(iym1(5)))
-NOMVAR(IPP)   = 'YM_CO2'
+nomprp(ipproc(iym1(5)))   = 'YM_CO2'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(iym1(6)))
-NOMVAR(IPP)   = 'YM_H2O'
+nomprp(ipproc(iym1(6)))   = 'YM_H2O'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 ipp = ipppro(ipproc(iym1(7)))
-NOMVAR(IPP)   = 'YM_N2'
+nomprp(ipproc(iym1(7)))   = 'YM_N2'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
-
 
 !===============================================================================
 ! 3. INFORMATIONS COMPLEMENTAIRES

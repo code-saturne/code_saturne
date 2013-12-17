@@ -240,7 +240,7 @@ idtva0 = 0
 cnom = ' '
 write(cnom,'(A)') 'Rayon P1'
 inum = 1
-nomvar(inum) = cnom
+nomva0 = cnom
 
 call codits &
 !==========

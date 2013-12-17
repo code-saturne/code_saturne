@@ -98,7 +98,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 integer          ifac, izone
 integer          icke, iel, ipcvis
 integer          ii
-integer jsp
+integer jsp, isc
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision dhy, rhomoy, uref2, ustar2, viscla, xiturb
@@ -375,16 +375,18 @@ if (iaerosol.eq.1) then
 
       if (iprofa(izone).eq.1) then
         do jsp = 1, nesp_aer*nbin_aer+nbin_aer
-          if (rcodcl(ifac,isca(nespg_siream+jsp),1).gt.0.5d0*rinfin) &
-              rcodcl(ifac,isca(nespg_siream+jsp),1) = dlconc0(jsp)
+          isc = (isca_chem(1) - 1)  + nespg_siream + jsp
+          if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
+              rcodcl(ifac,isca(isc),1) = dlconc0(jsp)
         enddo
       endif
 
       ! For other species zero dirichlet conditions are imposed,
       ! unless they have already been treated earlier (eg, in usatcl)
       do ii = 1, nesp_aer*nbin_aer+nbin_aer
-        if (rcodcl(ifac,isca(nespg_siream+ii),1).gt.0.5d0*rinfin) &
-            rcodcl(ifac,isca(nespg_siream+ii),1) = 0.0d0
+        isc = (isca_chem(1) - 1)  + nespg_siream + ii
+        if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
+            rcodcl(ifac,isca(isc),1) = 0.0d0
       enddo
 
        ! For gaseous species which have not been treated earlier
@@ -392,8 +394,9 @@ if (iaerosol.eq.1) then
        ! which can be treated in usatcl of with the file chemistry)
        ! zero dirichlet conditions are imposed
        do ii = 1, nespg_siream
-        if (rcodcl(ifac,isca(ii),1).gt.0.5d0*rinfin) &
-            rcodcl(ifac,isca(ii),1) = 0.0d0
+        isc = (isca_chem(1) - 1)  + ii
+        if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
+            rcodcl(ifac,isca(isc),1) = 0.0d0
        enddo
 
     endif

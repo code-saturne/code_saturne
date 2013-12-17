@@ -87,7 +87,7 @@ integer          ipcvst
 integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
-integer          ischcp, isstpp, ippvar
+integer          ischcp, isstpp
 integer          ipcvsl, iflmas, iflmab
 integer          imucpp, idftnp
 double precision epsrgp, climgp, extrap
@@ -159,7 +159,6 @@ do iscal = 1, nscal
   inc    = 1
   iccocg = 1
   idftnp = 1 !idften(ivar)!FIXME when activating GGDH
-  ippvar = ipprtp(ivar)
   iwarnp = iwarni(ivar)
   blencp = blencv(ivar)
   epsrgp = epsrgr(ivar)
@@ -267,7 +266,7 @@ do iscal = 1, nscal
    !==========
   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-    ippvar , iwarnp , imucpp , idftnp ,                            &
+    iwarnp , imucpp , idftnp ,                                     &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
     whsad  , whsad  ,                                              &
     coefap , coefbp ,                                              &
@@ -296,7 +295,7 @@ do iscal = 1, nscal
     !==========
   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-    ippvar , iwarnp , imucpp , idftnp ,                            &
+    iwarnp , imucpp , idftnp ,                                     &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
     rtp(1,ivar)     , rtp(1,ivar)     ,                            &
     coefap , coefbp , cofafp , cofbfp ,                            &

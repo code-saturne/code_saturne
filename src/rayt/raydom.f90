@@ -563,7 +563,6 @@ if (iirayo.eq.2) then
   !==========
   ( itypfb ,                                                       &
     izfrad ,                                                       &
-    rtp    , rtpa   ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
     tparo  , bqinci , beps   ,                                     &
@@ -658,7 +657,6 @@ else if (iirayo.eq.1) then
   !==========
   ( itypfb ,                                                       &
     izfrad ,                                                       &
-    rtp    , rtpa   ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
     tparo  , bqinci , beps   ,                                     &
@@ -668,8 +666,7 @@ else if (iirayo.eq.1) then
 
   call raysol &
   !==========
- ( rtp    , rtpa   ,                                              &
-   coefap , coefbp ,                                              &
+ ( coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &

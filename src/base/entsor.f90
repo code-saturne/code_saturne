@@ -92,6 +92,16 @@ module entsor
   !> viscosity, specific heat) or turbulent viscosity if \ref iturb >= 10
   integer, save :: ichrvr(nvppmx)
 
+  !> field key for output label
+  integer, save :: keylbl = -1
+
+  !> field keys for logging and postprocessing output
+  integer, save :: keylog = -1
+  integer, save :: keyvis = -1
+
+  !> field key for start position in global postprocessing (ipp index) arrays
+  integer, save :: keyipp = -1
+
   !> \defgroup userfile Additional user files
 
   !> \addtogroup userfile
@@ -331,14 +341,18 @@ module entsor
   !> \addtogroup listing
   !> \{
 
-  !> name of the variables (unknowns, physical properties ...): used in the
+  !> temporary variable name for some algebraic operations
+
+  character*80, save :: nomva0
+
+  !> name physical properties: used in the
   !> execution listing, in the post-processing files, etc.
   !> If not initialised,  the code chooses the manes by default.
-  !> It is recommended not to define variable names of more than 16
+  !> It is recommended not to define property names of more than 16
   !> characters, to get a clear execution listing (some advanced writing
   !> levels take into account only the first 16 characters).
   !> always useful}
-  character*80, save :: nomvar(nvppmx)
+  character*80, save :: nomprp(npromx)
 
   !> locator pointer vor variables output
   integer, save :: ipprtp(nvarmx)
@@ -362,10 +376,6 @@ module entsor
   !> = 1: writing in the execution listing.
   !> = 0: no writing.
   integer, save :: ilisvr(nvppmx)
-  !> index of a variable if ipp corresponds to a determined variable
-  !> (p,u,k...)
-  !> 0 si ipp corresponds to an annex variable (cp, mut...) or to nothing.
-  integer, save :: itrsvr(nvppmx)
 
   !> writing period in the execution report file.
   !>   - -1: no writing

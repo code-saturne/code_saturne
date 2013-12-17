@@ -81,10 +81,10 @@ character*80     chaine
 integer          ivar  , iscal , imom
 integer          iel
 integer          iccfth
-integer          iclip , ipp  , iok   , ii
+integer          iclip , iok   , ii
 integer          idtcm , ipcmom, iiptot
 integer          ibormo(nbmomx), imodif
-integer          kscmin, kscmax, iflid
+integer          kscmin, kscmax, keypp, keyvar, iflid, n_fields
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
@@ -105,7 +105,12 @@ double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 ! 1. Initialization
 !===============================================================================
 
-! Key id for scamin and scamax
+call field_get_n_fields(n_fields)
+
+call field_get_key_id("variable_id", keyvar)
+call field_get_key_id("post_id", keypp)
+
+! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 
@@ -539,7 +544,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
           call clpsca(ncelet, ncel, iscal, rvoid, rtp)
           !==========
         else
-          chaine = nomvar(ipprtp(isca(ii)))
+          call field_get_label(ivarfl(isca(ii)), chaine)
           write(nfecra,3040) ii,chaine(1:16),                     &
                              valmin,scminp,valmax,scmaxp
           iok = iok + 1
@@ -584,7 +589,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 !       On pourrait clipper dans le cas ou VALMIN.GE.0, mais ca
 !       n'apporterait rien, par definition
           if(valmin.lt.0.d0) then
-            chaine = nomvar(ipprtp(isca(ii)))
+            call field_get_name(ivarfl(isca(ii)), chaine)
             write(nfecra,3050)ii,chaine(1:16),                     &
                               valmin,scminp,valmax,scmaxp
             iok = iok + 1
@@ -596,7 +601,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
             call clpsca(ncelet, ncel, iscal, rtp(1,isca(iscavr(ii))), rtp)
             !==========
           else
-            chaine = nomvar(ipprtp(isca(ii)))
+            call field_get_name(ivarfl(isca(ii)), chaine)
             write(nfecra,3050)ii,chaine(1:16),valmin,scminp,valmax,scmaxp
             iok = iok + 1
           endif
@@ -607,7 +612,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 ! On pourrait clipper dans le cas ou VALMIN.GE.VFMIN.AND.VALMAX.LE.VFMAX
 !     mais ca n'apporterait rien, par definition
           if(valmin.lt.vfmin.or.valmax.gt.vfmax) then
-            chaine = nomvar(ipprtp(isca(ii)))
+            call field_get_name(ivarfl(isca(ii)), chaine)
             write(nfecra,3051)ii,chaine(1:16),                     &
                               valmin,scminp,valmax,scmaxp,         &
                               ii,iclvfl(ii)
@@ -630,24 +635,23 @@ endif
 write(nfecra,2000)
 
 !     Inconnues de calcul : on affiche les bornes
-do ipp  = 2, nvppmx
-  if(itrsvr(ipp ).ge.1) then
-    ivar = itrsvr(ipp )
-    valmax = -grand
-    valmin =  grand
-    do iel = 1, ncel
-      valmax = max(valmax,rtp(iel,ivar))
-      valmin = min(valmin,rtp(iel,ivar))
-    enddo
-    if (irangp.ge.0) then
-      call parmax (valmax)
-      !==========
-      call parmin (valmin)
-      !==========
-    endif
-    chaine = nomvar(ipp )
-    write(nfecra,2010)chaine(1:16),valmin,valmax
+do iflid = 0, n_fields-1
+  call field_get_key_int(iflid, keyvar, ivar)
+  if (ivar.lt.0) cycle
+  valmax = -grand
+  valmin =  grand
+  do iel = 1, ncel
+    valmax = max(valmax,rtp(iel,ivar))
+    valmin = min(valmin,rtp(iel,ivar))
+  enddo
+  if (irangp.ge.0) then
+    call parmax (valmax)
+    !==========
+    call parmin (valmin)
+    !==========
   endif
+  call field_get_label(iflid, chaine)
+  write(nfecra,2010)chaine(1:16),valmin,valmax
 enddo
 write(nfecra,2020)
 
@@ -689,7 +693,7 @@ if(nbmomt.gt.0) then
       valmin = 0.d0
     endif
 
-    chaine = nomvar(ipppro(ipcmom))
+    chaine = nomprp(ipcmom)
     write(nfecra,2010)chaine(1:16),valmin,valmax
 
   enddo
@@ -702,8 +706,8 @@ if (idtvar.ge.0) then
   vdtmax = -grand
   vdtmin =  grand
   do iel = 1, ncel
-    vdtmax = max(vdtmax,dt    (iel))
-    vdtmin = min(vdtmin,dt    (iel))
+    vdtmax = max(vdtmax,dt(iel))
+    vdtmin = min(vdtmin,dt(iel))
   enddo
   if (irangp.ge.0) then
     call parmax (vdtmax)
@@ -711,7 +715,7 @@ if (idtvar.ge.0) then
     call parmin (vdtmin)
     !==========
   endif
-  write(nfecra,2010) nomvar(ippdt), vdtmin, vdtmax
+  write(nfecra,2010) 'dt', vdtmin, vdtmax
   write(nfecra,2020)
 
   if (vdtmin.le.zero) then

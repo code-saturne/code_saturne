@@ -75,6 +75,7 @@ use ppincl
 use ppcpfu
 use radiat
 use cs_coal_incl
+use field
 
 !===============================================================================
 
@@ -84,7 +85,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, nmodpp
+integer          n_fields, nmodpp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
@@ -149,7 +150,6 @@ call usipph(iihmpu , nfecra , iturb , irccor , itherm, icp)
 !===============================================================================
 
 ! --- Nombre de scalaires utilisateurs
-
 
 !   - Interface Code_Saturne
 !     ======================
@@ -228,11 +228,9 @@ endif
 call usray1
 !==========
 
-! --- Varpos
-!     Verification et construction de ISCAPP
-!      1ier passage
+!     Define fields for variables, check and build iscapp
 
-call varpos(nmodpp)
+call fldvar(nmodpp)
 !==========
 
 if (ippmod(icompf).ge.0) then
@@ -361,8 +359,8 @@ call usalin
 !     Determination de IPR, IU ... ISCA, NVAR
 !     Determination de IPP...
 
-!      2ieme passage
-call varpos(nmodpp)
+!      1er passage
+call varpos
 !==========
 
 !===============================================================================
@@ -426,8 +424,8 @@ if (iihmpr.eq.1) then
               ro0, viscl0, viscv0, visls0, cp0, t0,                   &
               p0, xmasmr, itempk)
 
-  ! Scamin, scamax
-  call cssca2(iscalt, iscavr, scamin, scamax)
+!     Scamin, scamax
+  call cssca2(iscavr)
   !==========
 
   ! Diffusivites
@@ -483,8 +481,8 @@ endif
 call comcoc(imrgra)
 
 ! --- Varpos
-!      3ieme passage
-call varpos(nmodpp)
+!      2ieme passage
+call varpos
 !==========
 
 
@@ -498,34 +496,25 @@ call varpos(nmodpp)
 !   - Interface Code_Saturne
 !     ======================
 
+call field_get_n_fields(n_fields)
 
 if (iihmpr.eq.1) then
 
-    iappel = 1
+  iappel = 1
 
-    call uiprop                                                   &
-    !==========
-            (irom, iviscl, ivisct, ivisls, icour, ifour,          &
-             ismago, iale, icp, iscalt, iscavr,                   &
-             iprtot, ipppro, ipproc, icmome,                      &
-             ipptx, ippty, ipptz, ippdt,                          &
-             ivisma, idtvar, ipucou, iappel)
-
-  do ii = 1,nvppmx
-    call fcnmva (nomvar(ii), len(nomvar(ii)), ii)
-    !==========
-  enddo
+  call uiprop                                                   &
+  !==========
+          (irom, iviscl, ivisct, ivisls, icour, ifour,          &
+           ismago, iale, icp, iscalt, iscavr,                   &
+           iprtot, ipppro, ipproc, icmome,                      &
+           ipptx, ippty, ipptz, ippdt,                          &
+           ivisma, idtvar, ipucou, iappel)
 
   call csenso                                                     &
   !==========
      ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
        ipstdv, ichrvr, ilisvr, ihisvr, tplfmt, isca, iscapp,      &
        ipprtp, xyzcap )
-
-  do ii = 1,nvppmx
-    call cfnmva(nomvar(ii), len(nomvar(ii)), ii)
-    !==========
-  enddo
 
   call nvamem
   !==========

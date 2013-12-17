@@ -31,11 +31,9 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[out]    nmodpp        number of activated paricle physic models
 !______________________________________________________________________________
 
-subroutine varpos &
-( nmodpp )
+subroutine varpos
 
 !===============================================================================
 ! Module files
@@ -61,6 +59,7 @@ use ppincl
 use radiat
 use ihmpre
 use mesh
+use field
 
 !===============================================================================
 
@@ -68,14 +67,11 @@ implicit none
 
 ! Arguments
 
-integer       nmodpp
-
 ! Local variables
-
 
 character     rubriq*64, cmoy4*4, cindfm*4
 character     ficsui*32
-integer       ivar  , ipp   , iscal , irphas , iprop
+integer       ivar  , iscal , irphas , iprop
 integer       ii    , jj    , kk    , ll
 integer       iok   , ippok , ipppst
 integer       iest  , ivisph, ipropp
@@ -119,190 +115,45 @@ nfmtmo = 9999
 cindfm = 'YYYY'
 
 !===============================================================================
-! 1. PREMIER APPEL : CALCUL DE NSCAPP
-!                    VERIFICATION DU NOMBRE DE SCALAIRES
-!                    CONSTRUCTION DE ISCAPP
-!                    CALCUL DE NSCAL
-!                    RETURN
-
-!  C'est juste avant ce second appel que les modeles de combustion
-!    auront ete renseignes. C'est dans la section ci-dessous qu'on en
-!    en deduira NSCAPP (avant meme les verifications).
-!  A la sortie de cette section, NSCAL, NSCAUS et NSCAPP sont connus.
-!  On renseignera egalement ici les valeurs de ISCAVR, IVISLS
-!    pour les scalaires physiques particulieres en question.
-!  On en profite aussi pour remplir ITYTUR et ITYTURT puisque ITURB et ITURT
-!    viennent d'etre definis.
-!  On remplit aussi itycor puisque irccor, iturb et itytur viennent d'etre
-!    definis.
-!===============================================================================
-
-if (ipass.eq.1) then
-
-  ! ---> Remplissage de ITYTUR
-  itytur = iturb/10
-
-  ! ---> Remplissage de itycor :
-  ! type de correction rotation/courbure pour les modeles de viscosite turbulente
-  if (irccor.eq.1.and.(itytur.eq.2.or.itytur.eq.5)) then
-    itycor = 1
-  elseif (irccor.eq.1.and.(iturb.eq.60.or.iturb.eq.70)) then
-    itycor = 2
-  endif
-
-  ! ---> Coherence modele
-  !     Rq : ATTENTION il faudrait renforcer le blindage
-
-  iok   = 0
-  nmodpp = 0
-  do ipp = 2, nmodmx
-    if ( ippmod(ipp).ne.-1 ) then
-      nmodpp = nmodpp+1
-      ippok = ipp
-    endif
-  enddo
-  if (nmodpp.gt.1) then
-    write(nfecra,6000)
-    iok = iok + 1
-  endif
-
-  if (nmodpp.eq.1) then
-    if (ippmod(ippok).lt.0 .or. ippmod(ippok).gt.5) then
-      write(nfecra,6001)
-      iok = iok + 1
-    endif
-  endif
-
-  if(iok.ne.0) then
-    call csexit (1)
-    !==========
-  endif
-
-! ---> On positionne l'indicateur global IPPMOD(IPHPAR)
-!         0 : pas de physique particuliere
-!         1 : physique particuliere enclenchee
-!         2 : physique particuliere avec definition du coefficient
-!             d'absorption par fichier parametrique pour le rayonnement
-  ippmod(iphpar) = 0
-  if (nmodpp.gt.0) then
-    ippmod(iphpar) = 1
-    if (ippmod(icompf).eq.-1 .and. ippmod(iatmos).eq.-1           &
-                             .and. ippmod(iaeros).eq.-1)          &
-         ippmod(iphpar) = 2
-  endif
-
-! ---> Lecture donnees thermochimie
-
-  call pplecd
-  !==========
-
-! ---> Calcul de NSCAPP
-
-  call ppcsca
-  !==========
-
-  if (itherm.ne.0 .and. nmodpp.eq.0) then
-    nscapp = 1
-  endif
-
-! ---> Verifications
-
-  iok = 0
-
-  if(nscaus.lt.0) then
-    write(nfecra,6010) nscaus
-    iok = iok + 1
-  endif
-
-  if(nscaus.gt.0 .or. nscapp.gt.0) then
-    if((nscaus+nscapp).gt.nscamx) then
-
-      if(nscapp.le.0) then
-        write(nfecra,6011)                                        &
-             nscaus,       nscamx,nscamx       ,nscaus
-      else
-        write(nfecra,6012)                                        &
-             nscaus,nscapp,nscamx,nscamx-nscapp,nscaus+nscapp
-      endif
-      iok = iok + 1
-    endif
-  endif
-
-  if(iok.ne.0) then
-    call csexit (1)
-    !==========
-  endif
-
-! ---> Calcul de ISCAPP et NSCAL
-!      On prefere que l'identite porte sur les scalaires utilisateurs,
-!        ca minimisera peut etre des erreurs utilisateur
-
-  iscal = max(0,nscaus)
-  if (nscapp.gt.0) then
-    do ii = 1, nscapp
-      iscal = iscal + 1
-      iscapp(ii) = iscal
-    enddo
-
-    if (itherm.ne.0 .and. nmodpp.eq.0) then
-      iscalt = iscapp(1)
-    endif
-
-    call ppvarp(nmodpp)
-
-  endif
-
-  nscal = iscal
-
-  if (itherm.eq.2 .and. iscalt.gt.0) then
-    ihm = iscalt
-  endif
-
-  return
-
-endif
-
-
-!===============================================================================
-! 2. SECOND APPEL : VERIFICATIONS ET
+! 1. PREMIER APPEL : VERIFICATIONS ET
 !        POSITIONNEMENT DES VARIABLES  : IPR, IU ... ISCA, NVAR
 !                       ET DES PROPRIETES PPALES
 !===============================================================================
 
-if(ipass.eq.2) then
+if (ipass.eq.1) then
 
 
-! ---> 2.1 VERIFICATIONS
+! ---> 1.1 VERIFICATIONS
 !      -----------------
 
   iok = 0
 
 ! ---  NSCAL a deja ete verifie, mais on ne sait jamais.
 
-  if(nscal.lt.0) then
+  if (nscal.lt.0) then
     write(nfecra,7010) nscal, nscaus, nscapp
     iok = iok + 1
   endif
-  if(nscal.gt.nscamx) then
+  if (nscal.gt.nscamx) then
     write(nfecra,7011) nscal, nscamx, nscaus, nscapp, nscal
     iok = iok + 1
   endif
 
 ! --- ISCAVR(ISCAL) doit etre compris entre 0 et NSCAL.
 
-  if(nscaus.gt.0) then
+  if (nscaus.gt.0) then
     do ii = 1, nscaus
       iscal = ii
-      if(iscavr(iscal).gt.nscal.or.iscavr(iscal).lt.0) then
+      if (iscavr(iscal).gt.nscal.or.iscavr(iscal).lt.0) then
         write(nfecra,7030) iscal,ii,ii,iscavr(iscal),nscal
         iok = iok + 1
       endif
     enddo
   endif
-  if(nscapp.gt.0) then
+  if (nscapp.gt.0) then
     do ii = 1, nscapp
       iscal = iscapp(ii)
-      if(iscavr(iscal).gt.nscal.or.iscavr(iscal).lt.0) then
+      if (iscavr(iscal).gt.nscal.or.iscavr(iscal).lt.0) then
         write(nfecra,7031) iscal,ii,ii,iscavr(iscal),nscal
         iok = iok + 1
       endif
@@ -315,7 +166,7 @@ if(ipass.eq.2) then
 !     Tous les tests qui suivent sont utilises pour le message
 !       d'erreur eventuel.
 
-  if(nscaus.gt.0) then
+  if (nscaus.gt.0) then
     do jj = 1, nscaus
       ii    = jj
       iscal = iscavr(ii)
@@ -324,12 +175,12 @@ if(ipass.eq.2) then
                ivisls(ii).ne.-1                        ) then
         ll = 0
         do kk = 1, nscaus
-          if(       kk .eq.iscal) ll = kk
+          if (       kk .eq.iscal) ll = kk
         enddo
         do kk = 1, nscapp
-          if(iscapp(kk).eq.iscal) ll = -kk
+          if (iscapp(kk).eq.iscal) ll = -kk
         enddo
-        if(ll.gt.0) then
+        if (ll.gt.0) then
           write(nfecra,7040)                                      &
                ii,ii,jj,iscal,ll,jj,iscal,jj,ivisls(iscal)
         else
@@ -338,7 +189,7 @@ if(ipass.eq.2) then
         endif
         iok = iok + 1
 !     Si on n'a pas une variance std mais que ivisls est incorrect : erreur
-      elseif( (iscal.le.0 .or.iscal.gt.nscal).and.                &
+      else if ( (iscal.le.0 .or.iscal.gt.nscal).and.                &
              (ivisls(ii).ne.0.and.ivisls(ii).ne.1) ) then
         write(nfecra,7050) ii,jj,jj,ivisls(ii)
         iok = iok + 1
@@ -346,7 +197,7 @@ if(ipass.eq.2) then
     enddo
   endif
 
-  if(nscapp.gt.0) then
+  if (nscapp.gt.0) then
     do jj = 1, nscapp
       ii    = iscapp(jj)
       iscal = iscavr(ii)
@@ -355,12 +206,12 @@ if(ipass.eq.2) then
                ivisls(ii).ne.-1                        ) then
         ll = 0
         do kk = 1, nscaus
-          if(       kk .eq.iscal) ll = kk
+          if (       kk .eq.iscal) ll = kk
         enddo
         do kk = 1, nscapp
-          if(iscapp(kk).eq.iscal) ll = -kk
+          if (iscapp(kk).eq.iscal) ll = -kk
         enddo
-        if(ll.gt.0) then
+        if (ll.gt.0) then
           write(nfecra,7042)                                      &
                ii,ii,jj,iscal,ll,jj,iscal,jj,ivisls(iscal)
         else
@@ -369,7 +220,7 @@ if(ipass.eq.2) then
         endif
         iok = iok + 1
 !       Si on n'a pas une variance std mais que ivisls est incorrect : erreur
-      elseif( (iscal.le.0 .or.iscal.gt.nscal).and.                &
+      else if ( (iscal.le.0 .or.iscal.gt.nscal).and.                &
               (ivisls(ii).ne.0.and.ivisls(ii).ne.1) ) then
         write(nfecra,7051)ii,jj,jj,ivisls(ii)
         iok = iok + 1
@@ -378,10 +229,10 @@ if(ipass.eq.2) then
   endif
 
 !       On initialise les ivisls des variances
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do ii = 1, nscal
       iscal = iscavr(ii)
-      if(iscal.gt.0.and.iscal.le.nscal) then
+      if (iscal.gt.0.and.iscal.le.nscal) then
         ivisls(ii) = ivisls(iscal)
       endif
     enddo
@@ -397,151 +248,12 @@ if(ipass.eq.2) then
   endif
 ! --- On s'arrete si quelque chose s'est mal passe
 
-  if(iok.ne.0) then
+  if (iok.ne.0) then
     call csexit (1)
   endif
 
 
-! ---> 2.2 POSITIONNEMENT DES VARIABLES  : IPR, IU ... ISCA, NVAR
-!      --------------------------------
-
-  ivar = 0
-
-  ! --- Pression
-
-  ivar          = ivar + 1
-  ipr    = ivar
-
-  ! --- Vitesse
-  ivar          = ivar + 1
-  iu     = ivar
-  ivar          = ivar + 1
-  iv     = ivar
-  ivar          = ivar + 1
-  iw     = ivar
-
-  ! --- Turbulence
-  if (itytur.eq.2) then
-    ivar          = ivar + 1
-    ik     = ivar
-    ivar          = ivar + 1
-    iep    = ivar
-  elseif(itytur.eq.3) then
-    ivar          = ivar + 1
-    ir11   = ivar
-    ivar          = ivar + 1
-    ir22   = ivar
-    ivar          = ivar + 1
-    ir33   = ivar
-    ivar          = ivar + 1
-    ir12   = ivar
-    ivar          = ivar + 1
-    ir13   = ivar
-    ivar          = ivar + 1
-    ir23   = ivar
-    ivar          = ivar + 1
-    iep    = ivar
-    if (iturb.eq.32) then
-      ivar = ivar + 1
-      ial  = ivar
-    endif
-  elseif(itytur.eq.5) then
-    ivar          = ivar + 1
-    ik     = ivar
-    ivar          = ivar + 1
-    iep    = ivar
-    ivar          = ivar + 1
-    iphi   = ivar
-    if(iturb.eq.50) then
-      ivar          = ivar + 1
-      ifb    = ivar
-    elseif(iturb.eq.51) then
-      ivar          = ivar + 1
-      ial    = ivar
-    endif
-  elseif(iturb.eq.60) then
-    ivar          = ivar + 1
-    ik     = ivar
-    ivar          = ivar + 1
-    iomg   = ivar
-  elseif (iturb.eq.70) then
-    ivar          = ivar + 1
-    inusa  = ivar
-  endif
-
-! --- Vitesse de maillage en ALE
-  if (iale.eq.1) then
-    ivar = ivar + 1
-    iuma = ivar
-    ivar = ivar + 1
-    ivma = ivar
-    ivar = ivar + 1
-    iwma = ivar
-  endif
-
-! --- Scalaires
-  if(nscapp.ge.1) then
-    do jj = 1, nscapp
-      ii       = iscapp(jj)
-      ivar     = ivar + 1
-      isca(ii) = ivar
-    enddo
-  endif
-  if(nscaus.ge.1) then
-    do jj = 1, nscaus
-      ii       = jj
-      ivar     = ivar + 1
-      isca(ii) = ivar
-    enddo
-  endif
-
-! --- Nombre total de variables
-  nvar = ivar
-
-! --- Verification de NVAR
-
-  if(nvar.gt.nvarmx) then
-    write(nfecra,7100)nvar,nvarmx,nvar
-    call csexit (1)
-  endif
-
-
-! --- Maintenant on peut faire ceci :
-
-  istat (ipr) = 0
-  iconv (ipr) = 0
-  if (iturb.eq.50) then
-    istat(ifb)  = 0
-    iconv(ifb)  = 0
-    !     Pour fb, on sait qu'on a un terme diagonal, meme si ISTAT=0,
-    !       donc on ne decalera pas la diagonale
-    idircl(ifb) = 0
-  elseif (iturb.eq.51) then
-    istat(ial)  = 0
-    iconv(ial)  = 0
-    !     Pour alpha, on sait qu'on a un terme diagonal, meme si ISTAT=0,
-    !       donc on ne decalera pas la diagonale
-    idircl(ial) = 0
-  elseif (iturb.eq.32) then
-    istat(ial)  = 0
-    iconv(ial)  = 0
-    ! Meme remarque pour alpha du EBRSM
-    idircl(ial) = 0
-  endif
-  if (iale.eq.1) then
-    istat(iuma) = 0
-    iconv(iuma) = 0
-    imgr (iuma) = 1
-    istat(ivma) = 0
-    iconv(ivma) = 0
-    imgr (ivma) = 1
-    istat(iwma) = 0
-    iconv(iwma) = 0
-    imgr (iwma) = 1
-  endif
-
-
-! ---> 2.3 POSITIONNEMENT DES PROPRIETES PRINCIPALES
+! ---> 1.2 POSITIONNEMENT DES PROPRIETES PRINCIPALES
 !      --------------------------------
 
 ! --- Numerotation des proprietes presentes ici
@@ -595,13 +307,13 @@ if(ipass.eq.2) then
   endif
 
 !  Proprietes des phases : CP s'il est variable
-  if(icp.ne.0) then
+  if (icp.ne.0) then
     iprop         = iprop + 1
     icp    = iprop
   endif
 
 !  Proprietes des phases : Cs^2 si on est en LES dynamique
-  if(iturb.eq.41) then
+  if (iturb.eq.41) then
     iprop         = iprop + 1
     ismago = iprop
   else
@@ -638,9 +350,9 @@ if(ipass.eq.2) then
 !         si IVISLS(II) .GT. 0 : visc = PROPCE(IEL ,IPPROC(IVISLS(II)))
 !     Ceci permet de ne pas reserver des tableaux vides pour les
 !       scalaires a viscosite constante
-  if(nscal.ge.1) then
+  if (nscal.ge.1) then
     do ii = 1, nscal
-      if(ivisls(ii).ne.0) then
+      if (ivisls(ii).ne.0) then
         iprop      = iprop + 1
         ivisls(ii) = iprop
       endif
@@ -721,14 +433,14 @@ if(ipass.eq.2) then
     ipppro(iprop)         = ipppst
   endif
 
-  if(icp.gt.0) then
+  if (icp.gt.0) then
     iprop                 = iprop + 1
     ipproc(icp   ) = iprop
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
   endif
 
-  if(ismago.ne.-1) then
+  if (ismago.ne.-1) then
     iprop                 = iprop  + 1
     ipproc(ismago) = iprop
     ipppst                = ipppst + 1
@@ -753,7 +465,7 @@ if(ipass.eq.2) then
   endif
 
   do iest = 1, nestmx
-    if(iescal(iest).gt.0) then
+    if (iescal(iest).gt.0) then
       iprop                      = iprop + 1
       ipproc(iestim(iest)) = iprop
       ipppst                     = ipppst + 1
@@ -767,10 +479,10 @@ if(ipass.eq.2) then
 !       pour le potentiel imaginaire.
 !       Intervention 1/2
 
-  if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+  if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
     do ii = 1, nscal
-      if(ivisls(ii).gt.0.and.ii.ne.ipoti) then
-        if(iscavr(ii).le.0) then
+      if (ivisls(ii).gt.0.and.ii.ne.ipoti) then
+        if (iscavr(ii).le.0) then
           iprop                 = iprop + 1
           ipproc(ivisls(ii)  )  = iprop
           ipppst                = ipppst + 1
@@ -780,8 +492,8 @@ if(ipass.eq.2) then
     enddo
   else
     do ii = 1, nscal
-      if(ivisls(ii).gt.0) then
-        if(iscavr(ii).le.0) then
+      if (ivisls(ii).gt.0) then
+        if (iscavr(ii).le.0) then
           iprop                 = iprop + 1
           ipproc(ivisls(ii)  )  = iprop
           ipppst                = ipppst + 1
@@ -801,8 +513,8 @@ if(ipass.eq.2) then
   endif
 
   do ii = 1, nscal
-    if(ivisls(ii).gt.0) then
-      if(iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
+    if (ivisls(ii).gt.0) then
+      if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
         ipproc(ivisls(ii)  )  = ipproc(ivisls(iscavr(ii))  )
       endif
     endif
@@ -814,7 +526,7 @@ if(ipass.eq.2) then
 !         renvoie sur celle du potentiel reel.
 !       Intervention 2/2
 
-  if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+  if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
     ipproc(ivisls(ipoti)  )  = ipproc(ivisls(ipotr)  )
   endif
 
@@ -840,7 +552,7 @@ if(ipass.eq.2) then
 
 ! --- Verification de NPROCE
 
-  if(nproce.gt.npromx) then
+  if (nproce.gt.npromx) then
     write(nfecra,7200)nproce, npromx, nproce
     call csexit (1)
     !==========
@@ -851,7 +563,7 @@ if(ipass.eq.2) then
 endif
 
 !===============================================================================
-! 3. TROISIEME APPEL :
+! 2. DEUXIEME APPEL :
 !        POSITIONNEMENT DES PROPRIETES POUR LE SCHEMA EN TEMPS,
 !                                           LES MOMENTS ET FIN
 !===============================================================================
@@ -865,10 +577,10 @@ endif
 !       d'infos situees en tete de fichier suite (si on fait une
 !       suite avec des moments non reinitialises).
 
-if(ipass.eq.3) then
+if (ipass.eq.2) then
 
 
-! ---> 3.1 PROPRIETES ADDITIONNELLES POUR LES ET SCHEMA EN TEMPS
+! ---> 2.1 PROPRIETES ADDITIONNELLES POUR LES ET SCHEMA EN TEMPS
 !      ---------------------------------------------------------
 
 ! --- Initialisations par defaut eventuelles et verifications
@@ -879,9 +591,9 @@ if(ipass.eq.3) then
   iok = 0
 
 !     Pression hydrostatique
-  if(iphydr.eq.0.or.iphydr.eq.2) then
+  if (iphydr.eq.0.or.iphydr.eq.2) then
     icalhy = 0
-  elseif(iphydr.eq.1) then
+  else if (iphydr.eq.1) then
     gravn2 = gx**2+gy**2+gz**2
     if (gravn2.lt.epzero**2) then
       icalhy = 0
@@ -893,8 +605,8 @@ if(ipass.eq.3) then
 !     Schemas en temps
 !         en LES : Ordre 2 ; sinon Ordre 1
 !         (en particulier, ordre 2 impossible en k-eps couple)
-  if(ischtp.eq.-999) then
-    if(itytur.eq.4) then
+  if (ischtp.eq.-999) then
+    if (itytur.eq.4) then
       ischtp = 2
     else
       ischtp = 1
@@ -903,49 +615,49 @@ if(ipass.eq.3) then
 
 !     Schemas en temps : variables deduites
 !     Schema pour le Flux de masse
-  if(istmpf.eq.-999) then
-    if(ischtp.eq.1) then
+  if (istmpf.eq.-999) then
+    if (ischtp.eq.1) then
       istmpf = 1
-    elseif(ischtp.eq.2) then
+    else if (ischtp.eq.2) then
       istmpf = 2
     endif
   endif
   !     Masse volumique
-  if(iroext.eq.-999) then
-    if(ischtp.eq.1) then
+  if (iroext.eq.-999) then
+    if (ischtp.eq.1) then
       iroext = 0
-    elseif(ischtp.eq.2) then
+    else if (ischtp.eq.2) then
       !       Pour le moment par defaut on ne prend pas l'ordre 2
       !              IROEXT = 1
       iroext = 0
     endif
   endif
   !     Viscosite
-  if(iviext.eq.-999) then
-    if(ischtp.eq.1) then
+  if (iviext.eq.-999) then
+    if (ischtp.eq.1) then
       iviext = 0
-    elseif(ischtp.eq.2) then
+    else if (ischtp.eq.2) then
       !       Pour le moment par defaut on ne prend pas l'ordre 2
       !              IVIEXT = 1
       iviext = 0
     endif
   endif
   !     Chaleur massique
-  if(icpext.eq.-999) then
-    if(ischtp.eq.1) then
+  if (icpext.eq.-999) then
+    if (ischtp.eq.1) then
       icpext = 0
-    elseif(ischtp.eq.2) then
+    else if (ischtp.eq.2) then
       !       Pour le moment par defaut on ne prend pas l'ordre 2
       !              ICPEXT = 1
       icpext = 0
     endif
   endif
   !     Termes sources NS,
-  if(isno2t.eq.-999) then
-    if(ischtp.eq.1) then
+  if (isno2t.eq.-999) then
+    if (ischtp.eq.1) then
       isno2t = 0
-      !            ELSEIF(ISCHTP.EQ.2.AND.IVISSE.EQ.1) THEN
-    elseif(ischtp.eq.2) then
+      !            ELSE IF (ISCHTP.EQ.2.AND.IVISSE.EQ.1) THEN
+    else if (ischtp.eq.2) then
       !       Pour le moment par defaut on prend l'ordre 2
       isno2t = 1
       !              ISNO2T = 0
@@ -954,15 +666,15 @@ if(ipass.eq.3) then
   !     Termes sources turbulence (k-eps, Rij, v2f ou k-omega)
   !     On n'autorise de changer ISTO2T qu'en Rij (sinon avec
   !       le couplage k-eps/omega il y a pb)
-  if(isto2t.eq.-999) then
-    if(ischtp.eq.1) then
+  if (isto2t.eq.-999) then
+    if (ischtp.eq.1) then
       isto2t = 0
-    elseif(ischtp.eq.2) then
+    else if (ischtp.eq.2) then
       !       Pour le moment par defaut on ne prend pas l'ordre 2
       !              ISTO2T = 1
       isto2t = 0
     endif
-  else if( itytur.eq.2.or.iturb.eq.50             &
+  else if ( itytur.eq.2.or.iturb.eq.50             &
        .or.iturb.ne.60) then
     write(nfecra,8132) iturb,isto2t
     iok = iok + 1
@@ -972,10 +684,10 @@ if(ipass.eq.3) then
 
   do iscal = 1, nscal
 !     Termes sources Scalaires,
-    if(isso2t(iscal).eq.-999) then
-      if(ischtp.eq.1) then
+    if (isso2t(iscal).eq.-999) then
+      if (ischtp.eq.1) then
         isso2t(iscal) = 0
-      elseif(ischtp.eq.2) then
+      else if (ischtp.eq.2) then
 !       Pour coherence avec Navier Stokes on prend l'ordre 2
 !       mais de toute facon qui dit ordre 2 dit LES et donc
 !       generalement pas de TS scalaire a interpoler.
@@ -984,10 +696,10 @@ if(ipass.eq.3) then
       endif
     endif
 !     Diffusivite scalaires
-    if(ivsext(iscal).eq.-999) then
-      if(ischtp.eq.1) then
+    if (ivsext(iscal).eq.-999) then
+      if (ischtp.eq.1) then
         ivsext(iscal) = 0
-      elseif(ischtp.eq.2) then
+      else if (ischtp.eq.2) then
 !       Pour le moment par defaut on ne prend pas l'ordre 2
 !              IVSEXT(ISCAL) = 1
         ivsext(iscal) = 0
@@ -1014,104 +726,104 @@ if(ipass.eq.3) then
 !     Viscosite secondaire
   ivisph = ivisse
   if (ivisph.ne.0.and.ivisph.ne.1) then
-    WRITE(NFECRA,8022) 'IVISSE ',IVISPH
+    write(nfecra,8022) 'IVISSE ',ivisph
     iok = iok + 1
   endif
 
 !     Schemas en temps
 
   !     Schema en temps global.
-  if(ischtp.ne. 1.and.ischtp.ne.2) then
-    WRITE(NFECRA,8101) 'ISCHTP',ISCHTP
+  if (ischtp.ne. 1.and.ischtp.ne.2) then
+    write(nfecra,8101) 'ISCHTP',ischtp
     iok = iok + 1
   endif
-  if(ischtp.eq. 2.and.idtvar.ne.0) then
+  if (ischtp.eq. 2.and.idtvar.ne.0) then
     write(nfecra,8111) ischtp,idtvar
     iok = iok + 1
   endif
-  if(ischtp.eq. 2.and.itytur.eq.2) then
+  if (ischtp.eq. 2.and.itytur.eq.2) then
     write(nfecra,8112) ischtp,iturb
     iok = iok + 1
   endif
-  if(ischtp.eq.1.and.itytur.eq.4) then
+  if (ischtp.eq.1.and.itytur.eq.4) then
     write(nfecra,8113) ischtp,iturb
   endif
-  if(ischtp.eq. 2.and.iturb.eq.50) then
+  if (ischtp.eq. 2.and.iturb.eq.50) then
     write(nfecra,8114) ischtp,iturb
     iok = iok + 1
   endif
-  if(ischtp.eq. 2.and.iturb.eq.51) then
+  if (ischtp.eq. 2.and.iturb.eq.51) then
     write(nfecra,8117) ischtp,iturb
     iok = iok + 1
   endif
-  if(ischtp.eq. 2.and.iturb.eq.60) then
+  if (ischtp.eq. 2.and.iturb.eq.60) then
     write(nfecra,8115) ischtp,iturb
     iok = iok + 1
   endif
-  if(ischtp.eq. 2.and.iturb.eq.70) then
+  if (ischtp.eq. 2.and.iturb.eq.70) then
     write(nfecra,8116) ischtp,iturb
     iok = iok + 1
   endif
 
   !     Schema en temps pour le flux de masse
-  if(istmpf.ne. 2.and.istmpf.ne.0.and.            &
+  if (istmpf.ne. 2.and.istmpf.ne.0.and.            &
        istmpf.ne. 1) then
-    WRITE(NFECRA,8121) 'ISTMPF',ISTMPF
+    write(nfecra,8121) 'ISTMPF',istmpf
     iok = iok + 1
   endif
 
   !     Schema en temps pour les termes sources de NS
-  if(isno2t.ne.0.and.                                    &
+  if (isno2t.ne.0.and.                                    &
        isno2t.ne. 1.and.isno2t.ne.2) then
-    WRITE(NFECRA,8131) 'ISNO2T',ISNO2T
+    write(nfecra,8131) 'ISNO2T',isno2t
     iok = iok + 1
   endif
   !     Schema en temps pour les termes sources des grandeurs
   !     turbulentes
-  if(isto2t.ne.0.and.                                    &
+  if (isto2t.ne.0.and.                                    &
        isto2t.ne. 1.and.isto2t.ne.2) then
-    WRITE(NFECRA,8131) 'ISTO2T',ISTO2T
+    write(nfecra,8131) 'ISTO2T',isto2t
     iok = iok + 1
   endif
 
   !     Schema en temps pour la masse volumique
-  if(iroext.ne.0.and.                                    &
+  if (iroext.ne.0.and.                                    &
        iroext.ne. 1.and.iroext.ne.2) then
-    WRITE(NFECRA,8131) 'IROEXT',IROEXT
+    write(nfecra,8131) 'IROEXT',iroext
     iok = iok + 1
   endif
 
   !     Schema en temps pour la viscosite
-  if(iviext.ne.0.and.                                    &
+  if (iviext.ne.0.and.                                    &
        iviext.ne. 1.and.iviext.ne.2) then
-    WRITE(NFECRA,8131) 'IVIEXT',IVIEXT
+    write(nfecra,8131) 'IVIEXT',iviext
     iok = iok + 1
   endif
 
   !     Schema en temps pour la chaleur specifique
-  if(icpext.ne.0.and.                                    &
+  if (icpext.ne.0.and.                                    &
        icpext.ne. 1.and.icpext.ne.2) then
-    WRITE(NFECRA,8131) 'ICPEXT',ICPEXT
+    write(nfecra,8131) 'ICPEXT',icpext
     iok = iok + 1
   endif
 
   do iscal = 1, nscal
 !     Schema en temps pour les termes sources des scalaires
-    if(isso2t(iscal).ne.0.and.                                    &
+    if (isso2t(iscal).ne.0.and.                                    &
        isso2t(iscal).ne. 1.and.isso2t(iscal).ne.2) then
-      WRITE(NFECRA,8141) ISCAL,'ISSO2T',ISSO2T(ISCAL)
+      write(nfecra,8141) iscal,'ISSO2T',isso2t(iscal)
       iok = iok + 1
     endif
 !     Schema en temps pour la viscosite
-    if(ivsext(iscal).ne.0.and.                                    &
+    if (ivsext(iscal).ne.0.and.                                    &
        ivsext(iscal).ne. 1.and.ivsext(iscal).ne.2) then
-      WRITE(NFECRA,8141) ISCAL,'IVSEXT',IVSEXT(ISCAL)
+      write(nfecra,8141) iscal,'IVSEXT',ivsext(iscal)
       iok = iok + 1
     endif
   enddo
 
 !     Stop si probleme
-  if(iok.gt.0) then
+  if (iok.gt.0) then
     call csexit(1)
   endif
 
@@ -1139,7 +851,7 @@ if(ipass.eq.3) then
     iroma  = iprop
   endif
   !     Dans le cas d'une extrapolation de la viscosite totale
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     iprop         = iprop + 1
     ivisla = iprop
     iprop         = iprop + 1
@@ -1147,8 +859,8 @@ if(ipass.eq.3) then
   endif
 
   !     Proprietes des phases : CP s'il est variable
-  if(icp.ne.0) then
-    if(icpext.gt.0) then
+  if (icp.ne.0) then
+    if (icpext.gt.0) then
       iprop         = iprop + 1
       icpa   = iprop
     endif
@@ -1156,25 +868,25 @@ if(ipass.eq.3) then
 
   !     On a besoin d'un tableau pour les termes sources de Navier Stokes
   !       a extrapoler. Ce tableau est NDIM
-  if(isno2t.gt.0) then
+  if (isno2t.gt.0) then
     iprop         = iprop + 1
     itsnsa = iprop
   endif
-  if(isto2t.gt.0) then
+  if (isto2t.gt.0) then
     iprop         = iprop + 1
     itstua = iprop
   endif
 
 !     Proprietes des scalaires : termes sources pour theta schema
 !       et VISCLS si elle est variable
-  if(nscal.ge.1) then
+  if (nscal.ge.1) then
     do iscal = 1, nscal
-      if(isso2t(iscal).gt.0) then
+      if (isso2t(iscal).gt.0) then
         iprop         = iprop + 1
         itssca(iscal) = iprop
       endif
-      if(ivisls(iscal).ne.0) then
-        if(ivsext(iscal).gt.0) then
+      if (ivisls(iscal).ne.0) then
+        if (ivsext(iscal).gt.0) then
           iprop         = iprop + 1
           ivissa(iscal) = iprop
         endif
@@ -1207,52 +919,52 @@ if(ipass.eq.3) then
     iprop                 = iprop  + 1
     ipproc(iroma ) = iprop
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     iprop                 = iprop  + 1
     ipproc(ivisla) = iprop
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     iprop                 = iprop  + 1
     ipproc(ivista) = iprop
   endif
-  if(icpext.gt.0) then
+  if (icpext.gt.0) then
     iprop                 = iprop + 1
     ipproc(icpa  ) = iprop
   endif
-  if(isno2t.gt.0) then
+  if (isno2t.gt.0) then
     iprop                 = iprop + 1
     ipproc(itsnsa) = iprop
     !     Ce tableau est NDIM :
     iprop                 = iprop + ndim-1
   endif
-  if(isto2t.gt.0) then
+  if (isto2t.gt.0) then
     iprop                 = iprop + 1
     ipproc(itstua) = iprop
     !     Ce tableau est 2, 7 ou 4 selon le modele de turbulence :
     if    (itytur.eq.2) then
       iprop                 = iprop + 2-1
-    elseif(itytur.eq.3) then
+    else if (itytur.eq.3) then
       iprop                 = iprop + 7-1
       if (iturb.eq.32) then
         iprop                 = iprop + 1
       endif
-    elseif(iturb.eq.50) then
+    else if (iturb.eq.50) then
       iprop                 = iprop + 4-1
-    elseif(iturb.eq.70) then
+    else if (iturb.eq.70) then
       iprop                 = iprop + 1-1
     endif
   endif
 
   do ii = 1, nscal
 ! Termes source des scalaires pour theta schema
-    if(isso2t(ii).gt.0) then
+    if (isso2t(ii).gt.0) then
       iprop                 = iprop + 1
       ipproc(itssca(ii))    = iprop
     endif
 
-    if(ivisls(ii).gt.0) then
-      if(iscavr(ii).le.0) then
-        if(ivsext(ii).gt.0) then
+    if (ivisls(ii).gt.0) then
+      if (iscavr(ii).le.0) then
+        if (ivsext(ii).gt.0) then
           iprop                 = iprop + 1
           ipproc(ivissa(ii)  )  = iprop
         endif
@@ -1260,9 +972,9 @@ if(ipass.eq.3) then
     endif
   enddo
   do ii = 1, nscal
-    if(ivisls(ii).gt.0) then
-      if(iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
-        if(ivsext(ii).gt.0) then
+    if (ivisls(ii).gt.0) then
+      if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
+        if (ivsext(ii).gt.0) then
           ipproc(ivissa(ii)  )  = ipproc(ivissa(iscavr(ii))  )
         endif
       endif
@@ -1274,7 +986,7 @@ if(ipass.eq.3) then
   nppmax = ipppst
 
 
-! ---> 3.2 CALCUL DE LA TAILLE DU TABLEAU DES TEMPS CUMULES POUR LES MOMENTS
+! ---> 2.2 CALCUL DE LA TAILLE DU TABLEAU DES TEMPS CUMULES POUR LES MOMENTS
 !      ---------------------------------------------------------------------
 
 !     Pour verification des definitions de moments
@@ -1285,9 +997,9 @@ if(ipass.eq.3) then
   inmfin = 0
   do imom = 1, nbmomx
 !     Si on n'est pas a la fin de la liste
-    if(inmfin.eq.0) then
+    if (inmfin.eq.0) then
 !       Si il y en a, ca en fait en plus
-      if(idfmom(1,imom).ne.0) then
+      if (idfmom(1,imom).ne.0) then
         nbmomt = nbmomt + 1
 !       Si il n'y en a pas, c'est la fin de la liste
       else
@@ -1295,13 +1007,13 @@ if(ipass.eq.3) then
       endif
 !     Si on est a la fin de la liste, il n'en faut plus
     else
-      if(idfmom(1,imom).ne.0) then
+      if (idfmom(1,imom).ne.0) then
         iok = iok + 1
       endif
     endif
   enddo
 
-  if(iok.ne.0) then
+  if (iok.ne.0) then
     write(nfecra,8200)nbmomt+1,idfmom(1,nbmomt+1),nbmomt,nbmomt
     do imom = 1, nbmomx
       write(nfecra,8201)imom,idfmom(1,imom)
@@ -1315,24 +1027,24 @@ if(ipass.eq.3) then
     idffin = 0
     do jj = 1, ndgmox
       idfmji = idfmom(jj,imom)
-      if(idffin.eq.0) then
-        if(idfmji.lt.-nprmax) then
+      if (idffin.eq.0) then
+        if (idfmji.lt.-nprmax) then
           iok = iok + 1
           write(nfecra,8210)jj,imom,idfmji,nprmax
-        elseif(idfmji.gt.nvar) then
+        else if (idfmji.gt.nvar) then
           iok = iok + 1
           write(nfecra,8211)jj,imom,idfmji,nvar
-        elseif(idfmji.lt.0) then
+        else if (idfmji.lt.0) then
           if (ipproc(-idfmji).le.0) then
             iok = iok + 1
             write(nfecra,8212)jj,imom,idfmji,-idfmji,             &
                  ipproc(-idfmji)
           endif
-        elseif(idfmji.eq.0) then
+        else if (idfmji.eq.0) then
           idffin = 1
         endif
       else
-        if(idfmji.ne.0) then
+        if (idfmji.ne.0) then
           iok = iok + 1
           write(nfecra,8213)imom,jj,idfmji
         endif
@@ -1342,13 +1054,13 @@ if(ipass.eq.3) then
 
 ! --- Verification de NTDMOM (>0)
   do imom = 1, nbmomt
-    if(ntdmom(imom).lt.0) then
+    if (ntdmom(imom).lt.0) then
       iok = iok + 1
       write(nfecra,8214)imom,ntdmom(imom)
     endif
   enddo
 
-  if(iok.ne.0) then
+  if (iok.ne.0) then
     call csexit(1)
   endif
 
@@ -1360,16 +1072,16 @@ if(ipass.eq.3) then
 !       ie ILSMOM = 0 == (ISUITE=0 OR IMOOLD(IMOM)=-1 pour tout IMOM)
 !       ie ILSMOM = 1 == (ISUITE=1 AND IMOOLD(IMOM) different de -1 pour un IMOM)
   ilsmom = 0
-  if(isuite.eq.1.and.nbmomt.gt.0) then
+  if (isuite.eq.1.and.nbmomt.gt.0) then
     do imom = 1, nbmomt
-      if(imoold(imom).ne.-1) then
+      if (imoold(imom).ne.-1) then
         ilsmom = 1
       endif
     enddo
   endif
 
 ! --- Lecture du fichier suite (debut : info sur les moments et sur le ntpabs)
-  if(ilsmom.eq.1) then
+  if (ilsmom.eq.1) then
 
 !     Ouverture
 !        (ILECEC=1:lecture)
@@ -1391,7 +1103,7 @@ if(ipass.eq.3) then
     itysup = 0
     nbval  = 1
     irtyp  = 1
-    RUBRIQ = 'version_fichier_suite_auxiliaire'
+    rubriq = 'version_fichier_suite_auxiliaire'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ivers,ierror)
 
@@ -1407,17 +1119,17 @@ if(ipass.eq.3) then
     itysup = 0
     nbval  = 1
     irtyp  = 1
-    RUBRIQ = 'nombre_moyennes_temps'
+    rubriq = 'nombre_moyennes_temps'
     jbmomt = 0
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 jbmomt,ierror)
     nberro=nberro+ierror
-    if(ierror.ne.0) then
+    if (ierror.ne.0) then
       write(nfecra,8311)
     endif
 
 !     Nombre de pas de temps final du calcul precedent
-    RUBRIQ = 'nbre_pas_de_temps'
+    rubriq = 'nbre_pas_de_temps'
     itysup = 0
     nbval  = 1
     irtyp  = 1
@@ -1425,11 +1137,11 @@ if(ipass.eq.3) then
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 jtcabs,ierror)
     nberro=nberro+ierror
-    if(ierror.ne.0) then
+    if (ierror.ne.0) then
       write(nfecra,8312)
     endif
 
-    if(nberro.ne.0) then
+    if (nberro.ne.0) then
       call csexit (1)
     endif
 
@@ -1450,28 +1162,28 @@ if(ipass.eq.3) then
 !                                  (simplifie la lecture lecamo)
   iok = 0
 
-  if(ilsmom.eq.1) then
+  if (ilsmom.eq.1) then
     do imom = 1, nbmomt
-      if(imoold(imom).gt.jbmomt.or.imoold(imom).eq.0              &
+      if (imoold(imom).gt.jbmomt.or.imoold(imom).eq.0              &
                              .or.imoold(imom).lt.-2) then
         write(nfecra,8400) imom,imoold(imom),jbmomt
         iok = iok + 1
-      elseif(imoold(imom).le.jbmomt.and.imoold(imom).gt.0         &
+      else if (imoold(imom).le.jbmomt.and.imoold(imom).gt.0        &
                              .and.ntdmom(imom).gt.jtcabs) then
         write(nfecra,8401) imom,imoold(imom),ntdmom(imom),jtcabs
         iok = iok + 1
-      elseif(imoold(imom).eq.-2.and.ntdmom(imom).gt.jtcabs) then
+      else if (imoold(imom).eq.-2.and.ntdmom(imom).gt.jtcabs) then
         imoold(imom)=-1
-      elseif(imoold(imom).eq.-2.and.imom.le.jbmomt) then
+      else if (imoold(imom).eq.-2.and.imom.le.jbmomt) then
         imoold(imom)=imom
-      elseif(imoold(imom).eq.-2.and.imom.gt.jbmomt) then
+      else if (imoold(imom).eq.-2.and.imom.gt.jbmomt) then
         imoold(imom)=-1
       endif
     enddo
     do imom = 1, nbmomt
-      if(imoold(imom).gt.0) then
+      if (imoold(imom).gt.0) then
         do jmom = 1, imom-1
-          if(imoold(imom).eq.imoold(jmom)) then
+          if (imoold(imom).eq.imoold(jmom)) then
             write(nfecra,8402) imom,jmom,imoold(imom)
             iok = iok + 1
           endif
@@ -1481,9 +1193,9 @@ if(ipass.eq.3) then
 
 !       Si pas suite : si IMOOLD pas renseigne, on initialise
 !                      sinon erreur
-  elseif(isuite.eq.0) then
+  else if (isuite.eq.0) then
     do imom = 1, nbmomt
-      if(imoold(imom).ne.-2) then
+      if (imoold(imom).ne.-2) then
         write(nfecra,8403) isuite,imom,imoold(imom)
         iok = iok + 1
       else
@@ -1492,7 +1204,7 @@ if(ipass.eq.3) then
     enddo
   endif
 
-  if(iok.ne.0) then
+  if (iok.ne.0) then
     call csexit (1)
   endif
 
@@ -1509,7 +1221,7 @@ if(ipass.eq.3) then
   enddo
 
 !     Si on ne lit rien dans le fichier suite, IDTOLD restera nul
-  if(ilsmom.eq.1) then
+  if (ilsmom.eq.1) then
 
     nberro = 0
 
@@ -1519,23 +1231,23 @@ if(ipass.eq.3) then
 !        On lit les infos pour tous les moments courants
       do imom = 1, nbmomt
 !           On s'interesse uniquement aux moments qui suivnt d'anciens moments
-        if(imoold(imom).gt.0) then
+        if (imoold(imom).gt.0) then
 !            Si le numero de l'ancien moment est incompatible avec le format
 !              on cherche numero_cumul_temps_momentYYYY qui n existe pas
 !              ca genere une erreur
-          if(imom.le.nfmtmo) then
-            WRITE(CMOY4,'(I4.4)')IMOOLD(IMOM)
+          if (imom.le.nfmtmo) then
+            write(cmoy4,'(i4.4)')imoold(imom)
           else
             cmoy4 = cindfm
           endif
           itysup = 0
           nbval  = 1
           irtyp  = 1
-          RUBRIQ = 'numero_cumul_temps_moment'//CMOY4
+          rubriq = 'numero_cumul_temps_moment'//cmoy4
           call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,     &
                       irtyp,idtold(imom),ierror)
           nberro=nberro+ierror
-          if(idtold(imom).eq.0.or.ierror.ne.0) then
+          if (idtold(imom).eq.0.or.ierror.ne.0) then
             write(nfecra,8313)imom,imoold(imom)
             iok = iok + 1
           endif
@@ -1543,7 +1255,7 @@ if(ipass.eq.3) then
       enddo
     endif
 
-    if(nberro.ne.0) then
+    if (nberro.ne.0) then
       call csexit (1)
     endif
 
@@ -1575,21 +1287,21 @@ if(ipass.eq.3) then
   do imom = 1, nbmomt
     imold = imoold(imom)
 !        Si on (re)initialise IMOM
-    if(imold.eq.-1) then
+    if (imold.eq.-1) then
 !          On cherche si on en a deja vu (re)initialisees au meme moment
       imomr = 0
       do jmom = 1, imom-1
         jmold = imoold(jmom)
-        if(jmold.eq.-1.and.ntdmom(jmom).eq.ntdmom(imom)) then
+        if (jmold.eq.-1.and.ntdmom(jmom).eq.ntdmom(imom)) then
           imomr = jmom
         endif
       enddo
 !          Si oui : on utilise le meme tableau
-      if(imomr.gt.0) then
+      if (imomr.gt.0) then
         idtmom(imom) = idtmom(imomr)
 !          Si non : on a besoin d'un nouveau tableau ou reel
       else
-        if(idtvar.eq.2.or.idtvar.eq.-1) then
+        if (idtvar.eq.2.or.idtvar.eq.-1) then
           iiplus = iiplus + 1
           idtmom(imom) = iiplus
         else
@@ -1602,29 +1314,29 @@ if(ipass.eq.3) then
 
 !       Pour les moments IMOM relus dans IMOLD
 !         (ie suite + IMOOLD non egal a -1)
-  if(isuite.eq.1) then
+  if (isuite.eq.1) then
     do imom = 1, nbmomt
       imold = imoold(imom)
-      if(imold.gt.0) then
+      if (imold.gt.0) then
 !         On regarde si le DTcumule du IMOLD a deja ete vu
 !            (indicateur JMOMOK)
         idto = idtold(imom)
         jmomok = 0
         do jmom = 1, imom-1
           jmold = imoold(jmom)
-          if(jmold.gt.0) then
+          if (jmold.gt.0) then
             jdto = idtold(jmom)
-            if(jdto.eq.idto) then
+            if (jdto.eq.idto) then
               jmomok = jmom
             endif
           endif
         enddo
 !         Si on le voit pour la premiere fois, ca en fait un de plus
-        if(jmomok.eq.0) then
+        if (jmomok.eq.0) then
 !           Si DT non uniforme dans le present calcul ou que
 !              DT cumule etait non uniforme dans l'ancien, on a un
 !              DT cumule non uniforme (sinon, il est uniforme)
-          if(idtvar.eq.2.or.idtvar.eq.-1.or.idto.gt.0) then
+          if (idtvar.eq.2.or.idtvar.eq.-1.or.idto.gt.0) then
             iiplus = iiplus + 1
             idtmom(imom) = iiplus
           else
@@ -1642,12 +1354,12 @@ if(ipass.eq.3) then
 !       Verification de IDTMOM : normalement, jamais ca plante ici.
   iok = 0
   do imom = 1, nbmomt
-    if(idtmom(imom).eq.0) then
+    if (idtmom(imom).eq.0) then
       iok = iok + 1
       write(nfecra,8410)imom, idtmom(imom)
     endif
   enddo
-  if(iok.ne.0) then
+  if (iok.ne.0) then
     call csexit (1)
   endif
 
@@ -1657,7 +1369,7 @@ if(ipass.eq.3) then
     nbdtcm=max(idtmom(imom),nbdtcm)
   enddo
 
-! ---> 3.3 POSITIONNEMENT DANS PROPCE DES MOMENTS ET DU TEMPS CUMULE
+! ---> 2.3 POSITIONNEMENT DANS PROPCE DES MOMENTS ET DU TEMPS CUMULE
 !      -------------------------------------------------------------
 
 ! --- Reprise du dernier numero de propriete
@@ -1704,7 +1416,7 @@ if(ipass.eq.3) then
     istat(ipr) = 1
   endif
 
-! ---> 3.5 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
+! ---> 2.4 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
 !      ---------------------------------------------------------------------
 
 ! --- Les pointeurs ont ete initialises a 1 (poubelle) dans iniini.
@@ -1719,13 +1431,13 @@ if(ipass.eq.3) then
 !      Le rang de la derniere propriete pour le post est IPPPST.
 
 
-  if(idtvar.gt.0) then
+  if (idtvar.gt.0) then
     ipppst = ipppst + 1
     ippdt  = ipppst
     nppmax = ipppst
   endif
 
-  if(ipucou.eq.1) then
+  if (ipucou.eq.1) then
     ipppst = ipppst + 1
     ipptx  = ipppst
     ipppst = ipppst + 1
@@ -1738,7 +1450,7 @@ if(ipass.eq.3) then
 
 ! Verification de la limite sur IPPPST
 
-  if(ipppst.gt.nvppmx) then
+  if (ipppst.gt.nvppmx) then
     write(nfecra,8900)ipppst,nvppmx
     call csexit (1)
     !==========
@@ -1749,12 +1461,12 @@ if(ipass.eq.3) then
 endif
 
 !===============================================================================
-! 4. QUATRIEME APPEL :
+! 3. TROISIEME APPEL :
 !        RESERVATION D'UNE PLACE DANS PROPCE SI RAYONNEMENT
 !        ET LAGRANGIEN AVEC THERMIQUE DES PARTICULES
 !===============================================================================
 
-if (ipass.eq.4) then
+if (ipass.eq.3) then
 
   if ( iirayo.gt.0 ) then
 
@@ -1901,111 +1613,11 @@ endif
 
 
 !===============================================================================
-! 5. FORMATS
+! 4. Formats
 !===============================================================================
 
 #if defined(_CS_LANG_FR)
- 6000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     PLUSIEURS MODELES PHYSIQUES PARTICULIERES ACTIVES      ',/,&
-'@                                                            ',/,&
-'@  Un seul modele physique particuliere peut etre active a la',/,&
-'@    fois.                                                   ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Modifier les indicateurs de IPPMOD dans usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     SELECTION INCORRECTE DU MODELE PHYSIQUE PARTICULIERE   ',/,&
-'@                                                            ',/,&
-'@  Les valeurs des indicateurs du tableau IPPMOD ne sont pas ',/,&
-'@    admissibles                                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Modifier les indicateurs de IPPMOD dans usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES ERRONE                             ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateur doit etre un entier    ',/,&
-'@    positif ou nul. Il vaut ici   NSCAUS  = ',I10            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande                          est  NSCAUS = ',I10     ,/,&
-'@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  La valeur maximale autorisee de NSCAUS                    ',/,&
-'@                          est donc  NSCAMX        = ',I10    ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX doit valoir au moins ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6012 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande                          est  NSCAUS = ',I10     ,/,&
-'@  Le nombre de scalaires pour les physiques particulieres   ',/,&
-'@    necessaire avec le modele choisi est  NSCAPP = ',I10     ,/,&
-'@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  La valeur maximale autorisee de NSCAUS                    ',/,&
-'@    avec le modele choisi est donc NSCAMX-NSCAPP = ',I10     ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX doit valoir au moins ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+
  7010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2245,27 +1857,6 @@ endif
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Verifier usalin.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7100 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE VARIABLES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le type de calcul defini                                  ',/,&
-'@    correspond a un nombre de variables NVAR   = ',I10       ,/,&
-'@  Le nombre de variables maximal prevu                      ',/,&
-'@                      dans paramx   est NVARMX = ',I10       ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres                                   ',/,&
-'@                                                            ',/,&
-'@  NVARMX doit valoir au moins ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -2885,107 +2476,6 @@ endif
 
 #else
 
- 6000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     TOO MANY SPECIFIC PHYSICS MODULES ACTIVATED            ',/,&
-'@                                                            ',/,&
-'@  Only one specific physics module can be active for one    ',/,&
-'@    given calculation.                                      ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Modify the indices of       IPPMOD in   usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     WRONG SELLECTION OF THE MODEL FOR SPECIFIC PHYSICS     ',/,&
-'@                                                            ',/,&
-'@  The values of the indices of the array IPPMOD are not     ',/,&
-'@    admissible                                              ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Modify the indices of       IPPMOD in   usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     ERRONEOUS NUMBER OF SCALARS                            ',/,&
-'@                                                            ',/,&
-'@  The number of users scalars must be an integer either     ',/,&
-'@   positive or zero. Here is      NSCAUS  = ',I10            ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NUMBER OF SCALARS TOO LARGE                            ',/,&
-'@                                                            ',/,&
-'@  The number of users scalars                               ',/,&
-'@  requested                          is   NSCAUS = ',I10     ,/,&
-'@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx           is   NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  The maximmum value allowed of   NSCAUS                    ',/,&
-'@                          is in   NSCAMX        = ',I10      ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6012 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NUMBER OF SCALARS TOO LARGE                            ',/,&
-'@                                                            ',/,&
-'@  The number of users scalars                               ',/,&
-'@     requested                       is   NSCAUS = ',I10     ,/,&
-'@  The number of scalars necessary for the specific physics'  ,/,&
-'@    with the chosen model is              NSCAPP = ',I10     ,/,&
-'@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx.h         est  NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  The maximum value allowed for  NSCAUS                     ',/,&
-'@    with the chosen model is       NSCAMX-NSCAPP = ',I10     ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3225,27 +2715,6 @@ endif
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
 '@  Verify   usalin.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7100 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NUMBER OF VARIABLES TOO LARGE                          ',/,&
-'@                                                            ',/,&
-'@  The type of calculation defined                           ',/,&
-'@    corresponds to a number of variables NVAR  = ',I10       ,/,&
-'@  The maximum number of variables allowed                   ',/,&
-'@                      in   paramx   is  NVARMX = ',I10       ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@  NVARMX must be at least     ',I10                          ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -3866,11 +3335,9 @@ endif
 
 #endif
 
-
-
 !===============================================================================
-! 5. FIN
+! 5. End
 !===============================================================================
 
 return
-end subroutine
+end subroutine varpos

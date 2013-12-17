@@ -51,7 +51,7 @@ typedef struct {
   char **head;            /* name of the head                                */
   char **type;            /* type of markup: 'variable' or 'scalar'          */
   char **name;            /* variables name and scalars label                */
-  char **label;           /* scalars label                                   */
+  int   *scal_f_id;       /* scalar field ids                                */
   int   *rtp;             /* variables position in fortran array RTP         */
   int    nvar;            /* total number of variables and scalars           */
   int    nscaus;          /* number of user scalars                          */

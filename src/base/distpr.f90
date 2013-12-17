@@ -217,7 +217,7 @@ call matrix &
 !===============================================================================
 
 ipp = 1
-nomvar(ipp) = 'DisParoi'
+nomva0 = 'DisParoi'
 ipol   = 0
 ireslp = 0
 ! No multigrid (NCYMXP,NITMFP arbitrary)
@@ -252,7 +252,7 @@ do isweep = 0, nswrsl
 
   call prodsc(ncel,isqrt,smbdp,smbdp,rnorm)
   if (iwarny.ge.2) then
-     write(nfecra,5000) nomvar(ipp),isweep,rnorm
+     write(nfecra,5000) nomva0,isweep,rnorm
   endif
   if (isweep.le.1) rnoini = rnorm
   ! Convergence test
@@ -264,7 +264,7 @@ do isweep = 0, nswrsl
 
   call invers &
   !==========
- ( nomvar(ipp)     , isym   , ibsize , iesize ,                   &
+ ( nomva0 , isym   , ibsize , iesize ,                            &
    ipol   , ireslp , nitmay , imgrpy ,                            &
    ncymxp , nitmfp ,                                              &
    iwarny , niterf , icycle , iinvpe ,                            &
@@ -299,7 +299,7 @@ do isweep = 0, nswrsl
     !==========
  ( idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarny , imucpp , idftnp ,                            &
+   iwarny , imucpp , idftnp ,                                     &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &
    rtpdp  , rtpdp  , coefad , coefbd , coefad , cofbfd ,          &
    viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &

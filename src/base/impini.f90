@@ -78,16 +78,20 @@ implicit none
 ! Local variables
 
 character        name*300, chaine*80
+logical          interleaved
 integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok51 , iok60
 integer          iok32
 integer          iok70
 integer          iokss , iokcaz
-integer          ii    , jj    , ivar  , iiesca, iest
+integer          ii    , jj    , iiesca, iest
 integer          ipp   , iwar  , imom
 integer          nbccou, nbsucp, nbvocp, issurf, isvol
-integer          kscmin, kscmax, f_id
-
+integer          kscmin, kscmax, keypp, keyvar
+integer          c_id, f_id, f_dim, n_fields
 double precision scmaxp, scminp
+
+character*3, dimension(3) :: nomext3
+character*4, dimension(3) :: nomext63
 
 !===============================================================================
 
@@ -96,9 +100,17 @@ double precision scmaxp, scminp
 ! 1. Introduction
 !===============================================================================
 
-! Key id for scamin and scamax
+nomext3 = (/'[X]', '[Y]', '[Z]'/)
+nomext63 = (/'[11]', '[22]', '[33]'/)
+
+call field_get_n_fields(n_fields)
+
+! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+
+call field_get_key_id("variable_id", keyvar)
+call field_get_key_id("post_id", keypp)
 
 write(nfecra,1000)
 
@@ -1192,13 +1204,14 @@ if (idtvar.lt.0) then
 !   - Coefficient de relaxation
 
   write(nfecra,3011)
-  do ipp = 2, nvppmx
-    ii = itrsvr(ipp)
-    if(ii.ge.1) then
-      chaine=nomvar(ipp)
-      write(nfecra,3012) chaine(1:16),relaxv(ii)
-    endif
+
+  do f_id = 0, n_fields-1
+    call field_get_key_int(f_id, keyvar, ii)
+    if (ii.lt.0) cycle
+    call field_get_label(f_id, chaine)
+    write(nfecra,3012) chaine(1:16),relaxv(ii)
   enddo
+
   write(nfecra,3013)
 
 !     Instationnaire
@@ -1216,12 +1229,11 @@ else
 !   - Coef multiplicatif du pas de temps
 
   write(nfecra,3040)
-  do ipp = 2, nvppmx
-    ii = itrsvr(ipp)
-    if(ii.ge.1) then
-      chaine=nomvar(ipp)
-      write(nfecra,3041) chaine(1:16),istat(ii),cdtvar(ii)
-    endif
+  do f_id = 0, n_fields-1
+    call field_get_key_int(f_id, keyvar, ii)
+    if (ii.lt.0) cycle
+    call field_get_label(f_id, chaine)
+    write(nfecra,3041) chaine(1:16),istat(ii),cdtvar(ii)
   enddo
   write(nfecra,3042)
 
@@ -1396,15 +1408,15 @@ write(nfecra,9900)
 write(nfecra,4000)
 
 write(nfecra,4010)
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
-  if(ii.ge.1) then
-    chaine=nomvar(ipp)
-    write(nfecra,4020) chaine(1:16),                              &
-                       iconv(ii),idiff(ii),idifft(ii),            &
-                       ischcv(ii),isstpc(ii),                     &
-                       blencv(ii),thetav(ii)
-  endif
+
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
+  if (ii.lt.0) cycle
+  call field_get_label(f_id, chaine)
+  write(nfecra,4020) chaine(1:16),                                &
+                     iconv(ii),idiff(ii),idifft(ii),              &
+                     ischcv(ii),isstpc(ii),                       &
+                     blencv(ii),thetav(ii)
 enddo
 write(nfecra,4030)
 
@@ -1605,22 +1617,21 @@ write(nfecra,9900)
 write(nfecra,4500)
 
 write(nfecra,4510) imrgra, anomax
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
-  if(ii.ge.1) then
-    chaine=nomvar(ipp)
-    write(nfecra,4520) chaine(1:16),                               &
-      nswrgr(ii),nswrsm(ii),epsrgr(ii),epsrsm(ii),extrag(ii)
-  endif
+
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
+  if (ii.lt.0) cycle
+  call field_get_label(f_id, chaine)
+  write(nfecra,4520) chaine(1:16),                                 &
+    nswrgr(ii),nswrsm(ii),epsrgr(ii),epsrsm(ii),extrag(ii)
 enddo
 write(nfecra,4511)
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
-  if(ii.ge.1) then
-    chaine=nomvar(ipp)
-    write(nfecra,4521) chaine(1:16),                               &
-      ircflu(ii),imligr(ii),climgr(ii)
-  endif
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
+  if (ii.lt.0) cycle
+  call field_get_label(f_id, chaine)
+  write(nfecra,4521) chaine(1:16),                                 &
+    ircflu(ii),imligr(ii),climgr(ii)
 enddo
 write(nfecra,4530)
 
@@ -2012,13 +2023,12 @@ endif
 ! --- Solveurs iteratifs de base
 
 write(nfecra,5010)
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
-  if(ii.ge.1) then
-    chaine=nomvar(ipp)
-    write(nfecra,5020) chaine(1:16),iresol(ii),                    &
-                     nitmax(ii),epsilo(ii),idircl(ii)
-  endif
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
+  if (ii.lt.0) cycle
+  call field_get_label(f_id, chaine)
+  write(nfecra,5020) chaine(1:16),iresol(ii),                      &
+                   nitmax(ii),epsilo(ii),idircl(ii)
 enddo
 write(nfecra,5030)
 
@@ -2028,13 +2038,12 @@ write(nfecra,9900)
 ! --- Multigrille
 
 write(nfecra,5510)ncegrm, ngrmax
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
-  if(ii.ge.1) then
-    chaine=nomvar(ipp)
-    write(nfecra,5520) chaine(1:16),                               &
-      imgr(ii),ncymax(ii),nitmgf(ii)
-  endif
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ii)
+  if (ii.lt.0) cycle
+  call field_get_label(f_id, chaine)
+  write(nfecra,5520) chaine(1:16),                                 &
+    imgr(ii),ncymax(ii),nitmgf(ii)
 enddo
 write(nfecra,5530)
 
@@ -2140,19 +2149,21 @@ write(nfecra,9900)
 
 ! --- Scalaires
 
-if(nscal.ge.1) then
+if (nscal.ge.1) then
   write(nfecra,6000)
   write(nfecra,6010)itbrrb
   write(nfecra,6011)
   do ii = 1, nscal
-    chaine=nomvar(ipprtp(isca(ii)))
+    f_id = ivarfl(isca(ii))
+    call field_get_label(f_id, chaine)
     write(nfecra,6021) chaine(1:16),ii,iscacp(ii),      &
                        ivisls(ii),iturt(ii),visls0(ii),sigmas(ii)
   enddo
   write(nfecra,6031)
   write(nfecra,6012)
   do ii = 1, nscal
-    chaine=nomvar(ipprtp(isca(ii)))
+    f_id = ivarfl(isca(ii))
+    call field_get_label(f_id, chaine)
     write(nfecra,6022) chaine(1:16),ii,iscavr(ii), rvarfl(ii)
   enddo
   write(nfecra,6032)
@@ -2162,8 +2173,7 @@ if(nscal.ge.1) then
     f_id = ivarfl(isca(ii))
     call field_get_key_double(f_id, kscmin, scminp)
     call field_get_key_double(f_id, kscmax, scmaxp)
-
-    chaine=nomvar(ipprtp(isca(ii)))
+    call field_get_label(f_id, chaine)
     write(nfecra,6023) chaine(1:16),ii,iclvfl(ii),      &
                        scminp,scmaxp
   enddo
@@ -2336,8 +2346,8 @@ write(nfecra,7010) isuite, ileaux, iecaux
 if(isuite.eq.1.and.nscal.ge.1) then
   write(nfecra,7020)
   do ii = 1, nscal
-    ivar = isca(ii)
-    chaine=nomvar(ipprtp(ivar))
+    f_id = ivarfl(isca(ii))
+    call field_get_label(f_id, chaine)
     write(nfecra,7030) chaine(1:16),ii,iscold(ii)
   enddo
   write(nfecra,7040)
@@ -2475,36 +2485,51 @@ write(nfecra,7510) ntsuit
 !   - Fichiers Ensight
 
 write(nfecra,7520)
-do ii = 2, nvppmx
-  if(ichrvr(ii).eq.1) then
-    name = nomvar(ii)
-    write(nfecra,7521) ii,name  (1:16)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keypp, ipp)
+  if (ipp.le.1) cycle
+  if (ichrvr(ipp).eq.1) then
+    call field_get_label(f_id, name)
+    write(nfecra,7521) ipp, name(1:16)
   endif
 enddo
 write(nfecra,7522)
 
 !   - Fichiers historiques
 write(nfecra,7530) nthist,frhist,ncapt,nthsav
-do ii = 2, nvppmx
-  if(ihisvr(ii,1).ne.0) then
-    name = nomvar(ii)
-    write(nfecra,7531) ii,name  (1:16),ihisvr(ii,1)
-  endif
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keypp, ipp)
+  if (ipp.le.1) cycle
+  call field_get_dim (f_id, f_dim, interleaved)
+  do c_id = 1, min(f_dim, 3)
+    ii = ipp + c_id - 1
+    if (ihisvr(ii,1).ne.0) then
+      call field_get_label(f_id, name)
+      if (f_dim .eq. 3) then
+        name = trim(name) // nomext3(c_id)
+      else if (f_dim .eq. 6) then
+        name = trim(name) // nomext63(c_id)
+      endif
+      write(nfecra,7531) ii,name  (1:16),ihisvr(ii,1)
+    endif
+  enddo
 enddo
 write(nfecra,7532)
 
 !   - Fichiers listing
 
 write(nfecra,7540) ntlist
-do ipp = 2, nvppmx
-  ii = itrsvr(ipp)
-  if(ii.ge.1) then
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keypp, ipp)
+  if (ipp.lt.1) cycle
+  call field_get_key_int(f_id, keyvar, ii)
+  if (ii.ge.1) then
     iwar = iwarni(ii)
   else
     iwar = -999
   endif
-  if(ilisvr(ipp).eq.1) then
-    name = nomvar(ipp)
+  if (ilisvr(ipp).eq.1) then
+    call field_get_label(f_id, name)
     write(nfecra,7531) ipp,name  (1:16),iwar
   endif
 enddo
@@ -2642,7 +2667,8 @@ if (nbccou .ge. 1) then
   write(nfecra,8020) nbsucp, nbvocp
   write(nfecra,8030)
   do ii = 1, nscal
-    chaine=nomvar(ipprtp(isca(ii)))
+    f_id = ivarfl(isca(ii))
+    call field_get_label(f_id, chaine)
     write(nfecra,8031) chaine(1:16),ii,icpsyr(ii)
   enddo
   write(nfecra,8032)

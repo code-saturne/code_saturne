@@ -61,6 +61,7 @@ use ppthch
 use ppincl
 !bug Ba
 use ihmpre
+use field
 
 !===============================================================================
 
@@ -68,8 +69,9 @@ implicit none
 
 ! Local variables
 
-integer          ipp , ii
-integer          iok
+integer          ii
+integer          iok, kscmin, kscmax
+double precision  scaclp(4)
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -78,34 +80,31 @@ integer          iok
 ! 1.1 Definition des scamin et des scamax des variables transportees
 ! ==================================================================
 
+! Key id for scamin and scamax
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
-if(  (abs(scamin(ienerg)+grand).gt.epzero).or.           &
-     (abs(scamin(itempk)+grand).gt.epzero).or.           &
-     (abs(scamax(ienerg)-grand).gt.epzero).or.           &
-     (abs(scamax(itempk)-grand).gt.epzero) ) then
-  write(nfecra,2000)                                            &
-       scamin(ienerg),scamax(ienerg),             &
-       scamin(itempk),scamax(itempk)
+call field_get_key_double(ivarfl(isca(ienerg)), kscmin, scaclp(1))
+call field_get_key_double(ivarfl(isca(itempk)), kscmin, scaclp(2))
+call field_get_key_double(ivarfl(isca(ienerg)), kscmax, scaclp(3))
+call field_get_key_double(ivarfl(isca(itempk)), kscmax, scaclp(4))
+
+if ( (abs(scaclp(1)+grand).gt.epzero).or.           &
+     (abs(scaclp(2)+grand).gt.epzero).or.           &
+     (abs(scaclp(3)-grand).gt.epzero).or.           &
+     (abs(scaclp(4)-grand).gt.epzero) ) then
+  write(nfecra,2000) scaclp(1), scaclp(3), scaclp(2), scaclp(4)
   call csexit (1)
 endif
-!        SCAMIN(IENERG)   = -GRAND
-!        SCAMAX(IENERG)   =  GRAND
-!        SCAMIN(ITEMPK)   = -GRAND
-!        SCAMAX(ITEMPK)   =  GRAND
 
 ! 1.2 Nature des scalaires transportes
 ! ====================================
 
-! ---- Type de scalaire (0 passif, 1 temperature en K
-!                                 -1 temperature en C
-!                                  2 enthalpie en J
-!                                  3 energie totale en J)
-!      La distinction -1/1 sert pour le rayonnement
+! Does scalar itempk behave like a temperature ?
+! TODO check this; should be 1 for temperature unless handled in
+!      another manner
 
-iscacp(ienerg) = 0
 iscacp(itempk) = 0
-
-iscalt = ienerg
 
 !         - Schema convectif % schema 2ieme ordre
 !           = 0 : upwind
@@ -113,39 +112,6 @@ iscalt = ienerg
 do ii = 1, nvarmx
   blencv(ii) = 0.d0
 enddo
-
-!         Upwind necessaire pour le schema utilise
-
-
-! 1.3 Variable courante : nom, sortie chrono, suivi listing, sortie hist
-! ======================================================================
-
-!     Comme pour les autres variables,
-!       si l'on n'affecte pas les tableaux suivants,
-!       les valeurs par defaut seront utilisees
-
-!     NOMVAR( ) = nom de la variable
-!     ICHRVR( ) = sortie chono (oui 1/non 0)
-!     ILISVR( ) = suivi listing (oui 1/non 0)
-!     IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!     si IHISVR(.,1)  = -1 sortie sur toutes les sondes
-
-!     NB : Les 8 premiers caracteres du noms seront repris dans le
-!          listing 'developpeur'
-
-! ======================================================================
-
-ipp = ipprtp(isca(ienerg))
-nomvar(ipp)  = 'EnergieT'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-ipp = ipprtp(isca(itempk))
-nomvar(ipp)  = 'Temp K'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
 
 !===============================================================================
 ! 2. PARAMETRES GLOBAUX

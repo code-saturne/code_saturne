@@ -102,7 +102,7 @@ integer          imode, iel
 double precision d2s3
 double precision zent,xuent,xvent,xkent,xeent,tpent,qvent,ncent
 
-integer k,ii
+integer k,ii, isc
 double precision xcent
 
 !===============================================================================
@@ -181,7 +181,8 @@ if (iaerosol.eq.1) then
   if (init_at_chem.eq.1) then
     do iel = 1, ncel
       do ii = 1, nesp_aer*nbin_aer + nbin_aer
-       rtp(iel,isca(nespg_siream+ii)) = dlconc0(ii)
+        isc = (isca_chem(1) - 1) + nespg_siream + ii
+        rtp(iel,isca(isc)) = dlconc0(ii)
       enddo
     enddo
   endif

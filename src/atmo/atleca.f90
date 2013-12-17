@@ -49,6 +49,7 @@ use atincl
 use numvar
 use atchem
 use siream
+use field
 
 implicit none
 
@@ -59,7 +60,9 @@ implicit none
 
 ! Local variables
 
-integer jsp, jb
+integer    isc, f_id
+integer    jsp, jb
+character  label*80
 
 !================================================================================
 ! READINGS
@@ -95,11 +98,14 @@ enddo
 write(nfecra, *)
 write(nfecra, *) '==================================================='
 write(nfecra, *) 'printing aerosol concentrations'
+
 do jb = 1, nbin_aer
   write(nfecra,*) "Bin ",jb
   do jsp = 1, nesp_aer
-    write(nfecra,1001) nomvar(ipprtp(isca(nespg_siream+jb+(jsp-1)*nbin_aer))),&
-                       dlconc0(jb+(jsp-1)*nbin_aer)
+    isc = (isca_chem(1) - 1) + nespg_siream+jb+(jsp-1)*nbin_aer
+    f_id = ivarfl(isca(isc))
+    call field_get_label(f_id, label)
+    write(nfecra,1001) label, dlconc0(jb+(jsp-1)*nbin_aer)
   enddo
 enddo
 1001 format(A10," : ",ES10.2)

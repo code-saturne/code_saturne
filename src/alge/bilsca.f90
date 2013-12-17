@@ -92,7 +92,6 @@
 !> \param[in]     iccocg        indicator
 !>                               - 1 re-compute cocg matrix (for iterativ gradients)
 !>                               - 0 otherwise
-!> \param[in]     ipp*          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     imucpp        indicator
 !>                               - 0 do not multiply the convectiv term by Cp
@@ -147,7 +146,7 @@
 subroutine bilsca &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   ipp    , iwarnp , imucpp , idftnp ,                            &
+   iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscf  , viscb  , viscce , xcpp   ,          &
@@ -181,7 +180,7 @@ integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
-integer          iwarnp , ipp    , imucpp, idftnp, icvflb
+integer          iwarnp , imucpp, idftnp, icvflb
 
 integer          icvfli(nfabor)
 
@@ -279,7 +278,7 @@ elseif (idftnp.eq.6) then
     call diften &
     !==========
    ( idtvar , ivar   , nswrgp , imligp , ircflp ,                   &
-     inc    , imrgra , iccocg , ipp    , iwarnp , epsrgp ,          &
+     inc    , imrgra , iccocg , iwarnp , epsrgp ,                   &
      climgp , extrap , relaxp , thetap ,                            &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
      viscf  , viscb  , viscce ,                                     &

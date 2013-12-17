@@ -82,17 +82,15 @@ implicit none
 
 integer          ii, ivar, iprop
 integer          imom, idtnm
-integer          keylog
-integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
-integer          keysca, keyvar, kscmin, kscmax, kdiftn
+integer          keycpl, iflid, ikeyid, ikeyvl
+integer          kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3, idim6
-integer          ipcrom, ipcroa
+	integer          ipcrom, ipcroa
 logical          ilved, iprev, inoprv, lprev
 integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id, kscavr
 
 character*80     name
-character*32     name1, name2, name3
 character*80     f_name
 character*80     fname(nvppmx)
 
@@ -128,24 +126,11 @@ call field_get_key_id(name, keylbl)
 name = 'coupled'
 call field_get_key_id(name, keycpl)
 
-! Key id for scalar id
-call field_get_key_id("scalar_id", keysca)
-
-! Key id for variable id
-call field_get_key_id("variable_id", keyvar)
-
-! Key id for scamin and scamax
-call field_get_key_id("min_scalar_clipping", kscmin)
-call field_get_key_id("max_scalar_clipping", kscmax)
-
 ! If a scalar is a variance, store the id of the parent scalar
 call field_get_key_id("first_moment_id", kscavr)
 
 ! Key id for diffusivity tensor
 call field_get_key_id("diffusivity_tensor", kdiftn)
-
-! Postprocessing level for variables
-iopchr = 1
 
 !===============================================================================
 ! 2. Mapping for post-processing
@@ -155,41 +140,14 @@ iopchr = 1
 !----------------------
 
 ivar = ipr
-name = 'pressure'
-call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-if (ichrvr(ipprtp(ivar)) .eq. 1) then
-  call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
-endif
-if (ilisvr(ipprtp(ivar)) .eq. 1) then
-  call field_set_key_int(ivarfl(ivar), keylog, 1)
-endif
+call field_set_key_int(ivarfl(ivar), keyvis, ichrvr(ipprtp(ivar)))
+call field_set_key_int(ivarfl(ivar), keylog, ilisvr(ipprtp(ivar)))
 
 ivar = iu
-name = 'velocity'
-call field_create(name, itycat, ityloc, idim3, ilved, iprev, ivarfl(iu))
 
-! Change label for velocity to remove trailing coordinate name
-name = nomvar(ipprtp(iu))
-name1 = name(1:32)
-name = nomvar(ipprtp(iv))
-name2 = name(1:32)
-name = nomvar(ipprtp(iw))
-name3 = name(1:32)
-call fldsnv (name1, name2, name3)
-!==========
-call field_set_key_str(ivarfl(ivar), keylbl, name1)
-if (ichrvr(ipprtp(ivar)) .eq. 1) then
-  call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
-endif
-if (ilisvr(ipprtp(ivar)) .eq. 1) then
-  call field_set_key_int(ivarfl(ivar), keylog, 1)
-endif
+call field_set_key_int(ivarfl(ivar), keyvis, ichrvr(ipprtp(ivar)))
+call field_set_key_int(ivarfl(ivar), keylog, ilisvr(ipprtp(ivar)))
 call field_set_key_int(ivarfl(ivar), keycpl, 1)
-
-! All components point to same field
-ivarfl(iv) = ivarfl(iu)
-ivarfl(iw) = ivarfl(iu)
 
 ! Turbulence
 !-----------
@@ -199,82 +157,58 @@ nfld = 0
 if (itytur.eq.2) then
   nfld = nfld + 1
   ifvar(nfld) = ik
-  fname(nfld) = 'k'
   nfld = nfld + 1
   ifvar(nfld) = iep
-  fname(nfld) = 'epsilon'
 elseif (itytur.eq.3) then
   nfld = nfld + 1
   ifvar(nfld) = ir11
-  fname(nfld) = 'r11'
   nfld = nfld + 1
   ifvar(nfld) = ir22
-  fname(nfld) = 'r22'
   nfld = nfld + 1
   ifvar(nfld) = ir33
-  fname(nfld) = 'r33'
   nfld = nfld + 1
   ifvar(nfld) = ir12
-  fname(nfld) = 'r12'
   nfld = nfld + 1
   ifvar(nfld) = ir13
-  fname(nfld) = 'r13'
   nfld = nfld + 1
   ifvar(nfld) = ir23
-  fname(nfld) = 'r23'
   nfld = nfld + 1
   ifvar(nfld) = iep
-  fname(nfld) = 'epsilon'
   if (iturb.eq.32) then
     nfld = nfld + 1
     ifvar(nfld) = ial
-    fname(nfld) = 'alpha'
   endif
 elseif (itytur.eq.5) then
   nfld = nfld + 1
   ifvar(nfld) = ik
-  fname(nfld) = 'k'
   nfld = nfld + 1
   ifvar(nfld) = iep
-  fname(nfld) = 'epsilon'
   nfld = nfld + 1
   ifvar(nfld) = iphi
-  fname(nfld) = 'phi'
   if (iturb.eq.50) then
     nfld = nfld + 1
     ifvar(nfld) = ifb
-    fname(nfld) = 'f_bar'
   elseif (iturb.eq.51) then
     nfld = nfld + 1
     ifvar(nfld) = ial
-    fname(nfld) = 'alpha'
   endif
 elseif (iturb.eq.60) then
   nfld = nfld + 1
   ifvar(nfld) = ik
-  fname(nfld) = 'k'
   nfld = nfld + 1
   ifvar(nfld) = iomg
-  fname(nfld) = 'omega'
 elseif (iturb.eq.70) then
   nfld = nfld + 1
   ifvar(nfld) = inusa
-  fname(nfld) = 'nu_tilda'
 endif
 
-! Map fields
+! Set turbulence field options
 
 do ii = 1, nfld
   ivar = ifvar(ii)
   name = fname(ii)
-  call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-  call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-  if (ichrvr(ipprtp(ivar)) .eq. 1) then
-    call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
-  endif
-  if (ilisvr(ipprtp(ivar)) .eq. 1) then
-    call field_set_key_int(ivarfl(ivar), keylog, 1)
-  endif
+  call field_set_key_int(ivarfl(ivar), keyvis, ichrvr(ipprtp(ivar)))
+  call field_set_key_int(ivarfl(ivar), keylog, ilisvr(ipprtp(ivar)))
 enddo
 
 nfld = 0
@@ -284,26 +218,9 @@ nfld = 0
 
 if (iale.eq.1) then
   ivar = iuma
-  name = 'mesh_velocity'
-  call field_create(name, itycat, ityloc, idim3, ilved, iprev, ivarfl(ivar))
-  name = nomvar(ipprtp(iuma))
-  name1 = name(1:32)
-  name = nomvar(ipprtp(ivma))
-  name2 = name(1:32)
-  name = nomvar(ipprtp(iwma))
-  name3 = name(1:32)
-  call fldsnv (name1, name2, name3)
-  !==========
-  call field_set_key_str(ivarfl(ivar), keylbl, name1)
-  if (ichrvr(ipprtp(ivar)) .eq. 1) then
-    call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
-  endif
-  if (ilisvr(ipprtp(ivar)) .eq. 1) then
-    call field_set_key_int(ivarfl(ivar), keylog, 1)
-  endif
+  call field_set_key_int(ivarfl(ivar), keyvis, ichrvr(ipprtp(ivar)))
+  call field_set_key_int(ivarfl(ivar), keylog, ilisvr(ipprtp(ivar)))
   call field_set_key_int(ivarfl(ivar), keycpl, 1)
-  ivarfl(ivma) = ivarfl(iuma)
-  ivarfl(iwma) = ivarfl(iuma)
 endif
 
 ! User variables
@@ -312,56 +229,22 @@ endif
 do ii = 1, nscal
 
   if (isca(ii) .gt. 0) then
+
     ivar = isca(ii)
-    if (ii .eq. iscalt) then
-      if (itherm .eq. 1) then
-        name = 'temperature'
-      else if (itherm .eq. 2) then
-        name = 'enthalpy'
-      else if (itherm .eq. 3) then
-        name = 'total energy'
-      endif
-    else
-      name = nomvar(ipprtp(ivar))
-    endif
+    f_id = ivarfl(ivar)
 
-    ! Test if the field has already been defined
-    call field_get_id_try(trim(name), f_id)
-
-    ! If not already created
-    if (f_id.eq.-1) then
-      call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-      call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-      if (ichrvr(ipprtp(ivar)).eq.1) then
-        call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
-      endif
-      if (ilisvr(ipprtp(ivar)) .eq. 1) then
-        call field_set_key_int(ivarfl(ivar), keylog, 1)
-      endif
-      ! Set min and max clipping
-      call field_set_key_double(ivarfl(ivar), kscmin, scamin(ii))
-      call field_set_key_double(ivarfl(ivar), kscmax, scamax(ii))
-
-    ! It already exists
-    else
-      ivarfl(ivar) = f_id
-    endif
-
-    ! Set the "scalar_id" key word (inverse of isca(ii))
-    call field_set_key_int(ivarfl(ivar), keysca, ii)
+    call field_set_key_int(ivarfl(ivar), keyvis, ichrvr(ipprtp(ivar)))
+    call field_set_key_int(ivarfl(ivar), keylog, ilisvr(ipprtp(ivar)))
 
     if (ityturt(ii).gt.0) then
+      call field_get_name (f_id, name)
       f_name = trim(name)//'_turbulent_flux'
       call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
       call field_set_key_int(iflid, keycpl, 1)
       ! Tensorial diffusivity
       call field_set_key_int(iflid, kdiftn, 6)
-      if (ichrvr(ipprtp(ivar)) .eq. 1) then
-        call field_set_key_int(iflid, keyvis, iopchr)
-      endif
-      if (ilisvr(ipprtp(ivar)) .eq. 1) then
-        call field_set_key_int(iflid, keylog, 1)
-      endif
+      call field_set_key_int(iflid, keyvis, ichrvr(ipprtp(ivar)))
+      call field_set_key_int(iflid, keylog, ilisvr(ipprtp(ivar)))
     endif
 
     ! Additional fields for Drift scalars is done in addfld
@@ -379,8 +262,6 @@ do ii = 1, nscal
 enddo
 
 do ivar = 1, nvar
-  ! Set the "variable_id" key word (inverse of ivarfl(ivar))
-  call field_set_key_int(ivarfl(ivar), keyvar, ivar)
   ! Key word: tensorial diffusivity
   call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))
 enddo
@@ -410,13 +291,10 @@ call field_create(f_name, itycat, ityloc, idim1, ilved, lprev, icrom)
 iprpfl(ipcrom) = icrom
 if (lprev) iprpfl(ipcroa) = -1 ! could set icrom, but avoid this access mode
 
-call field_set_key_str(icrom, keylbl, nomvar(ipppro(ipcrom)))
-if (ichrvr(ipppro(ipcrom)) .eq. 1) then
-  call field_set_key_int(icrom, keyvis, iopchr)
-endif
-if (ilisvr(ipppro(ipcrom)) .eq. 1) then
-  call field_set_key_int(icrom, keylog, 1)
-endif
+call field_set_key_str(icrom, keylbl, nomprp(ipcrom))
+call field_set_key_int(icrom, keyvis, ichrvr(ipppro(ipcrom)))
+call field_set_key_int(icrom, keylog, ilisvr(ipppro(ipcrom)))
+call field_set_key_int(icrom, keyipp, ipppro(ipcrom))
 
 ! The boundary density at the previous time step is not required
 ! if we perform a hydrostatic pressure correction (icalhy=1)
@@ -432,9 +310,7 @@ call field_create(f_name, itycat, ityloc, idim1, ilved, lprev, ibrom)
 ! For now, base logging on that of cell density, and do not postprocess
 ! boundary density by default
 
-if (ilisvr(ipppro(ipcrom)) .eq. 1) then
-  call field_set_key_int(ibrom, keylog, 1)
-endif
+call field_set_key_int(ibrom, keylog, ilisvr(ipppro(ipcrom)))
 
 ! Cell properties
 !----------------
@@ -476,7 +352,7 @@ enddo
 imom = 0
 do iprop = 1, nproce
   if (iprop.eq.ipcrom .or. iprop.eq.ipcroa) cycle
-  name = nomvar(ipppro(iprop))
+  name = nomprp(iprop)
   if (iapro(iprop).eq.0) then
     if (name(1:4) .eq. '    ') then
       write(name, '(a, i3.3)') 'property_', iprop
@@ -498,11 +374,10 @@ do iprop = 1, nproce
   endif
   call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
   call field_set_key_str(iprpfl(iprop), keylbl, name)
-  if (ichrvr(ipppro(iprop)) .eq. 1) then
+  if (ipppro(iprop).gt.1) then
     call field_set_key_int(iprpfl(iprop), keyvis, ichrvr(ipppro(iprop)))
-  endif
-  if (ilisvr(ipppro(iprop)) .eq. 1) then
     call field_set_key_int(iprpfl(iprop), keylog, ilisvr(ipppro(iprop)))
+    call field_set_key_int(iprpfl(iprop), keyipp, ipppro(iprop))
   endif
 enddo
 
@@ -535,13 +410,14 @@ itycat = FIELD_INTENSIVE
 
 name = 'dt'
 call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iflid)
-call field_set_key_str(iflid, keylbl, nomvar(ippdt))
+call field_set_key_str(iflid, keylbl, 'Local Time Step')
 if (idtvar.eq.2.and.ichrvr(ippdt).gt.0) then
   call field_set_key_int(iflid, keyvis, ichrvr(ippdt))
 endif
 if (idtvar.eq.2.and.ilisvr(ippdt).gt.0) then
   call field_set_key_int(iflid, keylog, ilisvr(ippdt))
 endif
+call field_set_key_int(iflid, keyipp, ippdt)
 
 ! Transient velocity/pressure coupling, postprocessing field
 ! (variant used for computation is a tensorial field, not this one)
@@ -549,6 +425,7 @@ endif
 if (ipucou.ne.0 .or. ncpdct.gt.0) then
   name = 'dttens'
   call field_create(name, itycat, ityloc, 6, .true., inoprv, idtten)
+  call field_set_key_int(idtten, keyipp, ipptx)
 endif
 if (ichrvr(ipptx).gt.0) then
   call field_set_key_int(idtten, keyvis, ichrvr(ipptx))

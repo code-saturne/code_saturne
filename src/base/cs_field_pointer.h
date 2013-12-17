@@ -59,11 +59,84 @@ BEGIN_C_DECLS
 
 typedef enum {
 
+  /* Base variables and properties */
+
+  CS_ENUMF_(dt),           /*!< local time step */
+
   CS_ENUMF_(p),            /*!< pressure */
   CS_ENUMF_(u),            /*!< velocity */
 
+  CS_ENUMF_(k),            /*!< turbulent kinetic energy \f$ k \f$ */
+  CS_ENUMF_(eps),          /*!< turbulent dissipation \f$ \varepsilon \f$ */
+
+  CS_ENUMF_(r11),          /*!< Reynolds stress component \f$ R_{xx} \f$ */
+  CS_ENUMF_(r22),          /*!< Reynolds stress component \f$ R_{yy} \f$ */
+  CS_ENUMF_(r33),          /*!< Reynolds stress component \f$ R_{zz} \f$ */
+  CS_ENUMF_(r12),          /*!< Reynolds stress component \f$ R_{xy} \f$ */
+  CS_ENUMF_(r23),          /*!< Reynolds stress component \f$ R_{yz} \f$ */
+  CS_ENUMF_(r13),          /*!< Reynolds stress component \f$ R_{xz} \f$ */
+
+  CS_ENUMF_(phi),          /*!< \f$ \phi \f$ for \f$ \phi-f_b \f$ model */
+  CS_ENUMF_(f_bar),        /*!< \f$ f_b \f$ for \f$ \phi-f_b \f$ model */
+  CS_ENUMF_(alpha),        /*!< \f$ alpha \f$ for \f$ Bl-v^2-k \f$
+                             or EBRSM model */
+
+  CS_ENUMF_(omg),          /*!< \f$ omega \f$ for \f$ k-\omega \f$ SST model */
+  CS_ENUMF_(nusa),         /*!< \widetilde{\nu}_T \f$ for Spalart Allmaras */
+
+  CS_ENUMF_(mesh_u),       /*!< mesh velocity */
+
+  CS_ENUMF_(h),            /*!< enthalpy */
+  CS_ENUMF_(t),            /*!< temperature */
+  CS_ENUMF_(energy),       /*!< total energy */
+
   CS_ENUMF_(rho),          /*!< density (at cells) */
   CS_ENUMF_(rho_b),        /*!< density (at boundary faces) */
+
+  /* Specific physics variables and properties */
+
+  CS_ENUMF_(t_kelvin),     /*!< temperature, in Kelvin */
+
+  CS_ENUMF_(pot_t),        /*!< potential temperature */
+  CS_ENUMF_(totwt),        /*!< total water content */
+  CS_ENUMF_(ntdrp),        /*!< total number of droplets */
+  CS_ENUMF_(chemistry),    /*!< chemistry species (indexed) */
+
+  CS_ENUMF_(fm),           /*!< mixture fraction */
+  CS_ENUMF_(fp2m),         /*!< mixture fraction variance */
+
+  CS_ENUMF_(fsm),          /*!< soot mass fraction */
+  CS_ENUMF_(npm),          /*!< soot precursor number */
+  CS_ENUMF_(ygfm),         /*!< fresh gas fraction */
+
+  CS_ENUMF_(yfm),          /*!< mass fraction */
+  CS_ENUMF_(yfp2m),        /*!< mass fraction variance */
+  CS_ENUMF_(coyfp),        /*!< mass fraction covariance */
+
+  CS_ENUMF_(np),           /*!< particles per kg for coal class */
+  CS_ENUMF_(xch),          /*!< reactive coal mass fraction for coal class */
+  CS_ENUMF_(xck),          /*!< coke mass fraction for coal class */
+  CS_ENUMF_(xwt),          /*!< water mass fraction for coal class */
+  CS_ENUMF_(h2),           /*!< mass enthalpy for coal class (permeatic case) */
+  CS_ENUMF_(f1m),          /*!< mean value light volatiles for coal class */
+  CS_ENUMF_(f2m),          /*!< mean value heavy volatiles for coal class */
+  CS_ENUMF_(f4m),
+  CS_ENUMF_(f5m),
+  CS_ENUMF_(f6m),
+  CS_ENUMF_(f7m),
+  CS_ENUMF_(f8m),
+  CS_ENUMF_(f9m),
+  CS_ENUMF_(fvp2m),
+  CS_ENUMF_(yco2),         /*!< CO2 fraction */
+  CS_ENUMF_(yhcn),         /*!< HCN fraction */
+  CS_ENUMF_(yno),          /*!< NO fraction */
+  CS_ENUMF_(ynh3),         /*!< NH3 enthalpy */
+  CS_ENUMF_(hox),          /*!< Ox enthalpy */
+
+  CS_ENUMF_(potr),         /*!< Electric potential, real part */
+  CS_ENUMF_(poti),         /*!< Electric potential, imaginary part */
+  CS_ENUMF_(potva),        /*!< Vector potential */
+  CS_ENUMF_(ycoel),        /*!< Constituent mass fraction */
 
   /* End of attributes */
 
@@ -137,14 +210,60 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
                              int                     index,
                              cs_field_t             *f);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Map base fields to enumerated pointers.
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Map base fields to enumerated pointers.
+ *----------------------------------------------------------------------------*/
 
 void
 cs_field_pointer_map_base(void);
+
+/*----------------------------------------------------------------------------
+ * Map base fields to enumerated pointers for atmospheric models
+ *
+ * parameters:
+ *   n_chem_species <-- number of chemical species
+ *   species_f_if   <-- field id for each chemical species
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_atmospheric(int        n_chem_species,
+                                 const int  species_f_id[]);
+
+/*----------------------------------------------------------------------------
+ * Map base fields to enumerated pointers for atmospheric models
+ *
+ * parameters:
+ *   n_coals   <-- number of coals
+ *   n_classes <-- number of coal classes
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_coal_combustion(int  n_coals,
+                                     int  n_classes);
+
+/*----------------------------------------------------------------------------*
+ * Map base fields to enumerated pointers for compressible model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_compressible(void);
+
+/*----------------------------------------------------------------------------
+ * Map base fields to enumerated pointers for electric arcs
+ *
+ * parameters:
+ *  n_gasses <-- number of gasses
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_electric_arcs(int  n_gasses);
+
+/*----------------------------------------------------------------------------
+ * Map base fields to enumerated pointers for gas combustion.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_gas_combustion(void);
 
 /*----------------------------------------------------------------------------*/
 

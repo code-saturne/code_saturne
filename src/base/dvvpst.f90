@@ -111,7 +111,7 @@ integer          ipp   , idimt , kk   , ll, iel
 integer          ivarl , ivar0
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
-integer          ipcsii, keyvis, iflpst, itplus
+integer          ipcsii, iflpst, itplus
 
 double precision epsrgp, climgp, extrap
 double precision pcentr
@@ -341,7 +341,6 @@ else if (numtyp .eq. -2) then
   !  Projection of variables at boundary with no reconstruction
   !  ----------------------------------------------------------
 
-  call field_get_key_id('post_vis', keyvis)
   call field_get_key_id('coupled', keycpl)
 
   fldprv = -1
