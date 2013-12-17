@@ -229,7 +229,7 @@ elseif (idftnp.eq.6) then
     call bilsc4 &
     !==========
    ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , ivisep , &
+     ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , idiflc , &
      iwarnp ,                                                       &
      blencp , epsrgp , climgp , relaxp , thetap ,                   &
      pvar   , pvara  ,                                              &
