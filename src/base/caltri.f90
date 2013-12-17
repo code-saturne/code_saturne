@@ -384,11 +384,6 @@ endif
 call init_aux_arrays(ncelet, nfabor)
 !===================
 
-! Compute the porosity if needed
-if (iporos.ge.1) then
-  call usporo
-endif
-
 call turbomachinery_init_mapping
 !===============================
 
@@ -472,6 +467,11 @@ call iniva0 &
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , propce ,                                     &
    frcxt  , prhyd  )
+
+! Compute the porosity if needed
+if (iporos.ge.1) then
+  call usporo
+endif
 
 !===============================================================================
 ! Possible restart

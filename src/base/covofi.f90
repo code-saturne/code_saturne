@@ -94,7 +94,7 @@ use cstphy
 use cstnum
 use ppppar
 use ppthch
-use pointe, only: porosi, visten
+use pointe, only: visten
 use coincl
 use cpincl
 use cs_fuel_incl
@@ -177,6 +177,7 @@ double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -784,6 +785,8 @@ if (iporos.eq.0) then
 
 ! With porosity
 else
+
+  call field_get_val_s(ipori, porosi)
 
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)*porosi(iel)

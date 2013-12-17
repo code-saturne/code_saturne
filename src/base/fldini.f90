@@ -85,7 +85,7 @@ integer          imom, idtnm
 integer          keylog
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
 integer          keysca, keyvar, kscmin, kscmax, kdiftn
-integer          nfld, itycat, ityloc, idim1, idim3
+integer          nfld, itycat, ityloc, idim1, idim3, idim6
 integer          ipcrom, ipcroa
 logical          ilved, iprev, inoprv, lprev
 integer          ifvar(nvppmx), iapro(npromx)
@@ -111,6 +111,7 @@ itycat = FIELD_INTENSIVE + FIELD_VARIABLE  ! for most variables
 ityloc = 1 ! variables defined on cells
 idim1  = 1
 idim3  = 3
+idim6  = 6
 ilved  = .false.   ! not interleaved by default
 iprev = .true.     ! variables have previous value
 inoprv = .false.   ! variables have no previous value
@@ -664,6 +665,21 @@ ityloc = 3 ! boundary faces
 if (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0) then
   call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
   call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
+endif
+
+! Porosity fields
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 1 ! cells
+ilved = .true.
+
+if (iporos.ge.1) then
+  name = 'porosity'
+  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ipori)
+  if (iporos.eq.2) then
+    name = 'tensorial_porosity'
+    call field_create(name, itycat, ityloc, idim6, ilved, inoprv, iporf)
+  endif
 endif
 
 return

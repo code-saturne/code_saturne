@@ -64,8 +64,9 @@ subroutine vitens &
 ! Module files
 !===============================================================================
 
+use field
+use numvar, only: ipori, iporf
 use paramx
-use pointe
 use entsor
 use optcal, only: iporos
 use parall
@@ -92,8 +93,9 @@ double precision visci(3,3), viscj(3,3)
 double precision viscis, viscjs, fikis, fjkjs, distfi, distfj
 double precision temp, eps
 
-double precision, pointer, dimension(:,:) :: viscce
+double precision, pointer, dimension(:,:) :: viscce, porosf
 double precision, dimension(:,:), allocatable, target :: w2
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -110,6 +112,7 @@ if (iporos.eq.0) then
 
 ! With porosity
 else if (iporos.eq.1) then
+  call field_get_val_s(ipori, porosi)
   allocate(w2(6, ncelet))
   do iel = 1, ncel
     do isou = 1, 6
@@ -120,6 +123,8 @@ else if (iporos.eq.1) then
 
 ! With tensorial porosity
 else if (iporos.eq.2) then
+  call field_get_val_s(ipori, porosi)
+  call field_get_val_v(iporf, porosf)
   allocate(w2(6,ncelet))
   do iel = 1, ncel
     call symmetric_matrix_product(w2(1, iel), porosf(1, iel), w1(1, iel))

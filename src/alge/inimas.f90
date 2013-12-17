@@ -126,7 +126,8 @@ subroutine inimas &
 
 use paramx
 use dimens, only: ndimfb
-use pointe
+use field
+use numvar, only: ipori
 use optcal, only: iporos
 use parall
 use period
@@ -163,6 +164,7 @@ double precision diipbx, diipby, diipbz
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: qdmx, qdmy, qdmz
 double precision, allocatable, dimension(:,:) :: coefqa
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -173,6 +175,10 @@ double precision, allocatable, dimension(:,:) :: coefqa
 ! Allocate temporary arrays
 allocate(qdmx(ncelet), qdmy(ncelet), qdmz(ncelet))
 allocate(coefqa(ndimfb,3))
+
+if (iporos.ge.1) then
+  call field_get_val_s(ipori, porosi)
+endif
 
 ! Compute momentum
 

@@ -102,7 +102,8 @@ subroutine inimav &
 
 use paramx
 use dimens, only: ndimfb
-use pointe
+use field
+use numvar, only: ipori, iporf
 use optcal, only: iporos
 use parall
 use period
@@ -138,6 +139,8 @@ logical          ilved
 
 double precision, dimension(:,:), allocatable :: qdm, coefaq
 double precision, dimension(:,:,:), allocatable :: grdqdm
+double precision, dimension(:), pointer :: porosi
+double precision, dimension(:,:), pointer :: porosf
 
 allocate(qdm(3,ncelet))
 allocate(coefaq(3,ndimfb))
@@ -163,6 +166,13 @@ if (init.eq.1) then
 elseif (init.ne.0) then
   write(nfecra,1000) init
   call csexit (1)
+endif
+
+if (iporos.ge.1) then
+  call field_get_val_s(ipori, porosi)
+  if (iporos.eq.2) then
+    call field_get_val_v(iporf, porosf)
+  endif
 endif
 
 ! Standard mass flux

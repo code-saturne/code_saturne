@@ -57,9 +57,9 @@ subroutine visecv &
 use paramx
 use cstphy
 use entsor
+use field
 use numvar
 use optcal
-use pointe, only: porosi
 use parall
 use period
 use ppppar
@@ -85,6 +85,7 @@ integer          ipcvsv
 double precision d2s3m
 
 double precision, allocatable, dimension(:) :: secvis
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -150,6 +151,7 @@ endif
 
 ! With porosity
 if (iporos.ge.1) then
+  call field_get_val_s(ipori, porosi)
   do iel = 1, ncel
     secvis(iel) = secvis(iel)*porosi(iel)
   enddo

@@ -305,12 +305,6 @@ module pointe
   !> See the user subroutine \ref ustsma
   double precision, allocatable, dimension(:,:) :: smacel
 
-  !> value of the porosity
-  double precision, allocatable, dimension(:) :: porosi
-
-  !> value of the porosity (for convection and diffusion only)
-  double precision, allocatable, dimension(:,:) :: porosf
-
   !> symmetric tensor cell visco
   double precision, allocatable, dimension(:,:) :: visten
 
@@ -370,7 +364,7 @@ contains
     integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
-    integer                iok, ivar, iscal, iel, ifac
+    integer                iok, ivar, iscal, ifac
     integer                kdiftn
 
     ! Key id for diffusivity tensor
@@ -396,26 +390,6 @@ contains
 
     if (iale.eq.1) then
       allocate(idfstr(nfabor))
-    endif
-
-    ! Porosity array when needed
-
-    if (iporos.ge.1) then
-      allocate(porosi(ncelet))
-      do iel = 1, ncelet
-        porosi(iel) = 1.d0
-      enddo
-    endif
-    if (iporos.eq.2) then
-      allocate(porosf(6, ncelet))
-      do iel = 1, ncelet
-        porosf(1, iel) = 1.d0
-        porosf(2, iel) = 1.d0
-        porosf(3, iel) = 1.d0
-        porosf(4, iel) = 0.d0
-        porosf(5, iel) = 0.d0
-        porosf(6, iel) = 0.d0
-      enddo
     endif
 
     ! Symmetric cell diffusivity when needed
@@ -517,20 +491,6 @@ contains
     ! Resize/copy arrays
 
     allocate(buffer(ncelet))
-
-    ! Porosity array when needed
-
-    if (allocated(porosi)) then
-      do iel = 1, ncel
-        buffer(iel) = porosi(iel)
-      enddo
-      deallocate(porosi)
-      call synsca (buffer)
-      allocate(porosi(ncelet))
-      do iel = 1, ncelet
-        porosi(iel) = buffer(iel)
-      enddo
-    endif
 
     ! Symmetric cell diffusivity when needed
 
@@ -656,7 +616,6 @@ contains
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
-    if (allocated(porosi)) deallocate(porosi)
     if (allocated(visten)) deallocate(visten)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)

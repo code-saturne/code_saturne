@@ -96,6 +96,8 @@ double precision xxk, xcmu, trii
 double precision rvoid(1)
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cofbcp
+double precision, dimension(:), pointer :: porosi
+double precision, dimension(:,:), pointer :: porosf
 
 !===============================================================================
 
@@ -247,6 +249,27 @@ if (iale.eq.1) then
       propce(iel,iivism) = 1.d0
     enddo
   enddo
+endif
+
+! Porosity
+if (iporos.ge.1) then
+  call field_get_val_s(ipori, porosi)
+  do iel = 1, ncelet
+    porosi(iel) = 1.d0
+  enddo
+
+  ! Tensorial porosity
+  if (iporos.eq.2) then
+    call field_get_val_v(iporf, porosf)
+    do iel = 1, ncelet
+      porosf(1, iel) = 1.d0
+      porosf(2, iel) = 1.d0
+      porosf(3, iel) = 1.d0
+      porosf(4, iel) = 0.d0
+      porosf(5, iel) = 0.d0
+      porosf(6, iel) = 0.d0
+    enddo
+  endif
 endif
 
 !===============================================================================

@@ -108,6 +108,9 @@ call field_get_key_id("boundary_mass_flux_id", kbmasf)
 icrom = -1
 ibrom = -1
 
+ipori = -1
+iporf = -1
+
 !===============================================================================
 ! 1. Map Fortran pointers to C global data
 !===============================================================================

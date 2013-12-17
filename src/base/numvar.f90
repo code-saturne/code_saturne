@@ -184,6 +184,9 @@ module numvar
   !> cell and boundary density key ids of the variables
   integer, save :: icrom, ibrom
 
+  !> cell porosity key ids of the properties
+  integer, save :: ipori, iporf
+
   !> dynamic constant of Smagorinsky
   integer, save :: ismago
 

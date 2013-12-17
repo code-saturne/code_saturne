@@ -120,13 +120,14 @@ subroutine diften &
 !===============================================================================
 
 use paramx
-use pointe
 use entsor
 use parall
 use period
 use cplsat
 use optcal, only: iporos
 use mesh
+use field
+use numvar
 
 !===============================================================================
 
@@ -161,9 +162,10 @@ double precision diippf(3), djjppf(3), pipp, pjpp
 double precision visci(3,3), viscj(3,3)
 double precision fikdvi, fjkdvi
 
-double precision, pointer, dimension(:,:) :: viscce
+double precision, pointer, dimension(:,:) :: viscce, porosf
 double precision, dimension(:,:), allocatable, target :: w2
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -182,6 +184,7 @@ if (iporos.eq.0) then
 
 ! With porosity
 else if (iporos.eq.1) then
+  call field_get_val_s(ipori, porosi)
   allocate(w2(6, ncelet))
   do iel = 1, ncel
     do isou = 1, 6
@@ -192,6 +195,7 @@ else if (iporos.eq.1) then
 
 ! With tensorial porosity
 else if (iporos.eq.2) then
+  call field_get_val_v(iporf, porosf)
   allocate(w2(6, ncelet))
   do iel = 1, ncel
     call symmetric_matrix_product(w2(1, iel), porosf(1, iel), viscel(1, iel))

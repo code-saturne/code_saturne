@@ -60,9 +60,10 @@ subroutine viscfa &
 ! Module files
 !===============================================================================
 
+use field
+use numvar, only: ipori
 use paramx
 use optcal, only: iporos
-use pointe
 use parall
 use period
 use mesh
@@ -83,6 +84,7 @@ double precision viscf(nfac), viscb(nfabor)
 
 integer          ifac, ii, jj
 double precision visci, viscj, surfn, pnd
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -137,6 +139,9 @@ if (iporos.ne.1) then
 
 ! With porosity
 else
+
+  call field_get_val_s(ipori, porosi)
+
   if (imvisf.eq.0) then
 
     do ifac = 1, nfac

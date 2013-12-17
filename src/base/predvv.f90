@@ -109,7 +109,7 @@ subroutine predvv &
 use paramx
 use dimens, only: ndimfb
 use numvar
-use pointe, only: forbr, porosi
+use pointe, only: forbr
 use entsor
 use cstphy
 use cstnum
@@ -211,6 +211,7 @@ double precision, dimension(:,:), allocatable :: vect
 double precision, dimension(:), pointer :: brom, crom, croma, pcrom
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -237,6 +238,11 @@ call field_get_val_s(icrom, crom)
 ! Reperage de rho^n en cas d'extrapolation
 if (iroext.gt.0.or.idilat.gt.1) then
   call field_get_val_prev_s(icrom, croma)
+endif
+
+! With porosity
+if (iporos.ge.1) then
+  call field_get_val_s(ipori, porosi)
 endif
 
 ipcvis = ipproc(iviscl)

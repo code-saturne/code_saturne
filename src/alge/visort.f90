@@ -67,11 +67,12 @@ subroutine visort &
 !===============================================================================
 
 use paramx
-use pointe
 use optcal, only: iporos
+use numvar
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -90,6 +91,8 @@ double precision viscf(nfac), viscb(nfabor)
 integer          ifac, ii, jj, isou
 double precision visci(3), viscj(3), surf2(3)
 double precision pnd
+
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 
@@ -167,6 +170,8 @@ if (iporos.eq.0) then
 
 ! With porosity
 else
+
+  call field_get_val_s(ipori, porosi)
 
   ! Arithmetic mean
   if (imvisf.eq.0) then

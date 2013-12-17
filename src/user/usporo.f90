@@ -52,11 +52,11 @@ subroutine usporo
 use paramx
 use numvar
 use optcal
-use pointe
 use cstnum
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -67,6 +67,7 @@ implicit none
 integer          iel, ii, jj
 double precision x, pormin, pormax, hc, ll, dhc
 
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -77,6 +78,9 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 !===============================================================================
+
+! Retrieve porosity field
+call field_get_val_s(ipori, porosi)
 
 ! Example: fixe a linear by part porosity profile
 
