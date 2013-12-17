@@ -210,6 +210,18 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning a given field's type info
+
+    subroutine cs_f_field_get_type(f_id, f_type)  &
+      bind(C, name='cs_f_field_get_type')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      integer(c_int), intent(out) :: f_type
+    end subroutine cs_f_field_get_type
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function indicating if a field maintains a previous time
 
     function cs_f_field_have_previous(f_id) result(have_previous)  &
@@ -421,6 +433,19 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning a label associated with a field.
+
+    subroutine cs_f_field_get_label(f_id, str_max, str, str_len) &
+      bind(C, name='cs_f_field_get_label')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_id, str_max
+      type(c_ptr), intent(out)    :: str
+      integer(c_int), intent(out) :: str_len
+    end subroutine cs_f_field_get_label
+
+    !---------------------------------------------------------------------------
+
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
@@ -622,7 +647,7 @@ contains
   !> \param[out]  f_dim        number of field components (dimension)
   !> \param[out]  interleaved  true if field is interleaved, false otherwise
 
-  subroutine field_get_dim (f_id, f_dim, interleaved)
+  subroutine field_get_dim(f_id, f_dim, interleaved)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -652,6 +677,38 @@ contains
     return
 
   end subroutine field_get_dim
+
+  !=============================================================================
+
+  !> \brief Return a given field's type.
+
+  !> \param[in]   f_id         field id
+  !> \param[out]  f_type       field type flag
+
+  subroutine field_get_type(f_id, f_type)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    integer, intent(out) :: f_type
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id
+    integer(c_int) :: c_type
+
+    c_f_id = f_id
+
+    call cs_f_field_get_type(c_f_id, c_type)
+
+    f_type = c_type
+
+    return
+
+  end subroutine field_get_type
 
   !=============================================================================
 
@@ -1201,6 +1258,50 @@ contains
     return
 
   end subroutine fldsnv
+
+  !=============================================================================
+
+  !> \brief Return a label associated with a field.
+
+  !> If the "label" key has been set for this field, its associated string
+  !> is returned. Otherwise, the field's name is returned.
+
+  !> \param[in]   f_id  field id
+  !> \param[out]  str   string associated with key
+
+  subroutine field_get_label (f_id, str)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)           :: f_id
+    character(len=*), intent(out) :: str
+
+    ! Local variables
+
+    integer :: i
+    integer(c_int) :: c_f_id, c_str_max, c_str_len
+    type(c_ptr) :: c_str_p
+    character(kind=c_char, len=1), dimension(:), pointer :: c_str
+
+    c_f_id = f_id
+    c_str_max = len(str)
+
+    call cs_f_field_get_label(c_f_id, c_str_max, c_str_p, c_str_len)
+    call c_f_pointer(c_str_p, c_str, [c_str_len])
+
+    do i = 1, c_str_len
+      str(i:i) = c_str(i)
+    enddo
+    do i = c_str_len + 1, c_str_max
+      str(i:i) = ' '
+    enddo
+
+    return
+
+  end subroutine field_get_label
 
   !=============================================================================
 

@@ -190,6 +190,8 @@ static int  _n_keys_max = 0;
 static cs_field_key_def_t  *_key_defs = NULL;
 static cs_map_name_to_id_t  *_key_map = NULL;
 
+static int _k_label = -1;
+
 /* Key values : _key_vals[field_id*_n_keys_max + key_id] */
 
 static cs_field_key_val_t  *_key_vals = NULL;
@@ -211,6 +213,24 @@ static const char *_type_flag_name[] = {N_("intensive"),
                                         N_("postprocess"),
                                         N_("accumulator"),
                                         N_("user")};
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/* Names for components */
+
+/*! \var field name extension for vector components */
+const char *cs_glob_field_comp_name_3[] = {"[X]", "[Y]", "[Z]"};
+
+/*! \var field name extension for symmetric tensor components */
+const char *cs_glob_field_comp_name_6[] = {"[XX]", "[YY]", "[ZZ]",
+                                           "[XY]", "[XZ]", "[YZ]"};
+
+/*! \var field name extension for tensor components */
+const char *cs_glob_field_comp_name_9[] = {"[XX]", "[XY]", "[XZ]",
+                                           "[YX]", "[YY]", "[YZ]",
+                                           "[ZX]", "[ZY]", "[ZZ]"};
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -235,6 +255,10 @@ cs_f_field_get_name(int           id,
 void
 cs_f_field_get_dimension(int           id,
                          int           dim[2]);
+
+void
+cs_f_field_get_type(int           id,
+                    int          *type);
 
 int
 cs_f_field_have_previous(int   id);
@@ -285,6 +309,11 @@ cs_f_field_get_key_struct(int    f_id,
                           int    k_id,
                           void  *k_value);
 
+void
+cs_f_field_get_label(int           f_id,
+                     int           str_max,
+                     const char  **str,
+                     int          *str_len);
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -709,6 +738,25 @@ cs_f_field_get_dimension(int  id,
 }
 
 /*----------------------------------------------------------------------------
+ * Return the type flag of a field defined by its id.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id   <-- field id
+ *   type <-- field type flag
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_type(int           id,
+                    int          *type)
+{
+  const cs_field_t *f = cs_field_by_id(id);
+
+  *type = f->type;
+}
+
+/*----------------------------------------------------------------------------
  * Indicate if a field maintains values at previous time steps
  *
  * This function is intended for use by Fortran wrappers.
@@ -1048,7 +1096,10 @@ cs_f_field_get_key_str(int           f_id,
   const cs_field_t *f = cs_field_by_id(f_id);
   *str = cs_field_get_key_str(f, key_id);
 
-  *str_len = strlen(*str);
+  if (str != NULL)
+    *str_len = strlen(*str);
+  else
+    *str_len = 0;
 
   if (*str_len > str_max) {
     const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
@@ -1107,6 +1158,46 @@ cs_f_field_get_key_struct(int    f_id,
   const cs_field_t *f = cs_field_by_id(f_id);
 
   cs_field_get_key_struct(f, k_id, k_value);
+}
+
+/*----------------------------------------------------------------------------
+ * Return a label associated with a field.
+ *
+ * If the "label" key has been set for this field, its associated string
+ * is returned. Otherwise, the field's name is returned.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   f_id    <-- field id
+ *   str_max <-- maximum string length
+ *   str     --> pointer to associated string
+ *   str_len --> length of associated string
+ *
+ * returns:
+ *   pointer to character string
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_label(int           f_id,
+                     int           str_max,
+                     const char  **str,
+                     int          *str_len)
+{
+  const cs_field_t *f = cs_field_by_id(f_id);
+  *str = cs_field_get_label(f);
+
+  *str_len = strlen(*str);
+
+  if (*str_len > str_max) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, _k_label);
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving string from Field %d (\"%s\") and key %d (\"%s\"):\n"
+         "Fortran caller string length (%d) is too small for string \"%s\"\n"
+         "(of length %d)."),
+       f->id, f->name, _k_label, key, str_max, *str, *str_len);
+  }
 }
 
 /*! \endcond (end ignore by Doxygen) */
@@ -3157,12 +3248,37 @@ void
 cs_field_define_keys_base(void)
 {
   cs_field_define_key_str("label", NULL, 0);
+  _k_label = cs_field_key_id("label");
 
   cs_field_define_key_int("log", 0, 0);
   cs_field_define_key_int("post_vis", 0, 0);
   cs_field_define_key_int("post_probes", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a label associated with a field.
+ *
+ * If the "label" key has been set for this field, its associated string
+ * is returned. Otherwise, the field's name is returned.
+ *
+ * \param[in]  f       pointer to field structure
+ *
+ * \return  pointer to character string associated with label for this field
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_field_get_label(const cs_field_t  *f)
+{
+  const char *label = cs_field_get_key_str(f, _k_label);
+
+  if (label == NULL)
+    label = f->name;
+
+  return label;
 }
 
 /*----------------------------------------------------------------------------*/

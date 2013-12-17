@@ -134,6 +134,16 @@ typedef struct {
 typedef void
 (cs_field_log_key_struct_t) (const void  *t);
 
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/* Names for components */
+
+extern const char *cs_glob_field_comp_name_3[];
+extern const char *cs_glob_field_comp_name_6[];
+extern const char *cs_glob_field_comp_name_9[];
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -767,6 +777,22 @@ cs_field_log_all_key_vals(bool  log_defaults);
 
 void
 cs_field_define_keys_base(void);
+
+/*----------------------------------------------------------------------------
+ * Return a label associated with a field.
+ *
+ * If the "label" key has been set for this field, its associated string
+ * is returned. Otherwise, the field's name is returned.
+ *
+ * parameters:
+ *   f <-- pointer to field structure
+ *
+ * returns:
+ *   pointer to character string associated with label for this field
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_field_get_label(const cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
 
