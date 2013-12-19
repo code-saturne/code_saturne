@@ -166,7 +166,7 @@ cs_field_pointer_map(cs_field_pointer_id_t   e,
 
   assert(e < _n_pointers);
 
- union cs_field_pointer_val_t v;
+  union cs_field_pointer_val_t v;
   v.f = f;
   _field_pointer[e] = v;
 }
@@ -291,6 +291,11 @@ cs_field_pointer_map_base(void)
                        cs_field_by_name_try("density"));
   cs_field_pointer_map(CS_ENUMF_(rho_b),
                        cs_field_by_name_try("boundary_density"));
+
+  cs_field_pointer_map(CS_ENUMF_(poro),
+                       cs_field_by_name_try("porosity"));
+  cs_field_pointer_map(CS_ENUMF_(t_poro),
+                       cs_field_by_name_try("tensorial_porosity"));
 }
 
 /*----------------------------------------------------------------------------*/
