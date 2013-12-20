@@ -644,7 +644,7 @@ class DefineUserScalarsModel(Variables, Model):
         Return type of scalar for choice of color (for view)
         """
         self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
-        if scalar_label == self.getThermalScalarLabelsList()[0]:
+        if scalar_label not in self.getScalarLabelsList():
             node = self.node_therm.xmlGetNode('scalar', 'name', label=scalar_label)
         else:
             node = self.scalar_node.xmlGetNode('scalar', 'type', label=scalar_label)
@@ -658,7 +658,7 @@ class DefineUserScalarsModel(Variables, Model):
         Return type of scalar for choice of color (for view)
         """
         self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
-        if scalar_label == self.getThermalScalarLabelsList()[0]:
+        if scalar_label not in self.getScalarLabelsList():
             node = self.node_therm.xmlGetNode('scalar', 'name', label=scalar_label)
         else:
             node = self.scalar_node.xmlGetNode('scalar', 'name', label=scalar_label)
