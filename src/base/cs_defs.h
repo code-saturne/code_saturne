@@ -310,6 +310,8 @@ typedef cs_real_t  cs_real_6_t[6];      /* Vector of 6 real values
                                            (for symmetric tensor) */
 typedef cs_real_t  cs_real_33_t[3][3];  /* Matrix of 3x3 real values */
 
+typedef cs_real_33_t  cs_real_332_t[2];  /* Matrix of 3x3x2 real values */
+
 /* Mappings to MPI datatypes */
 /*---------------------------*/
 
