@@ -1899,6 +1899,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           break;
 
         case DIRICHLET_FORMULA:
+          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
+          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
           for (ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac]-1;
             mei_evaluate(boundaries->scalar[ivar][izone]);
@@ -2427,6 +2430,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           break;
 
         case DIRICHLET_FORMULA:
+          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
+          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
           for (ifac = 0; ifac < faces; ifac++) {
             int scal_id;
             int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
@@ -2444,6 +2450,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           break;
 
         case NEUMANN_FORMULA:
+          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
+          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
           for (ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac]-1;
             mei_evaluate(boundaries->scalar[ivar][izone]);
@@ -2454,6 +2463,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           break;
 
         case EXCHANGE_COEFF_FORMULA:
+          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
+          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
           for (ifac = 0; ifac < faces; ifac++) {
             int scal_id;
             int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
@@ -2532,6 +2544,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           break;
 
         case DIRICHLET_FORMULA:
+          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
+          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
           for (ifac = 0; ifac < faces; ifac++) {
             int scal_id;
             int numvar  = vars->nvar - vars->nscaus - vars->nscapp;

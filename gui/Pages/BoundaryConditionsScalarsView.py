@@ -432,9 +432,14 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             req = [("flux", "flux")]
         elif self.thermal_type == 'exchange_coefficient_formula':
             req = [(self.thermal, str(self.thermal)),("hc", "heat coefficient")]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration')]
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),
                                 expression = exp,
@@ -460,9 +465,14 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             req = [("flux", "flux")]
         elif self.species_type == 'exchange_coefficient_formula':
             req = [(self.species, str(self.species)),("hc", "heat coefficient")]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration')]
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),
                                 expression = exp,
@@ -488,9 +498,14 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             req = [("flux", "flux")]
         elif self.meteo_type == 'exchange_coefficient_formula':
             req = [(self.meteo, str(self.meteo)),("hc", "heat coefficient")]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration')]
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),
                                 expression = exp,
