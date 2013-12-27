@@ -239,7 +239,7 @@ if (nswrgp.gt.1) then
     call field_get_val_v(iporf, porosf)
     allocate(w2(6,ncelet))
     do iel = 1, ncel
-      call symmetric_matrix_product(w2(1, iel), porosf(1, iel), viscel(1, iel))
+      call symmetric_matrix_product(w2(1, iel), porosf(:, iel), viscel(1, iel))
     enddo
     viscce => w2(:,:)
   endif
