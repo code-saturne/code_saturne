@@ -92,7 +92,7 @@ character*200    chain, chainc
 !==================================================================
 
 do ivar = 1, nvar
-  if (ivar.eq.ipr) cycle
+  if (ivar.eq.ipr.and.ippmod(icompf).lt.0) cycle
   ipp = ipprtp(ivar)
   if (ilisvr(ipp).gt.0) then
     dervar(ipp) = 0
@@ -106,11 +106,13 @@ do ivar = 1, nvar
   endif
 enddo
 
-ipp = ipprtp(ipr)
-if (dervar(ipp).lt.epzero) then
-  dervar(ipp) = -1.d0
+if (ippmod(icompf).lt.0) then
+  ipp = ipprtp(ipr)
+  if (dervar(ipp).lt.epzero) then
+    dervar(ipp) = -1.d0
+  endif
+  dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
 endif
-dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
 
 !===============================================================================
 ! 2. ECRITURE DES CRITERES DE CONVERGENCE
