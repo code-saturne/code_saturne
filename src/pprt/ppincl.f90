@@ -694,12 +694,10 @@ module ppincl
   !> "pressure":
   !>
   !> Case of an expansion (M <= 0):
-  !> \f{eqnarray*}{
-  !> \left\{\begin{array}{lll}
-  !> P_p=0 & \text{if} & 1 + \displaystyle\frac{\gamma-1}{2}M<0\\
-  !> P_p = P_i \left(1 + \displaystyle\frac{\gamma-1}{2}M\right)
-  !> ^{\frac{2\gamma}{\gamma-1}} & \text{otherwise}\\
-  !> \end{array}\right.\\
+  !> \f{align*}{
+  !>    P_p &= 0 & \textrm{if } 1 + \displaystyle\frac{\gamma-1}{2}M<0
+  !> \\ P_p &= P_i \left(1 + \displaystyle\frac{\gamma-1}{2}M\right)
+  !> ^{\frac{2\gamma}{\gamma-1}} & \textrm{otherwise}
   !> \f}
   !>
   !> Case of a schock (M > 0):
