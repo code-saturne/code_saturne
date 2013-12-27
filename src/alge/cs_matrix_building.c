@@ -20,7 +20,7 @@
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
   Street, Fifth Floor, Boston, MA 02110-1301, USA. */
 
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
 
@@ -81,6 +81,13 @@ BEGIN_C_DECLS
 /*! \file  cs_matrix_building.c
 
 */
+
+/*=============================================================================
+ * Local Macro Definitions
+ *============================================================================*/
+
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+#define THR_MIN 128
 
 /*=============================================================================
  * Local type definitions
@@ -397,25 +404,25 @@ cs_matrix_scalar(
 
   epsi = 1.e-7;
 
-# pragma omp for;
+# pragma omp parallel for
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
     da[cell_id] = rovsdt[cell_id];
   }
   if (n_cells_ext > n_cells) {
-#   pragma omp for if (n_cells_ext - n_cells > THR_MIN);
+#   pragma omp parallel for if (n_cells_ext - n_cells > THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       da[cell_id] = 0.;
     }
   }
 
   if (isym == 2) {
-#   pragma omp for;
+#   pragma omp parallel for
     for (face_id = 0; face_id < n_i_faces; face_id++) {
       xa[0][face_id] = 0.;
       xa[1][face_id] = 0.;
     }
   } else {
-#   pragma omp for;
+#   pragma omp parallel for
     for (face_id = 0; face_id < n_i_faces; face_id++) {
       xa[0][face_id] = 0.;
     }
@@ -424,46 +431,53 @@ cs_matrix_scalar(
   /* When solving the temperature, the convective part is multiplied by Cp */
   if (imucpp == 0) {
 
-    /*===============================================================================
-      2. Computation of extradiagonal terms
-      ===============================================================================*/
+    /* 2. Computation of extradiagonal terms */
 
     if (isym == 2) {
 
-#     pragma omp for firstprivate(thetap, iconvp, idiffp) private(flui, fluj);
+#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+                              private(flui, fluj)
       for (face_id = 0; face_id < n_i_faces; face_id++) {
+
         flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
         fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
+
         xa[0][face_id] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
         xa[1][face_id] = thetap*(iconvp*fluj -idiffp*i_visc[face_id]);
+
       }
 
     } else {
 
-#     pragma omp for firstprivate(thetap, iconvp, idiffp) private(flui);
+#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+                              private(flui)
       for (face_id = 0; face_id < n_i_faces; face_id++) {
+
         flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
+
         xa[0][face_id] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
+
       }
 
     }
 
-    /*===============================================================================
-      3. Contribution of the extra-diagonal terms to the diagonal
-      ===============================================================================*/
+    /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
     if (isym == 2) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#      pragma omp for private(face_id, ii, jj);
+#      pragma omp parallel for private(face_id, ii, jj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
+
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
-            da[ii] = da[ii] - xa[0][face_id];
-            da[jj] = da[jj] - xa[1][face_id];
+
+            da[ii] -= xa[0][face_id];
+            da[jj] -= xa[1][face_id];
+
           }
         }
       }
@@ -471,36 +485,41 @@ cs_matrix_scalar(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj);
+#       pragma omp parallel for private(face_id, ii, jj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
+
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
-            da[ii] = da[ii] - xa[0][face_id];
-            da[jj] = da[jj] - xa[0][face_id];
+
+            da[ii] -= xa[0][face_id];
+            da[jj] -= xa[0][face_id];
+
           }
         }
       }
 
     }
 
-    /*===============================================================================
-      4. Contribution of border faces to the diagonal
-      ===============================================================================*/
+    /* 4. Contribution of border faces to the diagonal */
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for firstprivate(thetap, iconvp, idiffp) \
+#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
                  private(face_id, ii, flui) if(n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
+
           ii = b_face_cells[face_id] - 1;
+
           flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
-          da[ii] = da[ii] + thetap*( iconvp*flui*(coefbp[face_id]-1.)
-                                   + idiffp*b_visc[face_id]*cofbfp[face_id]);
+
+          da[ii] += thetap*( iconvp*flui*(coefbp[face_id]-1.)
+                            + idiffp*b_visc[face_id]*cofbfp[face_id]);
+
         }
       }
     }
@@ -508,46 +527,55 @@ cs_matrix_scalar(
     /* When solving the temperature, the convective part is multiplied by Cp */
   } else {
 
-    /*===============================================================================
-      2. Computation of extradiagonal terms
-      ===============================================================================*/
+    /* 2. Computation of extradiagonal terms */
 
     if (isym == 2) {
 
-#     pragma omp for firstprivate(thetap, iconvp, idiffp) private(flui, fluj);
+#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+                              private(flui, fluj)
       for (face_id = 0; face_id < n_i_faces; face_id++) {
+
         flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
         fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
-        xa[0][face_id] = thetap*(iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui -idiffp*i_visc[face_id]);
-        xa[1][face_id] = thetap*(iconvp*xcpp[i_face_cells[face_id][1] - 1]*fluj -idiffp*i_visc[face_id]);
+
+        xa[0][face_id] = thetap*( iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui
+                                 -idiffp*i_visc[face_id]);
+        xa[1][face_id] = thetap*( iconvp*xcpp[i_face_cells[face_id][1] - 1]*fluj
+                                 -idiffp*i_visc[face_id]);
+
       }
 
     } else {
 
-#     pragma omp for firstprivate(thetap, iconvp, idiffp) private(flui);
+#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) private(flui)
       for (face_id = 0; face_id < n_i_faces; face_id++) {
+
         flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
-        xa[0][face_id] = thetap*(iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui -idiffp*i_visc[face_id]);
+
+        xa[0][face_id] = thetap*( iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui
+                                 -idiffp*i_visc[face_id]);
+
       }
 
     }
 
-    /*===============================================================================
-      3. Contribution of the extra-diagonal terms to the diagonal
-      ===============================================================================*/
+    /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
     if (isym == 2) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj);
+#       pragma omp parallel for private(face_id, ii, jj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
+
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
-            da[ii] = da[ii] - xa[0][face_id];
-            da[jj] = da[jj] - xa[1][face_id];
+
+            da[ii] -= xa[0][face_id];
+            da[jj] -= xa[1][face_id];
+
           }
         }
       }
@@ -555,51 +583,50 @@ cs_matrix_scalar(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj);
+#       pragma omp parallel for private(face_id, ii, jj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
+
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
-            da[ii] = da[ii] - xa[0][face_id];
-            da[jj] = da[jj] - xa[0][face_id];
+
+            da[ii] -= xa[0][face_id];
+            da[jj] -= xa[0][face_id];
           }
         }
       }
 
     }
 
-    /*===============================================================================
-      4. Contribution of boundary faces to the diagonal
-      ===============================================================================*/
+    /* 4. Contribution of boundary faces to the diagonal */
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for firstprivate(thetap, iconvp, idiffp) \
-                 private(face_id, ii, flui) if(n_b_faces > THR_MIN)
+#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+                              private(face_id, ii, flui) \
+                 if(n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
+
           ii = b_face_cells[face_id] - 1;
           flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
-          da[ii] = da[ii] + thetap*( iconvp*flui*xcpp[ii]*(coefbp[face_id]-1.)
-                                     + idiffp*b_visc[face_id]*cofbfp[face_id]);
+          da[ii] += thetap*(  iconvp*flui*xcpp[ii]*(coefbp[face_id]-1.)
+                            + idiffp*b_visc[face_id]*cofbfp[face_id]);
         }
       }
     }
 
   }
 
-  /*===============================================================================
-    5. If no Dirichlet condition, the diagonal is slightly increased in order to
-       shift the eigenvalues spectrum.
-    ===============================================================================
-    (if IDIRCL=0, we force NDIRCP to be at least 1 in order not to
-    shift the diagonal) */
+  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
 
   if (ndircp <= 0) {
-#   pragma omp for firstprivate(epsi);
+#   pragma omp parallel for firstprivate(epsi)
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
       da[cell_id] = (1.+epsi)*da[cell_id];
     }
@@ -607,7 +634,7 @@ cs_matrix_scalar(
 
 }
 
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 /*! \brief This function builds the matrix of advection/diffusion for a vector
   field.
@@ -618,11 +645,11 @@ cs_matrix_scalar(
   faces).
 
 */
-/*-------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________*/
+ _____________________________________________________________________________*/
 /*!
  * \param[in]     n_cells_ext   number of extended (real + ghost) cells
  * \param[in]     n_cells       number of cells
@@ -660,7 +687,7 @@ cs_matrix_scalar(
  * \param[out]    da            diagonal part of the matrix
  * \param[out]    xa            extra interleaved diagonal part of the matrix
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_vector(
@@ -691,11 +718,7 @@ cs_matrix_vector(
   int face_id,ii,jj,cell_id, isou, jsou;
   double flui,fluj,epsi;
 
-  /*===============================================================================*/
-
-  /*===============================================================================
-    1. Initialization
-    ===============================================================================*/
+  /* 1. Initialization */
 
   if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
@@ -732,9 +755,7 @@ cs_matrix_vector(
     }
   }
 
-  /*===============================================================================
-    2. Computation of extradiagonal terms
-    ===============================================================================*/
+  /* 2. Computation of extradiagonal terms */
 
   if(isym == 2) {
 
@@ -754,9 +775,7 @@ cs_matrix_vector(
 
   }
 
-  /*===============================================================================
-    3. Contribution of the extra-diagonal terms to the diagonal
-    ===============================================================================*/
+  /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
   if(isym == 2) {
 
@@ -764,8 +783,8 @@ cs_matrix_vector(
       ii = i_face_cells[face_id][0] - 1;
       jj = i_face_cells[face_id][1] - 1;
       for (isou = 0; isou < 3; isou++) {
-        da[ii][isou][isou] = da[ii][isou][isou] - xa[face_id][0];
-        da[jj][isou][isou] = da[jj][isou][isou] - xa[face_id][1];
+        da[ii][isou][isou] -= xa[face_id][0];
+        da[jj][isou][isou] -= xa[face_id][1];
       }
     }
 
@@ -776,16 +795,14 @@ cs_matrix_vector(
       ii = i_face_cells[face_id][0] - 1;
       jj = i_face_cells[face_id][1] - 1;
       for (isou = 0; isou < 3; isou++) {
-        da[ii][isou][isou] = da[ii][isou][isou] -xa[face_id][0];
-        da[jj][isou][isou] = da[jj][isou][isou] -xa[face_id][0];
+        da[ii][isou][isou] -= xa[face_id][0];
+        da[jj][isou][isou] -= xa[face_id][0];
       }
     }
 
   }
 
-  /*===============================================================================
-    4. Contribution of border faces to the diagonal
-    ===============================================================================*/
+  /* 4. Contribution of border faces to the diagonal */
 
   for (face_id = 0; face_id <n_b_faces; face_id++) {
     ii = b_face_cells[face_id] - 1;
@@ -793,27 +810,23 @@ cs_matrix_vector(
     for (isou = 0; isou < 3; isou++) {
       for (jsou = 0; jsou < 3; jsou++) {
         if(isou == jsou) {
-          da[ii][jsou][isou] = da[ii][jsou][isou] + thetap*(
-                               iconvp*flui*(coefbu[face_id][jsou][isou]-1.)
-                              +idiffp*b_visc[face_id]*cofbfu[face_id][jsou][isou]
-                                                            );
+          da[ii][jsou][isou] += thetap*( iconvp*flui
+                                         *(coefbu[face_id][jsou][isou]-1.)
+                                        +idiffp*b_visc[face_id]
+                                         *cofbfu[face_id][jsou][isou] );
         } else {
-          da[ii][jsou][isou] = da[ii][jsou][isou] + thetap*(
-                               iconvp*( flui*coefbu[face_id][jsou][isou] )
-                              +idiffp*b_visc[face_id]*cofbfu[face_id][jsou][isou]
-                                                            );
+          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
+                                        +idiffp*b_visc[face_id]
+                                         *cofbfu[face_id][jsou][isou] );
         }
       }
     }
   }
 
 
-  /*===============================================================================
-    5. If no Dirichlet condition, the diagonal is slightly increased in order to
-       shift the eigenvalues spectrum.
-    ===============================================================================
-    (if IDIRCL=0, we force NDIRCP to be at least 1 in order not to
-    shift the diagonal) */
+  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
 
   if (ndircp <= 0) {
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -825,17 +838,17 @@ cs_matrix_vector(
 
 }
 
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 /*! \brief Construction of the diagonal of the advection/diffusion matrix
   for determining the variable time step, flow, Fourier.
 
 */
-/*-------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________*/
+ _____________________________________________________________________________*/
 /*!
  * \param[in]     iconvp        indicator
  *                               - 1 advection
@@ -858,7 +871,7 @@ cs_matrix_vector(
  *                               at border faces for the matrix
  * \param[out]    da            diagonal part of the matrix
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_time_step(
@@ -894,52 +907,49 @@ cs_matrix_time_step(
   int face_id, ii, jj, cell_id, g_id, t_id;
   double flui, fluj, xaifa1, xaifa2;
 
-  /*===============================================================================*/
-
-  /*===============================================================================
-    1. Initialization
-    ===============================================================================*/
+  /* 1. Initialization */
 
   if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isym"));
   }
 
-# pragma omp for;
+# pragma omp parallel for
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
     da[cell_id] = 0.;
   }
   if (n_cells_ext > n_cells) {
-#   pragma omp for if(n_cells_ext - n_cells > THR_MIN);
+#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       da[cell_id] = 0.;
     }
   }
 
-  /*===============================================================================
-    2. Computation of extradiagonal terms unnecessary
-    ===============================================================================*/
+  /* 2. Computation of extradiagonal terms unnecessary */
 
-  /*===============================================================================
-    3. Contribution of the extra-diagonal terms to the diagonal
-    ===============================================================================*/
+  /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
   if (isym == 2) {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, fluj, flui, xaifa2, xaifa1);
+#     pragma omp parallel for private(face_id, ii, jj, fluj, flui,             \
+                                      xaifa2, xaifa1)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
+
           ii = i_face_cells[face_id][0] - 1;
           jj = i_face_cells[face_id][1] - 1;
+
           fluj =-0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
           flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
+
           xaifa2 = iconvp*fluj -idiffp*i_visc[face_id];
           xaifa1 = iconvp*flui -idiffp*i_visc[face_id];
-          da[ii] = da[ii] -xaifa2;
-          da[jj] = da[jj] -xaifa1;
+          da[ii] -= xaifa2;
+          da[jj] -= xaifa1;
+
         }
       }
     }
@@ -947,45 +957,51 @@ cs_matrix_time_step(
   } else {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, flui, xaifa1);
+#     pragma omp parallel for private(face_id, ii, jj, flui, xaifa1)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
+
           ii = i_face_cells[face_id][0] - 1;
           jj = i_face_cells[face_id][1] - 1;
+
           flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
+
           xaifa1 = iconvp*flui -idiffp*i_visc[face_id];
-          da[ii] = da[ii] -xaifa1;
-          da[jj] = da[jj] -xaifa1;
+          da[ii] -= xaifa1;
+          da[jj] -= xaifa1;
+
         }
       }
     }
 
   }
 
-  /*===============================================================================
-    4. Contribution of border faces to the diagonal
-    ===============================================================================*/
+  /* 4. Contribution of border faces to the diagonal */
 
   for (g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp for private(face_id, ii, flui, fluj) if(m->n_b_faces > THR_MIN);
+#   pragma omp parallel for private(face_id, ii, flui, fluj) \
+               if(m->n_b_faces > THR_MIN)
     for (t_id = 0; t_id < n_b_threads; t_id++) {
       for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
+
         ii = b_face_cells[face_id] - 1;
-        flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
-        fluj =-0.5*(b_massflux[face_id] + fabs(b_massflux[face_id]));
-        da[ii] = da[ii] +iconvp*(-fluj + flui*coefbp[face_id])
-          +idiffp*b_visc[face_id]*cofbfp[face_id];
+
+        flui =  0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
+        fluj = -0.5*(b_massflux[face_id] + fabs(b_massflux[face_id]));
+
+        da[ii] +=   iconvp*(-fluj + flui*coefbp[face_id])
+                  + idiffp*b_visc[face_id]*cofbfp[face_id];
       }
     }
   }
 
 }
 
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 /*! \brief This function builds the matrix of advection/diffusion for a vector
   field with a tensorial diffusivity.
@@ -996,11 +1012,11 @@ cs_matrix_time_step(
   faces).
 
 */
-/*-------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________*/
+ _____________________________________________________________________________*/
 /*!
  * \param[in]     n_cells_ext   number of extended (real + ghost) cells
  * \param[in]     n_cells       number of cells
@@ -1039,7 +1055,7 @@ cs_matrix_time_step(
  * \param[out]    da            diagonal part of the matrix
  * \param[out]    xa            extra interleaved diagonal part of the matrix
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_tensorial_diffusion(
@@ -1070,11 +1086,7 @@ cs_matrix_tensorial_diffusion(
   int ifac,ii,jj,cell_id, isou, jsou;
   double flui,fluj,epsi;
 
-  /*===============================================================================*/
-
-  /*===============================================================================
-    1. Initialization
-    ===============================================================================*/
+  /* 1. Initialization */
 
   if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
@@ -1119,9 +1131,7 @@ cs_matrix_tensorial_diffusion(
     }
   }
 
-  /*===============================================================================
-    2. Computation of extradiagonal terms
-    ===============================================================================*/
+  /* 2. Computation of extradiagonal terms */
 
   if(isym == 2) {
 
@@ -1155,9 +1165,7 @@ cs_matrix_tensorial_diffusion(
 
   }
 
-  /*===============================================================================
-    3. Contribution of the extra-diagonal terms to the diagonal
-    ===============================================================================*/
+  /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
   if (isym == 2) {
 
@@ -1166,8 +1174,8 @@ cs_matrix_tensorial_diffusion(
       jj = i_face_cells[ifac][1] - 1;
       for (isou = 0; isou < 3; isou++) {
         for (jsou = 0; jsou < 3; jsou++) {
-          da[ii][jsou][isou] = da[ii][jsou][isou] - xa[ifac][0][jsou][isou];
-          da[jj][jsou][isou] = da[jj][jsou][isou] - xa[ifac][1][jsou][isou];
+          da[ii][jsou][isou] -= xa[ifac][0][jsou][isou];
+          da[jj][jsou][isou] -= xa[ifac][1][jsou][isou];
         }
       }
     }
@@ -1179,17 +1187,15 @@ cs_matrix_tensorial_diffusion(
       jj = i_face_cells[ifac][1] - 1;
       for (isou = 0; isou < 3; isou++) {
         for (jsou = 0; jsou < 3; jsou++) {
-          da[ii][jsou][isou] = da[ii][jsou][isou] -xa[ifac][0][jsou][isou];
-          da[jj][jsou][isou] = da[jj][jsou][isou] -xa[ifac][0][jsou][isou];
+          da[ii][jsou][isou] -= xa[ifac][0][jsou][isou];
+          da[jj][jsou][isou] -= xa[ifac][0][jsou][isou];
         }
       }
     }
 
   }
 
-  /*===============================================================================
-    4. Contribution of border faces to the diagonal
-    ===============================================================================*/
+  /* 4. Contribution of border faces to the diagonal */
 
   for (ifac = 0; ifac < n_b_faces; ifac++) {
     ii = b_face_cells[ifac] - 1;
@@ -1197,25 +1203,22 @@ cs_matrix_tensorial_diffusion(
     for (isou = 0; isou < 3; isou++) {
       for (jsou = 0; jsou < 3; jsou++) {
         if(isou == jsou) {
-          da[ii][jsou][isou] = da[ii][jsou][isou] + thetap*(
-                               iconvp*flui*(coefbu[ifac][jsou][isou]-1.)
-                              +idiffp*b_visc[ifac]*cofbfu[ifac][jsou][isou]
-                                                            );
+          da[ii][jsou][isou] += thetap*( iconvp*flui
+                                         *(coefbu[ifac][jsou][isou]-1.)
+                                        +idiffp*b_visc[ifac]
+                                         *cofbfu[ifac][jsou][isou] );
         } else {
-          da[ii][jsou][isou] = da[ii][jsou][isou] + thetap*(
-                               iconvp*( flui*coefbu[ifac][jsou][isou] )
-                              +idiffp*b_visc[ifac]*cofbfu[ifac][jsou][isou]
-                                                            );
+          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[ifac][jsou][isou]
+                                        +idiffp*b_visc[ifac]
+                                         *cofbfu[ifac][jsou][isou] );
         }
       }
     }
   }
 
 
-  /*===============================================================================
-    5. If no Dirichlet condition, the diagonal is slightly increased in order to
-       shift the eigenvalues spectrum.
-    ===============================================================================*/
+  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum. */
 
   if ( ndircp <= 0 ) {
     for (cell_id = 0; cell_id < n_cells; cell_id++) {

@@ -534,7 +534,7 @@ cs_convection_diffusion_vector(
  ______________________________________________________________________________*/
 /*!
  * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     ivar          index of the current variable
+ * \param[in]     f_id          index of the current variable
  * \param[in]     iconvp        indicator
  *                               - 1 convection,
  *                               - 0 sinon
@@ -584,6 +584,7 @@ cs_convection_diffusion_vector(
  *                               - thetap = 1: implicit scheme
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     bc_type       boundary condition type
  * \param[in]     coefap        boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
@@ -592,14 +593,14 @@ cs_convection_diffusion_vector(
  *                               of the variable (Explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
- * \param[in]     flumas        mass flux at interior faces
- * \param[in]     flumab        mass flux at boundary faces
- * \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
- * \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*-------------------------------------------------------------------------------*/
 
@@ -664,7 +665,7 @@ cs_convection_diffusion_thermal(
  ______________________________________________________________________________*/
 /*!
  * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     ivar          index of the current variable
+ * \param[in]     f_id          index of the current variable
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -710,9 +711,9 @@ cs_convection_diffusion_thermal(
  *                               of the variable (Explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
- * \param[in]     viscf         \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
- * \param[in]     viscb         \f$ \dfrac{S_\fib}{\ipf \centf} \f$
+ * \param[in]     v_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$

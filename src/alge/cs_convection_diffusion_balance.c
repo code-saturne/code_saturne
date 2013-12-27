@@ -20,7 +20,7 @@
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
   Street, Fifth Floor, Boston, MA 02110-1301, USA. */
 
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
 
@@ -420,11 +420,11 @@ void CS_PROCF (diftnv, DIFTNV)
   - ischcp = 1: centred
 
 */
-/*-------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________*/
+ _____________________________________________________________________________*/
 /*!
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
@@ -459,7 +459,8 @@ void CS_PROCF (diftnv, DIFTNV)
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
  * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix (for iterativ gradients)
+ *                               - 1 re-compute cocg matrix
+ *                                   (for iterative gradients)
  *                               - 0 otherwise
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
@@ -500,7 +501,7 @@ void CS_PROCF (diftnv, DIFTNV)
  *                               at border faces for the r.h.s.
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_scalar(
@@ -631,31 +632,29 @@ cs_convection_diffusion_scalar(
   if (iwarnp >= 2) {
     if (ischcp == 1) {
       bft_printf(
-        _(" %s : Convection in centered blending with %f percent of upwind\n"),
+        _(" %s: Convection in centered blending with %f percent of upwind\n"),
         var_name, (1.-blencp)*100.);
     } else {
       bft_printf(
-        _(" %s : Convection in 2nd order blending with %f percent of upwind\n"),
+        _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
         var_name, (1.-blencp)*100.);
     }
   }
 
-  iupwin = 0;
-  if (blencp == 0.)
-    iupwin = 1;
+  iupwin = (blencp > 0.) ? 0 : 1;
 
   /* 2. Compute the balance with reconstruction */
 
-  /* Compute the gradient of the variable
+  /* Compute the gradient of the variable */
 
-       GRAD sert a la fois pour la reconstruction des flux et pour le test
-       de pente. On doit donc le calculer :
-           - quand on a de la diffusion et qu'on reconstruit les flux
-           - quand on a de la convection SOLU
-           - quand on a de la convection, qu'on n'est pas en upwind pur
-             et qu'on reconstruit les flux
-           - quand on a de la convection, qu'on n'est pas en upwind pur
-             et qu'on n'a pas shunte le test de pente */
+  /* The gradient (grad) is used in the flux reconstruction and the slope test.
+     Thus we must compute it:
+         - when we have diffusion and we reconstruct the fluxes,
+         - when the convection scheme is SOLU,
+         - when we have convection, we are not in pure upwind
+           and we reconstruct the fluxes,
+         - when we have convection, we are not in pure upwind
+           and we have not shunted the slope test. */
 
   if (  (idiffp!=0 && ircflp==1)
      || (  iconvp!=0 && iupwin==0
@@ -724,7 +723,7 @@ cs_convection_diffusion_scalar(
           pjf = pvar[jj] + djfx*grad[jj][0]+djfy*grad[jj][1]+djfz*grad[jj][2];
 
           pfac = pjf;
-          if (i_massflux[face_id]>0.) pfac = pif;
+          if (i_massflux[face_id] > 0.) pfac = pif;
 
           pfac1 = pfac*i_face_normal[face_id][0];
           pfac2 = pfac*i_face_normal[face_id][1];
@@ -744,7 +743,7 @@ cs_convection_diffusion_scalar(
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, pfac) \
-                          if(m->n_b_faces > THR_MIN)
+                              if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -756,8 +755,9 @@ cs_convection_diffusion_scalar(
           diipby = diipb[face_id][1];
           diipbz = diipb[face_id][2];
           pfac =   inc*coefap[face_id]
-                 + coefbp[face_id] * (  pvar[ii]          + diipbx*grad[ii][0]
-                                   + diipby*grad[ii][1] + diipbz*grad[ii][2]);
+                 + coefbp[face_id] * (pvar[ii] + diipbx*grad[ii][0]
+                                               + diipby*grad[ii][1]
+                                               + diipbz*grad[ii][2]);
           grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_normal[face_id][0];
           grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_normal[face_id][1];
           grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_normal[face_id][2];
@@ -842,9 +842,12 @@ cs_convection_diffusion_scalar(
 
             /* Recompute II' and JJ' at this level */
 
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -887,10 +890,11 @@ cs_convection_diffusion_scalar(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                                        diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
-                                        dpxf, dpyf, dpzf, pip, pjp, flui, fluj,         \
-                                        pif, pjf, flux, pi, pj)                         \
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, diipfx, diipfy, diipfz,             \
+                                        djjpfx, djjpfy, djjpfz, dpxf, dpyf, dpzf,\
+                                        pip, pjp, flui, fluj,                    \
+                                        pif, pjf, flux, pi, pj)                  \
                             reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -935,7 +939,8 @@ cs_convection_diffusion_scalar(
             pif = pi;
             pjf = pj;
 
-            flux = iconvp*(flui*pif +fluj*pjf) + idiffp*i_visc[face_id]*(pip -pjp);
+            flux =   iconvp*(flui*pif +fluj*pjf)
+                   + idiffp*i_visc[face_id]*(pip -pjp);
 
             rhs[ii] = rhs[ii] - thetap *(flux - iconvp*i_massflux[face_id]*pi);
             rhs[jj] = rhs[jj] + thetap *(flux - iconvp*i_massflux[face_id]*pj);
@@ -960,11 +965,12 @@ cs_convection_diffusion_scalar(
     if (idtvar<0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                                        diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
-                                        dpxf, dpyf, dpzf, pip, pjp, pipr, pjpr, flui,   \
-                                        fluj, pir, pjr, pifri, pjfri, pifrj, pjfrj,     \
-                                        difx, dify, difz, djfx, djfy, djfz,             \
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, diipfx, diipfy, diipfz, djjpfx,     \
+                                        djjpfy, djjpfz, dpxf, dpyf, dpzf, pip,   \
+                                        pjp, pipr, pjpr, flui, fluj, pir, pjr,   \
+                                        pifri, pjfri, pifrj, pjfrj,              \
+                                        difx, dify, difz, djfx, djfy, djfz,      \
                                         fluxi, fluxj, pi, pj, pia, pja)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -987,9 +993,12 @@ cs_convection_diffusion_scalar(
 
             /* Recompute II' and JJ' at this level */
 
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -1074,10 +1083,11 @@ cs_convection_diffusion_scalar(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                                        diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
-                                        dpxf, dpyf, dpzf, pip, pjp, flui, fluj, pif,    \
-                                        pjf, difx, dify, difz, djfx, djfy, djfz, flux,  \
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, diipfx, diipfy, diipfz, djjpfx,     \
+                                        djjpfy, djjpfz, dpxf, dpyf, dpzf,        \
+                                        pip, pjp, flui, fluj, pif, pjf, difx,    \
+                                        dify, difz, djfx, djfy, djfz, flux,      \
                                         pi, pj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -1098,9 +1108,12 @@ cs_convection_diffusion_scalar(
 
             /* Recompute II' and JJ' at this level */
 
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -1151,7 +1164,8 @@ cs_convection_diffusion_scalar(
             /* Flux
               ----*/
 
-            flux = iconvp*(flui*pif +fluj*pjf) + idiffp*i_visc[face_id]*(pip -pjp);
+            flux =   iconvp*(flui*pif +fluj*pjf)
+                   + idiffp*i_visc[face_id]*(pip -pjp);
 
             /* Assembly
               --------*/
@@ -1179,14 +1193,16 @@ cs_convection_diffusion_scalar(
     if (idtvar<0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                                        distf, srfan, diipfx, diipfy, diipfz, djjpfx,   \
-                                        djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,     \
-                                        pipr, pjpr, flui, fluj, pir, pjr, testi, testj, \
-                                        testij, dcc, ddi, ddj, tesqck, pifri, pjfri,    \
-                                        pifrj, pjfrj, difx, dify, difz, djfx, djfy,     \
-                                        djfz, fluxi, fluxj, pi, pj, pia, pja)           \
-                            reduction(+:n_upwind)
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, distf, srfan, diipfx, diipfy,       \
+                                        diipfz, djjpfx, djjpfy, djjpfz, dpxf,    \
+                                        dpyf, dpzf, pip, pjp, pipr, pjpr, flui,  \
+                                        fluj, pir, pjr, testi, testj, testij,    \
+                                        dcc, ddi, ddj, tesqck, pifri, pjfri,     \
+                                        pifrj, pjfrj, difx, dify, difz, djfx,    \
+                                        djfy, djfz, fluxi, fluxj, pi, pj,        \
+                                        pia, pja)                                \
+                                reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -1209,9 +1225,12 @@ cs_convection_diffusion_scalar(
             pja = pvara[jj];
 
             /* Recompute II' and JJ' at this level */
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -1249,12 +1268,14 @@ cs_convection_diffusion_scalar(
                     + grdpa[ii][2]*grdpa[jj][2];
 
             if (i_massflux[face_id]>0.) {
-              dcc =   grad[ii][0]*i_face_normal[face_id][0] +grad[ii][1]*i_face_normal[face_id][1]
+              dcc =   grad[ii][0]*i_face_normal[face_id][0]
+                    + grad[ii][1]*i_face_normal[face_id][1]
                     + grad[ii][2]*i_face_normal[face_id][2];
               ddi = testi;
               ddj = (pj-pi)/distf *srfan;
             } else {
-              dcc =   grad[jj][0]*i_face_normal[face_id][0] +grad[jj][1]*i_face_normal[face_id][1]
+              dcc =   grad[jj][0]*i_face_normal[face_id][0]
+                    + grad[jj][1]*i_face_normal[face_id][1]
                     + grad[jj][2]*i_face_normal[face_id][2];
               ddi = (pj-pi)/distf *srfan;
               ddj = testj;
@@ -1301,10 +1322,18 @@ cs_convection_diffusion_scalar(
 
                 /* leave reconstruction of PIF and PJF even if IRCFLP=0
                   otherwise, it is the same as using upwind */
-                pifri = pir + difx*grad[ii][0]+dify*grad[ii][1]+difz*grad[ii][2];
-                pifrj = pi + difx*grad[ii][0]+dify*grad[ii][1]+difz*grad[ii][2];
-                pjfrj = pjr + djfx*grad[jj][0]+djfy*grad[jj][1]+djfz*grad[jj][2];
-                pjfri = pj + djfx*grad[jj][0]+djfy*grad[jj][1]+djfz*grad[jj][2];
+                pifri = pir + difx*grad[ii][0]
+                            + dify*grad[ii][1]
+                            + difz*grad[ii][2];
+                pifrj = pi  + difx*grad[ii][0]
+                            + dify*grad[ii][1]
+                            + difz*grad[ii][2];
+                pjfrj = pjr + djfx*grad[jj][0]
+                            + djfy*grad[jj][1]
+                            + djfz*grad[jj][2];
+                pjfri = pj  + djfx*grad[jj][0]
+                            + djfy*grad[jj][1]
+                            + djfz*grad[jj][2];
 
               }
 
@@ -1399,12 +1428,14 @@ cs_convection_diffusion_scalar(
                      + grdpa[ii][2]*grdpa[jj][2];
 
             if (i_massflux[face_id]>0.) {
-              dcc =   grad[ii][0]*i_face_normal[face_id][0] + grad[ii][1]*i_face_normal[face_id][1]
+              dcc =   grad[ii][0]*i_face_normal[face_id][0]
+                    + grad[ii][1]*i_face_normal[face_id][1]
                     + grad[ii][2]*i_face_normal[face_id][2];
               ddi = testi;
               ddj = (pj-pi)/distf *srfan;
             } else {
-              dcc =   grad[jj][0]*i_face_normal[face_id][0] + grad[jj][1]*i_face_normal[face_id][1]
+              dcc =   grad[jj][0]*i_face_normal[face_id][0]
+                    + grad[jj][1]*i_face_normal[face_id][1]
                     + grad[jj][2]*i_face_normal[face_id][2];
               ddi = (pj-pi)/distf *srfan;
               ddj = testj;
@@ -1497,7 +1528,7 @@ cs_convection_diffusion_scalar(
   }
 #endif
 
-    bft_printf(_(" %s : %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_faces);
   }
@@ -1513,8 +1544,9 @@ cs_convection_diffusion_scalar(
     if (idtvar<0) {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, flui, fluj, \
-                                        pir, pipr, pfac, pfacd, flux, pi, pia)           \
+#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, \
+                                        flui, fluj, pir, pipr, pfac, pfacd,  \
+                                        flux, pi, pia)                       \
                             if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -1541,7 +1573,9 @@ cs_convection_diffusion_scalar(
 
             pir  = pi/relaxp - (1.-relaxp)/relaxp*pia;
             pipr =   pir
-                   + ircflp*(grad[ii][0]*diipbx+grad[ii][1]*diipby+grad[ii][2]*diipbz);
+                   + ircflp*(  grad[ii][0]*diipbx
+                             + grad[ii][1]*diipby
+                             + grad[ii][2]*diipbz);
 
             pfac  = inc*coefap[face_id] +coefbp[face_id]*pipr;
             pfacd = inc*cofafp[face_id] +cofbfp[face_id]*pipr;
@@ -1558,8 +1592,8 @@ cs_convection_diffusion_scalar(
     } else {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, flui, fluj, \
-                                        pip, pfac, pfacd, flux, pi)                      \
+#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,    \
+                                        flui, fluj, pip, pfac, pfacd, flux, pi) \
                             if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -1584,7 +1618,9 @@ cs_convection_diffusion_scalar(
             }
 
             pip = pi
-                + ircflp*(grad[ii][0]*diipbx+grad[ii][1]*diipby+grad[ii][2]*diipbz);
+                + ircflp*(  grad[ii][0]*diipbx
+                          + grad[ii][1]*diipby
+                          + grad[ii][2]*diipbz);
 
             pfac  = inc*coefap[face_id] + coefbp[face_id]*pip;
             pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pip;
@@ -1616,8 +1652,9 @@ cs_convection_diffusion_scalar(
     if (idtvar<0) {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, flui, fluj, \
-                                        pir, pipr, pfac, pfacd, flux, pi, pia)           \
+#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, \
+                                        flui, fluj, pir, pipr, pfac, pfacd,  \
+                                        flux, pi, pia)                       \
                             if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -1635,7 +1672,9 @@ cs_convection_diffusion_scalar(
 
             pir  = pi/relaxp - (1.-relaxp)/relaxp*pia;
             pipr =   pir
-                   + ircflp*(grad[ii][0]*diipbx+grad[ii][1]*diipby+grad[ii][2]*diipbz);
+                   + ircflp*(  grad[ii][0]*diipbx
+                             + grad[ii][1]*diipby
+                             + grad[ii][2]*diipbz);
 
             /* Computed convective flux */
             if (icvfli[face_id] == 0) {
@@ -1669,8 +1708,8 @@ cs_convection_diffusion_scalar(
     } else {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, flui, fluj, \
-                                        pip, pfac, pfacd, flux, pi)                      \
+#       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,   \
+                                        flui, fluj, pip, pfac, pfacd, flux, pi)\
                             if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -1686,7 +1725,9 @@ cs_convection_diffusion_scalar(
             diipbz = diipb[face_id][2];
 
             pip = pi
-                + ircflp*(grad[ii][0]*diipbx+grad[ii][1]*diipby+grad[ii][2]*diipbz);
+                + ircflp*(  grad[ii][0]*diipbx
+                          + grad[ii][1]*diipby
+                          + grad[ii][2]*diipbz);
 
             /* Computed convective flux */
             if (icvfli[face_id] == 0) {
@@ -1755,11 +1796,11 @@ cs_convection_diffusion_scalar(
   - ischcp = 1: centred
 
 */
-/*-------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________*/
+ _____________________________________________________________________________*/
 /*!
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
@@ -1837,7 +1878,7 @@ cs_convection_diffusion_scalar(
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_vector(
@@ -1940,11 +1981,9 @@ cs_convection_diffusion_vector(
 
   cs_field_t *f;
 
-  /*===============================================================================*/
+  /*==========================================================================*/
 
-  /*===============================================================================
-    1.  INITIALISATION
-    ===============================================================================*/
+  /* 1. Initialization */
 
   /* Allocate work arrays */
 
@@ -1969,35 +2008,32 @@ cs_convection_diffusion_vector(
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
-      bft_printf(
-                 _(" %s : Convection in centered blending with %f percent of upwind\n"),
-                 var_name, (1.-blencp)*100.);
+      bft_printf
+        (
+         _(" %s: Convection in centered blending with %f percent of upwind\n"),
+         var_name, (1.-blencp)*100.);
     } else {
-      bft_printf(
-                 _(" %s : Convection in 2nd order blending with %f percent of upwind\n"),
-                 var_name, (1.-blencp)*100.);
+      bft_printf
+        (
+         _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
+         var_name, (1.-blencp)*100.);
     }
   }
 
-  iupwin = 0;
-  if (blencp == 0.)
-    iupwin = 1;
+  iupwin = (blencp > 0.) ? 0 : 1;
 
-  /*===============================================================================
-    2.  CALCUL DU BILAN AVEC TECHNIQUE DE RECONSTRUCTION
-    ===============================================================================*/
+  /* 2. Compute the balance with reconstruction */
 
-  /* ======================================================================
-     ---> CALCUL DU GRADIENT DE VITESSE
-     ======================================================================
-     DUDX sert a la fois pour la reconstruction des flux et pour le test
-     de pente. On doit donc le calculer :
-     - quand on a de la diffusion et qu'on reconstruit les flux
-     - quand on a de la convection SOLU
-     - quand on a de la convection, qu'on n'est pas en upwind pur
-     et qu'on reconstruit les flux
-     - quand on a de la convection, qu'on n'est pas en upwind pur
-     et qu'on n'a pas shunte le test de pente */
+  /* Compute the gradient of the velocity
+
+     The gradient (gradv) is used in the flux reconstruction and the slope test.
+     Thus we must compute it:
+         - when we have diffusion and we reconstruct the fluxes,
+         - when the convection scheme is SOLU,
+         - when we have convection, we are not in pure upwind
+           and we reconstruct the fluxes,
+         - when we have convection, we are not in pure upwind
+           and we have not shunted the slope test. */
 
   if (  (idiffp != 0 && ircflp == 1) || ivisep == 1
      || (   iconvp != 0 && iupwin == 0
@@ -2018,12 +2054,11 @@ cs_convection_diffusion_vector(
                        gradv);
 
   } else {
-#   pragma omp for private(isou, jsou)
+#   pragma omp parallel for private(isou, jsou)
     for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (isou = 0; isou < 3; isou++) {
-        for (jsou = 0; jsou < 3; jsou++) {
+        for (jsou = 0; jsou < 3; jsou++)
           gradv[cell_id][isou][jsou] = 0.;
-        }
       }
     }
   }
@@ -2032,20 +2067,19 @@ cs_convection_diffusion_vector(
      ---> Compute uncentred gradient gradva for the slope test
      ======================================================================*/
 
-# pragma omp for private(isou, jsou)
+# pragma omp parallel for private(isou, jsou)
   for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (jsou = 0; jsou < 3; jsou++) {
-      for (isou = 0; isou < 3; isou++) {
+      for (isou = 0; isou < 3; isou++)
         gradva[cell_id][isou][jsou] = 0.;
-      }
     }
   }
 
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, isou, jsou, difv, djfv, pif, pjf, \
-                             pfac, vfac)
+#     pragma omp parallel for private(face_id, ii, jj, isou, jsou,      \
+                                      difv, djfv, pif, pjf, pfac, vfac)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -2088,7 +2122,7 @@ cs_convection_diffusion_vector(
     }
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for private(face_id, ii, isou, jsou, diipbv, pfac) \
+#     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, pfac) \
                  if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -2097,38 +2131,34 @@ cs_convection_diffusion_vector(
 
           ii = b_face_cells[face_id] - 1;
 
-          for (jsou = 0; jsou < 3; jsou++) {
+          for (jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
-          }
 
           /*-----------------
             X-Y-Z components, p=u, v, w */
           for (isou = 0; isou <3; isou++) {
             pfac = inc*coefav[face_id][isou];
             /*coefu is a matrix */
-            for (jsou =  0; jsou < 3; jsou++) {
-              pfac = pfac + coefbv[face_id][jsou][isou]*(pvar[ii][jsou]
-                                                         + gradv[ii][jsou][0]*diipbv[0]
-                                                         + gradv[ii][jsou][1]*diipbv[1]
-                                                         + gradv[ii][jsou][2]*diipbv[2]);
-            }
+            for (jsou =  0; jsou < 3; jsou++)
+              pfac += coefbv[face_id][jsou][isou]*(  pvar[ii][jsou]
+                                                   + gradv[ii][jsou][0]*diipbv[0]
+                                                   + gradv[ii][jsou][1]*diipbv[1]
+                                                   + gradv[ii][jsou][2]*diipbv[2]);
 
-            for (jsou = 0; jsou < 3; jsou++) {
-              gradva[ii][isou][jsou] = gradva[ii][isou][jsou] +pfac*b_face_normal[face_id][jsou];
-            }
+            for (jsou = 0; jsou < 3; jsou++)
+              gradva[ii][isou][jsou] += pfac*b_face_normal[face_id][jsou];
           }
 
         }
       }
     }
 
-#   pragma omp for private(isou, jsou, unsvol)
+#   pragma omp parallel for private(isou, jsou, unsvol)
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
       unsvol = 1./cell_vol[cell_id];
       for (isou = 0; isou < 3; isou++) {
-        for (jsou = 0; jsou < 3; jsou++) {
+        for (jsou = 0; jsou < 3; jsou++)
           gradva[cell_id][isou][jsou] = gradva[cell_id][isou][jsou]*unsvol;
-        }
       }
     }
 
@@ -2149,11 +2179,10 @@ cs_convection_diffusion_vector(
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp for private(isou) if(n_cells_ext -n_cells > THR_MIN);
+#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
-      for (isou = 0; isou < 3; isou++) {
+      for (isou = 0; isou < 3; isou++)
         rhs[cell_id][isou] = 0.;
-      }
     }
   }
 
@@ -2166,10 +2195,11 @@ cs_convection_diffusion_vector(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, isou, jsou, pnd, dijpfv, \
-                               diipfv, djjpfv, flui, fluj, dpvf, pi, pj, \
-                               pia, pja, pip, pjp, pipr, pjpr,           \
-                               pifr, pjfr, fluxi, fluxj)                 \
+#       pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,   \
+                                        dijpfv, diipfv, djjpfv,             \
+                                        flui, fluj, dpvf, pi, pj, pia, pja, \
+                                        pip, pjp, pipr, pjpr, pifr, pjfr,   \
+                                        fluxi, fluxj)                       \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -2192,10 +2222,10 @@ cs_convection_diffusion_vector(
 
             /* Recompute II' and JJ' at this level */
             for (jsou = 0; jsou < 3; jsou++) {
-              diipfv[jsou] =   i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                            + (1.-pnd) * dijpfv[jsou]);
-              djjpfv[jsou] =   i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                + pnd  * dijpfv[jsou];
+              diipfv[jsou] =   i_face_cog[face_id][jsou]
+                             - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+              djjpfv[jsou] =   i_face_cog[face_id][jsou]
+                             - cell_cen[jj][jsou] + pnd  * dijpfv[jsou];
             }
 
             flui = 0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
@@ -2205,9 +2235,9 @@ cs_convection_diffusion_vector(
               X-Y-Z components, p=u, v, w */
             for (isou = 0; isou < 3; isou++) {
 
-              for (jsou = 0; jsou < 3; jsou++) {
-                dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
-              }
+              for (jsou = 0; jsou < 3; jsou++)
+                dpvf[jsou] = 0.5*(  gradv[ii][isou][jsou]
+                                  + gradv[jj][isou][jsou]);
 
               /* reconstruction only if IRCFLP = 1 */
               pi  = pvar[ii][isou];
@@ -2216,29 +2246,29 @@ cs_convection_diffusion_vector(
               pia = pvara[ii][isou];
               pja = pvara[jj][isou];
 
-              pip = pi + ircflp*(dpvf[0]*diipfv[0]
-                                 +dpvf[1]*diipfv[1]
-                                 +dpvf[2]*diipfv[2]);
-              pjp = pj + ircflp*(dpvf[0]*djjpfv[0]
-                                 +dpvf[1]*djjpfv[1]
-                                 +dpvf[2]*djjpfv[2]);
+              pip = pi + ircflp*(  dpvf[0]*diipfv[0]
+                                 + dpvf[1]*diipfv[1]
+                                 + dpvf[2]*diipfv[2]);
+              pjp = pj + ircflp*(  dpvf[0]*djjpfv[0]
+                                 + dpvf[1]*djjpfv[1]
+                                 + dpvf[2]*djjpfv[2]);
 
               pipr = pi /relaxp - (1.-relaxp)/relaxp * pia
-                + ircflp*(dpvf[0]*diipfv[0]
-                          +dpvf[1]*diipfv[1]
-                          +dpvf[2]*diipfv[2]);
+                     + ircflp*(  dpvf[0]*diipfv[0]
+                               + dpvf[1]*diipfv[1]
+                               + dpvf[2]*diipfv[2]);
               pjpr = pj /relaxp - (1.-relaxp)/relaxp * pja
-                + ircflp*(dpvf[0]*djjpfv[0]
-                          +dpvf[1]*djjpfv[1]
-                          +dpvf[2]*djjpfv[2]);
+                     + ircflp*(  dpvf[0]*djjpfv[0]
+                               + dpvf[1]*djjpfv[1]
+                               + dpvf[2]*djjpfv[2]);
 
               pifr = pi /relaxp - (1.-relaxp)/relaxp * pia;
               pjfr = pj /relaxp - (1.-relaxp)/relaxp * pja;
 
-              fluxi = iconvp*(flui*pifr + fluj*pj - i_massflux[face_id]*pi)
-                + idiffp*i_visc[face_id]*(pipr -pjp);
-              fluxj = iconvp*(flui*pi + fluj*pjfr - i_massflux[face_id]*pj)
-                + idiffp*i_visc[face_id]*(pip -pjpr);
+              fluxi =   iconvp*(flui*pifr + fluj*pj - i_massflux[face_id]*pi)
+                      + idiffp*i_visc[face_id]*(pipr -pjp);
+              fluxj =   iconvp*(flui*pi + fluj*pjfr - i_massflux[face_id]*pj)
+                      + idiffp*i_visc[face_id]*(pip -pjpr);
 
               rhs[ii][isou] = rhs[ii][isou] - fluxi;
               rhs[jj][isou] = rhs[jj][isou] + fluxj;
@@ -2253,9 +2283,9 @@ cs_convection_diffusion_vector(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, isou, jsou, pnd, dijpfv, \
-                               diipfv, djjpfv, flui, fluj, dpvf, pi, pj, \
-                               pip, pjp, flux)                           \
+#       pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,   \
+                                        dijpfv, diipfv, djjpfv, flui, fluj, \
+                                        dpvf, pi, pj, pip, pjp, flux)       \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -2270,18 +2300,17 @@ cs_convection_diffusion_vector(
               n_upwind++;
             }
 
-            for (jsou = 0; jsou < 3; jsou++) {
+            for (jsou = 0; jsou < 3; jsou++)
               dijpfv[jsou] = dijpf[face_id][jsou];
-            }
 
             pnd = weight[face_id];
 
             /* Recompute II' and JJ' at this level */
             for (jsou = 0; jsou < 3; jsou++) {
-              diipfv[jsou] =   i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                         + (1.-pnd) * dijpfv[jsou]);
-              djjpfv[jsou] =   i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                                                         +  pnd * dijpfv[jsou];
+              diipfv[jsou] =   i_face_cog[face_id][jsou]
+                             - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+              djjpfv[jsou] =   i_face_cog[face_id][jsou]
+                             - cell_cen[jj][jsou] +  pnd * dijpfv[jsou];
             }
 
             flui = 0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
@@ -2291,25 +2320,25 @@ cs_convection_diffusion_vector(
               X-Y-Z components, p=u, v, w */
             for (isou = 0; isou < 3; isou++) {
 
-              for (jsou = 0; jsou < 3; jsou++) {
-                dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
-              }
+              for (jsou = 0; jsou < 3; jsou++)
+                dpvf[jsou] = 0.5*(  gradv[ii][isou][jsou]
+                                  + gradv[jj][isou][jsou]);
 
               pi = pvar[ii][isou];
               pj = pvar[jj][isou];
 
-              pip = pi + ircflp*(dpvf[0]*diipfv[0]
-                                 +dpvf[1]*diipfv[1]
-                                 +dpvf[2]*diipfv[2]);
-              pjp = pj + ircflp*(dpvf[0]*djjpfv[0]
-                                 +dpvf[1]*djjpfv[1]
-                                 +dpvf[2]*djjpfv[2]);
+              pip = pi + ircflp*(  dpvf[0]*diipfv[0]
+                                 + dpvf[1]*diipfv[1]
+                                 + dpvf[2]*diipfv[2]);
+              pjp = pj + ircflp*(  dpvf[0]*djjpfv[0]
+                                 + dpvf[1]*djjpfv[1]
+                                 + dpvf[2]*djjpfv[2]);
 
               flux =   iconvp*(flui*pi +fluj*pj)
                 + idiffp*i_visc[face_id]*(pip -pjp);
 
-              rhs[ii][isou] = rhs[ii][isou] - thetap*(flux - iconvp*i_massflux[face_id]*pi);
-              rhs[jj][isou] = rhs[jj][isou] + thetap*(flux - iconvp*i_massflux[face_id]*pj);
+              rhs[ii][isou] -= thetap*(flux - iconvp*i_massflux[face_id]*pi);
+              rhs[jj][isou] += thetap*(flux - iconvp*i_massflux[face_id]*pj);
             }
 
           }
@@ -2332,11 +2361,11 @@ cs_convection_diffusion_vector(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, isou, jsou, dijpfv, pnd,     \
-                               diipfv, djjpfv, flui, fluj, difv, djfv, dpvf, \
-                               pi, pj, pia, pja, pip, pjp, pipr, pjpr,       \
-                               pir, pjr, pifri, pjfri, pifrj, pjfrj,         \
-                               fluxi, fluxj)
+#       pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,    \
+                                        dijpfv, diipfv, djjpfv, flui, fluj,  \
+                                        difv, djfv, dpvf, pi, pj, pia, pja,  \
+                                        pip, pjp, pipr, pjpr, pir, pjr,      \
+                                        pifri, pjfri, pifrj, pjfrj, fluxi, fluxj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -2345,18 +2374,17 @@ cs_convection_diffusion_vector(
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
 
-            for (jsou = 0; jsou < 3; jsou++) {
+            for (jsou = 0; jsou < 3; jsou++)
               dijpfv[jsou] = dijpf[face_id][jsou];
-            }
 
             pnd = weight[face_id];
 
             /* Recompute II' and JJ' at this level */
             for (jsou = 0; jsou < 3; jsou++) {
-              diipfv[jsou] =   i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                         + (1.-pnd) * dijpfv[jsou]);
-              djjpfv[jsou] =   i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                                                         + pnd  * dijpfv[jsou];
+              diipfv[jsou] =   i_face_cog[face_id][jsou]
+                             - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+              djjpfv[jsou] =   i_face_cog[face_id][jsou]
+                             - cell_cen[jj][jsou] + pnd  * dijpfv[jsou];
             }
 
             flui = 0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
@@ -2374,9 +2402,9 @@ cs_convection_diffusion_vector(
               X-Y-Z components, p=u, v, w */
             for (isou = 0; isou < 3; isou++) {
 
-              for (jsou = 0; jsou < 3; jsou++) {
-                dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
-              }
+              for (jsou = 0; jsou < 3; jsou++)
+                dpvf[jsou] = 0.5*(  gradv[ii][isou][jsou]
+                                  + gradv[jj][isou][jsou]);
 
               pi = pvar[ii][isou];
               pj = pvar[jj][isou];
@@ -2384,21 +2412,21 @@ cs_convection_diffusion_vector(
               pia = pvara[ii][isou];
               pja = pvara[jj][isou];
 
-              pip = pi + ircflp*(dpvf[0]*diipfv[0]
-                                 +dpvf[1]*diipfv[1]
-                                 +dpvf[2]*diipfv[2]);
-              pjp = pj + ircflp*(dpvf[0]*djjpfv[0]
-                                 +dpvf[1]*djjpfv[1]
-                                 +dpvf[2]*djjpfv[2]);
+              pip = pi + ircflp*(  dpvf[0]*diipfv[0]
+                                 + dpvf[1]*diipfv[1]
+                                 + dpvf[2]*diipfv[2]);
+              pjp = pj + ircflp*(  dpvf[0]*djjpfv[0]
+                                 + dpvf[1]*djjpfv[1]
+                                 + dpvf[2]*djjpfv[2]);
 
               pipr = pi /relaxp - (1.-relaxp)/relaxp * pia
-                + ircflp*(dpvf[0]*diipfv[0]
-                          +dpvf[1]*diipfv[1]
-                          +dpvf[2]*diipfv[2]);
+                     + ircflp*(  dpvf[0]*diipfv[0]
+                               + dpvf[1]*diipfv[1]
+                               + dpvf[2]*diipfv[2]);
               pjpr = pj /relaxp - (1.-relaxp)/relaxp * pja
-                + ircflp*(dpvf[0]*djjpfv[0]
-                          +dpvf[1]*djjpfv[1]
-                          +dpvf[2]*djjpfv[2]);
+                     + ircflp*(  dpvf[0]*djjpfv[0]
+                               + dpvf[1]*djjpfv[1]
+                               + dpvf[2]*djjpfv[2]);
 
               pir = pi /relaxp - (1. - relaxp)/relaxp* pia;
               pjr = pj /relaxp - (1. - relaxp)/relaxp* pja;
@@ -2422,18 +2450,18 @@ cs_convection_diffusion_vector(
                 /* leave reconstruction of PIF and PJF even if IRCFLP=0
                    otherwise, it is the same as using upwind */
                 pifri = pir + difv[0]*gradv[ii][isou][0]
-                  + difv[1]*gradv[ii][isou][1]
-                  + difv[2]*gradv[ii][isou][2];
+                            + difv[1]*gradv[ii][isou][1]
+                            + difv[2]*gradv[ii][isou][2];
                 pifrj = pi  + difv[0]*gradv[ii][isou][0]
-                  + difv[1]*gradv[ii][isou][1]
-                  + difv[2]*gradv[ii][isou][2];
+                            + difv[1]*gradv[ii][isou][1]
+                            + difv[2]*gradv[ii][isou][2];
 
                 pjfrj = pjr + djfv[0]*gradv[jj][isou][0]
-                  + djfv[1]*gradv[jj][isou][1]
-                  + djfv[2]*gradv[jj][isou][2];
+                            + djfv[1]*gradv[jj][isou][1]
+                            + djfv[2]*gradv[jj][isou][2];
                 pjfri = pj  + djfv[0]*gradv[jj][isou][0]
-                  + djfv[1]*gradv[jj][isou][1]
-                  + djfv[2]*gradv[jj][isou][2];
+                            + djfv[1]*gradv[jj][isou][1]
+                            + djfv[2]*gradv[jj][isou][2];
 
               }
 
@@ -2448,10 +2476,12 @@ cs_convection_diffusion_vector(
               /* Flux
                  ----*/
 
-              fluxi =   iconvp*(flui*pifri + fluj*pjfri - i_massflux[face_id]*pi)
-                + idiffp*i_visc[face_id]*(pipr -pjp);
-              fluxj =   iconvp*(flui*pifrj + fluj*pjfrj - i_massflux[face_id]*pj)
-                + idiffp*i_visc[face_id]*(pip -pjpr);
+              fluxi =   iconvp*(  flui*pifri + fluj*pjfri
+                                - i_massflux[face_id]*pi)
+                      + idiffp*i_visc[face_id]*(pipr -pjp);
+              fluxj =   iconvp*(  flui*pifrj + fluj*pjfrj
+                                - i_massflux[face_id]*pj)
+                      + idiffp*i_visc[face_id]*(pip -pjpr);
 
               /* Assembly
                  --------*/
@@ -2469,9 +2499,10 @@ cs_convection_diffusion_vector(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, isou, jsou, dijpfv, pnd,     \
-                               diipfv, djjpfv, flui, fluj, difv, djfv, dpvf, \
-                               pi, pj, pip, pjp, pif, pjf, flux)
+#       pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,     \
+                                        dijpfv, diipfv, djjpfv, flui, fluj,   \
+                                        difv, djfv, dpvf,                     \
+                                        pi, pj, pip, pjp, pif, pjf, flux)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -2488,10 +2519,10 @@ cs_convection_diffusion_vector(
 
             /* Recompute II' and JJ' at this level */
             for (jsou = 0; jsou < 3; jsou++) {
-              diipfv[jsou] =   i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                         + (1.-pnd) * dijpfv[jsou]);
-              djjpfv[jsou] =   i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                                                         + pnd  * dijpfv[jsou];
+              diipfv[jsou] =   i_face_cog[face_id][jsou]
+                             - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+              djjpfv[jsou] =   i_face_cog[face_id][jsou]
+                             - cell_cen[jj][jsou] + pnd  * dijpfv[jsou];
             }
 
             flui = 0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
@@ -2510,18 +2541,19 @@ cs_convection_diffusion_vector(
             for (isou = 0; isou < 3; isou++) {
 
               for (jsou = 0; jsou < 3; jsou++) {
-                dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
+                dpvf[jsou] = 0.5*(  gradv[ii][isou][jsou]
+                                  + gradv[jj][isou][jsou]);
               }
 
               pi = pvar[ii][isou];
               pj = pvar[jj][isou];
 
-              pip = pi + ircflp*(dpvf[0]*diipfv[0]
-                                 +dpvf[1]*diipfv[1]
-                                 +dpvf[2]*diipfv[2]);
-              pjp = pj + ircflp*(dpvf[0]*djjpfv[0]
-                                 +dpvf[1]*djjpfv[1]
-                                 +dpvf[2]*djjpfv[2]);
+              pip = pi + ircflp*(  dpvf[0]*diipfv[0]
+                                 + dpvf[1]*diipfv[1]
+                                 + dpvf[2]*diipfv[2]);
+              pjp = pj + ircflp*(  dpvf[0]*djjpfv[0]
+                                 + dpvf[1]*djjpfv[1]
+                                 + dpvf[2]*djjpfv[2]);
 
               /* Centered
                  --------*/
@@ -2558,13 +2590,13 @@ cs_convection_diffusion_vector(
                  ----*/
 
               flux =   iconvp*(flui*pif +fluj*pjf)
-                + idiffp*i_visc[face_id]*(pip -pjp);
+                     + idiffp*i_visc[face_id]*(pip -pjp);
 
               /* Assembly
                  --------*/
 
-              rhs[ii][isou] = rhs[ii][isou] - thetap*(flux - iconvp*i_massflux[face_id]*pi);
-              rhs[jj][isou] = rhs[jj][isou] + thetap*(flux - iconvp*i_massflux[face_id]*pj);
+              rhs[ii][isou] -= thetap*(flux - iconvp*i_massflux[face_id]*pi);
+              rhs[jj][isou] += thetap*(flux - iconvp*i_massflux[face_id]*pj);
 
             } /* isou */
 
@@ -2588,12 +2620,13 @@ cs_convection_diffusion_vector(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, isou, jsou, dijpfv, pnd, \
-                               distf, srfan, diipfv, djjpfv, flui, fluj, \
-                               difv, djfv, dpvf, pi, pj, pia, pja,       \
-                               pip, pjp, pipr, pjpr, pir, pjr, testij,   \
-                               testi, testj, dcc, ddi, ddj, tesqck,      \
-                               pifri, pifrj, pjfri, pjfrj, fluxi, fluxj) \
+#       pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,      \
+                                        distf, srfan, dijpfv, diipfv, djjpfv,  \
+                                        flui, fluj, difv, djfv, dpvf, pi, pj,  \
+                                        pia, pja, pip, pjp, pipr, pjpr,        \
+                                        pir, pjr, testij, testi, testj, dcc,   \
+                                        ddi, ddj, tesqck, pifri, pifrj, pjfri, \
+                                        pjfrj, fluxi, fluxj)                   \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -2613,10 +2646,10 @@ cs_convection_diffusion_vector(
 
             /* Recompute II' and JJ' at this level */
             for (jsou = 0; jsou < 3; jsou++) {
-              diipfv[jsou] =    i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                          + (1.-pnd) * dijpfv[jsou]);
-              djjpfv[jsou] =    i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                                                          + pnd * dijpfv[jsou];
+              diipfv[jsou] =   i_face_cog[face_id][jsou]
+                             - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+              djjpfv[jsou] =    i_face_cog[face_id][jsou]
+                             - cell_cen[jj][jsou] + pnd * dijpfv[jsou];
             }
 
             flui = 0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
@@ -2634,9 +2667,9 @@ cs_convection_diffusion_vector(
               X-Y-Z components, p=u, v, w */
             for (isou = 0; isou < 3; isou++) {
 
-              for (jsou = 0; jsou < 3; jsou++) {
-                dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
-              }
+              for (jsou = 0; jsou < 3; jsou++)
+                dpvf[jsou] = 0.5*(  gradv[ii][isou][jsou]
+                                  + gradv[jj][isou][jsou]);
 
               pi  = pvar[ii][isou];
               pj  = pvar[jj][isou];
@@ -2644,21 +2677,21 @@ cs_convection_diffusion_vector(
               pia = pvara[ii][isou];
               pja = pvara[jj][isou];
 
-              pip = pi + ircflp*(dpvf[0]*diipfv[0]
-                                 +dpvf[1]*diipfv[1]
-                                 +dpvf[2]*diipfv[2]);
-              pjp = pj + ircflp*(dpvf[0]*djjpfv[0]
-                                 +dpvf[1]*djjpfv[1]
-                                 +dpvf[2]*djjpfv[2]);
+              pip = pi + ircflp*(  dpvf[0]*diipfv[0]
+                                 + dpvf[1]*diipfv[1]
+                                 + dpvf[2]*diipfv[2]);
+              pjp = pj + ircflp*(  dpvf[0]*djjpfv[0]
+                                 + dpvf[1]*djjpfv[1]
+                                 + dpvf[2]*djjpfv[2]);
 
               pipr = pi /relaxp - (1.-relaxp)/relaxp * pia
-                + ircflp*(dpvf[0]*diipfv[0]
-                          +dpvf[1]*diipfv[1]
-                          +dpvf[2]*diipfv[2]);
+                     + ircflp*(  dpvf[0]*diipfv[0]
+                               + dpvf[1]*diipfv[1]
+                               + dpvf[2]*diipfv[2]);
               pjpr = pj /relaxp - (1.-relaxp)/relaxp * pja
-                + ircflp*(dpvf[0]*djjpfv[0]
-                          +dpvf[1]*djjpfv[1]
-                          +dpvf[2]*djjpfv[2]);
+                     + ircflp*(  dpvf[0]*djjpfv[0]
+                               + dpvf[1]*djjpfv[1]
+                               + dpvf[2]*djjpfv[2]);
 
               pir = pi /relaxp - (1. - relaxp)/relaxp*pia;
               pjr = pj /relaxp - (1. - relaxp)/relaxp*pja;
@@ -2666,27 +2699,27 @@ cs_convection_diffusion_vector(
               /* Slope test
                  ----------*/
 
-              testi = gradva[ii][isou][0]*i_face_normal[face_id][0]
-                + gradva[ii][isou][1]*i_face_normal[face_id][1]
-                + gradva[ii][isou][2]*i_face_normal[face_id][2];
-              testj = gradva[jj][isou][0]*i_face_normal[face_id][0]
-                + gradva[jj][isou][1]*i_face_normal[face_id][1]
-                + gradva[jj][isou][2]*i_face_normal[face_id][2];
-              testij= gradva[ii][isou][0]*gradva[jj][isou][0]
-                + gradva[ii][isou][1]*gradva[jj][isou][1]
-                + gradva[ii][isou][2]*gradva[jj][isou][2];
+              testi =   gradva[ii][isou][0]*i_face_normal[face_id][0]
+                      + gradva[ii][isou][1]*i_face_normal[face_id][1]
+                      + gradva[ii][isou][2]*i_face_normal[face_id][2];
+              testj =   gradva[jj][isou][0]*i_face_normal[face_id][0]
+                      + gradva[jj][isou][1]*i_face_normal[face_id][1]
+                      + gradva[jj][isou][2]*i_face_normal[face_id][2];
+              testij =   gradva[ii][isou][0]*gradva[jj][isou][0]
+                       + gradva[ii][isou][1]*gradva[jj][isou][1]
+                       + gradva[ii][isou][2]*gradva[jj][isou][2];
 
               if (i_massflux[face_id] > 0.) {
-                dcc = gradv[ii][isou][0]*i_face_normal[face_id][0]
-                  + gradv[ii][isou][1]*i_face_normal[face_id][1]
-                  + gradv[ii][isou][2]*i_face_normal[face_id][2];
+                dcc =   gradv[ii][isou][0]*i_face_normal[face_id][0]
+                      + gradv[ii][isou][1]*i_face_normal[face_id][1]
+                      + gradv[ii][isou][2]*i_face_normal[face_id][2];
                 ddi = testi;
                 ddj = (pj - pi)/distf *srfan;
               }
               else {
-                dcc = gradv[jj][isou][0]*i_face_normal[face_id][0]
-                  + gradv[jj][isou][1]*i_face_normal[face_id][1]
-                  + gradv[jj][isou][2]*i_face_normal[face_id][2];
+                dcc =   gradv[jj][isou][0]*i_face_normal[face_id][0]
+                      + gradv[jj][isou][1]*i_face_normal[face_id][1]
+                      + gradv[jj][isou][2]*i_face_normal[face_id][2];
                 ddi = (pj - pi)/distf *srfan;
                 ddj = testj;
               }
@@ -2702,9 +2735,8 @@ cs_convection_diffusion_vector(
                 pjfri = pj;
                 pjfrj = pjr;
                 /* in parallel, face will be counted by one and only one rank */
-                if (ii < n_cells) {
+                if (ii < n_cells)
                   n_upwind++;
-                }
               }
               else {
 
@@ -2721,24 +2753,24 @@ cs_convection_diffusion_vector(
                 /* Second order
                    ------------*/
 
-                } else {/* if (ischcp.eq.0) then
-                         difv already defined */
+                }
+                else { /* if (ischcp.eq.0) then difv already defined */
 
                   /* leave reconstruction of PIF and PJF even if IRCFLP=0
                      otherwise, it is the same as using upwind */
                   pifri = pir + difv[0]*gradv[ii][isou][0]
-                    + difv[1]*gradv[ii][isou][1]
-                    + difv[2]*gradv[ii][isou][2];
+                              + difv[1]*gradv[ii][isou][1]
+                              + difv[2]*gradv[ii][isou][2];
                   pifrj = pi  + difv[0]*gradv[ii][isou][0]
-                    + difv[1]*gradv[ii][isou][1]
-                    + difv[2]*gradv[ii][isou][2];
+                              + difv[1]*gradv[ii][isou][1]
+                              + difv[2]*gradv[ii][isou][2];
 
                   pjfrj = pjr + djfv[0]*gradv[jj][isou][0]
-                    + djfv[1]*gradv[jj][isou][1]
-                    + djfv[2]*gradv[jj][isou][2];
+                              + djfv[1]*gradv[jj][isou][1]
+                              + djfv[2]*gradv[jj][isou][2];
                   pjfri = pj  + djfv[0]*gradv[jj][isou][0]
-                    + djfv[1]*gradv[jj][isou][1]
-                    + djfv[2]*gradv[jj][isou][2];
+                              + djfv[1]*gradv[jj][isou][1]
+                              + djfv[2]*gradv[jj][isou][2];
 
                 }
 
@@ -2755,9 +2787,11 @@ cs_convection_diffusion_vector(
               /* Flux
                  ----*/
 
-              fluxi =    iconvp*(flui*pifri + fluj*pjfri - i_massflux[face_id]*pi)
+              fluxi =    iconvp*(  flui*pifri + fluj*pjfri
+                                 - i_massflux[face_id]*pi)
                 + idiffp*i_visc[face_id]*(pipr -pjp);
-              fluxj =    iconvp*(flui*pifrj + fluj*pjfrj - i_massflux[face_id]*pj)
+              fluxj =    iconvp*(  flui*pifrj + fluj*pjfrj
+                                 - i_massflux[face_id]*pj)
                 + idiffp*i_visc[face_id]*(pip -pjpr);
 
               /* Assembly
@@ -2776,11 +2810,11 @@ cs_convection_diffusion_vector(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, isou, jsou, dijpfv, pnd, \
-                               distf, srfan, diipfv, djjpfv, flui, fluj, \
-                               difv, djfv, dpvf, pi, pj, pip, pjp,       \
-                               testi, testj, testij, dcc, ddi, ddj,      \
-                               tesqck, pif, pjf, flux)                   \
+#       pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,     \
+                                        distf, srfan, dijpfv, diipfv, djjpfv, \
+                                        flui, fluj, difv, djfv, dpvf, pi, pj, \
+                                        pip, pjp, testi, testj, testij, dcc,  \
+                                        ddi, ddj, tesqck, pif, pjf, flux)     \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -2800,10 +2834,10 @@ cs_convection_diffusion_vector(
 
             /* Recompute II' and JJ' at this level */
             for (jsou = 0; jsou < 3; jsou++) {
-              diipfv[jsou] =    i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                          + (1.-pnd) * dijpfv[jsou]);
-              djjpfv[jsou] =    i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                                                          + pnd * dijpfv[jsou];
+              diipfv[jsou] =   i_face_cog[face_id][jsou]
+                             - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+              djjpfv[jsou] =   i_face_cog[face_id][jsou]
+                             - cell_cen[jj][jsou] + pnd * dijpfv[jsou];
             }
 
             flui = 0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
@@ -2822,7 +2856,8 @@ cs_convection_diffusion_vector(
             for (isou = 0; isou < 3; isou++) {
 
               for (jsou = 0; jsou < 3; jsou++) {
-                dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
+                dpvf[jsou] = 0.5*(  gradv[ii][isou][jsou]
+                                  + gradv[jj][isou][jsou]);
               }
 
               pi = pvar[ii][isou];
@@ -2839,25 +2874,25 @@ cs_convection_diffusion_vector(
                  ----------*/
 
               testi = gradva[ii][isou][0]*i_face_normal[face_id][0]
-                + gradva[ii][isou][1]*i_face_normal[face_id][1]
-                + gradva[ii][isou][2]*i_face_normal[face_id][2];
+                    + gradva[ii][isou][1]*i_face_normal[face_id][1]
+                    + gradva[ii][isou][2]*i_face_normal[face_id][2];
               testj = gradva[jj][isou][0]*i_face_normal[face_id][0]
-                + gradva[jj][isou][1]*i_face_normal[face_id][1]
-                + gradva[jj][isou][2]*i_face_normal[face_id][2];
-              testij= gradva[ii][isou][0]*gradva[jj][isou][0]
-                + gradva[ii][isou][1]*gradva[jj][isou][1]
-                + gradva[ii][isou][2]*gradva[jj][isou][2];
+                    + gradva[jj][isou][1]*i_face_normal[face_id][1]
+                    + gradva[jj][isou][2]*i_face_normal[face_id][2];
+              testij=   gradva[ii][isou][0]*gradva[jj][isou][0]
+                      + gradva[ii][isou][1]*gradva[jj][isou][1]
+                      + gradva[ii][isou][2]*gradva[jj][isou][2];
 
               if (i_massflux[face_id] > 0.) {
-                dcc = gradv[ii][isou][0]*i_face_normal[face_id][0]
-                  + gradv[ii][isou][1]*i_face_normal[face_id][1]
-                  + gradv[ii][isou][2]*i_face_normal[face_id][2];
+                dcc =   gradv[ii][isou][0]*i_face_normal[face_id][0]
+                      + gradv[ii][isou][1]*i_face_normal[face_id][1]
+                      + gradv[ii][isou][2]*i_face_normal[face_id][2];
                 ddi = testi;
                 ddj = (pj - pi)/distf *srfan;
               } else {
-                dcc = gradv[jj][isou][0]*i_face_normal[face_id][0]
-                  + gradv[jj][isou][1]*i_face_normal[face_id][1]
-                  + gradv[jj][isou][2]*i_face_normal[face_id][2];
+                dcc =   gradv[jj][isou][0]*i_face_normal[face_id][0]
+                      + gradv[jj][isou][1]*i_face_normal[face_id][1]
+                      + gradv[jj][isou][2]*i_face_normal[face_id][2];
                 ddi = (pj - pi)/distf *srfan;
                 ddj = testj;
               }
@@ -2915,13 +2950,13 @@ cs_convection_diffusion_vector(
                  ----*/
 
               flux =   iconvp*(flui*pif +fluj*pjf)
-                + idiffp*i_visc[face_id]*(pip -pjp);
+                     + idiffp*i_visc[face_id]*(pip -pjp);
 
               /* Assembly
                  --------*/
 
-              rhs[ii][isou] = rhs[ii][isou] - thetap*(flux - iconvp*i_massflux[face_id]*pi);
-              rhs[jj][isou] = rhs[jj][isou] + thetap*(flux - iconvp*i_massflux[face_id]*pj);
+              rhs[ii][isou] -= thetap*(flux - iconvp*i_massflux[face_id]*pi);
+              rhs[jj][isou] += thetap*(flux - iconvp*i_massflux[face_id]*pj);
 
             } /* isou */
 
@@ -2949,7 +2984,7 @@ cs_convection_diffusion_vector(
     }
 #endif
 
-    bft_printf(_(" %s : %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_faces);
   }
@@ -2965,8 +3000,9 @@ cs_convection_diffusion_vector(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp for private(face_id, ii, isou, jsou, diipbv, flui, fluj, \
-                               pfac, pfacd, pir, pipr, flux, pi, pia)       \
+#       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
+                                        flui, fluj, pfac, pfacd, pir,    \
+                                        pipr, flux, pi, pia)            \
                    if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -2975,9 +3011,8 @@ cs_convection_diffusion_vector(
 
             ii = b_face_cells[face_id] - 1;
 
-            for (jsou = 0; jsou < 3; jsou++) {
+            for (jsou = 0; jsou < 3; jsou++)
               diipbv[jsou] = diipb[face_id][jsou];
-            }
 
             /* Remove decentering for coupled faces */
             if (ifaccp == 1 && bc_type[face_id] == CS_COUPLED) {
@@ -2997,9 +3032,10 @@ cs_convection_diffusion_vector(
 
               /*coefu and cofuf are matrices */
               for (jsou = 0; jsou < 3; jsou++) {
-                pir  = pvar[ii][jsou]/relaxp - (1.-relaxp)/relaxp*pvara[ii][jsou];
+                pir  =   pvar[ii][jsou]/relaxp
+                       - (1.-relaxp)/relaxp*pvara[ii][jsou];
 
-                pipr = pir +ircflp*( gradv[ii][jsou][0]*diipbv[0]
+                pipr = pir +ircflp*(   gradv[ii][jsou][0]*diipbv[0]
                                      + gradv[ii][jsou][1]*diipbv[1]
                                      + gradv[ii][jsou][2]*diipbv[2]);
                 pfac  = pfac  + coefbv[face_id][jsou][isou]*pipr;
@@ -3025,8 +3061,8 @@ cs_convection_diffusion_vector(
     } else {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp for private(face_id, ii, isou, jsou, diipbv, flui, fluj, \
-                               pfac, pfacd, pip, flux, pi)                  \
+#       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv,         \
+                                        flui, fluj, pfac, pfacd, pip, flux, pi)  \
                    if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -3057,7 +3093,7 @@ cs_convection_diffusion_vector(
 
               /*coefu and cofuf are matrices */
               for (jsou = 0; jsou < 3; jsou++) {
-                pip = pvar[ii][jsou] + ircflp*( gradv[ii][jsou][0]*diipbv[0]
+                pip = pvar[ii][jsou] + ircflp*(   gradv[ii][jsou][0]*diipbv[0]
                                                 + gradv[ii][jsou][1]*diipbv[1]
                                                 + gradv[ii][jsou][2]*diipbv[2]);
                 pfac  = pfac  + coefbv[face_id][jsou][isou]*pip;
@@ -3078,7 +3114,7 @@ cs_convection_diffusion_vector(
 
     } /* idtvar */
 
-    /* Boundary convective flux is imposed at some faces (tagged in icvfli array) */
+    /* Boundary convective flux imposed at some faces (tags in icvfli array) */
   } else if (icvflb==1) {
 
     /* Retrieve the value of the convective flux to be imposed */
@@ -3094,8 +3130,9 @@ cs_convection_diffusion_vector(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp for private(face_id, ii, isou, jsou, diipbv, flui, fluj, \
-                               pfac, pfacd, pir, pipr, flux, pi, pia)       \
+#       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv,    \
+                                        flui, fluj, pfac, pfacd, pir, pipr, \
+                                        flux, pi, pia)                      \
                    if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -3128,7 +3165,8 @@ cs_convection_diffusion_vector(
 
                 /*coefu and cofuf are matrices */
                 for (jsou = 0; jsou < 3; jsou++) {
-                  pir  = pvar[ii][jsou]/relaxp - (1.-relaxp)/relaxp*pvara[ii][jsou];
+                  pir  =   pvar[ii][jsou]/relaxp
+                         - (1.-relaxp)/relaxp*pvara[ii][jsou];
 
                   pipr = pir +ircflp*( gradv[ii][jsou][0]*diipbv[0]
                                        + gradv[ii][jsou][1]*diipbv[1]
@@ -3159,9 +3197,10 @@ cs_convection_diffusion_vector(
 
                 /*coefu and cofuf are matrices */
                 for (jsou = 0; jsou < 3; jsou++) {
-                  pir  = pvar[ii][jsou]/relaxp - (1.-relaxp)/relaxp*pvara[ii][jsou];
+                  pir  =   pvar[ii][jsou]/relaxp
+                         - (1.-relaxp)/relaxp*pvara[ii][jsou];
 
-                  pipr = pir +ircflp*( gradv[ii][jsou][0]*diipbv[0]
+                  pipr = pir +ircflp*(   gradv[ii][jsou][0]*diipbv[0]
                                        + gradv[ii][jsou][1]*diipbv[1]
                                        + gradv[ii][jsou][2]*diipbv[2]);
                   pfac  = pfac + cofbcv[face_id][jsou][isou]*pipr;
@@ -3171,8 +3210,9 @@ cs_convection_diffusion_vector(
                 pi  = pvar[ii][isou];
                 pia = pvara[ii][isou];
 
-                flux = iconvp*( - b_massflux[face_id]*pi + pfac*icvfli[face_id])
-                  + idiffp*b_visc[face_id]*pfacd;
+                flux =   iconvp*( - b_massflux[face_id]*pi
+                                  + pfac*icvfli[face_id])
+                       + idiffp*b_visc[face_id]*pfacd;
                 rhs[ii][isou] = rhs[ii][isou] - flux;
 
               } /* isou */
@@ -3187,8 +3227,8 @@ cs_convection_diffusion_vector(
     } else {
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp for private(face_id, ii, isou, jsou, diipbv, flui, fluj, \
-                               pfac, pfacd, pip, flux, pi)                  \
+#       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv,        \
+                                        flui, fluj, pfac, pfacd, pip, flux, pi) \
                    if(m->n_b_faces > THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -3221,9 +3261,10 @@ cs_convection_diffusion_vector(
 
                 /*coefu and cofuf are matrices */
                 for (jsou = 0; jsou < 3; jsou++) {
-                  pip = pvar[ii][jsou] + ircflp*( gradv[ii][jsou][0]*diipbv[0]
-                                                  + gradv[ii][jsou][1]*diipbv[1]
-                                                  + gradv[ii][jsou][2]*diipbv[2]);
+                  pip =   pvar[ii][jsou]
+                        + ircflp*(  gradv[ii][jsou][0]*diipbv[0]
+                                  + gradv[ii][jsou][1]*diipbv[1]
+                                  + gradv[ii][jsou][2]*diipbv[2]);
                   pfac  = pfac  + coefbv[face_id][jsou][isou]*pip;
                   pfacd = pfacd + cofbfv[face_id][jsou][isou]*pip;
                 }
@@ -3248,9 +3289,10 @@ cs_convection_diffusion_vector(
 
                 /*coefu and cofuf are matrices */
                 for (jsou = 0; jsou < 3; jsou++) {
-                  pip = pvar[ii][jsou] + ircflp*( gradv[ii][jsou][0]*diipbv[0]
-                                                  + gradv[ii][jsou][1]*diipbv[1]
-                                                  + gradv[ii][jsou][2]*diipbv[2]);
+                  pip = pvar[ii][jsou]
+                        + ircflp*(  gradv[ii][jsou][0]*diipbv[0]
+                                  + gradv[ii][jsou][1]*diipbv[1]
+                                  + gradv[ii][jsou][2]*diipbv[2]);
                   pfac = pfac + cofbcv[face_id][jsou][isou]*pip;
                   pfacd = pfacd + cofbfv[face_id][jsou][isou]*pip;
                 }
@@ -3274,9 +3316,7 @@ cs_convection_diffusion_vector(
 
   }
 
-  /*===============================================================================
-    3.  Computation of the transpose grad(vel) term and grad(-2/3 div(vel))
-    ===============================================================================*/
+  /* 3. Computation of the transpose grad(vel) term and grad(-2/3 div(vel)) */
 
   if (ivisep == 1) {
 
@@ -3287,17 +3327,17 @@ cs_convection_diffusion_vector(
     /* Allocate a temporary array */
     BFT_MALLOC(bndcel, n_cells_ext, cs_real_t);
 
-#   pragma omp for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+#   pragma omp parallel for
+    for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
       bndcel[cell_id] = 1.;
-    }
 
-#   pragma omp for private(ityp) if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for private(ityp) if(m->n_b_faces > THR_MIN)
     for (face_id = 0; face_id < m->n_b_faces; face_id++) {
       ityp = bc_type[face_id];
-      if (ityp == CS_OUTLET
+      if (   ityp == CS_OUTLET
           || ityp == CS_INLET
-          || (ifaccp == 1 && ityp == CS_COUPLED)) bndcel[b_face_cells[face_id] - 1] = 0.;
+          || (ifaccp == 1 && ityp == CS_COUPLED))
+        bndcel[b_face_cells[face_id] - 1] = 0.;
     }
 
     if (halo != NULL)
@@ -3306,8 +3346,8 @@ cs_convection_diffusion_vector(
     /* ---> Interior faces */
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, isou, jsou, pnd, secvis, \
-                             visco, grdtrv, tgrdfl, flux)
+#     pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd, secvis, \
+                                      visco, grdtrv, tgrdfl, flux)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -3386,14 +3426,14 @@ cs_convection_diffusion_vector(
   - ischcp = 1: centred
 
 */
-/*-------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________*/
+ _____________________________________________ _______________________________*/
 /*!
  * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     ivar          index of the current variable
+ * \param[in]     f_id          index of the current variable
  * \param[in]     iconvp        indicator
  *                               - 1 convection,
  *                               - 0 sinon
@@ -3422,7 +3462,8 @@ cs_convection_diffusion_vector(
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
  * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix (for iterativ gradients)
+ *                               - 1 re-compute cocg matrix
+ *                                 (for iterative gradients)
  *                               - 0 otherwise
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
@@ -3443,6 +3484,7 @@ cs_convection_diffusion_vector(
  *                               - thetap = 1: implicit scheme
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     bc_type       boundary condition type
  * \param[in]     coefap        boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
@@ -3451,16 +3493,16 @@ cs_convection_diffusion_vector(
  *                               of the variable (Explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
- * \param[in]     flumas        mass flux at interior faces
- * \param[in]     flumab        mass flux at boundary faces
- * \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
- * \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_thermal(
@@ -3560,11 +3602,9 @@ cs_convection_diffusion_thermal(
   cs_real_3_t *grdpa;
   cs_field_t *f;
 
-  /*===============================================================================*/
+  /*==========================================================================*/
 
-  /*===============================================================================
-    1. Initialization
-    ===============================================================================*/
+  /* 1. Initialization */
 
   /* Allocate work arrays */
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
@@ -3588,35 +3628,32 @@ cs_convection_diffusion_thermal(
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
-      bft_printf(
-                 _(" %s : Convection in centered blending with %f percent of upwind\n"),
-                 var_name, (1.-blencp)*100.);
+      bft_printf
+        (
+         _(" %s: Convection in centered blending with %f percent of upwind\n"),
+         var_name, (1.-blencp)*100.);
     } else {
-      bft_printf(
-                 _(" %s : Convection in 2nd order blending with %f percent of upwind\n"),
-                 var_name, (1.-blencp)*100.);
+      bft_printf
+        (
+         _(" %s: Convection in 2nd order blending with %f percent of upwind\n"),
+         var_name, (1.-blencp)*100.);
     }
   }
 
-  iupwin = 0;
-  if (blencp == 0.)
-    iupwin = 1;
+  iupwin = (blencp > 0.) ? 0 : 1;
 
-  /*===============================================================================
-    2.  CALCUL DU BILAN AVEC TECHNIQUE DE RECONSTRUCTION
-    ===============================================================================*/
+  /* 2. Compute the balance with reconstruction technics */
 
-  /* ======================================================================
-     ---> CALCUL DU GRADIENT DE P
-     ======================================================================
-     GRAD sert a la fois pour la reconstruction des flux et pour le test
-     de pente. On doit donc le calculer :
-     - quand on a de la diffusion et qu'on reconstruit les flux
-     - quand on a de la convection SOLU
-     - quand on a de la convection, qu'on n'est pas en upwind pur
-     et qu'on reconstruit les flux
-     - quand on a de la convection, qu'on n'est pas en upwind pur
-     et qu'on n'a pas shunte le test de pente */
+  /* Compute the gradient of the variable
+
+     The gradient (grad) is used in the flux reconstruction and the slope test.
+     Thus we must compute it:
+         - when we have diffusion and we reconstruct the fluxes,
+         - when the convection scheme is SOLU,
+         - when we have convection, we are not in pure upwind
+           and we reconstruct the fluxes,
+         - when we have convection, we are not in pure upwind
+           and we have not shunted the slope test. */
 
   if (  (idiffp!=0 && ircflp==1)
         || (  iconvp!=0 && iupwin==0
@@ -3652,10 +3689,10 @@ cs_convection_diffusion_thermal(
   }
 
   /* ======================================================================
-     ---> CALCUL DU GRADIENT DECENTRE DPDXA, DPDYA, DPDZA POUR TST DE PENTE
+     ---> Compute uncentred gradient gradpa for the slope test
      ======================================================================*/
 
-# pragma omp for;
+# pragma omp parallel for
   for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     grdpa[cell_id][0] = 0.;
     grdpa[cell_id][1] = 0.;
@@ -3665,8 +3702,9 @@ cs_convection_diffusion_thermal(
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, difx, dify, difz, djfx, djfy, djfz, \
-                             pif, pjf, pfac, pfac1, pfac2, pfac3)
+#     pragma omp parallel for private(face_id, ii, jj, difx, dify, difz,  \
+                                      djfx, djfy, djfz, pif, pjf, pfac,   \
+                                      pfac1, pfac2, pfac3)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -3705,8 +3743,8 @@ cs_convection_diffusion_thermal(
     }
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for private(face_id, ii, diipbx, diipby, diipbz, pfac) \
-                 if(nfabor > THR_MIN)
+#     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, pfac) \
+                 if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -3727,7 +3765,7 @@ cs_convection_diffusion_thermal(
       }
     }
 
-#   pragma omp for private(unsvol);
+#   pragma omp parallel for private(unsvol)
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
       unsvol = 1./cell_vol[cell_id];
       grdpa[cell_id][0] = grdpa[cell_id][0]*unsvol;
@@ -3753,10 +3791,9 @@ cs_convection_diffusion_thermal(
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp for if(n_cells_ext - n_cells > THR_MIN);
-    for (cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
+#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+    for (cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++)
       rhs[cell_id] = 0.;
-    }
   }
 
   /* --> Pure upwind flux
@@ -3768,11 +3805,12 @@ cs_convection_diffusion_thermal(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                               diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
-                               dpxf, dpyf, dpzf, pip, pjp, pipr, pjpr,         \
-                               flui, fluj, pif, pjf, fluxi, fluxj,             \
-                               pi, pj, pir, pjr, pia, pja)                     \
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, diipfx, diipfy, diipfz, djjpfx,     \
+                                        djjpfy, djjpfz, dpxf, dpyf, dpzf,        \
+                                        pip, pjp, pipr, pjpr, flui, fluj,        \
+                                        pif, pjf, fluxi, fluxj,                  \
+                                        pi, pj, pir, pjr, pia, pja)              \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -3799,9 +3837,12 @@ cs_convection_diffusion_thermal(
 
             /* Recompute II' and JJ' at this level */
 
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -3828,10 +3869,12 @@ cs_convection_diffusion_thermal(
             pif  = pi;
             pjf  = pj;
 
-            fluxi = iconvp*xcpp[ii]*(flui*pir + fluj*pjf - i_massflux[face_id]*pi)
-              + idiffp*i_visc[face_id]*(pipr - pjp);
-            fluxj = iconvp*xcpp[jj]*(flui*pif + fluj*pjr - i_massflux[face_id]*pj)
-              + idiffp*i_visc[face_id]*(pip - pjpr);
+            fluxi =   iconvp*xcpp[ii]*(  flui*pir + fluj*pjf
+                                       - i_massflux[face_id]*pi)
+                    + idiffp*i_visc[face_id]*(pipr - pjp);
+            fluxj =   iconvp*xcpp[jj]*(flui*pif + fluj*pjr
+                                       - i_massflux[face_id]*pj)
+                    + idiffp*i_visc[face_id]*(pip - pjpr);
 
             rhs[ii] = rhs[ii] - fluxi;
             rhs[jj] = rhs[jj] + fluxj;
@@ -3844,10 +3887,11 @@ cs_convection_diffusion_thermal(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                               diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
-                               dpxf, dpyf, dpzf, pip, pjp, flui, fluj,         \
-                               pif, pjf, fluxi, fluxj, pi, pj)                 \
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, diipfx, diipfy, diipfz, djjpfx,     \
+                                        djjpfy, djjpfz, dpxf, dpyf, dpzf,        \
+                                        pip, pjp, flui, fluj, pif, pjf,          \
+                                        fluxi, fluxj, pi, pj)                    \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -3872,9 +3916,12 @@ cs_convection_diffusion_thermal(
 
             /* Recompute II' and JJ' at this level */
 
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -3892,10 +3939,12 @@ cs_convection_diffusion_thermal(
             pif = pi;
             pjf = pj;
 
-            fluxi = iconvp*xcpp[ii]*(flui*pif +fluj*pjf -i_massflux[face_id]*pi)
-              + idiffp*i_visc[face_id]*(pip -pjp);
-            fluxj = iconvp*xcpp[jj]*(flui*pif +fluj*pjf -i_massflux[face_id]*pj)
-              + idiffp*i_visc[face_id]*(pip -pjp);
+            fluxi =   iconvp*xcpp[ii]*(  flui*pif +fluj*pjf
+                                       - i_massflux[face_id]*pi)
+                    + idiffp*i_visc[face_id]*(pip -pjp);
+            fluxj =   iconvp*xcpp[jj]*(  flui*pif +fluj*pjf
+                                       - i_massflux[face_id]*pj)
+                    + idiffp*i_visc[face_id]*(pip -pjp);
 
             rhs[ii] = rhs[ii] - thetap * fluxi;
             rhs[jj] = rhs[jj] + thetap * fluxj;
@@ -3921,12 +3970,14 @@ cs_convection_diffusion_thermal(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                               diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
-                               dpxf, dpyf, dpzf, pip, pjp, pipr, pjpr, flui,   \
-                               fluj, pir, pjr, pifri, pjfri, pifrj, pjfrj,     \
-                               difx, dify, difz, djfx, djfy, djfz,             \
-                               fluxi, fluxj, pi, pj, pia, pja)
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, diipfx, diipfy, diipfz, djjpfx,     \
+                                        djjpfy, djjpfz, dpxf, dpyf, dpzf,        \
+                                        pip, pjp, pipr, pjpr, flui,              \
+                                        fluj, pir, pjr, pifri, pjfri,            \
+                                        pifrj, pjfrj,                            \
+                                        difx, dify, difz, djfx, djfy, djfz,      \
+                                        fluxi, fluxj, pi, pj, pia, pja)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -3948,9 +3999,12 @@ cs_convection_diffusion_thermal(
 
             /* Recompute II' and JJ' at this level */
 
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =  i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -4016,10 +4070,12 @@ cs_convection_diffusion_thermal(
             /* Flux
                ----*/
 
-            fluxi =   iconvp*xcpp[ii]*(flui*pifri + fluj*pjfri - i_massflux[face_id]*pi)
-              + idiffp*i_visc[face_id]*(pipr -pjp);
-            fluxj =   iconvp*xcpp[jj]*(flui*pifrj + fluj*pjfrj - i_massflux[face_id]*pj)
-              + idiffp*i_visc[face_id]*(pip -pjpr);
+            fluxi =   iconvp*xcpp[ii]*(  flui*pifri + fluj*pjfri
+                                       - i_massflux[face_id]*pi)
+                    + idiffp*i_visc[face_id]*(pipr -pjp);
+            fluxj =   iconvp*xcpp[jj]*(  flui*pifrj + fluj*pjfrj
+                                       - i_massflux[face_id]*pj)
+                    + idiffp*i_visc[face_id]*(pip -pjpr);
 
             /* Assembly
                --------*/
@@ -4035,11 +4091,12 @@ cs_convection_diffusion_thermal(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                               diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
-                               dpxf, dpyf, dpzf, pip, pjp, flui, fluj, pif,    \
-                               pjf, difx, dify, difz, djfx, djfy, djfz, fluxi, \
-                               fluxj, pi, pj)
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, diipfx, diipfy, diipfz, djjpfx,     \
+                                        djjpfy, djjpfz, dpxf, dpyf, dpzf,        \
+                                        pip, pjp, flui, fluj, pif, pjf,          \
+                                        difx, dify, difz, djfx, djfy, djfz,      \
+                                        fluxi, fluxj, pi, pj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -4112,10 +4169,12 @@ cs_convection_diffusion_thermal(
             /* Flux
                ----*/
 
-            fluxi = iconvp*xcpp[ii]*(flui*pif +fluj*pjf - i_massflux[face_id]*pi)
-              + idiffp*i_visc[face_id]*(pip -pjp);
-            fluxj = iconvp*xcpp[jj]*(flui*pif +fluj*pjf - i_massflux[face_id]*pj)
-              + idiffp*i_visc[face_id]*(pip -pjp);
+            fluxi =   iconvp*xcpp[ii]*(  flui*pif +fluj*pjf
+                                      - i_massflux[face_id]*pi)
+                    + idiffp*i_visc[face_id]*(pip -pjp);
+            fluxj =   iconvp*xcpp[jj]*(  flui*pif +fluj*pjf
+                                       - i_massflux[face_id]*pj)
+                    + idiffp*i_visc[face_id]*(pip -pjp);
 
             /* Assembly
                --------*/
@@ -4143,13 +4202,15 @@ cs_convection_diffusion_thermal(
     if (idtvar < 0) {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd,   \
-                               distf, srfan, diipfx, diipfy, diipfz, djjpfx,   \
-                               djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,     \
-                               pipr, pjpr, flui, fluj, pir, pjr, testi, testj, \
-                               testij, dcc, ddi, ddj, tesqck, pifri, pjfri,    \
-                               pifrj, pjfrj, difx, dify, difz, djfx, djfy,     \
-                               djfz, fluxi, fluxj, pi, pj, pia, pja)           \
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy,        \
+                                        dijpfz, pnd, distf, srfan, diipfx,      \
+                                        diipfy, diipfz, djjpfx, djjpfy, djjpfz, \
+                                        dpxf, dpyf, dpzf, pip, pjp, pipr, pjpr, \
+                                        flui, fluj, pir, pjr, testi, testj,     \
+                                        testij, dcc, ddi, ddj, tesqck, pifri,   \
+                                        pjfri, pifrj, pjfrj, difx, dify, difz,  \
+                                        djfx, djfy, djfz, fluxi, fluxj, pi, pj, \
+                                        pia, pja)                               \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -4173,9 +4234,12 @@ cs_convection_diffusion_thermal(
             pja = pvara[jj];
 
             /* Recompute II' and JJ' at this level */
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -4202,21 +4266,26 @@ cs_convection_diffusion_thermal(
             /* Slope test
                ----------*/
 
-            testi =   grdpa[ii][0]*i_face_normal[face_id][0] + grdpa[ii][1]*i_face_normal[face_id][1]
-              + grdpa[ii][2]*i_face_normal[face_id][2];
-            testj =   grdpa[jj][0]*i_face_normal[face_id][0] + grdpa[jj][1]*i_face_normal[face_id][1]
-              + grdpa[jj][2]*i_face_normal[face_id][2];
-            testij=   grdpa[ii][0]*grdpa[jj][0]      + grdpa[ii][1]*grdpa[jj][1]
-              + grdpa[ii][2]*grdpa[jj][2];
+            testi =   grdpa[ii][0]*i_face_normal[face_id][0]
+                    + grdpa[ii][1]*i_face_normal[face_id][1]
+                    + grdpa[ii][2]*i_face_normal[face_id][2];
+            testj =   grdpa[jj][0]*i_face_normal[face_id][0]
+                    + grdpa[jj][1]*i_face_normal[face_id][1]
+                    + grdpa[jj][2]*i_face_normal[face_id][2];
+            testij=   grdpa[ii][0]*grdpa[jj][0]
+                    + grdpa[ii][1]*grdpa[jj][1]
+                    + grdpa[ii][2]*grdpa[jj][2];
 
             if (i_massflux[face_id] > 0.) {
-              dcc =   grad[ii][0]*i_face_normal[face_id][0] +grad[ii][1]*i_face_normal[face_id][1]
-                + grad[ii][2]*i_face_normal[face_id][2];
+              dcc =   grad[ii][0]*i_face_normal[face_id][0]
+                    + grad[ii][1]*i_face_normal[face_id][1]
+                    + grad[ii][2]*i_face_normal[face_id][2];
               ddi = testi;
               ddj = (pj-pi)/distf *srfan;
             } else {
-              dcc =   grad[jj][0]*i_face_normal[face_id][0] +grad[jj][1]*i_face_normal[face_id][1]
-                + grad[jj][2]*i_face_normal[face_id][2];
+              dcc =   grad[jj][0]*i_face_normal[face_id][0]
+                    + grad[jj][1]*i_face_normal[face_id][1]
+                    + grad[jj][2]*i_face_normal[face_id][2];
               ddi = (pj-pi)/distf *srfan;
               ddj = testj;
             }
@@ -4262,10 +4331,18 @@ cs_convection_diffusion_thermal(
 
                 /* leave reconstruction of PIF and PJF even if IRCFLP=0
                    otherwise, it is the same as using upwind */
-                pifri = pir + difx*grad[ii][0]+dify*grad[ii][1]+difz*grad[ii][2];
-                pifrj = pi + difx*grad[ii][0]+dify*grad[ii][1]+difz*grad[ii][2];
-                pjfrj = pjr + djfx*grad[jj][0]+djfy*grad[jj][1]+djfz*grad[jj][2];
-                pjfri = pj + djfx*grad[jj][0]+djfy*grad[jj][1]+djfz*grad[jj][2];
+                pifri = pir + difx*grad[ii][0]
+                            + dify*grad[ii][1]
+                            + difz*grad[ii][2];
+                pifrj = pi  + difx*grad[ii][0]
+                            + dify*grad[ii][1]
+                            + difz*grad[ii][2];
+                pjfrj = pjr + djfx*grad[jj][0]
+                            + djfy*grad[jj][1]
+                            + djfz*grad[jj][2];
+                pjfri = pj  + djfx*grad[jj][0]
+                            + djfy*grad[jj][1]
+                            + djfz*grad[jj][2];
 
               }
 
@@ -4282,10 +4359,12 @@ cs_convection_diffusion_thermal(
             /* Flux
                ----*/
 
-            fluxi = iconvp*xcpp[ii]*(flui*pifri + fluj*pjfri - i_massflux[face_id]*pi)
-              + idiffp*i_visc[face_id]*(pipr -pjp);
-            fluxj = iconvp*xcpp[jj]*(flui*pifrj + fluj*pjfrj - i_massflux[face_id]*pj)
-              + idiffp*i_visc[face_id]*(pip -pjpr);
+            fluxi =   iconvp*xcpp[ii]*(  flui*pifri + fluj*pjfri
+                                       - i_massflux[face_id]*pi)
+                    + idiffp*i_visc[face_id]*(pipr -pjp);
+            fluxj =   iconvp*xcpp[jj]*(  flui*pifrj + fluj*pjfrj
+                                       - i_massflux[face_id]*pj)
+                    + idiffp*i_visc[face_id]*(pip -pjpr);
 
             /* Assembly
                --------*/
@@ -4301,12 +4380,13 @@ cs_convection_diffusion_thermal(
     } else {
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, pnd, \
-                               distf, srfan, diipfx, diipfy, diipfz, djjpfx, \
-                               djjpfy, djjpfz, dpxf, dpyf, dpzf, pip, pjp,   \
-                               flui, fluj, testi, testj, testij, dcc, ddi,   \
-                               ddj, tesqck, pif, pjf, difx, dify, difz,      \
-                               djfx, djfy, djfz, fluxi, fluxj, pi, pj)       \
+#       pragma omp parallel for private(face_id, ii, jj, dijpfx, dijpfy, dijpfz, \
+                                        pnd, distf, srfan, diipfx, diipfy,       \
+                                        diipfz, djjpfx, djjpfy, djjpfz,          \
+                                        dpxf, dpyf, dpzf, pip, pjp, flui, fluj,  \
+                                        testi, testj, testij, dcc, ddi, ddj,     \
+                                        tesqck, pif, pjf, difx, dify, difz,      \
+                                        djfx, djfy, djfz, fluxi, fluxj, pi, pj)  \
                    reduction(+:n_upwind)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -4329,9 +4409,12 @@ cs_convection_diffusion_thermal(
 
             /* Recompute II' and JJ' at this level */
 
-            diipfx = i_face_cog[face_id][0] - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
-            diipfy = i_face_cog[face_id][1] - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
-            diipfz = i_face_cog[face_id][2] - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
+            diipfx =   i_face_cog[face_id][0]
+                     - (cell_cen[ii][0] + (1.-pnd) * dijpfx);
+            diipfy =   i_face_cog[face_id][1]
+                     - (cell_cen[ii][1] + (1.-pnd) * dijpfy);
+            diipfz =   i_face_cog[face_id][2]
+                     - (cell_cen[ii][2] + (1.-pnd) * dijpfz);
             djjpfx = i_face_cog[face_id][0] -  cell_cen[jj][0] + pnd * dijpfx;
             djjpfy = i_face_cog[face_id][1] -  cell_cen[jj][1] + pnd * dijpfy;
             djjpfz = i_face_cog[face_id][2] -  cell_cen[jj][2] + pnd * dijpfz;
@@ -4349,21 +4432,26 @@ cs_convection_diffusion_thermal(
             /* Slope test
                ----------*/
 
-            testi =   grdpa[ii][0]*i_face_normal[face_id][0] + grdpa[ii][1]*i_face_normal[face_id][1]
-              + grdpa[ii][2]*i_face_normal[face_id][2];
-            testj =   grdpa[jj][0]*i_face_normal[face_id][0] + grdpa[jj][1]*i_face_normal[face_id][1]
-              + grdpa[jj][2]*i_face_normal[face_id][2];
-            testij =   grdpa[ii][0]*grdpa[jj][0]    + grdpa[ii][1]*grdpa[jj][1]
-              + grdpa[ii][2]*grdpa[jj][2];
+            testi =   grdpa[ii][0]*i_face_normal[face_id][0]
+                    + grdpa[ii][1]*i_face_normal[face_id][1]
+                    + grdpa[ii][2]*i_face_normal[face_id][2];
+            testj =   grdpa[jj][0]*i_face_normal[face_id][0]
+                    + grdpa[jj][1]*i_face_normal[face_id][1]
+                    + grdpa[jj][2]*i_face_normal[face_id][2];
+            testij =   grdpa[ii][0]*grdpa[jj][0]
+                     + grdpa[ii][1]*grdpa[jj][1]
+                     + grdpa[ii][2]*grdpa[jj][2];
 
             if (i_massflux[face_id] > 0.) {
-              dcc =   grad[ii][0]*i_face_normal[face_id][0] + grad[ii][1]*i_face_normal[face_id][1]
-                + grad[ii][2]*i_face_normal[face_id][2];
+              dcc =   grad[ii][0]*i_face_normal[face_id][0]
+                    + grad[ii][1]*i_face_normal[face_id][1]
+                    + grad[ii][2]*i_face_normal[face_id][2];
               ddi = testi;
               ddj = (pj-pi)/distf *srfan;
             } else {
-              dcc =   grad[jj][0]*i_face_normal[face_id][0] + grad[jj][1]*i_face_normal[face_id][1]
-                + grad[jj][2]*i_face_normal[face_id][2];
+              dcc =   grad[jj][0]*i_face_normal[face_id][0]
+                    + grad[jj][1]*i_face_normal[face_id][1]
+                    + grad[jj][2]*i_face_normal[face_id][2];
               ddi = (pj-pi)/distf *srfan;
               ddj = testj;
             }
@@ -4421,10 +4509,12 @@ cs_convection_diffusion_thermal(
             /* Flux
                ----*/
 
-            fluxi = iconvp*xcpp[ii]*(flui*pif + fluj*pjf - i_massflux[face_id]*pi)
-              + idiffp*i_visc[face_id]*(pip-pjp);
-            fluxj = iconvp*xcpp[jj]*(flui*pif + fluj*pjf - i_massflux[face_id]*pj)
-              + idiffp*i_visc[face_id]*(pip-pjp);
+            fluxi =   iconvp*xcpp[ii]*(  flui*pif + fluj*pjf
+                                       - i_massflux[face_id]*pi)
+                    + idiffp*i_visc[face_id]*(pip-pjp);
+            fluxj =   iconvp*xcpp[jj]*(  flui*pif + fluj*pjf
+                                       - i_massflux[face_id]*pj)
+                    + idiffp*i_visc[face_id]*(pip-pjp);
 
             /* Assembly
                --------*/
@@ -4457,7 +4547,7 @@ cs_convection_diffusion_thermal(
     }
 #endif
 
-    bft_printf(_(" %s : %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_faces);
   }
@@ -4470,9 +4560,10 @@ cs_convection_diffusion_thermal(
   if (idtvar < 0) {
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for private(face_id, ii, diipbx, diipby, diipbz, flui, fluj, \
-                             pir, pipr, pfac, pfacd, flux, pi, pia)           \
-                 if(nfabor > THR_MIN)
+#     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,     \
+                                      flui, fluj, pir, pipr, pfac, pfacd,      \
+                                      flux, pi, pia)                           \
+                 if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -4515,9 +4606,9 @@ cs_convection_diffusion_thermal(
   } else {
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for private(face_id, ii, diipbx, diipby, diipbz, flui, fluj, \
-                             pip, pfac, pfacd, flux, pi)                      \
-                 if(nfabor > THR_MIN)
+#     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,     \
+                                      flui, fluj, pip, pfac, pfacd, flux, pi)  \
+                 if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -4562,7 +4653,7 @@ cs_convection_diffusion_thermal(
 
 }
 
-/*-------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------*/
 
 /*! \brief This function adds the explicit part of the diffusion
   terms with a symmetric tensor diffusivity for a transport equation of a
@@ -4580,14 +4671,14 @@ cs_convection_diffusion_thermal(
   - mind the sign minus
 
 */
-/*-------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- ______________________________________________________________________________*/
+ _____________________________________________________________________________*/
 /*!
  * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     ivar          index of the current variable
+ * \param[in]     f_id          index of the current variable
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -4633,14 +4724,14 @@ cs_convection_diffusion_thermal(
  *                               of the variable (Explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
- * \param[in]     viscf         \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
- * \param[in]     viscb         \f$ \dfrac{S_\fib}{\ipf \centf} \f$
+ * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_tensorial_diffusion_vector(
@@ -4720,9 +4811,7 @@ cs_tensorial_diffusion_vector(
 
   cs_field_t *f;
 
-  /*===============================================================================
-    1. Initialization
-    ===============================================================================*/
+  /* 1. Initialization */
 
   /* Allocate work arrays */
   BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
@@ -4743,13 +4832,9 @@ cs_tensorial_diffusion_vector(
   else
     snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
 
-  /*===============================================================================
-    2. Compute the diffusive part with reconstruction technics
-    ===============================================================================*/
+  /* 2. Compute the diffusive part with reconstruction technics */
 
-  /* ======================================================================
-     ---> Compute the gradient of the current variable if needed
-     ======================================================================*/
+  /* Compute the gradient of the current variable if needed */
 
   if (ircflp == 1 || ivisep == 1) {
 
@@ -4768,12 +4853,11 @@ cs_tensorial_diffusion_vector(
                        gradv);
 
   } else {
-#   pragma omp for private(isou, jsou);
+#   pragma omp parallel for private(isou, jsou)
     for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (isou = 0; isou < 3 ; isou++) {
-        for (jsou = 0; jsou < 3; jsou++) {
+        for (jsou = 0; jsou < 3; jsou++)
           gradv[cell_id][isou][jsou] = 0.;
-        }
       }
     }
   }
@@ -4785,7 +4869,7 @@ cs_tensorial_diffusion_vector(
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp for private(isou) if(n_cells_ext -n_cells > THR_MIN);
+#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (isou = 0; isou < 3; isou++) {
         rhs[cell_id][isou] = 0.;
@@ -4797,10 +4881,10 @@ cs_tensorial_diffusion_vector(
   if (idtvar < 0) {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, isou, jsou, pnd, dijpfv, \
-                             diipfv, djjpfv, dpvf, pi, pj,             \
-                             pia, pja, pip, pjp, pipr, pjpr,           \
-                             fluxi, fluxj)                             \
+#     pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,     \
+                                      dijpfv, diipfv, djjpfv, dpvf, pi, pj, \
+                                      pia, pja, pip, pjp, pipr, pjpr,       \
+                                      fluxi, fluxj)                         \
                  reduction(+:n_upwind)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -4823,10 +4907,10 @@ cs_tensorial_diffusion_vector(
 
           /* Recompute II' and JJ' at this level */
           for (jsou = 0; jsou < 3; jsou++) {
-            diipfv[jsou] =   i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                       + (1.-pnd) * dijpfv[jsou]);
-            djjpfv[jsou] =   i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                                                       + pnd  * dijpfv[jsou];
+            diipfv[jsou] =   i_face_cog[face_id][jsou]
+                           - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+            djjpfv[jsou] =   i_face_cog[face_id][jsou]
+                           - cell_cen[jj][jsou]  + pnd  * dijpfv[jsou];
           }
 
           /*-----------------
@@ -4844,21 +4928,21 @@ cs_tensorial_diffusion_vector(
             pja = pvara[jj][isou];
 
             /* reconstruction only if IRCFLP = 1 */
-            pip[isou] = pi + ircflp*(dpvf[0]*diipfv[0]
-                                    +dpvf[1]*diipfv[1]
-                                    +dpvf[2]*diipfv[2]);
-            pjp[isou] = pj + ircflp*(dpvf[0]*djjpfv[0]
-                                    +dpvf[1]*djjpfv[1]
-                                    +dpvf[2]*djjpfv[2]);
+            pip[isou] = pi + ircflp*(  dpvf[0]*diipfv[0]
+                                     + dpvf[1]*diipfv[1]
+                                     + dpvf[2]*diipfv[2]);
+            pjp[isou] = pj + ircflp*(  dpvf[0]*djjpfv[0]
+                                     + dpvf[1]*djjpfv[1]
+                                     + dpvf[2]*djjpfv[2]);
 
             pipr[isou] = pi /relaxp - (1.-relaxp)/relaxp * pia
-              + ircflp*(dpvf[0]*diipfv[0]
-                       +dpvf[1]*diipfv[1]
-                       +dpvf[2]*diipfv[2]);
+                         + ircflp*(  dpvf[0]*diipfv[0]
+                                   + dpvf[1]*diipfv[1]
+                                   + dpvf[2]*diipfv[2]);
             pjpr[isou] = pj /relaxp - (1.-relaxp)/relaxp * pja
-              + ircflp*(dpvf[0]*djjpfv[0]
-                       +dpvf[1]*djjpfv[1]
-                       +dpvf[2]*djjpfv[2]);
+                         + ircflp*(  dpvf[0]*djjpfv[0]
+                                   + dpvf[1]*djjpfv[1]
+                                   + dpvf[2]*djjpfv[2]);
 
           }
 
@@ -4884,9 +4968,9 @@ cs_tensorial_diffusion_vector(
   } else {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, isou, jsou, pnd, dijpfv, \
-                             diipfv, djjpfv, dpvf, pi, pj,             \
-                             pip, pjp, flux)                           \
+#     pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd, dijpfv,\
+                                      diipfv, djjpfv, dpvf, pi, pj,            \
+                                      pip, pjp, flux)                          \
                  reduction(+:n_upwind)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -4909,10 +4993,10 @@ cs_tensorial_diffusion_vector(
 
           /* Recompute II' and JJ' at this level */
           for (jsou = 0; jsou < 3; jsou++) {
-            diipfv[jsou] =   i_face_cog[face_id][jsou] - (cell_cen[ii][jsou]
-                                                       + (1.-pnd) * dijpfv[jsou]);
-            djjpfv[jsou] =   i_face_cog[face_id][jsou] -  cell_cen[jj][jsou]
-                                                       +  pnd * dijpfv[jsou];
+            diipfv[jsou] =   i_face_cog[face_id][jsou]
+                           - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
+            djjpfv[jsou] =   i_face_cog[face_id][jsou]
+                           - cell_cen[jj][jsou]  +  pnd * dijpfv[jsou];
           }
 
           /*-----------------
@@ -4926,12 +5010,12 @@ cs_tensorial_diffusion_vector(
             pi = pvar[ii][isou];
             pj = pvar[jj][isou];
 
-            pip[isou] = pi + ircflp*(dpvf[0]*diipfv[0]
-                                    +dpvf[1]*diipfv[1]
-                                    +dpvf[2]*diipfv[2]);
-            pjp[isou] = pj + ircflp*(dpvf[0]*djjpfv[0]
-                                    +dpvf[1]*djjpfv[1]
-                                    +dpvf[2]*djjpfv[2]);
+            pip[isou] = pi + ircflp*(  dpvf[0]*diipfv[0]
+                                     + dpvf[1]*diipfv[1]
+                                     + dpvf[2]*diipfv[2]);
+            pjp[isou] = pj + ircflp*(  dpvf[0]*djjpfv[0]
+                                     + dpvf[1]*djjpfv[1]
+                                     + dpvf[2]*djjpfv[2]);
 
           }
 
@@ -4960,9 +5044,9 @@ cs_tensorial_diffusion_vector(
   if (idtvar < 0) {
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for private(face_id, ii, isou, jsou, diipbv, \
-                             pfacd, pir, pipr, flux)          \
-                 if(nfabor > THR_MIN)
+#     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
+                                      pfacd, pir, pipr, flux)          \
+                 if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -4970,9 +5054,8 @@ cs_tensorial_diffusion_vector(
 
           ii = b_face_cells[face_id] - 1;
 
-          for (jsou = 0; jsou < 3; jsou++) {
+          for (jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
-          }
 
           /*-----------------
             X-Y-Z components, p=u, v, w */
@@ -4984,9 +5067,9 @@ cs_tensorial_diffusion_vector(
             for (jsou = 0; jsou < 3; jsou++) {
               pir  = pvar[ii][jsou]/relaxp - (1.-relaxp)/relaxp*pvara[ii][jsou];
 
-              pipr[jsou] = pir +ircflp*( gradv[ii][jsou][0]*diipbv[0]
-                                       + gradv[ii][jsou][1]*diipbv[1]
-                                       + gradv[ii][jsou][2]*diipbv[2]);
+              pipr[jsou] = pir +ircflp*(  gradv[ii][jsou][0]*diipbv[0]
+                                        + gradv[ii][jsou][1]*diipbv[1]
+                                        + gradv[ii][jsou][2]*diipbv[2]);
               pfacd = pfacd + cofbfv[face_id][jsou][isou]*pipr[jsou];
             }
 
@@ -5003,9 +5086,9 @@ cs_tensorial_diffusion_vector(
   } else {
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp for private(face_id, ii, isou, jsou, diipbv, \
-                             pfacd, pir, flux, pi)            \
-                 if(nfabor > THR_MIN)
+#     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
+                                      pfacd, pir, flux, pi)            \
+                 if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -5013,9 +5096,8 @@ cs_tensorial_diffusion_vector(
 
           ii = b_face_cells[face_id] - 1;
 
-          for (jsou = 0; jsou < 3; jsou++) {
+          for (jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
-          }
 
           /*-----------------
             X-Y-Z components, p=u, v, w */
@@ -5025,9 +5107,9 @@ cs_tensorial_diffusion_vector(
 
             /*coefu and cofuf are matrices */
             for (jsou = 0; jsou < 3; jsou++) {
-              pir = pvar[ii][jsou] + ircflp*( gradv[ii][jsou][0]*diipbv[0]
-                                            + gradv[ii][jsou][1]*diipbv[1]
-                                            + gradv[ii][jsou][2]*diipbv[2]);
+              pir = pvar[ii][jsou] + ircflp*(  gradv[ii][jsou][0]*diipbv[0]
+                                             + gradv[ii][jsou][1]*diipbv[1]
+                                             + gradv[ii][jsou][2]*diipbv[2]);
               pfacd = pfacd + cofbfv[face_id][jsou][isou]*pir;
             }
 
@@ -5042,9 +5124,7 @@ cs_tensorial_diffusion_vector(
 
   } /* idtvar */
 
-  /*===============================================================================
-    3.  Computation of the transpose grad(vel) term and grad(-2/3 div(vel))
-    ===============================================================================*/
+  /* 3. Computation of the transpose grad(vel) term and grad(-2/3 div(vel)) */
 
   if (ivisep == 1) {
 
@@ -5055,12 +5135,12 @@ cs_tensorial_diffusion_vector(
     /* Allocate a temporary array */
     BFT_MALLOC(bndcel, n_cells_ext, cs_real_t);
 
-#   pragma omp for
+#   pragma omp parallel for
     for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       bndcel[cell_id] = 1.;
     }
 
-#   pragma omp for private(ityp) if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for private(ityp) if(m->n_b_faces > THR_MIN)
     for (face_id = 0; face_id < m->n_b_faces; face_id++) {
       ityp = bc_type[face_id];
       if (   ityp == CS_OUTLET
@@ -5076,8 +5156,8 @@ cs_tensorial_diffusion_vector(
     /* ---> Interior faces */
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp for private(face_id, ii, jj, isou, jsou, pnd, secvis, \
-                             grdtrv, tgrdfl, flux, i, j, k)
+#     pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd, secvis,\
+                                      grdtrv, flux, i, j, k)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
         for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
