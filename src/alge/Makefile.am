@@ -58,6 +58,7 @@ pkginclude_HEADERS = \
 cs_benchmark.h \
 cs_blas.h \
 cs_convection_diffusion_balance.h \
+cs_finite_volume_operators.h \
 cs_gradient.h \
 cs_gradient_perio.h \
 cs_grid.h \
@@ -80,6 +81,7 @@ libcsalge_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
 cs_convection_diffusion_balance.c \
+cs_finite_volume_operators.c \
 cs_gradient.c \
 cs_gradient_perio.c \
 cs_grid.c \
@@ -91,7 +93,6 @@ cs_sles.c \
 bilsca.f90 \
 bilscv.f90 \
 diften.f90 \
-divmas.f90 \
 divrij.f90 \
 grdcel.f90 \
 grdpre.f90 \
@@ -100,13 +101,9 @@ grdpot.f90 \
 inimas.f90 \
 inimav.f90 \
 invers.f90 \
-itrgrp.f90 \
 itrgrv.f90 \
-itrmas.f90 \
 itrmav.f90 \
 prodsc.f90 \
-projts.f90 \
-projtv.f90 \
 viscfa.f90 \
 visort.f90 \
 vitens.f90 \

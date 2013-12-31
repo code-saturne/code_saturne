@@ -1,5 +1,5 @@
 /*============================================================================
- * Explicit matrix building
+ * Matrix building
  *============================================================================*/
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
