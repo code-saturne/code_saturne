@@ -141,6 +141,7 @@ _check_bounding_boxes(const char        *halo_type,
                   "and     cell %ld with:\n"
                   "  bounding box min:  [%12.6g %12.6g %12.6g]\n"
                   "               max:  [%12.6g %12.6g %12.6g]"),
+                halo_type,
                 (long)cell_id1+1,
                 emin[cell_id1][0], emin[cell_id1][1], emin[cell_id1][2],
                 emax[cell_id1][0], emax[cell_id1][1], emax[cell_id1][2],
