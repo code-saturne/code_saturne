@@ -9154,7 +9154,7 @@ msgid ""
 "  Global number of single vertices found: %6llu\n"
 msgstr ""
 "\n"
-"  Nombre global de sommets solitaires repéréss : %6llu\n"
+"  Nombre global de sommets solitaires repérés : %6llu\n"
 
 #, c-format
 msgid "  Global number of single edges found:    %6llu\n"
