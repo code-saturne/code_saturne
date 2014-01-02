@@ -3963,7 +3963,7 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
 
   coarse_cell = c->coarse_cell;
 
-# pragma omp parallel for if(c_n_cells_ext > THR_MIN)
+# pragma omp parallel for private(i) if(c_n_cells_ext > THR_MIN)
   for (ii = 0; ii < c_n_cells_ext; ii++)
     for (i = 0; i < db_size[0]; i++)
       c_var[ii*db_size[1]+i] = 0.;
@@ -4111,7 +4111,7 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
 
   coarse_cell = c->coarse_cell;
 
-# pragma omp parallel for if(f_n_cells > THR_MIN)
+# pragma omp parallel for private(i) if(f_n_cells > THR_MIN)
   for (ii = 0; ii < f_n_cells; ii++)
     for (i = 0; i < db_size[0]; i++)
       f_var[ii*db_size[1]+i] = _c_var[(coarse_cell[ii]-1)*db_size[1]+i];

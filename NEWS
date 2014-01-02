@@ -1,6 +1,11 @@
 Release 3.0.4 (unreleased)
 ==========================
 
+Bug fixes:
+----------
+
+- Fix some OpenMP directives leading to possible crash.
+
 Release 3.0.3 (11 Dec 2013)
 ===========================
 
