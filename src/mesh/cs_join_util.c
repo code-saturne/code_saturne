@@ -479,6 +479,7 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
  *   count          <-> counter buffer (0: not selected, 1 otherwise)
  *   related_ranks  <-> rank associated to each single vertex (size: var_size)
  *   single         <-> data about the distribution of single vertices
+ *   verbosity      <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 static void
@@ -486,7 +487,8 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
                      cs_lnum_t            var_size,
                      cs_lnum_t           *count,
                      cs_lnum_t           *related_ranks,
-                     cs_join_sync_t      *single)
+                     cs_join_sync_t      *single,
+                     int                  verbosity)
 {
   int  distant_rank, n_interfaces, last_found_rank;
   cs_lnum_t  id, ii;
@@ -612,27 +614,27 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
 
   BFT_FREE(buf);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
- {
-   int  i, j;
+  if (cs_glob_join_log != NULL && verbosity > 3) {
+    int  i, j;
+    FILE  *logfile = cs_glob_join_log;
 
-    bft_printf("\n  Single vertices for the joining operation: (%p)\n",
-               single);
-    bft_printf("  Single vertices: n_elts : %8d\n"
-               "  Single vertices: n_ranks: %8d\n",
-               single->n_elts, single->n_ranks);
+    fprintf(logfile,
+            "\n  Single vertices for the joining operation: (%p)\n",
+            (void *)single);
+    fprintf(logfile,
+            "  Single vertices: n_elts : %8d\n"
+            "  Single vertices: n_ranks: %8d\n",
+            single->n_elts, single->n_ranks);
 
     if (single->n_elts > 0) {
       for (i = 0; i < single->n_ranks; i++)
         for (j = single->index[i]; j < single->index[i+1]; j++)
-          bft_printf(" %9d | %6d | %9d\n",
+          fprintf(logfile, " %9d | %6d | %9d\n",
                      j, single->ranks[i], single->array[j]);
-      bft_printf("\n");
+      fprintf(logfile, "\n");
     }
-    bft_printf_flush();
-
- }
-#endif
+    fflush(logfile);
+  }
 
 }
 
@@ -641,17 +643,19 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
  * Use a cs_interface_t structure to help the build.
  *
  * parameters:
- *  interfaces     --> pointer to a cs_interface_set_t structure
- *  var_size       --> number of elements in var buffer
- *  related_ranks  <-> rank buffer for synchronization
- *  coupled        <-> pointer to a structure to build on coupled vertices
+ *   interfaces     --> pointer to a cs_interface_set_t structure
+ *   var_size       --> number of elements in var buffer
+ *   related_ranks  <-> rank buffer for synchronization
+ *   coupled        <-> pointer to a structure to build on coupled vertices
+ *   verbosity      <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 static void
 _add_coupled_vertices(cs_interface_set_t  *interfaces,
                       cs_lnum_t            var_size,
                       int                 *related_ranks,
-                      cs_join_sync_t      *coupled)
+                      cs_join_sync_t      *coupled,
+                      int                  verbosity)
 {
   int  distant_rank, n_interfaces, last_found_rank;
   cs_lnum_t id, ii;
@@ -766,27 +770,29 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
 
   BFT_FREE(buf);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  {
-   int  i, j;
+  if (cs_glob_join_log != NULL && verbosity > 3) {
 
-   bft_printf("\n  Coupled vertices for the joining operation: (%p)\n",
-              coupled);
-   bft_printf("  Coupled vertices: n_elts : %8d\n"
-              "  Coupled vertices: n_ranks: %8d\n",
-              coupled->n_elts, coupled->n_ranks);
+    int  i, j;
+    FILE  *logfile = cs_glob_join_log;
 
-   if (coupled->n_elts > 0) {
-     for (i = 0; i < coupled->n_ranks; i++)
-       for (j = coupled->index[i]; j < coupled->index[i+1]; j++)
-         bft_printf(" %9d | %6d | %9d\n",
-                    j, coupled->ranks[i], coupled->array[j]);
-     bft_printf("\n");
+    fprintf(logfile, "\n  Coupled vertices for the joining operation: (%p)\n",
+            (void *)coupled);
+    fprintf(logfile,
+            "  Coupled vertices: n_elts : %8d\n"
+            "  Coupled vertices: n_ranks: %8d\n",
+            coupled->n_elts, coupled->n_ranks);
+
+    if (coupled->n_elts > 0) {
+      for (i = 0; i < coupled->n_ranks; i++)
+        for (j = coupled->index[i]; j < coupled->index[i+1]; j++)
+          fprintf(logfile, " %9d | %6d | %9d\n",
+                  j, coupled->ranks[i], coupled->array[j]);
+      fprintf(logfile, "\n");
    }
-   bft_printf_flush();
+    fflush(logfile);
 
   }
-#endif
+
 }
 
 /*----------------------------------------------------------------------------
@@ -799,13 +805,15 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
  *   ifs          <--  pointer to a cs_interface_set_t struct.
  *   p_vtx_tag    <->  pointer to an array on vertices. tag=1 if selected
  *   join_select  <->  pointer to a fvm_join_selection_t structure
+ *   verbosity    <--  verbosity level
  *---------------------------------------------------------------------------*/
 
 static void
 _get_missing_vertices(cs_lnum_t            n_vertices,
                       cs_interface_set_t  *ifs,
                       cs_lnum_t           *p_vtx_tag[],
-                      cs_join_select_t    *selection)
+                      cs_join_select_t    *selection,
+                      int                  verbosity)
 {
   cs_lnum_t  i;
   cs_gnum_t  n_l_elts, n_g_elts;
@@ -832,7 +840,8 @@ _get_missing_vertices(cs_lnum_t            n_vertices,
                        n_vertices,
                        vtx_tag,
                        related_ranks,
-                       selection->s_vertices);
+                       selection->s_vertices,
+                       verbosity);
 
   n_l_elts = selection->s_vertices->n_elts;
 
@@ -849,7 +858,8 @@ _get_missing_vertices(cs_lnum_t            n_vertices,
     _add_coupled_vertices(ifs,
                           n_vertices,
                           related_ranks,
-                          selection->c_vertices);
+                          selection->c_vertices,
+                          verbosity);
 
   } /* End if n_g_elts > 0 */
 
@@ -1019,17 +1029,13 @@ _add_s_edge(cs_lnum_t        vertex_tag[],
 {
   cs_lnum_t  i, a, b, edge_id;
 
-  _Bool  is_selected = false, is_found = false;
+  if (vertex_tag[v1_id] > 0 && vertex_tag[v2_id] > 0) {
 
-  cs_lnum_t  tmp_size = *p_tmp_size;
-  cs_lnum_t  max_size = *p_max_size;
-  cs_lnum_t *tmp_edges = *p_tmp_edges;
+    _Bool  is_found = false;
 
-  if (vertex_tag[v1_id] > 0)
-    if (vertex_tag[v2_id] > 0)
-      is_selected = true;
-
-  if (is_selected) { /* Check if this edge is in sel_edges */
+    cs_lnum_t  tmp_size = *p_tmp_size;
+    cs_lnum_t  max_size = *p_max_size;
+    cs_lnum_t *tmp_edges = *p_tmp_edges;
 
     edge_id = _get_edge_id(v1_id, v2_id, sel_v2v_idx, sel_v2v_lst);
 
@@ -1064,16 +1070,157 @@ _add_s_edge(cs_lnum_t        vertex_tag[],
 
       }
 
-    } /* this edge is not among the selection */
+    } /* this edge should be among the selected edges */
 
-  } /* this edge should be among the selected edges */
+    /* Return pointers */
 
-  /* Return pointers */
+    *p_max_size = max_size;
+    *p_tmp_size = tmp_size;
+    *p_tmp_edges = tmp_edges;
 
-  *p_max_size = max_size;
-  *p_tmp_size = tmp_size;
-  *p_tmp_edges = tmp_edges;
+  }
+}
 
+/*----------------------------------------------------------------------------
+ * Copy selected edge definitions at parallel interfaces (only in parallel).
+ *
+ * The returned arrays (sel_v2v_recv_idx and sel_v2v_recv_lst) both use
+ * 0 to n-1 numbering.
+
+ * The caller is responsible for freeing those returned arrays.
+ *
+ * parameters:
+ *   ifs              <-- pointer to the interface set on vertices
+ *   sel_v2v_idx      <-- vertex -> vertex connect. index
+ *   sel_v2v_lst      <-- vertex -> vertex connect. list
+ *   sel_v2v_recv_idx --> pointer to received edges index
+ *   sel_v2v_recv_lst --> pointer to received edges connectivity
+ *---------------------------------------------------------------------------*/
+
+static void
+_copy_interface_edges(cs_interface_set_t   *ifs,
+                      cs_lnum_t             sel_v2v_idx[],
+                      cs_lnum_t             sel_v2v_lst[],
+                      cs_lnum_t           **sel_v2v_recv_idx,
+                      cs_lnum_t           **sel_v2v_recv_lst)
+{
+  int i;
+  cs_lnum_t  j, if_shift;
+
+  /* Exchange v2v info;
+     only info relative to edges where both vertices are available
+     on the distant side is sent. */
+
+  int n_interfaces = cs_interface_set_size(ifs);
+
+  cs_lnum_t ifs_tot_size = cs_interface_set_n_elts(ifs);
+
+  cs_lnum_t *_sel_v2v_send_idx = NULL, *_sel_v2v_recv_idx = NULL;
+  cs_lnum_t *_sel_v2v_send_lst = NULL, *_sel_v2v_recv_lst = NULL;
+
+  BFT_MALLOC(_sel_v2v_send_idx, ifs_tot_size + 1, cs_lnum_t);
+  BFT_MALLOC(_sel_v2v_recv_idx, ifs_tot_size + 1, cs_lnum_t);
+
+  /* Counting pass for v2v_info exchange
+     (send/receive indexes are prepared as counts) */
+
+  if_shift = 0;
+  _sel_v2v_send_idx[0] = 0;
+  _sel_v2v_recv_idx[0] = 0;
+
+  for (i = 0; i < n_interfaces; i++) {
+
+    const cs_interface_t *interface = cs_interface_set_get(ifs, i);
+    const cs_lnum_t *local_id = cs_interface_get_elt_ids(interface);
+    const cs_lnum_t if_size = cs_interface_size(interface);
+
+    for (j = 0; j < if_size; j++) {
+
+      cs_lnum_t k = local_id[j];
+      cs_lnum_t s_id = sel_v2v_idx[k];
+      cs_lnum_t e_id = sel_v2v_idx[k+1];
+
+      _sel_v2v_send_idx[if_shift + j + 1] = 0;
+
+      for (cs_lnum_t l = s_id; l < e_id; l++) {
+        if (cs_search_binary(if_size, sel_v2v_lst[l] - 1, local_id) > -1)
+          _sel_v2v_send_idx[if_shift + j + 1] += 1;
+      }
+
+    }
+
+    if_shift += if_size;
+
+  }
+
+  cs_interface_set_copy_array(ifs,
+                              CS_LNUM_TYPE,
+                              1,
+                              false,
+                              _sel_v2v_send_idx + 1,
+                              _sel_v2v_recv_idx + 1);
+
+  for (j = 0; j < ifs_tot_size; j++) {
+    _sel_v2v_send_idx[j+1] += _sel_v2v_send_idx[j];
+    _sel_v2v_recv_idx[j+1] += _sel_v2v_recv_idx[j];
+  }
+
+  /* Data pass for v2v_info exchange */
+
+  cs_interface_set_add_match_ids(ifs);
+
+  BFT_MALLOC(_sel_v2v_send_lst, _sel_v2v_send_idx[ifs_tot_size], cs_lnum_t);
+  BFT_MALLOC(_sel_v2v_recv_lst, _sel_v2v_recv_idx[ifs_tot_size], cs_lnum_t);
+
+  if_shift = 0;
+
+  for (i = 0; i < n_interfaces; i++) {
+
+    const cs_interface_t *interface = cs_interface_set_get(ifs, i);
+    const cs_lnum_t if_size = cs_interface_size(interface);
+
+    const cs_lnum_t *local_id = cs_interface_get_elt_ids(interface);
+    const cs_lnum_t *distant_id = cs_interface_get_match_ids(interface);
+
+    for (j = 0; j < if_size; j++) {
+
+      cs_lnum_t k = local_id[j];
+      cs_lnum_t s_id = sel_v2v_idx[k];
+      cs_lnum_t e_id = sel_v2v_idx[k+1];
+      cs_lnum_t v_send_size = 0;
+
+      for (cs_lnum_t l = s_id; l < e_id; l++) {
+        cs_lnum_t m = cs_search_binary(if_size, sel_v2v_lst[l] - 1, local_id);
+        if (m > -1) {
+          _sel_v2v_send_lst[_sel_v2v_send_idx[if_shift + j] + v_send_size]
+            = distant_id[m];
+          v_send_size += 1;
+        }
+      }
+
+    }
+
+    if_shift += if_size;
+
+  }
+
+  cs_interface_set_copy_indexed(ifs,
+                                CS_LNUM_TYPE,
+                                false,
+                                _sel_v2v_send_idx,
+                                _sel_v2v_recv_idx,
+                                _sel_v2v_send_lst,
+                                _sel_v2v_recv_lst);
+
+  /* Free temporary data and set return pointers */
+
+  BFT_FREE(_sel_v2v_send_idx);
+  BFT_FREE(_sel_v2v_send_lst);
+
+  cs_interface_set_free_match_ids(ifs);
+
+  *sel_v2v_recv_idx = _sel_v2v_recv_idx;
+  *sel_v2v_recv_lst = _sel_v2v_recv_lst;
 }
 
 /*----------------------------------------------------------------------------
@@ -1091,6 +1238,7 @@ _add_s_edge(cs_lnum_t        vertex_tag[],
  *   i_f2v_lst    <-- interior "face -> vertex" connect. list
  *   i_face_cells <-- interior face -> cells connect.
  *   s_edges      <-> pointer to the single edges structure to define
+ *   verbosity    <-- verbosity level
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1104,14 +1252,27 @@ _add_single_edges(cs_interface_set_t   *ifs,
                   cs_lnum_t             i_f2v_idx[],
                   cs_lnum_t             i_f2v_lst[],
                   cs_lnum_t             i_face_cells[],
-                  cs_join_sync_t       *s_edges)
+                  cs_join_sync_t       *s_edges,
+                  int                   verbosity)
 {
-  cs_lnum_t  i, j, fid, s, e;
+  int i;
+  cs_lnum_t  j, fid, s, e;
 
-  int  shift = 0, tmp_size = 0, max_size = 10;
+  int  tmp_size = 0, max_size = 10;
+  cs_lnum_t *sel_v2v_recv_idx = NULL, *sel_v2v_recv_lst = NULL;
   int  *tmp_edges = NULL;
 
   assert(s_edges != NULL);
+
+  /* Exchange v2v info;
+     only info relative to edges where both vertices are available
+     on the distant side is sent. */
+
+  _copy_interface_edges(ifs,
+                        sel_v2v_idx,
+                        sel_v2v_lst,
+                        &sel_v2v_recv_idx,
+                        &sel_v2v_recv_lst);
 
   /* Scan adjacent faces to find new "single" edges */
 
@@ -1176,105 +1337,93 @@ _add_single_edges(cs_interface_set_t   *ifs,
 
   }
 
-  /* Find the related ranks for synchronization
-     (if we have only single edges but not vertices, the situation is
-     not handled; this may happen with bad periodicity specifications) */
+  /* Find the related ranks for synchronization */
 
-  if (tmp_size > 0 && selection->s_vertices->n_elts > 0) {
+  if (tmp_size > 0) {
 
-    int   n_entities, distant_rank;
+    int   distant_rank;
 
-    int  s_last_rank = 0;
+    cs_lnum_t  if_shift;
     int  last_found_rank = -1;
-    int  *edge_tag = NULL;
+    cs_lnum_t n_s_edges = 0;
+
+    bool *edge_tag = NULL;
 
     const int  n_interfaces = cs_interface_set_size(ifs);
-    const cs_lnum_t  *local_id = NULL;
-    const cs_interface_t  *interface = NULL;
 
-    const cs_lnum_t  *s_vertices = selection->s_vertices->array;
-    const int  *s_vertices_index = selection->s_vertices->index;
-
-    shift = 0;
     s_edges->n_elts = tmp_size;
     BFT_REALLOC(tmp_edges, 2*tmp_size, int);
 
-    BFT_MALLOC(edge_tag, tmp_size, int);
+    BFT_MALLOC(edge_tag, tmp_size, bool);
     BFT_MALLOC(s_edges->array, 2*tmp_size, cs_lnum_t);
     BFT_MALLOC(s_edges->index, n_interfaces + 1, cs_lnum_t);
     BFT_MALLOC(s_edges->ranks, n_interfaces, int);
 
     for (i = 0; i < tmp_size; i++)
-      edge_tag[i] = 0; /* Not matched */
+      edge_tag[i] = false; /* Not matched */
 
     /* Loop on interfaces (naturally ordered by rank) */
 
+    if_shift = 0;
+
     for (i = 0; i < n_interfaces; i++) {
 
-      cs_lnum_t  _n_s_vertices;
-      const cs_lnum_t  *_s_vertices;
+      const cs_interface_t *interface = cs_interface_set_get(ifs, i);
+      const cs_lnum_t if_size = cs_interface_size(interface);
 
-      interface = cs_interface_set_get(ifs, i);
+      const cs_lnum_t *local_id = cs_interface_get_elt_ids(interface);
+
       distant_rank = cs_interface_rank(interface);
-      n_entities = cs_interface_size(interface);
-      local_id = cs_interface_get_elt_ids(interface);
-
-      /* Find rank start and end in single vertices */
-
-      while (s_last_rank < selection->s_vertices->n_ranks) {
-        if (selection->s_vertices->ranks[s_last_rank] >= distant_rank)
-          break;
-        else
-          s_last_rank++;
-      }
-
-      if (selection->s_vertices->ranks[s_last_rank] != distant_rank)
-        continue;
-
-      _n_s_vertices = (  s_vertices_index[s_last_rank + 1]
-                       - s_vertices_index[s_last_rank]);
-
-      if (_n_s_vertices < 1)
-        continue;
-
-      _s_vertices = s_vertices + s_vertices_index[s_last_rank];
 
       /* Loop on single edges */
 
       for (j = 0; j < tmp_size; j++) {
 
-        if (edge_tag[j] == 0) { /* Not already treated */
+        if (edge_tag[j] == false) { /* Not already treated */
 
-          cs_lnum_t i0 = cs_search_binary(_n_s_vertices,
-                                          tmp_edges[2*j]+1,
-                                          _s_vertices);
-          cs_lnum_t i1 = cs_search_binary(_n_s_vertices,
-                                          tmp_edges[2*j+1]+1,
-                                          _s_vertices);
+          cs_lnum_t i0 = cs_search_binary(if_size,
+                                          tmp_edges[2*j],
+                                          local_id);
 
-          if (i0 > -1 || i1 > -1) {
+          if (i0 > -1) {
 
-            if (last_found_rank != distant_rank) {
-              s_edges->ranks[s_edges->n_ranks] = distant_rank;
-              s_edges->index[s_edges->n_ranks] = shift;
-              s_edges->n_ranks++;
-              last_found_rank = distant_rank;
+            cs_lnum_t s_id = sel_v2v_recv_idx[if_shift + i0];
+            cs_lnum_t e_id = sel_v2v_recv_idx[if_shift + i0 + 1];
+
+            /* Search on short, unsorted array */
+
+            for (cs_lnum_t l = s_id; l < e_id; l++) {
+
+              if (sel_v2v_recv_lst[l] == tmp_edges[2*j+1]) {
+
+                if (last_found_rank != distant_rank) {
+                  s_edges->ranks[s_edges->n_ranks] = distant_rank;
+                  s_edges->index[s_edges->n_ranks] = n_s_edges;
+                  s_edges->n_ranks++;
+                  last_found_rank = distant_rank;
+                }
+
+                edge_tag[j] = true; /* Tag as done */
+                s_edges->array[2*n_s_edges] = tmp_edges[2*j] + 1;
+                s_edges->array[2*n_s_edges+1] = tmp_edges[2*j+1] + 1;
+                n_s_edges++;
+
+                break;
+              }
             }
 
-            edge_tag[j] = 1; /* Tag as done */
-            s_edges->array[2*shift] = tmp_edges[2*j] + 1;
-            s_edges->array[2*shift+1] = tmp_edges[2*j+1] + 1;
-            shift++;
-
           }
+
         } /* Not matched yet */
 
-      } /* Loop on single edges */
+      } /* End of loop on single edges */
 
-    } /* Loop on interfaces */
+      if_shift += if_size;
 
-    s_edges->index[s_edges->n_ranks] = shift;
-    s_edges->n_elts = shift;
+    } /* End of loop on interfaces */
+
+    s_edges->index[s_edges->n_ranks] = n_s_edges;
+    s_edges->n_elts = n_s_edges;
 
     /* Memory management */
 
@@ -1285,30 +1434,37 @@ _add_single_edges(cs_interface_set_t   *ifs,
     BFT_REALLOC(s_edges->index, s_edges->n_ranks + 1, cs_lnum_t);
     BFT_FREE(edge_tag);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf("\n  Single edges for the joining operation: (%p)\n",
-               s_edges);
-    bft_printf("  Single edges: n_elts : %8d\n"
-               "  Single edges: n_ranks: %8d\n",
-               s_edges->n_elts, s_edges->n_ranks);
-
-    if (s_edges->n_elts > 0) {
-      for (i = 0; i < s_edges->n_ranks; i++)
-        for (j = s_edges->index[i]; j < s_edges->index[i+1]; j++)
-          bft_printf(" %9d | %6d | (%9d, %9d)\n",
-                     j, s_edges->ranks[i], s_edges->array[2*j],
-                     s_edges->array[2*j+1]);
-      bft_printf("\n");
-    }
-    bft_printf_flush();
-#endif
-
   } /* End if tmp_size > 0 */
 
   /* Free memory */
 
   BFT_FREE(tmp_edges);
+  BFT_FREE(sel_v2v_recv_idx);
+  BFT_FREE(sel_v2v_recv_lst);
 
+  /* Logging */
+
+  if (cs_glob_join_log != NULL && verbosity > 3) {
+
+    FILE  *logfile = cs_glob_join_log;
+
+    fprintf(logfile, "\n  Single edges for the joining operation: (%p)\n",
+            (void *)s_edges);
+    fprintf(logfile,
+            "  Single edges: n_elts : %8d\n"
+            "  Single edges: n_ranks: %8d\n",
+            s_edges->n_elts, s_edges->n_ranks);
+
+    if (s_edges->n_elts > 0) {
+      for (i = 0; i < s_edges->n_ranks; i++)
+        for (j = s_edges->index[i]; j < s_edges->index[i+1]; j++)
+          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
+                  j, s_edges->ranks[i], s_edges->array[2*j],
+                  s_edges->array[2*j+1]);
+      fprintf(logfile, "\n");
+    }
+    fflush(logfile);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1319,12 +1475,14 @@ _add_single_edges(cs_interface_set_t   *ifs,
  *  ifs          <--  pointer to the interface set on vertices
  *  s_edges      <--  single edges structure used to build coupled_edges
  *  c_edges      <->  pointer to the coupled edges structure to define
+ *  verbosity    <--  verbosity level
  *---------------------------------------------------------------------------*/
 
 static void
 _add_coupled_edges(cs_interface_set_t   *ifs,
                    cs_join_sync_t       *s_edges,
-                   cs_join_sync_t       *c_edges)
+                   cs_join_sync_t       *c_edges,
+                   int                   verbosity)
 {
   cs_lnum_t  i, j, id, n_entities;
   int  request_count, rank_shift, distant_rank;
@@ -1534,7 +1692,9 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
           assert(id != -1);
           c_edges->array[2*j] = local_id[id] + 1;
 
-          id = cs_search_binary(n_entities, c_edges->array[2*j+1] - 1, distant_id);
+          id = cs_search_binary(n_entities,
+                                c_edges->array[2*j+1] - 1,
+                                distant_id);
           assert(id != -1);
           c_edges->array[2*j+1] = local_id[id] + 1;
 
@@ -1549,27 +1709,31 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
   cs_interface_set_free_match_ids(ifs);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n  Coupled edges for the joining operation: (%p)\n",
-             c_edges);
-  bft_printf("  Coupled edges: n_elts : %8d\n"
-             "  Coupled edges: n_ranks: %8d\n",
-             c_edges->n_elts, c_edges->n_ranks);
+  if (cs_glob_join_log != NULL && verbosity > 3) {
 
-  if (c_edges->n_elts > 0) {
-    int  shift;
-    for (i = 0, shift = 0; i < c_edges->n_ranks; i++) {
-      for (j = c_edges->index[i]; j < c_edges->index[i+1]; j++) {
-        bft_printf(" %9d | %6d | (%9d, %9d)\n",
-                   shift, c_edges->ranks[i],
-                   c_edges->array[2*j], c_edges->array[2*j+1]);
-        shift++;
+    FILE  *logfile = cs_glob_join_log;
+
+    fprintf(logfile, "\n  Coupled edges for the joining operation: (%p)\n",
+            (void *)c_edges);
+    fprintf(logfile,
+            "  Coupled edges: n_elts : %8d\n"
+            "  Coupled edges: n_ranks: %8d\n",
+            c_edges->n_elts, c_edges->n_ranks);
+
+    if (c_edges->n_elts > 0) {
+      int  shift;
+      for (i = 0, shift = 0; i < c_edges->n_ranks; i++) {
+        for (j = c_edges->index[i]; j < c_edges->index[i+1]; j++) {
+          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
+                  shift, c_edges->ranks[i],
+                  c_edges->array[2*j], c_edges->array[2*j+1]);
+          shift++;
+        }
       }
+      fprintf(logfile, "\n");
+      fflush(logfile);
     }
-    bft_printf("\n");
-    bft_printf_flush();
   }
-#endif
 
 }
 
@@ -1648,10 +1812,6 @@ _filter_edge_element(cs_join_select_t   *selection,
               &(request[request_count++]));
 
   }
-
-  /* We wait for posting all receives (often recommended) */
-
-  MPI_Barrier(mpi_comm);
 
   /* Send data to distant ranks */
 
@@ -1744,6 +1904,7 @@ _filter_edge_element(cs_join_select_t   *selection,
  *  ifs           <-- pointer to a cs_interface_set_t struct.
  *  i_face_cells  <-- interior face -> cells connect.
  *  join_select   <-> pointer to a fvm_join_selection_t structure
+ *  verbosity     <-- verbosity level
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1755,7 +1916,8 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
                    cs_lnum_t            vtx_tag[],
                    cs_interface_set_t  *ifs,
                    cs_lnum_t            i_face_cells[],
-                   cs_join_select_t    *selection)
+                   cs_join_select_t    *selection,
+                   int                  verbosity)
 {
   cs_gnum_t  n_l_elts, n_g_elts;
 
@@ -1783,7 +1945,8 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
                     i_f2v_idx,
                     i_f2v_lst,
                     i_face_cells,
-                    selection->s_edges);
+                    selection->s_edges,
+                    verbosity);
 
   n_l_elts = selection->s_edges->n_elts;
 
@@ -1799,7 +1962,8 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
 
     _add_coupled_edges(ifs,
                        selection->s_edges,
-                       selection->c_edges);
+                       selection->c_edges,
+                       verbosity);
 
     _filter_edge_element(selection,
                          sel_v2v_idx,
@@ -1807,50 +1971,53 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
 
   } /* End if n_g_s_elts > 0 */
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
- {
-  int  i, j;
-  cs_join_sync_t  *s_edges = selection->s_edges;
-  cs_join_sync_t  *c_edges = selection->c_edges;
+  if (cs_glob_join_log != NULL && verbosity > 3) {
+    int  i, j;
+    cs_join_sync_t  *s_edges = selection->s_edges;
+    cs_join_sync_t  *c_edges = selection->c_edges;
+    FILE  *logfile = cs_glob_join_log;
 
-  bft_printf("\n  Coupled edges for the joining operation: (%p)\n",
-             c_edges);
-  bft_printf("  Coupled edges: n_elts : %8d\n"
-             "  Coupled edges: n_ranks: %8d\n",
-             c_edges->n_elts, c_edges->n_ranks);
+    fprintf(logfile, "\n  After possible filtering\n");
 
-  if (c_edges->n_elts > 0) {
-    int  shift;
-    for (i = 0, shift = 0; i < c_edges->n_ranks; i++) {
-      for (j = c_edges->index[i]; j < c_edges->index[i+1]; j++) {
-        bft_printf(" %9d | %6d | (%9d, %9d)\n",
-                   shift, c_edges->ranks[i],
-                   c_edges->array[2*j], c_edges->array[2*j+1]);
-        shift++;
+    fprintf(logfile, "\n  Coupled edges for the joining operation: (%p)\n",
+            (void *)c_edges);
+    fprintf(logfile,
+            "  Coupled edges: n_elts : %8d\n"
+            "  Coupled edges: n_ranks: %8d\n",
+            c_edges->n_elts, c_edges->n_ranks);
+
+    if (c_edges->n_elts > 0) {
+      int  shift;
+      for (i = 0, shift = 0; i < c_edges->n_ranks; i++) {
+        for (j = c_edges->index[i]; j < c_edges->index[i+1]; j++) {
+          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
+                  shift, c_edges->ranks[i],
+                  c_edges->array[2*j], c_edges->array[2*j+1]);
+          shift++;
+        }
       }
+      fprintf(logfile, "\n");
     }
-    bft_printf("\n");
+
+    fprintf(logfile, "\n  Single edges for the joining operation: (%p)\n",
+            (void *)s_edges);
+    fprintf(logfile,
+            "  Single edges: n_elts : %8d\n"
+            "  Single edges: n_ranks: %8d\n",
+            s_edges->n_elts, s_edges->n_ranks);
+
+    if (s_edges->n_elts > 0) {
+      for (i = 0; i < s_edges->n_ranks; i++)
+        for (j = s_edges->index[i]; j < s_edges->index[i+1]; j++)
+          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
+                  j, s_edges->ranks[i], s_edges->array[2*j],
+                  s_edges->array[2*j+1]);
+      fprintf(logfile, "\n");
+    }
+
+    fflush(logfile);
     bft_printf_flush();
-  }
-
-  bft_printf("\n  Single edges for the joining operation: (%p)\n",
-             s_edges);
-  bft_printf("  Single edges: n_elts : %8d\n"
-             "  Single edges: n_ranks: %8d\n",
-             s_edges->n_elts, s_edges->n_ranks);
-
-  if (s_edges->n_elts > 0) {
-    for (i = 0; i < s_edges->n_ranks; i++)
-      for (j = s_edges->index[i]; j < s_edges->index[i+1]; j++)
-        bft_printf(" %9d | %6d | (%9d, %9d)\n",
-                   j, s_edges->ranks[i], s_edges->array[2*j],
-                     s_edges->array[2*j+1]);
-    bft_printf("\n");
-  }
-  bft_printf_flush();
-
- }
-#endif
+   }
 
   /* Free memory */
 
@@ -2145,7 +2312,8 @@ cs_join_select_create(const char  *selection_criteria,
     _get_missing_vertices(mesh->n_vertices,
                           ifs,
                           &vtx_tag,
-                          selection);
+                          selection,
+                          verbosity);
 
   }
 #endif
@@ -2192,7 +2360,8 @@ cs_join_select_create(const char  *selection_criteria,
                        vtx_tag,
                        ifs,
                        mesh->i_face_cells,
-                       selection);
+                       selection,
+                       verbosity);
 
     BFT_FREE(vtx_tag);
     cs_interface_set_destroy(&ifs);
@@ -2235,7 +2404,7 @@ cs_join_select_create(const char  *selection_criteria,
             "    number of vertices:            %8d\n",
             selection->n_vertices);
     fprintf(logfile,
-            "    number of adj. boundary faces:   %8d\n",
+            "    number of adj. boundary faces: %8d\n",
             selection->n_b_adj_faces);
     fprintf(logfile,
             "    number of adj. interior faces: %8d\n",
@@ -2268,48 +2437,51 @@ cs_join_select_create(const char  *selection_criteria,
       fprintf(logfile, "\n");
     }
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    fprintf(logfile,
-            "\n  Selected faces for the joining operation:\n");
-    for (i = 0; i < selection->n_faces; i++)
-      fprintf(logfile,
-              " %9d | %9d | %10llu\n",
-              i, selection->faces[i],
-              (unsigned long long)selection->compact_face_gnum[i]);
-    fprintf(logfile, "\n");
-#endif
+    /* Debug level logging */
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    fprintf(logfile,
-            "\n  Selected vertices for the joining operation:\n");
-    for (i = 0; i < selection->n_vertices; i++)
-      fprintf(logfile,
-              " %9d | %9d\n", i, selection->vertices[i]);
-    fprintf(logfile, "\n");
-#endif
+    if (verbosity > 4) {
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    fprintf(logfile,
-            "\n  Contiguous boundary faces for the joining operation:\n");
-    for (i = 0; i < selection->n_b_adj_faces; i++)
       fprintf(logfile,
-              " %9d | %9d\n", i, selection->b_adj_faces[i]);
-    fprintf(logfile, "\n");
-#endif
+              "\n  Selected faces for the joining operation:\n");
+      for (i = 0; i < selection->n_faces; i++)
+        fprintf(logfile,
+                " %9d | %9d | %10llu\n",
+                i, selection->faces[i],
+                (unsigned long long)selection->compact_face_gnum[i]);
+      fprintf(logfile, "\n");
+    }
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    fprintf(logfile,
-            "\n  Contiguous interior faces for the joining operation:\n");
-    for (i = 0; i < selection->n_i_adj_faces; i++)
-      fprintf(logfile, " %9d | %9d\n", i, selection->i_adj_faces[i]);
-    fprintf(logfile, "\n");
-#endif
+    if (verbosity > 4) {
+      fprintf(logfile,
+              "\n  Selected vertices for the joining operation:\n");
+      for (i = 0; i < selection->n_vertices; i++)
+        fprintf(logfile,
+                " %9d | %9d\n", i, selection->vertices[i]);
+      fprintf(logfile, "\n");
+    }
+
+    if (verbosity > 4) {
+      fprintf(logfile,
+              "\n  Contiguous boundary faces for the joining operation:\n");
+      for (i = 0; i < selection->n_b_adj_faces; i++)
+        fprintf(logfile,
+                " %9d | %9d\n", i, selection->b_adj_faces[i]);
+      fprintf(logfile, "\n");
+    }
+
+    if (verbosity > 4) {
+      fprintf(logfile,
+              "\n  Contiguous interior faces for the joining operation:\n");
+      for (i = 0; i < selection->n_i_adj_faces; i++)
+        fprintf(logfile, " %9d | %9d\n", i, selection->i_adj_faces[i]);
+      fprintf(logfile, "\n");
+    }
 
     fflush(logfile);
 
-  } /* End if verbosity > 2 */
+    bft_printf_flush();
 
-  bft_printf_flush();
+  } /* End if verbosity > 2 */
 
   return  selection;
 }
