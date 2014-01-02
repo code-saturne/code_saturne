@@ -9,6 +9,15 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix parallel mesh joining bug appearing in some partitioning situations.
+  A previous "fix" in release 3.0.2 had only made the issue appear in 
+  different partitioning situations. This fix to single/coupled edge handling
+  is hopefully final, and is more in-depth, using full selected edge
+  definition exchanges at parallel interfaces rather than attempting to rebuild
+  this info from local edges and vertex interfaces.
+  Logging of this section was also improved so as to always be available with
+  high enough joining verbosity.
+
 - Fix some OpenMP directives leading to possible crash.
 
 Release 3.0.3 (11 Dec 2013)
