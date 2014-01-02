@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-12-10 17:31+0100\n"
+"POT-Creation-Date: 2014-01-02 19:51+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5506,7 +5506,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-" Histogramme du profil/lignes de matrice % sur les rangs :\n"
+" Histogramme du profil/lignes de matrice %s sur les rangs :\n"
 "\n"
 
 #, c-format
@@ -8893,15 +8893,31 @@ msgstr ""
 
 #, c-format
 msgid ""
+"\n"
+"  Global number of single vertices found: %6llu\n"
+msgstr ""
+"\n"
+"  Nombre global de sommets solitaires repérés : %6llu\n"
+
+#, c-format
+msgid "  Global number of single edges found:    %6llu\n"
+msgstr "  Nombre global d'arêtes solitaires repérées : %6llu\n"
+
+#, c-format
+msgid ""
 "Mesh joining:  Forbidden value for the fraction parameter.\n"
 "  It must be between [0.0, 1.0[ and is here: %f\n"
 msgstr ""
+"Recollement de maillage : valeur interdite pour le paramètre de fraction.\n"
+"  Il doit être entre [0.0, 1.0[ et vaut ici : %f\n"
 
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the plane parameter.\n"
 "  It must be between [0, 90] and is here: %f\n"
 msgstr ""
+"Recollement de maillage : valeur interdite pour le paramètre de plan.\n"
+"  Il doit être entre [0, 90[ et vaut ici : %f\n"
 
 msgid "The log directory cannot be created"
 msgstr "Le répertoire de traces (log) ne peut être créé"
