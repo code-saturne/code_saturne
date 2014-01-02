@@ -85,7 +85,7 @@ integer          imom, idtnm
 integer          keycpl, iflid, ikeyid, ikeyvl
 integer          kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3, idim6
-	integer          ipcrom, ipcroa
+        integer          ipcrom, ipcroa
 logical          ilved, iprev, inoprv, lprev
 integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id, kscavr
