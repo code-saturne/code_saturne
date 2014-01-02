@@ -1,8 +1,14 @@
 Release 3.1.3 (unreleased)
 ==========================
 
+Changes:
+--------
+
+- Update some external package versions for automatic installer.
+
 Bug fixes:
 ----------
+
 - Fix some OpenMP directives leading to possible crash.
 
 - Fix build configuration bug leading to loss of user flags when (PT-)SCOTCH or

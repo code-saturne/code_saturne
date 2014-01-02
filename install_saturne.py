@@ -228,11 +228,7 @@ class Package:
 
         import urllib
 
-        try:
-            urllib.urlretrieve(self.url, self.archive)
-        except:
-            sys.stderr.write("Error while retrieving %s\n" % self.url)
-            sys.exit(1)
+        urllib.urlretrieve(self.url, self.archive)
 
     #---------------------------------------------------------------------------
 
@@ -597,9 +593,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.9",
-                    archive="hdf5-1.8.9.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.9/src/%s")
+                    version="1.8.10",
+                    archive="hdf5-1.8.10.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -610,12 +606,12 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="3.1.3",
-                    archive="cgnslib_3.1.3-4.tar.gz",
+                    version="3.1.4",
+                    archive="cgnslib_3.1.4-2.tar.gz",
                     url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
 
         p = self.packages['cgns']
-        p.config_opts = "-D ENABLE_64BIT=ON -D ENABLE_SCOPING=ON"
+        p.config_opts = "-DENABLE_64BIT=ON -DENABLE_SCOPING=ON"
 
         # MED library
 
@@ -623,8 +619,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.6",
-                    archive="med-3.0.6.tar.gz",
+                    version="3.0.7",
+                    archive="med-3.0.7.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -1258,7 +1254,7 @@ disable_frontend  %(disable_frontend)s
 #
 # If Code_Saturne is built with SALOME support,
 # running "code_saturne salome" will launch the
-# associated application, containing thr CFDSTUDY module.
+# associated application, containing the CFDSTUDY module.
 #--------------------------------------------------------
 salome    %(salome)s
 #
