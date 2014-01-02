@@ -236,10 +236,10 @@ typedef struct {
   cs_gnum_t   *per_v_couples;
 
   /*
-     Single elements (Only possible in parallel). It appears
+     Single elements (Only possible in parallel). Appear mainly
      when the domain splitting has a poor quality and elements
-     on the joining interface are prisms or tetraedrals
-     s = single / c = coupled
+     on the joining interface are prisms or tetrahedra
+     s = single (receiver) / c = coupled (owner).
   */
 
   bool         do_single_sync;

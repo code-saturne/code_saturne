@@ -4172,8 +4172,8 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
  * are symmetric, and src_index is sufficient to determine sizes (whether
  * src_on_parent is true or not).
  *
- * In some use cases, for example when copying values only in one, the
- * copying is not symmetric, so both a source and destination buffer must
+ * In some use cases, for example when copying values only in one direction,
+ * the copying is not symmetric, so both a source and destination buffer must
  * be provided.
  *
  * \param[in]   ifs            pointer to interface set structure
