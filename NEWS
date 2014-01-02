@@ -4,6 +4,8 @@ Release 2.0.8 (next release)
 Changes:
 --------
 
+- Update some external package versions for automatic installer.
+
 - Update SLURM template for EDF ivanoe cluster.
 
 Bug fixes:

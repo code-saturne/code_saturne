@@ -125,11 +125,7 @@ class Package:
 
         import urllib
 
-        try:
-            urllib.urlretrieve(self.url, self.archive)
-        except:
-            sys.stderr.write("Error while retrieving %s\n" % self.url)
-            sys.exit(1)
+        urllib.urlretrieve(self.url, self.archive)
 
 
     def extract(self):
@@ -241,12 +237,12 @@ class Package:
 
             cmake = 'cmake'
             if self.install_dir is not None:
-                cmake += ' -D CMAKE_INSTALL_PREFIX=' + self.install_dir
+                cmake += ' -DCMAKE_INSTALL_PREFIX=' + self.install_dir
             cmake += ' ' + self.config_opts
 
             # Add compilers
-            if self.cc is not None: cmake += ' -D CMAKE_C_COMPILER=\"' + self.cc + '\"'
-            if self.fc is not None: cmake += ' -D CMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
+            if self.cc is not None: cmake += ' -DCMAKE_C_COMPILER=\"' + self.cc + '\"'
+            if self.fc is not None: cmake += ' -DCMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
 
             cmake += ' ' + self.source_dir
 
@@ -378,8 +374,8 @@ class Setup:
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0.7",
-                    archive="ncs-2.0.7.tar.gz",
+                    version="2.0.8",
+                    archive="ncs-2.0.8.tar.gz",
                     url=url_cs)
 
         p = self.packages['ncs']
@@ -391,9 +387,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.9",
-                    archive="hdf5-1.8.9.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.9/src/%s")
+                    version="1.8.10",
+                    archive="hdf5-1.8.10.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -404,12 +400,12 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="3.1.3",
-                    archive="cgnslib_3.1.3-4.tar.gz",
+                    version="3.1.4",
+                    archive="cgnslib_3.1.4-2.tar.gz",
                     url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
 
         p = self.packages['cgns']
-        p.config_opts = "-D ENABLE_64BIT=ON -D ENABLE_SCOPING=ON"
+        p.config_opts = "-DENABLE_64BIT=ON -DENABLE_SCOPING=ON"
         p.vpath_support = True
         p.create_install_dirs = True
 
@@ -419,8 +415,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.6",
-                    archive="med-3.0.6.tar.gz",
+                    version="3.0.7",
+                    archive="med-3.0.7.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -432,8 +428,8 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.6.3",
-                    archive="openmpi-1.6.3.tar.gz",
+                    version="1.6.5",
+                    archive="openmpi-1.6.5.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.6/downloads/%s")
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
