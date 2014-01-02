@@ -106,7 +106,7 @@ _cs_real_sum_1d(cs_lnum_t        n,
 # pragma omp parallel private(bid, start_id, end_id, i, c, s)    \
                               reduction(+:v_sum) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       s = 0.0;
@@ -180,7 +180,7 @@ _cs_real_sstats_1d(cs_lnum_t         n,
 # pragma omp parallel private(bid, start_id, end_id, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       lmin = HUGE_VAL;
@@ -273,7 +273,7 @@ _cs_real_sstats_1d_l(cs_lnum_t         n,
 # pragma omp parallel private(bid, start_id, end_id, li, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       lmin = HUGE_VAL;
@@ -371,7 +371,7 @@ _cs_real_sstats_1d_w(cs_lnum_t         n,
 # pragma omp parallel private(bid, start_id, end_id, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       lmin = HUGE_VAL;
@@ -477,7 +477,7 @@ _cs_real_sstats_1d_w_l(cs_lnum_t         n,
 # pragma omp parallel private(bid, start_id, end_id, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       lmin = HUGE_VAL;
@@ -583,7 +583,7 @@ _cs_real_sstats_1d_l_w(cs_lnum_t         n,
 # pragma omp parallel private(bid, start_id, end_id, li, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       lmin = HUGE_VAL;
@@ -689,7 +689,7 @@ _cs_real_sstats_3d(cs_lnum_t          n,
 # pragma omp parallel private(bid, start_id, end_id, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       for (j = 0; j < 4; j++) {
@@ -812,7 +812,7 @@ _cs_real_sstats_3d_l(cs_lnum_t          n,
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       for (j = 0; j < 4; j++) {
@@ -940,7 +940,7 @@ _cs_real_sstats_3d_w(cs_lnum_t          n,
 # pragma omp parallel private(bid, start_id, end_id, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       for (j = 0; j < 4; j++) {
@@ -1077,7 +1077,7 @@ _cs_real_sstats_3d_w_l(cs_lnum_t          n,
 # pragma omp parallel private(bid, start_id, end_id, i, j, \
                               wi, c, s, v_norm, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       for (j = 0; j < 4; j++) {
@@ -1214,7 +1214,7 @@ _cs_real_sstats_3d_l_w(cs_lnum_t          n,
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       for (j = 0; j < 4; j++) {
@@ -1350,7 +1350,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               c, s, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       for (j = 0; j < dim; j++) {
@@ -1520,7 +1520,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               wi, c, s, lmin, lmax) if (n > THR_MIN)
   {
-    # pragma omp parallel for
+    # pragma omp for
     for (sid = 0; sid < n_sblocks; sid++) {
 
       for (j = 0; j < dim; j++) {
