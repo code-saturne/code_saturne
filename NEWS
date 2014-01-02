@@ -1,6 +1,11 @@
 Release 3.2.2 (unreleased)
 ==========================
 
+Changes:
+--------
+
+- Update some external package versions for automatic installer.
+
 Bug fixes:
 ----------
 
