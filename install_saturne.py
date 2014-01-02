@@ -1254,7 +1254,7 @@ disable_frontend  %(disable_frontend)s
 #
 # If Code_Saturne is built with SALOME support,
 # running "code_saturne salome" will launch the
-# associated application, containing thr CFDSTUDY module.
+# associated application, containing the CFDSTUDY module.
 #--------------------------------------------------------
 salome    %(salome)s
 #
