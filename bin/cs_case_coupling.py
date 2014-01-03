@@ -80,7 +80,7 @@ def get_param(path):
 def coupling(package,
              domains,
              casedir,
-             pset_size):
+             pset_size=1):
 
     use_saturne = False
     use_syrthes = False

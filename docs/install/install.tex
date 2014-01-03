@@ -1123,6 +1123,7 @@ Once the code is installed, a post-install step may
 be necessary for computing environments using a batch system,
 for separate front-end and compute systems (such as Blue Gene
 systems), or for coupling with \syrthes 4 or Code\_Aster.
+The global default MPI execution commands and options may also be overriden.
 
 Copy or rename the \texttt{<install-prefix>/etc/code\_saturne.cfg.template} to \\
 \texttt{<install-prefix>/etc/code\_saturne.cfg},
@@ -1148,6 +1149,10 @@ the components required to run on compute-nodes,
 while the front-end build may be configured without MPI support.
 The front-end build's post-install step allows definition of
 the associated compute build.
+
+All default MPI execution commands and options may be overriden using the
+\texttt{mpi} section. Note that only the options defined in this section
+are overriden; defaults continue to apply for all others.
 
 \section{Installing for \syrthes coupling\label{sec:syrthes}}
 
