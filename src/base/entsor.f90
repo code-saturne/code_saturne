@@ -145,7 +145,7 @@ module entsor
   !> - it is recommended to keep the default value and, if necessary, to modify
   !> the launch script to copy the files in the alternate destination directory
   !> - useful if and only if chronological record files are generated
-  !> (i.e. there is \ref n for which \ref ihisvr(n, 1) \f$\ne\f$ 0)
+  !> (i.e. there is \ref n for which \ref ihisvr "ihisvr(n, 1)" \f$\ne\f$ 0)
   character*80, save :: emphis
 
   !> prefix of history files
@@ -223,11 +223,11 @@ module entsor
   !> \ref ihisvr(n, 1) \f$\ne\f$ 0)
   integer, save :: nthsav
 
-  !> number \ref ihisvr(n, 1) and index-numbers \ref ihisvr(n, j>1) of the
-  !> record probes to be used for each variable, em i.e. calculation variable
+  !> number \ref ihisvr "ihisvr(n, 1)" and index-numbers \ref ihisvr "ihisvr(n, j>1)"
+  !> of the record probes to be used for each variable, em i.e. calculation variable
   !> or physical property defined at the cell centers.
-  !> With \ref ihisvr(n, 1)=-999 or -1, \ref ihisvr(n, j>1) is useless.
-  !>  - \ref ihisvr(n, 1): number of record probes to use
+  !> With \ref ihisvr "ihisvr(n, 1)"=-999 or -1, \ref ihisvr(n, j>1) is useless.
+  !>  - \ref ihisvr "ihisvr(n, 1)": number of record probes to use
   !> for the variable N.
   !>     * = -999: by default: chronogical records are generated on
   !> all the probes if N is one of the main variables (pressure, velocity,
@@ -235,20 +235,20 @@ module entsor
   !> viscosity. For the other quantities, no chronological record is generated.
   !>     * = -1: chronological records are produced on all the probes.
   !>     * = 0: no chronological record on any probe.
-  !>     * > 0: chronological record on \ref ihisvr(n, 1) probes to be
-  !> specified with  \ref ihisvr(n, j>1).
+  !>     * > 0: chronological record on \ref ihisvr "ihisvr(n, 1)" probes to be
+  !> specified with  \ref ihisvr "ihisvr(n, j>1)".
   !> always useful, must be inferior or equal to \ref ncapt.
-  !>  - \ref ihisvr(n, j>1): index-numbers of the probes
+  !>  - \ref ihisvr "ihisvr(n, j>1)": index-numbers of the probes
   !> used for the variable n.
-  !> (with j <= \ref ihisvr(n,1)+1).
-  !>     * = -999: by default: if \ref ihisvr(n, 1) \f$\ne\f$ -999
+  !> (with j <= \ref ihisvr "ihisvr(n,1)+1").
+  !>     * = -999: by default: if \ref ihisvr "ihisvr(n, 1)" \f$\ne\f$ -999
   !> the  code stops. Otherwise, refer to the description of the case
-  !> \ref ihisvr(n, 1)=-999.
+  !> \ref ihisvr "ihisvr(n, 1)"=-999.
   !>
-  !> Useful if and only if \ref ihisvr(n, 1) > 0 .
+  !> Useful if and only if \ref ihisvr "ihisvr(n, 1)" > 0 .
   !>
-  !> The condition \ref ihisvr(n, j) <= \ref ncapt must be respected.
-  !> For an easier use, it is recommended to simply specify \ref ihisvr(n,1)=-1 for
+  !> The condition \ref ihisvr "ihisvr(n, j)" <= \ref ncapt must be respected.
+  !> For an easier use, it is recommended to simply specify \ref ihisvr "ihisvr(n,1)"=-1 for
   !> all the interesting variables.
   integer, save :: ihisvr(nvppmx,ncaptm+1)
 
