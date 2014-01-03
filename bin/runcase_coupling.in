@@ -59,14 +59,6 @@ domains = [
 APP_DICTS
     ]
 
-# SCRATCHDIR variable allows the user to specify in which temporary
-# directory the calculation will run. If set to None, a default directory
-# will be used (architecture dependent). If a value is specified,
-# the temporary directory will be of the form:
-#  <SCRATCHDIR>/tmp_Saturne/<study>.<case>.<date>
-
-SCRATCHDIR = None
-
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
@@ -84,41 +76,9 @@ if __name__ == '__main__':
 
     run_id = None
 
-    # Force MPI environment if mpi_environment != None
-
-    mpi_env = None
-
-    # Syntax is as follows:
-    #
-    # mpi_env = mpi_environment(case.package_compute)
-    #
-    # Some fields may need to be modified in case of incorrect defaults
-    # (due to the wide variety of MPI implementations and build options,
-    # the default configuration may not give correct values in some cases).
-
-    # mpi_env.bindir = path to mpi binaries
-    # mpi_env.mpiexec = mpiexec, mpirun, or equivalent command
-    # mpi_env.mpiexec_opts = mpiexec command options
-    # mpi_env.mpiexec_args = option to pass arguments (usually None, or -args)
-    # mpi_env.mpiexec_exe = option to define executable (usually None, or -exe)
-    # mpi_env.mpiexec_n = option to define number of ranks (e.g. ' -n ', ' -np ')
-    # mpi_env.mpiexec_n_per_node = option to define number of ranks per node
-    #                              (e.g. ' -ppn 6 ', ' --ranks-per-node 16 ')
-    # mpi_env.mpiexec_separator = separator after options (':' for Blue Gene/Q)
-    # mpi_env.gen_hostsfile = shell command to generate hostsfile if required
-    # mpi_env.del_hostsfile = shell command to delete hostsfile if required
-    # mpi_env.mpiboot = command to start environment (e.g. mpdboot, lamboot)
-    # mpi_env.mpihalt = command to halt environment (e.g. mpdallexit, lamhalt)
-    # mpi_env.mpmd = MPI_MPMD_mpiexec (mpiexec colon-separated syntax), or
-    #                MPI_MPMD_configfile (mpiexec -configfile syntax), or
-    #                MPI_MPMD_script, or
-    #                MPI_MPMD_execve
-
     # Execute script
 
     case.run(n_procs=None,
-             mpi_environment=mpi_env,
-             scratchdir=SCRATCHDIR,
              run_id=run_id,
              prepare_data=True,
              run_solver=True,

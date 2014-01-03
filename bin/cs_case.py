@@ -1123,6 +1123,7 @@ fi
 
     def prepare_data(self,
                      n_procs = None,
+                     mpiexec_options=None,
                      mpi_environment = None,
                      run_id = None):
 
@@ -1181,6 +1182,8 @@ fi
 
         if mpi_environment != None:
             exec_env.mpi_env = mpi_environment
+        elif mpiexec_options != None:
+            exec_env.mpi_env.mpiexec_options = mpiexec_options
 
         # Transfer parameters MPI parameters from user scripts here
 
@@ -1469,6 +1472,7 @@ fi
     def run(self,
             n_procs = None,
             mpi_environment = None,
+            mpiexec_options=None,
             scratchdir = None,
             run_id = None,
             prepare_data = True,
@@ -1502,10 +1506,14 @@ fi
                     del(c.n_procs)
 
         # Define scratch directory
+        # priority: user script, argument, environment variable, preference setting.
+
+        if scratchdir == None:
+            scratchdir = os.getenv('CS_SCRATCHDIR')
 
         if scratchdir == None:
 
-           # Read the possible config files
+            # Read the possible config files
 
             if sys.platform.startswith('win'):
                 username = os.getenv('USERNAME')
@@ -1522,12 +1530,18 @@ fi
 
             if config.has_option('run', 'scratchdir'):
                 scratchdir = os.path.expanduser(config.get('run', 'scratchdir'))
-                scratchdir = os.path.expandvars(scratchdir)
-                if self.case_dir.find(scratchdir) == 0:
+                scratchdir = os.path.realpath(os.path.expandvars(scratchdir))
+                if os.path.realpath(self.case_dir).find(scratchdir) == 0:
                     scratchdir = None
 
         if scratchdir != None:
             self.exec_prefix = os.path.join(scratchdir, self.package.scratchdir)
+
+        # Define MPI execution options
+        # priority: argument, environment variable, preference setting, defaults.
+
+        if mpiexec_options == None:
+            mpiexec_options = os.getenv('CS_MPIEXEC_OPTIONS')
 
         if run_id != None:
             self.run_id = run_id
@@ -1536,6 +1550,7 @@ fi
             retcode = 0
             if prepare_data == True:
                 retcode = self.prepare_data(n_procs,
+                                            mpiexec_options,
                                             mpi_environment)
             if run_solver == True and retcode == 0:
                 self.run_solver()

@@ -245,7 +245,7 @@ restart files, a \texttt{monitoring} directory for the files of chronological
 record of the results at specific locations (probes),\\
 \texttt{preprocessor.log} and \texttt{listing} files reporting the
 Preprocessor and the Kernel execution. All files from the \texttt{DATA}
-directory not in subdirectories is also copied. For a tracing of
+directory not in subdirectories are also copied. For a tracing of
 the modifications in prior calculations, the user-subroutines used in
 a calculation are stored in a \texttt{src\_saturne} subdirectory. The data files
 (such as the XML Interface data file and thermo-chemical data files) and
@@ -415,7 +415,7 @@ several meshes in case of mesh joining or coupling with
 \item If not using the GUI, copy the
   \texttt{DATA/REFERENCE/cs\_user\_scripts.py} file to \texttt{DATA} and
   edit it, so that the correct run options and paths may be set. For advanced
-  uses, this file may also be used in conjunction with the GUI. Jus as with
+  uses, this file may also be used in conjunction with the GUI. Just as with
   user Fortran subroutines below, settings defined in this file have priority
   over those defined in the GUI.
 
@@ -651,6 +651,11 @@ file-systems, some better suited to data storage, others to intensive I/O.
 If this is not the case, there is no point in running in a scratch directory
 rather than the results directory, as this incurs additional file copies.
 
+If the environment variable \texttt{CS\_SCRATCHDIR} is defined,
+its value has priority over that defined in the preference file
+so if necessary, it
+is possible to define a setting specific to a given run using this mechanism.
+
 \noindent
 {\em WARNING: in case of an error, the temporary directories are not deleted
 after a calculation, so that they may be used for debugging. They may then
@@ -693,7 +698,7 @@ The GUI presents the range of possibilities as 4 execution modes:
 
 \item {\bf mesh preprocessing}: the Kernel is run in preprocessing mode, so as to handle all mesh modification operations, such as joining, periodicity, smoothing, \emph{etc.} If a \texttt{mesh\_input} file or directory is provided, it is used directly. Otherwise, mesh import is run first.
 
-\item {\bf mesh quality criteria}: similar to preprocessing, with the addition of mesh quality criteria computation, and post-processing output of those criteria. Some additional mesh consistency checks ae also run.
+\item {\bf mesh quality criteria}: similar to preprocessing, with the addition of mesh quality criteria computation, and post-processing output of those criteria. Some additional mesh consistency checks are also run.
 
 \item {\bf standard}: this includes preprocessing, followed by a standard computation.
 
@@ -709,9 +714,35 @@ Note also that mesh partitioning is done directly by the Kernel. Depending on th
 If the code was built only with a serial partitioning library,
 graph-based partitioning may best be run in a serial pre-processing stage.
 In some cases, serial partitioning might also provide better partitioning
-quality then parallel partitioning, so if both are available, comparing
+quality than parallel partitioning, so if both are available, comparing
 the performance of the code may be worthwhile, at least for calculations
 expected to run for many iterations.
+
+%==================================
+\subsubsection{Environment variables\label{sec:envcs}}
+%==================================
+
+Setting a few environment variables specific to \CS allows modifying
+its default behaviour. The environment variables used by \CS
+are described here:
+
+\envvar{CS\_SCRATCHDIR}
+
+Allows defining the execution directory (see
+\S\ref{sec:prg_temporarydirectory}),
+overriding the default path or settings from the global
+or user \texttt{code\_saturne.cfg}.
+
+\envvar{CS\_MPIEXEC\_OPTIONS}
+
+This variable allows defining extra arguments to be passed to
+the MPI execution command by the run scripts.
+If this option is defined, it will have priority over the value defined
+in the preference file (or by computed defaults), so if necessary, it
+is possible to define a setting specific to a given run using this
+mechanism. This may be useful when tuning the installation to a given
+machine, for example experimenting MPI mapping and ``bind to core''
+features.
 
 %==================================
 \subsubsection{Interactive modification of the target time step}
@@ -723,7 +754,8 @@ To do so, a file named \texttt{control\_file} must be placed in the
 execution directory (see \S\ref{sec:prg_temporarydirectory}).
 This file must contain a line indicating the value of the new limit
 number of time steps.\\
-If this new limit has already been passed in the calculation, \CS will stop
+If this new limit has already been reached,
+ \CS will stop
 properly at the end of the current time step (the results and restart files
 will be written correctly).\\
 This procedure allows the user to stop a calculation in a clean and interactive
