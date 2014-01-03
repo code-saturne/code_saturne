@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-01-02 19:30+0100\n"
+"POT-Creation-Date: 2014-01-03 11:22+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2937,21 +2937,24 @@ msgstr ""
 
 #, c-format
 msgid " %s: Convection in centered blending with %f percent of upwind\n"
-msgstr ""
+msgstr " %s : Convection en blending centré avec %f pourcent d'upwind\n"
 
 #, c-format
 msgid " %s: Convection in 2nd order blending with %f percent of upwind\n"
-msgstr ""
+msgstr " %s : Convection en blending d'ordre 2 avec %f pourcent d'upwind\n"
 
 msgid "invalid value of ischcp"
-msgstr ""
+msgstr "valeur invalide pour ischcp"
 
 #, c-format
 msgid " %s: %llu Faces with upwind on %llu interior faces \n"
-msgstr ""
+msgstr " %s : %llu Faces avec upwind sur %llu faces intérieures\n"
 
 msgid "invalid value of icvflb and f_id"
-msgstr ""
+msgstr "valeur invalide pour icvflb et f_id"
+
+msgid "invalid value of init"
+msgstr "valeur invalide pour init"
 
 msgid "Iterative reconstruction"
 msgstr "Reconstruction itérative"
@@ -3085,6 +3088,9 @@ msgid ""
 msgstr ""
 "\n"
 "  Type d'agglomération multigrille : %s\n"
+
+msgid "invalid value of isym"
+msgstr ""
 
 msgid "native"
 msgstr "native"
@@ -6825,6 +6831,20 @@ msgstr ""
 "du module thermique 1D en paroi.\n"
 "Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
+#, c-format
+msgid ""
+"WARNING: non-convergence in the computation\n"
+"******** of the friction velocity\n"
+"\n"
+"face number: %d \n"
+"friction vel: %f \n"
+msgstr ""
+"ATTENTION : non-convergence du calcul\n"
+"*********   de la vitesse de frottement\n"
+"\n"
+"face numéro : %d \n"
+"vitesse de frottement : %f \n"
+
 msgid "bft_mem_init() has already been called"
 msgstr ""
 
@@ -9201,6 +9221,83 @@ msgstr ""
 "  Définition de maillage incohérente. Ne peut pas construire les arêtes.\n"
 "  La Face %d contient deux fois le sommet %d.\n"
 
+msgid "Bad Cell Ortho Norm"
+msgstr ""
+
+msgid "Bad Cell Offset"
+msgstr ""
+
+msgid "Bad Cell LSQ Gradient"
+msgstr ""
+
+msgid "Bad Cell Volume Ratio"
+msgstr ""
+
+msgid "Bad Cell Association"
+msgstr ""
+
+msgid "Bad Cell by User"
+msgstr ""
+
+msgid ""
+"\n"
+"  Criterion 1: Orthogonality:\n"
+msgstr ""
+"\n"
+"  Critère 1 : orthogonalité :\n"
+
+#, c-format
+msgid "    Number of bad cells detected: %llu --> %3.0f %%\n"
+msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
+
+msgid ""
+"\n"
+"  Criterion 2: Offset:\n"
+msgstr ""
+"\n"
+"  Critère 2 : décentrement :\n"
+
+msgid ""
+"\n"
+"  Criterion 3: Least-Squares Gradient Quality:\n"
+msgstr ""
+"\n"
+"  Critère 3 : qualité du gradient moindres-carrés :\n"
+
+msgid ""
+"\n"
+"  Criterion 4: Cells Volume Ratio:\n"
+msgstr ""
+"\n"
+"  Critère 4 : ratio des volumes de cellules :\n"
+
+msgid ""
+"\n"
+"  Criterion 5: Guilt by Association:\n"
+msgstr ""
+"\n"
+"  Critère 5 : culpabilité par association :\n"
+
+msgid ""
+"\n"
+" Warning:\n"
+" --------\n"
+"    Mesh quality issue has been detected\n"
+"\n"
+"    The mesh should be re-considered using the listed criteria.\n"
+"\n"
+"    The calculation will run but the solution quality may be degraded...\n"
+msgstr ""
+"\n"
+" Attention :\n"
+" ---------\n"
+"    Un défaut de qualité de maillage a été détecté\n"
+"\n"
+"    Le maillage devrait être revu en fonction des critères indiqués.\n"
+"\n"
+"    Le calcul sera effectué mais la qualité de la solution peut être "
+"dégradée...\n"
+
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
 
@@ -9495,83 +9592,6 @@ msgid ""
 "  interior faces   %10d  %12.5f\n"
 "  boundary faces   %10d  %12.5f\n"
 msgstr ""
-
-msgid "Bad Cell Ortho Norm"
-msgstr ""
-
-msgid "Bad Cell Offset"
-msgstr ""
-
-msgid "Bad Cell LSQ Gradient"
-msgstr ""
-
-msgid "Bad Cell Volume Ratio"
-msgstr ""
-
-msgid "Bad Cell Association"
-msgstr ""
-
-msgid "Bad Cell by User"
-msgstr ""
-
-msgid ""
-"\n"
-"  Criterion 1: Orthogonality:\n"
-msgstr ""
-"\n"
-"  Critère 1 : orthogonalité :\n"
-
-#, c-format
-msgid "    Number of bad cells detected: %llu --> %3.0f %%\n"
-msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
-
-msgid ""
-"\n"
-"  Criterion 2: Offset:\n"
-msgstr ""
-"\n"
-"  Critère 2 : décentrement :\n"
-
-msgid ""
-"\n"
-"  Criterion 3: Least-Squares Gradient Quality:\n"
-msgstr ""
-"\n"
-"  Critère 3 : qualité du gradient moindres-carrés :\n"
-
-msgid ""
-"\n"
-"  Criterion 4: Cells Volume Ratio:\n"
-msgstr ""
-"\n"
-"  Critère 4 : ratio des volumes de cellules :\n"
-
-msgid ""
-"\n"
-"  Criterion 5: Guilt by Association:\n"
-msgstr ""
-"\n"
-"  Critère 5 : culpabilité par association :\n"
-
-msgid ""
-"\n"
-" Warning:\n"
-" --------\n"
-"    Mesh quality issue has been detected\n"
-"\n"
-"    The mesh should be re-considered using the listed criteria.\n"
-"\n"
-"    The calculation will run but the solution quality may be degraded...\n"
-msgstr ""
-"\n"
-" Attention :\n"
-" ---------\n"
-"    Un défaut de qualité de maillage a été détecté\n"
-"\n"
-"    Le maillage devrait être revu en fonction des critères indiqués.\n"
-"\n"
-"    Le calcul sera effectué mais la qualité de la solution peut être "
-"dégradée...\n"
 
 msgid "    Checking the face -> cells connectivity coherency\n"
 msgstr "    Test de cohérence de la connectivité faces -> cellules\n"

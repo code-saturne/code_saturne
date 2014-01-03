@@ -42,9 +42,11 @@ preprocessor/util/ecs_timer.c
 src/alge/cs_benchmark.c
 src/alge/cs_blas.c
 src/alge/cs_convection_diffusion_balance.c
+src/alge/cs_finite_volume_operators.c
 src/alge/cs_gradient.c
 src/alge/cs_gradient_perio.c
 src/alge/cs_grid.c
+src/alge/cs_matrix_building.c
 src/alge/cs_matrix.c
 src/alge/cs_matrix_util.c
 src/alge/cs_multigrid.c
@@ -105,7 +107,9 @@ src/base/cs_time_plot.c
 src/base/cs_timer.c
 src/base/cs_time_step.c
 src/base/cs_tpar1d.c
+src/base/cs_turbomachinery.c
 src/base/cs_ventil.c
+src/base/cs_wall_functions.c
 src/bft/bft_backtrace.c
 src/bft/bft_error.c
 src/bft/bft_mem.c
@@ -177,9 +181,9 @@ src/mesh/cs_join_set.c
 src/mesh/cs_join_split.c
 src/mesh/cs_join_update.c
 src/mesh/cs_join_util.c
-src/mesh/cs_mesh.c
 src/mesh/cs_mesh_bad_cells.c
 src/mesh/cs_mesh_builder.c
+src/mesh/cs_mesh.c
 src/mesh/cs_mesh_coherency.c
 src/mesh/cs_mesh_connect.c
 src/mesh/cs_mesh_from_builder.c
