@@ -149,7 +149,7 @@ do ivar = 1, nvar
         chain = trim(chain) // 'X'
       else if (c_id.eq.2) then
         chain = trim(chain) // 'Y'
-      else if (c_id.eq.2) then
+      else if (c_id.eq.3) then
         chain = trim(chain) // 'Z'
       endif
     endif
