@@ -945,6 +945,24 @@ class mpi_environment:
 
         self.info_cmds = None
 
+        # Initialize options based on system-wide or user configuration
+
+        config = configparser.ConfigParser()
+        config.read(pkg.get_configfiles())
+
+        if config.has_section('mpi'):
+            for option in config.items('mpi'):
+               k = option[0]
+               v = option[1]
+               if not v:
+                   v = None
+               elif v[0] in ['"', "'"]:
+                   v = v[1:-1]
+               if k == 'mpmd':
+                   self.mpi_env.mpmd_mode = eval(v)
+               else:
+                   self.mpi_env.__dict__[k] = v
+
         # Initialize based on known MPI types, or default.
 
         init_method = self.__init_other__
@@ -967,9 +985,47 @@ class mpi_environment:
 
         p = os.getenv('PATH').split(':')
         if len(self.bindir) > 0:
-            p.insert(0, self.bindir)
+            p = [self.bindir]
 
         init_method(p, resource_info, wdir)
+
+        # Overwrite options based on system-wide or user configuration
+
+        if config.has_section('mpi'):
+            for option in config.items('mpi'):
+               k = option[0]
+               v = option[1]
+               if not v:
+                   v = None
+               elif v[0] in ['"', "'"]:
+                   v = v[1:-1]
+               if k == 'mpmd':
+                   self.mpi_env.mpmd_mode = eval(v)
+               else:
+                   self.mpi_env.__dict__[k] = v
+
+    #---------------------------------------------------------------------------
+
+    def __get_mpiexec_absname__(self, p):
+
+        """
+        Build absolute pathname matching mpiexec command.
+        """
+
+        absname = ''
+
+        if self.mpiexec != None:
+            if os.path.isabs(self.mpiexec):
+                absname = self.mpiexec
+            else:
+                for d in p:
+                    absname = os.path.join(d, name)
+                    if os.path.isfile(absname):
+                        break
+                    else:
+                        absname = ''
+
+        return absname
 
     #---------------------------------------------------------------------------
 
@@ -1092,25 +1148,37 @@ class mpi_environment:
         # 'gforker', and 'remshell' are defined by the standard MPICH
         # install and determine the associated launcher.
 
-        launcher_names = ['mpiexec.mpich', 'mpiexec.mpich2', 'mpiexec',
-                          'mpiexec.hydra', 'mpiexec.mpd', 'mpiexec.smpd',
-                          'mpiexec.gforker', 'mpiexec.remshell',
-                          'mpirun.mpich2', 'mpirun.mpich2', 'mpirun']
-
         pm = ''
-        for d in p:
-            for name in launcher_names:
-                absname = os.path.join(d, name)
-                if os.path.isfile(absname):
-                    pm = self.__get_mpich2_3_default_pm__(absname)
-                    # Set launcher name
-                    if d == self.bindir:
-                        self.mpiexec = absname
+        absname = ''
+
+        if self.mpiexec != None:
+            absname = __get_mpiexec_absname__(self, p)
+
+        else:
+            launcher_names = ['mpiexec.mpich', 'mpiexec.mpich2', 'mpiexec',
+                              'mpiexec.hydra', 'mpiexec.mpd', 'mpiexec.smpd',
+                              'mpiexec.gforker', 'mpiexec.remshell',
+                              'mpirun.mpich2', 'mpirun.mpich2', 'mpirun']
+
+            for d in p:
+                for name in launcher_names:
+                    absname = os.path.join(d, name)
+                    if os.path.isfile(absname):
+                        # Set launcher name
+                        if d == self.bindir:
+                            self.mpiexec = absname
+                        else:
+                            self.mpiexec = name
+                        break
                     else:
-                        self.mpiexec = name
+                        absname = ''
+                    if self.mpiexec != None:
+                        break
+                if self.mpiexec != None:
                     break
-            if self.mpiexec != None:
-                break
+
+        if absname:
+            pm = self.__get_mpich2_3_default_pm__(absname)
 
         if (self.mpiexec == None):
             basename = 'mpiexec'
@@ -1304,22 +1372,34 @@ class mpi_environment:
 
         # Determine base executable paths
 
-        launcher_names = ['mpiexec.openmpi', 'mpirun.openmpi',
-                          'mpiexec', 'mpirun']
-        info_name = ''
+        if self.mpiexec != None:
+            absname = __get_mpiexec_absname__(self, p)
 
-        for d in p:
-            for name in launcher_names:
-                absname = os.path.join(d, name)
-                if os.path.isfile(absname):
-                    if d == self.bindir:
-                        self.mpiexec = absname
+        else:
+            launcher_names = ['mpiexec.openmpi', 'mpirun.openmpi',
+                              'mpiexec', 'mpirun']
+
+            for d in p:
+                for name in launcher_names:
+                    absname = os.path.join(d, name)
+                    if os.path.isfile(absname):
+                        if d == self.bindir:
+                            self.mpiexec = absname
+                        else:
+                            self.mpiexec = name
+                        break
                     else:
-                        self.mpiexec = name
-                    info_name = os.path.join(d, 'ompi_info')
+                        absname = ''
+                    if self.mpiexec != None:
+                        break
+                if self.mpiexec != None:
                     break
-            if self.mpiexec != None:
-                break
+
+        if absname:
+            info_name = os.path.join(os.path.dirname(absname),
+                                     'ompi_info')
+        else:
+            info_name = ''
 
         # Determine processor count and MPMD handling
 
@@ -1588,12 +1668,7 @@ class mpi_environment:
         # but these are cases on systems we have used in the past
         # but do not currently have access to).
 
-        if platform.uname()[0] == 'OSF1':
-            if abs_exec_path('prun') != None:
-                self.mpiexec = 'prun'
-                self.mpiexec_n = ' -n '
-
-        elif platform.uname()[0] == 'AIX':
+        if platform.uname()[0] == 'AIX':
             if abs_exec_path('poe') != None:
                 self.mpiexec = 'poe'
                 self.mpiexec_n = None
@@ -1654,24 +1729,6 @@ class exec_environment:
         # known MPI types, use default otherwise
 
         self.mpi_env = mpi_environment(pkg, self.resources, wdir)
-
-        # Modify options based on system-wide or user configuration
-
-        config = configparser.ConfigParser()
-        config.read(pkg.get_configfiles())
-
-        if config.has_section('mpi'):
-            for option in config.items('mpi'):
-               k = option[0]
-               v = option[1]
-               if not v:
-                   v = None
-               elif v[0] in ['"', "'"]:
-                   v = v[1:-1]
-               if k == 'mpmd':
-                   self.mpi_env.mpmd_mode = eval(v)
-               else:
-                   self.mpi_env.__dict__[k] = v
 
 #-------------------------------------------------------------------------------
 
