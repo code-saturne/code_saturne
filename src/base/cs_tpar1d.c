@@ -343,9 +343,7 @@ void CS_PROCF (tpar1d, TPAR1D)
   bl[n-1] = 0.;
   al[0] = 0.;
   bl[0] = bl[0] + (*rocp)/(*dtf)*2*zz[0] + (*lb)/(zz[1]-zz[0]) - h2;
-  cl[0] = cl[0];
   dl[0] = dl[0] +f3;
-  al[n-1] = al[n-1];
   bl[n-1] =   bl[n-1] + (*rocp)/(*dtf)*2*(cs_glob_par1d[*ii].e-zz[n-1])
             + (*lb)/(zz[n-1]-zz[n-2]) -h5;
   cl[n-1] = 0.;

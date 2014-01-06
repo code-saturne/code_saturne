@@ -2366,7 +2366,7 @@ _compare_sections(_cs_io_t    *inp1,
     _set_indexed_section(inp2, id2);
 
     if (inp1->data == NULL && inp2->data == NULL && block_size > max_block_size)
-      block_size = block_size;
+      block_size = max_block_size;
 
     MEM_MALLOC(cmp1, block_size*8, unsigned char);
     MEM_MALLOC(cmp2, block_size*8, unsigned char);

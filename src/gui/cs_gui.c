@@ -1219,7 +1219,7 @@ static char *_specific_physic_scalar_name_label(const char *physics,
 {
   char *path = NULL;
   char *str  = NULL;
-  char *_label = NULL;
+  const char *_label = NULL;
 
   static int start_id = 0; /* Scalar fields decalared in order,
                               so accelerate search using previous
@@ -2951,8 +2951,6 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
       /* for the Temperature, the diffusivity factor is not divided by Cp */
       if (*itherm != 1)
         visls0[i] = visls0[i]/result;
-      else
-        visls0[i] = visls0[i];
     }
 
     /* User scalar

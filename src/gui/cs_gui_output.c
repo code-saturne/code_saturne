@@ -1682,7 +1682,7 @@ _field_labels_from_gui(void)
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
-    const cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field_by_id(f_id);
     const int ipp = cs_field_get_key_int(f, k_post);
 
     if (ipp < 2)
