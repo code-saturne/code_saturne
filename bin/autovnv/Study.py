@@ -956,7 +956,7 @@ class Studies(object):
                             for i in range(len(nodes)):
                                 if is_compare[i]:
                                     case.is_compare = "done"
-                                    self.reporting('    - compare %s (%s)' % (case.label, args[i]))
+                                    self.reporting('    - compare %s (with args: %s)' % (case.label, args[i]))
                                     case.diff_value += case.runCompare(self, repo[i], dest[i], t[i], args[i])
                         if not is_compare or case.is_compare != "done":
                             repo = ""
@@ -964,12 +964,14 @@ class Studies(object):
                             t    = None
                             args = None
                             case.is_compare = "done"
-                            self.reporting('    - compare %s (%s)' % (case.label, args))
                             ref = None
                             if self.__ref:
                                 ref = os.path.join(self.__ref, s.label)
                             case.diff_value += case.runCompare(self, repo, dest, t, args, reference=ref)
-
+                            if case.diff_value:
+                                self.reporting('    - compare %s (default mode) --> DIFFERENCES FOUND' % (case.label))
+                            else:
+                                self.reporting('    - compare %s (default mode) --> NO DIFFERENCES FOUND' % (case.label))
 
 
 
