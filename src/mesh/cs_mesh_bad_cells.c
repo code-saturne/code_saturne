@@ -291,16 +291,17 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 
   const cs_real_t *surfbo  = mesh_quantities->b_face_normal;
 
-  int           sweep_id, n_sweeps;
   cs_lnum_t     i, k, face_id, cell1, cell2, cell_id;
   cs_real_3_t   cell_center1, cell_center2, vect, dij, eigenvalues;
-  cs_real_33_t  w2, rot;
+  cs_real_33_t  w2;
 
   double unsdij, surfn, surf_n_inv, min_diag, max_diag;
-  double pivot, y, t, s, c;
+  double xam, q, p, r, phi;
 
-  cs_lnum_t  indexl = 0, indexc = 0;
   cs_real_t *w1 = NULL;
+
+  const double pi = 4 * atan(1);
+
   BFT_MALLOC(w1, 6 * n_cells_wghosts, cs_real_t);
 
   for (i = 0; i < 6 * n_cells_wghosts; i++)
@@ -365,10 +366,6 @@ _compute_least_squares(const cs_mesh_t             *mesh,
     w1[cell1 + 5 * n_cells_wghosts] += dij[1] * dij[2];
   }
 
-  /* Use of a Jacobi transformation to estimate the min/max eigenvalues ratio */
-
-  n_sweeps = 100;
-
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
 
     w2[0][0] = w1[cell_id];
@@ -381,67 +378,63 @@ _compute_least_squares(const cs_mesh_t             *mesh,
     w2[2][0] = w1[cell_id + 4 * n_cells_wghosts];
     w2[2][1] = w1[cell_id + 5 * n_cells_wghosts];
 
-    for (sweep_id = 0; sweep_id < n_sweeps; sweep_id++) {
+    /* Compute the eigenvalues for a given real symmetric 3x3 matrix */
 
-      pivot  = 0.;
+    xam = w2[0][1] * w2[0][1] + w2[0][2] * w2[0][2] + w2[1][2] * w2[1][2];
 
+    /* First check if the matrix is diagonal */
+    if (xam <= 0.) {
       for (i = 0; i < 3; i++)
         eigenvalues[i] = w2[i][i];
+    }
+
+    /* If the matrix is not diagonal, we get the eigenvalues from a
+       trigonometric solution                                       */
+    else {
+      q = (w2[0][0] + w2[1][1] + w2[2][2]) / 3.;
+
+      p = (w2[0][0] - q) * (w2[0][0] - q) +
+          (w2[1][1] - q) * (w2[1][1] - q) +
+          (w2[2][2] - q) * (w2[2][2] - q) + 2. * xam;
+
+      p = sqrt(p / 6.);
 
       for (i = 0; i < 3; i++) {
         for (k = 0; k < 3; k++) {
-          if (fabs(w2[i][k]) >= pivot && i != k) {
-            pivot = fabs(w2[i][k]);
-            indexl = i;
-            indexc = k;
-          }
+          if (i == k)
+            w2[i][k] = (1. / p) * (w2[i][k] - q);
+          else
+            w2[i][k] = (1. / p) * (w2[i][k]);
         }
       }
 
-      if (pivot < 1.e-10)
-        break;
+      r =   w2[0][0] * w2[1][1] * w2[2][2]
+          + w2[0][1] * w2[1][2] * w2[2][0]
+          + w2[0][2] * w2[1][0] * w2[2][1]
+          - w2[0][2] * w2[1][1] * w2[2][0]
+          - w2[0][1] * w2[1][0] * w2[2][2]
+          - w2[0][0] * w2[1][2] * w2[2][1];
 
-      y = (w2[indexc][indexc] - w2[indexl][indexl]) / (2.*w2[indexl][indexc]);
+      r *= 0.5;
 
-      if (y >= 0.)
-        t = 1. / (fabs(y) + sqrt(y*y + 1));
+      /* In exact arithmetic for a symmetric matrix  -1 <= r <= 1
+         but computation error can leave it slightly outside this range */
+      if (r <= -1.)
+        phi = pi / 3.;
+      else if (r >= 1.)
+        phi = 0.;
       else
-        t = -1. / (fabs(y) + sqrt(y*y + 1));
+        phi = acos(r) / 3.;
 
-      c = 1. / sqrt(t*t + 1);
-      s = t*c;
-
-      for (i = 0; i < 3; i++) {
-        for (k = 0; k < 3; k++)
-          rot[i][k] = 0.;
-      }
-
-      for (i = 0; i < 3; i++)
-        rot[i][i] = 1.;
-
-      rot[indexl][indexl] = c;
-      rot[indexc][indexc] = c;
-      rot[indexl][indexc] = -s;
-      rot[indexc][indexl] = s;
-
-      for (i = 0; i < 3; i++)
-        for (k = 0; k < 3; k++)
-          w2[i][k] = rot[i][0]*w2[0][k] +
-                     rot[i][1]*w2[1][k] +
-                     rot[i][2]*w2[2][k];
-
-      rot[indexl][indexc] = s;
-      rot[indexc][indexl] = -s;
-
-      for (i = 0; i < 3; i++)
-        for (k = 0; k < 3; k++)
-          w2[i][k] = w2[i][0]*rot[0][k] +
-                     w2[i][1]*rot[1][k] +
-                     w2[i][2]*rot[2][k];
+      /* The eigenvalues satisfy eig3 <= eig2 <= eig1
+         with tr(w2) = eig1 + eig2 + eig3             */
+      eigenvalues[0] = q + 2. * p * cos(phi);
+      eigenvalues[2] = q + 2. * p * cos(phi + (2. * pi / 3.));
+      eigenvalues[1] = 3. * q - eigenvalues[0] - eigenvalues[2];
     }
 
     min_diag = 1.e15;
-    max_diag = 0.0;
+    max_diag = 0.;
 
     for (i = 0; i < 3; i++) {
       min_diag = fmin(min_diag, fabs(eigenvalues[i]));
@@ -450,9 +443,8 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 
     lsq = min_diag / max_diag;
 
-    if (lsq < 0.1) {
+    if (lsq < 0.1)
       bad_cell_flag[cell_id] = _type_flag_mask[2];
-    }
   }
 
   BFT_FREE(w1);
