@@ -9,6 +9,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Minor Fixes to info messages for CCMIO ouptut.
+
 - Fix pressure derive (listing) in compressible.
 
 - Fix parallel mesh joining bug appearing in some partitioning situations.

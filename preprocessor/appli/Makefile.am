@@ -64,7 +64,6 @@ cs_preprocess_LDADD = \
 $(top_builddir)/preprocessor/pre-post/libprepostecs.la \
 $(top_builddir)/preprocessor/base/libbaseecs.la \
 $(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
-$(ADF_LDFLAGS) $(ADFRUNPATH) $(ADF_LIBS) \
 $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
 $(MED_LDFLAGS) $(MEDRUNPATH) $(MED_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
