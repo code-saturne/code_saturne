@@ -9,7 +9,7 @@ Changes:
 Bug fixes:
 ----------
 
-- Minor Fixes to info messages for CCMIO ouptut.
+- Minor Fixes to info messages for CCMIO output.
 
 - Fix pressure derive (listing) in compressible.
 

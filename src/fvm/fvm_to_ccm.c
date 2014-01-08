@@ -4078,6 +4078,13 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
 
   if (w->rank < 1) {
 
+    bool new_time_value = false;
+
+    if (    w->field_time.n_time_values == 0
+        ||  w->field_time.time_value[w->field_time.n_time_values-1]
+            < time_value)
+      new_time_value = true;
+
     /* Prepare new ccmp filename */
 
     if (time_step > -1) {
@@ -4098,7 +4105,9 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
 
     /* Open file */
 
-    cs_file_remove(w->solution_filename);
+    if (new_time_value)
+      cs_file_remove(w->solution_filename);
+
     CCMIOOpenFile(err, w->solution_filename, kCCMIOWrite, &root);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
@@ -4110,9 +4119,7 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
 
     /* Write new field info */
 
-    if (    w->field_time.n_time_values == 0
-        ||  w->field_time.time_value[w->field_time.n_time_values-1]
-            < time_value) {
+    if (new_time_value) {
 
       _write_state(w);
       _write_processor(w);
