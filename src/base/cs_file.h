@@ -774,6 +774,19 @@ cs_file_listdir(const char *path);
 cs_file_off_t
 cs_file_size(const char  *path);
 
+/*----------------------------------------------------------------------------
+ * Remove a file if it exists and is a regular file.
+ *
+ * parameters
+ *   path <-- file path.
+ *
+ * returns:
+ *   0 in case of success or if file does not exist, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_file_remove(const char  *path);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

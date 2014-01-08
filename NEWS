@@ -14,6 +14,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Minor Fixes to info messages for CCMIO ouptut.
+
 - Fix parallel mesh joining bug appearing in some partitioning situations.
   A previous "fix" in release 3.1.1 had only made the issue appear in 
   different partitioning situations. This fix to single/coupled edge handling
