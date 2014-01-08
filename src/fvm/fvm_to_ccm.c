@@ -207,6 +207,7 @@ typedef struct {
  *============================================================================*/
 
 cs_datatype_t _ccm_num_datatype = CS_INT32;
+static char _ccm_version_string[32] = {"CCM"};
 
 /*=============================================================================
  * Private function definitions
@@ -598,6 +599,7 @@ _write_state(fvm_to_ccm_writer_t  *w)
  * parameters:
  *   w <-> pointer to writer structure
  *----------------------------------------------------------------------------*/
+
 static void
 _write_processor(fvm_to_ccm_writer_t  *w)
 {
@@ -3591,9 +3593,15 @@ const char *
 fvm_to_ccm_version_string(int string_index,
                           int compile_time_version)
 {
-  const char * retval = NULL;
+#if    defined(kCCMIOMajorVersion) && defined(kCCMIOMinorVersion) \
+    && defined(kCCMIORevision)
+  snprintf(_ccm_version_string, 31, "%s %d.%d.%d", "CCMIO",
+           kCCMIOMajorVersion, kCCMIOMinorVersion, kCCMIORevision);
+#else
+  sprintf(_ccm_version_string, "%s", "CCMIO");
+#endif
 
-  return retval;
+  return _ccm_version_string;
 }
 
 /*----------------------------------------------------------------------------
@@ -3895,12 +3903,13 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
 
     /* Open file for output */
 
+    cs_file_remove(w->mesh_filename);
     CCMIOOpenFile(err, w->mesh_filename, kCCMIOWrite, &root);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
                 _("CCMIOOpenFile() failed to open file \"%s\"\n"
                   "CCMIO error %d."),
-                w->solution_filename, (int)error);
+                w->mesh_filename, (int)error);
     w->root_id = root;
     w->is_open = true;
   }
@@ -4089,6 +4098,7 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
 
     /* Open file */
 
+    cs_file_remove(w->solution_filename);
     CCMIOOpenFile(err, w->solution_filename, kCCMIOWrite, &root);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
