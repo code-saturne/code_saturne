@@ -4829,6 +4829,16 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Error removing file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à la suppression du fichier \"%s\" :\n"
+"\n"
+"  %s"
+
+#, c-format
+msgid ""
 "The %d periodic transformations of the halo do not comply\n"
 "with the main mesh transformations (numbering %d).\n"
 msgstr ""

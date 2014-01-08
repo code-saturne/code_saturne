@@ -29,7 +29,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_LDFLAGS = $(ADF_LDFLAGS) $(CCM_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) \
+AM_LDFLAGS = $(CCM_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) \
 $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 
 # Conditionally compiled extensions
@@ -133,7 +133,7 @@ libfvm_ccm_la_CPPFLAGS =\
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
 $(CFLAGS_DBG) $(CFLAGS_OPT) \
-$(ADF_CPPFLAGS) $(CCM_CPPFLAGS) $(MPI_CPPFLAGS)
+$(CCM_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_filters_la_LIBADD += libfvm_ccm.la
 libfvm_ccm_la_SOURCES = fvm_to_ccm.c
 endif

@@ -1159,45 +1159,6 @@ _file_write_block_p(cs_file_t  *f,
 #if defined(HAVE_MPI_IO)
 
 /*----------------------------------------------------------------------------
- * Check for and remove existing file.
- *
- * This is necessary because some MPI-IO implementations seem to append
- * data to an exisiting file even when MPI_MODE_CREATE is specified.
- *
- * parameters:
- *   f <-- cs_file_t descriptor
- *----------------------------------------------------------------------------*/
-
-static void
-_file_clear(cs_file_t  *f)
-{
-  int exists = 0;
-
-#if defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_STAT_H) \
-                              && defined(HAVE_UNISTD_H)
-
-  struct stat s;
-
-  if (stat(f->name, &s) == 0) {
-    if (S_ISREG(s.st_mode) != 0)
-      exists = 1;
-  }
-  if (exists)
-    unlink(f->name);
-
-#else
-
-  /* If Posix-type API is not available, revert to basic method */
-
-  FILE *f;
-
-  if ((f = fopen(fic_name, "w")) != NULL)
-    fclose(f);
-
-#endif
-}
-
-/*----------------------------------------------------------------------------
  * Output MPI error message.
  *
  * This supposes that the default MPI errorhandler is not used
@@ -1265,7 +1226,7 @@ _mpi_file_open(cs_file_t       *f,
       amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
     MPI_Comm_rank(f->comm, &rank);
     if (rank < 1)
-      _file_clear(f);
+      cs_file_remove(f->name);
   }
 
   else if (f->mode == CS_FILE_MODE_READ)
@@ -3747,6 +3708,51 @@ cs_file_size(const char  *path)
 #endif /* defined(HAVE_SYS_STAT_H) */
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Remove a file if it exists and is a regular file.
+ *
+ * \param[in]  path  file path.
+ *
+ * \return 0 in case of success or if file does not exist, 0 otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_file_remove(const char  *path)
+{
+  int exists = 0;
+  int retval = 0;
+
+#if defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_STAT_H) \
+                              && defined(HAVE_UNISTD_H)
+
+  struct stat s;
+
+  if (stat(path, &s) == 0) {
+    if (S_ISREG(s.st_mode) != 0)
+      exists = 1;
+  }
+  if (exists)
+    retval = unlink(path);
+
+#else
+
+  /* If Posix-type API is not available, revert to basic method */
+
+  FILE *f;
+
+  if ((f = fopen(path, "w")) != NULL)
+    retval = fclose(f);
+
+#endif
+
+  if (retval != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error removing file \"%s\":\n\n"
+                "  %s"), path, strerror(errno));
 }
 
 /*----------------------------------------------------------------------------*/
