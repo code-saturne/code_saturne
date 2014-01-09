@@ -44,7 +44,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
-subroutine cs_user_extra_operations &
+subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
    dt     , rtpa   , rtp    , propce )
 
@@ -92,7 +92,6 @@ integer          iel    , ifac   , ivar
 integer          iel1   , iel2   , ieltsm
 integer          iortho
 integer          inc    , iccocg
-integer          nswrgp , imligp , iwarnp
 integer          ipcvst , iflmas , iflmab , ipccp, ipcvsl
 integer          iscal
 integer          ncesmp
@@ -102,10 +101,8 @@ double precision xrtpa  , xrtp
 double precision xbilan , xbilvl , xbilpa , xbilpt
 double precision xbilsy , xbilen , xbilso , xbildv
 double precision xbilmi , xbilma
-double precision epsrgp , climgp , extrap
 double precision xfluxf , xgamma
-double precision diipbx, diipby, diipbz, distbr
-double precision visct, flumab , xcp , xvsl, ctb1, ctb2
+double precision flumab , xcp , ctb1, ctb2
 
 integer, allocatable, dimension(:) :: lstelt
 
@@ -261,29 +258,20 @@ if (inpdt0.eq.0) then
 
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
-    call field_gradient_scalar                                             &
+    call field_gradient_scalar &
     !=========================
-      (ivarfl(ivar), 0, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
-       epsrgp, climgp, extrap, grad)
+      (ivarfl(ivar), 0, imrgra, inc, iccocg,                               &
+       grad)
 
     ! - Compute reconstructed value in boundary cells
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
       treco(ifac) =   rtp(iel,ivar)       &
-                    + diipbx*grad(1,iel)  &
-                    + diipby*grad(2,iel)  &
-                    + diipbz*grad(3,iel)
+                    + diipb(1,ifac)*grad(1,iel)  &
+                    + diipb(2,ifac)*grad(2,iel)  &
+                    + diipb(3,ifac)*grad(3,iel)
     enddo
 
     ! Free memory
@@ -335,9 +323,6 @@ if (inpdt0.eq.0) then
   ! Caution: values of Cp and Dt in cells adjacent to interior faces are
   !          used, which implies having synchronized these values for
   !          parallelism and periodicity.
-
-  ! Note that if Cp is variable, writing a balance on the temperature
-  ! equation is not absolutely correct.
 
   if (ipccp.gt.0) then
     do ifac = 1, nfac
@@ -432,25 +417,14 @@ if (inpdt0.eq.0) then
     ifac = lstelt(ilelt)
     iel  = ifabor(ifac)   ! associated boundary cell
 
-    ! Geometric variables
-
-    distbr = distb(ifac)
-
     ! Physical variables
 
-    visct  = propce(iel,ipcvst)
     flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
       xcp    = cp0
-    endif
-
-    if (ipcvsl.gt.0) then
-      xvsl = propce(iel,ipcvsl)
-    else
-      xvsl = visls0(iscal)
     endif
 
     ! Contribution to flux from the current face
@@ -476,25 +450,14 @@ if (inpdt0.eq.0) then
     ifac = lstelt(ilelt)
     iel  = ifabor(ifac)   ! associated boundary cell
 
-    ! Geometric variables
-
-    distbr = distb(ifac)
-
     ! Physical variables
 
-    visct  = propce(iel,ipcvst)
     flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
       xcp    = cp0
-    endif
-
-    if (ipcvsl.gt.0) then
-      xvsl = propce(iel,ipcvsl)
-    else
-      xvsl = visls0(iscal)
     endif
 
     ! Contribution to flux from the current face
@@ -519,25 +482,14 @@ if (inpdt0.eq.0) then
     ifac = lstelt(ilelt)
     iel  = ifabor(ifac)   ! associated boundary cell
 
-    ! Geometric variables
-
-    distbr = distb(ifac)
-
     ! Physical variables
 
-    visct  = propce(iel,ipcvst)
     flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
       xcp    = cp0
-    endif
-
-    if (ipcvsl.gt.0) then
-      xvsl = propce(iel,ipcvsl)
-    else
-      xvsl = visls0(iscal)
     endif
 
     ! Contribution to flux from the current face
@@ -562,25 +514,14 @@ if (inpdt0.eq.0) then
     ifac = lstelt(ilelt)
     iel  = ifabor(ifac)   ! associated boundary cell
 
-    ! Geometric variables
-
-    distbr = distb(ifac)
-
     ! Physical variables
 
-    visct  = propce(iel,ipcvst)
     flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
       xcp    = cp0
-    endif
-
-    if (ipcvsl.gt.0) then
-      xvsl = propce(iel,ipcvsl)
-    else
-      xvsl = visls0(iscal)
     endif
 
     ! Contribution to flux from the current face
@@ -605,25 +546,14 @@ if (inpdt0.eq.0) then
     ifac = lstelt(ilelt)
     iel  = ifabor(ifac)   ! associated boundary cell
 
-    ! Geometric variables
-
-    distbr = distb(ifac)
-
     ! Physical variables
 
-    visct  = propce(iel,ipcvst)
     flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
       xcp    = cp0
-    endif
-
-    if (ipcvsl.gt.0) then
-      xvsl = propce(iel,ipcvsl)
-    else
-      xvsl = visls0(iscal)
     endif
 
     ! Contribution to flux from the current face
@@ -730,4 +660,4 @@ deallocate(lstelt)
 !< [finalize]
 
 return
-end subroutine cs_user_extra_operations
+end subroutine cs_f_user_extra_operations

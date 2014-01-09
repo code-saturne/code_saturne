@@ -65,7 +65,7 @@ AM_LDFLAGS =
 # Add cs_user_modules file to distribution as it is not automatically accounted
 # for by automake
 
-EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90
+EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90 cs_user_extra_operations.f90
 
 # Library source files
 
@@ -73,7 +73,7 @@ userfiles = \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_coupling.c \
-cs_user_extra_operations.f90 \
+cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
 cs_user_les_inflow.f90 \
@@ -105,8 +105,7 @@ ustsma.f90 \
 usvort.f90 \
 usvosy.f90 
 
-
-
+# Special treatment to files existing both in f90 and C:
 cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90
 
 cs_f_user_parameters.o: $(cs_user_f_parameters)
@@ -118,13 +117,24 @@ cs_f_user_parameters.obj: $(cs_user_f_parameters)
 cs_f_user_parameters.lo: $(cs_user_f_parameters)
 	$(LTFCCOMPILE) -c -o cs_f_user_parameters.o $(cs_user_f_parameters)
 
+cs_user_f_extra_operations = $(top_srcdir)/src/user/cs_user_extra_operations.f90
+
+cs_f_user_extra_operations.o: $(cs_user_f_extra_operations)
+	$(FCCOMPILE) -c -o cs_f_user_extra_operations.o  $(cs_user_f_extra_operations)
+
+cs_f_user_extra_operations.obj: $(cs_user_f_extra_operations)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_extra_operations)`
+
+cs_f_user_extra_operations.lo: $(cs_user_f_extra_operations)
+	$(LTFCCOMPILE) -c -o cs_f_user_extra_operations.o $(cs_user_f_extra_operations)
+
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
-libcsuser_la_LIBADD = cs_f_user_parameters.lo
+libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user
-user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90
+user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90 cs_user_extra_operations.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

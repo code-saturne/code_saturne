@@ -1,9 +1,10 @@
-#ifndef __CS_PARAMETERS_H__
-#define __CS_PARAMETERS_H__
-
 /*============================================================================
- * General parameters management.
+ * This function is called at the end of each time step, and has a very
+ *  general purpose
+ *  (i.e. anything that does not have another dedicated user subroutine)
  *============================================================================*/
+
+/* VERS */
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
@@ -27,90 +28,74 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <assert.h>
+#include <math.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
+/*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "fvm_writer.h"
+
+#include "cs_base.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
+#include "cs_field_operator.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "cs_halo.h"
+#include "cs_halo_perio.h"
+#include "cs_log.h"
+#include "cs_parameters.h"
+#include "cs_prototypes.h"
+#include "cs_time_step.h"
+#include "cs_selector.h"
+
+#include "cs_post.h"
+
+/*----------------------------------------------------------------------------
+ *  Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Macro definitions
- *============================================================================*/
-
 /*============================================================================
- * Type definitions
+ * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Structure of variable calculation options
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-  int     iwarni;
-  int     iconv ;
-  int     istat ;
-  int     idiff ;
-  int     idifft;
-  int     idften;
-  int     iswdyn;
-  int     ischcv;
-  int     isstpc;
-  int     nswrgr;
-  int     nswrsm;
-  int     imrgra;
-  int     imligr;
-  int     ircflu;
-  double  thetav;
-  double  blencv;
-  double  epsilo;
-  double  epsrsm;
-  double  epsrgr;
-  double  climgr;
-  double  extrag;
-  double  relaxv;
-} cs_var_cal_opt_t;
-
-/*----------------------------------------------------------------------------
- * Boundary condition types
- *----------------------------------------------------------------------------*/
-
-enum {
-  CS_INDEF = 1,
-  CS_INLET = 2,
-  CS_OUTLET = 3,
-  CS_SYMMETRY = 4,
-  CS_SMOOTHWALL = 5,
-  CS_ROUGHWALL = 6,
-  CS_ESICF = 7,
-  CS_SSPCF = 8,
-  CS_SOPCF = 9,
-  CS_ERUCF = 10,
-  CS_EPHCF = 11,
-  CS_EQHCF = 12,
-  CS_COUPLED = 13,
-  CS_FREE_INLET = 14
-};
-
-/*=============================================================================
- * Public function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Define general field keys.
  *
- * A recommened practice for different submodules would be to use
- * "cs_<module>_key_init() functions to define keys specific to those modules.
  *----------------------------------------------------------------------------*/
 
 void
-cs_parameters_define_field_keys(void);
+cs_user_extra_operations(void)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-/*----------------------------------------------------------------------------*/
+}
 
 END_C_DECLS
-
-#endif /* __CS_PARAMETERS_H__ */

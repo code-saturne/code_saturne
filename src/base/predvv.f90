@@ -340,12 +340,6 @@ allocate(grad(3,ncelet))
 
 iccocg = 1
 inc    = 1
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
 
 ! For compressible flows, the new Pressure field is required
 if (ippmod(icompf).ge.0) then
@@ -357,8 +351,7 @@ else
 endif
 
 call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
-                              iccocg, nswrgp, iphydr, iwarnp,     &
-                              imligp, epsrgp , extrap, climgp,    &
+                              iccocg, iphydr,                     &
                               frcxt, grad)
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
@@ -722,17 +715,10 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   iccocg = 1
   iprev  = 1
   inc    = 1
-  nswrgp = nswrgr(ik)
-  imligp = imligr(ik)
-  epsrgp = epsrgr(ik)
-  climgp = climgr(ik)
-  extrap = extrag(ik)
-
-  iwarnp = iwarni(ik)
 
   call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
-                             iccocg, nswrgp, iwarnp, imligp,      &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                              &
+                             grad)
 
   d2s3 = 2.d0/3.d0
 

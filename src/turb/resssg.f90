@@ -141,7 +141,7 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          iprev , inc, iccocg, iphydp, ll
+integer          iprev , inc, iccocg, ll
 integer          imucpp, idftnp, iswdyp
 integer          indrey(3,3)
 integer          icvflb
@@ -363,17 +363,10 @@ if (iturb.eq.32) then
   iprev  = 1
   inc    = 1
   iccocg = 1
-  nswrgp = nswrgr(ial)
-  imligp = imligr(ial)
-  iwarnp = iwarni(ial)
-  epsrgp = epsrgr(ial)
-  climgp = climgr(ial)
-  extrap = extrag(ial)
-  iphydp = 0
 
   call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
-                             iccocg, nswrgp, iwarnp, imligp,      &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                              &
+                             grad)
 
 endif
 

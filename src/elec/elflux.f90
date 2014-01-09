@@ -88,10 +88,10 @@ integer          ipcefj, ipcsig, ipcsii
 integer          ipcla1, ipcla2, ipcla3
 integer          ipcdc1, ipcdc2, ipcdc3
 integer          ipcdi1, ipcdi2, ipcdi3
-integer          iprev , inc   , iccocg, nswrgp, imligp, iwarnp
+integer          iprev , inc   , iccocg
 integer          ivar  , modntl
 
-double precision epsrgp, climgp, extrap, vrmin, vrmax, var
+double precision vrmin, vrmax, var
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:,:) :: grad
@@ -168,16 +168,10 @@ if (iappel.eq.1) then
   iprev = 0
   inc = 1
   iccocg = 1
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
 
   call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                             iccocg, nswrgp, iwarnp, imligp,      &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                               &
+                             grad)
 
 !   2.2 Calcul du champ electrique E = - grad (potR)
 !  -------------------------------------------------
@@ -317,16 +311,10 @@ if (iappel.eq.1) then
     iprev = 0
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                               iccocg, nswrgp, iwarnp, imligp,       &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                               &
+                               grad)
 
 !   3.2 Calcul du champ electrique Ei = - grad (potI) :
 !  -------------------------------------------------
@@ -498,16 +486,10 @@ if (iappel.eq.2) then
     iprev = 0
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                               iccocg, nswrgp, iwarnp, imligp,       &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                               &
+                               grad)
 
     ! B = rot A
 
@@ -524,16 +506,10 @@ if (iappel.eq.2) then
     iprev = 0
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                               iccocg, nswrgp, iwarnp, imligp,       &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                               &
+                               grad)
 
     ! B = rot A
 
@@ -550,16 +526,10 @@ if (iappel.eq.2) then
     iprev = 0
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                               iccocg, nswrgp, iwarnp, imligp,       &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                               &
+                               grad)
 
     ! B = rot A
 

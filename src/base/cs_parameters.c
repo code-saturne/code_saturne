@@ -97,9 +97,9 @@ static cs_var_cal_opt_t _var_cal_opt =
   1,     /* isstpc */
   100,   /* nswrgr */
   1,     /* nswrsm */
+  0,     /* imrgra */
   -1,    /* imligr */
   1,     /* ircflu */
-  1,     /* inc    */
   1.,    /* thetav */
   1.,    /* blencv */
   1.e-8, /* epsilo */
@@ -133,9 +133,9 @@ _log_func_var_opt_cal(const void *t)
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "isstpc", _t->isstpc);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "nswrgr", _t->nswrgr);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "nswrsm", _t->nswrsm);
+  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "imrgra", _t->imrgra);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "imligr", _t->imligr);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "ircflu", _t->ircflu);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "inc   ", _t->inc   );
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "thetav", _t->thetav);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "blencv", _t->blencv);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "epsilo", _t->epsilo);

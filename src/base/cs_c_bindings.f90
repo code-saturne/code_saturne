@@ -62,9 +62,9 @@ module cs_c_bindings
     integer(c_int) :: isstpc
     integer(c_int) :: nswrgr
     integer(c_int) :: nswrsm
+    integer(c_int) :: imrgra
     integer(c_int) :: imligr
     integer(c_int) :: ircflu
-    integer(c_int) :: inc
     real(c_double) :: thetav
     real(c_double) :: blencv
     real(c_double) :: epsilo
@@ -137,7 +137,7 @@ module cs_c_bindings
       bind(C, name='cs_log_init_moments')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(c_double), dimension(*), intent(in) :: cumulative_time
+      real(kind=c_double), dimension(*), intent(in) :: cumulative_time
     end subroutine cs_log_init_moments
 
     !---------------------------------------------------------------------------
@@ -219,7 +219,7 @@ module cs_c_bindings
       character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
       character(kind=c_char, len=1), dimension(*), intent(in) :: old_name
       integer(c_int), value :: location_id, n_location_vals
-      integer, dimension(*) :: val
+      integer(kind=c_int), dimension(*) :: val
       integer(c_int) :: ierror
     end subroutine cs_f_restart_read_int_t_compat
 
@@ -302,6 +302,16 @@ module cs_c_bindings
       implicit none
       type(c_ptr), value :: restart
     end subroutine cs_restart_write_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C user function for extra operations
+
+    subroutine cs_user_extra_operations()  &
+      bind(C, name='cs_user_extra_operations')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_user_extra_operations
 
     !---------------------------------------------------------------------------
 

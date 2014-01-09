@@ -78,14 +78,13 @@ double precision, dimension(nfbrps), intent(out)   :: bflux
 
 ! Local variables
 
-integer ::         inc, iccocg, nswrgp, imligp, iwarnp
+integer ::         inc, iccocg
 integer ::         ifac, iloc, ivar
 integer ::         iel
 integer ::         ipcvsl, ipcvst, iflmab
 
 double precision :: xvsl  , srfbn
 double precision :: visct , flumab, diipbx, diipby, diipbz, tcel
-double precision :: epsrgp, climgp, extrap
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -133,16 +132,11 @@ if (iscalt.gt.0) then
 
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
-    call field_gradient_scalar                                             &
-      (ivarfl(ivar), 1, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
-       epsrgp, climgp, extrap, grad)
+    call field_gradient_scalar &
+      (ivarfl(ivar), 1, imrgra, inc,         &
+       iccocg,                               &
+       grad)
 
     ! Compute diffusive and convective flux using reconstructed temperature
 
@@ -273,12 +267,12 @@ double precision, dimension(nfbrps), intent(out)   :: btemp
 
 ! Local variables
 
-integer ::         inc, iccocg, nswrgp, imligp, iwarnp
+integer ::         inc, iccocg
 integer ::         iel, ifac, iloc, ivar
 integer ::         itplus, itstar
 
 double precision :: diipbx, diipby, diipbz
-double precision :: epsrgp, climgp, extrap, tcel
+double precision :: tcel
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp, tstarp
@@ -310,18 +304,12 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
     ! Compute gradient of temperature / enthalpy
 
-    call field_gradient_scalar                                             &
-      (ivarfl(ivar), 1, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
-       epsrgp, climgp, extrap, grad)
+    call field_gradient_scalar &
+      (ivarfl(ivar), 1, imrgra, inc, iccocg,                               &
+       grad)
 
     ! Compute reconstructed value in boundary cells
 
@@ -430,13 +418,13 @@ double precision, dimension(nfbrps), intent(out)   :: bnussl
 
 ! Local variables
 
-integer ::         inc, iccocg, nswrgp, imligp, iwarnp
+integer ::         inc, iccocg
 integer ::         iel, ifac, iloc, ivar
 integer ::         ipcvsl, ipcvst, itplus, itstar
 
 double precision :: xvsl  , srfbn
 double precision :: visct , diipbx, diipby, diipbz
-double precision :: epsrgp, climgp, extrap, numer, denom, tcel
+double precision :: numer, denom, tcel
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -489,16 +477,10 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
-    call field_gradient_scalar                                             &
-      (ivarfl(ivar), 1, imrgra, inc, iccocg, nswrgp, iwarnp, imligp,       &
-       epsrgp, climgp, extrap, grad)
+    call field_gradient_scalar &
+      (ivarfl(ivar), 1, imrgra, inc, iccocg,                               &
+       grad)
 
     ! Compute using reconstructed temperature value in boundary cells
 

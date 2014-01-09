@@ -518,16 +518,10 @@ if (itspdv.eq.1) then
     iprev = 1
     inc = 1
     iccocg = 1
-    nswrgp = nswrgr(iii)
-    imligp = imligr(iii)
-    iwarnp = iwarni(iii)
-    epsrgp = epsrgr(iii)
-    climgp = climgr(iii)
-    extrap = extrag(iii)
 
     call field_gradient_scalar(ivarfl(iii), iprev, imrgra, inc,   &
-                               iccocg, nswrgp, iwarnp, imligp,    &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                            &
+                               grad)
 
     ! Traitement de la production
     ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping

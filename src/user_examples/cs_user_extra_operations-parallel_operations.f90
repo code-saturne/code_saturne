@@ -45,7 +45,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
-subroutine cs_user_extra_operations &
+subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
    dt     , rtpa   , rtp    , propce )
 
@@ -435,4 +435,4 @@ write(nfecra,5150) irangv, xyz(1), xyz(2), xyz(3)
 !< [example_15]
 
 return
-end subroutine cs_user_extra_operations
+end subroutine cs_f_user_extra_operations

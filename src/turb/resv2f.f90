@@ -190,31 +190,17 @@ inc = 1
 iprev = 1
 ivar = iphi
 
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-iwarnp = iwarni(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-
 call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,      &
-                           iccocg, nswrgp, iwarnp, imligp,        &
-                           epsrgp, extrap, climgp, gradp)
+                           iccocg,                                &
+                           gradp)
 
 iccocg = 1
 inc = 1
 ivar = ik
 
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-iwarnp = iwarni(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-
 call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,        &
-                           iccocg, nswrgp, iwarnp, imligp,        &
-                           epsrgp, extrap, climgp, gradk)
+                           iccocg,                                &
+                           gradk)
 
 do iel = 1, ncel
   w1(iel) = gradp(1,iel)*gradk(1,iel) &

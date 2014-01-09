@@ -223,8 +223,7 @@ if (ivar.eq.isca(icoyfp)) then
   iccocg = 1
 
   call field_gradient_scalar(ivarfl(ii), iprev, imrgra, inc,              &
-                             iccocg, nswrgr(ii), iwarni(ii), imligr(ii),  &
-                             epsrgr(ii), extrag(ii), climgr(ii),          &
+                             iccocg,                                      &
                              gradf)
 
 ! --- Calcul du gradient de Yfuel
@@ -240,8 +239,7 @@ if (ivar.eq.isca(icoyfp)) then
   iccocg = 1
 
   call field_gradient_scalar(ivarfl(ii), iprev, imrgra, inc,              &
-                             iccocg, nswrgr(ii), iwarni(ii), imligr(ii),  &
-                             epsrgr(ii), extrag(ii), climgr(ii),          &
+                             iccocg,                                      &
                              grady)
 
 ! --- Calcul du terme source

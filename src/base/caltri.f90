@@ -898,10 +898,12 @@ if (itrale.gt.0) then
     xyzcen, rtp, propce, ipproc)
   endif
 
-  call cs_user_extra_operations                                   &
-  !============================
+  call cs_f_user_extra_operations &
+  !==============================
  ( nvar   , nscal  ,                                              &
    dt     , rtpa   , rtp    , propce )
+
+  call cs_user_extra_operations()
 
 endif
 

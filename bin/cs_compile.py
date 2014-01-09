@@ -399,6 +399,8 @@ def compile_and_link(pkg, srcdir, destdir,
         cmd = [get_compiler(pkg, 'fc')]
         if f == 'cs_user_parameters.f90':
             cmd = cmd + ["-o", "cs_f_user_parameters.o"]
+        if f == 'cs_user_extra_operations.f90':
+            cmd = cmd + ["-o", "cs_f_user_extra_operations.o"]
         if opt_fcflags != None:
             cmd = cmd + separate_args(opt_fcflags)
         cmd = cmd + ["-I", srcdir]

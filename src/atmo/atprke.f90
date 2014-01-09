@@ -94,13 +94,10 @@ integer         itpp , iqw
 integer         ipcliq
 integer         iccocg, inc
 integer         iivar
-integer         nswrgp, imligp
-integer         iwarnp
 
 double precision gravke, prdtur
 double precision theta_virt
 double precision qldia,qw
-double precision epsrgp, climgp, extrap
 double precision xk, xeps, visct, ttke, rho
 
 double precision dum
@@ -165,21 +162,14 @@ itpp = isca(iscalt)
 iccocg = 1
 inc = 1
 
-nswrgp = nswrgr(itpp)
-epsrgp = epsrgr(itpp)
-imligp = imligr(itpp)
-iwarnp = iwarni(itpp)
-climgp = climgr(itpp)
-extrap = extrag(itpp)
-
 iivar = itpp
 
 ! computes the turbulent production/destruction terms:
 ! dry atmo: (1/sigmas*theta)*(dtheta/dz)*gz
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, grad)
+                           iccocg,                                  &
+                           grad)
 
 ! Production and gravity terms
 ! TINSTK=P+G et TINSTE = P + (1-CE3)*G
@@ -262,21 +252,14 @@ enddo
 iccocg = 1
 inc = 1
 
-nswrgp = nswrgr(itpp)
-epsrgp = epsrgr(itpp)
-imligp = imligr(itpp)
-iwarnp = iwarni(itpp)
-climgp = climgr(itpp)
-extrap = extrag(itpp)
-
 iivar = itpp
 
 ! computes the turbulent production/destruction terms:
 ! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, grad)
+                           iccocg,                                  &
+                           grad)
 
 ! Production and gravity terms
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G
@@ -303,21 +286,14 @@ endif
 ! now gradient of humidity and it's associated production term
 ! ----------------------------------------------------------------
 
-nswrgp = nswrgr(iqw)
-epsrgp = epsrgr(iqw)
-imligp = imligr(iqw)
-iwarnp = iwarni(iqw)
-climgp = climgr(iqw)
-extrap = extrag(iqw)
-
 iivar = iqw
 
 ! computes the turbulent production/destruction terms:
 ! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, grad)
+                           iccocg,                                  &
+                           grad)
 
 ! Production and gravity terms
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G

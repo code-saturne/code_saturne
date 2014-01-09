@@ -45,7 +45,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
-subroutine cs_user_extra_operations &
+subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
    dt     , rtpa   , rtp    , propce )
 
@@ -129,4 +129,4 @@ endif
    /)
 
 return
-end subroutine cs_user_extra_operations
+end subroutine cs_f_user_extra_operations

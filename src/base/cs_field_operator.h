@@ -62,12 +62,6 @@ BEGIN_C_DECLS
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
- *   verbosity      <-- verbosity level
- *   clip_mode      <-- clipping mode
- *   epsilon        <-- precision for iterative gradient calculation
- *   extrap         <-- boundary gradient extrapolation coefficient
- *   clip_coeff     <-- clipping coefficient
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
@@ -77,12 +71,6 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
                               cs_halo_type_t             halo_type,
                               int                        inc,
                               bool                       recompute_cocg,
-                              int                        n_r_sweeps,
-                              int                        verbosity,
-                              int                        clip_mode,
-                              double                     epsilon,
-                              double                     extrap,
-                              double                     clip_coeff,
                               cs_real_3_t      *restrict grad);
 
 /*----------------------------------------------------------------------------
@@ -96,13 +84,7 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   hyd_p_flag     <-- flag for hydrostatic pressure
- *   verbosity      <-- verbosity level
- *   clip_mode      <-- clipping mode
- *   epsilon        <-- precision for iterative gradient calculation
- *   extrap         <-- boundary gradient extrapolation coefficient
- *   clip_coeff     <-- clipping coefficient
  *   f_ext          <-- exterior force generating the hydrostatic pressure
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
@@ -113,13 +95,7 @@ void cs_field_gradient_potential(const cs_field_t          *f,
                                  cs_halo_type_t             halo_type,
                                  int                        inc,
                                  bool                       recompute_cocg,
-                                 int                        n_r_sweeps,
                                  int                        hyd_p_flag,
-                                 int                        verbosity,
-                                 int                        clip_mode,
-                                 double                     epsilon,
-                                 double                     extrap,
-                                 double                     clip_coeff,
                                  cs_real_3_t                f_ext[],
                                  cs_real_3_t      *restrict grad);
 
@@ -134,11 +110,6 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
- *   verbosity      <-- verbosity level
- *   clip_mode      <-- clipping mode
- *   epsilon        <-- precision for iterative gradient calculation
- *   extrap         <-- boundary gradient extrapolation coefficient
  *   clip_coeff     <-- clipping coefficient
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
@@ -148,11 +119,6 @@ void cs_field_gradient_vector(const cs_field_t          *f,
                               cs_gradient_type_t         gradient_type,
                               cs_halo_type_t             halo_type,
                               int                        inc,
-                              int                        n_r_sweeps,
-                              int                        verbosity,
-                              int                        clip_mode,
-                              double                     epsilon,
-                              double                     clip_coeff,
                               cs_real_33_t     *restrict grad);
 
 /*----------------------------------------------------------------------------*/

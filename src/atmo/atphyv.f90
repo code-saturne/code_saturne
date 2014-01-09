@@ -501,18 +501,11 @@ itpp = isca(iscalt)
 iccocg = 1
 inc = 1
 
-nswrgp = nswrgr(itpp)
-epsrgp = epsrgr(itpp)
-imligp = imligr(itpp)
-iwarnp = iwarni(itpp)
-climgp = climgr(itpp)
-extrap = extrag(itpp)
-
 iivar = itpp
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, dtlsd)
+                           iccocg,                                  &
+                           dtlsd)
 
 end subroutine grad_thetal
 
@@ -543,18 +536,12 @@ iccocg = 1
 inc = 1
 
 iqw = isca(itotwt)
-nswrgp = nswrgr(iqw)
-epsrgp = epsrgr(iqw)
-imligp = imligr(iqw)
-iwarnp = iwarni(iqw)
-climgp = climgr(iqw)
-extrap = extrag(iqw)
 
 iivar = iqw
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, dqsd)
+                           iccocg,                                  &
+                           dqsd)
 
 end subroutine grad_qw
 end subroutine atphyv

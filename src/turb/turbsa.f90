@@ -221,16 +221,8 @@ iccocg = 1
 inc = 1
 iprev = 1
 
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(inusa)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
-
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,       &
-                           nswrgp, iwarnp, imligp, epsrgp,       &
-                           climgp, gradv)
+                           gradv)
 
 ! vort = omega**2 = dudy**2 + dvdx**2 + dudz**2 + dwdx**2 + dvdz**2 + dwdy**2
 !                - 2*dudy*dvdx - 2*dudz*dwdx - 2*dvdz*dwdy
@@ -253,16 +245,9 @@ allocate(grad(3,ncelet))
 
 ! Compute the gradient of nusa
 
-nswrgp = nswrgr(inusa)
-imligp = imligr(inusa)
-iwarnp = iwarni(inusa)
-epsrgp = epsrgr(inusa)
-climgp = climgr(inusa)
-extrap = extrag(inusa)
-
 call field_gradient_scalar(ivarfl(inusa), iprev, imrgra, inc,       &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, grad)
+                           iccocg,                                  &
+                           grad)
 
 ! trgrdn = GRAD(nusa)**2
 do iel = 1, ncel

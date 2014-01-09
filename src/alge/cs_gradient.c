@@ -523,7 +523,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   const int n_i_threads = mesh->i_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = mesh->i_face_numbering->group_index;
   const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
   const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_3_t  *restrict cell_cen
@@ -570,18 +570,18 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   /* Allocate and initialize working buffers */
 
   if (clip_mode == 1)
-    BFT_MALLOC(buf, 3*n_cells_wghosts, cs_real_t);
+    BFT_MALLOC(buf, 3*n_cells_ext, cs_real_t);
   else
-    BFT_MALLOC(buf, 2*n_cells_wghosts, cs_real_t);
+    BFT_MALLOC(buf, 2*n_cells_ext, cs_real_t);
 
   denum = buf;
-  denom = buf + n_cells_wghosts;
+  denom = buf + n_cells_ext;
 
   if (clip_mode == 1)
-    clip_factor = buf + 2*n_cells_wghosts;
+    clip_factor = buf + 2*n_cells_ext;
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_wghosts; ii++) {
+  for (ii = 0; ii < n_cells_ext; ii++) {
     denum[ii] = 0;
     denom[ii] = 0;
   }
@@ -768,7 +768,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   else if (clip_mode == 1) {
 
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells_wghosts; ii++)
+    for (ii = 0; ii < n_cells_ext; ii++)
       clip_factor[ii] = (cs_real_t)DBL_MAX;
 
     /* Synchronize variable */

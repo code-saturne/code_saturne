@@ -119,11 +119,10 @@ double precision dofcpl(3,nfbcpl)
 ! Local variables
 
 integer          ifac, iel, isou
-integer          inc, iccocg, iprev, nswrgp, imligp
-integer          iwarnp, ivar, iflmab
+integer          inc, iccocg, iprev
+integer          ivar, iflmab
 integer          ipt
 
-double precision epsrgp, climgp, extrap
 double precision xip   , xiip  , yiip  , ziip
 double precision xjp
 double precision xipf, yipf, zipf, ipf
@@ -166,28 +165,14 @@ do ivar = 1, nvcp
 
   if (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw) then
 
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
-
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,   &
-                               iccocg, nswrgp, iwarnp, imligp,     &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                             &
+                               grad)
 
   else if (ivar.eq.iu) then
 
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-
     call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
-                               nswrgp, iwarnp, imligp,          &
-                               epsrgp, climgp, gradv)
+                               gradv)
 
   endif
 

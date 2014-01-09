@@ -463,16 +463,10 @@ if (iscalt.gt.0) then
     inc = 1
     iprev = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
 
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
-                               iccocg, nswrgp, iwarnp, imligp,    &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                            &
+                               grad)
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
@@ -609,16 +603,10 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
       inc = 1
       iprev = 1
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
 
       call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
-                                 iccocg, nswrgp, iwarnp, imligp,    &
-                                 epsrgp, extrap, climgp, grad)
+                                 iccocg,                            &
+                                 grad)
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)

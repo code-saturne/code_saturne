@@ -230,27 +230,13 @@ iccocg = 1
 inc = 1
 iprev = 1
 
-nswrgp = nswrgr(ik)
-imligp = imligr(ik)
-iwarnp = iwarni(ik)
-epsrgp = epsrgr(ik)
-climgp = climgr(ik)
-extrap = extrag(ik)
-
 call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,          &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, gradk)
-
-nswrgp = nswrgr(iomg)
-imligp = imligr(iomg)
-iwarnp = iwarni(iomg)
-epsrgp = epsrgr(iomg)
-climgp = climgr(iomg)
-extrap = extrag(iomg)
+                           iccocg,                                  &
+                           gradk)
 
 call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,        &
-                           iccocg, nswrgp, iwarnp, imligp,          &
-                           epsrgp, extrap, climgp, grado)
+                           iccocg,                                  &
+                           grado)
 
 do iel = 1, ncel
   gdkgdw(iel) = gradk(1,iel)*grado(1,iel) &

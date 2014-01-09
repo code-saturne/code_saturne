@@ -162,18 +162,11 @@ call grdcel &
 ! Compute velocity gradient
 iprev  = 0
 inc    = 1
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(iu)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
 
 ! WARNING: gradv(xyz, uvw, iel)
 
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
-                           nswrgp, iwarnp, imligp,          &
-                           epsrgp, climgp, gradv)
+                           gradv)
 
 ! Find the variance of the thermal scalar
 itt = -1

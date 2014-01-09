@@ -764,16 +764,9 @@ allocate(gradp(3,ncelet))
 iccocg = 1
 iprev  = 1
 inc    = 1
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
 
 call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
-                              iccocg, nswrgp, iphydr, iwarnp,     &
-                              imligp, epsrgp , extrap, climgp,    &
+                              iccocg, iphydr,                     &
                               frcxt, gradp)
 
 do iel = 1, ncelet

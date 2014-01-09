@@ -74,6 +74,7 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -2544,6 +2545,7 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
 
 void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                 const    int *const iscapp,
+                                const    int *const ivarfl,
                                       double *const blencv,
                                          int *const ischcv,
                                          int *const isstpc,
@@ -2558,6 +2560,9 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   int i, j, jj, k;
   double tmp;
   char* algo_choice = NULL;
+  cs_field_t *f;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -2566,6 +2571,9 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   /* 1) variables from velocity_pressure and turbulence */
   /* 1-a) for pressure */
   j = vars->rtp[0];
+  f = cs_field_by_id(ivarfl[j]);
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
   cs_gui_variable_value(vars->name[0], "solver_precision", &epsilo[j]);
   tmp = (double) nitmax[j];
   cs_gui_variable_value(vars->name[0], "max_iter_number", &tmp);
@@ -2598,9 +2606,19 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   cs_gui_variable_value(vars->name[0], "rhs_reconstruction", &tmp);
   nswrsm[j] = (int) tmp;
 
+
+  // Set Field calculation options in the field structure
+  var_cal_opt.epsilo = epsilo[j];
+  // TODO add nitmax, imgr, iresol
+  var_cal_opt.nswrsm = nswrsm[j];
+  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
   /* 1-b) for the other variables */
   for (i=1; i < k; i++) {
     j = vars->rtp[i];
+    f = cs_field_by_id(ivarfl[j]);
+    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
     cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
     cs_gui_variable_value(vars->name[i], "solver_precision", &epsilo[j]);
 
@@ -2630,6 +2648,13 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     tmp = (double) nswrsm[j];
     cs_gui_variable_value(vars->name[i], "rhs_reconstruction", &tmp);
     nswrsm[j] = (int) tmp;
+
+    // Set Field calculation options in the field structure
+    var_cal_opt.blencv = blencv[j];
+    var_cal_opt.epsilo = epsilo[j];
+    // TODO add nitmax, imgr, iresol
+    var_cal_opt.nswrsm = nswrsm[j];
+    cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
   /* 2) user scalars */
@@ -2637,6 +2662,9 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   if (vars->nscaus > 0 ) {
     for (i=0 ; i < vars->nscaus; i++) {
       j = isca[i]-1;
+      f = cs_field_by_id(ivarfl[j]);
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
       cs_gui_scalar_value(_scalar_label(i), "blending_factor", &blencv[j]);
       cs_gui_scalar_value(_scalar_label(i), "solver_precision", &epsilo[j]);
 
@@ -2666,6 +2694,16 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       tmp = (double) nswrsm[j];
       cs_gui_scalar_value(_scalar_label(i), "rhs_reconstruction", &tmp);
       nswrsm[j] = (int) tmp;
+
+      // Set Field calculation options in the field structure
+      var_cal_opt.blencv = blencv[j];
+      var_cal_opt.epsilo = epsilo[j];
+      // TODO add cdtvar, nitmax, imgr, iresol
+      var_cal_opt.ischcv = ischcv[j];
+      var_cal_opt.isstpc = isstpc[j];
+      var_cal_opt.ircflu = ircflu[j];
+      var_cal_opt.nswrsm = nswrsm[j];
+      cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
 
@@ -2675,6 +2713,9 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     for (i=0 ; i < vars->nscapp ; i++) {
       j = iscapp[i] -1;
       jj = isca[j]-1;
+      f = cs_field_by_id(ivarfl[jj]);
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
       cs_gui_model_scalar_value(vars->model, _scalar_label(j), "blending_factor", &blencv[jj]);
       cs_gui_model_scalar_value(vars->model, _scalar_label(j), "solver_precision", &epsilo[jj]);
       cs_gui_model_scalar_value(vars->model, _scalar_label(j), "time_step_factor", &cdtvar[jj]);
@@ -2704,6 +2745,16 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       tmp = (double) nswrsm[jj];
       cs_gui_model_scalar_value(vars->model, _scalar_label(j), "rhs_reconstruction", &tmp);
       nswrsm[jj] = (int) tmp;
+
+      // Set Field calculation options in the field structure
+      var_cal_opt.blencv = blencv[j];
+      var_cal_opt.epsilo = epsilo[j];
+      // TODO add cdtvar, nitmax, imgr, iresol
+      var_cal_opt.ischcv = ischcv[j];
+      var_cal_opt.isstpc = isstpc[j];
+      var_cal_opt.ircflu = ircflu[j];
+      var_cal_opt.nswrsm = nswrsm[j];
+      cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
 

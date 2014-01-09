@@ -49,6 +49,7 @@
 #include "cs_gradient_perio.h"
 #include "cs_log.h"
 #include "cs_map.h"
+#include "cs_parameters.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
 
@@ -95,12 +96,6 @@ void cs_f_field_gradient_scalar(int                    f_id,
                                 int                    imrgra,
                                 int                    inc,
                                 int                    recompute_cocg,
-                                int                    n_r_sweeps,
-                                int                    verbosity,
-                                int                    clip_mode,
-                                double                 epsilon,
-                                double                 extrap,
-                                double                 clip_coeff,
                                 cs_real_3_t  *restrict grad);
 
 void cs_f_field_gradient_potential(int                    f_id,
@@ -108,13 +103,7 @@ void cs_f_field_gradient_potential(int                    f_id,
                                    int                    imrgra,
                                    int                    inc,
                                    int                    recompute_cocg,
-                                   int                    n_r_sweeps,
                                    int                    hyd_p_flag,
-                                   int                    verbosity,
-                                   int                    clip_mode,
-                                   double                 epsilon,
-                                   double                 extrap,
-                                   double                 clip_coeff,
                                    cs_real_3_t            f_ext[],
                                    cs_real_3_t  *restrict grad);
 
@@ -122,11 +111,6 @@ void cs_f_field_gradient_vector(int                     f_id,
                                 int                     use_previous_t,
                                 int                     imrgra,
                                 int                     inc,
-                                int                     n_r_sweeps,
-                                int                     verbosity,
-                                int                     clip_mode,
-                                double                  epsilon,
-                                double                  clip_coeff,
                                 cs_real_33_t  *restrict grad);
 
 /*! \endcond (end ignore by Doxygen) */
@@ -151,12 +135,6 @@ void cs_f_field_gradient_vector(int                     f_id,
  *   imrgra         <-- gradient reconstruction mode
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
- *   verbosity      <-- verbosity level
- *   clip_mode      <-- clipping mode
- *   epsilon        <-- precision for iterative gradient calculation
- *   extrap         <-- boundary gradient extrapolation coefficient
- *   clip_coeff     <-- clipping coefficient
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
@@ -165,12 +143,6 @@ void cs_f_field_gradient_scalar(int                    f_id,
                                 int                    imrgra,
                                 int                    inc,
                                 int                    recompute_cocg,
-                                int                    n_r_sweeps,
-                                int                    verbosity,
-                                int                    clip_mode,
-                                double                 epsilon,
-                                double                 extrap,
-                                double                 clip_coeff,
                                 cs_real_3_t  *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -190,12 +162,6 @@ void cs_f_field_gradient_scalar(int                    f_id,
                            halo_type,
                            inc,
                            _recompute_cocg,
-                           n_r_sweeps,
-                           verbosity,
-                           clip_mode,
-                           epsilon,
-                           extrap,
-                           clip_coeff,
                            grad);
 }
 
@@ -210,13 +176,7 @@ void cs_f_field_gradient_scalar(int                    f_id,
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   hyd_p_flag     <-- flag for hydrostatic pressure
- *   verbosity      <-- verbosity level
- *   clip_mode      <-- clipping mode
- *   epsilon        <-- precision for iterative gradient calculation
- *   extrap         <-- boundary gradient extrapolation coefficient
- *   clip_coeff     <-- clipping coefficient
  *   f_ext          <-- exterior force generating the hydrostatic pressure
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
@@ -226,13 +186,7 @@ void cs_f_field_gradient_potential(int                    f_id,
                                    int                    imrgra,
                                    int                    inc,
                                    int                    recompute_cocg,
-                                   int                    n_r_sweeps,
                                    int                    hyd_p_flag,
-                                   int                    verbosity,
-                                   int                    clip_mode,
-                                   double                 epsilon,
-                                   double                 extrap,
-                                   double                 clip_coeff,
                                    cs_real_3_t            f_ext[],
                                    cs_real_3_t  *restrict grad)
 {
@@ -253,13 +207,7 @@ void cs_f_field_gradient_potential(int                    f_id,
                               halo_type,
                               inc,
                               _recompute_cocg,
-                              n_r_sweeps,
                               hyd_p_flag,
-                              verbosity,
-                              clip_mode,
-                              epsilon,
-                              extrap,
-                              clip_coeff,
                               f_ext,
                               grad);
 }
@@ -274,12 +222,6 @@ void cs_f_field_gradient_potential(int                    f_id,
  *   imrgra         <-- gradient reconstruction mode
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
- *   verbosity      <-- verbosity level
- *   clip_mode      <-- clipping mode
- *   epsilon        <-- precision for iterative gradient calculation
- *   extrap         <-- boundary gradient extrapolation coefficient
- *   clip_coeff     <-- clipping coefficient
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
@@ -287,11 +229,6 @@ void cs_f_field_gradient_vector(int                     f_id,
                                 int                     use_previous_t,
                                 int                     imrgra,
                                 int                     inc,
-                                int                     n_r_sweeps,
-                                int                     verbosity,
-                                int                     clip_mode,
-                                double                  epsilon,
-                                double                  clip_coeff,
                                 cs_real_33_t  *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -309,11 +246,6 @@ void cs_f_field_gradient_vector(int                     f_id,
                            gradient_type,
                            halo_type,
                            inc,
-                           n_r_sweeps,
-                           verbosity,
-                           clip_mode,
-                           epsilon,
-                           clip_coeff,
                            grad);
 }
 
@@ -335,12 +267,6 @@ void cs_f_field_gradient_vector(int                     f_id,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
- * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- * \param[in]       verbosity       verbosity level
- * \param[in]       clip_mode       clipping mode
- * \param[in]       epsilon         precision for iterative gradient calculation
- * \param[in]       extrap          boundary gradient extrapolation coefficient
- * \param[in]       clip_coeff      clipping coefficient
  * \param[out]      grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -351,15 +277,14 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
                               cs_halo_type_t             halo_type,
                               int                        inc,
                               bool                       recompute_cocg,
-                              int                        n_r_sweeps,
-                              int                        verbosity,
-                              int                        clip_mode,
-                              double                     epsilon,
-                              double                     extrap,
-                              double                     clip_coeff,
                               cs_real_3_t      *restrict grad)
 {
   int tr_dim = 0;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+
+  // Get the calculation option from the field
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
@@ -370,14 +295,14 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
                      halo_type,
                      inc,
                      recompute_cocg,
-                     n_r_sweeps,
+                     var_cal_opt.nswrsm,
                      tr_dim,
                      0, /* hyd_p_flag */
-                     verbosity,
-                     clip_mode,
-                     epsilon,
-                     extrap,
-                     clip_coeff,
+                     var_cal_opt.iwarni,
+                     var_cal_opt.imligr,
+                     var_cal_opt.epsrgr,
+                     var_cal_opt.extrag,
+                     var_cal_opt.climgr,
                      NULL, /* f_ext */
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
@@ -398,13 +323,7 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
- * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
  * \param[in]       hyd_p_flag      flag for hydrostatic pressure
- * \param[in]       verbosity       verbosity level
- * \param[in]       clip_mode       clipping mode
- * \param[in]       epsilon         precision for iterative gradient calculation
- * \param[in]       extrap          boundary gradient extrapolation coefficient
- * \param[in]       clip_coeff      clipping coefficient
  * \param[in]       f_ext           exterior force generating
  *                                  the hydrostatic pressure
  * \param[out]      grad            gradient
@@ -417,31 +336,31 @@ void cs_field_gradient_potential(const cs_field_t          *f,
                                  cs_halo_type_t             halo_type,
                                  int                        inc,
                                  bool                       recompute_cocg,
-                                 int                        n_r_sweeps,
                                  int                        hyd_p_flag,
-                                 int                        verbosity,
-                                 int                        clip_mode,
-                                 double                     epsilon,
-                                 double                     extrap,
-                                 double                     clip_coeff,
                                  cs_real_3_t                f_ext[],
                                  cs_real_3_t      *restrict grad)
 {
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+
+  // Get the calculation option from the field
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   cs_gradient_scalar(f->name,
                      gradient_type,
                      halo_type,
                      inc,
                      recompute_cocg,
-                     n_r_sweeps,
+                     var_cal_opt.nswrsm,
                      0, /* tr_dim */
                      hyd_p_flag,
-                     verbosity,
-                     clip_mode,
-                     epsilon,
-                     extrap,
-                     clip_coeff,
+                     var_cal_opt.iwarni,
+                     var_cal_opt.imligr,
+                     var_cal_opt.epsrgr,
+                     var_cal_opt.extrag,
+                     var_cal_opt.climgr,
                      f_ext,
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
@@ -462,12 +381,6 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
- * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- * \param[in]       verbosity       verbosity level
- * \param[in]       clip_mode       clipping mode
- * \param[in]       epsilon         precision for iterative gradient calculation
- * \param[in]       extrap          boundary gradient extrapolation coefficient
- * \param[in]       clip_coeff      clipping coefficient
  * \param[in]       f_ext           exterior force generating
  *                                  the hydrostatic pressure
  * \param[out]      grad            gradient
@@ -479,14 +392,15 @@ void cs_field_gradient_vector(const cs_field_t          *f,
                               cs_gradient_type_t         gradient_type,
                               cs_halo_type_t             halo_type,
                               int                        inc,
-                              int                        n_r_sweeps,
-                              int                        verbosity,
-                              int                        clip_mode,
-                              double                     epsilon,
-                              double                     clip_coeff,
                               cs_real_33_t     *restrict grad)
 {
   cs_real_3_t *var;
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+
+  // Get the calculation option from the field
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   if (f->interleaved)
     var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
@@ -508,11 +422,11 @@ void cs_field_gradient_vector(const cs_field_t          *f,
                      gradient_type,
                      halo_type,
                      inc,
-                     n_r_sweeps,
-                     verbosity,
-                     clip_mode,
-                     epsilon,
-                     clip_coeff,
+                     var_cal_opt.nswrsm,
+                     var_cal_opt.iwarni,
+                     var_cal_opt.imligr,
+                     var_cal_opt.epsrgr,
+                     var_cal_opt.climgr,
                      (const cs_real_3_t *)(f->bc_coeffs->a),
                      (const cs_real_33_t *)(f->bc_coeffs->b),
                      var,

@@ -342,6 +342,7 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
 
 void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                 const    int *const iscapp,
+                                const    int *const ivarfl,
                                       double *const blencv,
                                          int *const ischcv,
                                          int *const isstpc,

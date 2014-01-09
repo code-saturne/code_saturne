@@ -327,7 +327,7 @@ cs_field_pointer_map_atmospheric(int        n_chem_species,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Map base fields to enumerated pointers for atmospheric models
+ * \brief Map base fields to enumerated pointers for coal combustion
  *
  * \param[in]  n_coals    number of coals
  * \param[in]  n_classes  number of coal classes

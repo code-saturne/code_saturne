@@ -71,6 +71,7 @@ use radiat
 use cplsat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -93,6 +94,8 @@ integer          f_id, kscavr
 character*80     name
 character*80     f_name
 character*80     fname(nvppmx)
+
+type(var_cal_opt) vcopt
 
 !===============================================================================
 
@@ -265,6 +268,37 @@ do ivar = 1, nvar
   ! Key word: tensorial diffusivity
   call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))
 enddo
+
+! Copy field calculation options into the field structure
+do ivar = 1, nvar
+  vcopt%iwarni= iwarni(ivar)
+  vcopt%iconv = iconv (ivar)
+  vcopt%istat = istat (ivar)
+  vcopt%idiff = idiff (ivar)
+  vcopt%idifft= idifft(ivar)
+  vcopt%idften= idften(ivar)
+  vcopt%iswdyn= iswdyn(ivar)
+  vcopt%ischcv= ischcv(ivar)
+  vcopt%isstpc= isstpc(ivar)
+  vcopt%nswrgr= nswrgr(ivar)
+  vcopt%nswrsm= nswrsm(ivar)
+  vcopt%imrgra= imrgra
+  vcopt%imligr= imligr(ivar)
+  vcopt%ircflu= ircflu(ivar)
+  vcopt%thetav= thetav(ivar)
+  vcopt%blencv= blencv(ivar)
+  vcopt%epsilo= epsilo(ivar)
+  vcopt%epsrsm= epsrsm(ivar)
+  vcopt%epsrgr= epsrgr(ivar)
+  vcopt%climgr= climgr(ivar)
+  vcopt%extrag= extrag(ivar)
+  vcopt%relaxv= relaxv(ivar)
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+enddo
+
+
+
 
 ! Density field
 !--------------

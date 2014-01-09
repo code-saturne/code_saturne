@@ -104,9 +104,8 @@ iccocg  = 1
 !===============================================================================
 
 call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,          &
-                           iccocg, nswrgr(ipr),                      &
-                           iwarni(ipr), imligr(ipr), epsrgr(ipr),    &
-                           extrag(ipr), climgr(ipr), gradpr)
+                           iccocg,                                   &
+                           gradpr)
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
@@ -132,8 +131,7 @@ enddo
 if (modcpl.gt.0 .and. iplas.ge.modcpl) then
 
   call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,          &
-                             nswrgr(iu), iwarni(iu), imligr(iu),      &
-                             epsrgr(iu), climgr(iu), gradvf)
+                             gradvf)
 
 endif
 

@@ -89,7 +89,7 @@ integer          n_fields, nmodpp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
-integer          iappel
+integer          iappel, ivar
 double precision relaxp, extrap
 
 !===============================================================================
@@ -404,7 +404,7 @@ if (iihmpr.eq.1) then
 
   call uinum1                                                     &
   !==========
-        (isca, iscapp, blencv, ischcv, isstpc, ircflu,            &
+        (isca, iscapp, ivarfl, blencv, ischcv, isstpc, ircflu,    &
          cdtvar, nitmax, epsilo, iresol, imgr, nswrsm)
 
 !     Options numériques globales

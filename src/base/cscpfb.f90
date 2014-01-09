@@ -91,12 +91,10 @@ double precision rvdis(nptdis,nvcpto)
 
 integer          ipt    , iel    , isou
 integer          ivar   , iscal
-integer          inc    , iccocg , iprev  , nswrgp
-integer          iwarnp , imligp
+integer          inc    , iccocg , iprev
 integer          ipos
 integer          itytu0
 
-double precision epsrgp , climgp , extrap
 double precision xjjp   , yjjp   , zjjp
 double precision d2s3
 double precision xjpf,yjpf,zjpf,jpf
@@ -197,16 +195,9 @@ ipos = 1
 ! 1.  Prepare for pressure
 !=========================================================================
 
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
-
 call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,  &
-                           iccocg, nswrgp, iwarnp, imligp,   &
-                           epsrgp, extrap, climgp, grad)
+                           iccocg,                           &
+                           grad)
 
 ! For a specific face to face coupling, geometric assumptions are made
 
@@ -281,15 +272,8 @@ endif
 ! 2.  Prepare for velocity
 !=========================================================================
 
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(iu)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
-                           nswrgp, iwarnp, imligp,          &
-                           epsrgp, climgp, gradv)
+                           gradv)
 
 do isou = 1, 3
 
@@ -400,16 +384,9 @@ if (itytur.eq.2) then
 !          3.1.1. INTERPOLATION EN J'
 !=======================================================================
 
-  nswrgp = nswrgr(ik)
-  imligp = imligr(ik)
-  iwarnp = iwarni(ik)
-  epsrgp = epsrgr(ik)
-  climgp = climgr(ik)
-  extrap = extrag(ik)
-
   call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
-                             iccocg, nswrgp, iwarnp, imligp,      &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                              &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -449,16 +426,9 @@ if (itytur.eq.2) then
 
   !         Préparation des données: interpolation de epsilon en J'
 
-  nswrgp = nswrgr(iep)
-  imligp = imligr(iep)
-  iwarnp = iwarni(iep)
-  epsrgp = epsrgr(iep)
-  climgp = climgr(iep)
-  extrap = extrag(iep)
-
   call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,     &
-                             iccocg, nswrgp, iwarnp, imligp,      &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                              &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -651,16 +621,9 @@ elseif (itytur.eq.3) then
     if (isou.eq.5) ivar = ir13
     if (isou.eq.6) ivar = ir23
 
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
-
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,    &
-                               iccocg, nswrgp, iwarnp, imligp,      &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                              &
+                               grad)
 
     ! For a specific face to face coupling, geometric assumptions are made
 
@@ -736,16 +699,9 @@ elseif (itytur.eq.3) then
 
   ! Préparation des données: interpolation de epsilon en J'
 
-  nswrgp = nswrgr(iep)
-  imligp = imligr(iep)
-  iwarnp = iwarni(iep)
-  epsrgp = epsrgr(iep)
-  climgp = climgr(iep)
-  extrap = extrag(iep)
-
   call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,     &
-                             iccocg, nswrgp, iwarnp, imligp,      &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                              &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -897,16 +853,9 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de k en J'
 
-  nswrgp = nswrgr(ik)
-  imligp = imligr(ik)
-  iwarnp = iwarni(ik)
-  epsrgp = epsrgr(ik)
-  climgp = climgr(ik)
-  extrap = extrag(ik)
-
   call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
-                             iccocg, nswrgp, iwarnp, imligp,      &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                              &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -946,16 +895,9 @@ elseif (iturb.eq.50) then
 
   ! Préparation des données: interpolation de epsilon en J'
 
-  nswrgp = nswrgr(iep)
-  imligp = imligr(iep)
-  iwarnp = iwarni(iep)
-  epsrgp = epsrgr(iep)
-  climgp = climgr(iep)
-  extrap = extrag(iep)
-
   call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,  &
-                             iccocg, nswrgp, iwarnp, imligp,   &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                           &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -995,16 +937,9 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de Phi en J'
 
-  nswrgp = nswrgr(iphi)
-  imligp = imligr(iphi)
-  iwarnp = iwarni(iphi)
-  epsrgp = epsrgr(iphi)
-  climgp = climgr(iphi)
-  extrap = extrag(iphi)
-
   call field_gradient_scalar(ivarfl(iphi), iprev, imrgra, inc,  &
-                             iccocg, nswrgp, iwarnp, imligp,    &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                            &
+                             grad)
 
   do ipt = 1, nptdis
 
@@ -1021,16 +956,9 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de F-barre en J'
 
-  nswrgp = nswrgr(ifb)
-  imligp = imligr(ifb)
-  iwarnp = iwarni(ifb)
-  epsrgp = epsrgr(ifb)
-  climgp = climgr(ifb)
-  extrap = extrag(ifb)
-
   call field_gradient_scalar(ivarfl(ifb), iprev, imrgra, inc,  &
-                             iccocg, nswrgp, iwarnp, imligp,   &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                           &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1127,16 +1055,9 @@ elseif (iturb.eq.60) then
 
   !         Préparation des données: interpolation de k en J'
 
-  nswrgp = nswrgr(ik)
-  imligp = imligr(ik)
-  iwarnp = iwarni(ik)
-  epsrgp = epsrgr(ik)
-  climgp = climgr(ik)
-  extrap = extrag(ik)
-
   call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,  &
-                             iccocg, nswrgp, iwarnp, imligp,  &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                          &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1176,16 +1097,9 @@ elseif (iturb.eq.60) then
 
   !         Préparation des données: interpolation de omega en J'
 
-  nswrgp = nswrgr(iomg)
-  imligp = imligr(iomg)
-  iwarnp = iwarni(iomg)
-  epsrgp = epsrgr(iomg)
-  climgp = climgr(iomg)
-  extrap = extrag(iomg)
-
   call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,  &
-                             iccocg, nswrgp, iwarnp, imligp,    &
-                             epsrgp, extrap, climgp, grad)
+                             iccocg,                            &
+                             grad)
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1372,16 +1286,9 @@ if (nscal.gt.0) then
 
 ! --- Calcul du gradient du scalaire pour interpolation
 
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
-
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
-                               iccocg, nswrgp, iwarnp, imligp,    &
-                               epsrgp, extrap, climgp, grad)
+                               iccocg,                            &
+                               grad)
 
     ! For a specific face to face coupling, geometric assumptions are made
 
