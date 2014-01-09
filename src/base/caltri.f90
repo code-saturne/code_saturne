@@ -267,6 +267,11 @@ if (ncpdct.gt.0) then
   if (idtten.lt.0) then
     call field_create('dttens', FIELD_INTENSIVE, 1, 6, .true., .false., idtten)
   endif
+else if (iporos.eq.2) then
+  ! Add matching field if not already done
+  if (idtten.lt.0) then
+    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .true., .false., idtten)
+  endif
 endif
 
 ! -----------------
