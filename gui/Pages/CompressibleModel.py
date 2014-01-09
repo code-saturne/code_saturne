@@ -126,7 +126,7 @@ class CompressibleModel(Variables, Model):
         """
         node = self.node_thermo.xmlInitNode('compressible_model')
         status = node['model']
-        if status == None:
+        if status not in self.comp_choice:
             status = self._defaultCompressibleValues()['activation']
             self.setCompressibleModel(status)
         return status

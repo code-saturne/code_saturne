@@ -227,6 +227,16 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
+    def getThermalScalarLabelsList(self):
+        """Public method.
+        Return the User scalar label list (thermal scalar included)"""
+        lst = []
+        for node in self.node_therm.xmlGetNodeList('scalar'):
+            lst.append(node['label'])
+        return lst
+
+
+    @Variables.noUndo
     def getScalarLabelsList(self):
         """Public method.
         Return the User scalar label list (thermal scalar included)"""
@@ -616,7 +626,7 @@ class DefineUserScalarsModel(Variables, Model):
     def deleteScalar(self, slabel):
         """
         Public method.
-        Delete scalar I{label}. Also called by ThermalScalarModel
+        Delete scalar I{label}
         Warning: deleting a scalar may delete other scalar which are variances
         of previous deleting scalars.
         """
@@ -634,6 +644,34 @@ class DefineUserScalarsModel(Variables, Model):
         # Delete all scalars
         for scalar in lst:
             self.__deleteScalar(scalar)
+
+        return lst
+
+
+    @Variables.undoGlobal
+    def deleteThermalScalar(self, slabel):
+        """
+        Public method.
+        Delete scalar I{label}. Called by ThermalScalarModel
+        Warning: deleting a scalar may delete other scalar which are variances
+        of previous deleting scalars.
+        """
+        self.isInList(slabel, self.getThermalScalarLabelsList())
+
+        # First add the main scalar to delete
+        lst = []
+        lst.append(slabel)
+
+        # Then add variance scalar related to the main scalar
+        for node in self.scalar_node.xmlGetNodeList('scalar'):
+            if node.xmlGetString('variance') == slabel:
+                self.__deleteScalar(node['label'])
+
+        # Delete scalars
+        node = self.node_therm.xmlGetNode('scalar', label=slabel)
+        node.xmlRemoveNode()
+        self.__deleteScalarBoundaryConditions(slabel)
+        self.__updateScalarNameAndDiffusivityName()
 
         return lst
 
