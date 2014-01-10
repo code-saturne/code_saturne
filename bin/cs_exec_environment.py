@@ -961,9 +961,9 @@ class mpi_environment:
                elif v[0] in ['"', "'"]:
                    v = v[1:-1]
                if k == 'mpmd':
-                   self.mpi_env.mpmd_mode = eval(v)
+                   self.mpmd = eval('MPI_MPMD_' + v)
                else:
-                   self.mpi_env.__dict__[k] = v
+                   self.__dict__[k] = v
 
         # Initialize based on known MPI types, or default.
 
@@ -1002,9 +1002,9 @@ class mpi_environment:
                elif v[0] in ['"', "'"]:
                    v = v[1:-1]
                if k == 'mpmd':
-                   self.mpi_env.mpmd_mode = eval(v)
+                   self.mpmd = eval('MPI_MPMD_' + v)
                else:
-                   self.mpi_env.__dict__[k] = v
+                   self.__dict__[k] = v
 
     #---------------------------------------------------------------------------
 
@@ -1396,6 +1396,9 @@ class mpi_environment:
                         break
                 if self.mpiexec != None:
                     break
+
+        if (self.mpiexec == None):
+            self.mpiexec = 'mpiexec'
 
         if absname:
             info_name = os.path.join(os.path.dirname(absname),
