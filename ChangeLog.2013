@@ -1,0 +1,2718 @@
+2013-12-12 13:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5573] NEWS, configure.ac: Bump version to 3.0.4 to prepare for
+	  future ports or fixes.
+
+2013-12-11 16:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5562] NEWS, bin/cs_case_coupling.py,
+	  bin/cs_exec_environment.py, bin/runcase_coupling.in,
+	  extras/code_saturne.cfg.template: Add options to redefine default
+	  MPI library/execution options using code_saturne.cfg.
+
+2013-12-11 15:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5559] NEWS, m4/cs_metis.m4, m4/cs_scotch.m4, po/fr.po: Merge
+	  rev. 5555 from trunk (fix build possible configuration bug when
+	  SCOTCH or Metis detection is disabled).
+
+2013-12-09 16:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5546] bin/cs_case_domain.py: Minimize behavior difference
+	  between previous patch and older versions.
+
+2013-12-09 16:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5545] bin/cs_case_domain.py: Merge rev. 5542 from trunk
+	  (missing addition to rev. 5443 for more robust and stable Syrthes
+	  environment detection).
+
+2013-12-09 10:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5540] NEWS, configure.ac: Bump version to 3.0.3.
+
+2013-12-09 10:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5539] NEWS: Update NEWS relative to 3.0.2 release.
+
+2013-12-04 17:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5511] m4/cs_scotch.m4: Merge rev. 5508 from trunk (fix for
+	  SCOTCH detection on BlueGene/Q).
+
+2013-12-04 16:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5507] NEWS,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py: Merge
+	  rev. 5505 from trunk (updates to CFDSTUDY).
+
+2013-12-04 16:16  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5504] src/base/post_util.f90: Fix in the wall-temperature
+	  post-processing.
+
+2013-12-03 16:13  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5481] src/Makefile.am, src/base/dvvpst.f90: Merge rev. 5175 and
+	  5410 from trunk (makefile dependencies).
+
+2013-12-03 15:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5480] m4/cs_scotch.m4: Merge rev. 5464 from trunk (linking with
+	  Scotch/PT-Scotch on some recent Linux distributions).
+
+2013-12-03 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5478] bin/cs_exec_environment.py: Merge rev. 5466 from trunk
+	  (fix run script for some use cases of MPICH-based MPI libraries).
+
+2013-12-03 15:36  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5476]
+	  src/user_examples/cs_user_extra_operations-energy_balance.f90:
+	  Merge rev. 5471 from trunk (fix user example).
+
+2013-12-03 14:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5470] NEWS: Update NEWS file.
+
+2013-12-03 14:01  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5463] src/alge/matrvv.f90: Minor fix (rev 5460).
+
+2013-12-02 15:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5457] src/base/caltri.f90, src/base/dvvpst.f90: Add local
+	  interface definitions for correct build with Intel Fortran 13 or
+	  above.
+
+2013-12-02 14:12  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5456] docs/theory/bndcnd.tex, src/base/clptrg.f90,
+	  src/base/clptur.f90, src/base/hturbp.f90: Fix in the wall
+	  boundary conditions: - for the velocity, when the wall velocity
+	  condition is non-zero, the gradient BC was wrong. - for the
+	  scalars, a term was missing (proportional to the wall value) in
+	  the gradient BC - for scalars with small molecular Prandtl
+	  number, the value of the viscous sub-layer was not in adequation
+	  between the gradient BC and the flux BC. NB: all the validation
+	  test cases are run.
+
+2013-11-28 11:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5448] bin/cs_case.py: Merge rev. 5446 from trunk (fix BG/Q MPMD
+	  configfile: for SYRTHES, use -w and not -wdir, simplify paths).
+
+2013-11-27 17:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5445] bin/cs_case_domain.py: Merge rev. 5433 from trunk
+	  (SYRTHES coupling version selection robustness improvement).
+
+2013-11-27 10:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5438] extras/batch/batch.SLURM_BGQ: Merge rev. 5436 from trunk
+	  (remove obsolete comment in batch template).
+
+2013-11-26 18:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5433] NEWS, src/turb/turrij.f90: Merge revs. 5431 and 5432 from
+	  3.1 branch (fix crash in turrij on BlueGene/Q, by not passing
+	  null Fortran pointers to subroutines without explicit
+	  interfaces).
+
+2013-11-25 09:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5425] src/mesh/cs_join_util.c: Merge rev. 5422 from trunk (fix
+	  joining bug introduced by rev. 5080).
+
+2013-11-15 18:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5408] NEWS, m4/cs_salome.m4, src/fvm/fvm_to_medcoupling.cxx:
+	  Merge revs. 5397 and 5403 from trunk (updates for build with
+	  SALOME 7.3).
+
+2013-11-15 16:13  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5404] src/user/cs_user_source_terms.f90: Fix user example.
+
+2013-11-15 15:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5401] src/mesh/cs_join_util.c: Merge rev. 5213 from trunk
+	  (handle errors more gracefully in some cases of periodic
+	  joining).
+
+2013-10-31 10:15  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5379] gui/Pages/SourceTermsModel.py,
+	  gui/Pages/SourceTermsView.py, src/base/covofi.f90,
+	  src/gui/cs_gui.c, src/gui/cs_gui.h: Merge rev. 4827 from trunk
+	  (FIX sources terms for scalar and thermal variables).
+
+2013-10-30 15:07  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5376] docs/style/csmacros.sty: Merge rev. 5374 from trunk (Fix
+	  in the link between pdf docs and Doxygen doc).
+
+2013-10-30 09:58  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5372] gui/Pages/InitializationModel.py,
+	  gui/Pages/InitializationView.py, src/gui/cs_gui.c: Merge rev.
+	  5370 from trunk (fix bug in the GUI).
+
+2013-09-26 11:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5269] src/base/coupbi.f90: Merge rev. 5267 from trunk (fix
+	  Syrthes coupling bug introduced by rev. 5048).
+
+2013-09-24 17:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5265] NEWS, bin/cs_case_domain.py: Merge rev. 5248 from trunk
+	  (script cleanup stage in case of symbolic links for directories).
+
+2013-09-13 17:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5250] NEWS, m4/cs_ccm.m4: Merge rev. 5240 from trunk (fix bad
+	  detection if libccmio without CGNS).
+
+2013-09-05 17:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5212] NEWS, gui/Pages/AtmosphericFlowsModel.py,
+	  gui/Pages/Boundary.py: Merge rev. 5211 from trunk (GUI fix for
+	  atmospheric flow wall bc's and default values for numerical
+	  options).
+
+2013-07-31 09:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5168] NEWS, src/base/tridim.f90: Merge rev. 5166 from tunk (fix
+	  reallocation issue for LES with internal fluid-structure
+	  coupling).
+
+2013-07-31 08:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5164] NEWS, src/base/cs_time_plot.c: Merge rev. 5162 from trunk
+	  (fix Fortran time plot numbering issue).
+
+2013-07-29 16:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5160] NEWS, src/base/condli.f90: Merge rev. 5158 from trunk
+	  (fix index bug in computation of forces for ALE).
+
+2013-07-25 08:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5145] docs/install/install.tex: Installation documentation
+	  updates (partial merge from rev. 4984).
+
+2013-07-22 12:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5138] extras/installer/install_saturne.py.in: Merge rev. 5136
+	  from trunk (installer fix for CGNS).
+
+2013-07-22 10:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5133] NEWS, extras/batch/batch.SLURM,
+	  gui/Pages/BatchRunningView.py: Merge rev. 5131 from trunk (fix
+	  handling of batch template defined by absolute path in GUI,
+	  update SLURM example).
+
+2013-07-16 10:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5124] docs/manpages/code_saturne.1: Merge rev. 5122 from trunk
+	  (update man page).
+
+2013-07-15 16:12  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5115] src/user/cs_user_source_terms.f90: Merge rev. 5113 from
+	  trunk (fix user example).
+
+2013-07-12 16:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5111] NEWS, bin/cs_exec_environment.py: Merge rev. 5109 from
+	  trunk (fix when using Torque or PBS pro with Open MPI without
+	  proper support configured).
+
+2013-07-12 14:22  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r5107] src/lagr/cs_lagr_tracking.c: Merge rev.5105 from trunk
+	  (Lag. module: fix wrong count of exiting particles statistical
+	  weight)
+
+2013-07-10 08:09  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5088] src/base/ecrava.f90: Merge rev. 5086 from trunk (Fix bug
+	  in the writing of variables (ecrava) in case of AFM or DFM for
+	  scalars).
+
+2013-07-09 15:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5082] NEWS, src/mesh/cs_join_util.c: Merge rev. 5080 from trunk
+	  (fix rarely occuring parallel mesh joining bug).
+
+2013-07-03 10:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5067] NEWS, configure.ac: Merge rev. 5065 from trunk (force
+	  link with C++ when EOS is used).
+
+2013-07-03 10:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5064] NEWS, src/mesh/cs_mesh_thinwall.c: Merge rev. 5062 from
+	  trunk (fix for incorrect array access with empty local list when
+	  building thin walls).
+
+2013-07-02 11:54  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5061] docs/theory/spadis.tex: Merge rev. 5059 from trunk (fix
+	  in theory guide).
+
+2013-07-01 15:07  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5058] src/alge/bilsc2.f90, src/alge/bilsc4.f90,
+	  src/alge/bilsca.f90, src/alge/bilscv.f90, src/alge/diften.f90,
+	  src/alge/diftnv.f90: Merge rev. 5056 from trunk (Fix doxygen
+	  comments).
+
+2013-06-27 15:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5050] NEWS, src/base/coupbi.f90: Merge rev. 5048 from trunk
+	  (fix for Syrthes coupling with rough wall).
+
+2013-06-27 13:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5044] m4/cs_libxml2.m4: Merge rev. 5037 from trunk (fix libxml2
+	  detection LDFLAGS order handling).
+
+2013-06-24 08:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5031] README: Merge rev. 5029 from trunk (remove reference to
+	  old website).
+
+2013-06-20 13:00  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5024] src/user/cs_user_parameters.f90: Merge rev. 5022 from
+	  trunk (fix uninitialized value).
+
+2013-06-14 15:19  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5006] docs/user/saturne1.tex: Merge rev. 5005 from trunk (fix
+	  documentation compilation).
+
+2013-06-14 13:42  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r5003] src/gui/cs_gui.c: Merge rev. r5002 from trunk (fix
+	  indices in evaluation of user laws for fluid properties for
+	  compressible).
+
+2013-06-10 12:41  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4986] gui/Pages/LagrangianOutputView.py: FIX bug for nvisla
+	  (frequency for lagrangian output)
+
+2013-06-07 08:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4975] .,
+	  src/user_examples/cs_user_initialization-compressible.f90: Merge
+	  rev. r4673 from trunk (fix subroutine name in user example).
+
+2013-06-06 14:43  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4974] gui/Pages/Boundary.py: Merge rev. 4967 from trunk (fix in
+	  GUI for compressible).
+
+2013-06-05 15:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4971] src/base/cs_restart.c: Merge rev. r4970 from trunk
+	  (low-level fix for loss of particles in serial restart with
+	  8-byte cs_gnum_t).
+
+2013-06-03 11:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4965] m4/cs_salome.m4: Merge rev. 4964 from trunk (fix for
+	  build with EURIWARE build of Salome 7.2).
+
+2013-05-30 15:40  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4962] docs/style/csbiblio.bib, docs/theory/biblio.tex,
+	  docs/theory/bndcnd.tex, docs/theory/cfbase.tex,
+	  docs/theory/combbase.tex, docs/theory/elbase.tex,
+	  docs/theory/goveqn.tex, docs/theory/navsto.tex,
+	  docs/theory/resolp.tex, docs/theory/spadis.tex,
+	  docs/theory/theory.tex, docs/theory/timstp.tex,
+	  docs/theory/turbul.tex: Merge rev. 4961 from trunk (update theory
+	  doc.)
+
+2013-05-29 14:14  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4960] src/turb/cs_les_filter.c: Merge rev. 4958 from trunk
+	  (Minor fix in LES filter).
+
+2013-05-27 09:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4956] src/base/cs_renumber.c: Merge rev. 4955 from trunk (fix
+	  array bounds error in boundary face renumbering).
+
+2013-05-17 15:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4949] extras/changelog/authors.xml: Merge rev. 4948 from trunk
+	  (update authors Changelog matches).
+
+2013-05-17 14:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4946] COMPATIBILITY: Update dependencies mini-documentation.
+
+2013-05-16 17:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4943] po/fr.po, src/mesh/cs_mesh_coherency.c: Merge rev. 4941
+	  from trunk (mesh coherency test avoids false error reports in
+	  some cases of rotational periodicity).
+
+2013-05-15 16:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4940] po/fr.po: Merge revs. 4938 and 4939 fom trunk (fix
+	  tanslation).
+
+2013-05-15 15:56  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4936] src/base/clptur.f90: Merge rev. 4935 from trunk (fix
+	  uninitialized value).
+
+2013-05-13 09:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4931] libple, libple/ChangeLog, libple/INSTALL[DEL],
+	  libple/README, libple/config/ple_auto_flags.sh,
+	  libple/configure.ac, libple/m4/ple_mpi.m4,
+	  libple/src/Makefile.am, libple/src/ple_locator.h: Synchronize PLE
+	  with version from Code_Saturne trunk (requires minor build and
+	  detail changes only).
+
+2013-05-13 08:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4928] bin/cs_exec_environment.py, bin/runcase_mpi_rank,
+	  configure.ac, libple/m4/ple_mpi.m4, m4/cs_mpi.m4,
+	  src/base/cs_base.c: Merge revs. 4925 and 4926 from trunk (MPI
+	  type detection robustness improvements, adding MPICH-3).
+
+2013-05-06 10:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4923] docs/theory/bndcnd.tex, docs/theory/spadis.tex: Merge
+	  rev. 4922 from trunk (Update theory documentation).
+
+2013-05-03 16:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4920] NEWS, src/mesh/cs_partition.c: Merge rev. 4919 from trunk
+	  (fix naive/block partitioning when some I/O blocks are empty for
+	  some ranks).
+
+2013-05-03 15:06  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4917] src/lagr/lagaff.f90: Merge rev. 4916 from trunk: Lag.
+	  module: Fix non-general display of the physical time in the
+	  lagrangian listing
+
+2013-05-03 14:41  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4915] src/lagr/lagune.f90: Merge rev. 4914 from trunk (Lag.
+	  module: Fix for the timestep value to dt(1) instead of dtref)
+
+2013-05-03 12:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4911] NEWS, configure.ac, po/fr.po: Bump version to 3.0.1.
+
+2013-05-03 12:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4910] bin/cs_exec_environment.py: Merge rev. 4909 from trunk
+	  (fix typo preventing use of rcfile in code_saturne.cfg).
+
+2013-05-03 10:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4908] configure.ac: Merge rev. 4907 from trunk (fix typo and
+	  test order for determination of static/dynamic link flags).
+
+2013-04-30 13:05  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4900] bin/cs_salome.py: Merge rev 4899 from trunk (FIX for
+	  neptune_cfd update PYTHONPATH with neptune_cfd, code_saturne and
+	  EOS)
+
+2013-04-30 06:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4896] preprocessor/pre-post/ecs_pre_gmsh.c: Merge rev. 4895
+	  from trunk (fix crash in Gmsh reader).
+
+2013-04-26 09:18  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4889] docs/tutorial/case4.tex,
+	  examples/2-full_domain/case2/case2.xml: Merge rev. 4888 from
+	  trunk (Fix in the tutorial).
+
+2013-04-26 09:16  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4887] extras/bash_completion/code_saturne: Merge rev. 4886 from
+	  trunk (Fix in the bash_completion).
+
+2013-04-25 16:43  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4884] src/lagr/cs_lagr_tracking.c, src/lagr/cs_lagr_tracking.h,
+	  src/lagr/enslag.f90, src/lagr/enswaf.f90, src/lagr/lagent.f90,
+	  src/lagr/laglec.f90, src/lagr/lagopt.f90, src/lagr/lagout.f90,
+	  src/lagr/lagran.f90, src/lagr/lagune.f90: Lag. module: Fix of the
+	  management of the list of post-processed particles (rev.4880 from
+	  trunk)
+
+2013-04-25 15:15  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4882] src/mei/mei_math_util.c: Merge rev. 4881 from trunk (fix
+	  1d interpolation for fluid properties).
+
+2013-04-25 12:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4879] src/base/lecamx.f90: Merge rev. 4878 from trunk (fix:
+	  missing argument in lecamx).
+
+2013-04-25 09:55  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4877] src/lagr/enslag.f90: Merge rev. 4876 from trunk (Lag.
+	  module: Fix in the writing of the post-processing of the
+	  trajectories)
+
+2013-04-24 07:51  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4874] src/lagr/cs_lagr_tracking.c: Merge rev. 4873 from trunk
+	  (Lag. module: Fix in the trajectography step for motionless
+	  particles)
+
+2013-04-23 09:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4871] src/base/navstv.f90: Merge rev. 4870 from trunk (fix
+	  OpenMP bug affecting logging of min/max velocity).
+
+2013-04-23 08:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4869] bin/cs_case.py: Merge rev. 4868 from trunk (add mapping
+	  line for better environment robustness for MPMD on Blue Gene/Q).
+
+2013-04-22 16:20  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4867] src/base/cscfbr.f90: Merge rev. 4866 from trunk (fix bug
+	  introduced in rev. 4847).
+
+2013-04-19 13:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4854] bin/cs_case_domain.py: Fix: remove spurious addition of
+	  "enquote_args" in merge of rev. 4826 from trunk.
+
+2013-04-18 17:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4853] m4/cs_salome.m4: Merge rev. 4852 from trunk (update
+	  SALOME detection for EDF builds of SALOME 7).
+
+2013-04-18 12:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4850] src/base/tridim.f90: Merge rev. 4849 from trunk (fix
+	  reallocation bug when sub-iterations are used for structures).
+
+2013-04-18 09:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4848] src/base/cs_sat_coupling.c, src/base/cs_sat_coupling.h,
+	  src/base/csccel.f90, src/base/cscelv.f90: Merge rev. 4847 from
+	  trunk (Fix in the cell code-code coupling with ivelco=1).
+
+2013-04-16 17:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4845] bin/cs_case_domain.py: Fix: mesh_input must not be
+	  removed when running in "import only" mode.
+
+2013-04-16 14:49  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4844] src/base/cspcev.f90: Merge rev. 4843 from trunk (Fix bug
+	  in cell code-code coupling with ivelco=1).
+
+2013-04-16 07:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4836] po/fr.po: Merge rev. 4835 from trunk (update French
+	  translations file).
+
+2013-04-15 14:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4834] NEWS, src/apps/cs_solver.c: Do not trap floating-point
+	  exceptions even for debug builds on Blue Gene/Q.
+
+2013-04-15 14:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4833] NEWS, bin/cs_case.py, bin/cs_case_coupling.py,
+	  bin/cs_case_domain.py, bin/cs_exec_environment.py,
+	  src/base/cs_opts.c: Merge revs. 4826 and 4832 from trunk (MPMD
+	  support for Blue Gene/Q).
+
+2013-04-15 08:20  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4829] gui/Pages/OutputVolumicVariablesModel.py,
+	  gui/Pages/SourceTermsView.py, src/base/covofi.f90,
+	  src/base/inivar.f90, src/base/predvv.f90, src/gui/cs_gui.c,
+	  src/gui/cs_gui.h: Merge rev 4817 and 4827 from trunk
+
+2013-04-12 16:03  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4825] src/rayt/raydir.f90, src/rayt/raysol.f90: Fix existing
+	  quadratures T2 and T4.
+
+2013-04-08 13:17  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4823] src/gui/cs_gui_particles.c, src/lagr/laghis.f90: Merge
+	  rev. 4821 from trunk (Fix Lagrangian probes set-up through the
+	  GUI)
+
+2013-04-08 13:17  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4822]
+	  src/user_examples/cs_user_boundary_conditions-auto_inlet_profile.f90:
+	  Remove trailing blanks
+
+2013-04-04 17:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4820] m4/cs_metis.m4: Fix ParMETIS detection with static
+	  libraries.
+
+2013-04-03 09:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4813] libple/ChangeLog, libple/configure.ac,
+	  libple/src/ple_defs.c, libple/src/ple_locator.c: Merge rev. 4812
+	  from trunk (PLE 1.0.3, see libple/ChangeLog).
+
+2013-03-22 17:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4807] NEWS, configure.ac, po/fr.po: Bump version to 3.0.0 for
+	  release.
+
+2013-03-22 17:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4806] bin/autovnv/Study.py: Merge rev. 4742 from trunk (autovnv
+	  fix when input files are asked for in the detailed report but
+	  post-processing of cases is off).
+
+2013-03-22 15:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4805]
+	  docs/doxygen/examples/cs_user_boundary_conditions_examples.h,
+	  docs/doxygen/examples/cs_user_extra_operations_examples.h,
+	  docs/user/saturne1.tex, docs/user/saturne2.tex,
+	  src/user/cs_user_parameters.f90, src/user_examples/Makefile.am,
+	  src/user_examples/cs_user_boundary_conditions-auto_inlet_profile.f90[CPY]:
+	  Merge rev. 4804 from trunk (documentatin updates).
+
+2013-03-22 15:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4803] gui/Pages/TurbulenceView.py: Merge rev. 4729 from trunk
+	  (for low Reynolds RANS model, impose one velocity scale for wall
+	  functions for listing purposes).
+
+2013-03-22 13:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4801] gui/Pages/BatchRunningView.py: Merge rev. 4800 from trunk
+	  (fix computation stop from GUI when using separate temporary
+	  execution directory).
+
+2013-03-22 11:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4799] gui/Pages/SalomeHandler.py: Merge rev. 4430 from trunk
+	  (remove obsolete import for CFDSTUDYGUI).
+
+2013-03-21 17:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4798] gui/Pages/BatchRunningView.py: Merge rev. 4791 from trunk
+	  (update runcase in a more robust manner with SLURM).
+
+2013-03-21 17:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4797] docs/user/saturne1.tex: Merge rev. 4796 from trunk (minor
+	  documentation fix).
+
+2013-03-21 13:32  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4795] src/base/clptur.f90: Merge rev. 4794 from trunk (Fix bug
+	  in wall temperature post-treatment).
+
+2013-03-20 18:02  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4793] docs/user/saturne1.tex, docs/user/saturne2.tex: Merge
+	  rev. 4792 from trunk (correct User Doc WITH RESOLVED CONFLICTS
+	  ALL ACCEPTED).
+
+2013-03-15 17:56  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4790] docs/user/graphics/sem_principle.pdf[CPY],
+	  docs/user/saturne1.tex: Merge rev. 4789 from trunk (update user
+	  documentation).
+
+2013-03-14 16:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4785] extras/installer/install_saturne.py.in: Merge rev. 4784
+	  from trunk (update MED version in installer).
+
+2013-03-13 13:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4783] ., src/base/cs_restart.c, src/base/cs_restart.h,
+	  src/lagr/laglec.f90, src/lagr/lagout.f90: Merge revs. 4766, 4780,
+	  and 4782 from trunk (Lagrangian module: improve handling of
+	  parallel deposition restart).
+
+2013-03-12 14:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4777] configure.ac, po/fr.po: Bump version from rc1 to rc2.
+
+2013-03-12 13:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4774] bin/autovnv/Study.py: Merge rev 4773 from trunk (in batch
+	  mode, do not switch cases to submit directory when running).
+
+2013-03-12 09:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4772] src/base/fldini.f90, src/base/fldtri.f90: Merge rev. 4771
+	  from trunk (add missing field mapping for alpha with EBRSM
+	  model).
+
+2013-03-11 18:09  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4770] data/thch/meteo: Merge rev. 4769 from trunk (update meteo
+	  file).
+
+2013-03-11 18:05  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4768] docs/user/graphics/gui_lagr_bc.png,
+	  docs/user/saturne1.tex: Merge rev. 4765 from trunk (update
+	  particle-tracking user documentation).
+
+2013-03-11 18:01  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4767] src/lagr/lagent.f90: Merge rev. 4764 from trunk (fix in
+	  lagr module).
+
+2013-03-11 11:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4763] src/user_examples/cs_user_boundary_conditions-base.f90:
+	  Merge rev. 4762 from trunk (update base boundary conditions
+	  example for all turbulent models).
+
+2013-03-08 12:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4761] bin/cs_case.py: Use code name instead of package name
+	  (for correct capitalization) in run log.
+
+2013-03-08 12:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4760] src/base/cs_post.c, src/base/fldini.f90: Merge rev. 4759
+	  from trunk (fix for postprocessing of moments with variable time
+	  step).
+
+2013-03-07 16:54  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4758] src/user/cs_user_physical_properties.f90: Merge rev. 4757
+	  from trunk (fix comment).
+
+2013-03-07 15:35  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4756] docs/user/saturne1.tex: Merge rev. 4755 from trunk
+	  (update documentation).
+
+2013-03-06 14:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4754] docs/user/saturne1.tex, docs/user/saturne2.tex: Merge
+	  rev. 4753 from trunk (update user doc).
+
+2013-03-06 14:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4752] src/user/cs_user_fluid_structure_interaction.f90: Merge
+	  rev. 4751 from trunk (clean unused parameter).
+
+2013-03-06 14:27  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4750] src/cfbl/cfqdmv.f90: Merge rev. 4749 from trunk (fix Head
+	  loss+compressible).
+
+2013-03-05 15:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4747] src/user_examples/cs_user_boundary_conditions-base.f90:
+	  Merge rev. 4746 from trunk (Doxygen).
+
+2013-03-04 10:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4741] src/turb/turbke.f90: Merge rev. 4740 from trunk (Fix bug
+	  in v2f-type models with buoyancy introduced in rev. 4079)).
+
+2013-02-28 18:48  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4739] src/elec/elincl.f90, src/elec/elreca.f90,
+	  src/gui/cs_gui_specific_physics.c,
+	  src/user/cs_user_parameters.f90: Merge rev. 4702 from trunk (ele:
+	  fix the correction with plane).
+
+2013-02-28 18:40  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4738] src/atmo/attycl.f90: Merge rev. 4665 from trunk (atmo:
+	  fix initialization of turbulence when there is no meteo data).
+
+2013-02-28 18:35  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4737] gui/Pages/BoundaryConditionsMeteoView.py,
+	  gui/Pages/BoundaryConditionsScalarsView.py: Merge rev. 4664 from
+	  trunk (gui: fix widget for meteo data).
+
+2013-02-28 18:30  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4736] gui/Pages/BoundaryConditionsMeteoView.py,
+	  gui/Pages/BoundaryConditionsVelocityInletView.py,
+	  gui/Pages/BoundaryConditionsView.py: Merge rev. 4662 from trunk
+	  (gui: fixes in atmo and fuel models for inlet conditions).
+
+2013-02-27 17:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4734] src/mesh/cs_join_post.c: Merge rev. 4733 from trunk (fix
+	  inverted arguments for mesh joining visualization level 3).
+
+2013-02-27 10:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4725] docs/theory/Makefile.am: Merge rev. 4724 from trunk (add
+	  missing file from rev. 4720 for 'make dist').
+
+2013-02-27 09:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4723] src/base/cs_renumber.c, src/base/cs_renumber.h: Merge
+	  rev. 4722 from trunk (fixes in mesh renumbering when deactivated
+	  or mesh quantities already computed).
+
+2013-02-26 18:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4721] docs/theory/mesh_algo.tex,
+	  docs/theory/mesh_quality.tex[CPY], docs/theory/theory.tex: Merge
+	  rev. 4720 from trunk (add bad cells flagging to theory
+	  documentation).
+
+2013-02-26 13:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4718] src/gui/cs_gui_specific_physics.c, src/turb/clpv2f.f90:
+	  Merge rev. 4717 from trunk (fixes based on compiler warnings).
+
+2013-02-26 10:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4716] docs/user/saturne1.tex: Merge rev. 4715 from trunk
+	  (documentation update).
+
+2013-02-26 10:32  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4714] src/turb/divrit.f90: Remove trailing blanks.
+
+2013-02-26 10:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4712] src/base/diffst.f90: Merge rev. 4711 from trunk (Minor
+	  fix in weakly compressible algo for fire when using temperature
+	  (idilat=4)).
+
+2013-02-26 10:20  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4710] src/base/modini.f90: merge rev. 4709 from trunk (Change
+	  the value of ideuch for low Reynolds number RANS models, for
+	  listing purpose).
+
+2013-02-26 10:16  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4708] src/base/covofi.f90, src/turb/divrit.f90: Merge rev. 4707
+	  from trunk (Fix in post-treatment of the turbulent fluxes in GGDH
+	  (iturt(iscal)=10)).
+
+2013-02-26 10:09  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4706] docs/user/saturne2.tex: Merge rev. 4705 from trunk
+	  (update user documentation).
+
+2013-02-26 09:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4704] gui/Base/XMLengine.py: Fix exception message.
+
+2013-02-22 17:48  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4694] src/base/iniini.f90: Merge rev. 4692 from trunk (fix
+	  uninitialized value).
+
+2013-02-22 17:46  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4693] bin/autovnv/Drawing.py: Fix merge r4382 (add edf colors
+	  for AutoVnV).
+
+2013-02-22 17:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4691] examples/1-simple_junction/case1/case1.xml[CPY],
+	  examples/2-full_domain/case2/case2.xml[CPY],
+	  examples/2-full_domain/case3/case3.xml[CPY],
+	  examples/2-full_domain/case3/cs_user_boundary_conditions.f90[CPY],
+	  examples/2-full_domain/case3/usclim.f90[DEL],
+	  examples/2-full_domain/case4/case4.xml[CPY],
+	  examples/2-full_domain/case4/cs_user_boundary_conditions.f90[CPY],
+	  examples/2-full_domain/case4/usclim.f90[DEL],
+	  examples/2-full_domain/case4/usproj.f90[DEL],
+	  examples/3-stratified_junction/case5/case5.xml[CPY],
+	  examples/3-stratified_junction/case5/cs_user_postprocess.c[CPY],
+	  examples/3-stratified_junction/case5/cs_user_postprocess_var.f90[CPY],
+	  examples/3-stratified_junction/case5/usmpst.f90[DEL],
+	  examples/3-stratified_junction/case5/usvpst.f90[DEL],
+	  examples/4-2Ddisks[CPY], examples/4-2Ddisks/case6[CPY],
+	  examples/4-2Ddisks/case6/fluid[CPY],
+	  examples/4-2Ddisks/case6/fluid/fluid-3rond2D-coupling.xml[CPY],
+	  examples/4-2Ddisks/case6/fluid/fluid-3rond2D-coupling_restart.xml[CPY],
+	  examples/4-2Ddisks/case6/fluid/fluid_3disks_alone.xml[CPY],
+	  examples/4-2Ddisks/case6/runcase_coupling[CPY],
+	  examples/4-2Ddisks/case6/solid[CPY],
+	  examples/4-2Ddisks/case6/solid/solid-alone.syd[CPY],
+	  examples/4-2Ddisks/case6/solid/solid-coupling.syd[CPY],
+	  examples/4-2Ddisks/case6/solid/solid-coupling_restart.syd[CPY],
+	  examples/4-2Ddisks/mesh[CPY], examples/4-2Ddisks/mesh/fluid[CPY],
+	  examples/4-2Ddisks/mesh/fluid/3rond2d_fluide.des[CPY],
+	  examples/4-2Ddisks/mesh/solid[CPY],
+	  examples/4-2Ddisks/mesh/solid/3rond2d.des[CPY],
+	  examples/4-2Ddisks/mesh/solid/3rond2d_syr40.dat[CPY]: Merge rev.
+	  4682 from trunk (update tutorial examples data and setup).
+
+2013-02-22 17:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4690] src/pprt/ppppar.f90: Merge rev. 4684 from trunk (ncharm
+	  dimension extension for the pulverized fuel combustion).
+
+2013-02-22 17:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4689] docs/user/graphics/Makefile.am: Merge rev. 4688 from
+	  trunk (update fix for 'make dist').
+
+2013-02-22 15:42  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4686] src/base/optcal.f90: Merge rev. 4685 from trunk (Minor
+	  fix in a doxygen comment).
+
+2013-02-22 15:26  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4683] docs/style/csmacros.sty: Merge rev. 4681 from trunk (Add
+	  a macro for the VnV).
+
+2013-02-22 09:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4680] configure.ac: Merge rev. 4679 from trunk (ensure C and
+	  Fortran compilers are found).
+
+2013-02-20 17:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4675] docs/style/csmacros.sty, docs/user/biblio.tex,
+	  docs/user/graphics/gui_bc_parameters.png,
+	  docs/user/graphics/gui_bc_regions.png,
+	  docs/user/graphics/gui_calculation_features.png[CPY],
+	  docs/user/graphics/gui_case_dir.png,
+	  docs/user/graphics/gui_coriolis.png[CPY],
+	  docs/user/graphics/gui_density_law.png,
+	  docs/user/graphics/gui_fluid_props.png,
+	  docs/user/graphics/gui_global_res_parameters.png,
+	  docs/user/graphics/gui_gravity.png[CPY],
+	  docs/user/graphics/gui_gravity_hyd_pressure.png[DEL],
+	  docs/user/graphics/gui_head_loss_coeffs.png,
+	  docs/user/graphics/gui_head_loss_regions.png,
+	  docs/user/graphics/gui_initialisation.png[CPY],
+	  docs/user/graphics/gui_mesh_join.png,
+	  docs/user/graphics/gui_mobile_mesh.png,
+	  docs/user/graphics/gui_numerical_parameters.png,
+	  docs/user/graphics/gui_output_1d_profiles.png[DEL],
+	  docs/user/graphics/gui_output_log.png,
+	  docs/user/graphics/gui_output_meshes.png,
+	  docs/user/graphics/gui_output_profiles.png[CPY],
+	  docs/user/graphics/gui_output_writers.png,
+	  docs/user/graphics/gui_phys_prop_ref_pressure.png[DEL],
+	  docs/user/graphics/gui_phys_prop_reference_values.png[CPY],
+	  docs/user/graphics/gui_prepare_execution.png,
+	  docs/user/graphics/gui_thermal_scalar.png,
+	  docs/user/graphics/gui_thermo_phys_models.png[DEL],
+	  docs/user/graphics/gui_time_averages.png,
+	  docs/user/graphics/gui_time_step.png,
+	  docs/user/graphics/gui_turbulence_models.png,
+	  docs/user/graphics/gui_user_scal_def_init.png,
+	  docs/user/graphics/gui_user_scal_phys_props.png[DEL],
+	  docs/user/graphics/gui_volume_regions.png[DEL],
+	  docs/user/saturne1.tex, docs/user/saturne2.tex: Merge rev. 4674
+	  from trunk (major documentation update).
+
+2013-02-19 15:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4671] docs/refcard/refcard.tex: Merge rev. 4670 from trunk (fix
+	  in the refcard).
+
+2013-02-19 12:26  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4667] docs/refcard/refcard.tex,
+	  extras/bash_completion/code_saturne: Merge rev. 4666 from trunk
+	  (Update refcard and autocompletion file).
+
+2013-02-15 18:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4652] docs/user/saturne1.tex: Merge rev. 4651 from trunk
+	  (external documentation links update).
+
+2013-02-15 16:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4650] docs/style/csmacros.sty, docs/theory/spadis.tex,
+	  docs/theory/turbul.tex: Merge rev. 4649 from trunk (doc).
+
+2013-02-15 09:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4644] src/base/vissec.f90: Merge rev. 4643 from trunk (minor
+	  improvement to rev. 4637).
+
+2013-02-14 18:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4642] docs/doxygen/images/icon.png, docs/style/csmacros.sty,
+	  docs/theory/bndcnd.tex, docs/theory/goveqn.tex,
+	  docs/theory/introd.tex, docs/theory/spadis.tex,
+	  docs/theory/theory.tex, docs/theory/timstp.tex,
+	  docs/theory/turbul.tex, src/base/numvar.f90, src/base/optcal.f90:
+	  Merge rev. 4641 from trunk (doc).
+
+2013-02-14 17:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4640] docs/user/graphics/gui_formula_interface.png: Merge rev.
+	  4639 from trunk (minor documentation update).
+
+2013-02-14 17:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4638] src/alge/bilsc4.f90, src/base/vissec.f90: Merge rev. 4637
+	  from trunk (add missing ghost cell sync, do not use
+	  unsynchronized extended ghost cell values).
+
+2013-02-14 12:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4635] src/alge/cs_gradient.c: Merge rev. 4634 from trunk (force
+	  initial halo synchronization for scalar gradient to extended
+	  halo).
+
+2013-02-14 09:06  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4633]
+	  docs/doxygen/examples/cs_user_extra_operations_examples.h[CPY]:
+	  Merge rev. 4632 from trunk (add doxygen file).
+
+2013-02-13 17:56  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4631] src/atmo/attycl.f90: Merge rev. 4630 from trunk (fix bad
+	  pointer in atmo. module).
+
+2013-02-13 14:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4629] libple/INSTALL: Update INSTALL to a more recent version.
+
+2013-02-13 14:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4628] src/base/cs_coupling.c, src/base/cs_coupling.h,
+	  src/base/cs_syr4_coupling.c: Merge rev. 4626 from trunk (for
+	  Syrthes coupling mesh mismatch, use delayed stop to avoid killing
+	  diagnostics).
+
+2013-02-13 13:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4623] sbin/bootstrap: Merge rev. 4622 from trunk (more robust
+	  bootstrapping across autotool versions).
+
+2013-02-13 11:25  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4621] src/base/numvar.f90: Merge rev. 4620 from trunk
+	  (doxygen).
+
+2013-02-13 10:42  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4619]
+	  src/user_examples/cs_user_extra_operations-energy_balance.f90,
+	  src/user_examples/cs_user_extra_operations-extract_1d_profile.f90:
+	  Merge rev. 4618 from trunk (update doxygen).
+
+2013-02-13 10:11  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4617] docs/doxygen/Doxyfile-src,
+	  docs/doxygen/examples/bft_error_example.c,
+	  docs/doxygen/examples/cs_user_boundary_conditions_examples.h[CPY],
+	  docs/doxygen/mainpage.h, src/alge/cs_matrix_priv.h,
+	  src/base/cs_field.c, src/base/cs_post.c,
+	  src/base/cs_selector_f2c.f90, src/base/cs_time_step.c,
+	  src/base/navstv.f90, src/base/optcal.f90, src/base/predvv.f90,
+	  src/bft/bft_error.c, src/ctwr/cs_ctwr.h,
+	  src/mesh/cs_join_intersect.h, src/mesh/cs_join_mesh.h,
+	  src/mesh/cs_join_set.h, src/mesh/cs_join_util.h,
+	  src/user/cs_user_boundary_conditions.f90,
+	  src/user_examples/cs_user_boundary_conditions-advanced.f90,
+	  src/user_examples/cs_user_boundary_conditions-base.f90: Merge
+	  rev. 4613-4616 from trunk (doxygen).
+
+2013-02-12 09:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4612] src/comb/cs_coal_readata.f90: Merge rev. 4605 from trunk
+	  (GUI reader fix to use NOx only when defined).
+
+2013-02-11 16:57  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4607] docs/doxygen/Doxyfile-src, docs/style/csmacros.sty,
+	  docs/theory/introd.tex, src/alge/bilsc2.f90, src/alge/bilsc4.f90,
+	  src/alge/bilsca.f90, src/alge/bilsct.f90, src/alge/bilscv.f90,
+	  src/alge/diften.f90, src/alge/diftnv.f90, src/alge/inimas.f90,
+	  src/alge/inimav.f90, src/alge/itrgrv.f90, src/alge/itrmav.f90,
+	  src/alge/matrix.f90, src/alge/matrvv.f90, src/alge/matrxv.f90,
+	  src/alge/projtv.f90, src/alge/vistnv.f90, src/alge/vitens.f90,
+	  src/base/alelav.f90, src/base/alemav.f90, src/base/clptrg.f90,
+	  src/base/clptur.f90, src/base/clsyvt.f90, src/base/codits.f90,
+	  src/base/coditv.f90, src/base/condli.f90, src/base/cs_control.c,
+	  src/base/cs_coupling.c, src/base/cs_file.c, src/base/cs_log.c,
+	  src/base/cs_post.c, src/base/cs_selector_f2c.f90,
+	  src/base/distyp.f90, src/base/field.f90, src/base/hturbp.f90,
+	  src/base/navstv.f90, src/base/phyvar.f90, src/base/post.f90,
+	  src/base/post_util.f90, src/base/predfl.f90, src/base/predvv.f90,
+	  src/base/prehyd.f90, src/base/resopv.f90, src/base/vericl.f90,
+	  src/cogz/d3phst.f90, src/cogz/d3pint.f90, src/cogz/d3pphy.f90,
+	  src/cogz/sootsc.f90, src/mesh/cs_mesh_bad_cells.c,
+	  src/mesh/cs_mesh_from_builder.c, src/pprt/pppdfr.f90,
+	  src/turb/divrit.f90, src/turb/resrit.f90, src/turb/rotcor.f90,
+	  src/turb/turbke.f90, src/turb/turbkw.f90, src/turb/turrij.f90,
+	  src/user/cs_user_boundary_conditions.f90,
+	  src/user/cs_user_extra_operations.f90,
+	  src/user/cs_user_initialization.f90,
+	  src/user/cs_user_les_inflow.f90,
+	  src/user/cs_user_physical_properties.f90,
+	  src/user/cs_user_postprocess_var.f90,
+	  src/user/cs_user_source_terms.f90, src/user/usalcl.f90,
+	  src/user_examples/cs_user_boundary_conditions-advanced.f90,
+	  src/user_examples/cs_user_boundary_conditions-base.f90,
+	  src/user_examples/cs_user_extra_operations-energy_balance.f90,
+	  src/user_examples/cs_user_extra_operations-extract_1d_profile.f90:
+	  Merge rev. 4606 from trunk (fix doxygen warnings).
+
+2013-02-11 10:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4603] configure.ac, po/fr.po: Merge rev. 4602 from trunk
+	  (ensure -allow-multiple-definitions flag is set for IBM Blue
+	  Gene).
+
+2013-02-08 17:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4599] configure.ac: Bump version from beta to rc1.
+
+2013-02-08 17:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4598] docs/tutorial/case6.tex[CPY],
+	  docs/tutorial/graphics/Makefile.am,
+	  docs/tutorial/graphics/case3_p1.jpg[CPY],
+	  docs/tutorial/graphics/case3_p10.jpg[CPY],
+	  docs/tutorial/graphics/case3_p2.jpg[CPY],
+	  docs/tutorial/graphics/case3_p3.jpg[CPY],
+	  docs/tutorial/graphics/case3_p4.jpg[CPY],
+	  docs/tutorial/graphics/case3_p5.jpg[CPY],
+	  docs/tutorial/graphics/case3_p6.jpg[CPY],
+	  docs/tutorial/graphics/case3_p7.jpg[CPY],
+	  docs/tutorial/graphics/case3_p8.jpg[CPY],
+	  docs/tutorial/graphics/case3_p9.jpg[CPY],
+	  docs/tutorial/graphics/case4_p1.jpg[CPY],
+	  docs/tutorial/graphics/case4_p2.jpg[CPY],
+	  docs/tutorial/graphics/case4_p3.jpg[CPY],
+	  docs/tutorial/graphics/case4_p4.jpg[CPY],
+	  docs/tutorial/graphics/case4_p5.jpg[CPY],
+	  docs/tutorial/graphics/case4_p6.jpg[CPY],
+	  docs/tutorial/graphics/case5_03.jpg[CPY],
+	  docs/tutorial/graphics/case5_04.jpg[CPY],
+	  docs/tutorial/graphics/case5_05.jpg[CPY],
+	  docs/tutorial/graphics/case5_06.jpg[CPY],
+	  docs/tutorial/graphics/case5_07.jpg[CPY],
+	  docs/tutorial/graphics/case5_08.jpg[CPY],
+	  docs/tutorial/graphics/case5_09.jpg[CPY],
+	  docs/tutorial/graphics/evotemp_case3.png[CPY],
+	  docs/tutorial/graphics/probe9.agr[DEL],
+	  docs/tutorial/tuto_case6.tex[CPY]: Merge revs. 4595, 4596, and
+	  4597 from trunk (tutorial files/build fixes).
+
+2013-02-08 15:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4594] docs/tutorial/Makefile.am, docs/tutorial/case1.tex,
+	  docs/tutorial/case2.tex, docs/tutorial/case3.tex,
+	  docs/tutorial/case4.tex, docs/tutorial/case5.tex,
+	  docs/tutorial/graphics/Makefile.am,
+	  docs/tutorial/graphics/V-1.png[DEL],
+	  docs/tutorial/graphics/V-10.png[DEL],
+	  docs/tutorial/graphics/V-11.png[DEL],
+	  docs/tutorial/graphics/V-12.png[DEL],
+	  docs/tutorial/graphics/V-13.png[DEL],
+	  docs/tutorial/graphics/V-14.png[DEL],
+	  docs/tutorial/graphics/V-15.png[DEL],
+	  docs/tutorial/graphics/V-16.png[DEL],
+	  docs/tutorial/graphics/V-17.png[DEL],
+	  docs/tutorial/graphics/V-18.png[DEL],
+	  docs/tutorial/graphics/V-2.png[DEL],
+	  docs/tutorial/graphics/V-20.png[DEL],
+	  docs/tutorial/graphics/V-21.png[DEL],
+	  docs/tutorial/graphics/V-22.png[DEL],
+	  docs/tutorial/graphics/V-23.png[DEL],
+	  docs/tutorial/graphics/V-24.png[DEL],
+	  docs/tutorial/graphics/V-25.png[DEL],
+	  docs/tutorial/graphics/V-27.png[DEL],
+	  docs/tutorial/graphics/V-28.png[DEL],
+	  docs/tutorial/graphics/V-29.png[DEL],
+	  docs/tutorial/graphics/V-3.png[DEL],
+	  docs/tutorial/graphics/V-30.png[DEL],
+	  docs/tutorial/graphics/V-31.png[DEL],
+	  docs/tutorial/graphics/V-32.png[DEL],
+	  docs/tutorial/graphics/V-33.png[DEL],
+	  docs/tutorial/graphics/V-34.png[DEL],
+	  docs/tutorial/graphics/V-34bis.png[DEL],
+	  docs/tutorial/graphics/V-35.png[DEL],
+	  docs/tutorial/graphics/V-36.png[DEL],
+	  docs/tutorial/graphics/V-37.png[DEL],
+	  docs/tutorial/graphics/V-38.png[DEL],
+	  docs/tutorial/graphics/V-39.png[DEL],
+	  docs/tutorial/graphics/V-4.png[DEL],
+	  docs/tutorial/graphics/V-40.png[DEL],
+	  docs/tutorial/graphics/V-41.png[DEL],
+	  docs/tutorial/graphics/V-43.png[DEL],
+	  docs/tutorial/graphics/V-44.png[DEL],
+	  docs/tutorial/graphics/V-45.png[DEL],
+	  docs/tutorial/graphics/V-46.png[DEL],
+	  docs/tutorial/graphics/V-47.png[DEL],
+	  docs/tutorial/graphics/V-48.png[DEL],
+	  docs/tutorial/graphics/V-49.png[DEL],
+	  docs/tutorial/graphics/V-5.png[DEL],
+	  docs/tutorial/graphics/V-50.png[DEL],
+	  docs/tutorial/graphics/V-51.png[DEL],
+	  docs/tutorial/graphics/V-52.png[DEL],
+	  docs/tutorial/graphics/V-53.png[DEL],
+	  docs/tutorial/graphics/V-54.png[DEL],
+	  docs/tutorial/graphics/V-56.png[DEL],
+	  docs/tutorial/graphics/V-57.png[DEL],
+	  docs/tutorial/graphics/V-58.png[DEL],
+	  docs/tutorial/graphics/V-59.png[DEL],
+	  docs/tutorial/graphics/V-6.png[DEL],
+	  docs/tutorial/graphics/V-60.png[DEL],
+	  docs/tutorial/graphics/V-60bis.png[DEL],
+	  docs/tutorial/graphics/V-61.png[DEL],
+	  docs/tutorial/graphics/V-62.png[DEL],
+	  docs/tutorial/graphics/V-63.png[DEL],
+	  docs/tutorial/graphics/V-64.png[DEL],
+	  docs/tutorial/graphics/V-65.png[DEL],
+	  docs/tutorial/graphics/V-66.png[DEL],
+	  docs/tutorial/graphics/V-67.png[DEL],
+	  docs/tutorial/graphics/V-68.png[DEL],
+	  docs/tutorial/graphics/V-69.png[DEL],
+	  docs/tutorial/graphics/V-69bis.png[DEL],
+	  docs/tutorial/graphics/V-7.png[DEL],
+	  docs/tutorial/graphics/V-70.png[DEL],
+	  docs/tutorial/graphics/V-71.png[DEL],
+	  docs/tutorial/graphics/V-72.png[DEL],
+	  docs/tutorial/graphics/V-73.png[DEL],
+	  docs/tutorial/graphics/V-73bis.png[DEL],
+	  docs/tutorial/graphics/V-74.png[DEL],
+	  docs/tutorial/graphics/V-74bis.png[DEL],
+	  docs/tutorial/graphics/V-75.png[DEL],
+	  docs/tutorial/graphics/V-76.png[DEL],
+	  docs/tutorial/graphics/V-76bis.png[DEL],
+	  docs/tutorial/graphics/V-8.png[DEL],
+	  docs/tutorial/graphics/V-9.png[DEL],
+	  docs/tutorial/graphics/c2_p1.jpg[DEL],
+	  docs/tutorial/graphics/c2_p2.jpg[DEL],
+	  docs/tutorial/graphics/c2_p3.jpg[DEL],
+	  docs/tutorial/graphics/c2_p4.jpg[DEL],
+	  docs/tutorial/graphics/c2_p5.jpg[DEL],
+	  docs/tutorial/graphics/c2_p6.jpg[DEL],
+	  docs/tutorial/graphics/c2_p7.jpg[DEL],
+	  docs/tutorial/graphics/c5_config.jpg[DEL],
+	  docs/tutorial/graphics/cas1_t_1.jpg[DEL],
+	  docs/tutorial/graphics/cas1_t_10.jpg[DEL],
+	  docs/tutorial/graphics/cas1_t_20.jpg[DEL],
+	  docs/tutorial/graphics/cas1_t_29.jpg[DEL],
+	  docs/tutorial/graphics/case1_V-1.png[CPY],
+	  docs/tutorial/graphics/case1_V-10.png[CPY],
+	  docs/tutorial/graphics/case1_V-11.png[CPY],
+	  docs/tutorial/graphics/case1_V-12.png[CPY],
+	  docs/tutorial/graphics/case1_V-13.png[CPY],
+	  docs/tutorial/graphics/case1_V-14.png[CPY],
+	  docs/tutorial/graphics/case1_V-15.png[CPY],
+	  docs/tutorial/graphics/case1_V-16.png[CPY],
+	  docs/tutorial/graphics/case1_V-17.png[CPY],
+	  docs/tutorial/graphics/case1_V-18.png[CPY],
+	  docs/tutorial/graphics/case1_V-19.png[CPY],
+	  docs/tutorial/graphics/case1_V-2.png[CPY],
+	  docs/tutorial/graphics/case1_V-20.png[CPY],
+	  docs/tutorial/graphics/case1_V-21.png[CPY],
+	  docs/tutorial/graphics/case1_V-22.png[CPY],
+	  docs/tutorial/graphics/case1_V-23.png[CPY],
+	  docs/tutorial/graphics/case1_V-24.png[CPY],
+	  docs/tutorial/graphics/case1_V-25.png[CPY],
+	  docs/tutorial/graphics/case1_V-26.png[CPY],
+	  docs/tutorial/graphics/case1_V-27.png[CPY],
+	  docs/tutorial/graphics/case1_V-28.png[CPY],
+	  docs/tutorial/graphics/case1_V-29.png[CPY],
+	  docs/tutorial/graphics/case1_V-3.png[CPY],
+	  docs/tutorial/graphics/case1_V-30.png[CPY],
+	  docs/tutorial/graphics/case1_V-31.png[CPY],
+	  docs/tutorial/graphics/case1_V-32.png[CPY],
+	  docs/tutorial/graphics/case1_V-33.png[CPY],
+	  docs/tutorial/graphics/case1_V-34.png[CPY],
+	  docs/tutorial/graphics/case1_V-35.png[CPY],
+	  docs/tutorial/graphics/case1_V-36.png[CPY],
+	  docs/tutorial/graphics/case1_V-37.png[CPY],
+	  docs/tutorial/graphics/case1_V-38.png[CPY],
+	  docs/tutorial/graphics/case1_V-4.png[CPY],
+	  docs/tutorial/graphics/case1_V-5.png[CPY],
+	  docs/tutorial/graphics/case1_V-6.png[CPY],
+	  docs/tutorial/graphics/case1_V-7.png[CPY],
+	  docs/tutorial/graphics/case1_V-8.png[CPY],
+	  docs/tutorial/graphics/case1_V-9.png[CPY],
+	  docs/tutorial/graphics/case1_fig01.jpg[CPY],
+	  docs/tutorial/graphics/case1_fig02.jpg[CPY],
+	  docs/tutorial/graphics/case1_fig03.jpg[CPY],
+	  docs/tutorial/graphics/case1_fig04_t_1.jpg[CPY],
+	  docs/tutorial/graphics/case1_fig04_t_10.jpg[CPY],
+	  docs/tutorial/graphics/case1_fig04_t_20.jpg[CPY],
+	  docs/tutorial/graphics/case1_fig04_t_29.jpg[CPY],
+	  docs/tutorial/graphics/case2_V-1.png[CPY],
+	  docs/tutorial/graphics/case2_V-10.png[CPY],
+	  docs/tutorial/graphics/case2_V-11.png[CPY],
+	  docs/tutorial/graphics/case2_V-12.png[CPY],
+	  docs/tutorial/graphics/case2_V-13.png[CPY],
+	  docs/tutorial/graphics/case2_V-14.png[CPY],
+	  docs/tutorial/graphics/case2_V-15.png[CPY],
+	  docs/tutorial/graphics/case2_V-16.png[CPY],
+	  docs/tutorial/graphics/case2_V-17.png[CPY],
+	  docs/tutorial/graphics/case2_V-18.png[CPY],
+	  docs/tutorial/graphics/case2_V-19.png[CPY],
+	  docs/tutorial/graphics/case2_V-2.png[CPY],
+	  docs/tutorial/graphics/case2_V-20.png[CPY],
+	  docs/tutorial/graphics/case2_V-21.png[CPY],
+	  docs/tutorial/graphics/case2_V-22.png[CPY],
+	  docs/tutorial/graphics/case2_V-23.png[CPY],
+	  docs/tutorial/graphics/case2_V-24.png[CPY],
+	  docs/tutorial/graphics/case2_V-25.png[CPY],
+	  docs/tutorial/graphics/case2_V-26.png[CPY],
+	  docs/tutorial/graphics/case2_V-27.png[CPY],
+	  docs/tutorial/graphics/case2_V-28.png[CPY],
+	  docs/tutorial/graphics/case2_V-29.png[CPY],
+	  docs/tutorial/graphics/case2_V-3.png[CPY],
+	  docs/tutorial/graphics/case2_V-30.png[CPY],
+	  docs/tutorial/graphics/case2_V-4.png[CPY],
+	  docs/tutorial/graphics/case2_V-5.png[CPY],
+	  docs/tutorial/graphics/case2_V-6.png[CPY],
+	  docs/tutorial/graphics/case2_V-7.png[CPY],
+	  docs/tutorial/graphics/case2_V-8.png[CPY],
+	  docs/tutorial/graphics/case2_V-9.png[CPY],
+	  docs/tutorial/graphics/case2_fig01.jpg[CPY],
+	  docs/tutorial/graphics/case2_fig02.jpg[CPY],
+	  docs/tutorial/graphics/case2_fig03.jpg[CPY],
+	  docs/tutorial/graphics/case2_fig04.jpg[CPY],
+	  docs/tutorial/graphics/case2_p0.jpg[CPY],
+	  docs/tutorial/graphics/case2_p1.jpg[CPY],
+	  docs/tutorial/graphics/case2_p2.jpg[CPY],
+	  docs/tutorial/graphics/case2_p3.jpg[CPY],
+	  docs/tutorial/graphics/case2_p4.jpg[CPY],
+	  docs/tutorial/graphics/case2_p5.jpg[CPY],
+	  docs/tutorial/graphics/case2_p6.jpg[CPY],
+	  docs/tutorial/graphics/case3-V1.png[CPY],
+	  docs/tutorial/graphics/case3-V2.png[CPY],
+	  docs/tutorial/graphics/case3-V3.png[CPY],
+	  docs/tutorial/graphics/case3-V4.png[CPY],
+	  docs/tutorial/graphics/case3-V5.png[CPY],
+	  docs/tutorial/graphics/case3-V6.png[CPY],
+	  docs/tutorial/graphics/case3-V7.png[CPY],
+	  docs/tutorial/graphics/case3_fig01.jpg[CPY],
+	  docs/tutorial/graphics/case3_p1.jpg[DEL],
+	  docs/tutorial/graphics/case3_p10.jpg[DEL],
+	  docs/tutorial/graphics/case3_p2.jpg[DEL],
+	  docs/tutorial/graphics/case3_p3.jpg[DEL],
+	  docs/tutorial/graphics/case3_p4.jpg[DEL],
+	  docs/tutorial/graphics/case3_p5.jpg[DEL],
+	  docs/tutorial/graphics/case3_p6.jpg[DEL],
+	  docs/tutorial/graphics/case3_p7.jpg[DEL],
+	  docs/tutorial/graphics/case3_p8.jpg[DEL],
+	  docs/tutorial/graphics/case3_p9.jpg[DEL],
+	  docs/tutorial/graphics/case3_probe9.agr[CPY],
+	  docs/tutorial/graphics/case3_probe9.png[CPY],
+	  docs/tutorial/graphics/case4_V-1.png[CPY],
+	  docs/tutorial/graphics/case4_V-2.png[CPY],
+	  docs/tutorial/graphics/case4_V-3.png[CPY],
+	  docs/tutorial/graphics/case4_V-4.png[CPY],
+	  docs/tutorial/graphics/case4_V-5-paraview.png[CPY],
+	  docs/tutorial/graphics/case4_fig01.jpg[CPY],
+	  docs/tutorial/graphics/case4_moytemp.png[CPY],
+	  docs/tutorial/graphics/case4_p1.jpg[DEL],
+	  docs/tutorial/graphics/case4_p2.jpg[DEL],
+	  docs/tutorial/graphics/case4_p3.jpg[DEL],
+	  docs/tutorial/graphics/case4_p4.jpg[DEL],
+	  docs/tutorial/graphics/case4_p5.jpg[DEL],
+	  docs/tutorial/graphics/case4_p6.jpg[DEL],
+	  docs/tutorial/graphics/case5-V1.png[CPY],
+	  docs/tutorial/graphics/case5-V10.png[CPY],
+	  docs/tutorial/graphics/case5-V11.png[CPY],
+	  docs/tutorial/graphics/case5-V12.png[CPY],
+	  docs/tutorial/graphics/case5-V13.png[CPY],
+	  docs/tutorial/graphics/case5-V2.png[CPY],
+	  docs/tutorial/graphics/case5-V3.png[CPY],
+	  docs/tutorial/graphics/case5-V4.png[CPY],
+	  docs/tutorial/graphics/case5-V5.png[CPY],
+	  docs/tutorial/graphics/case5-V5b.png[CPY],
+	  docs/tutorial/graphics/case5-V6.png[CPY],
+	  docs/tutorial/graphics/case5-V7.png[CPY],
+	  docs/tutorial/graphics/case5-V8.png[CPY],
+	  docs/tutorial/graphics/case5-V9.png[CPY],
+	  docs/tutorial/graphics/case5_01.jpg[DEL],
+	  docs/tutorial/graphics/case5_02.jpg[DEL],
+	  docs/tutorial/graphics/case5_03.jpg[DEL],
+	  docs/tutorial/graphics/case5_04.jpg[DEL],
+	  docs/tutorial/graphics/case5_05.jpg[DEL],
+	  docs/tutorial/graphics/case5_06.jpg[DEL],
+	  docs/tutorial/graphics/case5_07.jpg[DEL],
+	  docs/tutorial/graphics/case5_08.jpg[DEL],
+	  docs/tutorial/graphics/case5_09.jpg[DEL],
+	  docs/tutorial/graphics/case5_color_Snimbus.jpg[CPY],
+	  docs/tutorial/graphics/case5_config.jpg[CPY],
+	  docs/tutorial/graphics/case6_Visu2D-coupling-Vec00.png[CPY],
+	  docs/tutorial/graphics/case6_Visu2D-coupling-temp00.png[CPY],
+	  docs/tutorial/graphics/case6_Visu2d-solid-temp.png[CPY],
+	  docs/tutorial/graphics/case6_Visu2d_Temp_fluid.png[CPY],
+	  docs/tutorial/graphics/case6_Visu2d_Vec_fluid.png[CPY],
+	  docs/tutorial/graphics/case6_color-fluid-mesh.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-1-2.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-1.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-10.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-11.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-2.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-3.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-4.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-5.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-6.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-7.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-8.png[CPY],
+	  docs/tutorial/graphics/case6_fluid_V-9.png[CPY],
+	  docs/tutorial/graphics/case6_fluidcoupling_V-1.png[CPY],
+	  docs/tutorial/graphics/case6_fluidcoupling_V-2.png[CPY],
+	  docs/tutorial/graphics/case6_fluidcoupling_V-3.png[CPY],
+	  docs/tutorial/graphics/case6_geometry-3rond2d.png[CPY],
+	  docs/tutorial/graphics/case6_solid-mesh-color.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-1.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-10.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-11.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-12.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-13.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-14.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-15.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-2.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-3.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-4.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-5.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-6.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-7.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-8.png[CPY],
+	  docs/tutorial/graphics/case6_solid_V-9.png[CPY],
+	  docs/tutorial/graphics/case6_solidcoupling_V-1.png[CPY],
+	  docs/tutorial/graphics/case6_solidcoupling_V-2.png[CPY],
+	  docs/tutorial/graphics/case6_solidcoupling_V-3.png[CPY],
+	  docs/tutorial/graphics/case6_visu_fluid-00.png[CPY],
+	  docs/tutorial/graphics/case6_visu_fluid-01.png[CPY],
+	  docs/tutorial/graphics/case6_visu_solid-00.png[CPY],
+	  docs/tutorial/graphics/color_Snimbus.jpg[DEL],
+	  docs/tutorial/graphics/density_law.png[DEL],
+	  docs/tutorial/graphics/evotemp_case3.png[DEL],
+	  docs/tutorial/graphics/fig01.jpg[DEL],
+	  docs/tutorial/graphics/fig02.jpg[DEL],
+	  docs/tutorial/graphics/fig03.jpg[DEL],
+	  docs/tutorial/graphics/fig04.jpg[DEL],
+	  docs/tutorial/graphics/fig05.jpg[DEL],
+	  docs/tutorial/graphics/fig06.jpg[DEL],
+	  docs/tutorial/graphics/fig07.jpg[DEL],
+	  docs/tutorial/graphics/fig08.jpg[DEL],
+	  docs/tutorial/graphics/fig09.jpg[DEL],
+	  docs/tutorial/graphics/head_loss0.png[DEL],
+	  docs/tutorial/graphics/head_loss1.png[DEL],
+	  docs/tutorial/graphics/head_loss2.png[DEL],
+	  docs/tutorial/graphics/head_loss3.png[DEL],
+	  docs/tutorial/graphics/head_loss4.png[DEL],
+	  docs/tutorial/graphics/head_loss5.png[DEL],
+	  docs/tutorial/graphics/moytemp.png[DEL],
+	  docs/tutorial/graphics/probe9.png[DEL],
+	  docs/tutorial/graphics/viscosity_law.png[DEL],
+	  docs/tutorial/tuto_case1.tex, docs/tutorial/tuto_case2.tex,
+	  docs/tutorial/tuto_case3.tex, docs/tutorial/tuto_case4.tex,
+	  docs/tutorial/tuto_case5.tex, docs/tutorial/tutorial.tex: Merge
+	  rev. 4587 from trunk (search HCN/NH3 partition only when NOx
+	  model is active).
+
+2013-02-08 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4593] src/gui/cs_gui_specific_physics.c: Merge rev. 4587 from
+	  trunk (fix search HCN/NH3 partition only when NOx model).
+
+2013-02-08 15:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4592] gui/Base/QtPage.py: Merge rev. 4582 from trunk (fix
+	  update for QComboBox index when delItem).
+
+2013-02-08 15:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4591] src/base/iniini.f90, src/base/navstv.f90,
+	  src/base/optcal.f90: Merge rev. 4588 from trunk (add ALE option
+	  to choose the way the mass flux due to mesh velocity is
+	  computed).
+
+2013-02-08 15:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4590] bin/cs_case.py: Merge rev. 4586 from trunk (fix behavior
+	  of user scripts for case parameters).
+
+2013-02-08 15:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4589] src/user/cs_user_postprocess.c: Merge rev. 4585 from
+	  trunk (fix comments).
+
+2013-02-08 10:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4583] gui/Base/XMLengine.py: Allow compatibility with Python
+	  version older than 2.6.
+
+2013-02-08 09:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4581] gui/Base/QtPage.py: Merge rev. 4580 from trunk (fix
+	  confusion between view and model in index list).
+
+2013-02-07 18:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4579] src/user/cs_user_parameters.f90: Merge rev. 4578 from
+	  trunk (make some user parameter subroutines optional even without
+	  the GUI).
+
+2013-02-07 17:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4577] src/cfbl/cfther.f90: Merge rev. 4576 from trunk (fix
+	  incorrect B.C pointer in compressible module).
+
+2013-02-07 17:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4575] ., src/base/iniusi.f90, src/cfbl/cfini1.f90: Merge rev.
+	  4574 from trunk (force segregated velocity solver for
+	  compressible module).
+
+2013-02-07 15:32  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4573] docs/doxygen/Doxyfile-src,
+	  src/user_examples/cs_user_boundary_conditions-advanced.f90,
+	  src/user_examples/cs_user_boundary_conditions-base.f90,
+	  src/user_examples/cs_user_extra_operations-energy_balance.f90,
+	  src/user_examples/cs_user_extra_operations-extract_1d_profile.f90:
+	  Merge rev. 4572 from trunk (update Doxygen).
+
+2013-02-07 15:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4571] ., docs/doxygen/images/icon.png: Merge rev. 4570 from
+	  trunk (update logo for Doxygen).
+
+2013-02-07 14:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4569] ., configure.ac, docs/doxygen/Makefile.am: Merge rev.
+	  4568 from trunk (allow choice of doxygen executable in
+	  configure).
+
+2013-02-07 14:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4567] ., docs/Makefile.am, docs/autovnv/autovnv.tex,
+	  docs/developer/developer.tex, docs/install/install.tex,
+	  docs/refcard/refcard.tex, docs/style/cs_logo_black.pdf[CPY],
+	  docs/style/cs_logo_bubble.pdf[CPY],
+	  docs/style/cs_logo_flux.pdf[CPY],
+	  docs/style/cs_logo_wave.pdf[CPY],
+	  docs/style/cs_logo_wire_black.pdf[CPY], docs/style/csdoc.sty,
+	  docs/style/logocs.png[DEL], docs/theory/theory.tex,
+	  docs/user/user.tex: Merge rev. 4566 from trunk (update logo in
+	  PDF documentation).
+
+2013-02-07 12:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4564] src/base/cs_ext_neighborhood.c,
+	  src/base/cs_ext_neighborhood.h, src/mesh/cs_mesh_quantities.c,
+	  src/mesh/cs_mesh_quantities.h: Merge rev. 4563 from trunk (fix
+	  lsq vector gradient with red. ext. neighborhood) Added missing
+	  quantities update for imrgra 3 / ivelco 1 combination.
+
+2013-02-07 11:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4562] ., gui/Base: Remove some partial SVN merge info.
+
+2013-02-07 11:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4561] gui/Base,
+	  src/user_examples/cs_user_boundary_conditions-atmospheric.f90:
+	  Merge rev. 4560 from trunk (update example user source file with
+	  caution comment).
+
+2013-02-06 16:15  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4558] src/gui/cs_gui_boundary_conditions.c: Merge rev. 4557
+	  from trunk (fix in gas combustion).
+
+2013-02-06 16:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4556] ., gui/Base, src/base/ecrava.f90, src/base/lecamp.f90,
+	  src/base/lecamx.f90: Merge rev. 4526 from trunk (fixes for
+	  turbulent flux in checkpoint/restart).
+
+2013-02-06 16:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4555] src/user/cs_user_mesh.c: Merge rev. 4554 from trunk (fix
+	  user thin wall example for compatibility with mesh joining).
+
+2013-02-06 15:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4553] gui/Pages/StartRestartView.py: Merge rev. 4552 from trunk
+	  (GUI fix for auxiliary restart file status).
+
+2013-02-06 08:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4550] src/user/cs_user_physical_properties.f90: Merge rev. 4549
+	  from trunk (fix of a merge).
+
+2013-02-06 08:36  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4548] src/user/cs_user_physical_properties.f90: Merge rev. 4547
+	  from trunk (Fix introduced by merging rev. 4538 with revs. 4509
+	  and 4510).
+
+2013-02-05 17:27  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4546] src/base/numvar.f90: Merge doxygen.
+
+2013-02-05 17:27  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4545] src/turb/turbke.f90: Merge rev. 4544 from trunk (Fix bug
+	  in v2-f).
+
+2013-02-05 14:29  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4543] gui/Base, gui/Base/XMLengine.py: Merge rev 4542 from
+	  trunk (FIX control lenght before use for undo functions)
+
+2013-02-05 12:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4541] src/user/cs_user_boundary_conditions.f90,
+	  src/user_examples/cs_user_boundary_conditions-advanced.f90,
+	  src/user_examples/cs_user_boundary_conditions-base.f90: Merge
+	  rev. 4540 from trunk (Doxygen).
+
+2013-02-05 09:01  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4539] docs/style/csmacros.sty, docs/theory/bndcnd.tex,
+	  docs/theory/goveqn.tex, docs/theory/introd.tex,
+	  docs/theory/timstp.tex, src/user/cs_user_extra_operations.f90,
+	  src/user/cs_user_initialization.f90,
+	  src/user/cs_user_les_inflow.f90, src/user/cs_user_modules.f90,
+	  src/user/cs_user_physical_properties.f90,
+	  src/user/cs_user_postprocess_var.f90,
+	  src/user/cs_user_source_terms.f90: Merger rev. 4538 from trunk
+	  (doc).
+
+2013-02-04 18:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4536] docs/user/saturne1.tex, src/alge/cs_sles.c: Merge rev.
+	  4535 from trunk (fix some typos).
+
+2013-02-04 18:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4534] src/mesh/cs_mesh_bad_cells.c: Merge rev. 4533 from trunk
+	  (fix dimension dependency for bad cells offsetting criteria and
+	  avoid useless work arrays).
+
+2013-02-04 15:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4532] src/base/prehyd.f90: Merge rev. 4531 from trunk.
+
+2013-02-04 13:22  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4530] docs/theory/turbul.tex[CPY]: Merge rev. 4529 from trunk.
+
+2013-02-04 13:07  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4528] docs/theory/bndcnd.tex, docs/theory/introd.tex: Merge
+	  rev. 4527 from trunk (Add exmples of linking between theory doc
+	  and local doxygen doc).
+
+2013-02-04 10:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4525] ., src/mesh/cs_mesh_bad_cells.c: Merge rev. 4524 from
+	  trunk (add missing parallel synchronization for bad cells
+	  criteria).
+
+2013-02-04 10:48  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4523] docs/style/csmacros.sty, docs/theory/Makefile.am,
+	  docs/theory/bndcnd.tex, docs/theory/goveqn.tex,
+	  docs/theory/introd.tex, docs/theory/spadis.tex,
+	  docs/theory/theory.tex, docs/theory/timstp.tex: Merge rev. 4522
+	  from trunk (update theory doc).
+
+2013-02-04 10:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4521] ., NEWS, QUALITY_ASSURANCE, README, configure.ac,
+	  docs/Makefile.am, docs/developer[CPY],
+	  docs/developer/Makefile.am[CPY],
+	  docs/developer/coding_standards.tex[CPY],
+	  docs/developer/common_constructs.tex[CPY],
+	  docs/developer/developer.tex[CPY], docs/developer/graphics[CPY],
+	  docs/developer/graphics/Makefile.am[CPY],
+	  docs/developer/input[CPY], docs/developer/write_theory.tex[CPY],
+	  docs/developper[DEL], docs/doxygen/mainpage.h,
+	  docs/install/install.tex, docs/theory/combbase.tex,
+	  docs/theory/combgaz.tex, docs/theory/introd.tex,
+	  docs/theory/summary.tex, docs/user/saturne1.tex,
+	  extras/bash_completion/code_saturne, extras/installer/README.txt,
+	  extras/windows/innosetup/setup.iss.in, gui/Base/BrowserView.py,
+	  libple/configure.ac, src/atmo/atmcls.f90,
+	  src/base/cs_prototypes.h: Merge rev. 4520 from trunk (fix
+	  spelling for developer).
+
+2013-02-04 10:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4519] ., config/cs_auto_flags.sh, configure.ac: Merge rev. 4518
+	  from trunk (robustness improvements for static builds).
+
+2013-02-04 09:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4517] ., src/user/cs_user_physical_properties.f90: Merge rev.
+	  4516 from trunk (add field module for user physical property
+	  examples to avoid link issues).
+
+2013-02-04 09:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4515] ., m4/cs_metis.m4, m4/cs_scotch.m4: Merge rev. 4514 from
+	  trunk (fixes for builds including Scotch or METIS).
+
+2013-02-01 18:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4513] gui/Pages/FluidCharacteristicsView.py,
+	  src/base/iniusi.f90, src/base/optcal.f90, src/base/phyvar.f90,
+	  src/cfbl/cfini1.f90, src/cfbl/cfiniv.f90, src/cfbl/cfphyv.f90,
+	  src/gui/cs_gui.c, src/gui/cs_gui.h,
+	  src/user/cs_user_parameters.f90,
+	  src/user/cs_user_physical_properties.f90: Merge revs. 4509 and
+	  4510 from trunk (fix variable physical properties for
+	  compressible model).
+
+2013-02-01 18:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4512] QUALITY_ASSURANCE: Update QUALITY_ASSURANCE to indicate
+	  3.0 is a validated version.
+
+2013-02-01 12:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4507] ., gui/Pages/FluidCharacteristicsView.py: Merge rev. 4506
+	  from trunk (GUI fix for volumic viscosity law choice behavior for
+	  compressible flow).
+
+2013-02-01 09:04  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4504] src/lagr/cs_lagr_tracking.c: Merge rev 4503 from trunk
+	  (Lag. module: fix a bug in the number of particles to be
+	  visualized)
+
+2013-01-31 18:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4502] ., gui/Base/XMLengine.py: Merge rev. 4501 from trunk
+	  (reduce floating-point number precision truncature by GUI).
+
+2013-01-31 10:04  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4500] gui/Pages/CoriolisSourceTermsForm.ui,
+	  gui/Pages/NumericalParamEquationModel.py,
+	  gui/Pages/NumericalParamGlobalForm.ui, src/base/iniusi.f90,
+	  src/gui/cs_gui.c: Merge rev. 4497, 4498 and 4499 from trunk
+	  (gui).
+
+2013-01-31 09:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4496] ., m4/cs_metis.m4, m4/cs_scotch.m4: Merge rev. 4495 from
+	  trunk (build fixes for Scotch and METIS).
+
+2013-01-30 14:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4494] ., gui/Pages/AnalysisFeaturesView.py,
+	  gui/Pages/FluidCharacteristicsView.py, src/base/iniusi.f90,
+	  src/base/phyvar.f90, src/base/verini.f90, src/cfbl/cfini1.f90,
+	  src/cfbl/cfther.f90, src/cfbl/cfvarp.f90, src/gui/cs_gui.c,
+	  src/gui/cs_gui.h, src/gui/cs_gui_specific_physics.c,
+	  src/user/cs_user_parameters.f90: Merge rev. 4491 from trunk (GUI
+	  fixes for compressible module).
+
+2013-01-30 14:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4493] ., gui/Pages/NumericalParamGlobalView.py,
+	  gui/Pages/SteadyManagementModel.py: Merge rev. 4490 from trunk
+	  (do not allow PISO for steady calculation time scheme).
+
+2013-01-30 14:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4492] ., gui/Pages/QMeiEditorView.py,
+	  gui/Pages/ReferenceValuesForm.ui,
+	  gui/Pages/ReferenceValuesModel.py: Merge rev. 4486 from trunk
+	  (GUI translation fixes).
+
+2013-01-29 14:22  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4488] src/lagr/enslag.f90, src/lagr/lagout.f90: Merge rev. 4487
+	  from trunk (Fix bugs to restore Lagrangian trajectories output in
+	  sequential mode)
+
+2013-01-29 13:13  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4485] src/lagr/lagune.f90: Merge rev. 4484 from trunk (fix a
+	  bug for the display of lost particles in parallel mode)
+
+2013-01-28 16:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4482] src/base/cs_selector_f2c.f90,
+	  src/user/cs_user_boundary_conditions.f90,
+	  src/user/cs_user_physical_properties.f90, src/user/usalcl.f90,
+	  src/user/usporo.f90: Merge rev. 4481 from trunk (Update doxygen
+	  documentation and fix in some user examples).
+
+2013-01-28 13:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4479] src/cplv/cpthp1.f90: Merge rev. 4478 from trunk (gas
+	  temperature/enthalpy: allow any size of array instead of ncharb
+	  as this may depend on caller).
+
+2013-01-28 13:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4477] gui/Pages/PerformanceTuningView.py, src/base/cs_file.c,
+	  tests/cs_file_test.c: Merge rev. 4475 from trunk (update file
+	  unit tests and improve some experimental file IO modes).
+
+2013-01-28 12:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4476] gui/Base/MainView.py: Fix indentation error introduced in
+	  rev. 4461.
+
+2013-01-28 12:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4473] NEWS: Update NEWS file.
+
+2013-01-28 08:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4471] docs/style/csmacros.sty, docs/theory/goveqn.tex,
+	  docs/theory/spadis.tex, docs/theory/theory.tex,
+	  docs/theory/timstp.tex, src/base/alelav.f90, src/base/alemav.f90:
+	  Merge rev. 4470 from trunk (Update documentation).
+
+2013-01-25 18:56  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4469] src/base/tridim.f90: Merge rev. 4465 from trunk (fix in
+	  gas combustion).
+
+2013-01-25 18:54  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4468] gui/Pages/ThermalRadiationModel.py: Merge rev. 4464 from
+	  trunk (fix in gui for gas combustion).
+
+2013-01-25 18:52  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4467] gui/Pages/ReferenceValuesModel.py,
+	  gui/Pages/ReferenceValuesView.py: Merge rev. 4463 and 4466 from
+	  trunk (fixes in gui for gas combustion).
+
+2013-01-23 16:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4462] ., docs/user/graphics/cs_components.fig,
+	  docs/user/saturne1.tex, docs/user/saturne2.tex,
+	  src/base/iniini.f90, src/base/prehyd.f90,
+	  src/user/cs_user_parameters.f90,
+	  src/user/cs_user_physical_properties.f90: Merge revs. 4456 and
+	  4458 from trunk (user documentation updates).
+
+2013-01-23 16:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4461] ., gui/Base/MainView.py, gui/Base/XMLengine.py,
+	  gui/Base/XMLvariables.py: Merge rev. 4455 from trunk (fix some
+	  GUI undo/redo bugs).
+
+2013-01-23 16:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4460] bin/cs_compile.py: Merge rev. 4453 from trunk (add
+	  missing HAVE_CONFIG_H for C++ compilation).
+
+2013-01-17 15:35  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4449] src/lagr/lagopt.f90: Merge rev. 4448 from trunk (Lag.
+	  module: forbid the use of the broken trajectory and displacement
+	  post-processing in parallel mode)
+
+2013-01-17 13:50  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4447] src/user/cs_user_parameters.f90: Merge rev. 4446 from
+	  trunk (update user example).
+
+2013-01-16 16:42  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4445] src/base/clptur.f90: Merge rev. 4444 from trunk (Fix in
+	  LES).
+
+2013-01-16 14:53  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4443] gui/Pages/ElectricalForm.ui,
+	  gui/Pages/ElectricalModel.py, gui/Pages/ElectricalView.py,
+	  src/elec/elincl.f90, src/elec/elprop.f90, src/elec/elreca.f90,
+	  src/gui/cs_gui_boundary_conditions.c,
+	  src/gui/cs_gui_specific_physics.c,
+	  src/gui/cs_gui_specific_physics.h,
+	  src/user/cs_user_parameters.f90: Merge rev. 4258 from trunk
+	  (fixes in electric arcs).
+
+2013-01-16 14:28  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4442] gui/Base/BrowserView.py,
+	  gui/Pages/AnalysisFeaturesView.py,
+	  gui/Pages/CompressibleModel.py,
+	  gui/Pages/FluidCharacteristicsForm.ui,
+	  gui/Pages/FluidCharacteristicsModel.py,
+	  gui/Pages/FluidCharacteristicsView.py,
+	  gui/Pages/NumericalParamEquationModel.py,
+	  gui/Pages/NumericalParamEquationView.py,
+	  gui/Pages/NumericalParamGlobalModel.py,
+	  gui/Pages/NumericalParamGlobalView.py,
+	  gui/Pages/ReferenceValuesForm.ui, gui/Pages/TimeStepModel.py,
+	  src/base/coupbo.f90, src/base/iniusi.f90, src/base/inivar.f90,
+	  src/cfbl/Makefile.am, src/cfbl/cfener.f90, src/cfbl/cfini1.f90,
+	  src/cfbl/cfiniv.f90, src/cfbl/cfmsfl.f90, src/cfbl/cfmsgs.f90,
+	  src/cfbl/cfmsvl.f90, src/cfbl/cfmsvs.f90, src/cfbl/cfphyv.f90,
+	  src/cfbl/cfther.f90[CPY], src/cfbl/cfvarp.f90,
+	  src/cfbl/cfxtcl.f90, src/gui/cs_gui.c, src/gui/cs_gui.h,
+	  src/user/Makefile.am, src/user/cs_user_physical_properties.f90,
+	  src/user/uscfth.f90[DEL]: Merge rev. 4263, 4264 and 4441 from
+	  trunk (fixes in compressible algorithm).
+
+2013-01-16 13:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4440] ., gui/Base/Toolbox.py, gui/Base/XMLmodel.py,
+	  gui/Pages/AnalysisFeaturesView.py, gui/Pages/Boundary.py,
+	  gui/Pages/BoundaryConditionsTurbulenceInletView.py,
+	  gui/Pages/CoalCombustionModel.py,
+	  gui/Pages/GasCombustionModel.py,
+	  gui/Pages/InitializationModel.py,
+	  gui/Pages/InitializationView.py, gui/Pages/LagrangianModel.py,
+	  gui/Pages/TurbulenceModel.py, gui/Pages/TurbulenceView.py,
+	  src/gui/cs_gui.c, src/gui/cs_gui_boundary_conditions.c: Merge
+	  revs. 4433, 4437, 4438, and 4439 from trunk (v2f model for GUI is
+	  now BL-v2/k variant).
+
+2013-01-16 10:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4435] gui/Pages/NumericalParamEquationView.py: Undo spurious
+	  change from previous commit (to be applied, but separately).
+
+2013-01-16 10:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4434] gui/Pages/NumericalParamEquationView.py,
+	  libple/config/ple_auto_flags.sh: Merge rev. 4432 from trunk
+	  (remove spurious 'fi' introduced in a recent changeset).
+
+2013-01-15 15:10  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4427] src/mesh/cs_join_set.c: Merge rev. 4426 from trunk (fix
+	  in parallel mesh joining).
+
+2013-01-15 14:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4424] .: Remove SVN mergeinfo information leading to spurious
+	  empty changes.
+
+2013-01-15 14:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4423] bin/autovnv/PlotVTK.py: Merge rev. 4422 from trunk (fix
+	  for autovnv VTK plot attribute settings).
+
+2013-01-15 10:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4420] src/lagr/lagent.f90,
+	  src/user/cs_user_particle_tracking.f90, src/user/uslaen.f90:
+	  Remove merge info, as merges are only done for specific
+	  changesets.
+
+2013-01-15 10:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4419] ., config/cs_auto_flags.sh,
+	  libple/config/ple_auto_flags.sh, src/lagr/lagent.f90,
+	  src/user/cs_user_particle_tracking.f90, src/user/uslaen.f90:
+	  Merge rev. 4418 from trunk (add Open64 compiler support).
+
+2013-01-15 08:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4417] docs/theory/bndcnd.tex: Merge rev. 4416 from trunk
+	  (Update doc).
+
+2013-01-14 12:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4410] ., src/base/lecamp.f90, src/base/lecamx.f90,
+	  src/lagr/lagent.f90, src/user/cs_user_particle_tracking.f90,
+	  src/user/uslaen.f90: Merge rev. 4409 from trunk (minor log
+	  message fixes for restart).
+
+2013-01-14 10:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4408] ., bin/autovnv/PlotVTK.py, src/lagr/lagent.f90,
+	  src/user/cs_user_particle_tracking.f90, src/user/uslaen.f90:
+	  Merge rev. 4407 from trunk (fix for Autovnv VTK plot when center
+	  is not (0,0,0)).
+
+2013-01-14 09:23  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4406] src/base/navsto.f90, src/base/navstv.f90,
+	  src/base/resolp.f90, src/base/resopv.f90: Merge rev. 4405 from
+	  trunk (fix in idilat = 2 or 3).
+
+2013-01-11 15:46  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4401] src/user/uslaen.f90: Merge rev. 4400 from trunk (Lag.
+	  module: implementation of a more robust way to compute stats)
+
+2013-01-10 18:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4398] ., src/alge/cs_matrix.c, src/lagr/lagent.f90,
+	  src/user/cs_user_particle_tracking.f90: Merge rev. 4397 from
+	  trunk (fix matrix tuning logging bug).
+
+2013-01-10 17:48  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4396] src/gui/cs_gui_output.c, src/gui/cs_gui_output.h: Merge
+	  rev. 4395 from trunk (fix Valgring error in CSENSO).
+
+2013-01-09 15:35  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4391] src/turb/resrij.f90, src/turb/resssg.f90,
+	  src/turb/rijech.f90, src/turb/turrij.f90, src/turb/visdyn.f90,
+	  src/turb/vissma.f90, src/turb/visv2f.f90, src/turb/viswal.f90:
+	  Merge rev. 4390 from trunk (Use vectorial gradient in turrij.f90
+	  and perform som cleaning).
+
+2013-01-09 13:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4389] Makefile.am, bin/__init__.py, bin/autovnv/Command.py,
+	  bin/autovnv/Drawing.py, bin/autovnv/Parser.py,
+	  bin/autovnv/PlotVTK.py, bin/autovnv/Study.py,
+	  bin/autovnv/TexMaker.py, bin/autovnv/__init__.py,
+	  bin/code_saturne.in, bin/cs_autovnv.py, bin/cs_case.py,
+	  bin/cs_case_coupling.py, bin/cs_case_domain.py,
+	  bin/cs_compile.py, bin/cs_create.py, bin/cs_exec_environment.py,
+	  bin/cs_gui.py, bin/cs_info.py, bin/cs_run.py, bin/cs_salome.py,
+	  bin/cs_script.py, bin/cs_user_scripts.py, bin/cs_xml_reader.py,
+	  bin/runcase_aster.in, bin/runcase_coupling.in,
+	  bin/runcase_mpi_rank, config/cs_auto_flags.sh,
+	  config/salome_module.mk, configure.ac, docs/Makefile.am,
+	  docs/autovnv/Makefile.am, docs/autovnv/autovnv.tex,
+	  docs/autovnv/graphics/Makefile.am, docs/developper/Makefile.am,
+	  docs/developper/coding_standards.tex,
+	  docs/developper/common_constructs.tex,
+	  docs/developper/developper.tex,
+	  docs/developper/graphics/Makefile.am,
+	  docs/developper/write_theory.tex, docs/doxygen/Makefile.am,
+	  docs/doxygen/examples/bft_error_example.c,
+	  docs/doxygen/mainpage.h, docs/install/Makefile.am,
+	  docs/install/install.tex, docs/manpages/code_saturne.1,
+	  docs/refcard/Makefile.am, docs/refcard/graphics/Makefile.am,
+	  docs/refcard/refcard.tex, docs/style/csbiblio.bib,
+	  docs/style/csdoc.cls, docs/style/csdoc.sty,
+	  docs/style/csindex.sty, docs/style/csmacros.sty,
+	  docs/style/csshortdoc.cls, docs/style/csvers.tex.in,
+	  docs/theory/Makefile.am, docs/theory/algebr.tex,
+	  docs/theory/apintr.tex, docs/theory/biblio.tex,
+	  docs/theory/bilsc2.tex, docs/theory/bndcnd.tex,
+	  docs/theory/cfbase.tex, docs/theory/cfener.tex,
+	  docs/theory/cfmsvl.tex, docs/theory/cfqdmv.tex,
+	  docs/theory/cfxtcl.tex, docs/theory/clptrg.tex,
+	  docs/theory/clptur.tex, docs/theory/clsyvt.tex,
+	  docs/theory/codits.tex, docs/theory/combbase.tex,
+	  docs/theory/combgaz.tex, docs/theory/comprs.tex,
+	  docs/theory/condli.tex, docs/theory/covofi.tex,
+	  docs/theory/elbase.tex, docs/theory/goveqn.tex,
+	  docs/theory/gradmc.tex, docs/theory/gradrc.tex,
+	  docs/theory/graphics/Makefile.am, docs/theory/inimas.tex,
+	  docs/theory/introd.tex, docs/theory/itrmas.tex,
+	  docs/theory/matrix.tex, docs/theory/mesh_algo.tex,
+	  docs/theory/navsto.tex, docs/theory/preduv.tex,
+	  docs/theory/recvmc.tex, docs/theory/resolp.tex,
+	  docs/theory/spadis.tex, docs/theory/summary.tex,
+	  docs/theory/theory.tex, docs/theory/thermo.tex,
+	  docs/theory/timstp.tex, docs/theory/turbke.tex,
+	  docs/theory/turrij.tex, docs/theory/viscfa.tex,
+	  docs/theory/visort.tex, docs/theory/vissec.tex,
+	  docs/theory/vortex.tex, docs/tutorial/Makefile.am,
+	  docs/tutorial/case1.tex, docs/tutorial/case2.tex,
+	  docs/tutorial/case3.tex, docs/tutorial/case4.tex,
+	  docs/tutorial/case5.tex, docs/tutorial/graphics/Makefile.am,
+	  docs/tutorial/intro.tex, docs/tutorial/tuto_case1.tex,
+	  docs/tutorial/tuto_case2.tex, docs/tutorial/tuto_case3.tex,
+	  docs/tutorial/tuto_case4.tex, docs/tutorial/tuto_case5.tex,
+	  docs/tutorial/tutorial.tex, docs/user/Makefile.am,
+	  docs/user/biblio.tex, docs/user/graphics/Makefile.am,
+	  docs/user/saturne1.tex, docs/user/saturne2.tex,
+	  docs/user/summary.tex, docs/user/user.tex,
+	  examples/3-stratified_junction/case5/cs_user_postprocess.c,
+	  extras/windows/cxfreeze/setup.py,
+	  extras/windows/innosetup/setup.iss.in, gui/Base/BrowserView.py,
+	  gui/Base/Common.py, gui/Base/IdView.py, gui/Base/MainView.py,
+	  gui/Base/Makefile.am, gui/Base/QtPage.py, gui/Base/Toolbox.py,
+	  gui/Base/XMLengine.py, gui/Base/XMLinitialize.py,
+	  gui/Base/XMLmodel.py, gui/Base/XMLvariables.py,
+	  gui/Base/__init__.py, gui/Makefile.am,
+	  gui/Pages/AnalysisFeaturesView.py,
+	  gui/Pages/AtmosphericFlowsModel.py,
+	  gui/Pages/AtmosphericFlowsView.py,
+	  gui/Pages/BatchRunningModel.py, gui/Pages/BatchRunningView.py,
+	  gui/Pages/BodyForcesModel.py, gui/Pages/BodyForcesView.py,
+	  gui/Pages/Boundary.py,
+	  gui/Pages/BoundaryConditionsCoalInletView.py,
+	  gui/Pages/BoundaryConditionsCompressibleOutletView.py,
+	  gui/Pages/BoundaryConditionsElectricalView.py,
+	  gui/Pages/BoundaryConditionsMeteoView.py,
+	  gui/Pages/BoundaryConditionsMobileMeshView.py,
+	  gui/Pages/BoundaryConditionsRoughWallView.py,
+	  gui/Pages/BoundaryConditionsScalarsView.py,
+	  gui/Pages/BoundaryConditionsSlidingWallView.py,
+	  gui/Pages/BoundaryConditionsTurbulenceInletView.py,
+	  gui/Pages/BoundaryConditionsVelocityInletView.py,
+	  gui/Pages/BoundaryConditionsView.py,
+	  gui/Pages/BoundaryConditionsWallRadiativeTransferView.py,
+	  gui/Pages/CoalCombustionModel.py,
+	  gui/Pages/CoalCombustionView.py, gui/Pages/CommonCombustion.py,
+	  gui/Pages/CompressibleModel.py,
+	  gui/Pages/ConjugateHeatTransferModel.py,
+	  gui/Pages/ConjugateHeatTransferView.py,
+	  gui/Pages/CoriolisSourceTermsModel.py,
+	  gui/Pages/CoriolisSourceTermsView.py,
+	  gui/Pages/DefineUserScalarsModel.py,
+	  gui/Pages/DefineUserScalarsView.py, gui/Pages/ElectricalModel.py,
+	  gui/Pages/ElectricalView.py, gui/Pages/FacesSelectionView.py,
+	  gui/Pages/FluidCharacteristicsModel.py,
+	  gui/Pages/FluidCharacteristicsView.py,
+	  gui/Pages/FluidStructureInteractionModel.py,
+	  gui/Pages/FluidStructureInteractionView.py,
+	  gui/Pages/GasCombustionModel.py, gui/Pages/GasCombustionView.py,
+	  gui/Pages/HeadLossesModel.py, gui/Pages/HeadLossesView.py,
+	  gui/Pages/IdentityAndPathesModel.py,
+	  gui/Pages/IdentityAndPathesView.py,
+	  gui/Pages/InitializationModel.py,
+	  gui/Pages/InitializationView.py,
+	  gui/Pages/LagrangianBoundariesModel.py,
+	  gui/Pages/LagrangianBoundariesView.py,
+	  gui/Pages/LagrangianModel.py, gui/Pages/LagrangianOutputModel.py,
+	  gui/Pages/LagrangianOutputView.py,
+	  gui/Pages/LagrangianStatisticsModel.py,
+	  gui/Pages/LagrangianStatisticsView.py,
+	  gui/Pages/LagrangianView.py, gui/Pages/LocalizationModel.py,
+	  gui/Pages/LocalizationView.py, gui/Pages/Makefile.am,
+	  gui/Pages/MobileMeshModel.py, gui/Pages/MobileMeshView.py,
+	  gui/Pages/NumericalParamEquationModel.py,
+	  gui/Pages/NumericalParamEquationView.py,
+	  gui/Pages/NumericalParamGlobalModel.py,
+	  gui/Pages/NumericalParamGlobalView.py,
+	  gui/Pages/OutputControlModel.py, gui/Pages/OutputControlView.py,
+	  gui/Pages/OutputSurfacicVariablesModel.py,
+	  gui/Pages/OutputSurfacicVariablesView.py,
+	  gui/Pages/OutputVolumicVariablesModel.py,
+	  gui/Pages/OutputVolumicVariablesView.py,
+	  gui/Pages/PerformanceTuningModel.py,
+	  gui/Pages/PerformanceTuningView.py,
+	  gui/Pages/PreProcessingInformationsView.py,
+	  gui/Pages/ProfilesModel.py, gui/Pages/ProfilesView.py,
+	  gui/Pages/QMeiEditorView.py, gui/Pages/ReferenceValuesModel.py,
+	  gui/Pages/ReferenceValuesView.py, gui/Pages/SalomeHandler.py,
+	  gui/Pages/ScriptRunningModel.py,
+	  gui/Pages/SolutionDomainModel.py,
+	  gui/Pages/SolutionDomainView.py, gui/Pages/SolutionVerifView.py,
+	  gui/Pages/SourceTermsModel.py, gui/Pages/SourceTermsView.py,
+	  gui/Pages/StartRestartModel.py, gui/Pages/StartRestartView.py,
+	  gui/Pages/SteadyManagementModel.py,
+	  gui/Pages/SteadyManagementView.py,
+	  gui/Pages/ThermalRadiationModel.py,
+	  gui/Pages/ThermalRadiationView.py,
+	  gui/Pages/ThermalScalarModel.py, gui/Pages/ThermalScalarView.py,
+	  gui/Pages/TimeAveragesModel.py, gui/Pages/TimeAveragesView.py,
+	  gui/Pages/TimeStepModel.py, gui/Pages/TimeStepView.py,
+	  gui/Pages/TurbulenceModel.py, gui/Pages/TurbulenceView.py,
+	  gui/Pages/VerifyExistenceLabelDialogView.py,
+	  gui/Pages/WelcomeView.py, gui/Pages/XMLEditorView.py,
+	  gui/Pages/__init__.py, m4/cs_blas.m4, m4/cs_ccm.m4,
+	  m4/cs_cgns.m4, m4/cs_docs.m4, m4/cs_fortran.m4, m4/cs_hdf5.m4,
+	  m4/cs_libxml2.m4, m4/cs_med.m4, m4/cs_metis.m4, m4/cs_modules.m4,
+	  m4/cs_mpi.m4, m4/cs_omniorb.m4, m4/cs_ple.m4, m4/cs_salome.m4,
+	  m4/cs_scotch.m4, m4/cs_zlib.m4, po/fr.po,
+	  preprocessor/Makefile.am, preprocessor/appli/Makefile.am,
+	  preprocessor/appli/ecs_cmd.c, preprocessor/appli/ecs_cmd.h,
+	  preprocessor/appli/ecs_main.c, preprocessor/base/Makefile.am,
+	  preprocessor/base/ecs_descr.c, preprocessor/base/ecs_descr.h,
+	  preprocessor/base/ecs_descr_chaine.c,
+	  preprocessor/base/ecs_descr_chaine.h,
+	  preprocessor/base/ecs_descr_priv.h,
+	  preprocessor/base/ecs_famille.c, preprocessor/base/ecs_famille.h,
+	  preprocessor/base/ecs_famille_chaine.c,
+	  preprocessor/base/ecs_famille_chaine.h,
+	  preprocessor/base/ecs_famille_priv.h,
+	  preprocessor/base/ecs_maillage.c,
+	  preprocessor/base/ecs_maillage.h,
+	  preprocessor/base/ecs_maillage_priv.h,
+	  preprocessor/base/ecs_table.c, preprocessor/base/ecs_table.h,
+	  preprocessor/base/ecs_table_att.c,
+	  preprocessor/base/ecs_table_att.h,
+	  preprocessor/base/ecs_table_def.c,
+	  preprocessor/base/ecs_table_def.h,
+	  preprocessor/base/ecs_table_priv.h,
+	  preprocessor/pre-post/Makefile.am,
+	  preprocessor/pre-post/ecs_maillage_ncs.c,
+	  preprocessor/pre-post/ecs_maillage_ncs.h,
+	  preprocessor/pre-post/ecs_maillage_post.c,
+	  preprocessor/pre-post/ecs_maillage_post.h,
+	  preprocessor/pre-post/ecs_maillage_pre.c,
+	  preprocessor/pre-post/ecs_maillage_pre.h,
+	  preprocessor/pre-post/ecs_med.c, preprocessor/pre-post/ecs_med.h,
+	  preprocessor/pre-post/ecs_med_priv.h,
+	  preprocessor/pre-post/ecs_post.c,
+	  preprocessor/pre-post/ecs_post.h,
+	  preprocessor/pre-post/ecs_post_cgns.c,
+	  preprocessor/pre-post/ecs_post_cgns.h,
+	  preprocessor/pre-post/ecs_post_cgns_priv.h,
+	  preprocessor/pre-post/ecs_post_ens.c,
+	  preprocessor/pre-post/ecs_post_ens.h,
+	  preprocessor/pre-post/ecs_post_ens_priv.h,
+	  preprocessor/pre-post/ecs_post_med.c,
+	  preprocessor/pre-post/ecs_post_med.h,
+	  preprocessor/pre-post/ecs_pre.c, preprocessor/pre-post/ecs_pre.h,
+	  preprocessor/pre-post/ecs_pre_ccm.c,
+	  preprocessor/pre-post/ecs_pre_ccm.h,
+	  preprocessor/pre-post/ecs_pre_cgns.c,
+	  preprocessor/pre-post/ecs_pre_cgns.h,
+	  preprocessor/pre-post/ecs_pre_ens.c,
+	  preprocessor/pre-post/ecs_pre_ens.h,
+	  preprocessor/pre-post/ecs_pre_gambit.c,
+	  preprocessor/pre-post/ecs_pre_gambit.h,
+	  preprocessor/pre-post/ecs_pre_gmsh.c,
+	  preprocessor/pre-post/ecs_pre_gmsh.h,
+	  preprocessor/pre-post/ecs_pre_ideas.c,
+	  preprocessor/pre-post/ecs_pre_ideas.h,
+	  preprocessor/pre-post/ecs_pre_med.c,
+	  preprocessor/pre-post/ecs_pre_med.h,
+	  preprocessor/pre-post/ecs_pre_nopo.c,
+	  preprocessor/pre-post/ecs_pre_nopo.h,
+	  preprocessor/pre-post/ecs_table_comm.c,
+	  preprocessor/pre-post/ecs_table_comm.h,
+	  preprocessor/pre-post/ecs_table_post.c,
+	  preprocessor/pre-post/ecs_table_post.h,
+	  preprocessor/pre-post/ecs_table_post_cgns.c,
+	  preprocessor/pre-post/ecs_table_post_cgns.h,
+	  preprocessor/pre-post/ecs_table_post_ens.c,
+	  preprocessor/pre-post/ecs_table_post_ens.h,
+	  preprocessor/pre-post/ecs_table_post_med.c,
+	  preprocessor/pre-post/ecs_table_post_med.h,
+	  preprocessor/util/Makefile.am, preprocessor/util/ecs_backtrace.c,
+	  preprocessor/util/ecs_backtrace.h, preprocessor/util/ecs_comm.c,
+	  preprocessor/util/ecs_comm.h, preprocessor/util/ecs_def.c,
+	  preprocessor/util/ecs_def.h,
+	  preprocessor/util/ecs_elt_typ_liste.h,
+	  preprocessor/util/ecs_fic.c, preprocessor/util/ecs_fic.h,
+	  preprocessor/util/ecs_file.c, preprocessor/util/ecs_file.h,
+	  preprocessor/util/ecs_mem.c, preprocessor/util/ecs_mem.h,
+	  preprocessor/util/ecs_mem_usage.c,
+	  preprocessor/util/ecs_mem_usage.h, preprocessor/util/ecs_tab.c,
+	  preprocessor/util/ecs_tab.h, preprocessor/util/ecs_timer.c,
+	  preprocessor/util/ecs_timer.h, salome/Makefile.am,
+	  salome/cfd_study/Makefile.am, salome/cfd_study/doc/Makefile.am,
+	  salome/cfd_study/idl/CFDSTUDY_Gen.idl,
+	  salome/cfd_study/idl/Makefile.am,
+	  salome/cfd_study/resources/Makefile.am,
+	  salome/cfd_study/src/CFDSTUDY/CFDSTUDY.py,
+	  salome/cfd_study/src/CFDSTUDY/Makefile.am,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Agents.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_CommandMgr.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Commons.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DesktopMgr.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Management.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_SolverGUI.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/Makefile.am,
+	  salome/cfd_study/src/Makefile.am,
+	  salome/fsi_coupling/Makefile.am, salome/fsi_coupling/idl/FSI.idl,
+	  salome/fsi_coupling/idl/Makefile.am,
+	  salome/fsi_coupling/libmilieu/Makefile.am,
+	  salome/fsi_coupling/libmilieu/communication.c,
+	  salome/fsi_coupling/libmilieu/communication.h,
+	  salome/fsi_coupling/libmilieu/donnees.c,
+	  salome/fsi_coupling/libmilieu/donnees.h,
+	  salome/fsi_coupling/libmilieu/runmilieu.c,
+	  salome/fsi_coupling/libmilieu/runmilieu.h,
+	  salome/fsi_coupling/libmilieu/utilitaires.c,
+	  salome/fsi_coupling/libmilieu/utilitaires.h,
+	  salome/fsi_coupling/resources/Makefile.am,
+	  salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER_component.py,
+	  salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER_module.py.in,
+	  salome/fsi_coupling/src/FSI_ASTER/Makefile.am,
+	  salome/fsi_coupling/src/FSI_MILIEU/FSI_MILIEU.cxx,
+	  salome/fsi_coupling/src/FSI_MILIEU/FSI_MILIEU.hxx,
+	  salome/fsi_coupling/src/FSI_MILIEU/Makefile.am,
+	  salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.cxx,
+	  salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.hxx,
+	  salome/fsi_coupling/src/FSI_SATURNE/Makefile.am,
+	  salome/fsi_coupling/src/Makefile.am, src/Makefile.am,
+	  src/alge/Makefile.am, src/alge/bilsc2.f90, src/alge/bilsc4.f90,
+	  src/alge/bilsca.f90, src/alge/bilsct.f90, src/alge/bilscv.f90,
+	  src/alge/cs_benchmark.c, src/alge/cs_benchmark.h,
+	  src/alge/cs_blas.c, src/alge/cs_blas.h, src/alge/cs_gradient.c,
+	  src/alge/cs_gradient.h, src/alge/cs_gradient_quality.c,
+	  src/alge/cs_gradient_quality.h, src/alge/cs_grid.c,
+	  src/alge/cs_grid.h, src/alge/cs_matrix.c, src/alge/cs_matrix.h,
+	  src/alge/cs_matrix_priv.h, src/alge/cs_matrix_util.c,
+	  src/alge/cs_multigrid.c, src/alge/cs_multigrid.h,
+	  src/alge/cs_sles.c, src/alge/cs_sles.h, src/alge/diften.f90,
+	  src/alge/diftnv.f90, src/alge/divmas.f90, src/alge/divrij.f90,
+	  src/alge/grdcel.f90, src/alge/grdpot.f90, src/alge/grdpre.f90,
+	  src/alge/grdvec.f90, src/alge/grdvni.f90, src/alge/inimas.f90,
+	  src/alge/inimav.f90, src/alge/invers.f90, src/alge/itrgrp.f90,
+	  src/alge/itrgrv.f90, src/alge/itrmas.f90, src/alge/itrmav.f90,
+	  src/alge/matrdt.f90, src/alge/matrix.f90, src/alge/matrvv.f90,
+	  src/alge/matrxv.f90, src/alge/prodsc.f90, src/alge/projts.f90,
+	  src/alge/projtv.f90, src/alge/vectds.f90, src/alge/viortv.f90,
+	  src/alge/viscfa.f90, src/alge/visort.f90, src/alge/vistnv.f90,
+	  src/alge/vitens.f90, src/apps/Makefile.am,
+	  src/apps/cs_check_syntax.c, src/apps/cs_io_dump.c,
+	  src/apps/cs_solver.c, src/atmo/Makefile.am, src/atmo/atincl.f90,
+	  src/atmo/atini1.f90, src/atmo/atiniv.f90, src/atmo/atlecm.f90,
+	  src/atmo/atmcls.f90, src/atmo/atmsol.f90, src/atmo/atmstd.f90,
+	  src/atmo/atphyv.f90, src/atmo/atprke.f90, src/atmo/atprop.f90,
+	  src/atmo/atr1vf.f90, src/atmo/atsoil.f90, src/atmo/attssc.f90,
+	  src/atmo/attycl.f90, src/atmo/atvarp.f90, src/atmo/etheq.f90,
+	  src/atmo/intprf.f90, src/atmo/nuclea.f90, src/atmo/rayigc.f90,
+	  src/atmo/rayir.f90, src/atmo/rayive.f90, src/atmo/rayso.f90,
+	  src/atmo/raysze.f90, src/atmo/satfun.f90, src/atmo/solcat.f90,
+	  src/atmo/soliva.f90, src/atmo/solmoy.f90, src/atmo/solvar.f90,
+	  src/atmo/spefun.f90, src/base/Makefile.am, src/base/alaste.f90,
+	  src/base/albase.f90, src/base/alelap.f90, src/base/alelav.f90,
+	  src/base/alemaj.f90, src/base/alemav.f90, src/base/alstru.f90,
+	  src/base/altycl.f90, src/base/calhyd.f90, src/base/calmom.f90,
+	  src/base/caltri.f90, src/base/catsma.f90, src/base/catsmv.f90,
+	  src/base/causta.f90, src/base/clca66.f90, src/base/clpsca.f90,
+	  src/base/clptrg.f90, src/base/clptur.f90, src/base/clsyvt.f90,
+	  src/base/codits.f90, src/base/coditv.f90, src/base/condli.f90,
+	  src/base/cou1di.f90, src/base/cou1do.f90, src/base/coupbi.f90,
+	  src/base/coupbo.f90, src/base/covofi.f90, src/base/cplsat.f90,
+	  src/base/cptssy.f90, src/base/cpvosy.f90, src/base/cregeo.f90,
+	  src/base/cs2tsv.f90, src/base/cs_ale.c, src/base/cs_ale.h,
+	  src/base/cs_ast_coupling.c, src/base/cs_ast_coupling.h,
+	  src/base/cs_base.c, src/base/cs_base.h,
+	  src/base/cs_base_fortran.c, src/base/cs_base_fortran.h,
+	  src/base/cs_block_dist.c, src/base/cs_block_dist.h,
+	  src/base/cs_block_to_part.c, src/base/cs_block_to_part.h,
+	  src/base/cs_boundary_conditions.c,
+	  src/base/cs_boundary_conditions.h, src/base/cs_calcium.c,
+	  src/base/cs_calcium.h, src/base/cs_control.c,
+	  src/base/cs_control.h, src/base/cs_coupling.c,
+	  src/base/cs_coupling.h, src/base/cs_defs.c, src/base/cs_defs.h,
+	  src/base/cs_ext_neighborhood.c, src/base/cs_ext_neighborhood.h,
+	  src/base/cs_field.c, src/base/cs_field.h, src/base/cs_file.c,
+	  src/base/cs_file.h, src/base/cs_halo.c, src/base/cs_halo.h,
+	  src/base/cs_halo_perio.c, src/base/cs_halo_perio.h,
+	  src/base/cs_interface.c, src/base/cs_interface.h,
+	  src/base/cs_io.c, src/base/cs_io.h, src/base/cs_log.c,
+	  src/base/cs_log.h, src/base/cs_map.c, src/base/cs_map.h,
+	  src/base/cs_measures_util.c, src/base/cs_measures_util.h,
+	  src/base/cs_numbering.c, src/base/cs_numbering.h,
+	  src/base/cs_opts.c, src/base/cs_opts.h, src/base/cs_order.c,
+	  src/base/cs_order.h, src/base/cs_parall.c, src/base/cs_parall.h,
+	  src/base/cs_paramedmem_coupling.cxx,
+	  src/base/cs_paramedmem_coupling.hxx, src/base/cs_part_to_block.c,
+	  src/base/cs_part_to_block.h, src/base/cs_post.c,
+	  src/base/cs_post.h, src/base/cs_post_default.c,
+	  src/base/cs_post_default.h, src/base/cs_preprocessor_data.c,
+	  src/base/cs_preprocessor_data.h, src/base/cs_prototypes.h,
+	  src/base/cs_renumber.c, src/base/cs_renumber.h,
+	  src/base/cs_resource.c, src/base/cs_resource.h,
+	  src/base/cs_restart.c, src/base/cs_restart.h,
+	  src/base/cs_sat_coupling.c, src/base/cs_sat_coupling.h,
+	  src/base/cs_search.c, src/base/cs_search.h,
+	  src/base/cs_selector.c, src/base/cs_selector.h,
+	  src/base/cs_selector_f2c.f90, src/base/cs_sort.c,
+	  src/base/cs_sort.h, src/base/cs_syr4_coupling.c,
+	  src/base/cs_syr4_coupling.h, src/base/cs_syr_coupling.c,
+	  src/base/cs_syr_coupling.h, src/base/cs_system_info.c,
+	  src/base/cs_system_info.h, src/base/cs_time_plot.c,
+	  src/base/cs_time_plot.h, src/base/cs_time_step.c,
+	  src/base/cs_time_step.h, src/base/cs_timer.c,
+	  src/base/cs_timer.h, src/base/cs_tpar1d.c, src/base/cs_tpar1d.h,
+	  src/base/cs_ventil.c, src/base/cs_ventil.h, src/base/csc2cl.f90,
+	  src/base/csc2ts.f90, src/base/csccel.f90, src/base/cscelv.f90,
+	  src/base/cscfbr.f90, src/base/cscini.f90, src/base/csclli.f90,
+	  src/base/cscloc.f90, src/base/cscpce.f90, src/base/cscpfb.f90,
+	  src/base/csinit.f90, src/base/csopli.f90, src/base/cspcev.f90,
+	  src/base/csprnt.f90, src/base/cstnum.f90, src/base/cstphy.f90,
+	  src/base/diffst.f90, src/base/dimens.f90, src/base/distpr.f90,
+	  src/base/distyp.f90, src/base/dttvar.f90, src/base/dvvpst.f90,
+	  src/base/ecrava.f90, src/base/ecrhis.f90, src/base/ecrlis.f90,
+	  src/base/entsor.f90, src/base/field.f90, src/base/findnd.f90,
+	  src/base/findpt.f90, src/base/fldini.f90, src/base/fldtri.f90,
+	  src/base/haltyp.f90, src/base/hturbp.f90, src/base/idrbla.f90,
+	  src/base/ihmpre.f90, src/base/impini.f90, src/base/iniini.f90,
+	  src/base/initi1.f90, src/base/initi2.f90, src/base/iniusi.f90,
+	  src/base/iniva0.f90, src/base/inivar.f90, src/base/iprbla.f90,
+	  src/base/lecamo.f90, src/base/lecamp.f90, src/base/lecamx.f90,
+	  src/base/majgeo.f90, src/base/memfin.f90, src/base/memtri.f90,
+	  src/base/mesh.f90, src/base/mltgrd.f90, src/base/mmtycl.f90,
+	  src/base/modini.f90, src/base/navsto.f90, src/base/navstv.f90,
+	  src/base/newmrk.f90, src/base/numvar.f90, src/base/numvec.f90,
+	  src/base/optcal.f90, src/base/ordita.f90, src/base/parall.f90,
+	  src/base/paramx.f90, src/base/pergra.f90, src/base/perinr.f90,
+	  src/base/perinu.f90, src/base/period.f90, src/base/phyvar.f90,
+	  src/base/pointe.f90, src/base/post.f90, src/base/post_util.f90,
+	  src/base/precli.f90, src/base/predfl.f90, src/base/preduv.f90,
+	  src/base/predvv.f90, src/base/prehyd.f90, src/base/prmoy0.f90,
+	  src/base/recvmc.f90, src/base/resolp.f90, src/base/resopv.f90,
+	  src/base/scalai.f90, src/base/schtmp.f90, src/base/stdtcl.f90,
+	  src/base/strdep.f90, src/base/strhis.f90, src/base/strini.f90,
+	  src/base/strpre.f90, src/base/tdesi1.f90, src/base/tridim.f90,
+	  src/base/tsepdc.f90, src/base/tspdcv.f90, src/base/tstvec.f90,
+	  src/base/typecl.f90, src/base/undscr.f90, src/base/varpos.f90,
+	  src/base/vericl.f90, src/base/verini.f90, src/base/verlon.f90,
+	  src/base/vert1d.f90, src/base/visecv.f90, src/base/vissec.f90,
+	  src/base/zufall.f90, src/bft/Makefile.am,
+	  src/bft/bft_backtrace.c, src/bft/bft_backtrace.h,
+	  src/bft/bft_error.c, src/bft/bft_error.h, src/bft/bft_mem.c,
+	  src/bft/bft_mem.h, src/bft/bft_mem_usage.c,
+	  src/bft/bft_mem_usage.h, src/bft/bft_printf.c,
+	  src/bft/bft_printf.h, src/cfbl/Makefile.am, src/cfbl/cfbsc2.f90,
+	  src/cfbl/cfbsc3.f90, src/cfbl/cfcdts.f90, src/cfbl/cfdivs.f90,
+	  src/cfbl/cfdttv.f90, src/cfbl/cfener.f90, src/cfbl/cfini1.f90,
+	  src/cfbl/cfiniv.f90, src/cfbl/cfmsfl.f90, src/cfbl/cfmsgs.f90,
+	  src/cfbl/cfmsvl.f90, src/cfbl/cfmsvs.f90, src/cfbl/cfphyv.f90,
+	  src/cfbl/cfpoin.f90, src/cfbl/cfprop.f90, src/cfbl/cfqdmv.f90,
+	  src/cfbl/cfrusb.f90, src/cfbl/cfvarp.f90, src/cfbl/cfxtcl.f90,
+	  src/cogz/Makefile.am, src/cogz/coincl.f90, src/cogz/coini1.f90,
+	  src/cogz/colecd.f90, src/cogz/coprop.f90, src/cogz/cothht.f90,
+	  src/cogz/covarp.f90, src/cogz/d3phst.f90, src/cogz/d3pini.f90,
+	  src/cogz/d3pint.f90, src/cogz/d3pphy.f90, src/cogz/d3ptcl.f90,
+	  src/cogz/d3pver.f90, src/cogz/ebuini.f90, src/cogz/ebuphy.f90,
+	  src/cogz/ebutcl.f90, src/cogz/ebutss.f90, src/cogz/ebuver.f90,
+	  src/cogz/lwcgfu.f90, src/cogz/lwcini.f90, src/cogz/lwcphy.f90,
+	  src/cogz/lwctcl.f90, src/cogz/lwctss.f90, src/cogz/lwcurl.f90,
+	  src/cogz/lwcver.f90, src/cogz/pdflwc.f90, src/cogz/pdfpp3.f90,
+	  src/cogz/pdfpp4.f90, src/cogz/sootsc.f90, src/comb/Makefile.am,
+	  src/comb/cs_coal_bcond.f90, src/comb/cs_coal_fp2st.f90,
+	  src/comb/cs_coal_htconvers1.f90, src/comb/cs_coal_htconvers2.f90,
+	  src/comb/cs_coal_incl.f90, src/comb/cs_coal_masstransfer.f90,
+	  src/comb/cs_coal_noxst.f90, src/comb/cs_coal_param.f90,
+	  src/comb/cs_coal_physprop.f90, src/comb/cs_coal_physprop1.f90,
+	  src/comb/cs_coal_physprop2.f90, src/comb/cs_coal_prop.f90,
+	  src/comb/cs_coal_radst.f90, src/comb/cs_coal_readata.f90,
+	  src/comb/cs_coal_scast.f90, src/comb/cs_coal_thfieldconv1.f90,
+	  src/comb/cs_coal_thfieldconv2.f90, src/comb/cs_coal_varini.f90,
+	  src/comb/cs_coal_varpos.f90, src/comb/cs_coal_verify.f90,
+	  src/comb/cs_fuel_bcond.f90, src/comb/cs_fuel_fp2st.f90,
+	  src/comb/cs_fuel_htconvers1.f90, src/comb/cs_fuel_htconvers2.f90,
+	  src/comb/cs_fuel_incl.f90, src/comb/cs_fuel_masstransfer.f90,
+	  src/comb/cs_fuel_noxst.f90, src/comb/cs_fuel_param.f90,
+	  src/comb/cs_fuel_physprop.f90, src/comb/cs_fuel_physprop1.f90,
+	  src/comb/cs_fuel_physprop2.f90, src/comb/cs_fuel_prop.f90,
+	  src/comb/cs_fuel_radst.f90, src/comb/cs_fuel_readata.f90,
+	  src/comb/cs_fuel_scast.f90, src/comb/cs_fuel_thfieldconv1.f90,
+	  src/comb/cs_fuel_thfieldconv2.f90, src/comb/cs_fuel_varini.f90,
+	  src/comb/cs_fuel_varpos.f90, src/comb/cs_fuel_verify.f90,
+	  src/comb/cs_gascomb.f90, src/cplv/Makefile.am,
+	  src/cplv/cpcym2.f90, src/cplv/cpflux.f90, src/cplv/cpincl.f90,
+	  src/cplv/cpini1.f90, src/cplv/cpiniv.f90, src/cplv/cplecd.f90,
+	  src/cplv/cplin1.f90, src/cplv/cplini.f90, src/cplv/cplph1.f90,
+	  src/cplv/cplphy.f90, src/cplv/cplpro.f90, src/cplv/cpltcl.f90,
+	  src/cplv/cpltss.f90, src/cplv/cpltsv.f90, src/cplv/cplvar.f90,
+	  src/cplv/cplver.f90, src/cplv/cplym1.f90, src/cplv/cppdf4.f90,
+	  src/cplv/cppdfr.f90, src/cplv/cpphy1.f90, src/cplv/cpphy2.f90,
+	  src/cplv/cpphyv.f90, src/cplv/cpprop.f90, src/cplv/cpptcl.f90,
+	  src/cplv/cprays.f90, src/cplv/cpteh1.f90, src/cplv/cpteh2.f90,
+	  src/cplv/cptehm.f90, src/cplv/cpthp1.f90, src/cplv/cpthp2.f90,
+	  src/cplv/cptssc.f90, src/cplv/cptsvc.f90, src/cplv/cptsvi.f90,
+	  src/cplv/cpvarp.f90, src/cplv/cpveri.f90, src/ctwr/Makefile.am,
+	  src/ctwr/cs_ctwr.c, src/ctwr/cs_ctwr.h,
+	  src/ctwr/cs_ctwr_air_props.c, src/ctwr/cs_ctwr_air_props.h,
+	  src/ctwr/cs_ctwr_f2c.f90, src/ctwr/cs_ctwr_halo.c,
+	  src/ctwr/cs_ctwr_halo.h, src/ctwr/cs_ctwr_mesh.c,
+	  src/ctwr/cs_ctwr_mesh.h, src/ctwr/ctincl.f90,
+	  src/ctwr/ctini1.f90, src/ctwr/ctiniv.f90, src/ctwr/ctphyv.f90,
+	  src/ctwr/cttssc.f90, src/ctwr/ctvarp.f90, src/elec/Makefile.am,
+	  src/elec/cs_elec_bcond.f90, src/elec/elflux.f90,
+	  src/elec/elincl.f90, src/elec/elini1.f90, src/elec/eliniv.f90,
+	  src/elec/ellecd.f90, src/elec/elphyv.f90, src/elec/elprop.f90,
+	  src/elec/elreca.f90, src/elec/elthht.f90, src/elec/eltssc.f90,
+	  src/elec/elvarp.f90, src/elec/elveri.f90, src/fvm/Makefile.am,
+	  src/fvm/fvm_box.c, src/fvm/fvm_box.h, src/fvm/fvm_box_priv.h,
+	  src/fvm/fvm_box_tree.c, src/fvm/fvm_box_tree.h,
+	  src/fvm/fvm_convert_array.c, src/fvm/fvm_convert_array.h,
+	  src/fvm/fvm_defs.c, src/fvm/fvm_defs.h, src/fvm/fvm_gather.c,
+	  src/fvm/fvm_gather.h, src/fvm/fvm_group.c, src/fvm/fvm_group.h,
+	  src/fvm/fvm_hilbert.c, src/fvm/fvm_hilbert.h,
+	  src/fvm/fvm_io_num.c, src/fvm/fvm_io_num.h, src/fvm/fvm_morton.c,
+	  src/fvm/fvm_morton.h, src/fvm/fvm_neighborhood.c,
+	  src/fvm/fvm_neighborhood.h, src/fvm/fvm_nodal.c,
+	  src/fvm/fvm_nodal.h, src/fvm/fvm_nodal_append.c,
+	  src/fvm/fvm_nodal_append.h, src/fvm/fvm_nodal_extract.c,
+	  src/fvm/fvm_nodal_extract.h, src/fvm/fvm_nodal_extrude.c,
+	  src/fvm/fvm_nodal_extrude.h, src/fvm/fvm_nodal_from_desc.c,
+	  src/fvm/fvm_nodal_from_desc.h, src/fvm/fvm_nodal_order.c,
+	  src/fvm/fvm_nodal_order.h, src/fvm/fvm_nodal_priv.h,
+	  src/fvm/fvm_nodal_project.c, src/fvm/fvm_nodal_project.h,
+	  src/fvm/fvm_nodal_triangulate.c, src/fvm/fvm_nodal_triangulate.h,
+	  src/fvm/fvm_periodicity.c, src/fvm/fvm_periodicity.h,
+	  src/fvm/fvm_point_location.c, src/fvm/fvm_point_location.h,
+	  src/fvm/fvm_selector.c, src/fvm/fvm_selector.h,
+	  src/fvm/fvm_selector_postfix.c, src/fvm/fvm_selector_postfix.h,
+	  src/fvm/fvm_tesselation.c, src/fvm/fvm_tesselation.h,
+	  src/fvm/fvm_to_ccm.c, src/fvm/fvm_to_ccm.h,
+	  src/fvm/fvm_to_cgns.c, src/fvm/fvm_to_cgns.h,
+	  src/fvm/fvm_to_ensight.c, src/fvm/fvm_to_ensight.h,
+	  src/fvm/fvm_to_ensight_case.c, src/fvm/fvm_to_ensight_case.h,
+	  src/fvm/fvm_to_med.c, src/fvm/fvm_to_med.h, src/fvm/fvm_trace.c,
+	  src/fvm/fvm_trace.h, src/fvm/fvm_triangulate.c,
+	  src/fvm/fvm_triangulate.h, src/fvm/fvm_writer.c,
+	  src/fvm/fvm_writer.h, src/fvm/fvm_writer_helper.c,
+	  src/fvm/fvm_writer_helper.h, src/fvm/fvm_writer_priv.h,
+	  src/gui/Makefile.am, src/gui/cs_gui.c, src/gui/cs_gui.h,
+	  src/gui/cs_gui_boundary_conditions.c,
+	  src/gui/cs_gui_boundary_conditions.h,
+	  src/gui/cs_gui_conjugate_heat_transfer.c,
+	  src/gui/cs_gui_conjugate_heat_transfer.h, src/gui/cs_gui_mesh.c,
+	  src/gui/cs_gui_mesh.h, src/gui/cs_gui_mobile_mesh.c,
+	  src/gui/cs_gui_mobile_mesh.h, src/gui/cs_gui_output.c,
+	  src/gui/cs_gui_output.h, src/gui/cs_gui_particles.c,
+	  src/gui/cs_gui_particles.h, src/gui/cs_gui_radiative_transfer.c,
+	  src/gui/cs_gui_radiative_transfer.h,
+	  src/gui/cs_gui_specific_physics.c,
+	  src/gui/cs_gui_specific_physics.h, src/gui/cs_gui_util.c,
+	  src/gui/cs_gui_util.h, src/gui/cs_gui_variables.h,
+	  src/lagr/Makefile.am, src/lagr/cs_lagr_perio.c,
+	  src/lagr/cs_lagr_perio.h, src/lagr/cs_lagr_tracking.c,
+	  src/lagr/cs_lagr_utils.c, src/lagr/cs_lagr_utils.h,
+	  src/lagr/diverv.f90, src/lagr/enslag.f90, src/lagr/enswaf.f90,
+	  src/lagr/lagaff.f90, src/lagr/lagcar.f90, src/lagr/lagcli.f90,
+	  src/lagr/lagcou.f90, src/lagr/lagdcl.f90, src/lagr/lagdeb.f90,
+	  src/lagr/lagdep.f90, src/lagr/lagdif.f90, src/lagr/lagdim.f90,
+	  src/lagr/lageje.f90, src/lagr/lagent.f90, src/lagr/lageqp.f90,
+	  src/lagr/lagerr.f90, src/lagr/lages1.f90, src/lagr/lages2.f90,
+	  src/lagr/lagesd.f90, src/lagr/lagesp.f90, src/lagr/laggeo.f90,
+	  src/lagr/laggra.f90, src/lagr/laghis.f90, src/lagr/lagich.f90,
+	  src/lagr/lagidp.f90, src/lagr/lagimp.f90, src/lagr/lagini.f90,
+	  src/lagr/lagipn.f90, src/lagr/lagitf.f90, src/lagr/lagitg.f90,
+	  src/lagr/lagitp.f90, src/lagr/laglec.f90, src/lagr/laglis.f90,
+	  src/lagr/lagnew.f90, src/lagr/lagnpr.f90, src/lagr/lagnwc.f90,
+	  src/lagr/lagopt.f90, src/lagr/lagout.f90, src/lagr/lagpar.f90,
+	  src/lagr/lagphy.f90, src/lagr/lagpoi.f90, src/lagr/lagprj.f90,
+	  src/lagr/lagran.f90, src/lagr/lagrus.f90, src/lagr/lagsta.f90,
+	  src/lagr/lagstf.f90, src/lagr/lagswe.f90, src/lagr/lagtri.f90,
+	  src/lagr/lagune.f90, src/mei/Makefile.am, src/mei/mei_evaluate.c,
+	  src/mei/mei_evaluate.h, src/mei/mei_hash_table.c,
+	  src/mei/mei_hash_table.h, src/mei/mei_math_util.c,
+	  src/mei/mei_math_util.h, src/mei/mei_node.c, src/mei/mei_node.h,
+	  src/mei/mei_parser.y, src/mei/mei_parser_glob.c,
+	  src/mei/mei_parser_glob.h, src/mei/mei_scanner.l,
+	  src/mesh/Makefile.am, src/mesh/cs_join.c, src/mesh/cs_join.h,
+	  src/mesh/cs_join_intersect.c, src/mesh/cs_join_intersect.h,
+	  src/mesh/cs_join_merge.c, src/mesh/cs_join_merge.h,
+	  src/mesh/cs_join_mesh.c, src/mesh/cs_join_mesh.h,
+	  src/mesh/cs_join_perio.c, src/mesh/cs_join_perio.h,
+	  src/mesh/cs_join_post.c, src/mesh/cs_join_post.h,
+	  src/mesh/cs_join_set.c, src/mesh/cs_join_set.h,
+	  src/mesh/cs_join_split.c, src/mesh/cs_join_split.h,
+	  src/mesh/cs_join_update.c, src/mesh/cs_join_update.h,
+	  src/mesh/cs_join_util.c, src/mesh/cs_join_util.h,
+	  src/mesh/cs_mesh.c, src/mesh/cs_mesh.h,
+	  src/mesh/cs_mesh_bad_cells.c, src/mesh/cs_mesh_bad_cells.h,
+	  src/mesh/cs_mesh_builder.c, src/mesh/cs_mesh_builder.h,
+	  src/mesh/cs_mesh_coherency.c, src/mesh/cs_mesh_coherency.h,
+	  src/mesh/cs_mesh_connect.c, src/mesh/cs_mesh_connect.h,
+	  src/mesh/cs_mesh_from_builder.c, src/mesh/cs_mesh_from_builder.h,
+	  src/mesh/cs_mesh_halo.c, src/mesh/cs_mesh_halo.h,
+	  src/mesh/cs_mesh_location.c, src/mesh/cs_mesh_location.h,
+	  src/mesh/cs_mesh_quality.c, src/mesh/cs_mesh_quality.h,
+	  src/mesh/cs_mesh_quantities.c, src/mesh/cs_mesh_quantities.h,
+	  src/mesh/cs_mesh_save.c, src/mesh/cs_mesh_save.h,
+	  src/mesh/cs_mesh_smoother.c, src/mesh/cs_mesh_smoother.h,
+	  src/mesh/cs_mesh_thinwall.c, src/mesh/cs_mesh_thinwall.h,
+	  src/mesh/cs_mesh_to_builder.c, src/mesh/cs_mesh_to_builder.h,
+	  src/mesh/cs_mesh_warping.c, src/mesh/cs_mesh_warping.h,
+	  src/mesh/cs_partition.c, src/mesh/cs_partition.h,
+	  src/pprt/Makefile.am, src/pprt/ppcabs.f90, src/pprt/ppcpfu.f90,
+	  src/pprt/ppcsca.f90, src/pprt/ppincl.f90, src/pprt/ppini1.f90,
+	  src/pprt/ppinii.f90, src/pprt/ppiniv.f90, src/pprt/ppinv2.f90,
+	  src/pprt/pplecd.f90, src/pprt/pppdfr.f90, src/pprt/ppphyv.f90,
+	  src/pprt/ppppar.f90, src/pprt/ppprcl.f90, src/pprt/ppprop.f90,
+	  src/pprt/ppray4.f90, src/pprt/pptbht.f90, src/pprt/ppthch.f90,
+	  src/pprt/pptssc.f90, src/pprt/pptycl.f90, src/pprt/ppvarp.f90,
+	  src/rayt/Makefile.am, src/rayt/radiat.f90, src/rayt/raycli.f90,
+	  src/rayt/raycll.f90, src/rayt/raydak.f90, src/rayt/raydir.f90,
+	  src/rayt/raydom.f90, src/rayt/raylec.f90, src/rayt/rayopt.f90,
+	  src/rayt/rayout.f90, src/rayt/raypar.f90, src/rayt/raypun.f90,
+	  src/rayt/raysca.f90, src/rayt/raysol.f90, src/rayt/rmodak.f90,
+	  src/turb/Makefile.am, src/turb/clipke.f90, src/turb/clipsa.f90,
+	  src/turb/clpalp.f90, src/turb/clprij.f90, src/turb/clpv2f.f90,
+	  src/turb/cs_les_filter.c, src/turb/cs_les_filter.h,
+	  src/turb/cs_les_inflow.c, src/turb/cs_les_inflow.h,
+	  src/turb/divrit.f90, src/turb/resalp.f90, src/turb/reseps.f90,
+	  src/turb/resrij.f90, src/turb/resrit.f90, src/turb/resssg.f90,
+	  src/turb/resv2f.f90, src/turb/rijech.f90, src/turb/rijthe.f90,
+	  src/turb/rotcor.f90, src/turb/tsepls.f90, src/turb/turbke.f90,
+	  src/turb/turbkw.f90, src/turb/turbsa.f90, src/turb/turent.f90,
+	  src/turb/turrij.f90, src/turb/vandri.f90, src/turb/visdyn.f90,
+	  src/turb/vislmg.f90, src/turb/vissma.f90, src/turb/vissst.f90,
+	  src/turb/visv2f.f90, src/turb/viswal.f90, src/turb/vor2cl.f90,
+	  src/turb/vordep.f90, src/turb/vorimp.f90, src/turb/vorin0.f90,
+	  src/turb/vorinc.f90, src/turb/vorini.f90, src/turb/vorlgv.f90,
+	  src/turb/vorpre.f90, src/turb/vortex.f90, src/turb/vorver.f90,
+	  src/turb/vorvit.f90, src/user/Makefile.am,
+	  src/user/cs_user_atmospheric_model.f90,
+	  src/user/cs_user_boundary_conditions.f90,
+	  src/user/cs_user_coupling.c,
+	  src/user/cs_user_extra_operations.f90,
+	  src/user/cs_user_fluid_structure_interaction.f90,
+	  src/user/cs_user_initialization.f90,
+	  src/user/cs_user_les_inflow.f90, src/user/cs_user_mesh.c,
+	  src/user/cs_user_modules.f90, src/user/cs_user_parameters.f90,
+	  src/user/cs_user_particle_tracking.f90,
+	  src/user/cs_user_performance_tuning.c,
+	  src/user/cs_user_physical_properties.f90,
+	  src/user/cs_user_postprocess.c,
+	  src/user/cs_user_postprocess_var.f90,
+	  src/user/cs_user_radiative_transfer.f90,
+	  src/user/cs_user_solver.c, src/user/cs_user_source_terms.f90,
+	  src/user/usalcl.f90, src/user/uscfth.f90, src/user/usctdz.f90,
+	  src/user/uselrc.f90, src/user/ushist.f90, src/user/uskpdc.f90,
+	  src/user/uslaen.f90, src/user/uslag1.f90, src/user/uslag2.f90,
+	  src/user/usporo.f90, src/user/uspt1d.f90, src/user/usray1.f90,
+	  src/user/usray2.f90, src/user/usthht.f90, src/user/ustsma.f90,
+	  src/user/usvort.f90, src/user/usvosy.f90,
+	  src/user_examples/Makefile.am,
+	  src/user_examples/cs_user_boundary_conditions-advanced.f90,
+	  src/user_examples/cs_user_boundary_conditions-atmospheric.f90,
+	  src/user_examples/cs_user_boundary_conditions-base.f90,
+	  src/user_examples/cs_user_boundary_conditions-compressible.f90,
+	  src/user_examples/cs_user_boundary_conditions-cooling_towers.f90,
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs.f90,
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90,
+	  src/user_examples/cs_user_boundary_conditions-fuel.f90,
+	  src/user_examples/cs_user_boundary_conditions-gas_3ptchem.f90,
+	  src/user_examples/cs_user_boundary_conditions-gas_ebu.f90,
+	  src/user_examples/cs_user_boundary_conditions-gas_libby_williams.f90,
+	  src/user_examples/cs_user_boundary_conditions-pulverized_coal.f90,
+	  src/user_examples/cs_user_boundary_conditions-pulverized_coal_lagrangian.f90,
+	  src/user_examples/cs_user_extra_operations-energy_balance.f90,
+	  src/user_examples/cs_user_extra_operations-extract_1d_profile.f90,
+	  src/user_examples/cs_user_extra_operations-force_temperature.f90,
+	  src/user_examples/cs_user_extra_operations-global_efforts.f90,
+	  src/user_examples/cs_user_extra_operations-parallel_operations.f90,
+	  src/user_examples/cs_user_extra_operations-print_statistical_moment.f90,
+	  src/user_examples/cs_user_initialization-atmospheric.f90,
+	  src/user_examples/cs_user_initialization-base.f90,
+	  src/user_examples/cs_user_initialization-compressible.f90,
+	  src/user_examples/cs_user_initialization-cooling_towers.f90,
+	  src/user_examples/cs_user_initialization-electric_arcs.f90,
+	  src/user_examples/cs_user_initialization-fuel.f90,
+	  src/user_examples/cs_user_initialization-gas_3ptchem.f90,
+	  src/user_examples/cs_user_initialization-gas_ebu.f90,
+	  src/user_examples/cs_user_initialization-gas_libby_williams.f90,
+	  src/user_examples/cs_user_initialization-pulverized_coal.f90,
+	  src/user_examples/cs_user_initialization-time_step.f90,
+	  src/user_examples/cs_user_initialization-unified_combustion_coal.f90,
+	  src/user_examples/cs_user_les_inflow-base.f90,
+	  src/user_examples/cs_user_parameters-output.f90,
+	  src/user_examples/cs_user_postprocess-sfc.c, tests/Makefile.am,
+	  tests/bft_backtrace_test.c, tests/bft_error_test.c,
+	  tests/bft_mem_test.c, tests/bft_mem_usage_test.c,
+	  tests/bft_printf_test.c, tests/cs_blas_test.c,
+	  tests/cs_core_test.c, tests/cs_file_test.c,
+	  tests/cs_interface_test.c, tests/cs_sizes_test.c,
+	  tests/fvm_selector_postfix_test.c, tests/fvm_selector_test.c,
+	  tests/mei_test_main.c, tests/unittests.py: Update Copyright.
+
+2013-01-09 13:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4385] ChangeLog.2012, Makefile.am: Add ChangeLog for 2012.
+
+2013-01-09 09:35  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4382] bin/autovnv/Drawing.py: Merge rev. 4381 from trunk (add
+	  EDF colors for autovnv).
+
+2013-01-08 16:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4380] src/base/navstv.f90: Merge rev. 4379 from trunk (Fix in
+	  ALE when no pressure step is performed).
+
+2013-01-08 14:26  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4378] src/gui/cs_gui.c: Merge rev. 4377 from trunk (Fix in the
+	  GUI).
+
+2013-01-08 10:57  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4376] src/lagr/lagent.f90,
+	  src/user/cs_user_particle_tracking.f90: Merge rev. 4375 from
+	  trunk (Lag. module: fix a potential issue in case of user-defined
+	  particle injection in parallel runs)
+
+2013-01-04 18:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4373] ., src/alge/cs_matrix.c: Merge rev. 4372 from trunk (fix
+	  matrix operation tuning bugs).
+
+2013-01-04 18:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4371] ., src/alge/itrgrv.f90: Merge rev. 4370 from trunk (fix
+	  OpenMP bug).
+
+2013-01-04 10:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4368] ., docs/doxygen/Makefile.am: Merge rev 4363 from trunk
+	  (fix in doxygen compilation).
+
+2013-01-04 10:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4367] ., src/alge/itrgrv.f90, src/alge/itrmas.f90,
+	  src/alge/itrmav.f90, src/alge/projtv.f90, src/base/condli.f90,
+	  src/base/navstv.f90, src/base/phyvar.f90, src/base/pointe.f90,
+	  src/base/preduv.f90, src/base/predvv.f90, src/base/resolp.f90,
+	  src/base/resopv.f90, src/base/tridim.f90, src/base/tspdcv.f90,
+	  src/gui/cs_gui.c: Merge rev 4366 from trunk (Major fix in Head
+	  Losses).
+
+2013-01-04 09:52  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4365] ., src/alge/itrgrv.f90, src/alge/itrmav.f90,
+	  src/alge/projtv.f90: Merge rev 4363 from trunk (Update doxygen
+	  documentation).
+
+2013-01-03 16:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4362] ., config/cs_auto_flags.sh, configure.ac: Merge rev. 4361
+	  from trunk (build system fixes for use of OpenMP on Blue Gene/Q).
+
+2013-01-03 15:09  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4360] ., src/alge/grdpot.f90, src/base/navsto.f90,
+	  src/base/preduv.f90, src/base/predvv.f90, src/base/resopv.f90:
+	  Merge rev 4359 from trunk (Cosmetic).
+
+2013-01-03 14:58  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4358] ., src/base/impini.f90: Merge rev 4357 from trunk (fix in
+	  the listing).
+
+2013-01-03 10:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4356] ., src/alge/matrix.f90: Merge rev. 4355 from trunk (fix
+	  OpenMP directives).
+
+2013-01-03 10:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4353] ., src/alge/cs_matrix.c: Merge rev. 4352 from trunk
+	  (remove extra argument leading to OpenMP compile error).
+
+2012-12-21 16:59  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4351] ., src/lagr/lagopt.f90: Merge rev. 4350 from trunk (Lag.
+	  module: fix a bad parameter initialization)
+
