@@ -4257,8 +4257,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
           }
 
           BFT_FREE(formula_turb);
-          BFT_FREE(choice);
         }
+        BFT_FREE(choice);
       }
 
       /* Thermal scalar initialization */
