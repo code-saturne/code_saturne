@@ -1151,17 +1151,21 @@ class mpi_environment:
 
         if self.mpiexec != None:
             absname = __get_mpiexec_absname__(self, p)
+            pm = self.__get_mpich2_3_default_pm__(absname)
 
         else:
             launcher_names = ['mpiexec.mpich', 'mpiexec.mpich2', 'mpiexec',
-                              'mpiexec.hydra', 'mpiexec.mpd', 'mpiexec.smpd',
+                              'mpiexec.hydra', 'mpiexec.smpd',
                               'mpiexec.gforker', 'mpiexec.remshell',
-                              'mpirun.mpich2', 'mpirun.mpich2', 'mpirun']
+                              'mpirun.mpich2', 'mpirun.mpich', 'mpirun']
 
             for d in p:
                 for name in launcher_names:
                     absname = os.path.join(d, name)
                     if os.path.isfile(absname):
+                        pm = self.__get_mpich2_3_default_pm__(absname)
+                        if pm == 'mpd': # MPD is deprecated; avoid it
+                            continue
                         # Set launcher name
                         if d == self.bindir:
                             self.mpiexec = absname
@@ -1175,14 +1179,10 @@ class mpi_environment:
                 if self.mpiexec != None:
                     break
 
-        if absname:
-            pm = self.__get_mpich2_3_default_pm__(absname)
-
         if (self.mpiexec == None):
-            basename = 'mpiexec'
             self.mpiexec = 'mpiexec'
-        else:
-            basename = os.path.basename(self.mpiexec)
+
+        basename = os.path.basename(self.mpiexec)
 
         # Determine if SMPD should be handled
 
