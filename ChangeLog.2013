@@ -1,0 +1,2031 @@
+2013-12-11 15:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5558] configure.ac: Bump version number to 3.1.3.
+
+2013-12-11 15:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5557] NEWS, m4/cs_metis.m4, m4/cs_scotch.m4, po/fr.po: Merge
+	  rev. 5555 from trunk (fix build possible configuration bug when
+	  SCOTCH or Metis detection is disabled).
+
+2013-12-10 16:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5552] NEWS, bin/cs_case_domain.py: Syrthes environment loaded
+	  at case creation time has priority over the currently selected
+	  environment.
+
+2013-12-09 16:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5544] bin/cs_case_domain.py: Merge rev. 5542 from trunk
+	  (missing addition to rev. 5443 for more robust and stable Syrthes
+	  environment detection).
+
+2013-12-09 10:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5538] NEWS, configure.ac: Bump version to 3.1.2.
+
+2013-12-09 10:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5537] NEWS, po/fr.po: Update NEWS relative to 3.1.1 release.
+
+2013-12-05 16:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5535] m4/cs_salome.m4: Revert spurious merge from trunk in
+	  SALOME detection macros.
+
+2013-12-04 19:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5532] configure.ac: Bumped version number to 3.1.1.
+
+2013-12-04 17:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5510] install_saturne.py, m4/cs_scotch.m4: Merge rev. 5508 from
+	  trunk (fix for SCOTCH detection on BlueGene/Q).
+
+2013-12-04 16:12  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5503] src/base/post_util.f90: Fix in the wall-temperature
+	  post-processing.
+
+2013-12-03 15:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5479] install_saturne.py, m4/cs_scotch.m4: Merge rev. 5464 from
+	  trunk (linking with Scotch/PT-Scotch on some recent Linux
+	  distributions).
+
+2013-12-03 15:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5477] bin/cs_exec_environment.py: Merge rev. 5466 from trunk
+	  (fix run script for some use cases of MPICH-based MPI libraries).
+
+2013-12-03 15:35  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5475]
+	  src/user_examples/cs_user_extra_operations-energy_balance.f90:
+	  Merge rev. 5471 from trunk (fix user example).
+
+2013-12-03 13:59  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5462] src/alge/matrvv.f90: Fix minor bug.
+
+2013-12-02 17:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5458] src/base/caltri.f90, src/base/dvvpst.f90: Add local
+	  Fortran function interfaces to ensure correct build with Intel
+	  Fortran 13 and above.
+
+2013-11-28 11:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5447] bin/cs_case.py: Merge rev. 5446 from trunk (fix BG/Q MPMD
+	  configfile: for SYRTHES, use -w and not -wdir, simplify paths).
+
+2013-11-27 17:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5444] bin/cs_case_domain.py: Merge rev. 5433 from trunk
+	  (SYRTHES coupling version selection robustness improvement).
+
+2013-11-27 10:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5437] extras/batch/batch.SLURM_BGQ: Merge rev. 5436 from trunk
+	  (remove obsolete comment in batch template).
+
+2013-11-26 18:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5432] src/turb/turrij.f90: Fix compile error due to typo in
+	  previous commit.
+
+2013-11-26 18:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5431] NEWS, src/turb/turrij.f90: Make sure null() Fortran
+	  pointers are not passed to subroutines with no explicit
+	  interfacesto avoid crash on BlueGene/Q.
+
+2013-11-25 09:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5424] src/mesh/cs_join_util.c: Merge rev. 5422 from trunk (fix
+	  joining bug introduced by rev. 5080).
+
+2013-11-25 09:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5423] po/fr.po, src/mesh/cs_join_util.c: Merge rev. 5213 from
+	  trunk (handle errors more gracefully in some cases of periodic
+	  joining).
+
+2013-11-20 17:57  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5412] src/base/driflu.f90: Merge rev. 5411 from trunk
+	  (uninitialized variables)
+
+2013-11-15 16:14  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5405] src/user/cs_user_source_terms.f90: Fix user example.
+
+2013-11-04 14:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5381] docs/theory/bndcnd.tex, src/base/clptrg.f90,
+	  src/base/clptur.f90, src/base/hturbp.f90: Fix in the wall
+	  boundary conditions: - for the velocity, when the wall velocity
+	  condition is non-zero, the gradient BC was wrong. - for the
+	  scalars, the former formulation (before the modification induced
+	  by the AFM and DFM models) by default for the gradient BC of the
+	  scalars. - for the scalars, a term was missing (proportional to
+	  the wall value) in the gradient BC (for AFM and DFM) - for
+	  scalars with small molecular Prandtl number, the value of the
+	  viscous sub-layer was not in adequation between the gradient BC
+	  and the flux BC (for AFM and DFM).
+
+2013-10-30 15:06  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5375] docs/style/csmacros.sty: Merge rev. 5374 from trunk (Fix
+	  in the link between pdf docs and Doxygen doc).
+
+2013-10-30 09:57  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5371] gui/Pages/InitializationModel.py,
+	  gui/Pages/InitializationView.py, src/gui/cs_gui.c: Merge rev.
+	  5370 from trunk (fix bug in the GUI)
+
+2013-09-26 11:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5268] src/base/coupbi.f90: Merge rev. 5267 from trunk (fix
+	  Syrthes coupling bug introduced by rev. 5048).
+
+2013-09-24 17:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5264] NEWS, bin/cs_case_domain.py: Merge rev. 5248 from trunk
+	  (script cleanup stage in case of symbolic links for directories).
+
+2013-09-13 17:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5254] NEWS, src/rayt/raydir.f90: Merge rev. 5253 from trunk
+	  (fix bug in radiative quadrature formulas).
+
+2013-09-13 17:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5252] NEWS, src/base/cs_post.c: Merge rev. 5251 from trunk (fix
+	  for call of user selection function for particle postprocessing).
+
+2013-09-13 17:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5249] NEWS, m4/cs_ccm.m4: Merge rev. 5240 from trunk (fix bad
+	  detection if libccmio without CGNS).
+
+2013-07-31 09:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5167] NEWS, src/base/tridim.f90: Merge rev. 5166 from tunk (fix
+	  reallocation issue for LES with internal fluid-structure
+	  coupling).
+
+2013-07-31 08:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5163] NEWS, src/base/cs_time_plot.c: Merge rev. 5162 from trunk
+	  (fix Fortran time plot numbering issue).
+
+2013-07-29 16:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5159] NEWS, src/base/condli.f90: Merge rev. 5158 from trunk
+	  (fix index bug in computation of forces for ALE).
+
+2013-07-22 12:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5137] install_saturne.py: Merge rev. 5136 from trunk (installer
+	  fix for CGNS).
+
+2013-07-22 10:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5132] NEWS, extras/batch/batch.SLURM,
+	  gui/Pages/BatchRunningView.py: Merge rev. 5131 from trunk (fix
+	  handling of batch template defined by absolute path in GUI,
+	  update SLURM example).
+
+2013-07-16 10:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5123] docs/manpages/code_saturne.1: Merge rev. 5122 from trunk
+	  (update man page).
+
+2013-07-16 10:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5118] install_saturne.py: Merge rev. 5117 from trunk (ensure
+	  svn checkout of installer is executable).
+
+2013-07-15 16:10  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5114] src/user/cs_user_source_terms.f90: Merge rev. 5113 from
+	  trunk (fix user example).
+
+2013-07-12 16:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5110] NEWS, bin/cs_exec_environment.py: Merge rev. 5109 from
+	  trunk (fix when using Torque or PBS pro with Open MPI without
+	  proper support configured).
+
+2013-07-12 14:21  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r5106] src/lagr/cs_lagr_tracking.c: Merge rev.5105 from trunk
+	  (Lag. module: fix wrong count of exiting particles statistical
+	  weight)
+
+2013-07-10 08:08  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5087] src/base/ecrava.f90: Merge rev. 5086 from trunk (Fix bug
+	  in the writing of variables (ecrava) in case of AFM or DFM for
+	  scalars).
+
+2013-07-09 15:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5081] NEWS, src/mesh/cs_join_util.c: Merge rev. 5080 from trunk
+	  (fix rarely occuring parallel mesh joining bug).
+
+2013-07-03 10:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5066] NEWS, configure.ac: Merge rev. 5065 from trunk (force
+	  link with C++ when EOS is used).
+
+2013-07-03 10:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5063] NEWS, src/mesh/cs_mesh_thinwall.c: Merge rev. 5062 from
+	  trunk (fix for incorrect array access with empty local list when
+	  building thin walls).
+
+2013-07-02 11:54  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5060] docs/theory/spadis.tex: Merge rev. 5059 from trunk
+	  (theory doc).
+
+2013-07-01 15:02  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5057] src/alge/bilsc2.f90, src/alge/bilsc4.f90,
+	  src/alge/bilsca.f90, src/alge/bilscv.f90, src/alge/diften.f90,
+	  src/alge/diftnv.f90: Merge rev. 5056 from trunk (Fix doxygen
+	  comments).
+
+2013-07-01 14:54  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5055] src/base/driflu.f90: Merge rev. 5054 from trunk (Fix bug
+	  in the centrifugal term of the scalar with drift).
+
+2013-06-27 16:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5051] NEWS, src/base/coupbi.f90: Merge rev. 5048 from trunk
+	  (fix for Syrthes coupling with rough wall).
+
+2013-06-27 12:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5043] m4/cs_libxml2.m4: Merge rev. 5037 from trunk (fix libxml2
+	  detection LDFLAGS order handling).
+
+2013-06-24 08:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5030] README: Merge rev. 5029 from trunk (remove reference to
+	  old website).
+
+2013-06-20 15:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r5026] bin/cs_case.py, bin/cs_case_domain.py: Merge rev. 5025
+	  from trunk (script fixes for Code_Aster coupling).
+
+2013-06-20 12:59  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5023] src/user/cs_user_parameters.f90: Merge rev. 5022 from
+	  trunk (fix uninitialized value).
+
+2013-06-14 15:23  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r5007] docs/user/saturne1.tex: Merge rev. 5005 from trunk (fix
+	  documentation compilation).
+
+2013-06-14 13:49  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r5004] src/gui/cs_gui.c: Merge rev. r5002 from trunk (fix
+	  indices in evaluation of user laws for fluid properties for
+	  compressible).
+
+2013-06-13 10:06  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r5001] src/base/addfld.f90, src/base/driflu.f90,
+	  src/user_examples/cs_user_physical_properties-scalar_drift.f90:
+	  Merge rev. 5000 from trunk (fixes in scalar drift).
+
+2013-06-11 14:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4996] NEWS, configure.ac: Prepare for 3.1.0 release.
+
+2013-06-11 14:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4994] .[CPY]: Branch version 3.1.
+
+2013-06-11 09:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4993] Fix comments (provided by BDLDM)
+
+2013-06-11 09:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4992] RMB (provided by BDLDM).
+
+2013-06-11 09:40  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4991] Enforce the fluctuating mass flux to 0 in SEM LES inlets.
+
+2013-06-10 13:18  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4988] FIX for particles output
+
+2013-06-10 13:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4987] Update NEWS file.
+
+2013-06-10 10:29  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4985] Minor fixes on the scalar drift (provided by M. Guingo).
+
+2013-06-10 09:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4984] Automatic installer changes. The installer is now moved
+	  to the top-level directory, and does not download Code_Saturne
+	  anymore. The setup file template is removed, and generated by a
+	  first call to install_saturne.py. The README is merged with the
+	  top-level README. MPI should be installed upstream, but PT-SCOTCH
+	  and ParMetis are now handled.
+
+2013-06-10 07:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4983] Remplace deprecated python string index() with find().
+
+2013-06-10 07:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4982] Improve robustness of compile command relative to
+	  white-space.
+
+2013-06-10 07:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4981] Minor improvements to Lagrangian postprocessing handling.
+
+2013-06-07 15:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4980] Force initialization to avoid some Valgrind/debug issues.
+
+2013-06-07 15:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4979] Rewrite of Lagrangian post-processing output. The
+	  particles postprocessing output is now based on the standard FVM
+	  mechanism, whose handling was extended for these purposes. There
+	  is no restriction on output in parallel mode anymore. Thanks to
+	  Cyril Baudry for updating the GUI.
+
+2013-06-07 15:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4978] Fix svn:ignore for build-aux directory.
+
+2013-06-07 14:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4977] Improve robustness of SALOME detection for YAMM builds.
+	  Sourcing the SALOME environment should not be required anymore
+	  when the --with-salome configure option is used with a YAMM
+	  salome build, which incluides its own Python interpreter by
+	  default. To simplify current and future tests, a
+	  build-aux/cs_config_test.py file was added to allow writing of
+	  configuration tests in Python.
+
+2013-06-07 13:00  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r4976] Autovnv: allow to call Code_Saturne GUI functions in
+	  external prepro scripts (automatically set the PYTHONPATH
+	  variable).
+
+2013-06-06 09:58  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r4973] Add file input feature to the postpro environment in
+	  autovnv.
+
+2013-06-06 08:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4972] Improve warning message (mention ParaView).
+
+2013-06-05 15:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4970] Fix low-level bug leading to loss of particles in serial
+	  restart with 8-byte cs_gnum_t.
+
+2013-06-04 10:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4969] Fix for bug introduced in previous rev (4968).
+
+2013-06-04 09:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4968] Fix minor memory leaks and remove unused local variables.
+
+2013-06-03 13:55  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r4967] GUI: fix temperature condition at an inlet for
+	  compressible module.
+
+2013-06-03 11:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4966] Remove obsolete options for detection of SALOME.
+
+2013-06-03 11:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4964] Fix for build with EURIWARE build of Salome 7.2.
+
+2013-06-03 08:38  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4963] FIX bad node location for radiative transfert with fuel
+	  combustion
+
+2013-05-30 15:39  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4961] Update theory guide: - no more "work in progress" but
+	  links to the relative sections - correction of the wall functions
+	  provided by D. Laurence - description of the BL-v2-k model
+	  provided by F. Billard - update of the bibliography - minor
+	  corrections
+
+2013-05-29 14:13  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4959] Improve k-omega robustness when yplus is low.
+
+2013-05-29 14:12  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4958] Minor fix in LES filter.
+
+2013-05-28 13:31  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4957] update case creation by GUI
+
+2013-05-27 09:11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4955] Fix array bounds error in boundary face renumbering.
+
+2013-05-24 14:57  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r4954] Prevent from trying to update labels in empty formulas in
+	  the xml file.
+
+2013-05-24 09:18  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4953] Fix in drift scalar in the turbophoresis term (provided
+	  by M. Guingo).
+
+2013-05-22 15:35  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4952] Minor commit in drift scalars.
+
+2013-05-22 13:40  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4951] Use field structure for the scalar with drift and add a
+	  drift model for coal combustion.
+	  
+	  New key words are added to the field structure: - scalar_id
+	  (inverse of the array isca(iscal)) - scalar_class (class of the
+	  scalar which belongs to, in particular they share the convective
+	  mass flux) - inner_mass_flux_id (index of the convective field at
+	  inner faces) - boundary_mass_flu_id (index of the convective
+	  field at boundary faces) - drift_scalar_model (type of model for
+	  drift scalar: * 0 no drift * >0 with drift the different models
+	  are activable in cs_user_parameters (user_field_parameters)) One
+	  example is available in src/user_examples and doxygened.
+
+2013-05-21 08:52  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r4950] Fix duplicated function call and improve robustness of
+	  autovnv run_command.
+
+2013-05-17 15:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4948] Update authors Changelog matches.
+
+2013-05-17 14:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4947] Update dependencies mini-documentation.
+
+2013-05-17 14:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4945] Update dependencies mini-documentation.
+
+2013-05-17 14:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4944] Clean unused translations.
+
+2013-05-16 15:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4942] Fix special whitespace preventing generation of LaTex
+	  doxygen documentation.
+
+2013-05-16 14:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4941] Improve mesh coherency test to avoid false error reports
+	  in some cases of rotational periodicity.
+
+2013-05-15 16:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4939] Fix spurious change in part of rev. 4938.
+
+2013-05-15 16:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4938] Fix translation.
+
+2013-05-15 16:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4937] Fix licence template modified in rev. 4934.
+
+2013-05-15 15:55  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4935] Fix uninitialized value.
+
+2013-05-15 13:07  Martine Paolillo <martine.paolillo@edf.fr>
+
+	* [r4934] When running ./code_saturne salome, the following error
+	  appears /bin/bash: -c: line 0: Erreur de syntaxe près du symbole
+	  inattendu « ; » /bin/bash: -c: line 0: `;' and correction into
+	  bin/cs_salome.py
+
+2013-05-14 07:34  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4933] CFDSTUDY: update online tutorial.
+
+2013-05-13 16:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4932] Add missing cs_interface_set_max() prototype.
+
+2013-05-13 09:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4930] Make automatic compiler flags more consistent between
+	  Code_Saturne and PLE.
+
+2013-05-13 08:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4929] PLE: restore old MPI library detections for identity
+	  between Code_Saturne trunk and 3.0 branch.
+
+2013-05-13 08:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4927] PLE library's automake is not in "foreign" mode, so let
+	  it handle INSTALL file itself.
+
+2013-05-13 08:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4926] Minor improvements on rev. 4925 for MPI type detection.
+
+2013-05-10 13:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4925] Improve MPI variant detection.
+
+2013-05-07 12:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4924] Ensure optional specific environment is sourced before
+	  importing matplotlib or vtk Python modules.
+
+2013-05-06 10:32  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4922] Update theory documentation.
+
+2013-05-03 15:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4919] Make block (naive) partitioning more robust in case of
+	  empty read distribution blocks.
+
+2013-05-03 15:10  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4918] Lag. module: third stage of the implementation of a
+	  particle resuspension model
+
+2013-05-03 14:59  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4916] Lag. module: Fix non-general display of the physical time
+	  in the lagrangian listing
+
+2013-05-03 14:37  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4914] Lag. module: Fix for the timestep value to dt(1) instead
+	  of dtref
+
+2013-05-03 12:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4909] Fix typo preventing use of rcfile in code_saturne.cfg.
+
+2013-05-03 10:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4907] Fix typo and test order for determination of
+	  static/dynamic link flags.
+
+2013-05-03 09:01  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4906] Lag. module, combustion submodule: additional security on
+	  the evolution of the reactive coal diameter
+
+2013-05-02 11:56  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4905] FIX use package for salome with neptune_cfd
+
+2013-05-02 10:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4904] Add "flush" times to postprocessing writer timer.
+
+2013-05-02 10:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4903] Add CS_LOG_DEFAULT type to use logging API to listing
+	  file.
+
+2013-05-02 09:54  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4902] FIX: ensure compatibility with Salome 6.6 and Salome 7.2
+
+2013-05-02 09:03  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4901] Fix bug in autovnv.
+
+2013-04-30 13:00  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4899] FIX for neptune_cfd update PYTHONPATH with neptune_cfd,
+	  code_saturne and EOS
+
+2013-04-30 12:52  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4898] Add use Agg and suppress usetex to run autovnv on cluster
+	  with Xserver
+
+2013-04-30 08:09  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4897] Lag. module: new counter for the resuspended particles in
+	  case of resuspension activated
+
+2013-04-30 06:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4895] Fix crash in Gmsh reader.
+
+2013-04-29 15:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4894] Fix for compilation with shape-checking of Intel
+	  compiler.
+
+2013-04-29 15:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4893] Fix bug introduced in rev. 4891.
+
+2013-04-29 13:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4892] Fix bug introduced in rev. 4891.
+
+2013-04-29 08:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4891] Variable min/max values may use a local array in ecrlis.
+
+2013-04-26 11:08  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4890] Lag. module, combustion-dedicated part: use of a
+	  formulation of the char density local to a particle and
+	  improvement of the numerics
+
+2013-04-26 09:17  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4888] Fix in the tutorial.
+
+2013-04-26 09:14  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4886] Fix in the bash_completion.
+
+2013-04-25 16:32  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4883] Autovnv: merge the step of preprocessing and case
+	  running. Update doc with exemple.
+
+2013-04-25 15:12  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4881] Fix 1d interpolation used to define the fluid properties.
+
+2013-04-25 14:08  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4880] Lag. module: Fix the management of the list of the
+	  post-processed individual particles
+
+2013-04-25 11:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4878] Fix missing argument in lecamx.
+
+2013-04-25 09:53  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4876] Lag. module: Fix in the writing of the post-processing of
+	  the trajectories
+
+2013-04-24 12:05  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4875] Lag. module: Implementation of a resuspension model -
+	  step 2
+
+2013-04-24 07:43  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4873] Lag. module: Fix in the trajectography step for
+	  motionless particles
+
+2013-04-23 16:20  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4872] Autovnv: add the possibility to make a global
+	  post-traitement to a study composed of several cases.
+
+2013-04-23 09:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4870] Fix OpenMP bug affecting logging of min/max velocity.
+
+2013-04-23 08:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4868] Add mapping line for better environment robustness for
+	  MPMD on Blue Gene/Q.
+
+2013-04-22 16:18  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4866] Fix bug introduced in rev. 4847.
+
+2013-04-22 15:09  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4865] Autovnv: add the possibility to run several times the
+	  same case and to impose the name of directory of the results.
+
+2013-04-22 12:13  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4864] Autovnv: remove unecessary class dealing with thread.
+
+2013-04-18 17:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4852] Update SALOME detection for EDF builds of SALOME 7.
+
+2013-04-18 17:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4851] Update INSTALL autotools files.
+
+2013-04-18 12:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4849] Fix reallocation bug when sub-iterations are used for
+	  structures.
+
+2013-04-18 09:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4847] Fix in the cell code-code coupling with ivelco=1.
+
+2013-04-17 09:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4846] Call writer's flush function if it exists after
+	  postprocessing output for a given time step.
+
+2013-04-16 14:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4843] Fix bug in cell code-code coupling with ivelco=1.
+
+2013-04-16 07:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4835] Update French translations file.
+
+2013-04-15 14:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4832] Fixes to MPMD support for Blue Gene/Q (completes changes
+	  from rev. 4826).
+
+2013-04-15 13:46  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4831] Lag. module: first stage of the implementation of a
+	  particle resuspension model
+
+2013-04-15 13:45  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4830] Remove trailing blanks
+
+2013-04-15 07:54  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4828] FIX : replace Rosin-Rammeler by Rosin-Rammler
+
+2013-04-15 07:54  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4827] FIX sources terms for scalar and thermal variables
+
+2013-04-12 17:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4826] Basic MPMP support for Blue Gene/Q (using SLURM).
+
+2013-04-12 15:47  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4824] Fix existing quadratures T2 and T4, and add new
+	  quadratures S4 S6 S8 and Tn.
+
+2013-04-08 13:08  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4821] Fix for the Lagrangian probes set-up through the GUI
+
+2013-04-04 13:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4819] Fix for build with parmetis.
+
+2013-04-04 13:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4818] Change some documentation diagram colors.
+
+2013-04-03 16:51  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4817] Plug the source terms (momentum and scalars) from the GUI
+	  to the core code.
+
+2013-04-03 13:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4816] Improve SFC partition distribution. Based on patch
+	  provided by Charles Moulinec, adapted so as to be used only when
+	  some ranks would have no cells (in other cases, we keep a
+	  fixed-size block, which may be useful for testing of some
+	  external linear algebra libraries, which assume a block-based
+	  partitioning).
+
+2013-04-03 13:11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4815] Remove obsolete METIS 4/ParMETIS 3 support.
+
+2013-04-03 09:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4812] Release PLE 1.0.3 (fixes test in "locate on closest" and
+	  test for empty realloc).
+
+2013-04-02 16:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4811] Remove white space.
+
+2013-04-02 16:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4810] Fix user subroutines compilation on Mac OSX.
+
+2013-03-27 15:30  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4809] FIX bad alloc for source terms
+
+2013-03-22 15:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4804] Documentation updates.
+
+2013-03-22 13:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4802] Mesh joining: refactor to use cs_block_dist_info_t block
+	  information structures instead of cs_join_block_info_t.
+
+2013-03-22 13:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4800] Fix computation stop from GUI when using separate
+	  temporary execution directory.
+
+2013-03-21 17:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4796] Minor documentation fix.
+
+2013-03-21 13:30  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4794] Fix bug in the wall temperature post-treatment.
+
+2013-03-20 17:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4792] Fix some miswritings in the user-doc.
+
+2013-03-19 09:16  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4791] update runcase (compute is a specific class name to
+	  ivanoe)
+
+2013-03-15 17:55  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4789] Add Synthetic Eddy Method (SEM) description in the user
+	  documentation. Provided by Benoit de Laage de Meux
+	  <benoit.de-laage-de-meux@edf.fr>.
+
+2013-03-14 18:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4788] Add assertions in mesh joining.
+
+2013-03-14 18:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4787] Joining robustness checks and 64-bit safety improvements
+	  for large meshes.
+
+2013-03-14 16:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4784] Update MED version in installer.
+
+2013-03-13 13:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4782] Fixes for rev. 4766/4780.
+
+2013-03-12 17:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4780] Fixes for rev. r4766.
+
+2013-03-12 14:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4776] Use same INSTALL file for Code_Saturne and libPLE.
+
+2013-03-12 13:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4775] Use Python3-compatible print statements.
+
+2013-03-12 13:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4773] Autovnv: in batch mode, do not switch cases to submit
+	  directory when running (in this case, the submit directory is
+	  above the case directory, so switching to it prevents running
+	  cases when the autovnv command is run under a batch system).
+
+2013-03-12 09:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4771] Add missing field mapping for alpha with EBRSM model.
+
+2013-03-11 18:07  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4769] Update meteo file example.
+
+2013-03-11 17:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4766] Lagrangian module: improve handling of parallel
+	  deposition restart.
+
+2013-03-11 14:36  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4765] Update of the particle-tracking user guide
+
+2013-03-11 13:48  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4764] Lag. module: fix a bug in the injection subroutine
+
+2013-03-11 11:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4762] Update base boundary conditions example for all turbulent
+	  models.
+
+2013-03-08 12:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4759] Fix for postprocessign of moments with variable time
+	  step.
+
+2013-03-07 16:52  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4757] Fix comment.
+
+2013-03-07 15:17  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4755] Update user documentation for the meteo module (provided
+	  by Bertrand Carissimo <bertrand.carissimo@edf.fr>).
+
+2013-03-06 14:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4753] Update user documentation.
+
+2013-03-06 14:27  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4751] Clean unused parameter.
+
+2013-03-06 14:26  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4749] Fix bug with Head losses in the compressible module
+	  (introduced in rev. 4366).
+
+2013-03-05 16:05  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4748] Add the drift scalars: - set it in cs_user_parameters.f90
+	  and activate or not some terms (thermophoresis, turbophoresis,
+	  centrifugal force...) - set the particle information of the class
+	  in cs_user_physical_properties.f90 (see the user_example) - a
+	  doxygen dedicated page for the data setting is in
+	  /docs/doxygen/examples/ - the examples for boundary conditions
+	  need to be added, as well as the electrophoresis terms and the
+	  deviatoric part of the turbophoresis
+
+2013-03-05 15:52  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4746] [doxygen] clean a user example.
+
+2013-03-04 17:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4745] Remove deprecated iprfml array (family attributes).
+
+2013-03-04 16:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4744] Update unit test example.
+
+2013-03-04 16:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4743] Improve/update boundary condition error handling.
+
+2013-03-04 15:13  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4742] Autovnv: fix when input files is asked in the detailed
+	  report but post-processing of cases is turned off.
+
+2013-03-04 10:39  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4740] Fix bug in v2f-type models with buoyancy (introduced in
+	  rev. 4079, fix provided by Flavien BILLARD, University of
+	  Manchester).
+
+2013-02-28 10:13  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4735] replace t by s in formula for profile definition in GUI
+
+2013-02-27 16:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4733] Fix inverted arguments for mesh joining visualization
+	  level 3.
+
+2013-02-27 16:57  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4732] FIX : update user doc for electric arcs model
+
+2013-02-27 16:48  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4731] FIX translate comments for electric arcs
+
+2013-02-27 16:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4730] Ensure vertex values for quality criteria are
+	  synchronized across ranks.
+
+2013-02-27 16:08  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4729] FIX for low Reynolds RANS model : impose one velocity
+	  scale for wall functions (for listing purpose)
+
+2013-02-27 14:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4728] Allow compilation of C files on Blue Gene/Q with GNU
+	  compiler.
+
+2013-02-27 14:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4727] Improve compiler default flags for IBM XL C++.
+
+2013-02-27 13:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4726] Use more consistent placement of LIBS for library
+	  detection.
+
+2013-02-27 10:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4724] Add missing file from rev. 4720 for 'make dist'.
+
+2013-02-27 09:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4722] Fixes in mesh renumbering when renumbering is deactivated
+	  or mesh quantities are already computed.
+
+2013-02-26 18:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4720] Theory documentation: raise mesh algorithms one level,
+	  add bad cells flagging.
+
+2013-02-26 13:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4717] Fixes based on compiler warnings.
+
+2013-02-26 10:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4715] User documentation update.
+
+2013-02-26 10:30  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4713] RMB :-(
+
+2013-02-26 10:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4711] Minor fix in weakly compressible algo for fire when using
+	  temperature (idilat=4).
+
+2013-02-26 10:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4709] Change the value of ideuch for low Reynolds number RANS
+	  models, for listing purpose.
+
+2013-02-26 10:15  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4707] Fix in post-treatment of the turbulent fluxes in GGDH
+	  (iturt(iscal)=10).
+
+2013-02-26 10:07  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4705] Update user documentation (provided by Bruno Audebert
+	  <bruno.audebert@edf.fr>).
+
+2013-02-25 21:37  David Monfort <david.monfort@edf.fr>
+
+	* [r4703] Add a HAVE_SALOME conditional based on omniORB and
+	  KERNEL/GUI modules so as to fix SALOME modules compilation
+	  (CFD_STUDY and FSI).
+
+2013-02-25 15:18  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4702] FIX electric arc correction by plane
+
+2013-02-25 13:24  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4701] FIX detection of salome kernel to ensure intallation.
+	  Need an other correction
+
+2013-02-25 11:11  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4700] FIX bad test for minGW
+
+2013-02-24 18:18  David Monfort <david.monfort@edf.fr>
+
+	* [r4699] Split the test on SALOME Kernel in two separate ones (one
+	  for the Kernel itself, one for the Calcium library) since on some
+	  systems the Calcium library may not be made available with
+	  SALOME.
+
+2013-02-24 17:17  David Monfort <david.monfort@edf.fr>
+
+	* [r4698] Disable shared library support at the moment for MinGW
+	  hosts as it seems to conflict with user subroutines.
+
+2013-02-24 17:14  David Monfort <david.monfort@edf.fr>
+
+	* [r4697] Move Python detection before library tests so as to
+	  ensure a correct detection (esp. useful for some SALOME modules
+	  or prerequisites).
+
+2013-02-24 17:10  David Monfort <david.monfort@edf.fr>
+
+	* [r4696] Improve OmniORB detection and use.
+
+2013-02-24 16:11  David Monfort <david.monfort@edf.fr>
+
+	* [r4695] Use 'get_dir' function instead of 'dirs' member for
+	  Code_Aster coupling.
+
+2013-02-22 17:41  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4692] Fix uninitialized value (criterion for rhs residue in
+	  computation of y+ for SA, k-omega and LES turbulence models).
+
+2013-02-22 17:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4688] Update 'make dist' relative to user guide included
+	  graphics.
+
+2013-02-22 17:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4687] Extend standard run scripts to handle Code_Aster
+	  coupling.
+
+2013-02-22 15:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4685] Minor fix in a doxygen comment.
+
+2013-02-22 15:36  Dorothée Sénéchal <dorothee.senechal@edf.fr>
+
+	* [r4684] ncharm dimension extension for the pulverized fuel
+	  combustion
+
+2013-02-22 15:25  Dorothée Sénéchal <dorothee.senechal@edf.fr>
+
+	* [r4682] Update tutorial examples data and setup.
+
+2013-02-22 15:25  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4681] Add a macro for the VnV.
+
+2013-02-22 09:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4679] Ensure C and Fortran compilers are found.
+
+2013-02-22 09:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4678] When finalizing MPI, check if it has been done before
+	  (safer with external libraries).
+
+2013-02-22 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4677] Fix handling of loadable libraries in pkglibdir.
+
+2013-02-20 17:51  B90854
+
+	* [r4676] Minor update in user example comment.
+
+2013-02-20 17:26  B90854
+
+	* [r4674] Major user documentation update.
+
+2013-02-20 17:14  B90854
+
+	* [r4673] Fix in user example.
+
+2013-02-20 17:06  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4672] FIX replace xmlNode for null node
+
+2013-02-19 15:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4670] Fix in the refcard.
+
+2013-02-19 13:31  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4669] Update of the user guide (particle-tracking module
+	  section)
+
+2013-02-19 12:38  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4668] Fix in the URL on the EnSight doc in the user guide
+
+2013-02-19 12:26  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4666] Update refcard and autocompletion file.
+
+2013-02-19 09:03  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4665] FIX initialize turbulence for boundary conditions when
+	  dont read meteo data
+
+2013-02-18 14:56  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4664] FIX show meteo widget only when no meteo read data
+
+2013-02-18 10:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4663] Added function to redefine the current time step.
+
+2013-02-18 10:02  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4662] FIX fuel combustion and atmospheric flow for inlet in GUI
+
+2013-02-17 22:52  David Monfort <david.monfort@edf.fr>
+
+	* [r4661] Minor improvements for relocatable installations.
+
+2013-02-17 22:43  David Monfort <david.monfort@edf.fr>
+
+	* [r4660] Minor fixes in the SALOME module.
+
+2013-02-17 22:41  David Monfort <david.monfort@edf.fr>
+
+	* [r4659] Convert to Unix EOL so as to avoid EOL differences after
+	  edition.
+
+2013-02-17 22:40  David Monfort <david.monfort@edf.fr>
+
+	* [r4658] Update scripts to Python 2.6 version for consistency with
+	  SALOME.
+
+2013-02-17 20:26  David Monfort <david.monfort@edf.fr>
+
+	* [r4657] Fix sphinx-build detection and use.
+
+2013-02-17 20:14  David Monfort <david.monfort@edf.fr>
+
+	* [r4656] Fix the Doxygen and LaTeX compilation on Windows. (bis)
+
+2013-02-17 16:46  David Monfort <david.monfort@edf.fr>
+
+	* [r4655] Fix call to AM_PROG_AR in configure.ac to avoid warnings.
+
+2013-02-17 16:46  David Monfort <david.monfort@edf.fr>
+
+	* [r4654] Fix fig2dev trick on Windows to avoid errors on Linux.
+
+2013-02-17 16:08  David Monfort <david.monfort@edf.fr>
+
+	* [r4653] Improve documentation generation to handle some specific
+	  MikTeX issues.
+
+2013-02-15 18:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4651] External documentation links update.
+
+2013-02-15 16:18  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4649] Update theory doc.
+
+2013-02-15 09:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4648] Prepare for improvements in Syrthes coupling location
+	  error handling.
+
+2013-02-15 09:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4643] Minor improvement to rev. 4637.
+
+2013-02-14 18:03  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4641] Update documentation.
+
+2013-02-14 17:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4639] Minor documentation update.
+
+2013-02-14 17:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4637] Add missing ghost cell sync and avoid computations with
+	  potentially unsynchronized extended ghost cell values.
+
+2013-02-14 15:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4636] Also generate ChangeLog with "make dist" on git working
+	  copy.
+
+2013-02-14 12:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4634] Force initial halo synchronization for scalar gradient to
+	  extended halo. This avoids issues with floating-point exception
+	  trapping with standard halos, when some calcualtions are run on
+	  cells + ghost cells, and extended ghost cells contain unupdated
+	  values, which can lead to floating point errors: although the
+	  errors are on unused values, trapping them aborts the
+	  computation.
+
+2013-02-14 09:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4632] Add doxygen file.
+
+2013-02-13 17:53  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4630] Atmo: fix wrong pointer indirection.
+
+2013-02-13 14:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4627] Update INSTALL to a more recent version.
+
+2013-02-13 14:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4626] In case of Syrthes coupling mesh mismatch, use delayed
+	  stop instead of abort to avoid killing diagnostics.
+
+2013-02-13 14:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4625] Execution script case_domain variants consistency
+	  improvements.
+
+2013-02-13 13:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4624] Fix code_saturne compile on some architectures (such as
+	  Blue Gene/Q).
+
+2013-02-13 13:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4622] Make bootstrapping more robust across a variety of
+	  autotool chains.
+
+2013-02-13 11:24  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4620] Doxygen numvar.
+
+2013-02-13 10:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4618] Update doxygen examples.
+
+2013-02-13 09:57  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4616] Update doxygen.
+
+2013-02-12 17:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4615] Add missing file to previous commit.
+
+2013-02-12 17:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4614] Doxygen improvements.
+
+2013-02-12 14:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4613] Fix some Doxygen warnings.
+
+2013-02-12 08:49  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4611] FIX : add duplicate probes capabilities to GUI
+
+2013-02-12 08:43  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4610] add duplicate probes capabilities to GUI
+
+2013-02-11 17:15  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4609] Remove a missed variable in rev. 4604 (remove BGL
+	  support).
+
+2013-02-11 17:11  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4608] add control by time for output profiles
+
+2013-02-11 16:56  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4606] Fix many doxygen warnings.
+
+2013-02-11 15:20  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4605] FIX : use NOx only when defined
+
+2013-02-11 12:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4604] Remove Blue Gene/L support and associated execve-based
+	  MPMD mode.
+
+2013-02-11 10:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4602] Ensure -allow-multiple-definitions flag is set for IBM
+	  Blue Gene.
+
+2013-02-08 17:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4597] Cleanup for tutorial directory.
+
+2013-02-08 16:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4596] Remove spurious addition from rev. 4595.
+
+2013-02-08 16:36  Dorothée Sénéchal <dorothee.senechal@edf.fr>
+
+	* [r4595] Restore files spuriously removed on rev. 4584.
+
+2013-02-08 15:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4588] Fix in ALE: an an option to choose the way the mass flux
+	  due to mesh velocity is computed (iflxmw).
+
+2013-02-08 15:24  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4587] FIX search HCN/NH3 partition only when NOx model
+
+2013-02-08 15:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4586] Fix behavior of user scripts for case parameters.
+
+2013-02-08 15:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4585] Fix comments.
+
+2013-02-08 13:43  Dorothée Sénéchal <dorothee.senechal@edf.fr>
+
+	* [r4584] Update the tutorial guide and adding a new three 2D disks
+	  testcase dedicated to the coupling with the thermal code Syrthes
+
+2013-02-08 10:03  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4582] FIX update for QComboBox index when delItem
+
+2013-02-08 09:36  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4580] FIX confusion between view and model in index list
+
+2013-02-07 18:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4578] Make some user parameter subroutines optional even
+	  without the GUI.
+
+2013-02-07 17:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4576] Fix incorrect B.C pointer in compressible module.
+
+2013-02-07 17:16  B90854
+
+	* [r4574] Force segregated velocity solver for compressible module.
+
+2013-02-07 15:30  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4572] Update doxygen.
+
+2013-02-07 15:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4570] Update logo for Doxygen.
+
+2013-02-07 14:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4568] Allow choice of doxygen executable in configure.
+
+2013-02-07 14:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4566] Update logo in PDF documentation.
+
+2013-02-07 14:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4565] Update copyright.
+
+2013-02-07 11:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4563] Fix for least-squares vector gradient with reduced
+	  extended neighborhood (missing quantities update for imrgra 3 /
+	  ivelco 1 combination).
+
+2013-02-07 11:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4560] Update example user source file with caution comment.
+
+2013-02-06 16:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4559] Update doxygen examples with \skipped command.
+
+2013-02-06 16:11  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4557] Fix mass flow rate GUI reader in boundary conditions for
+	  gas combustion.
+
+2013-02-06 15:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4554] Fix user thin wall example for compatibility with mesh
+	  joining.
+
+2013-02-06 15:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4552] GUI: fix for auxiliary restart file status.
+
+2013-02-06 09:16  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4551] FIX for bad handling of whitespaces in paths
+
+2013-02-06 08:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4549] Fix bug introduced by merging rev. 4538 with revs. 4509
+	  and 4510.
+
+2013-02-06 08:16  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4547] Fix compilation bug introduced by merging rev. 4538 with
+	  revs. 4509 and 4510.
+
+2013-02-05 17:25  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4544] Fix bug in v2-f introduced in rev. 4079.
+
+2013-02-05 14:18  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4542] FIX control lenght before use for undo functions
+
+2013-02-05 12:42  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4540] Update doxygen.
+
+2013-02-05 09:00  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4538] Update doc.
+
+2013-02-05 08:42  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4537] FIX replace initalize by initialize
+
+2013-02-04 18:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4535] Fix some typos.
+
+2013-02-04 18:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4533] Fix dimension dependency for bad cells offsetting
+	  criteria, and avoid unneeded work array allocation.
+
+2013-02-04 15:03  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4531] Update doxygen.
+
+2013-02-04 13:21  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4529] Add missing doc file.
+
+2013-02-04 13:06  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4527] Add exmples of linking between theory doc and local
+	  doxygen doc.
+
+2013-02-04 11:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4526] Fixes for turbulent flux in checkpoint/restart.
+
+2013-02-04 10:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4524] Add missing parallel synchronization for bad cells
+	  criteria.
+
+2013-02-04 10:47  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4522] Update theory documentation.
+
+2013-02-04 10:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4520] Fix spelling for developer.
+
+2013-02-04 09:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4518] Robustness improvements for static builds.
+
+2013-02-04 09:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4516] Add field module for user physical property examples to
+	  avoid link issues.
+
+2013-02-04 09:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4514] Fixes for builds including Scotch or METIS.
+
+2013-02-01 18:39  B90854
+
+	* [r4511] Remove whitespace.
+
+2013-02-01 18:39  B90854
+
+	* [r4510] Add missing files to previous commit.
+
+2013-02-01 18:35  B90854
+
+	* [r4509] Fix variable physical properties for compressible model.
+
+2013-02-01 14:38  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4508] Lag. module: first stage of the reimplementation of the
+	  coal combustion model
+
+2013-02-01 12:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4506] GUI: fix volumic viscosity law choice behavior for
+	  compressible flow.
+
+2013-02-01 09:14  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4505] Lag. module: making the trajectography stage more robust
+
+2013-02-01 09:00  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4503] Lag. module: fix a bug in the number of particles to be
+	  visualized
+
+2013-01-31 18:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4501] Reduce floating-point number precision truncature by GUI.
+
+2013-01-31 09:43  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4499] Update tooltips for gui.
+
+2013-01-31 09:36  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4498] Change presentation in the gui of min/max clippings for
+	  the user scalars to -1e12/1e12 (in agreement with the Fortran
+	  initialization).
+
+2013-01-31 09:31  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4497] Remove trailing blanks.
+
+2013-01-31 09:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4495] Build fixes for Scotch and METIS.
+
+2013-01-30 13:55  B90854
+
+	* [r4491] GUI fixes for compressible module.
+
+2013-01-30 13:54  B90854
+
+	* [r4490] Do not allow PISO for steady calculation time scheme.
+
+2013-01-29 14:51  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4489] Lag. module: Remove useless temporary file 'scratch3.lag'
+	  at the end of the calculation
+
+2013-01-29 14:14  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4487] Fix bugs to restore Lagrangian trajectories output in
+	  sequential mode
+
+2013-01-29 14:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4486] GUI translation fixes.
+
+2013-01-29 13:07  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4484] Lag. module: fix a bug for the display of lost particles
+	  in parallel mode
+
+2013-01-28 18:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4483] Improve upon rev. 4480 (handling of whitespace).
+
+2013-01-28 16:36  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4481] Update doxygen documentation and fix in some user
+	  examples.
+
+2013-01-28 16:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4480] Improve handling of whitespace, so as to use quotes only
+	  where necessary.
+
+2013-01-28 13:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4478] Gas temperature/enthalpy: allow any size of array instead
+	  of ncharb as this may depend on caller.
+
+2013-01-28 12:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4475] Update file unit tests and improve some experimental file
+	  IO modes.
+
+2013-01-28 12:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4474] Remove obsolete architectures.
+
+2013-01-28 12:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4472] Update NEWS file.
+
+2013-01-28 08:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4470] Update documentation.
+
+2013-01-25 17:42  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4466] Remove trailing blanks.
+
+2013-01-25 17:40  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4465] Fix incorrect argument order in calling of uiclim (gas
+	  combustion).
+
+2013-01-25 16:26  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4464] FIX inherits missing for fuel combustion
+
+2013-01-25 13:18  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4463] FIX for initial temperature for fuel combustion models in
+	  GUI
+
+2013-01-23 16:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4459] Update for gfortran option syntax.
+
+2013-01-23 16:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4458] Documentation updates.
+
+2013-01-22 17:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4456] Partial user documentation update.
+
+2013-01-22 17:09  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4455] FIX some bugs in undo/redo function
+
+2013-01-21 13:33  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4454] FIX add EOS_* variables to Makefile.am
+
+2013-01-21 10:23  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4453] FIX bad cxx compilation; missing HAVE_CONFIG_H for cxx
+
+2013-01-20 23:08  David Monfort <david.monfort@edf.fr>
+
+	* [r4452] Windows port: executables are now installed in
+	  libexec/code_saturne too.
+
+2013-01-18 16:36  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4451] Lag. module: Possible activation of the particle
+	  deposition submodel through the GUI
+
+2013-01-18 09:13  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4450] Lag. module: Implementation of a zero-flux particle
+	  boundary condition to be applied with eulerian symmetries
+
+2013-01-17 14:31  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4448] Lag. module : Forbid the use of the broken trajectory and
+	  displacement post-processing in parallel mode
+
+2013-01-17 13:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4446] Improve user example.
+
+2013-01-16 16:41  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4444] In LES: restore the wall shear stress in the velocity
+	  components coupled solver (ivelco = 1) when the first cell is in
+	  the viscous sub-layer.
+
+2013-01-16 14:12  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4441] Update comments in function descriptions (missed in rev.
+	  4258).
+
+2013-01-16 13:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4439] Minor fix in user message missed from^Crevious changeset.
+
+2013-01-16 13:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4438] Complete rev. 4437 relative to MEI expressions including
+	  alpha for v2f model.
+
+2013-01-16 13:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4437] Follow-up to rev. 4433 (v2f-BL-v2/k in GUI) to improve
+	  consistency.
+
+2013-01-16 13:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4436] Fix comment.
+
+2013-01-16 08:47  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4433] change v2f phi model to v2f BL-v2k model
+
+2013-01-15 21:55  David Monfort <david.monfort@edf.fr>
+
+	* [r4432] Remove spurious 'fi' introduced in a recent changeset.
+
+2013-01-15 15:20  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4431] Fix update of Object Browser of SALOME in case of file of
+	  parameters copy from a directory to another.
+
+2013-01-15 15:18  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4430] Fix graphical detection of boundary conditions or volume
+	  regions through SALOME.
+
+2013-01-15 15:04  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4426] Fix in parallel mesh joining for case where a rank has no
+	  mergeable vertices.
+
+2013-01-15 14:46  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4425] Prerequiste EOS: the GUI updates the PYTHONPATH in order
+	  to find the modules of EOS.
+
+2013-01-15 14:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4422] Fix for autovnv VTK plot attribute settings.
+
+2013-01-15 13:52  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4421] Lag. module: Fix in the calculation restart
+
+2013-01-15 10:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4418] Add Open64 compiler support.
+
+2013-01-15 08:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4416] Update doc.
+
+2013-01-14 16:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4415] Use int instead of cs_lnum_t for MPI count array
+	  arguments.
+
+2013-01-14 16:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4414] Fix yet another mispritn from rev. 4402.
+
+2013-01-14 16:15  Alexandre Douce <alexandre.douce@edf.fr>
+
+	* [r4413] Fix misprints in python files introduced in rev 4402.
+
+2013-01-14 12:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4409] Minor log message fixes for restart.
+
+2013-01-14 10:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4407] Fix for Autovnv VTK plot when center is not (0,0,0).
+
+2013-01-14 09:21  Dorothée Sénéchal <dorothee.senechal@edf.fr>
+
+	* [r4405] Fix in weakly compressible algos (idilat = 2 or 3).
+
+2013-01-14 08:53  David Monfort <david.monfort@edf.fr>
+
+	* [r4404] Do not try to use AM_PROG_AR if not defined (with older
+	  Automake).
+
+2013-01-14 07:38  David Monfort <david.monfort@edf.fr>
+
+	* [r4403] Fix the use of assignment sign instead of comparison sign
+	  in the checkpoint feature.
+
+2013-01-11 18:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4402] Add handling of whitespace in paths. Based on changeset
+	  by David Monfort.
+
+2013-01-11 15:36  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4400] Lag. module: Implementation of a more robust way to
+	  compute stats to avoid crashes observed with the intel compiler
+	  in optimized mode
+
+2013-01-11 08:17  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4399] add cs_eos.m4 for eos detection
+
+2013-01-10 18:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4397] Fix matrix tuning logging bug.
+
+2013-01-10 17:35  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4395] Fix Valgrind error in CSENSO. Clean comments and typo.
+
+2013-01-10 15:34  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4394] add EOS detection
+
+2013-01-10 10:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4393] Replace cs_lnum_t by int for MPI count arguments.
+
+2013-01-09 16:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4392] Ensure floating-foint execptions are not trapped on Blue
+	  Gene/Q.
+
+2013-01-09 15:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4390] Use vectorial gradient in turrij.f90 and perform som
+	  cleaning.
+
+2013-01-09 13:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4388] Update Copyright.
+
+2013-01-09 13:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4384] Add ChangeLog for 2012.
+
+2013-01-09 12:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4383] Update bash completion for GUI.
+
+2013-01-09 09:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4381] Add EDF colors for autovnv.
+
+2013-01-08 16:36  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4379] Fix in ALE when no pressure step is performed.
+
+2013-01-08 14:24  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4377] Fix bug in GUI introduced in rev. 4347 (GUI: allow
+	  setting of RHS reconstruction sweeps for pressure.)
+
+2013-01-08 10:39  Mathieu Guingo <mathieu.guingo@edf.fr>
+
+	* [r4375] Lag. module: fix a potential issue in case of
+	  user-defined particle injection in parallel run
+
+2013-01-07 16:50  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r4374] add new case capability by GUI
+
+2013-01-04 18:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4372] Fix matrix operation tuning bugs.
+
+2013-01-04 18:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4370] Fix OpenMP bug.
+
+2013-01-04 13:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4369] Use code name instead of package name in log messages.
+
+2013-01-04 10:03  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4366] Major fix in Head Losses: - itrgpv.f90, itrmav.f90 and
+	  projtv.f90 are now adapted to anisotropic diffusion (same
+	  algorithm as diften.f90 for scalars) for ivelco=1 - fix in BCs on
+	  the rpessure field for ivelco=0 with head losses - the symmetric
+	  tensor K for head losses is stored as follows [k11, k22, k33,
+	  k12, k23, k13] instead of [k11, k22, k33, k12, k13, k23] to be
+	  consistent with the anisotropic diffusion operator. - pseudo
+	  pressure velocity coupling is also corrected.
+
+2013-01-04 09:50  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4364] Update doxygen documentation and translate some comments.
+
+2013-01-03 22:36  David Monfort <david.monfort@edf.fr>
+
+	* [r4363] Fix Doxygen compilation when configuring with a relative
+	  path
+
+2013-01-03 16:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4361] Build system fixes for use of OpenMP on Blue Gene/Q.
+
+2013-01-03 15:07  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4359] Cosmetic.
+
+2013-01-03 14:49  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r4357] Fix in the listing.
+
+2013-01-03 10:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4355] Fix OpenMP directives.
+
+2013-01-03 10:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4354] Fix indentation.
+
+2013-01-03 10:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4352] Remove extra argument leading to OpenMP compile error.
+
