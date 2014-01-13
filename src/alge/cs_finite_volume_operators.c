@@ -768,9 +768,8 @@ cs_finite_volume_face_gradient_scalar(
 
     /* Free memory */
     BFT_FREE(grad);
-    BFT_FREE(visel);
   }
-
+  BFT_FREE(visel);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1113,9 +1112,8 @@ cs_finite_volume_div_face_gradient_scalar(
 
     /* Free memory */
     BFT_FREE(grad);
-    BFT_FREE(visel);
   }
-
+  BFT_FREE(visel);
 }
 
 /*----------------------------------------------------------------------------*/
