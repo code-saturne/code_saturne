@@ -976,7 +976,7 @@ class mpi_environment:
                                'BullxMPI':self.__init_openmpi__,
                                'BGP_MPI':self.__init_bgp__,
                                'BGQ_MPI':self.__init_bgq__,
-                               'HP_MPI':self.__init_hp_mpi__,
+                               'Platform_MPI':self.__init_platform_mpi__,
                                'MPIBULL2':self.__init_mpibull2__}
             if self.type in mpi_env_by_type:
                 init_method = mpi_env_by_type[self.type]
@@ -1454,19 +1454,18 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_hp_mpi__(self, p, resource_info=None, wdir = None):
+    def __init_platform_mpi__(self, p, resource_info=None, wdir = None):
         """
-        Initialize for HP MPI environment.
+        Initialize for Platform MPI environment.
 
         The last version of HP MPI is version 2.3, released early 2009.
         HP MPI was then acquired by Platform MPI (formerly Scali MPI),
         which merged Scali MPI and HP MPI in Platform MPI 8.0.
-        Platform MPI still seems to use the mpirun launcher syntax.
         """
 
         # Determine base executable paths
 
-        self.mpiexec = 'mpirun'
+        self.mpiexec = 'mpirun' # mpiexec also possible, but fewer options
 
         for d in p:
             if not os.path.isabs(self.mpiexec):
@@ -1477,6 +1476,7 @@ class mpi_environment:
                     break
 
         # Determine processor count and MPMD handling
+        # Appfile also possible, but uses -np instead of -n
 
         self.mpmd = MPI_MPMD_script
         self.mpiexec_n = '-np'

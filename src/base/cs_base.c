@@ -999,8 +999,18 @@ cs_base_logfile_head(int    argc,
   snprintf(mpi_vendor_lib, 31, "MVAPICH2 %s", MVAPICH2_VERSION);
 #elif defined(MSMPI_VER)
   snprintf(mpi_vendor_lib, 31, "MS-MPI");
-#elif defined(HP_MPI)
-  snprintf(mpi_vendor_lib, 31, "HP-MPI");
+#elif defined(PLATFORM_MPI)
+  {
+    int v, v0, v1, v2, v3;
+    v0 =  PLATFORM_MPI>>24;
+    v =  (PLATFORM_MPI - (v0<<24));
+    v1 =  v>>16;
+    v =  (v - (v1<<16));
+    v2 =  v>>8;
+    v3 =  (v - (v2<<8));
+    snprintf(mpi_vendor_lib, 31, "Platform MPI %x.%x.%x.%x\n",
+             v0, v1, v2, v3);
+  }
 #endif
 
   mpi_vendor_lib[31] = '\0';

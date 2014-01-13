@@ -54,12 +54,12 @@ elif [ "$PMI_ID" != "" ] ; then
 elif [ "$SLURM_PROCID" != "" ] ; then
   MPI_RANK="$SLURM_PROCID"
 
-# Current systems for which we have no access (so trust docs)
-# -------------------------------------------
-
 # For IBM Platform MPI
 elif [ "$MPI_RANKID" != "" ] ; then
   MPI_RANK="$MPI_RANKID"
+
+# Current systems for which we have no access (so trust docs)
+# -------------------------------------------
 
 # For IBM PE
 elif [ "$MP_CHILD" != "" ] ; then

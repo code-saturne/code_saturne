@@ -259,14 +259,14 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                   [mpi_type=MPIBULL2])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([hp_mpi],
+    AC_EGREP_CPP([platform_mpi],
                  [
                   #include <mpi.h>
-                  #ifdef HP_MPI
-                  hp_mpi
+                  #ifdef PLATFORM_MPI
+                  cs_platform_mpi
                   #endif
                   ],
-                  [mpi_type=HP_MPI])
+                  [mpi_type=Platform_MPI])
   fi
 
   # Add a specific preprocessor directive to skip the MPI C++ bindings
