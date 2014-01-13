@@ -1654,14 +1654,12 @@ cs_field_destroy_all(void)
       BFT_FREE(f->val_pre);
     }
     if (f->bc_coeffs != NULL) {
-      if (f->is_owner == true) {
-        BFT_FREE(f->bc_coeffs->a);
-        BFT_FREE(f->bc_coeffs->b);
-        BFT_FREE(f->bc_coeffs->af);
-        BFT_FREE(f->bc_coeffs->bf);
-        BFT_FREE(f->bc_coeffs->ad);
-        BFT_FREE(f->bc_coeffs->bd);
-      }
+      BFT_FREE(f->bc_coeffs->a);
+      BFT_FREE(f->bc_coeffs->b);
+      BFT_FREE(f->bc_coeffs->af);
+      BFT_FREE(f->bc_coeffs->bf);
+      BFT_FREE(f->bc_coeffs->ad);
+      BFT_FREE(f->bc_coeffs->bd);
       BFT_FREE(f->bc_coeffs);
     }
   }
