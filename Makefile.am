@@ -102,6 +102,7 @@ ChangeLog.2009 \
 ChangeLog.2010 \
 ChangeLog.2011 \
 ChangeLog.2012 \
+ChangeLog.2013 \
 install_saturne.py \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
