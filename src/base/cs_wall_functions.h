@@ -54,40 +54,173 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute the friction velocity and y+/u+
+ * Wrapper to cs_wall_functions_velocity.
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 (
- const cs_int_t   *const iwallf,      /* <-- wall function type               */
- const cs_int_t   *const ifac,        /* <-- face number                      */
- const cs_real_t  *const xkappa,      /* <-- Von Karman constant              */
- const cs_real_t  *const cstlog,      /* <-- Log law constant                 */
- const cs_real_t  *const cmu025,      /* <-- C_mu^1/4                         */
- const cs_real_t  *const ypluli,      /* <-- y+ limit                         */
- const cs_real_t  *const apow,        /* <-- Coef of the Wener law            */
- const cs_real_t  *const bpow,        /* <-- Coef of the Wener law            */
- const cs_real_t  *const cpow,        /* <-- Coef of the Wener law            */
- const cs_real_t  *const viscosity,   /* <-- kinematic viscosity              */
- const cs_real_t  *const t_visc,      /* <-- turbulent kinematic viscosity    */
- const cs_real_t  *const vel,         /* <-- wall projected
-                                             cell center velocity             */
- const cs_real_t  *const y,           /* <-- wall distance                    */
- const cs_real_t  *const kinetic_en,  /* <-- turbulente kinetic energy        */
-       cs_int_t         *iuntur,      /* <-- indicator:
-                                              0 in the viscous sublayer       */
-       cs_int_t         *nsubla,      /* <-- counter of cell in the viscous
-                                             sublayer                         */
-       cs_int_t         *nlogla,      /* <-- counter of cell in the log-layer */
-       cs_real_t        *ustar,       /* --> friction velocity                */
-       cs_real_t        *uk,          /* --> friction velocity                */
-       cs_real_t        *yplus,       /* --> non-dimension wall distance      */
-       cs_real_t        *ypup,        /* --> yplus projected vel ratio        */
-       cs_real_t        *cofimp,      /* --> |U_F|/|U_I^p| to ensure a good
-                                             turbulence production            */
-       cs_real_t        *dplus        /* --> dimensionless shift to the wall
-                                             for scalable wall functions      */
-);
+ const cs_lnum_t  *const iwallf,
+ const cs_lnum_t  *const ifac,
+ const cs_real_t  *const xkappa,
+ const cs_real_t  *const cstlog,
+ const cs_real_t  *const cmu025,
+ const cs_real_t  *const ypluli,
+ const cs_real_t  *const apow,
+ const cs_real_t  *const bpow,
+ const cs_real_t  *const cpow,
+ const cs_real_t  *const viscosity,
+ const cs_real_t  *const t_visc,
+ const cs_real_t  *const vel,
+ const cs_real_t  *const y,
+ const cs_real_t  *const kinetic_en,
+       cs_lnum_t        *iuntur,
+       cs_lnum_t        *nsubla,
+       cs_lnum_t        *nlogla,
+       cs_real_t        *ustar,
+       cs_real_t        *uk,
+       cs_real_t        *yplus,
+       cs_real_t        *ypup,
+       cs_real_t        *cofimp,
+       cs_real_t        *dplus);
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_wall_functions_scalar.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (hturbp, HTURBP)
+(
+ const cs_real_t  *const prl,
+ const cs_real_t  *const prt,
+ const cs_real_t  *const ckarm,
+ const cs_real_t  *const yplus,
+ const cs_real_t  *const dplus,
+       cs_real_t        *htur,
+       cs_real_t        *yplim);
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*! \brief  Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
+
+*/
+/*-------------------------------------------------------------------------------
+  Arguments
+ ______________________________________________________________________________.
+   mode           name          role                                           !
+ ______________________________________________________________________________*/
+/*!
+ * \param[in]     iwallf        wall function type
+ * \param[in]     ifac          face number
+ * \param[in]     xkappa        Von Karman constant
+ * \param[in]     cstlog        Log law constant
+ * \param[in]     cmu025        \f$ C_{\mu}^{1/4} \f$
+ * \param[in]     ypluli        \f$y^+\f$ limit
+ * \param[in]     apow          Coef of the Wener law
+ * \param[in]     bpow          Coef of the Wener law
+ * \param[in]     dpow          Coef of the Wener law
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     t_visc        turbulent kinematic viscosity
+ * \param[in]     vel           wall projected
+ *                              cell center velocity
+ * \param[in]     y             wall distance
+ * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[in]     iuntur        indicator:
+ *                              0 in the viscous sublayer
+ * \param[in]     nsubla        counter of cell in the viscous
+ *                              sublayer
+ * \param[in]     nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         non-dimension wall distance
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ * \param[out]    dplus         dimensionless shift to the wall
+ *                              for scalable wall functions
+ */
+/*-------------------------------------------------------------------------------*/
+
+void
+cs_wall_functions_velocity(cs_lnum_t    iwallf,
+                           cs_lnum_t    ifac,
+                           cs_real_t    xkappa,
+                           cs_real_t    cstlog,
+                           cs_real_t    cmu025,
+                           cs_real_t    ypluli,
+                           cs_real_t    apow,
+                           cs_real_t    bpow,
+                           cs_real_t    dpow,
+                           cs_real_t    l_visc,
+                           cs_real_t    t_visc,
+                           cs_real_t    vel,
+                           cs_real_t    y,
+                           cs_real_t    kinetic_en,
+                           cs_lnum_t   *iuntur,
+                           cs_lnum_t   *nsubla,
+                           cs_lnum_t   *nlogla,
+                           cs_real_t   *ustar,
+                           cs_real_t   *uk,
+                           cs_real_t   *yplus,
+                           cs_real_t   *ypup,
+                           cs_real_t   *cofimp,
+                           cs_real_t   *dplus);
+
+/*-------------------------------------------------------------------------------*/
+
+/*! \brief Compute the correction of the exchange coefficient between the fluid and
+  the wall for a turbulent flow.
+
+  This is function of the dimensionless
+  distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
+
+  Then the return coefficient reads:
+  \f[
+  h_{tur} = Pr \dfrac{y^+}{T^+}
+  \f]
+
+  This coefficient is computed thanks to a similarity model between
+  dynamic viscous sub-layer and themal sub-layer.
+
+  \f$ T^+ \f$ is computed as follows:
+
+  - For a laminar Prandtl number smaller than 0.1 (such as liquid metals),
+    the standard model with two sub-layers (Prandtl-Taylor) is used.
+
+  - For a laminar Prandtl number larger than 0.1 (such as liquids and gaz),
+    a model with three sub-layers (Arpaci-Larsen) is used.
+
+  The final exchange coefficient is:
+  \f[
+  h = \dfrac{K}{\centip \centf} h_{tur}
+  \f]
+
+*/
+/*-------------------------------------------------------------------------------
+  Arguments
+ ______________________________________________________________________________.
+   mode           name          role                                           !
+ ______________________________________________________________________________*/
+/*!
+ * \param[in]     prl           laminar Prandtl number
+ * \param[in]     prt           turbulent Prandtl number
+ * \param[in]     ckarm         Von Karman constant
+ * \param[in]     yplus         dimensionless distance to the wall
+ * \param[in]     dplus         dimensionless distance for scalable
+ *                              wall functions
+ * \param[out]    htur          corrected exchange coefficient
+ * \param[out]    yplim         value of the limit for \f$ y^+ \f$
+ */
+/*-------------------------------------------------------------------------------*/
+
+void
+cs_wall_functions_scalar(double  prl,
+                         double  prt,
+                         double  ckarm,
+                         double  yplus,
+                         double  dplus,
+                         double  *htur,
+                         double  *yplim);
 
 /*----------------------------------------------------------------------------*/
 
