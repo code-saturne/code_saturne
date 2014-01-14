@@ -394,7 +394,7 @@ if (iirayo.gt.0) then
 ! --> i_quadrature
 !     Selection de la quadrature
   if (iirayo.eq.1) then
-    if (i_quadrature.lt.1 .or. i_quadrature.gt.6) then
+    if (i_quadrature.lt.1 .or. i_quadrature.gt.8) then
       write(nfecra, 4015) i_quadrature
       iok = iok + 1
     endif
