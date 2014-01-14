@@ -108,7 +108,7 @@ class package:
         if self.config.features['relocatable'] == "no":
             return self.dirs[installdir][1]
 
-        # Second, check is CS_ROOT_DIR is set
+        # Second, check if CS_ROOT_DIR is set
         prefix = os.getenv('CS_ROOT_DIR')
 
         # Third, assume that SALOME is being used
@@ -186,6 +186,8 @@ class package:
         if os.path.isdir(pythondir):
             import sys
             sys.path.insert(0, pythondir)
+            import cs_config
+            reload(cs_config)
             import cs_package
             reload(cs_package)
             pkg = cs_package.package()
