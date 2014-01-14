@@ -576,8 +576,6 @@ elseif (i_quadrature.eq.8) then
   vec(3)   = 0.681779900
   vec(4)   = 0.265240148
 
-  poids(2) = 8 * datan(1.0d0) / 96.0d0
-
   sx(1)   = vec(1)
   sx(2)   = vec(3)
   sx(3)   = vec(3)
@@ -599,6 +597,9 @@ elseif (i_quadrature.eq.8) then
   sz(5)   = vec(3)
   sz(6)   = vec(2)
 
+  poids(1) = 0.121876566
+  poids(2) = 0.139922822
+  
   angsol(1) = poids(1)
   angsol(2) = poids(2)
   angsol(3) = poids(2)
