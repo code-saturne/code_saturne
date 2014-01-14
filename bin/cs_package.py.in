@@ -216,6 +216,8 @@ class package:
         if os.path.isdir(pythondir):
             import sys
             sys.path.insert(0, pythondir)
+            import cs_config
+            reload(cs_config)
             import cs_package
             reload(cs_package)
             pkg = cs_package.package()
