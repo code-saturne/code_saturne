@@ -83,6 +83,14 @@ elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
 
   ndirs = ndirec * ndirec
 
+elseif (i_quadrature.eq.7) then   ! Quadrature 120 directions (LC11)
+
+  ndirs = 15
+
+elseif (i_quadrature.eq.8) then   ! Quadrature 48 directions (DCT020-2468)
+
+  ndirs = 6
+
 endif
 
 call init_quadrature(ndirs)
@@ -493,6 +501,110 @@ elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
   deallocate(x3d)
   deallocate(y3d)
   deallocate(z3d)
+
+elseif (i_quadrature.eq.7) then
+
+  vec(1)   = 0.963560905
+  vec(2)   = 0.189143308
+  vec(3)   = 0.772965714
+  vec(4)   = 0.448622338
+  vec(5)   = 0.686596043
+  vec(6)   = 0.239106143
+  vec(7)   = 0.879538138
+  vec(8)   = 0.475828397
+  vec(9)   = 0.000000000
+  poids(1) = 16 * datan(1.0d0) / 96.0d0
+  poids(2) = 8 * datan(1.0d0) / 96.0d0
+
+  sx(1)   = vec(1)
+  sx(2)   = vec(2)
+  sx(3)   = vec(2)
+  sx(4)   = vec(3)
+  sx(5)   = vec(4)
+  sx(6)   = vec(4)
+  sx(7)   = vec(5)
+  sx(8)   = vec(5)
+  sx(9)   = vec(6)
+  sx(10)  = vec(7)
+  sx(11)  = vec(8)
+  sx(12)  = vec(9)
+  sx(13)  = vec(9)
+  sx(14)  = vec(8)
+  sx(15)  = vec(7)
+
+  sy(1)   = vec(2)
+  sy(2)   = vec(1)
+  sy(3)   = vec(2)
+  sy(4)   = vec(4)
+  sy(5)   = vec(3)
+  sy(6)   = vec(3)
+  sy(7)   = vec(6)
+  sy(8)   = vec(5)
+  sy(9)   = vec(5)
+  sy(10)  = vec(8)
+  sy(11)  = vec(7)
+  sy(12)  = vec(7)
+  sy(13)  = vec(8)
+  sy(14)  = vec(9)
+  sy(15)  = vec(9)
+
+  sz(1)   = vec(2)
+  sz(2)   = vec(2)
+  sz(3)   = vec(1)
+  sz(4)   = vec(4)
+  sz(5)   = vec(4)
+  sz(6)   = vec(3)
+  sz(7)   = vec(5)
+  sz(8)   = vec(6)
+  sz(9)   = vec(5)
+  sz(10)  = vec(9)
+  sz(11)  = vec(9)
+  sz(12)  = vec(8)
+  sz(13)  = vec(7)
+  sz(14)  = vec(7)
+  sz(15)  = vec(8)
+
+
+  angsol(1:9) = poids(1)
+  angsol(10:15) = poids(2)
+
+
+elseif (i_quadrature.eq.8) then
+
+  vec(1)   = 0.939848342
+  vec(2)   = 0.241542019
+  vec(3)   = 0.681779900
+  vec(4)   = 0.265240148
+
+  poids(2) = 8 * datan(1.0d0) / 96.0d0
+
+  sx(1)   = vec(1)
+  sx(2)   = vec(3)
+  sx(3)   = vec(3)
+  sx(4)   = vec(2)
+  sx(5)   = vec(4)
+  sx(6)   = vec(2)
+
+  sy(1)   = vec(2)
+  sy(2)   = vec(4)
+  sy(3)   = vec(3)
+  sy(4)   = vec(2)
+  sy(5)   = vec(3)
+  sy(6)   = vec(1)
+
+  sz(1)   = vec(2)
+  sz(2)   = vec(3)
+  sz(3)   = vec(4)
+  sz(4)   = vec(1)
+  sz(5)   = vec(3)
+  sz(6)   = vec(2)
+
+  angsol(1) = poids(1)
+  angsol(2) = poids(2)
+  angsol(3) = poids(2)
+  angsol(4) = poids(1)
+  angsol(5) = poids(2)
+  angsol(6) = poids(1)
 
 endif
 

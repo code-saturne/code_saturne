@@ -130,16 +130,16 @@ class ThermalRadiationModel(Variables, Model):
         """
         dico = {}
         rayName = ['srad',     'qrad',     'absorp',  'emiss',    'coefAb',
-                    'wall_temp', 'flux_incident', 'thermal_conductivity', 'thickness',
-                    'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
+                   'wall_temp', 'flux_incident', 'thermal_conductivity', 'thickness',
+                   'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
 
         raylabF = ['Srad',       'Qrad',          'Absorp',     'Emiss',    'CoefAb',
-                    'Temp_paroi', 'Flux_incident', 'Conductivite_th', 'Epaisseur',
-                'Emissivite', 'Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
+                   'Temp_paroi', 'Flux_incident', 'Conductivite_th', 'Epaisseur',
+                   'Emissivite', 'Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
 
         raylabE = ['Srad',      'Qrad',      'Absorp',          'Emiss',    'CoefAb',
-                    'Wall_temp', 'Flux_incident', 'Th_conductivity', 'Thickness',
-                'Emissivity','Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
+                   'Wall_temp', 'Flux_incident', 'Th_conductivity', 'Thickness',
+                   'Emissivity','Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
 
         dico['name'] = rayName
         dico['labF'] = raylabF
@@ -234,7 +234,7 @@ class ThermalRadiationModel(Variables, Model):
     @Variables.undoLocal
     def setQuadrature(self, val):
         """ Put value of the selected quadrature """
-        self.isIntInList(val, [1, 2, 3, 4, 5, 6])
+        self.isIntInList(val, [1, 2, 3, 4, 5, 6, 7, 8])
         self.isInList(self.getRadiativeModel(), ('off', 'dom'))
         self.node_ray.xmlSetData('quadrature', val)
 

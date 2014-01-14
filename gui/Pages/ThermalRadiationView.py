@@ -194,7 +194,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         # Combo models
 
         self.modelRadModel   = QtPage.ComboModel(self.comboBoxRadModel, 3, 1)
-        self.modelDirection  = QtPage.ComboModel(self.comboBoxQuadrature, 6, 1)
+        self.modelDirection  = QtPage.ComboModel(self.comboBoxQuadrature, 8, 1)
         self.modelAbsorption = QtPage.ComboModel(self.comboBoxAbsorption, 3, 1)
 
         self.modelRadModel.addItem("No radiative transfers", 'off')
@@ -207,6 +207,8 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelDirection.addItem("32 directions (T2)",   "4")
         self.modelDirection.addItem("128 directions (T4)",  "5")
         self.modelDirection.addItem("8n^2 directions (Tn)", "6")
+        self.modelDirection.addItem("120 directions (LC11)", "7")
+        self.modelDirection.addItem("48 directions (DCT020-2468)", "8")
 
         # Connections
 
