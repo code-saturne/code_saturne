@@ -9,6 +9,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix handling of installs with alternative compute packages, such as
+  that necessary for a BlueGene/Q front-end.
+
 - Minor Fixes to info messages for CCMIO output.
 
 - Fix pressure derive (listing) in compressible.
