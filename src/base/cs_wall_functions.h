@@ -59,7 +59,7 @@ BEGIN_C_DECLS
 
 void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 (
- const cs_lnum_t  *const iwallf,
+ const cs_int_t   *const iwallf,
  const cs_lnum_t  *const ifac,
  const cs_real_t  *const xkappa,
  const cs_real_t  *const cstlog,
@@ -73,7 +73,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const vel,
  const cs_real_t  *const y,
  const cs_real_t  *const kinetic_en,
-       cs_lnum_t        *iuntur,
+       cs_int_t        *iuntur,
        cs_lnum_t        *nsubla,
        cs_lnum_t        *nlogla,
        cs_real_t        *ustar,
@@ -142,7 +142,7 @@ void CS_PROCF (hturbp, HTURBP)
 /*-------------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_velocity(cs_lnum_t    iwallf,
+cs_wall_functions_velocity(int          iwallf,
                            cs_lnum_t    ifac,
                            cs_real_t    xkappa,
                            cs_real_t    cstlog,
@@ -156,7 +156,7 @@ cs_wall_functions_velocity(cs_lnum_t    iwallf,
                            cs_real_t    vel,
                            cs_real_t    y,
                            cs_real_t    kinetic_en,
-                           cs_lnum_t   *iuntur,
+                           int         *iuntur,
                            cs_lnum_t   *nsubla,
                            cs_lnum_t   *nlogla,
                            cs_real_t   *ustar,

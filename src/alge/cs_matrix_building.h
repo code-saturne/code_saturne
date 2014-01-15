@@ -55,24 +55,18 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix
+ * Wrapper to cs_matrix_scalar
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrix, MATRIX)
 (
- const cs_int_t  *const   n_cells_ext,
- const cs_int_t  *const   n_cells,
  const cs_int_t  *const   n_i_faces,
- const cs_int_t  *const   n_b_faces,
  const cs_int_t  *const   iconvp,
  const cs_int_t  *const   idiffp,
  const cs_int_t  *const   ndircp,
  const cs_int_t  *const   isym,
- const cs_int_t  *const   nfecra,
  const cs_real_t *const   thetap,
  const cs_int_t  *const   imucpp,
- const cs_lnum_2_t        i_face_cells[],
- const cs_int_t           b_face_cells[],
  const cs_real_t          coefbp[],
  const cs_real_t          cofbfp[],
  const cs_real_t          rovsdt[],
@@ -85,23 +79,16 @@ void CS_PROCF (matrix, MATRIX)
  cs_real_t                xa[][*n_i_faces]);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrxv
+ * Wrapper to cs_matrix_vector
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrxv, MATRXV)
 (
- const cs_int_t  *const   n_cells_ext,
- const cs_int_t  *const   n_cells,
- const cs_int_t  *const   n_i_faces,
- const cs_int_t  *const   n_b_faces,
  const cs_int_t  *const   iconvp,
  const cs_int_t  *const   idiffp,
  const cs_int_t  *const   ndircp,
  const cs_int_t  *const   isym,
- const cs_int_t  *const   nfecra,
  const cs_real_t *const   thetap,
- const cs_lnum_2_t        i_face_cells[],
- const cs_int_t           b_face_cells[],
  const cs_real_33_t       coefbu[],
  const cs_real_33_t       cofbfu[],
  const cs_real_33_t       fimp[],
@@ -113,7 +100,7 @@ void CS_PROCF (matrxv, MATRXV)
  cs_real_2_t              xa[]);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrdr
+ * Wrapper to cs_matrix_time_step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrdt, MATRDT)
@@ -130,23 +117,16 @@ void CS_PROCF (matrdt, MATRDT)
  cs_real_t                da[]);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrvv
+ * Wrapper to cs_matrix_tensorial_diffusion
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrvv, MATRVV)
 (
- const cs_int_t  *const   n_cells_ext,
- const cs_int_t  *const   n_cells,
- const cs_int_t  *const   n_i_faces,
- const cs_int_t  *const   n_b_faces,
  const cs_int_t  *const   iconvp,
  const cs_int_t  *const   idiffp,
  const cs_int_t  *const   ndircp,
  const cs_int_t  *const   isym,
- const cs_int_t  *const   nfecra,
  const cs_real_t *const   thetap,
- const cs_lnum_2_t        i_face_cells[],
- const cs_int_t           b_face_cells[],
  const cs_real_33_t       coefbu[],
  const cs_real_33_t       cofbfu[],
  const cs_real_33_t       fimp[],
@@ -161,25 +141,17 @@ void CS_PROCF (matrvv, MATRVV)
  * Public function prototypes
  *============================================================================*/
 
-/*! \brief This function builds the matrix of advection/diffusion for a scalar
-  field.
-
-  The advection is upwind, the diffusion is not reconstructed.
-  The matrix is splitted into a diagonal block (number of cells)
-  and an extra diagonal part (of dimension 2 time the number of internal
-  faces).
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
+/*----------------------------------------------------------------------------*/
 /*!
- * \param[in]     n_cells_ext   number of extended (real + ghost) cells
- * \param[in]     n_cells       number of cells
+ * \brief Build the advection/diffusion matrix for a scalar field.
+ *
+ * The advection is upwind, the diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (number of cells)
+ * and an extra diagonal part (of dimension 2 time the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
  * \param[in]     n_i_faces     number of interior faces
- * \param[in]     n_b_faces     number of boundary faces
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -191,21 +163,19 @@ void CS_PROCF (matrvv, MATRVV)
  * \param[in]     isym          indicator
  *                               - 1 symmetric matrix
  *                               - 2 non symmmetric matrix
- * \param[in]     thetap        weightening coefficient for the theta-schema,
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
  * \param[in]     imucpp        indicator
- *                               - 0 do not multiply the convectiv term by Cp
- *                               - 1 do multiply the convectiv term by Cp
- * \param[in]     i_face_cells  cell indices of interior faces
- * \param[in]     b_face_cells  cell indices of boundary faces
+ *                               - 0 do not multiply the convective term by Cp
+ *                               - 1 do multiply the convective term by Cp
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     rovsdt        working array
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -220,19 +190,14 @@ void CS_PROCF (matrvv, MATRVV)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_scalar(
-                 int                       n_cells_ext,
-                 int                       n_cells,
-                 int                       n_i_faces,
-                 int                       n_b_faces,
+cs_matrix_scalar(const cs_mesh_t          *m,
+                 const cs_lnum_t           n_i_faces,
                  int                       iconvp,
                  int                       idiffp,
                  int                       ndircp,
                  int                       isym,
                  double                    thetap,
                  int                       imucpp,
-                 const cs_lnum_2_t         i_face_cells[],
-                 const cs_int_t            b_face_cells[],
                  const cs_real_t           coefbp[],
                  const cs_real_t           cofbfp[],
                  const cs_real_t           rovsdt[],
@@ -245,26 +210,15 @@ cs_matrix_scalar(
                  cs_real_t                 xa[][n_i_faces]);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function builds the matrix of advection/diffusion for a vector
-  field.
-
-  The advection is upwind, the diffusion is not reconstructed.
-  The matrix is splitted into a diagonal block (3x3 times number of cells)
-  and an extra diagonal part (of dimension 2 time the number of internal
-  faces).
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
- * \param[in]     n_cells_ext   number of extended (real + ghost) cells
- * \param[in]     n_cells       number of cells
- * \param[in]     n_i_faces     number of interior faces
- * \param[in]     n_b_faces     number of boundary faces
+ * \brief Build the advection/diffusion matrix for a vector field.
+ *
+ * The advection is upwind, the diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension 2 time the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -276,19 +230,16 @@ cs_matrix_scalar(
  * \param[in]     isym          indicator
  *                               - 1 symmetric matrix
  *                               - 2 non symmmetric matrix
- * \param[in]     thetap        weightening coefficient for the theta-schema,
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     i_face_cells  cell indices of interior faces
- * \param[in]     b_face_cells  cell indices of boundary faces
  * \param[in]     coefbu        boundary condition array for the variable
- *                               (Impplicit part - 3x3 tensor array)
+ *                               (Implicit part - 3x3 tensor array)
  * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (Impplicit part - 3x3 tensor array)
- * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
+ *                               (Implicit part - 3x3 tensor array)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -301,18 +252,12 @@ cs_matrix_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector(
-                 int                       n_cells_ext,
-                 int                       n_cells,
-                 int                       n_i_faces,
-                 int                       n_b_faces,
+cs_matrix_vector(const cs_mesh_t          *m,
                  int                       iconvp,
                  int                       idiffp,
                  int                       ndircp,
                  int                       isym,
                  double                    thetap,
-                 const cs_lnum_2_t         i_face_cells[],
-                 const cs_int_t            b_face_cells[],
                  const cs_real_33_t        coefbu[],
                  const cs_real_33_t        cofbfu[],
                  const cs_real_33_t        fimp[],
@@ -324,17 +269,11 @@ cs_matrix_vector(
                  cs_real_2_t     *restrict xa);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief Construction of the diagonal of the advection/diffusion matrix
-  for determining the variable time step, flow, Fourier.
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Build the diagonal of the advection/diffusion matrix
+ * for determining the variable time step, flow, Fourier.
+ *
+ * \param[in]     m             pointer to mesh structure
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -345,9 +284,9 @@ cs_matrix_vector(
  *                               - 1 symmetric matrix
  *                               - 2 non symmmetric matrix
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -359,7 +298,7 @@ cs_matrix_vector(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_time_step(
+cs_matrix_time_step(const cs_mesh_t          *m,
                     int                       iconvp,
                     int                       idiffp,
                     int                       isym,
@@ -372,26 +311,16 @@ cs_matrix_time_step(
                     cs_real_t       *restrict da);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function builds the matrix of advection/diffusion for a vector
-  field with a tensorial diffusivity.
-
-  The advection is upwind, the diffusion is not reconstructed.
-  The matrix is splitted into a diagonal block (3x3 times number of cells)
-  and an extra diagonal part (of dimension 2 times 3x3 the number of internal
-  faces).
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
- * \param[in]     n_cells_ext   number of extended (real + ghost) cells
- * \param[in]     n_cells       number of cells
- * \param[in]     n_i_faces     number of interior faces
- * \param[in]     n_b_faces     number of boundary faces
+ * \brief Build the advection/diffusion matrix for a vector field with a
+ * tensorial diffusivity.
+ *
+ * The advection is upwind, the diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension 2 times 3x3 the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -403,18 +332,16 @@ cs_matrix_time_step(
  * \param[in]     isym          indicator
  *                               - 1 symmetric matrix
  *                               - 2 non symmmetric matrix
- * \param[in]     thetap        weightening coefficient for the theta-schema,
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     i_face_cells  cell indices of interior faces
- * \param[in]     b_face_cells  cell indices of boundary faces
  * \param[in]     coefbu        boundary condition array for the variable
- *                               (Impplicit part - 3x3 tensor array)
+ *                               (Implicit part - 3x3 tensor array)
  * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (Impplicit part - 3x3 tensor array)
+ *                               (Implicit part - 3x3 tensor array)
  * \param[in]     fimp
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -428,18 +355,12 @@ cs_matrix_time_step(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_tensorial_diffusion(
-                              int                       n_cells_ext,
-                              int                       n_cells,
-                              int                       n_i_faces,
-                              int                       n_b_faces,
+cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
                               int                       iconvp,
                               int                       idiffp,
                               int                       ndircp,
                               int                       isym,
                               double                    thetap,
-                              const cs_lnum_2_t         i_face_cells[],
-                              const cs_int_t            b_face_cells[],
                               const cs_real_33_t        coefbu[],
                               const cs_real_33_t        cofbfu[],
                               const cs_real_33_t        fimp[],

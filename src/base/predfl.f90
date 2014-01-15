@@ -278,11 +278,8 @@ imucpp = 0
 
 call matrix &
 !==========
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   iconvp , idiffp , ndircp ,                                     &
-   isym   , nfecra ,                                              &
+ ( nfac   , iconvp , idiffp , ndircp , isym   ,                   &
    thetap , imucpp ,                                              &
-   ifacel , ifabor ,                                              &
    clbpot , cfbpot , pot    ,                                     &
    imasfl , bmasfl , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )

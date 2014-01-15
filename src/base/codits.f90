@@ -361,10 +361,8 @@ endif
 
 call matrix &
 !==========
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   iconvp , idiffp , ndircp , isym   , nfecra ,                   &
+ ( nfac   , iconvp , idiffp , ndircp , isym   ,                   &
    thetap , imucpp ,                                              &
-   ifacel , ifabor ,                                              &
    coefbp , cofbfp , rovsdt , flumas , flumab , viscfm , viscbm , &
    xcpp   , dam    , xam    )
 

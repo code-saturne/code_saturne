@@ -342,10 +342,8 @@ if (iesize.eq.1) then
 
   call matrxv &
   !==========
-   ( ncelet , ncel   , nfac   , nfabor ,                            &
-     iconvp , idiffp , ndircp , isym   , nfecra ,                   &
+   ( iconvp , idiffp , ndircp , isym   ,                            &
      thetap ,                                                       &
-     ifacel , ifabor ,                                              &
      coefbv , cofbfv , fimp   ,                                     &
      flumas , flumab , viscfm , viscbm ,                            &
      dam    , xam    )
@@ -354,10 +352,8 @@ elseif (iesize.eq.3) then
 
   call matrvv &
   !==========
-   ( ncelet , ncel   , nfac   , nfabor ,                            &
-     iconvp , idiffp , ndircp , isym   , nfecra ,                   &
+   ( iconvp , idiffp , ndircp , isym   ,                            &
      thetap ,                                                       &
-     ifacel , ifabor ,                                              &
      coefbv , cofbfv , fimp   ,                                     &
      flumas , flumab , viscfm , viscbm ,                            &
      dam    , xam    )
