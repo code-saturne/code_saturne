@@ -684,8 +684,12 @@ class case:
             cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
             e.write(cmd)
             s_args = d.solver_command()
-            cmd = '#mpmdcmd ' + os.path.relpath(s_args[1], self.exec_dir) \
-                + s_args[2] \
+            if s_args[1][0:2] == './':
+                s_path = os.path.relpath(os.path.join(s_args[0], s_args[1]),
+                                         self.exec_dir)
+            else:
+                s_path = s_args[1]
+            cmd = '#mpmdcmd ' + s_path + s_args[2] \
                 + ' -w ' + os.path.basename(s_args[0]) + '\n'
             e.write(cmd)
             e.write('#mpmdend\n')
@@ -695,8 +699,12 @@ class case:
             cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
             e.write(cmd)
             s_args = d.solver_command()
-            cmd = '#mpmdcmd ' + os.path.relpath(s_args[1], self.exec_dir) \
-                + s_args[2] \
+            if s_args[1][0:2] == './':
+                s_path = os.path.relpath(os.path.join(s_args[0], s_args[1]),
+                                         self.exec_dir)
+            else:
+                s_path = s_args[1]
+            cmd = '#mpmdcmd ' + s_path + s_args[2] \
                 + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
             e.write(cmd)
             e.write('#mpmdend\n')
