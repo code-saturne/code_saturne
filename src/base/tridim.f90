@@ -219,12 +219,6 @@ if(ipass.eq.1.and.ineedy.eq.1.and.abs(icdpar).eq.1.and.           &
   enddo
 endif
 
-!    Initialisation de pthera (pther est deja initialise ou lu dans
-!    un fichier suite pour l'algorithme a masse volumique variable
-
-if (idilat.eq.3) then
-  pthera = pther
-endif
 
 !===============================================================================
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION

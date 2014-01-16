@@ -869,6 +869,14 @@ if (iwarni(ivar).ge.2) then
   else
     ibcl = 0
   endif
+  ! Low Mach compressible algos (conservative in time)
+  if (idilat.gt.1) then
+    ipcrho = ipcroa
+
+    ! Standard algo
+  else
+    ipcrho = ipcrom
+  endif
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                 &
             - istat(ivar)*xcpp(iel)*(propce(iel,ipcrom)/dt(iel))*volume(iel)&

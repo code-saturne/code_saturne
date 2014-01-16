@@ -495,9 +495,9 @@ if (iappel.eq.1) then
   elseif (iphydr.eq.2) then
     do iel = 1, ncel
       rom = propce(iel, ipcrom)
-      trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel)
-      trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel)
-      trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel)
+      trav(1,iel) = (rom*gx - grdphd(iel,1) - grad(iel,1)) * volume(iel)
+      trav(2,iel) = (rom*gy - grdphd(iel,2) - grad(iel,2)) * volume(iel)
+      trav(3,iel) = (rom*gz - grdphd(iel,3) - grad(iel,3)) * volume(iel)
     enddo
   else
     do iel = 1, ncel
@@ -519,9 +519,9 @@ elseif(iappel.eq.2) then
   elseif (iphydr.eq.2) then
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
-      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1)) * volume(iel)
-      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2)) * volume(iel)
-      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3)) * volume(iel)
+      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1) - grad(iel,1)) * volume(iel)
+      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2) - grad(iel,2)) * volume(iel)
+      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3) - grad(iel,3)) * volume(iel)
     enddo
   else
     do iel = 1, ncel

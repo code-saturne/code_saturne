@@ -86,8 +86,10 @@ module cstphy
 
   !   pther  : Thermodynamic pressure for the current time step
   !   pthera : Thermodynamic pressure for the previous time step
+  !   pthermax: Thermodynamic maximum pressure for user clipping,
+  !             used to model a venting effect
 
-  double precision, save :: pther, pthera
+  double precision, save :: pther, pthera, pthermax
 
   ! Turbulence
   !   ivisls = 0 : viscosite laminaire constante = visls0

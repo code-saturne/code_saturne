@@ -1032,8 +1032,7 @@ if (ncesmp.gt.0) then
 endif
 
 ! --- Source term associated to the mass aggregation
-if ((idilat.eq.2.or.idilat.eq.3).and. &
-    (ntcabs.gt.1).and.(isuite.gt.0)) then
+if (idilat.eq.2.or.idilat.eq.3) then
   do iel = 1, ncel
     drom = propce(iel,ipcrom) - propce(iel,ipcroa)
     w7(iel) = w7(iel) + drom*volume(iel)/dt(iel)
