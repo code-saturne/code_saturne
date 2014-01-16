@@ -253,7 +253,7 @@ climgp = climgr(ipr)
 
 call projts                                                       &
 !==========
- ( init   , nswrgp , nfecra ,                                     &
+ ( init   , nswrgp ,                                              &
    dfext  ,                                                       &
    cofbfp ,                                                       &
    flumas, flumab ,                                               &
@@ -261,8 +261,7 @@ call projts                                                       &
    w10    , w10    , w10    )
 
 init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-            ifacel,ifabor,flumas,flumab,w7)
+call divmas(init,flumas,flumab,w7)
 call prodsc(ncel,isqrt,w7,w7,rnorm)
 
 
@@ -388,7 +387,7 @@ do isweep = 1, nswmpr
     call itrgrp &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfext  ,                                                       &
    phydr  ,                                                       &

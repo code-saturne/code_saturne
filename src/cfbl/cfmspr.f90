@@ -270,8 +270,7 @@ do ifac = 1, nfabor
 enddo
 
 init = 0
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                                &
-            ifacel,ifabor,wflmas,wflmab,smbrs)
+call divmas(init,wflmas,wflmab,smbrs)
 
 ! (Delta t)_ij is calculated as the "viscocity" associated to the pressure
 imvis1 = 1
@@ -394,7 +393,7 @@ iphydp = 0
 call itrmas                                                                     &
 !==========
 ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,                         &
-  iphydp , iwarnp , nfecra ,                                                    &
+  iphydp , iwarnp ,                                                             &
   epsrgp , climgp , extrap ,                                                    &
   rvoid  ,                                                                      &
   rtp(1,ivar)     ,                                                             &

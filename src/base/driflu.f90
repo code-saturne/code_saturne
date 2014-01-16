@@ -315,7 +315,7 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).or.    &
   call itrmas &
   !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
    viscce ,                                                       &
@@ -464,11 +464,7 @@ init = 1
 iconvp = iconv(ivar)
 thetap = thetav(ivar)
 
-call divmas &
- ( ncelet , ncel   , nfac   , nfabor , init   , nfecra ,    &
-   ifacel , ifabor ,                                        &
-   flumas , flumab ,                                        &
-   w1     )
+call divmas(init, flumas, flumab, w1)
 
 ! NB: if the porosity module is swiched on, the the porosity is already
 ! taken into account in w1

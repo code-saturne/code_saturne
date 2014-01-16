@@ -1161,9 +1161,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   if (iescal(iescor).gt.0) then
     init = 1
-    call divmas(ncelet, ncel, nfac, nfabor, init, nfecra,         &
-    !==========
-                ifacel, ifabor, esflum, esflub, w1)
+    call divmas(init, esflum, esflub, w1)
 
     if (ncetsm.gt.0) then
       !$omp parallel do private(iel) if(ncetsm > thr_n_min)

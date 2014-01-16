@@ -62,8 +62,6 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
-#include "cs_parall.h"
-
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -110,29 +108,19 @@ BEGIN_C_DECLS
 
 void CS_PROCF (divmas, DIVMAS)
 (
- const cs_int_t  *const   n_cells_ext,
- const cs_int_t  *const   n_cells,
- const cs_int_t  *const   n_i_faces,
- const cs_int_t  *const   n_b_faces,
  const cs_int_t  *const   init,
- const cs_int_t  *const   nfecra,
- const cs_lnum_2_t        i_face_cells[],
- const cs_int_t           b_face_cells[],
  const cs_real_t          i_massflux[],
  const cs_real_t          b_massflux[],
- cs_real_t                diverg[])
+ cs_real_t                diverg[]
+)
 {
-  cs_finite_volume_divergence(*n_cells_ext,
-                              *n_cells,
-                              *n_i_faces,
-                              *n_b_faces,
+  const cs_mesh_t  *m = cs_glob_mesh;
+
+  cs_finite_volume_divergence(m,
                               *init,
-                              i_face_cells,
-                              b_face_cells,
                               i_massflux,
                               b_massflux,
                               diverg);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -149,7 +137,6 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   iphydp,
  const cs_int_t  *const   iwarnp,
- const cs_int_t  *const   nfecra,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -165,9 +152,15 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_real_t          visely[],
  const cs_real_t          viselz[],
  cs_real_t                i_massflux[],
- cs_real_t                b_massflux[])
+ cs_real_t                b_massflux[]
+)
 {
-  cs_finite_volume_face_gradient_scalar(*init,
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_finite_volume_face_gradient_scalar(m,
+                                        fvq,
+                                        *init,
                                         *inc,
                                         *imrgra,
                                         *iccocg,
@@ -191,7 +184,6 @@ void CS_PROCF (itrmas, ITRMAS)
                                         viselz,
                                         i_massflux,
                                         b_massflux);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -208,7 +200,6 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   iphydp,
  const cs_int_t  *const   iwarnp,
- const cs_int_t  *const   nfecra,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -223,32 +214,37 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_real_t          viselx[],
  const cs_real_t          visely[],
  const cs_real_t          viselz[],
- cs_real_t                diverg[])
+ cs_real_t                diverg[]
+)
 {
-  cs_finite_volume_div_face_gradient_scalar(*init,
-                                                   *inc,
-                                                   *imrgra,
-                                                   *iccocg,
-                                                   *nswrgp,
-                                                   *imligp,
-                                                   *iphydp,
-                                                   *iwarnp,
-                                                   *epsrgp,
-                                                   *climgp,
-                                                   *extrap,
-                                                   frcxt,
-                                                   pvar,
-                                                   coefap,
-                                                   coefbp,
-                                                   cofafp,
-                                                   cofbfp,
-                                                   i_visc,
-                                                   b_visc,
-                                                   viselx,
-                                                   visely,
-                                                   viselz,
-                                                   diverg);
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
+  cs_finite_volume_div_face_gradient_scalar(m,
+                                            fvq,
+                                            *init,
+                                            *inc,
+                                            *imrgra,
+                                            *iccocg,
+                                            *nswrgp,
+                                            *imligp,
+                                            *iphydp,
+                                            *iwarnp,
+                                            *epsrgp,
+                                            *climgp,
+                                            *extrap,
+                                            frcxt,
+                                            pvar,
+                                            coefap,
+                                            coefbp,
+                                            cofafp,
+                                            cofbfp,
+                                            i_visc,
+                                            b_visc,
+                                            viselx,
+                                            visely,
+                                            viselz,
+                                            diverg);
 }
 
 /*----------------------------------------------------------------------------
@@ -259,7 +255,6 @@ void CS_PROCF (projts, PROJTS)
 (
  const cs_int_t  *const   init,
  const cs_int_t  *const   nswrgu,
- const cs_int_t  *const   nfecra,
  const cs_real_3_t        frcxt[],
  const cs_real_t          cofbfp[],
  cs_real_t                i_massflux[],
@@ -268,9 +263,15 @@ void CS_PROCF (projts, PROJTS)
  const cs_real_t          b_visc[],
  const cs_real_t          viselx[],
  const cs_real_t          visely[],
- const cs_real_t          viselz[])
+ const cs_real_t          viselz[]
+)
 {
-  cs_finite_volume_face_source_terms_scalar(*init,
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_finite_volume_face_source_terms_scalar(m,
+                                            fvq,
+                                            *init,
                                             *nswrgu,
                                             frcxt,
                                             cofbfp,
@@ -281,7 +282,6 @@ void CS_PROCF (projts, PROJTS)
                                             viselx,
                                             visely,
                                             viselz);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -293,7 +293,6 @@ void CS_PROCF (projtv, PROJTV)
  const cs_int_t  *const   init,
  const cs_int_t  *const   nswrgu,
  const cs_int_t  *const   ircflp,
- const cs_int_t  *const   nfecra,
  const cs_real_3_t        frcxt[],
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
@@ -303,7 +302,12 @@ void CS_PROCF (projtv, PROJTV)
  cs_real_t                i_massflux[],
  cs_real_t                b_massflux[])
 {
-  cs_finite_volume_face_source_terms_vector(*init,
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_finite_volume_face_source_terms_vector(m,
+                                            fvq,
+                                            *init,
                                             *nswrgu,
                                             *ircflp,
                                             frcxt,
@@ -314,35 +318,24 @@ void CS_PROCF (projtv, PROJTV)
                                             weighf,
                                             i_massflux,
                                             b_massflux);
-
 }
 
 /*============================================================================
  * Public function definitions
  *============================================================================*/
 
-/*! \brief This function adds the integrated mass flux on the cells.
-
-  \f[
-  \dot{m}_i = \dot{m}_i + \sum_{\fij \in \Facei{\celli}} \dot{m}_\ij
-  \f]
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
+/*----------------------------------------------------------------------------*/
 /*!
- * \param[in]     n_cells_ext   number of extended (real + ghost) cells
- * \param[in]     n_cells       number of cells
- * \param[in]     n_i_faces     number of interior faces
- * \param[in]     n_b_faces     number of boundary faces
+ * \brief Add the integrated mass flux on the cells.
+ *
+ * \f[
+ * \dot{m}_i = \dot{m}_i + \sum_{\fij \in \Facei{\celli}} \dot{m}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
  * \param[in]     init          indicator
  *                               - 1 initialize the divergence to 0
  *                               - 0 otherwise
- * \param[in]     i_face_cells  cell indexes of interior faces
- * \param[in]     b_face_cells  cell indexes of boundary faces
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in,out] diverg        mass flux divergence
@@ -350,20 +343,14 @@ void CS_PROCF (projtv, PROJTV)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_divergence(
-                            int                       n_cells_ext,
-                            int                       n_cells,
-                            int                       n_i_faces,
-                            int                       n_b_faces,
+cs_finite_volume_divergence(const cs_mesh_t          *m,
                             int                       init,
-                            const cs_lnum_2_t         i_face_cells[],
-                            const cs_int_t            b_face_cells[],
                             const cs_real_t           i_massflux[],
                             const cs_real_t           b_massflux[],
                             cs_real_t       *restrict diverg)
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -371,11 +358,10 @@ cs_finite_volume_divergence(
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  /* Local variables */
-
-  int cell_id, face_id, ii, jj, g_id, t_id;
-
-  /*==========================================================================*/
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
 
   /*==========================================================================
     1. Initialization
@@ -383,12 +369,12 @@ cs_finite_volume_divergence(
 
   if (init >= 1) {
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       diverg[cell_id] = 0.;
     }
   } else if (init == 0 && n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
-    for (cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       diverg[cell_id] = 0.;
     }
   } else if (init != 0) {
@@ -401,15 +387,15 @@ cs_finite_volume_divergence(
     2. Integration on internal faces
     ==========================================================================*/
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
-#   pragma omp parallel for private(face_id, ii, jj)
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
-      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = i_face_cells[face_id][0] - 1;
-        jj = i_face_cells[face_id][1] - 1;
+        cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+        cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
         diverg[ii] += i_massflux[face_id];
         diverg[jj] -= i_massflux[face_id];
@@ -423,14 +409,14 @@ cs_finite_volume_divergence(
     3. Integration on border faces
     ==========================================================================*/
 
-  for (g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for private(face_id, ii) if(n_b_faces > THR_MIN)
-    for (t_id = 0; t_id < n_b_threads; t_id++) {
-      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = b_face_cells[face_id] - 1;
+        cs_lnum_t ii = b_face_cells[face_id] - 1;
         diverg[ii] += b_massflux[face_id];
 
       }
@@ -440,22 +426,17 @@ cs_finite_volume_divergence(
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function updates the face mass flux with the face pressure
-  (or pressure increment, or pressure double increment) gradient.
-
-   \f[
-   \dot{m}_\ij = \dot{m}_\ij
-               - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
-   \f]
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Update the face mass flux with the face pressure (or pressure
+ * increment, or pressure double increment) gradient.
+ *
+ * \f[
+ * \dot{m}_\ij = \dot{m}_\ij
+ *             - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
@@ -505,7 +486,8 @@ cs_finite_volume_divergence(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_face_gradient_scalar(
+cs_finite_volume_face_gradient_scalar(const cs_mesh_t          *m,
+                                      cs_mesh_quantities_t     *fvq,
                                       int                       init,
                                       int                       inc,
                                       int                       imrgra,
@@ -531,9 +513,7 @@ cs_finite_volume_face_gradient_scalar(
                                       cs_real_t       *restrict i_massflux,
                                       cs_real_t       *restrict b_massflux)
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const int n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
@@ -562,13 +542,6 @@ cs_finite_volume_face_gradient_scalar(
 
   bool recompute_cocg = (iccocg) ? true : false;
 
-  int face_id, ii, jj, g_id, t_id;
-  double pfac,pip;
-  double dpxf  , dpyf  , dpzf;
-  double dijpfx, dijpfy, dijpfz;
-  double diipbx, diipby, diipbz;
-  double dijx  , dijy  , dijz;
-
   cs_real_3_t *grad;
   cs_real_3_t *visel;
 
@@ -581,7 +554,7 @@ cs_finite_volume_face_gradient_scalar(
     ==========================================================================*/
 
   BFT_MALLOC(visel, n_cells_ext, cs_real_3_t);
-  for (ii = 0; ii < n_cells_ext; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     visel[ii][0] = viselx[ii];
     visel[ii][1] = visely[ii];
     visel[ii][2] = viselz[ii];
@@ -589,11 +562,11 @@ cs_finite_volume_face_gradient_scalar(
 
   if (init >= 1) {
 #   pragma omp parallel for
-    for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_massflux[face_id] = 0.;
     }
 #   pragma omp parallel for if(m->n_b_faces > THR_MIN)
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       b_massflux[face_id] = 0.;
     }
   } else if(init != 0) {
@@ -626,15 +599,15 @@ cs_finite_volume_face_gradient_scalar(
 
     /* Mass flow through interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
           i_massflux[face_id] += i_visc[face_id]*(pvar[ii] -pvar[jj]);
 
@@ -644,16 +617,15 @@ cs_finite_volume_face_gradient_scalar(
 
     /* Mass flow through boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, pfac)                       \
-                 if(m->n_b_faces > THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
-          pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
+          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
           b_massflux[face_id] += b_visc[face_id]*pfac;
 
@@ -699,35 +671,37 @@ cs_finite_volume_face_gradient_scalar(
 
     if (halo != NULL) {
       cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)visel, 3);
-      if (cs_glob_mesh->n_init_perio > 0)
+      if (m->n_init_perio > 0)
         cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)visel, 3);
     }
 
     /* Mass flow through interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, dpxf, dpyf, dpzf, \
-                                      dijpfx, dijpfy, dijpfz, dijx, dijy, dijz)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
-          dpxf = 0.5*(visel[ii][0]*grad[ii][0] + visel[jj][0]*grad[jj][0]);
-          dpyf = 0.5*(visel[ii][1]*grad[ii][1] + visel[jj][1]*grad[jj][1]);
-          dpzf = 0.5*(visel[ii][2]*grad[ii][2] + visel[jj][2]*grad[jj][2]);
+          double dpxf = 0.5*(  visel[ii][0]*grad[ii][0]
+                             + visel[jj][0]*grad[jj][0]);
+          double dpyf = 0.5*(  visel[ii][1]*grad[ii][1]
+                             + visel[jj][1]*grad[jj][1]);
+          double dpzf = 0.5*(  visel[ii][2]*grad[ii][2]
+                             + visel[jj][2]*grad[jj][2]);
 
-          dijpfx = dijpf[face_id][0];
-          dijpfy = dijpf[face_id][1];
-          dijpfz = dijpf[face_id][2];
+          double dijpfx = dijpf[face_id][0];
+          double dijpfy = dijpf[face_id][1];
+          double dijpfz = dijpf[face_id][2];
 
           /*---> Dij = IJ - (IJ.N) N */
-          dijx = (cell_cen[jj][0]-cell_cen[ii][0])-dijpfx;
-          dijy = (cell_cen[jj][1]-cell_cen[ii][1])-dijpfy;
-          dijz = (cell_cen[jj][2]-cell_cen[ii][2])-dijpfz;
+          double dijx = (cell_cen[jj][0]-cell_cen[ii][0])-dijpfx;
+          double dijy = (cell_cen[jj][1]-cell_cen[ii][1])-dijpfy;
+          double dijz = (cell_cen[jj][2]-cell_cen[ii][2])-dijpfz;
 
           i_massflux[face_id] =  i_massflux[face_id]
                                + i_visc[face_id]*(pvar[ii] - pvar[jj])
@@ -740,25 +714,23 @@ cs_finite_volume_face_gradient_scalar(
 
     /* Mass flow through boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,     \
-                                      pip, pfac)                               \
-                 if(m->n_b_faces > THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id] - 1;
 
-          diipbx = diipb[face_id][0];
-          diipby = diipb[face_id][1];
-          diipbz = diipb[face_id][2];
+          double diipbx = diipb[face_id][0];
+          double diipby = diipb[face_id][1];
+          double diipbz = diipb[face_id][2];
 
-          pip = pvar[ii] + grad[ii][0]*diipbx
-                         + grad[ii][1]*diipby
-                         + grad[ii][2]*diipbz;
-          pfac = inc*cofafp[face_id] + cofbfp[face_id]*pip;
+          double pip = pvar[ii] + grad[ii][0]*diipbx
+                                + grad[ii][1]*diipby
+                                + grad[ii][2]*diipbz;
+          double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pip;
 
           b_massflux[face_id] += b_visc[face_id]*pfac;
 
@@ -773,22 +745,17 @@ cs_finite_volume_face_gradient_scalar(
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function updates the cell mass flux divergence with the face
-  pressure (or pressure increment, or pressure double increment) gradient.
-
-  \f[
-  \dot{m}_\ij = \dot{m}_\ij
-              - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
-  \f]
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Update the cell mass flux divergence with the face pressure (or
+ * pressure increment, or pressure double increment) gradient.
+ *
+ *\f[
+ *\dot{m}_\ij = \dot{m}_\ij
+ *            - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
+ *\f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
@@ -837,7 +804,8 @@ cs_finite_volume_face_gradient_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_div_face_gradient_scalar(
+cs_finite_volume_div_face_gradient_scalar(const cs_mesh_t          *m,
+                                          cs_mesh_quantities_t     *fvq,
                                           int                       init,
                                           int                       inc,
                                           int                       imrgra,
@@ -862,9 +830,7 @@ cs_finite_volume_div_face_gradient_scalar(
                                           const cs_real_t           viselz[],
                                           cs_real_t       *restrict diverg)
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -895,13 +861,6 @@ cs_finite_volume_div_face_gradient_scalar(
 
   bool recompute_cocg = (iccocg) ? true : false;
 
-  int face_id, ii, jj, g_id, t_id;
-  double pfac,pip;
-  double dpxf  , dpyf  , dpzf  , i_massflux, b_massflux;
-  double dijpfx, dijpfy, dijpfz;
-  double diipbx, diipby, diipbz;
-  double dijx  , dijy  , dijz;
-
   cs_real_3_t *grad;
   cs_real_3_t *visel;
 
@@ -912,7 +871,7 @@ cs_finite_volume_div_face_gradient_scalar(
     ==========================================================================*/
 
   BFT_MALLOC(visel, n_cells_ext, cs_real_3_t);
-  for (ii = 0; ii < n_cells_ext; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     visel[ii][0] = viselx[ii];
     visel[ii][1] = visely[ii];
     visel[ii][2] = viselz[ii];
@@ -920,12 +879,12 @@ cs_finite_volume_div_face_gradient_scalar(
 
   if (init >= 1) {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells_ext; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
   } else if (init == 0 && n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
-    for (ii = n_cells; ii < n_cells_ext; ii++) {
+    for (cs_lnum_t ii = n_cells; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
   } else if (init != 0) {
@@ -959,17 +918,17 @@ cs_finite_volume_div_face_gradient_scalar(
 
     /* Mass flow through interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, i_massflux)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
-          i_massflux = i_visc[face_id]*(pvar[ii] -pvar[jj]);
+          double i_massflux = i_visc[face_id]*(pvar[ii] -pvar[jj]);
           diverg[ii] += i_massflux;
           diverg[jj] -= i_massflux;
 
@@ -979,18 +938,17 @@ cs_finite_volume_div_face_gradient_scalar(
 
     /* Mass flow through boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, pfac, b_massflux)           \
-                 if(m->n_b_faces > THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
-          pfac = inc*cofafp[face_id] +cofbfp[face_id]*pvar[ii];
+          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          double pfac = inc*cofafp[face_id] +cofbfp[face_id]*pvar[ii];
 
-          b_massflux = b_visc[face_id]*pfac;
+          double b_massflux = b_visc[face_id]*pfac;
           diverg[ii] += b_massflux;
 
         }
@@ -1039,40 +997,41 @@ cs_finite_volume_div_face_gradient_scalar(
 
     if (halo != NULL) {
       cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)visel, 3);
-      if (cs_glob_mesh->n_init_perio > 0)
+      if (m->n_init_perio > 0)
         cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)visel, 3);
     }
 
     /* Mass flow through interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, dpxf, dpyf, dpzf,       \
-                                      dijpfx, dijpfy, dijpfz,                  \
-                                      dijx, dijy, dijz, i_massflux)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
-          dijpfx = dijpf[face_id][0];
-          dijpfy = dijpf[face_id][1];
-          dijpfz = dijpf[face_id][2];
+          double dijpfx = dijpf[face_id][0];
+          double dijpfy = dijpf[face_id][1];
+          double dijpfz = dijpf[face_id][2];
 
           /*---> Dij = IJ - (IJ.N) N */
-          dijx = (cell_cen[jj][0]-cell_cen[ii][0])-dijpfx;
-          dijy = (cell_cen[jj][1]-cell_cen[ii][1])-dijpfy;
-          dijz = (cell_cen[jj][2]-cell_cen[ii][2])-dijpfz;
+          double dijx = (cell_cen[jj][0]-cell_cen[ii][0])-dijpfx;
+          double dijy = (cell_cen[jj][1]-cell_cen[ii][1])-dijpfy;
+          double dijz = (cell_cen[jj][2]-cell_cen[ii][2])-dijpfz;
 
-          dpxf = 0.5*(visel[ii][0]*grad[ii][0] + visel[jj][0]*grad[jj][0]);
-          dpyf = 0.5*(visel[ii][1]*grad[ii][1] + visel[jj][1]*grad[jj][1]);
-          dpzf = 0.5*(visel[ii][2]*grad[ii][2] + visel[jj][2]*grad[jj][2]);
+          double dpxf = 0.5*(  visel[ii][0]*grad[ii][0]
+                             + visel[jj][0]*grad[jj][0]);
+          double dpyf = 0.5*(  visel[ii][1]*grad[ii][1]
+                             + visel[jj][1]*grad[jj][1]);
+          double dpzf = 0.5*(  visel[ii][2]*grad[ii][2]
+                             + visel[jj][2]*grad[jj][2]);
 
-          i_massflux =   i_visc[face_id]*(pvar[ii] -pvar[jj])
-                       +  (dpxf*dijx + dpyf*dijy + dpzf*dijz)
-                         *i_face_surf[face_id]/i_dist[face_id];
+          double i_massflux =   i_visc[face_id]*(pvar[ii] -pvar[jj])
+                              +  (dpxf*dijx + dpyf*dijy + dpzf*dijz)
+                                *i_face_surf[face_id]/i_dist[face_id];
 
           diverg[ii] += i_massflux;
           diverg[jj] -= i_massflux;
@@ -1083,27 +1042,25 @@ cs_finite_volume_div_face_gradient_scalar(
 
     /* Mass flow through boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,     \
-                                      pip, pfac, b_massflux)                   \
-                 if(m->n_b_faces > THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id] - 1;
 
-          diipbx = diipb[face_id][0];
-          diipby = diipb[face_id][1];
-          diipbz = diipb[face_id][2];
+          double diipbx = diipb[face_id][0];
+          double diipby = diipb[face_id][1];
+          double diipbz = diipb[face_id][2];
 
-          pip = pvar[ii] + grad[ii][0]*diipbx
-                         + grad[ii][1]*diipby
-                         + grad[ii][2]*diipbz;
-          pfac = inc*cofafp[face_id] +cofbfp[face_id]*pip;
+          double pip = pvar[ii] + grad[ii][0]*diipbx
+                                + grad[ii][1]*diipby
+                                + grad[ii][2]*diipbz;
+          double pfac = inc*cofafp[face_id] +cofbfp[face_id]*pip;
 
-          b_massflux = b_visc[face_id]*pfac;
+          double b_massflux = b_visc[face_id]*pfac;
           diverg[ii] += b_massflux;
 
         }
@@ -1117,18 +1074,13 @@ cs_finite_volume_div_face_gradient_scalar(
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function projects the external source terms to the faces
-  in coherence with itrmas.f90 for the improved hydrostatic pressure
-  algorithm (iphydr=1).
-
-*/
-/*----------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Project the external source terms to the faces in coherence with
+ * cs_finite_volume_face_gradient_scalar for the improved hydrostatic pressure
+ * algorithm (iphydr=1).
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
@@ -1150,7 +1102,8 @@ cs_finite_volume_div_face_gradient_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_face_source_terms_scalar(
+cs_finite_volume_face_source_terms_scalar(const cs_mesh_t          *m,
+                                          cs_mesh_quantities_t     *fvq,
                                           int                       init,
                                           int                       nswrgu,
                                           const cs_real_3_t         frcxt[],
@@ -1163,9 +1116,6 @@ cs_finite_volume_face_source_terms_scalar(
                                           const cs_real_t           visely[],
                                           const cs_real_t           viselz[])
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
@@ -1184,16 +1134,6 @@ cs_finite_volume_face_source_terms_scalar(
   const cs_real_3_t *restrict dijpf
     = (const cs_real_3_t *restrict)fvq->dijpf;
 
-  /* Local variables */
-
-  int face_id, ii, jj;
-  double dijpfx,dijpfy,dijpfz;
-  double diipx,diipy,diipz;
-  double djjpx,djjpy,djjpz;
-  double distbf,surfn;
-
-  double pnd;
-
   /*==========================================================================*/
 
   /*==========================================================================
@@ -1201,10 +1141,10 @@ cs_finite_volume_face_source_terms_scalar(
     ==========================================================================*/
 
   if (init == 1) {
-    for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_massflux[face_id] = 0.;
     }
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       b_massflux[face_id] = 0.;
     }
 
@@ -1221,10 +1161,10 @@ cs_finite_volume_face_source_terms_scalar(
 
     /* Mass flow through interior faces */
 
-    for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      ii = i_face_cells[face_id][0] - 1;
-      jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
       i_massflux[face_id] =  i_massflux[face_id]
                            + i_visc[face_id]*(
@@ -1246,11 +1186,11 @@ cs_finite_volume_face_source_terms_scalar(
 
     /* Mass flux through boundary faces */
 
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      ii = b_face_cells[face_id] - 1;
-      surfn = b_face_surf[face_id];
-      distbf = b_dist[face_id];
+      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      double surfn = b_face_surf[face_id];
+      double distbf = b_dist[face_id];
 
       b_massflux[face_id] =  b_massflux[face_id]
                            +  b_visc[face_id]*distbf/surfn
@@ -1270,27 +1210,27 @@ cs_finite_volume_face_source_terms_scalar(
 
     /* Mass flux through interior faces */
 
-    for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      ii = i_face_cells[face_id][0] - 1;
-      jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
-      pnd = weight[face_id];
+      double pnd = weight[face_id];
 
-      dijpfx = dijpf[face_id][0];
-      dijpfy = dijpf[face_id][1];
-      dijpfz = dijpf[face_id][2];
+      double dijpfx = dijpf[face_id][0];
+      double dijpfy = dijpf[face_id][1];
+      double dijpfz = dijpf[face_id][2];
 
-      surfn = i_face_surf[face_id];
+      double surfn = i_face_surf[face_id];
 
       /* Recompute II' and JJ' at this level */
 
-      diipx = i_face_cog[face_id][0]-cell_cen[ii][0]-(1.-pnd)*dijpfx;
-      diipy = i_face_cog[face_id][1]-cell_cen[ii][1]-(1.-pnd)*dijpfy;
-      diipz = i_face_cog[face_id][2]-cell_cen[ii][2]-(1.-pnd)*dijpfz;
-      djjpx = i_face_cog[face_id][0]-cell_cen[jj][0]+pnd*dijpfx;
-      djjpy = i_face_cog[face_id][1]-cell_cen[jj][1]+pnd*dijpfy;
-      djjpz = i_face_cog[face_id][2]-cell_cen[jj][2]+pnd*dijpfz;
+      double diipx = i_face_cog[face_id][0]-cell_cen[ii][0]-(1.-pnd)*dijpfx;
+      double diipy = i_face_cog[face_id][1]-cell_cen[ii][1]-(1.-pnd)*dijpfy;
+      double diipz = i_face_cog[face_id][2]-cell_cen[ii][2]-(1.-pnd)*dijpfz;
+      double djjpx = i_face_cog[face_id][0]-cell_cen[jj][0]+pnd*dijpfx;
+      double djjpy = i_face_cog[face_id][1]-cell_cen[jj][1]+pnd*dijpfy;
+      double djjpz = i_face_cog[face_id][2]-cell_cen[jj][2]+pnd*dijpfz;
 
       i_massflux[face_id] =  i_massflux[face_id]
                            + i_visc[face_id]*(
@@ -1321,11 +1261,11 @@ cs_finite_volume_face_source_terms_scalar(
 
     /* Mass flux through boundary faces */
 
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      ii = b_face_cells[face_id] - 1;
-      surfn = b_face_surf[face_id];
-      distbf = b_dist[face_id];
+      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      double surfn = b_face_surf[face_id];
+      double distbf = b_dist[face_id];
 
       b_massflux[face_id] = b_massflux[face_id]
                            + b_visc[face_id]*distbf/surfn
@@ -1340,18 +1280,13 @@ cs_finite_volume_face_source_terms_scalar(
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function projects the external source terms to the faces
-  in coherence with itrmav.f90 for the improved hydrostatic pressure
-  algorithm (iphydr=1).
-
-*/
-/*----------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Project the external source terms to the faces in coherence with
+ *  cs_finite_volume_div_face_gradient_scalar for the improved hydrostatic
+ * pressure algorithm (iphydr=1).
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
@@ -1376,7 +1311,8 @@ cs_finite_volume_face_source_terms_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_face_source_terms_vector(
+cs_finite_volume_face_source_terms_vector(const cs_mesh_t          *m,
+                                          cs_mesh_quantities_t     *fvq,
                                           int                       init,
                                           int                       nswrgp,
                                           int                       ircflp,
@@ -1389,9 +1325,6 @@ cs_finite_volume_face_source_terms_vector(
                                           cs_real_t       *restrict i_massflux,
                                           cs_real_t       *restrict b_massflux)
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
@@ -1409,11 +1342,8 @@ cs_finite_volume_face_source_terms_vector(
 
   /* Local variables */
 
-  int face_id, ii, jj, i;
-  double distbf,surfn;
   double diippf[3], djjppf[3];
   double visci[3][3], viscj[3][3];
-  double fikdvi, fjkdvi;
 
   /*==========================================================================*/
 
@@ -1422,10 +1352,10 @@ cs_finite_volume_face_source_terms_vector(
     ==========================================================================*/
 
   if (init == 1) {
-    for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_massflux[face_id] = 0.;
     }
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       b_massflux[face_id] = 0.;
     }
 
@@ -1442,10 +1372,10 @@ cs_finite_volume_face_source_terms_vector(
 
     /* ---> Contribution from interior faces */
 
-    for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      ii = i_face_cells[face_id][0] - 1;
-      jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
       i_massflux[face_id] =  i_massflux[face_id]+ i_visc[face_id]*(
                                                ( i_face_cog[face_id][0]
@@ -1466,11 +1396,11 @@ cs_finite_volume_face_source_terms_vector(
 
     /* ---> Contribution from boundary faces */
 
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      ii = b_face_cells[face_id] - 1;
-      surfn = b_face_surf[face_id];
-      distbf = b_dist[face_id];
+      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      double surfn = b_face_surf[face_id];
+      double distbf = b_dist[face_id];
 
       b_massflux[face_id] =  b_massflux[face_id]
                            + b_visc[face_id]*distbf/surfn
@@ -1489,10 +1419,10 @@ cs_finite_volume_face_source_terms_vector(
 
     /* ---> Contribution from interior faces */
 
-    for (face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      ii = i_face_cells[face_id][0] - 1;
-      jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
       /* Recompute II' and JJ' at this level */
 
@@ -1507,10 +1437,10 @@ cs_finite_volume_face_source_terms_vector(
       visci[0][2] = viscel[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
-      fikdvi = weighf[face_id][0];
+      double fikdvi = weighf[face_id][0];
 
       /* II" = IF + FI" */
-      for (i = 0; i < 3; i++) {
+      for (int i = 0; i < 3; i++) {
         diippf[i] =  i_face_cog[face_id][i]-cell_cen[ii][i]
                    - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
                              + visci[1][i]*i_face_normal[face_id][1]
@@ -1528,10 +1458,10 @@ cs_finite_volume_face_source_terms_vector(
       viscj[0][2] = viscel[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
-      fjkdvi = weighf[face_id][1];
+      double fjkdvi = weighf[face_id][1];
 
       /* JJ" = JF + FJ" */
-      for (i = 0; i < 3; i++) {
+      for (int i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
                     + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
                               + viscj[1][i]*i_face_normal[face_id][1]
@@ -1566,12 +1496,12 @@ cs_finite_volume_face_source_terms_vector(
 
     /* ---> Contribution from boundary faces */
 
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id] - 1;
 
-      surfn = b_face_surf[face_id];
-      distbf = b_dist[face_id];
+      double surfn = b_face_surf[face_id];
+      double distbf = b_dist[face_id];
 
       /* FIXME: wrong if dirichlet and viscel is really a tensor */
       b_massflux[face_id] =  b_massflux[face_id]

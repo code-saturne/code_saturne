@@ -444,8 +444,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
 !     Calcul de div(rho dt/rho*grad P)
   init = 1
-  call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-                                ifacel,ifabor,viscf,viscb,xnormp)
+  call divmas(init,viscf,viscb,xnormp)
 
 !     Ajout de -Gamma
   if (ncesmp.gt.0) then
@@ -1029,8 +1028,7 @@ if(itytur.eq.3.and.iterns.eq.1) then
     !==========
 
     init = 1
-    call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,              &
-                ifacel,ifabor,viscf,viscb,w1)
+    call divmas(init,viscf,viscb,w1)
 
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes de divergence
@@ -1765,8 +1763,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
    viscf  , viscb  )
 
   init = 0
-  call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-                                ifacel,ifabor,viscf,viscb,xnormp)
+  call divmas(init,viscf,viscb,xnormp)
 
   ! Compute the norm rnormp used in resopv
   isqrt = 1

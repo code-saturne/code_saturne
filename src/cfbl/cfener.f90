@@ -387,8 +387,7 @@ enddo
 
 !     Divergence
 init = 0
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                                &
-            ifacel,ifabor,viscf,viscb,smbrs)
+call divmas(init, viscf, viscb, smbrs)
 
 
 ! GRAVITATION FORCE TERM : RHO*g.U *VOLUME

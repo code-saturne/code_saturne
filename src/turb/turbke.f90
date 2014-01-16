@@ -513,7 +513,7 @@ if (iturb.eq.51) then
   call itrgrp &
   !==========
 ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-  iwarnp , nfecra ,                                              &
+  iwarnp ,                                                       &
   epsrgp , climgp , extrap ,                                     &
   rvoid  ,                                                       &
   rtpa(1,ivar)    ,                                              &

@@ -353,8 +353,7 @@ if(irnpnw.ne.1) then
    iflux  , bflux  )
 
   init = 1
-  call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-       ifacel,ifabor,iflux,bflux,res)
+  call divmas(init, iflux, bflux, res)
 
   ! --- Weakly compressible algorithm: semi analytic scheme
   if (idilat.eq.4) then
@@ -898,7 +897,7 @@ if (iphydr.eq.1) then
   if (idften(ipr).eq.1) then
     call projts &
     !==========
- ( init   , nswrgp , nfecra ,                                     &
+ ( init   , nswrgp ,                                              &
    dfrcxt ,                                                       &
    coefbf_p ,                                                     &
    imasfl , bmasfl ,                                              &
@@ -911,7 +910,6 @@ if (iphydr.eq.1) then
     call projtv &
     !==========
   ( init   , nswrgp , ircflp ,                                     &
-    nfecra ,                                                       &
     dfrcxt ,                                                       &
     coefbf_p ,                                                     &
     viscf  , viscb  ,                                              &
@@ -965,7 +963,7 @@ if (arak.gt.0.d0) then
     call itrmas &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
    rtpa(1,ipr)  ,                                                 &
@@ -993,7 +991,7 @@ if (arak.gt.0.d0) then
 
       call projts &
       !==========
- ( init   , nswrgp , nfecra ,                                     &
+ ( init   , nswrgp ,                                              &
    frcxt  ,                                                       &
    coefbf_dp       ,                                              &
    imasfl , bmasfl ,                                              &
@@ -1060,7 +1058,7 @@ if (arak.gt.0.d0) then
 
      call projtv &
      !==========
-   ( init   , nswrgp , ircflp , nfecra ,                            &
+   ( init   , nswrgp , ircflp ,                                     &
      frcxt  ,                                                       &
      coefbf_dp       ,                                              &
      viscf  , viscb  ,                                              &
@@ -1171,11 +1169,7 @@ relaxp = relaxv(ipr)
 ! --- Initial divergence
 init = 1
 
-call divmas &
-!==========
- ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
-   ifacel , ifabor ,                                             &
-   imasfl , bmasfl , divu )
+call divmas(init, imasfl , bmasfl , divu)
 
 ! --- Weakly compressible algorithm: semi analytic scheme
 !     1. The RHS contains rho div(u*) and not div(rho u*)
@@ -1210,11 +1204,7 @@ if (idilat.eq.4) then
    coefav , coefbv ,                                              &
    velflx , velflb )
 
-  call divmas &
-  !==========
- ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,           &
-   ifacel , ifabor ,                                              &
-   velflx , velflb , res )
+  call divmas(init, velflx , velflb , res)
 
   do iel = 1, ncel
     divu(iel) = divu(iel) + res(iel)*crom(iel)
@@ -1331,7 +1321,7 @@ if (iswdyp.ge.1) then
     call itrgrp &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
@@ -1430,7 +1420,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
       call itrgrp &
       !==========
    ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-     iwarnp , nfecra ,                                              &
+     iwarnp ,                                                       &
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
@@ -1563,7 +1553,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     call itrgrp &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
@@ -1681,7 +1671,7 @@ if (idften(ipr).eq.1) then
   call itrmas &
   !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    presa  ,                                                       &
@@ -1700,7 +1690,7 @@ if (idften(ipr).eq.1) then
   call itrmas &
   !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
@@ -2040,7 +2030,7 @@ if (idilat.eq.4) then
     call itrmas &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
@@ -2058,7 +2048,7 @@ if (idilat.eq.4) then
     call itrmas &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    dpvar  ,                                                       &

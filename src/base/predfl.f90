@@ -208,9 +208,7 @@ enddo
 ! --- Initial divergence of the mass
 init = 1
 
-call divmas &
-   ( ncelet, ncel  , nfac  , nfabor, init  , nfecra,            &
-     ifacel, ifabor, imasfl , bmasfl , divu )
+call divmas(init, imasfl , bmasfl , divu)
 
 ! --- Mass source terms
 if (ncesmp.gt.0) then
@@ -396,7 +394,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     call itrgrp &
     !==========
    ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-     iwarnp , nfecra ,                                              &
+     iwarnp ,                                                       &
      epsrgp , climgp , extrap ,                                     &
      rvoid  ,                                                       &
      pot    ,                                                       &
@@ -447,7 +445,7 @@ extrap = extrag(ipr)
 call itrmas &
 !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
    pota   ,                                                       &
@@ -467,7 +465,7 @@ inc = 0
 call itrmas &
 !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
    dpot   ,                                                       &

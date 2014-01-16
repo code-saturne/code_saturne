@@ -347,7 +347,7 @@ iphydp = 0
 call itrgrp &
 !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
    rtpa(1,iphi)    ,                                              &

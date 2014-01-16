@@ -374,11 +374,7 @@ if ((ityturt(iscal).eq.2.or.ityturt(iscal).eq.3)) then
 
   init = 1
 
-  call divmas &
-  !==========
-   ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
-     ifacel , ifabor ,                                             &
-     thflxf , thflxb , divut )
+  call divmas(init, thflxf, thflxb, divut)
 
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel) - divut(iel)

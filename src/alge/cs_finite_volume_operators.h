@@ -55,25 +55,19 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_finite_volume_divmas
+ * Wrapper to cs_finite_volume_divergence
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (divmas, DIVMAS)
 (
- const cs_int_t  *const   n_cells_ext,
- const cs_int_t  *const   n_cells,
- const cs_int_t  *const   n_i_faces,
- const cs_int_t  *const   n_b_faces,
  const cs_int_t  *const   init,
- const cs_int_t  *const   nfecra,
- const cs_lnum_2_t        i_face_cells[],
- const cs_int_t           b_face_cells[],
  const cs_real_t          i_massflux[],
  const cs_real_t          b_massflux[],
- cs_real_t                diverg[]);
+ cs_real_t                diverg[]
+);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_finite_volume_itrmas
+ * Wrapper to cs_finite_volume_face_gradient_scalar
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (itrmas, ITRMAS)
@@ -86,7 +80,6 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   iphydp,
  const cs_int_t  *const   iwarnp,
- const cs_int_t  *const   nfecra,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -102,10 +95,11 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_real_t          visely[],
  const cs_real_t          viselz[],
  cs_real_t                i_massflux[],
- cs_real_t                b_massflux[]);
+ cs_real_t                b_massflux[]
+);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_finite_volume_itrgrp
+ * Wrapper to cs_finite_volume_div_face_gradient_scalar
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (itrgrp, ITRGRP)
@@ -118,7 +112,6 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   iphydp,
  const cs_int_t  *const   iwarnp,
- const cs_int_t  *const   nfecra,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -133,17 +126,17 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_real_t          viselx[],
  const cs_real_t          visely[],
  const cs_real_t          viselz[],
- cs_real_t                diverg[]);
+ cs_real_t                diverg[]
+);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_finite_volume_projts
+ * Wrapper to cs_finite_volume_face_source_terms_scalar
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (projts, PROJTS)
 (
  const cs_int_t  *const   init,
  const cs_int_t  *const   nswrgu,
- const cs_int_t  *const   nfecra,
  const cs_real_3_t        frcxt[],
  const cs_real_t          cofbfp[],
  cs_real_t                i_massflux[],
@@ -152,10 +145,11 @@ void CS_PROCF (projts, PROJTS)
  const cs_real_t          b_visc[],
  const cs_real_t          viselx[],
  const cs_real_t          visely[],
- const cs_real_t          viselz[]);
+ const cs_real_t          viselz[]
+);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_finite_volume_projtv
+ * Wrapper to cs_finite_volume_face_source_terms_vector
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (projtv, PROJTV)
@@ -163,7 +157,6 @@ void CS_PROCF (projtv, PROJTV)
  const cs_int_t  *const   init,
  const cs_int_t  *const   nswrgu,
  const cs_int_t  *const   ircflp,
- const cs_int_t  *const   nfecra,
  const cs_real_3_t        frcxt[],
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
@@ -171,34 +164,25 @@ void CS_PROCF (projtv, PROJTV)
  const cs_real_6_t        viscel[],
  const cs_real_2_t        weighf[],
  cs_real_t                i_massflux[],
- cs_real_t                b_massflux[]);
+ cs_real_t                b_massflux[]
+);
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
-/*! \brief This function adds the integrated mass flux on the cells.
-
-  \f[
-  \dot{m}_i = \dot{m}_i + \sum_{\fij \in \Facei{\celli}} \dot{m}_\ij
-  \f]
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
+/*----------------------------------------------------------------------------*/
 /*!
- * \param[in]     n_cells_ext   number of extended (real + ghost) cells
- * \param[in]     n_cells       number of cells
- * \param[in]     n_i_faces     number of interior faces
- * \param[in]     n_b_faces     number of boundary faces
+ * \brief Add the integrated mass flux on the cells.
+ *
+ * \f[
+ * \dot{m}_i = \dot{m}_i + \sum_{\fij \in \Facei{\celli}} \dot{m}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
  * \param[in]     init          indicator
  *                               - 1 initialize the divergence to 0
  *                               - 0 otherwise
- * \param[in]     i_face_cells  cell indexes of interior faces
- * \param[in]     b_face_cells  cell indexes of boundary faces
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in,out] diverg        mass flux divergence
@@ -206,35 +190,24 @@ void CS_PROCF (projtv, PROJTV)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_divergence(
-                            int                       n_cells_ext,
-                            int                       n_cells,
-                            int                       n_i_faces,
-                            int                       n_b_faces,
+cs_finite_volume_divergence(const cs_mesh_t          *m,
                             int                       init,
-                            const cs_lnum_2_t         i_face_cells[],
-                            const cs_int_t            b_face_cells[],
                             const cs_real_t           i_massflux[],
                             const cs_real_t           b_massflux[],
                             cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function updates the face mass flux with the face pressure
-  (or pressure increment, or pressure double increment) gradient.
-
-   \f[
-   \dot{m}_\ij = \dot{m}_\ij
-               - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
-   \f]
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Update the face mass flux with the face pressure (or pressure
+ * increment, or pressure double increment) gradient.
+ *
+ * \f[
+ * \dot{m}_\ij = \dot{m}_\ij
+ *             - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
@@ -284,7 +257,8 @@ cs_finite_volume_divergence(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_face_gradient_scalar(
+cs_finite_volume_face_gradient_scalar(const cs_mesh_t          *m,
+                                      cs_mesh_quantities_t     *fvq,
                                       int                       init,
                                       int                       inc,
                                       int                       imrgra,
@@ -311,22 +285,17 @@ cs_finite_volume_face_gradient_scalar(
                                       cs_real_t       *restrict b_massflux);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function updates the cell mass flux divergence with the face
-  pressure (or pressure increment, or pressure double increment) gradient.
-
-  \f[
-  \dot{m}_\ij = \dot{m}_\ij
-              - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
-  \f]
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Update the cell mass flux divergence with the face pressure (or
+ * pressure increment, or pressure double increment) gradient.
+ *
+ *\f[
+ *\dot{m}_\ij = \dot{m}_\ij
+ *            - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
+ *\f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
@@ -375,7 +344,8 @@ cs_finite_volume_face_gradient_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_div_face_gradient_scalar(
+cs_finite_volume_div_face_gradient_scalar(const cs_mesh_t          *m,
+                                          cs_mesh_quantities_t     *fvq,
                                           int                       init,
                                           int                       inc,
                                           int                       imrgra,
@@ -401,18 +371,13 @@ cs_finite_volume_div_face_gradient_scalar(
                                           cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function projects the external source terms to the faces
-  in coherence with itrmas.f90 for the improved hydrostatic pressure
-  algorithm (iphydr=1).
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Project the external source terms to the faces in coherence with
+ * cs_finite_volume_face_gradient_scalar for the improved hydrostatic pressure
+ * algorithm (iphydr=1).
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
@@ -434,7 +399,8 @@ cs_finite_volume_div_face_gradient_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_face_source_terms_scalar(
+cs_finite_volume_face_source_terms_scalar(const cs_mesh_t          *m,
+                                          cs_mesh_quantities_t     *fvq,
                                           int                       init,
                                           int                       nswrgu,
                                           const cs_real_3_t         frcxt[],
@@ -448,18 +414,14 @@ cs_finite_volume_face_source_terms_scalar(
                                           const cs_real_t           viselz[]);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function projects the external source terms to the faces
-  in coherence with itrmav.f90 for the improved hydrostatic pressure
-  algorithm (iphydr=1).
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________!
- * \param[in]     init           indicator
+/*!
+ * \brief Project the external source terms to the faces in coherence with
+ *  cs_finite_volume_div_face_gradient_scalar for the improved hydrostatic
+ * pressure algorithm (iphydr=1).
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
  *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
@@ -483,7 +445,8 @@ cs_finite_volume_face_source_terms_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_finite_volume_face_source_terms_vector(
+cs_finite_volume_face_source_terms_vector(const cs_mesh_t          *m,
+                                          cs_mesh_quantities_t     *fvq,
                                           int                       init,
                                           int                       nswrgp,
                                           int                       ircflp,
