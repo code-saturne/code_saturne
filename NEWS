@@ -14,6 +14,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix paths in MPMD configfile for BlueGene/Q, necessary for code coupling.
+
 - Fix handling of installs with alternative compute packages, such as
   that necessary for a BlueGene/Q front-end.
 
