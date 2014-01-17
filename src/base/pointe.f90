@@ -509,7 +509,7 @@ contains
         enddo
       enddo
       deallocate(buff2)
-      call syntin(visten)
+      call syntis(visten)
     endif
 
     ! Wall-distance calculation
