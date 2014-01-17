@@ -1328,7 +1328,7 @@ echo "exit \$?" >> $localexec
         # Set user MPI options if required.
 
         if mpiexec_options != None:
-            exec_env.mpi_env.mpiexec_options = mpiexec_options
+            exec_env.mpi_env.mpiexec_opts = mpiexec_options
 
         # Transfer parameters MPI parameters from user scripts here.
 
