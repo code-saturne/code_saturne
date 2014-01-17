@@ -70,6 +70,7 @@ static int _cs_glob_n_halos = 0;
 
 /* Send buffer for synchronization */
 
+static int    _cs_glob_halo_max_stride = 3;
 static size_t _cs_glob_halo_send_buffer_size = 0;
 static void  *_cs_glob_halo_send_buffer = NULL;
 
@@ -587,7 +588,8 @@ cs_halo_update_buffers(const cs_halo_t *halo)
 
     size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
                                        halo->n_elts[CS_HALO_EXTENDED])
-                              * CS_MAX(sizeof(cs_lnum_t), sizeof(cs_real_t)) * 3;
+                              * CS_MAX(sizeof(cs_lnum_t),
+                                       sizeof(cs_real_t)) * _cs_glob_halo_max_stride;
 
     int n_requests = halo->n_c_domains*2;
 
@@ -1149,22 +1151,10 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
   cs_lnum_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-    const size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
-                                             halo->n_elts[CS_HALO_EXTENDED])
-                                    * sizeof(cs_real_t) * stride;
-
-    if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
-      _cs_glob_halo_send_buffer_size =  send_buffer_size;
-      BFT_REALLOC(_cs_glob_halo_send_buffer,
-                  _cs_glob_halo_send_buffer_size,
-                  char);
-    }
+  if (stride > _cs_glob_halo_max_stride) {
+    _cs_glob_halo_max_stride = stride;
+    cs_halo_update_buffers(halo);
   }
-
-#endif /* defined(HAVE_MPI) */
 
   if (sync_mode == CS_HALO_STANDARD)
     end_shift = 1;
