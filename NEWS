@@ -9,6 +9,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix wrong ghost cell sync call for tensorial viscosity, which caused a
+  crash in parallel in some cases.
+
 - Fix for the CS_MPIEXEC_OPTIONS environment variable, which was ignored.
 
 - Fix paths in MPMD configfile for BlueGene/Q, necessary for code coupling.
