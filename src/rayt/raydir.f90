@@ -599,7 +599,7 @@ elseif (i_quadrature.eq.8) then
 
   poids(1) = 0.121876566
   poids(2) = 0.139922822
-  
+
   angsol(1) = poids(1)
   angsol(2) = poids(2)
   angsol(3) = poids(2)
