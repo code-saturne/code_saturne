@@ -9,6 +9,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix for the CS_MPIEXEC_OPTIONS environment variable, which was ignored.
+
 - Fix paths in MPMD configfile for BlueGene/Q, necessary for code coupling.
 
 - Fix handling of installs with alternative compute packages, such as
