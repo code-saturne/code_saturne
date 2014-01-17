@@ -1191,9 +1191,9 @@ fi
         if mpi_environment != None:
             exec_env.mpi_env = mpi_environment
         elif mpiexec_options != None:
-            exec_env.mpi_env.mpiexec_options = mpiexec_options
+            exec_env.mpi_env.mpiexec_opts = mpiexec_options
 
-        # Transfer parameters MPI parameters from user scripts here
+        # Transfer parameters MPI parameters from user scripts here.
 
         if len(self.domains) == 1 and len(self.syr_domains) == 0:
             d = self.domains[0]
