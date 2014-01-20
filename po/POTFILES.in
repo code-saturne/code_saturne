@@ -105,6 +105,7 @@ src/base/cs_time_plot.c
 src/base/cs_timer.c
 src/base/cs_time_step.c
 src/base/cs_tpar1d.c
+src/base/cs_turbomachinery.c
 src/base/cs_ventil.c
 src/bft/bft_backtrace.c
 src/bft/bft_error.c

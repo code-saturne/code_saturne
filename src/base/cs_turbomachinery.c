@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2013 EDF S.A.
+  Copyright (C) 1998-2014 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,6 +60,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_to_builder.h"
 #include "cs_multigrid.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_preprocess.h"
 #include "cs_prototypes.h"
@@ -89,6 +90,9 @@ typedef struct {
 
   cs_mesh_t                 *reference_mesh;    /* Reference mesh (before
                                                    rotation and joining) */
+
+  cs_lnum_t                  n_b_faces_ref;     /* Reference number of
+                                                   boundary faces */
 
   cs_lnum_t                  n_rotor_vtx;       /* Size of rotor_vtx array */
   cs_lnum_t                 *rotor_vtx;         /* List of vertices related
@@ -126,6 +130,36 @@ void cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Function for selection of faces with joining changes.
+ *
+ * parameters:
+ *   input    <-- pointer to input (count[0]: n_previous, count[1]: n_current)
+ *   n_faces  --> number of selected faces
+ *   face_ids --> array of selected face ids (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+static void
+_post_error_faces_select(void         *input,
+                         cs_lnum_t    *n_faces,
+                         cs_lnum_t   **face_ids)
+{
+  cs_lnum_t face_id;
+
+  cs_lnum_t _n_faces = 0;
+  cs_lnum_t *_face_ids = NULL;
+
+  const cs_lnum_t  *count = input;
+
+  BFT_MALLOC(_face_ids, count[1], cs_lnum_t);
+
+  for (face_id = count[0]; face_id < count[1]; face_id++)
+    _face_ids[_n_faces++] = face_id;
+
+  *n_faces = _n_faces;
+  *face_ids = _face_ids;
+}
+
+/*----------------------------------------------------------------------------
  * Create an empty turbomachinery structure
  *----------------------------------------------------------------------------*/
 
@@ -138,6 +172,7 @@ _turbomachinery_create(void)
 
   tbm->rotor_cells_c = NULL;
   tbm->reference_mesh = cs_mesh_create();
+  tbm->n_b_faces_ref = -1;
   tbm->cell_rotor_num = NULL;
   tbm->rotor_vtx = NULL;
   tbm->model = CS_TURBOMACHINERY_NONE;
@@ -872,6 +907,51 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   cs_join_all(false);
 
+  cs_lnum_t boundary_changed = 0;
+  if (cs_glob_turbomachinery->n_b_faces_ref > -1) {
+    if (cs_glob_mesh->n_b_faces != cs_glob_turbomachinery->n_b_faces_ref)
+      boundary_changed = 1;
+  }
+  cs_parall_counter_max(&boundary_changed, 1);
+
+  /* Check that joining has not added or removed boundary faces.
+     Postprocess new faces appearing on boundary or inside of mesh:
+     this assumes that joining appends new faces at the end of the mesh */
+
+  if (boundary_changed) {
+    const int writer_id = -2;
+    const int writer_ids[] = {writer_id};
+    const int mesh_id = cs_post_get_free_mesh_id();
+    cs_lnum_t b_face_count[] = {cs_glob_turbomachinery->n_b_faces_ref,
+                                cs_glob_mesh->n_b_faces};
+    cs_gnum_t n_g_b_faces_ref = cs_glob_turbomachinery->n_b_faces_ref;
+    cs_parall_counter(&n_g_b_faces_ref, 1);
+    cs_post_init_error_writer();
+    cs_post_define_surface_mesh_by_func(mesh_id,
+                                        _("Added boundary faces"),
+                                        NULL,
+                                        _post_error_faces_select,
+                                        NULL,
+                                        b_face_count,
+                                        false, /* time varying */
+                                        true,  /* add groups if present */
+                                        false, /* auto variables */
+                                        1,
+                                        writer_ids);
+    cs_post_activate_writer(writer_id, 1);
+    cs_post_write_meshes(NULL);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error in turbomachinery mesh update:\n"
+                "Number of boundary faces has changed from %llu to %llu.\n"
+                "There are probably unjoined faces, "
+                "due to an insufficiently regular mesh;\n"
+                "adjusting mesh joining parameters might help."),
+              (unsigned long long)n_g_b_faces_ref,
+              (unsigned long long)cs_glob_mesh->n_g_b_faces);
+  }
+
+  cs_glob_turbomachinery->n_b_faces_ref = cs_glob_mesh->n_b_faces;
+
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
 
@@ -896,8 +976,10 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
     cs_numbering_destroy(&(cs_glob_mesh->i_face_numbering));
   if (cs_glob_mesh->b_face_numbering != NULL)
     cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
-  cs_glob_mesh->i_face_numbering = cs_numbering_create_default(cs_glob_mesh->n_i_faces);
-  cs_glob_mesh->b_face_numbering = cs_numbering_create_default(cs_glob_mesh->n_b_faces);
+  cs_glob_mesh->i_face_numbering
+    = cs_numbering_create_default(cs_glob_mesh->n_i_faces);
+  cs_glob_mesh->b_face_numbering
+    = cs_numbering_create_default(cs_glob_mesh->n_b_faces);
 
   /* Build group classes */
 

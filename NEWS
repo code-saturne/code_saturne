@@ -9,6 +9,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Make error explicit for irregular joining with turbomachinery.
+
 - Fix wrong ghost cell sync call for tensorial viscosity, which caused a
   crash in parallel in some cases.
 
