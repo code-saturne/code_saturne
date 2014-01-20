@@ -97,7 +97,7 @@ void CS_PROCF (matrxv, MATRXV)
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
  cs_real_33_t             da[],
- cs_real_2_t              xa[]);
+ cs_real_t                xa[]);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_time_step
@@ -211,7 +211,64 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build the advection/diffusion matrix for a vector field.
+ * \brief Build the diffusion matrix for a vector field
+ * (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     iconvp        indicator
+ *                               - 1 advection
+ *                               - 0 otherwise
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centred
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     coefbu        boundary condition array for the variable
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     cofbfu        boundary condition array for the variable flux
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra interleaved diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sym_matrix_vector(const cs_mesh_t          *m,
+                     int                       iconvp,
+                     int                       idiffp,
+                     int                       ndircp,
+                     double                    thetap,
+                     const cs_real_33_t        coefbu[],
+                     const cs_real_33_t        cofbfu[],
+                     const cs_real_33_t        fimp[],
+                     const cs_real_t           i_massflux[],
+                     const cs_real_t           b_massflux[],
+                     const cs_real_t           i_visc[],
+                     const cs_real_t           b_visc[],
+                     cs_real_33_t    *restrict da,
+                     cs_real_t       *restrict xa);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the advection/diffusion matrix for a vector field
+ * (non-symmetric matrix).
  *
  * The advection is upwind, the diffusion is not reconstructed.
  * The matrix is split into a diagonal block (3x3 times number of cells)
@@ -227,9 +284,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  *                               - 0 otherwise
  * \param[in]     ndircp        indicator
  *                               - 0 if the diagonal stepped aside
- * \param[in]     isym          indicator
- *                               - 1 symmetric matrix
- *                               - 2 non symmmetric matrix
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -256,7 +310,6 @@ cs_matrix_vector(const cs_mesh_t          *m,
                  int                       iconvp,
                  int                       idiffp,
                  int                       ndircp,
-                 int                       isym,
                  double                    thetap,
                  const cs_real_33_t        coefbu[],
                  const cs_real_33_t        cofbfu[],
@@ -329,9 +382,6 @@ cs_matrix_time_step(const cs_mesh_t          *m,
  *                               - 0 otherwise
  * \param[in]     ndircp        indicator
  *                               - 0 if the diagonal stepped aside
- * \param[in]     isym          indicator
- *                               - 1 symmetric matrix
- *                               - 2 non symmmetric matrix
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -359,7 +409,6 @@ cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
                               int                       iconvp,
                               int                       idiffp,
                               int                       ndircp,
-                              int                       isym,
                               double                    thetap,
                               const cs_real_33_t        coefbu[],
                               const cs_real_33_t        cofbfu[],
@@ -370,6 +419,62 @@ cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
                               const cs_real_t           b_visc[],
                               cs_real_33_t    *restrict da,
                               cs_real_332_t   *restrict xa);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the diffusion matrix for a vector field with a
+ * tensorial diffusivity (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension 3x3 the number of internal
+ * faces).
+ *
+ * \param[in]     iconvp        indicator
+ *                               - 1 advection
+ *                               - 0 otherwise
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centred
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     coefbu        boundary condition array for the variable
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     cofbfu        boundary condition array for the variable flux
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     fimp
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra interleaved diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sym_matrix_tensorial_diffusion(const cs_mesh_t           *m,
+                                  int                       iconvp,
+                                  int                       idiffp,
+                                  int                       ndircp,
+                                  double                    thetap,
+                                  const cs_real_33_t        coefbu[],
+                                  const cs_real_33_t        cofbfu[],
+                                  const cs_real_33_t        fimp[],
+                                  const cs_real_t           i_massflux[],
+                                  const cs_real_t           b_massflux[],
+                                  const cs_real_33_t        i_visc[],
+                                  const cs_real_t           b_visc[],
+                                  cs_real_33_t    *restrict da,
+                                  cs_real_33_t    *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 

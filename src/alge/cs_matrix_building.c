@@ -169,25 +169,49 @@ void CS_PROCF (matrxv, MATRXV)
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
  cs_real_33_t             da[],
- cs_real_2_t              xa[])
+ cs_real_t                xa[])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
-  cs_matrix_vector(m,
-                   *iconvp,
-                   *idiffp,
-                   *ndircp,
-                   *isym,
-                   *thetap,
-                   coefbu,
-                   cofbfu,
-                   fimp,
-                   i_massflux,
-                   b_massflux,
-                   i_visc,
-                   b_visc,
-                   da,
-                   xa);
+  if (*isym != 1 && *isym != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of isym"));
+  }
+
+  /* Symmetric matrix */
+  if (*isym == 1) {
+    cs_sym_matrix_vector(m,
+                         *iconvp,
+                         *idiffp,
+                         *ndircp,
+                         *thetap,
+                         coefbu,
+                         cofbfu,
+                         fimp,
+                         i_massflux,
+                         b_massflux,
+                         i_visc,
+                         b_visc,
+                         da,
+                         xa);
+
+  /* Non-symmetric matrix */
+  } else {
+    cs_matrix_vector(m,
+                     *iconvp,
+                     *idiffp,
+                     *ndircp,
+                     *thetap,
+                     coefbu,
+                     cofbfu,
+                     fimp,
+                     i_massflux,
+                     b_massflux,
+                     i_visc,
+                     b_visc,
+                     da,
+                     (cs_real_2_t*) xa);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -245,21 +269,46 @@ void CS_PROCF (matrvv, MATRVV)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
-  cs_matrix_tensorial_diffusion(m,
-                                *iconvp,
-                                *idiffp,
-                                *ndircp,
-                                *isym,
-                                *thetap,
-                                coefbu,
-                                cofbfu,
-                                fimp,
-                                i_massflux,
-                                b_massflux,
-                                i_visc,
-                                b_visc,
-                                da,
-                                xa);
+  if (*isym != 1 && *isym != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of isym"));
+  }
+
+  /* Symmetric matrix */
+  if (*isym == 1) {
+    cs_sym_matrix_tensorial_diffusion(m,
+                                      *iconvp,
+                                      *idiffp,
+                                      *ndircp,
+                                      *thetap,
+                                      coefbu,
+                                      cofbfu,
+                                      fimp,
+                                      i_massflux,
+                                      b_massflux,
+                                      i_visc,
+                                      b_visc,
+                                      da,
+                                      (cs_real_33_t*) xa);
+
+  /* Non-symmetric matrix */
+  } else {
+    cs_matrix_tensorial_diffusion(m,
+                                  *iconvp,
+                                  *idiffp,
+                                  *ndircp,
+                                  *thetap,
+                                  coefbu,
+                                  cofbfu,
+                                  fimp,
+                                  i_massflux,
+                                  b_massflux,
+                                  i_visc,
+                                  b_visc,
+                                  da,
+                                  (cs_real_332_t*) xa);
+  }
+
 }
 
 /*============================================================================
@@ -593,7 +642,169 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build the advection/diffusion matrix for a vector field.
+ * \brief Build the diffusion matrix for a vector field
+ * (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     iconvp        indicator
+ *                               - 1 advection
+ *                               - 0 otherwise
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centred
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     coefbu        boundary condition array for the variable
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     cofbfu        boundary condition array for the variable flux
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra interleaved diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sym_matrix_vector(const cs_mesh_t          *m,
+                     int                       iconvp,
+                     int                       idiffp,
+                     int                       ndircp,
+                     double                    thetap,
+                     const cs_real_33_t        coefbu[],
+                     const cs_real_33_t        cofbfu[],
+                     const cs_real_33_t        fimp[],
+                     const cs_real_t           i_massflux[],
+                     const cs_real_t           b_massflux[],
+                     const cs_real_t           i_visc[],
+                     const cs_real_t           b_visc[],
+                     cs_real_33_t    *restrict da,
+                     cs_real_t       *restrict xa)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const double epsi = 1.e-7;
+
+  /* 1. Initialization */
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
+      }
+    }
+
+  }
+
+  if(n_cells_ext > n_cells) {
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+
+      for (int isou = 0; isou < 3; isou++) {
+        for (int jsou = 0; jsou < 3; jsou++) {
+          da[cell_id][jsou][isou] = 0.;
+        }
+      }
+
+    }
+  }
+
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    xa[face_id] = 0.;
+  }
+
+  /* 2. Computation of extradiagonal terms */
+
+  for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
+
+    double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
+
+    xa[face_id] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
+
+  }
+
+  /* 3. Contribution of the extra-diagonal terms to the diagonal */
+
+  for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
+
+    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+
+    for (int isou = 0; isou < 3; isou++) {
+      da[ii][isou][isou] -= xa[face_id];
+      da[jj][isou][isou] -= xa[face_id];
+    }
+
+  }
+
+  /* 4. Contribution of border faces to the diagonal */
+
+  for (cs_lnum_t face_id = 0; face_id <n_b_faces; face_id++) {
+
+    cs_lnum_t ii = b_face_cells[face_id] - 1;
+    double flui = 0.5*( b_massflux[face_id] -fabs(b_massflux[face_id]) );
+
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        if(isou == jsou) {
+          da[ii][jsou][isou] += thetap*( iconvp*flui
+                                         *(coefbu[face_id][jsou][isou]-1.)
+                                        +idiffp*b_visc[face_id]
+                                         *cofbfu[face_id][jsou][isou] );
+        } else {
+          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
+                                        +idiffp*b_visc[face_id]
+                                         *cofbfu[face_id][jsou][isou] );
+        }
+      }
+    }
+
+  }
+
+
+  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (ndircp <= 0) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+      for (int isou = 0; isou < 3; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the advection/diffusion matrix for a vector field
+ * (non-symmetric matrix).
  *
  * The advection is upwind, the diffusion is not reconstructed.
  * The matrix is split into a diagonal block (3x3 times number of cells)
@@ -609,9 +820,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  *                               - 0 otherwise
  * \param[in]     ndircp        indicator
  *                               - 0 if the diagonal stepped aside
- * \param[in]     isym          indicator
- *                               - 1 symmetric matrix
- *                               - 2 non symmmetric matrix
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -638,7 +846,6 @@ cs_matrix_vector(const cs_mesh_t          *m,
                  int                       iconvp,
                  int                       idiffp,
                  int                       ndircp,
-                 int                       isym,
                  double                    thetap,
                  const cs_real_33_t        coefbu[],
                  const cs_real_33_t        cofbfu[],
@@ -664,11 +871,6 @@ cs_matrix_vector(const cs_mesh_t          *m,
 
   /* 1. Initialization */
 
-  if (isym != 1 && isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
-  }
-
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     for (int isou = 0; isou < 3; isou++) {
@@ -691,75 +893,33 @@ cs_matrix_vector(const cs_mesh_t          *m,
     }
   }
 
-  if(isym == 2) {
-
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      xa[face_id][0] = 0.;
-      xa[face_id][1] = 0.;
-    }
-
-  } else {
-
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      xa[face_id][0] = 0.;
-    }
-
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    xa[face_id][0] = 0.;
+    xa[face_id][1] = 0.;
   }
 
   /* 2. Computation of extradiagonal terms */
 
-  if(isym == 2) {
+  for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
 
-    for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
+    double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
+    double fluj =-0.5*( i_massflux[face_id] +fabs(i_massflux[face_id]) );
 
-      double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
-      double fluj =-0.5*( i_massflux[face_id] +fabs(i_massflux[face_id]) );
-
-      xa[face_id][0] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
-      xa[face_id][1] = thetap*(iconvp*fluj -idiffp*i_visc[face_id]);
-
-    }
-
-  } else {
-
-    for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
-
-      double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
-
-      xa[face_id][0] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
-
-    }
+    xa[face_id][0] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
+    xa[face_id][1] = thetap*(iconvp*fluj -idiffp*i_visc[face_id]);
 
   }
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-  if(isym == 2) {
+  for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
 
-    for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
+    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
-      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
-
-      for (int isou = 0; isou < 3; isou++) {
-        da[ii][isou][isou] -= xa[face_id][0];
-        da[jj][isou][isou] -= xa[face_id][1];
-      }
-
-    }
-
-  } else {
-
-    for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
-
-      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
-
-      for (int isou = 0; isou < 3; isou++) {
-        da[ii][isou][isou] -= xa[face_id][0];
-        da[jj][isou][isou] -= xa[face_id][0];
-      }
-
+    for (int isou = 0; isou < 3; isou++) {
+      da[ii][isou][isou] -= xa[face_id][0];
+      da[jj][isou][isou] -= xa[face_id][1];
     }
 
   }
@@ -810,6 +970,7 @@ cs_matrix_vector(const cs_mesh_t          *m,
  * \brief Build the diagonal of the advection/diffusion matrix
  * for determining the variable time step, flow, Fourier.
  *
+ * \param[in]     m             pointer to mesh structure
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -971,9 +1132,6 @@ cs_matrix_time_step(const cs_mesh_t          *m,
  *                               - 0 otherwise
  * \param[in]     ndircp        indicator
  *                               - 0 if the diagonal stepped aside
- * \param[in]     isym          indicator
- *                               - 1 symmetric matrix
- *                               - 2 non symmmetric matrix
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -1001,7 +1159,6 @@ cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
                               int                       iconvp,
                               int                       idiffp,
                               int                       ndircp,
-                              int                       isym,
                               double                    thetap,
                               const cs_real_33_t        coefbu[],
                               const cs_real_33_t        cofbfu[],
@@ -1027,10 +1184,174 @@ cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
 
   /* 1. Initialization */
 
-  if (isym != 1 && isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
+      }
+    }
   }
+  if(n_cells_ext > n_cells) {
+    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
+        for (int jsou = 0; jsou < 3; jsou++) {
+          da[cell_id][jsou][isou] = 0.;
+        }
+      }
+    }
+  }
+
+  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        xa[ifac][0][jsou][isou] = 0.;
+        xa[ifac][1][jsou][isou] = 0.;
+      }
+    }
+  }
+
+  /* 2. Computation of extradiagonal terms */
+
+  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+
+    double flui = 0.5*( i_massflux[ifac] -fabs(i_massflux[ifac]) );
+    double fluj =-0.5*( i_massflux[ifac] +fabs(i_massflux[ifac]) );
+
+    for (int isou = 0; isou < 3; isou++) {
+      xa[ifac][0][isou][isou] = iconvp*flui;
+      xa[ifac][1][isou][isou] = iconvp*fluj;
+      for (int jsou = 0; jsou < 3; jsou++) {
+        xa[ifac][0][jsou][isou] = thetap*( xa[ifac][0][jsou][isou]
+                                         - idiffp*i_visc[ifac][jsou][isou]);
+        xa[ifac][1][jsou][isou] = thetap*( xa[ifac][1][jsou][isou]
+                                         - idiffp*i_visc[ifac][jsou][isou]);
+      }
+    }
+
+  }
+
+  /* 3. Contribution of the extra-diagonal terms to the diagonal */
+
+  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+
+    cs_lnum_t ii = i_face_cells[ifac][0] - 1;
+    cs_lnum_t jj = i_face_cells[ifac][1] - 1;
+
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        da[ii][jsou][isou] -= xa[ifac][0][jsou][isou];
+        da[jj][jsou][isou] -= xa[ifac][1][jsou][isou];
+      }
+    }
+  }
+
+  /* 4. Contribution of border faces to the diagonal */
+
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+
+    cs_lnum_t ii = b_face_cells[ifac] - 1;
+    double flui = 0.5*( b_massflux[ifac] -fabs(b_massflux[ifac]) );
+
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        if(isou == jsou) {
+          da[ii][jsou][isou] += thetap*( iconvp*flui
+                                         *(coefbu[ifac][jsou][isou]-1.)
+                                        +idiffp*b_visc[ifac]
+                                         *cofbfu[ifac][jsou][isou] );
+        } else {
+          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[ifac][jsou][isou]
+                                        +idiffp*b_visc[ifac]
+                                         *cofbfu[ifac][jsou][isou] );
+        }
+      }
+    }
+
+  }
+
+
+  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum. */
+
+  if ( ndircp <= 0 ) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the diffusion matrix for a vector field with a
+ * tensorial diffusivity (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension 3x3 the number of internal
+ * faces).
+ *
+ * \param[in]     iconvp        indicator
+ *                               - 1 advection
+ *                               - 0 otherwise
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centred
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     coefbu        boundary condition array for the variable
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     cofbfu        boundary condition array for the variable flux
+ *                               (Implicit part - 3x3 tensor array)
+ * \param[in]     fimp
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra interleaved diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sym_matrix_tensorial_diffusion(const cs_mesh_t           *m,
+                                  int                       iconvp,
+                                  int                       idiffp,
+                                  int                       ndircp,
+                                  double                    thetap,
+                                  const cs_real_33_t        coefbu[],
+                                  const cs_real_33_t        cofbfu[],
+                                  const cs_real_33_t        fimp[],
+                                  const cs_real_t           i_massflux[],
+                                  const cs_real_t           b_massflux[],
+                                  const cs_real_33_t        i_visc[],
+                                  const cs_real_t           b_visc[],
+                                  cs_real_33_t    *restrict da,
+                                  cs_real_33_t    *restrict xa)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const double epsi = 1.e-7;
+
+  /* 1. Initialization */
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int isou = 0; isou < 3; isou++) {
@@ -1049,97 +1370,43 @@ cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
     }
   }
 
-  if(isym == 2) {
-    for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
-      for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++) {
-          xa[ifac][0][jsou][isou] = 0.;
-          xa[ifac][1][jsou][isou] = 0.;
-        }
-      }
-    }
-  } else {
-    for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
-      for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++) {
-          xa[ifac][0][jsou][isou] = 0.;
-        }
+  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        xa[ifac][jsou][isou] = 0.;
       }
     }
   }
 
   /* 2. Computation of extradiagonal terms */
 
-  if(isym == 2) {
+  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
 
-    for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+    double flui = 0.5*(i_massflux[ifac] -fabs(i_massflux[ifac]));
 
-      double flui = 0.5*( i_massflux[ifac] -fabs(i_massflux[ifac]) );
-      double fluj =-0.5*( i_massflux[ifac] +fabs(i_massflux[ifac]) );
-
-      for (int isou = 0; isou < 3; isou++) {
-        xa[ifac][0][isou][isou] = iconvp*flui;
-        xa[ifac][1][isou][isou] = iconvp*fluj;
-        for (int jsou = 0; jsou < 3; jsou++) {
-          xa[ifac][0][jsou][isou] = thetap*( xa[ifac][0][jsou][isou]
-                                           - idiffp*i_visc[ifac][jsou][isou]);
-          xa[ifac][1][jsou][isou] = thetap*( xa[ifac][1][jsou][isou]
-                                           - idiffp*i_visc[ifac][jsou][isou]);
-        }
+    for (int isou = 0; isou < 3; isou++) {
+      xa[ifac][isou][isou] = iconvp*flui;
+      for (int jsou = 0; jsou < 3; jsou++) {
+        xa[ifac][jsou][isou] = thetap*( xa[ifac][jsou][isou]
+                                         - idiffp*i_visc[ifac][jsou][isou]);
       }
-
-    }
-
-  } else {
-
-    for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
-
-      double flui = 0.5*(i_massflux[ifac] -fabs(i_massflux[ifac]));
-
-      for (int isou = 0; isou < 3; isou++) {
-        xa[ifac][0][isou][isou] = iconvp*flui;
-        for (int jsou = 0; jsou < 3; jsou++) {
-          xa[ifac][0][jsou][isou] = thetap*( xa[ifac][0][jsou][isou]
-                                           - idiffp*i_visc[ifac][jsou][isou]);
-        }
-      }
-
     }
 
   }
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-  if (isym == 2) {
+  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
 
-    for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+    cs_lnum_t ii = i_face_cells[ifac][0] - 1;
+    cs_lnum_t jj = i_face_cells[ifac][1] - 1;
 
-      cs_lnum_t ii = i_face_cells[ifac][0] - 1;
-      cs_lnum_t jj = i_face_cells[ifac][1] - 1;
-
-      for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++) {
-          da[ii][jsou][isou] -= xa[ifac][0][jsou][isou];
-          da[jj][jsou][isou] -= xa[ifac][1][jsou][isou];
-        }
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++) {
+        da[ii][jsou][isou] -= xa[ifac][jsou][isou];
+        da[jj][jsou][isou] -= xa[ifac][jsou][isou];
       }
     }
-
-  } else {
-
-    for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
-
-      cs_lnum_t ii = i_face_cells[ifac][0] - 1;
-      cs_lnum_t jj = i_face_cells[ifac][1] - 1;
-
-      for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++) {
-          da[ii][jsou][isou] -= xa[ifac][0][jsou][isou];
-          da[jj][jsou][isou] -= xa[ifac][0][jsou][isou];
-        }
-      }
-    }
-
   }
 
   /* 4. Contribution of border faces to the diagonal */
