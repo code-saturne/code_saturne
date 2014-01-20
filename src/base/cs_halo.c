@@ -65,12 +65,12 @@ BEGIN_C_DECLS
 /* Number of defined halos */
 
 static int _cs_glob_n_halos = 0;
+static int _cs_glob_halo_max_stride = 3;
 
 #if defined(HAVE_MPI)
 
 /* Send buffer for synchronization */
 
-static int    _cs_glob_halo_max_stride = 3;
 static size_t _cs_glob_halo_send_buffer_size = 0;
 static void  *_cs_glob_halo_send_buffer = NULL;
 
