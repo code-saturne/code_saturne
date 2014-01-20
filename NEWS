@@ -6,6 +6,8 @@ Changes:
 
 - Update some external package versions for automatic installer.
 
+- MedCoupling and ParaMEDMEM adapters may now build with Salome 7.3.
+
 Bug fixes:
 ----------
 
