@@ -91,7 +91,7 @@ typedef struct {
   cs_mesh_t                 *reference_mesh;    /* Reference mesh (before
                                                    rotation and joining) */
 
-  cs_lnum_t                  n_b_faces_ref;     /* Reference number of
+  cs_gnum_t                  n_g_b_faces_ref;   /* Reference number of
                                                    boundary faces */
 
   cs_lnum_t                  n_rotor_vtx;       /* Size of rotor_vtx array */
@@ -142,7 +142,7 @@ _turbomachinery_create(void)
 
   tbm->rotor_cells_c = NULL;
   tbm->reference_mesh = cs_mesh_create();
-  tbm->n_b_faces_ref = -1;
+  tbm->n_g_b_faces_ref = 0;
   tbm->cell_rotor_num = NULL;
   tbm->rotor_vtx = NULL;
   tbm->model = CS_TURBOMACHINERY_NONE;
@@ -877,21 +877,33 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   cs_join_all(false);
 
-  if (cs_glob_turbomachinery->n_b_faces_ref > -1) {
-    if (cs_glob_mesh->n_b_faces != cs_glob_turbomachinery->n_b_faces_ref) {
-      cs_gnum_t n_g_b_faces_ref = cs_glob_turbomachinery->n_b_faces_ref;
-      cs_parall_counter(&n_g_b_faces_ref, 1);
+  if (cs_glob_turbomachinery->n_g_b_faces_ref > 0) {
+    if (cs_glob_mesh->n_g_b_faces != cs_glob_turbomachinery->n_g_b_faces_ref) {
+      const int writer_id = -2;
+      const int writer_ids[] = {writer_id};
+      const int mesh_id = cs_post_get_free_mesh_id();
+      cs_post_init_error_writer();
+      cs_post_define_surface_mesh(mesh_id,
+                                  "Boundary",
+                                  NULL,
+                                  "all[]",
+                                  true,
+                                  false,
+                                  1,
+                                  writer_ids);
+      cs_post_activate_writer(writer_id, 1);
+      cs_post_write_meshes(NULL);
       bft_error(__FILE__, __LINE__, 0,
                 _("Error in turbomachinery mesh update:\n"
                   "Number of boundary faces has changed from %llu to %llu.\n"
                   "There are probably unjoined faces, "
                   "due to an insufficiently regular mesh;\n"
                   "adjusting mesh joining parameters might help."),
-                (unsigned long long)n_g_b_faces_ref,
+                (unsigned long long)cs_glob_turbomachinery->n_g_b_faces_ref,
                 (unsigned long long)cs_glob_mesh->n_g_b_faces);
     }
   }
-  cs_glob_turbomachinery->n_b_faces_ref = cs_glob_mesh->n_b_faces;
+  cs_glob_turbomachinery->n_g_b_faces_ref = cs_glob_mesh->n_g_b_faces;
 
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
