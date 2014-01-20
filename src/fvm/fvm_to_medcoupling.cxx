@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2011 EDF S.A.
+  Copyright (C) 1998-2014 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,6 +41,8 @@
 /*----------------------------------------------------------------------------
  * MED library headers
  *----------------------------------------------------------------------------*/
+
+#include <MED_version.h>
 
 #include <MEDCouplingUMesh.hxx>
 #include <MEDCouplingField.hxx>
@@ -157,7 +159,11 @@ _get_medcoupling_mesh_id(fvm_to_medcoupling_t  *writer,
   assert(writer != NULL);
 
   for (i = 0; i < writer->n_med_meshes; i++) {
+#if (SALOMEMED_VERSION  >= 0x070300)
+    if (strcmp(mesh_name, writer->med_meshes[i]->getName().c_str()) == 0)
+#else
     if (strcmp(mesh_name, writer->med_meshes[i]->getName()) == 0)
+#endif
       break;
   }
 
@@ -408,8 +414,13 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
 
     f = (writer->fields[f_id])->f;
 
+#if (SALOMEMED_VERSION  >= 0x070300)
+    if (   writer->fields[f_id]->mesh_id == mesh_id
+        && strcmp(fieldname, f->getName().c_str()) == 0) {
+#else
     if (   writer->fields[f_id]->mesh_id == mesh_id
         && strcmp(fieldname, f->getName()) == 0) {
+#endif
 
       /* If field exists, check that dimensions and type are compatible */
 
@@ -422,7 +433,11 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "coupling \"%s\" and mesh \"%s\" with %d components,\n"
                     "but re-defined with %d components."),
                   fieldname, writer->name,
+#if (SALOMEMED_VERSION  >= 0x070300)
+                  writer->med_meshes[field->mesh_id]->getName().c_str(),
+#else
                   writer->med_meshes[field->mesh_id]->getName(),
+#endif
                   field->dim, dim);
 
       else if (type_ref != type)
@@ -431,7 +446,11 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "coupling \"%s\" and mesh \"%s\" with type %d,\n"
                     "but re-defined with type %d."),
                   fieldname, writer->name,
+#if (SALOMEMED_VERSION  >= 0x070300)
+                  writer->med_meshes[field->mesh_id]->getName().c_str(),
+#else
                   writer->med_meshes[field->mesh_id]->getName(),
+#endif
                   (int)type_ref, type);
 
       else if ((writer->fields[f_id])->td != td)
@@ -440,7 +459,11 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "\"%s\" and mesh \"%s\" with time discretization %d,\n"
                     "but re-defined with time discretization %d."),
                   fieldname, writer->name,
+#if (SALOMEMED_VERSION  >= 0x070300)
+                  writer->med_meshes[field->mesh_id]->getName().c_str(),
+#else
                   writer->med_meshes[field->mesh_id]->getName(),
+#endif
                   (int)(field->td), (int)td);
 
       /* return id of field if compatible */
@@ -727,7 +750,7 @@ _write_connect_block(fvm_element_t      type,
   int elt_buf[8];
   cs_lnum_t  i;
   int  j;
-  
+
   const int  stride = fvm_nodal_n_vertices_element[type];
   INTERP_KERNEL::NormalizedCellType med_type = _get_norm_elt_type(type);
 
@@ -766,7 +789,7 @@ _write_block_connect_g(fvm_element_t     type,
 {
   cs_lnum_t *_block_connect = NULL;
 
-  const int  stride = fvm_nodal_n_vertices_element[type]; 
+  const int  stride = fvm_nodal_n_vertices_element[type];
 
   cs_file_serializer_t *s = cs_file_serializer_create(sizeof(cs_lnum_t),
                                                       stride,
@@ -1751,7 +1774,7 @@ _export_field_values_el(const fvm_nodal_t               *mesh,
 
 extern "C" {
 #if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
 #endif
 
 /*----------------------------------------------------------------------------
