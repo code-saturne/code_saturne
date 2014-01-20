@@ -60,6 +60,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_to_builder.h"
 #include "cs_multigrid.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_preprocess.h"
 #include "cs_prototypes.h"
@@ -89,6 +90,9 @@ typedef struct {
 
   cs_mesh_t                 *reference_mesh;    /* Reference mesh (before
                                                    rotation and joining) */
+
+  cs_lnum_t                  n_b_faces_ref;     /* Reference number of
+                                                   boundary faces */
 
   cs_lnum_t                  n_rotor_vtx;       /* Size of rotor_vtx array */
   cs_lnum_t                 *rotor_vtx;         /* List of vertices related
@@ -138,6 +142,7 @@ _turbomachinery_create(void)
 
   tbm->rotor_cells_c = NULL;
   tbm->reference_mesh = cs_mesh_create();
+  tbm->n_b_faces_ref = -1;
   tbm->cell_rotor_num = NULL;
   tbm->rotor_vtx = NULL;
   tbm->model = CS_TURBOMACHINERY_NONE;
@@ -872,6 +877,22 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   cs_join_all(false);
 
+  if (cs_glob_turbomachinery->n_b_faces_ref > -1) {
+    if (cs_glob_mesh->n_b_faces != cs_glob_turbomachinery->n_b_faces_ref) {
+      cs_gnum_t n_g_b_faces_ref = cs_glob_turbomachinery->n_b_faces_ref;
+      cs_parall_counter(&n_g_b_faces_ref, 1);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error in turbomachinery mesh update:\n"
+                  "Number of boundary faces has changed from %llu to %llu.\n"
+                  "There are probably unjoined faces, "
+                  "due to an insufficiently regular mesh;\n"
+                  "adjusting mesh joining parameters might help."),
+                (unsigned long long)n_g_b_faces_ref,
+                (unsigned long long)cs_glob_mesh->n_g_b_faces);
+    }
+  }
+  cs_glob_turbomachinery->n_b_faces_ref = cs_glob_mesh->n_b_faces;
+
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
 
@@ -896,8 +917,10 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
     cs_numbering_destroy(&(cs_glob_mesh->i_face_numbering));
   if (cs_glob_mesh->b_face_numbering != NULL)
     cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
-  cs_glob_mesh->i_face_numbering = cs_numbering_create_default(cs_glob_mesh->n_i_faces);
-  cs_glob_mesh->b_face_numbering = cs_numbering_create_default(cs_glob_mesh->n_b_faces);
+  cs_glob_mesh->i_face_numbering
+    = cs_numbering_create_default(cs_glob_mesh->n_i_faces);
+  cs_glob_mesh->b_face_numbering
+    = cs_numbering_create_default(cs_glob_mesh->n_b_faces);
 
   /* Build group classes */
 
