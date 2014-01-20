@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2013 EDF S.A.
+  Copyright (C) 1998-2014 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -159,7 +159,11 @@ _get_medcoupling_mesh_id(fvm_to_medcoupling_t  *writer,
   assert(writer != NULL);
 
   for (i = 0; i < writer->n_med_meshes; i++) {
+#if (SALOMEMED_VERSION  >= 0x070300)
+    if (strcmp(mesh_name, writer->med_meshes[i]->getName().c_str()) == 0)
+#else
     if (strcmp(mesh_name, writer->med_meshes[i]->getName()) == 0)
+#endif
       break;
   }
 
@@ -429,7 +433,11 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "coupling \"%s\" and mesh \"%s\" with %d components,\n"
                     "but re-defined with %d components."),
                   fieldname, writer->name,
+#if (SALOMEMED_VERSION  >= 0x070300)
+                  writer->med_meshes[field->mesh_id]->getName().c_str(),
+#else
                   writer->med_meshes[field->mesh_id]->getName(),
+#endif
                   field->dim, dim);
 
       else if (type_ref != type)
@@ -438,7 +446,11 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "coupling \"%s\" and mesh \"%s\" with type %d,\n"
                     "but re-defined with type %d."),
                   fieldname, writer->name,
+#if (SALOMEMED_VERSION  >= 0x070300)
+                  writer->med_meshes[field->mesh_id]->getName().c_str(),
+#else
                   writer->med_meshes[field->mesh_id]->getName(),
+#endif
                   (int)type_ref, type);
 
       else if ((writer->fields[f_id])->td != td)
@@ -447,7 +459,11 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "\"%s\" and mesh \"%s\" with time discretization %d,\n"
                     "but re-defined with time discretization %d."),
                   fieldname, writer->name,
+#if (SALOMEMED_VERSION  >= 0x070300)
+                  writer->med_meshes[field->mesh_id]->getName().c_str(),
+#else
                   writer->med_meshes[field->mesh_id]->getName(),
+#endif
                   (int)(field->td), (int)td);
 
       /* return id of field if compatible */
