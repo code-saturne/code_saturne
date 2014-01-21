@@ -703,6 +703,7 @@ use dimens
 use entsor
 use numvar
 use field
+use ihmpre, only: iihmpr
 
 !===============================================================================
 
@@ -769,7 +770,9 @@ do iscal = 1, nscaus
 
 enddo
 
-call uiscau
+if (iihmpr.eq.1) then
+  call uiscau
+endif
 
 return
 
