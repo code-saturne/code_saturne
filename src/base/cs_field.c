@@ -124,7 +124,7 @@ BEGIN_C_DECLS
   \var  cs_field_t::bc_coeffs
         Boundary condition coefficients, for variable type fields
   \var  cs_field_t::is_owner
-        Ownership flag for values and boundary coefficients
+        Ownership flag for values
 */
 
 /*=============================================================================
@@ -262,6 +262,10 @@ cs_f_field_get_type(int           id,
 
 int
 cs_f_field_have_previous(int   id);
+
+void
+cs_f_field_set_n_previous(int  id,
+                          int  n_previous);
 
 void
 cs_f_field_var_ptr_by_id(int          id,
@@ -779,6 +783,25 @@ cs_f_field_have_previous(int  id)
 }
 
 /*----------------------------------------------------------------------------
+ * Change a field's handling of values at previous time steps.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id         <-- field id
+ *   n_previous <-- number of previous values to save
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_set_n_previous(int  id,
+                          int  n_previous)
+{
+  cs_field_t *f = cs_field_by_id(id);
+
+  cs_field_set_n_time_vals(f, n_previous + 1);
+}
+
+/*----------------------------------------------------------------------------
  * Return a pointer to a field's variable values
  *
  * This function is intended for use by Fortran wrappers.
@@ -1253,6 +1276,62 @@ cs_field_create(const char   *name,
   f->n_time_vals = has_previous ? 2 : 1;
 
   return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Change the number of time values managed by a field.
+ *
+ * The minimum will never be below 1, as the current time is always handled.
+ *
+ * \param[in, out]  f            pointer to field structure
+ * \param[in]       n_time_vals  number of time values to maintain
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_set_n_time_vals(cs_field_t  *f,
+                         int          n_time_vals)
+{
+  assert(f != NULL);
+
+  int _n_time_vals = n_time_vals;
+
+  const int n_time_vals_ini = f->n_time_vals;
+
+  if (_n_time_vals < 1)
+    _n_time_vals = 1;
+
+  else if (_n_time_vals > 2)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s called for field \"%s\" with n_time_vals = %d\n"
+              " but only values 1 and 2 are currently supported.",
+              __func__, f->name, n_time_vals);
+
+  if (_n_time_vals == n_time_vals_ini)
+    return;
+
+  /* Update number of time values */
+
+  f->n_time_vals = _n_time_vals;
+
+  /* If allocation or mapping has already been done */
+
+  if (f->val != NULL) {
+    if (n_time_vals_ini > _n_time_vals) {
+      assert(n_time_vals_ini == 2 && _n_time_vals == 1);
+      if (f->is_owner)
+        BFT_FREE(f->val_pre);
+      else
+        f->val_pre = NULL;
+    }
+    else { /* if (n_time_vals_ini < _n_time_vals) */
+      if (f->is_owner) {
+        const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+        f->val_pre = _add_val(n_elts[2], f->dim, f->val_pre);
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1796,18 +1875,6 @@ cs_field_by_name_try(const char  *name)
  * \return  id of the field, or -1 if not found
  */
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
- * Return the id of a defined field based on its name.
- *
- * If no field with the given name exists, -1 is returned.
- *
- * parameters:
- *   name <-- field name
- *
- * returns:
- *   id the field, or -1 if not found
- *----------------------------------------------------------------------------*/
 
 int
 cs_field_id_by_name(const char *name)

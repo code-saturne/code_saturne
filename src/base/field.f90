@@ -234,6 +234,17 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function changing a fields handling of previous values
+
+    subroutine cs_f_field_set_n_previous(f_id, n_previous)  &
+      bind(C, name='cs_f_field_set_n_previous')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, n_previous
+    end subroutine cs_f_field_set_n_previous
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function allocating field values
 
     subroutine cs_field_allocate_values(f)  &
@@ -712,7 +723,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Return a given field's dimension.
+  !> \brief Indicate if a field maintains values at the previous time step
 
   !> \param[in]   f_id           field id
   !> \param[out]  have_previous  true if previous values are maintained
@@ -744,6 +755,35 @@ contains
     return
 
   end subroutine field_have_previous
+
+  !=============================================================================
+
+  !> \brief Modify a field's handling of values at the previous time step
+
+  !> \param[in]   f_id        field id
+  !> \param[out]  n_previous  number of previous values (0 or 1)
+
+  subroutine field_set_n_previous(f_id, n_previous)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id, n_previous
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_n_previous
+
+    c_f_id = f_id
+    c_n_previous = n_previous
+
+    call cs_f_field_set_n_previous(c_f_id, c_n_previous)
+
+    return
+
+  end subroutine field_set_n_previous
 
   !=============================================================================
 

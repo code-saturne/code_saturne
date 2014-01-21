@@ -119,8 +119,7 @@ typedef struct {
   cs_field_bc_coeffs_t   *bc_coeffs;    /* Boundary condition coefficients,
                                            for variable type fields */
 
-  bool                    is_owner;     /* Ownership flag for values
-                                           and boundary coefficients */
+  bool                    is_owner;     /* Ownership flag for values */
 
 } cs_field_t;
 
@@ -181,6 +180,20 @@ cs_field_create(const char   *name,
                 int           dim,
                 bool          interleaved,
                 bool          has_previous);
+
+/*----------------------------------------------------------------------------
+ * Change the number of time values managed by a field.
+ *
+ * The minimum will never be below 1, as the current time is always handled.
+ *
+ * parameters:
+ *   f           <-> pointer to field structure
+ *   n_time_vals <-- number of time values to maintain
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_set_n_time_vals(cs_field_t  *f,
+                         int          n_time_vals);
 
 /*----------------------------------------------------------------------------
  * Allocate arrays for field values.
