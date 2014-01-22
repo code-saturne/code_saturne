@@ -980,7 +980,7 @@ do ifac = 1, nfabor
 
         ! Translate into Diffusive flux BCs
         fcofaf(isou) = -hint*fcoefa(isou)
-        fcofbf(isou) = hint*(1.d0-fcofbf(isou))
+        fcofbf(isou) = hint*(1.d0-fcoefb(isou))
 
         if (isou.eq.1) then
           coefa_r11(ifac) = fcoefa(isou)
