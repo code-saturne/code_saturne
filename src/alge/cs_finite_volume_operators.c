@@ -579,10 +579,16 @@ cs_finite_volume_face_gradient_scalar(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
+  if (imrgra > 10) 
+    imrgra = 10; 
+  else if (imrgra > 0) 
+    imrgra = 0;
   if (imrgra < 0)
-    cs_gradient_type_by_imrgra(-imrgra,
-                               &gradient_type,
-                               &halo_type);
+    imrgra = -imrgra;
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
 
   snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
 
@@ -897,10 +903,16 @@ cs_finite_volume_div_face_gradient_scalar(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
+  if (imrgra > 10) 
+    imrgra = 10; 
+  else if (imrgra > 0) 
+    imrgra = 0;
   if (imrgra < 0)
-    cs_gradient_type_by_imrgra(imrgra,
-                               &gradient_type,
-                               &halo_type);
+    imrgra = -imrgra;
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
 
   snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
 
