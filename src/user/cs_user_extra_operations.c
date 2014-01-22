@@ -87,15 +87,19 @@ BEGIN_C_DECLS
  * User function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of each time step.
  *
- *----------------------------------------------------------------------------*/
+ * It and has a very general purpose, although it is recommended to handle
+ * mainly postprocessing or data-extraction type operations.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_extra_operations(void)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
 }
 
 END_C_DECLS
