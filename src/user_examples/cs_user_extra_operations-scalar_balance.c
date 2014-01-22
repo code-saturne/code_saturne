@@ -89,7 +89,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *
+ * Example for scalar balance.
  *----------------------------------------------------------------------------*/
 
 void
@@ -100,7 +100,7 @@ cs_user_extra_operations(void)
   cs_lnum_t n_faces;
   cs_lnum_t *face_list;
 
-  int ntcabs, cell_id, cell_id1, cell_id2, face_id;
+  int cell_id, cell_id1, cell_id2, face_id;
   int nt_cur = cs_glob_time_step->nt_cur;
 
   const cs_mesh_t *m = cs_glob_mesh;
@@ -115,7 +115,6 @@ cs_user_extra_operations(void)
   const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_real_t *cell_vol = fvq->cell_vol;
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_3_t *diipb = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *b_face_surf = (const cs_real_t *)fvq->b_face_surf;
 
@@ -399,15 +398,15 @@ cs_user_extra_operations(void)
 
   /* Sum of values on all ranks (parallel calculations) */
 
-  cs_parall_sum(&vol_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&div_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&a_wall_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&h_wall_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&sym_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&in_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&out_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&mass_i_balance, CS_DOUBLE, 1);
-  cs_parall_sum(&mass_o_balance, CS_DOUBLE, 1);
+  cs_parall_sum(1, CS_DOUBLE, &vol_balance);
+  cs_parall_sum(1, CS_DOUBLE, &div_balance);
+  cs_parall_sum(1, CS_DOUBLE, &a_wall_balance);
+  cs_parall_sum(1, CS_DOUBLE, &h_wall_balance);
+  cs_parall_sum(1, CS_DOUBLE, &sym_balance);
+  cs_parall_sum(1, CS_DOUBLE, &in_balance);
+  cs_parall_sum(1, CS_DOUBLE, &out_balance);
+  cs_parall_sum(1, CS_DOUBLE, &mass_i_balance);
+  cs_parall_sum(1, CS_DOUBLE, &mass_o_balance);
 
   /* --> Total balance
          ------------- */
