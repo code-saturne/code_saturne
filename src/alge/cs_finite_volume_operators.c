@@ -579,9 +579,9 @@ cs_finite_volume_face_gradient_scalar(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  if (imrgra > 10) 
-    imrgra = 10; 
-  else if (imrgra > 0) 
+  if (imrgra > 10)
+    imrgra = 10;
+  else if (imrgra > 0)
     imrgra = 0;
   if (imrgra < 0)
     imrgra = -imrgra;
@@ -903,9 +903,9 @@ cs_finite_volume_div_face_gradient_scalar(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  if (imrgra > 10) 
-    imrgra = 10; 
-  else if (imrgra > 0) 
+  if (imrgra > 10)
+    imrgra = 10;
+  else if (imrgra > 0)
     imrgra = 0;
   if (imrgra < 0)
     imrgra = -imrgra;

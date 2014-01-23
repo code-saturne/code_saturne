@@ -130,7 +130,7 @@ double precision rvoid(1)
 
 imrgrp = 0
 if (imrgra.lt.0) imrgrp = -imrgra
-if (imrgra.gt.10) imrgrp = 10 
+if (imrgra.gt.10) imrgrp = 10
 
 ! The gradient of a potential (pressure, ...) is a vector
 
