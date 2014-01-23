@@ -2326,7 +2326,6 @@ do ifac = 1, nfabor
       ! T+ = (T_I - T_w) / Tet
       tplus = max((yplus-dplus), epzero)/yptp
 
-      tplusp(ifac) = tplus
       if (itplus .ge. 0) tplusp(ifac) = tplus
       if (itstar .ge. 0) tstarp(ifac) = tet
 
