@@ -93,6 +93,11 @@ typedef enum {
   CS_ENUMF_(rho),          /*!< density (at cells) */
   CS_ENUMF_(rho_b),        /*!< density (at boundary faces) */
 
+  CS_ENUMF_(cp),           /*!< specific heat */
+
+  CS_ENUMF_(mu),           /*!< molecular viscosity */
+  CS_ENUMF_(mu_t),         /*!< turbulent dynamic viscosity */
+
   CS_ENUMF_(poro),         /*!< porosity */
   CS_ENUMF_(t_poro),       /*!< tensorial porosity */
 

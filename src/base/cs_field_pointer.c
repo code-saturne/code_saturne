@@ -292,6 +292,14 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(rho_b),
                        cs_field_by_name_try("boundary_density"));
 
+  cs_field_pointer_map(CS_ENUMF_(cp),
+                       cs_field_by_name_try("specific_heat"));
+
+  cs_field_pointer_map(CS_ENUMF_(mu),
+                       cs_field_by_name_try("molecular_viscosity"));
+  cs_field_pointer_map(CS_ENUMF_(mu_t),
+                       cs_field_by_name_try("turbulent_viscosity"));
+
   cs_field_pointer_map(CS_ENUMF_(poro),
                        cs_field_by_name_try("porosity"));
   cs_field_pointer_map(CS_ENUMF_(t_poro),

@@ -71,7 +71,8 @@ implicit none
 
 character     rubriq*64, cmoy4*4, cindfm*4
 character     ficsui*32
-integer       ivar  , iscal , irphas , iprop
+character*80  f_label, f_name, s_label, s_name
+integer       ivar  , iscal , irphas , iprop, id
 integer       ii    , jj    , kk    , ll
 integer       iok   , ippok , ipppst
 integer       iest  , ivisph, ipropp
@@ -127,17 +128,6 @@ if (ipass.eq.1) then
 !      -----------------
 
   iok = 0
-
-! ---  NSCAL a deja ete verifie, mais on ne sait jamais.
-
-  if (nscal.lt.0) then
-    write(nfecra,7010) nscal, nscaus, nscapp
-    iok = iok + 1
-  endif
-  if (nscal.gt.nscamx) then
-    write(nfecra,7011) nscal, nscamx, nscaus, nscapp, nscal
-    iok = iok + 1
-  endif
 
 ! --- ISCAVR(ISCAL) doit etre compris entre 0 et NSCAL.
 
@@ -284,64 +274,79 @@ if (ipass.eq.1) then
 !       construction de IPPPRO plus bas.
 !      Cependant, pour les physiques particulieres, ce n'est pas le cas.
 
+  ! Base properties, always present
 
-  iprop = 0
+  call add_property_field('density', 'Density', irom)
+  icrom = iprpfl(irom)
 
-!   Proprietes des phases : proprietes toujours presentes
-  iprop         = iprop + 1
-  irom   = iprop
-  iprop         = iprop + 1
-  iviscl = iprop
-  iprop         = iprop + 1
-  ivisct = iprop
-  iprop         = iprop + 1
-  icour  = iprop
-  iprop         = iprop + 1
-  ifour  = iprop
+  call add_property_field('molecular_viscosity', 'Laminar Viscosity', &
+                          iviscl)
 
-!  Pression totale stockee dans IPRTOT, si on n'est pas en compressible
-!  (sinon Ptot=P* !)
+  call add_property_field('turbulent_viscosity', 'Turb Viscosity', &
+                          ivisct)
+  if (iturb.eq.0) call hide_property(ivisct)
+
+  call add_property_field('courant_number', 'CFL', icour)
+  call add_property_field('fourier_number', 'Fourier Number', ifour)
+
+  ! Pression totale stockee dans IPRTOT, si on n'est pas en compressible
+  ! (sinon Ptot=P* !)
   if (ippmod(icompf).lt.0) then
-    iprop         = iprop + 1
-    iprtot        = iprop
+    call add_property_field('total_pressure', 'Total Pressure', &
+                            iprtot)
   endif
 
-!  Proprietes des phases : CP s'il est variable
+  ! CP when variable
   if (icp.ne.0) then
-    iprop         = iprop + 1
-    icp    = iprop
+    call add_property_field('specific_heat', 'Specific Heat', icp)
   endif
 
-!  Proprietes des phases : Cs^2 si on est en LES dynamique
+  ! Cs^2 si on est en LES dynamique
   if (iturb.eq.41) then
-    iprop         = iprop + 1
-    ismago = iprop
+    call add_property_field('smagorinsky_constant^2', 'Csdyn2', ismago)
   else
-    ismago = -1
+    ismago = 0
   endif
 
-!  Viscosite de maillage en ALE
+  ! Viscosite de maillage en ALE
   if (iale.eq.1) then
-    iprop     = iprop + 1
-    ivisma(1) = iprop
-!     si la viscosite est isotrope, les trois composantes pointent
-!       au meme endroit
+    call add_property_field('mesh_viscosity_1', 'Mesh ViscX', ivisma(1))
+    ! si la viscosite est isotrope, les trois composantes pointent
+    !  au meme endroit
     if (iortvm.eq.0) then
-      ivisma(2) = iprop
-      ivisma(3) = iprop
+      ivisma(2) = ivisma(1)
+      ivisma(3) = ivisma(1)
     else
-      iprop     = iprop + 1
-      ivisma(2) = iprop
-      iprop     = iprop + 1
-      ivisma(3) = iprop
+      call add_property_field('mesh_viscosity_2', 'Mesh ViscY', ivisma(2))
+      call add_property_field('mesh_viscosity_3', 'Mesh ViscZ', ivisma(3))
     endif
   endif
 
-!   Proprietes des phases : estimateurs d'erreur
+  ! Estimateurs d'erreur
   do iest = 1, nestmx
-    iprop              = iprop + 1
-    iestim(iest) = iprop
+    iestim(iest) = -1
   enddo
+
+  if (iescal(iespre).gt.0) then
+    write(f_name,  '(a14,i1)') 'est_error_pre_', iescal(iespre)
+    write(f_label, '(a5,i1)') 'EsPre', iescal(iespre)
+    call add_property_field(f_name, f_label, iestim(iespre))
+  endif
+  if (iescal(iesder).gt.0) then
+    write(f_name,  '(a14,i1)') 'est_error_der_', iescal(iesder)
+    write(f_label, '(a5,i1)') 'EsDer', iescal(iesder)
+    call add_property_field(f_name, f_label, iestim(iesder))
+  endif
+  if (iescal(iescor).gt.0) then
+    write(f_name,  '(a14,i1)') 'est_error_cor_', iescal(iescor)
+    write(f_label, '(a5,i1)') 'EsCor', iescal(iescor)
+    call add_property_field(f_name, f_label, iestim(iescor))
+  endif
+  if (iescal(iestot).gt.0) then
+    write(f_name,  '(a14,i1)') 'est_error_tot_', iescal(iestot)
+    write(f_label, '(a5,i1)') 'EsTot', iescal(iestot)
+    call add_property_field(f_name, f_label, iestim(iestot))
+  endif
 
 !   Proprietes des scalaires : VISCLS si elle est variable
 !     On utilisera IVISLS comme suit :
@@ -350,22 +355,68 @@ if (ipass.eq.1) then
 !         si IVISLS(II) .GT. 0 : visc = PROPCE(IEL ,IPPROC(IVISLS(II)))
 !     Ceci permet de ne pas reserver des tableaux vides pour les
 !       scalaires a viscosite constante
+
+  ! Add a scalar diffusivity when defined as variable
+
   if (nscal.ge.1) then
     do ii = 1, nscal
-      if (ivisls(ii).ne.0) then
-        iprop      = iprop + 1
-        ivisls(ii) = iprop
+      if (ivisls(ii).ne.0 .and. iscavr(ii).le.0) then
+        ! Build name and label, using a general rule, with a
+        ! fixed name for temperature or enthalpy
+        id = ivarfl(isca(ii))
+        call field_get_name(id, s_name)
+        call field_get_label(id, s_label)
+        if (ii.eq.iscalt) then
+          s_name = 'thermal'
+          s_label = 'Th'
+        endif
+        if (iscacp(ii).gt.0) then
+          f_name  = trim(s_name) // '_conductivity'
+          f_label = trim(s_label) // ' Cond'
+        else
+          f_name  = trim(s_name) // '_diffusivity'
+          f_label = trim(s_label) // ' Diff'
+        endif
+        ! Special case for electric arcs: real and imaginary electric
+        ! conductivity is the same (and ipotr < ipoti)
+        if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+          if (ii.eq.ipotr) then
+            f_name = 'elec_sigma'
+            f_label = 'Sigma'
+          else if (ii.eq.ipoti) then
+            ivisls(ipoti) = ivisls(ipotr)
+            cycle ! go to next scalar in loop, avoid creating property
+          endif
+        endif
+        ! Now create matching property
+        call add_property_field(f_name, f_label, ivisls(ii))
       endif
     enddo
-
   endif
+
+  if (iscalt.gt.0) then
+    if (ityturt(iscalt).gt.0.and.irovar.eq.1) then
+      call add_property_field('thermal_expansion', 'Beta', ibeta)
+    endif
+  endif
+
+!  Pour les fluctuations, le pointeur de la diffusivite
+!    envoie directement sur la diffusivite du scalaire associe.
+
+  do ii = 1, nscal
+    if (ivisls(ii).gt.0) then
+      if (iscavr(ii).gt.0) then
+        ivisls(ii) = ivisls(iscavr(ii))
+      endif
+    endif
+  enddo
 
 !     Numero max des proprietes ; ressert plus bas pour
 !       ajouter celles relatives a la physique particuliere
-  nprmax = iprop
+  nprmax = nproce
 
 
-! --- Positionnement dans les tableaux PROPCE, PROFA, PROFB
+! --- Positionnement dans les tableaux PROPCE
 
 !   Au centre des cellules (tout sauf les flux de masse)
 !     Pour les fluctuations, le pointeur de la diffusivite
@@ -399,66 +450,57 @@ if (ipass.eq.1) then
 !       conductivite electrique pour le potentiel reel et le potentiel
 !       imaginaire
 
-  iprop = 0
 
-  iprop                 = iprop  + 1
-  ipproc(irom  ) = iprop
+  iprop                 = irom
   ipppst                = ipppst + 1
   ipppro(iprop)         = ipppst
-  iprop                 = iprop  + 1
-  ipproc(iviscl) = iprop
+
+  iprop                 = iviscl
   ipppst                = ipppst + 1
   ipppro(iprop)         = ipppst
-  iprop                 = iprop  + 1
-  ipproc(ivisct) = iprop
+
+  iprop                 = ivisct
   if (iturb.eq.0) then
     ipppro(iprop)         = 1
   else
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
   endif
-  iprop                 = iprop  + 1
-  ipproc(icour ) = iprop
+  iprop                 = icour
   ipppst                = ipppst + 1
   ipppro(iprop)         = ipppst
-  iprop                 = iprop  + 1
-  ipproc(ifour ) = iprop
+
+  iprop                 = ifour
   ipppst                = ipppst + 1
   ipppro(iprop)         = ipppst
 
   if (ippmod(icompf).lt.0) then
-    iprop                 = iprop  + 1
-    ipproc(iprtot) = iprop
+    iprop                 = iprtot
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
   endif
 
   if (icp.gt.0) then
-    iprop                 = iprop + 1
-    ipproc(icp   ) = iprop
+    iprop                 = icp
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
   endif
 
-  if (ismago.ne.-1) then
-    iprop                 = iprop  + 1
-    ipproc(ismago) = iprop
+  if (ismago.gt.0) then
+    iprop                 = ismago
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
   endif
 
   if (iale.eq.1) then
-    iprop             = iprop + 1
-    ipproc(ivisma(1)) = iprop
+    iprop             = ivisma(1)
     ipppst            = ipppst + 1
     ipppro(iprop)     = ipppst
     if (iortvm.eq.1) then
-      iprop             = iprop + 1
-      ipproc(ivisma(2)) = iprop
+      iprop             = ivisma(2)
       ipppst            = ipppst + 1
       ipppro(iprop)     = ipppst
-      iprop             = iprop + 1
-      ipproc(ivisma(3)) = iprop
+      iprop             = ivisma(3)
       ipppst            = ipppst + 1
       ipppro(iprop)     = ipppst
     endif
@@ -466,8 +508,7 @@ if (ipass.eq.1) then
 
   do iest = 1, nestmx
     if (iescal(iest).gt.0) then
-      iprop                      = iprop + 1
-      ipproc(iestim(iest)) = iprop
+      iprop                      = iestim(iest)
       ipppst                     = ipppst + 1
       ipppro(iprop)              = ipppst
     endif
@@ -483,8 +524,7 @@ if (ipass.eq.1) then
     do ii = 1, nscal
       if (ivisls(ii).gt.0.and.ii.ne.ipoti) then
         if (iscavr(ii).le.0) then
-          iprop                 = iprop + 1
-          ipproc(ivisls(ii)  )  = iprop
+          iprop                 = ivisls(ii)
           ipppst                = ipppst + 1
           ipppro(iprop)         = ipppst
         endif
@@ -494,8 +534,7 @@ if (ipass.eq.1) then
     do ii = 1, nscal
       if (ivisls(ii).gt.0) then
         if (iscavr(ii).le.0) then
-          iprop                 = iprop + 1
-          ipproc(ivisls(ii)  )  = iprop
+          iprop                 = ivisls(ii)
           ipppst                = ipppst + 1
           ipppro(iprop)         = ipppst
         endif
@@ -504,30 +543,10 @@ if (ipass.eq.1) then
   endif
   if (iscalt.gt.0) then
     if (ityturt(iscalt).gt.0.and.irovar.eq.1) then!FIXME
-      iprop                 = iprop + 1
-      ibeta                 = iprop
-      ipproc(ibeta)         = iprop
+      iprop                 = ibeta
       ipppst                = ipppst + 1
       ipppro(iprop)         = ipppst
     endif
-  endif
-
-  do ii = 1, nscal
-    if (ivisls(ii).gt.0) then
-      if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
-        ipproc(ivisls(ii)  )  = ipproc(ivisls(iscavr(ii))  )
-      endif
-    endif
-  enddo
-
-!     Conductivite electrique imaginaire :
-!     La conductivite reelle et imaginaire sont dans le meme tableau.
-!       En Joule, le pointeur sur la  "viscosite" du potentiel imaginaire
-!         renvoie sur celle du potentiel reel.
-!       Intervention 2/2
-
-  if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-    ipproc(ivisls(ipoti)  )  = ipproc(ivisls(ipotr)  )
   endif
 
   nproce = iprop
@@ -578,7 +597,6 @@ endif
 !       suite avec des moments non reinitialises).
 
 if (ipass.eq.2) then
-
 
 ! ---> 2.1 PROPRIETES ADDITIONNELLES POUR LES ET SCHEMA EN TEMPS
 !      ---------------------------------------------------------
@@ -849,6 +867,7 @@ if (ipass.eq.2) then
   if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.ippmod(icompf).ge.0) then
     iprop         = iprop + 1
     iroma  = iprop
+    call field_set_n_previous(iprpfl(irom), 1)
   endif
   !     Dans le cas d'une extrapolation de la viscosite totale
   if (iviext.gt.0) then
@@ -856,6 +875,7 @@ if (ipass.eq.2) then
     ivisla = iprop
     iprop         = iprop + 1
     ivista = iprop
+    call field_set_n_previous(iprpfl(ivisct), 1)
   endif
 
   !     Proprietes des phases : CP s'il est variable
@@ -863,6 +883,7 @@ if (ipass.eq.2) then
     if (icpext.gt.0) then
       iprop         = iprop + 1
       icpa   = iprop
+      call field_set_n_previous(iprpfl(icp), 1)
     endif
   endif
 
@@ -1618,48 +1639,6 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 7010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES ERRONE                             ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires doit etre un entier                ',/,&
-'@    positif ou nul. Il vaut ici   NSCAL   = ',I10            ,/,&
-'@    Remarque : NSCAUS = ',I10                                ,/,&
-'@               NSCAPP = ',I10                                ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires necessaire  est  NSCAL  = ',I10     ,/,&
-'@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx.h         est  NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@    Remarque : NSCAUS = ',I10                                ,/,&
-'@               NSCAPP = ',I10                                ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@  NSCAMX doit valoir au moins ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2476,48 +2455,6 @@ endif
 
 #else
 
- 7010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     WRONG NUMBER OF SCALARS                                ',/,&
-'@                                                            ',/,&
-'@  The number of scalars must be an integer either           ',/,&
-'@    positive or zero. Here it is  NSCAL   = ',I10            ,/,&
-'@    Note     : NSCAUS = ',I10                                ,/,&
-'@               NSCAPP = ',I10                                ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NUMBER OF SCALARS TOO LARGE                            ',/,&
-'@                                                            ',/,&
-'@  The necessary number of scalars is      NSCAL  = ',I10     ,/,&
-'@  The number of scalars available in                        ',/,&
-'@                    paramx.h           is NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@    Note     : NSCAUS = ',I10                                ,/,&
-'@               NSCAPP = ',I10                                ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@  NSCAMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7030 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3341,3 +3278,316 @@ endif
 
 return
 end subroutine varpos
+
+!===============================================================================
+
+!> \function add_property_field_nd
+!
+!> \brief add field defining a property field defined on cells,
+!>        with default options
+!
+!> It is recommended not to define property names of more than 16
+!> characters, to get a clear execution listing (some advanced writing
+!> levels take into account only the first 16 characters).
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     name          field name
+!> \param[in]     label         field default label, or empty
+!> \param[in]     dim           field dimension
+!> \param[out]    iprop         matching field property id
+!_______________________________________________________________________________
+
+subroutine add_property_field_nd &
+ ( name, label, dim, iprop )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character(len=*), intent(in) :: name, label
+integer, intent(in)          :: dim
+integer, intent(out)         :: iprop
+
+! Local variables
+
+integer  id, type_flag, location_id
+logical  has_previous, interleaved
+
+!===============================================================================
+
+type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
+location_id = 1 ! variables defined on cells
+has_previous = .false.
+interleaved = .true.
+
+! Test if the field has already been defined
+call field_get_id_try(trim(name), id)
+if (id .ge. 0) then
+  write(nfecra,1000) trim(name)
+  call csexit (1)
+endif
+
+! Create field
+
+call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
+                  id)
+
+call field_set_key_int(id, keyvis, 1)
+call field_set_key_int(id, keylog, 1)
+
+if (len(trim(label)).gt.0) then
+  call field_set_key_str(id, keylbl, trim(label))
+endif
+
+! Property number and mapping to field
+
+iprop = nproce + 1
+nproce = nproce + dim
+
+call varpos_check_nproce
+
+iprpfl(iprop) = id
+ipproc(iprop) = iprop
+nomprp(iprop) = label
+
+return
+
+!---
+! Formats
+!---
+
+#if defined(_CS_LANG_FR)
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    ========                                                ',/,&
+'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#else
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
+'@    ======                                                  ',/,&
+'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#endif
+
+end subroutine add_property_field_nd
+
+!===============================================================================
+
+!> \function add_property_field
+!
+!> \brief add field defining a property field defined on cells,
+!>        with default options
+!
+!> It is recommended not to define property names of more than 16
+!> characters, to get a clear execution listing (some advanced writing
+!> levels take into account only the first 16 characters).
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     name          field name
+!> \param[in]     label         field default label, or empty
+!> \param[out]    iprop         matching field property id
+!_______________________________________________________________________________
+
+subroutine add_property_field &
+ ( name, label, iprop )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character(len=*), intent(in) :: name, label
+integer, intent(out)         :: iprop
+
+!===============================================================================
+
+call add_property_field_nd(name, label, 1, iprop)
+
+return
+
+end subroutine add_property_field
+
+!===============================================================================
+
+!> \function hide_property
+!
+!> \brief disable logging and postprocessing for an unused property
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iprop         property id
+!_______________________________________________________________________________
+
+subroutine hide_property &
+ ( iprop )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer, intent(in) :: iprop
+
+! Local variables
+
+integer  id
+
+!===============================================================================
+
+ipppro(iprop) = 1
+id = iprpfl(iprop)
+call field_set_key_int(id, keyvis, 0)
+call field_set_key_int(id, keylog, 0)
+
+return
+
+end subroutine hide_property
+
+!===============================================================================
+
+!> \function varpos_check_nproce
+
+!> \brief check npromx is sufficient for the required number of properties.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!_______________________________________________________________________________
+
+subroutine varpos_check_nproce
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+! Local variables
+
+if (nproce .gt. npromx) then
+  write(nfecra,1000) nproce, npromx
+  call csexit (1)
+endif
+
+return
+
+!---
+! Formats
+!---
+
+#if defined(_CS_LANG_FR)
+
+ 1000 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========'                                                ,/,&
+'@     NOMBRE DE PROPRIETES TROP GRAND'                        ,/,&
+'@'                                                            ,/,&
+'@  Le type de calcul defini'                                  ,/,&
+'@    correspond a un nombre de proprietes NPROCE >= ', i10    ,/,&
+'@  Le nombre de proprietes maximal prevu'                     ,/,&
+'@                      dans paramx    est NPROMX  = ', i10    ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne sera pas execute.'                            ,/,&
+'@'                                                            ,/,&
+'@  Verifier les parametres'                                   ,/,&
+'@'                                                            ,/,&
+'@  Si NPROMX est augmente, le code doit etre reinstalle.'     ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#else
+
+ 1000 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP'              ,/,&
+'@    ======'                                                  ,/,&
+'@     NUMBER OF PROPERTIES TOO LARGE'                         ,/,&
+'@'                                                            ,/,&
+'@  The type of calculation defined'                           ,/,&
+'@    corresponds to a number of properties NPROCE >= ', i10   ,/,&
+'@  The maximum number of properties allowed'                  ,/,&
+'@                      in   paramx     is  NPROMX  = ', i10   ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be executed'                        ,/,&
+'@'                                                            ,/,&
+'@  Verify   parameters.'                                      ,/,&
+'@'                                                            ,/,&
+'@  If NVARMX is increased, the code must be reinstalled.'     ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#endif
+
+end subroutine varpos_check_nproce
+
+!===============================================================================

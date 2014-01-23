@@ -282,6 +282,7 @@ contains
   subroutine resize_main_real_array ( dt , rtp , rtpa , propce )
 
     use dimens, only: nvar, nproce
+    use field
     use mesh  , only: ncel, ncelet
     use numvar
     use optcal, only: itytur
@@ -299,6 +300,7 @@ contains
 
     integer iel, iprop, ivar
 
+    double precision, pointer, dimension(:)   :: val_s
     double precision, allocatable, dimension(:) :: dt0
     double precision, allocatable, dimension(:,:) :: rtp0, rtpa0, proce0
 
@@ -387,9 +389,10 @@ contains
         ivar = ivar + 1
       enddo
 
-      do iprop = 1, nproce
-        if (iprop.eq.ipproc(irom)) call synsca (propce(1,iprop))
-      enddo
+      if (icrom.ge.0) then
+        call field_get_val_s(icrom, val_s)
+        call synsca(val_s)
+      endif
 
     endif
 

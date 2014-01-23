@@ -86,7 +86,7 @@ integer          imom, idtnm
 integer          keycpl, iflid, ikeyid, ikeyvl
 integer          kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3, idim6
-        integer          ipcrom, ipcroa
+integer          ipcrom, ipcroa
 logical          ilved, iprev, inoprv, lprev
 integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id, kscavr
@@ -299,38 +299,10 @@ do ivar = 1, nvar
   endif
 enddo
 
-
-
-
 ! Density field
 !--------------
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-
-! The density at the previous time step is required if idilat>1 or if
-! we perform a hydrostatic pressure correction (icalhy=1)
-
-f_name = 'density'
-ityloc = 1 ! cells
-ipcrom = ipproc(irom)
-if (     iroext.gt.0 .or. icalhy.eq.1 .or. idilat.gt.1              &
-    .or. ippmod(icompf).ge.0) then
-  lprev = .true.
-  ipcroa = ipproc(iroma)
-else
-  lprev = .false.
-  ipcroa = -1
-endif
-
-call field_create(f_name, itycat, ityloc, idim1, ilved, lprev, icrom)
-
-iprpfl(ipcrom) = icrom
-if (lprev) iprpfl(ipcroa) = -1 ! could set icrom, but avoid this access mode
-
-call field_set_key_str(icrom, keylbl, nomprp(ipcrom))
-call field_set_key_int(icrom, keyvis, ichrvr(ipppro(ipcrom)))
-call field_set_key_int(icrom, keylog, ilisvr(ipppro(ipcrom)))
-call field_set_key_int(icrom, keyipp, ipppro(ipcrom))
 
 ! The boundary density at the previous time step is not required
 ! if we perform a hydrostatic pressure correction (icalhy=1)
@@ -346,7 +318,8 @@ call field_create(f_name, itycat, ityloc, idim1, ilved, lprev, ibrom)
 ! For now, base logging on that of cell density, and do not postprocess
 ! boundary density by default
 
-call field_set_key_int(ibrom, keylog, ilisvr(ipppro(ipcrom)))
+call field_get_key_int(icrom, keylog, ikeyvl)
+call field_set_key_int(ibrom, keylog, ikeyvl)
 
 ! Cell properties
 !----------------
@@ -408,7 +381,9 @@ do iprop = 1, nproce
     endif
     itycat = FIELD_PROPERTY + FIELD_ACCUMULATOR
   endif
-  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
+  if (iprpfl(iprop).le.0) then
+    call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
+  endif
   call field_set_key_str(iprpfl(iprop), keylbl, name)
   if (ipppro(iprop).gt.1) then
     call field_set_key_int(iprpfl(iprop), keyvis, ichrvr(ipppro(iprop)))

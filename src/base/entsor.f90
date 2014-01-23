@@ -354,17 +354,17 @@ module entsor
   !> always useful}
   character*80, save :: nomprp(npromx)
 
-  !> locator pointer vor variables output
+  !> locator pointer for variables output
   integer, save :: ipprtp(nvarmx)
-  !> locator pointer vor variables output
+  !> locator pointer for variables output
   integer, save :: ipppro(npromx)
-  !> locator pointer vor variables output
+  !> locator pointer for variables output
   integer, save :: ippdt
-  !> locator pointer vor variables output
+  !> locator pointer for variables output
   integer, save :: ipptx
-  !> locator pointer vor variables output
+  !> locator pointer for variables output
   integer, save :: ippty
-  !> locator pointer vor variables output
+  !> locator pointer for variables output
   integer, save :: ipptz
 
   !> for every quantity (variable, physical or numerical property ...),
