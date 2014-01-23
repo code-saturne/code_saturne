@@ -386,7 +386,7 @@ _l2_norm_3(cs_lnum_t              n_elts,
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
  *                        or there is no periodicity of rotation
  *                      1 for velocity, 2 for Reynolds stress
- *   dpdxyz         <-> gradient of pvar (halo prepared for periodicity
+ *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
@@ -394,21 +394,21 @@ static void
 _sync_scalar_gradient_halo(const cs_mesh_t  *m,
                            cs_halo_type_t    halo_type,
                            int               idimtr,
-                           cs_real_3_t       dpdxyz[])
+                           cs_real_3_t       grad[])
 {
   if (m->halo != NULL) {
     if (idimtr == 0) {
       cs_halo_sync_var_strided
-        (m->halo, halo_type, (cs_real_t *)dpdxyz, 3);
+        (m->halo, halo_type, (cs_real_t *)grad, 3);
       if (m->n_init_perio > 0)
         cs_halo_perio_sync_var_vect
-          (m->halo, halo_type, (cs_real_t *)dpdxyz, 3);
+          (m->halo, halo_type, (cs_real_t *)grad, 3);
     }
     else
       cs_halo_sync_components_strided(m->halo,
                                       halo_type,
                                       CS_HALO_ROTATION_IGNORE,
-                                      (cs_real_t *)dpdxyz,
+                                      (cs_real_t *)grad,
                                       3);
   }
 }
@@ -422,7 +422,7 @@ _sync_scalar_gradient_halo(const cs_mesh_t  *m,
  *   dpdx      <-- x component of gradient
  *   dpdy      <-- y component of gradient
  *   dpdz      <-- z component of gradient
- *   dpdxyz    <-> interleaved gradient components
+ *   grad      <-> interleaved gradient components
  *----------------------------------------------------------------------------*/
 
 static void
@@ -431,7 +431,7 @@ _initialize_rotation_values(const cs_halo_t  *halo,
                             const cs_real_t   dpdx[],
                             const cs_real_t   dpdy[],
                             const cs_real_t   dpdz[],
-                            cs_real_3_t       dpdxyz[])
+                            cs_real_3_t       grad[])
 {
   int  rank_id, t_id;
   cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
@@ -455,9 +455,9 @@ _initialize_rotation_values(const cs_halo_t  *halo,
         end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
 
         for (i = start_std; i < end_std; i++) {
-          dpdxyz[i][0] = dpdx[i];
-          dpdxyz[i][1] = dpdy[i];
-          dpdxyz[i][2] = dpdz[i];
+          grad[i][0] = dpdx[i];
+          grad[i][1] = dpdy[i];
+          grad[i][2] = dpdz[i];
         }
 
         if (sync_mode == CS_HALO_EXTENDED) {
@@ -466,9 +466,9 @@ _initialize_rotation_values(const cs_halo_t  *halo,
           end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
 
           for (i = start_ext; i < end_ext; i++) {
-            dpdxyz[i][0] = dpdx[i];
-            dpdxyz[i][1] = dpdy[i];
-            dpdxyz[i][2] = dpdz[i];
+            grad[i][0] = dpdx[i];
+            grad[i][1] = dpdy[i];
+            grad[i][2] = dpdz[i];
           }
 
         } /* End if extended halo */
@@ -493,7 +493,7 @@ _initialize_rotation_values(const cs_halo_t  *halo,
  *                      periodicity
  *   climgp         <-- clipping coefficient for the computation of the gradient
  *   var            <-- variable
- *   dpdxyz         --> components of the pressure gradient
+ *   grad           --> components of the pressure gradient
  *----------------------------------------------------------------------------*/
 
 static void
@@ -503,7 +503,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
                           int                    idimtr,
                           cs_real_t              climgp,
                           cs_real_t              var[],
-                          cs_real_3_t  *restrict dpdxyz)
+                          cs_real_3_t  *restrict grad)
 {
   int        g_id, t_id;
   cs_gnum_t  t_n_clip;
@@ -550,16 +550,16 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
         cs_halo_sync_components_strided(halo,
                                         halo_type,
                                         CS_HALO_ROTATION_IGNORE,
-                                        (cs_real_t *restrict)dpdxyz,
+                                        (cs_real_t *restrict)grad,
                                         3);
       else {
         cs_halo_sync_var_strided(halo,
                                  halo_type,
-                                 (cs_real_t *restrict)dpdxyz,
+                                 (cs_real_t *restrict)grad,
                                  3);
         cs_halo_perio_sync_var_vect(halo,
                                     halo_type,
-                                    (cs_real_t *restrict)dpdxyz,
+                                    (cs_real_t *restrict)grad,
                                     3);
       }
 
@@ -608,12 +608,12 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dist1 = CS_ABS(  dist[0]*dpdxyz[ii][0]
-                         + dist[1]*dpdxyz[ii][1]
-                         + dist[2]*dpdxyz[ii][2]);
-          dist2 = CS_ABS(  dist[0]*dpdxyz[jj][0]
-                         + dist[1]*dpdxyz[jj][1]
-                         + dist[2]*dpdxyz[jj][2]);
+          dist1 = CS_ABS(  dist[0]*grad[ii][0]
+                         + dist[1]*grad[ii][1]
+                         + dist[2]*grad[ii][2]);
+          dist2 = CS_ABS(  dist[0]*grad[jj][0]
+                         + dist[1]*grad[jj][1]
+                         + dist[2]*grad[jj][2]);
 
           dvar = CS_ABS(var[ii] - var[jj]);
 
@@ -643,9 +643,9 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dist1 = CS_ABS(  dist[0]*dpdxyz[ii][0]
-                         + dist[1]*dpdxyz[ii][1]
-                         + dist[2]*dpdxyz[ii][2]);
+          dist1 = CS_ABS(  dist[0]*grad[ii][0]
+                         + dist[1]*grad[ii][1]
+                         + dist[2]*grad[ii][2]);
           dvar = CS_ABS(var[ii] - var[jj]);
 
           denum[ii] = CS_MAX(denum[ii], dist1);
@@ -675,9 +675,9 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dpdxf = 0.5 * (dpdxyz[ii][0] + dpdxyz[jj][0]);
-          dpdyf = 0.5 * (dpdxyz[ii][1] + dpdxyz[jj][1]);
-          dpdzf = 0.5 * (dpdxyz[ii][2] + dpdxyz[jj][2]);
+          dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
+          dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
+          dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
 
           dist1 = CS_ABS(dist[0]*dpdxf + dist[1]*dpdyf + dist[2]*dpdzf);
           dvar = CS_ABS(var[ii] - var[jj]);
@@ -709,9 +709,9 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dpdxf = 0.5 * (dpdxyz[ii][0] + dpdxyz[jj][0]);
-          dpdyf = 0.5 * (dpdxyz[ii][1] + dpdxyz[jj][1]);
-          dpdzf = 0.5 * (dpdxyz[ii][2] + dpdxyz[jj][2]);
+          dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
+          dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
+          dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
 
           dist1 = CS_ABS(dist[0]*dpdxf + dist[1]*dpdyf + dist[2]*dpdzf);
           dvar = CS_ABS(var[ii] - var[jj]);
@@ -744,9 +744,9 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
         if (denum[ii] > climgp * denom[ii]) {
 
           factor1 = climgp * denom[ii]/denum[ii];
-          dpdxyz[ii][0] *= factor1;
-          dpdxyz[ii][1] *= factor1;
-          dpdxyz[ii][2] *= factor1;
+          grad[ii][0] *= factor1;
+          grad[ii][1] *= factor1;
+          grad[ii][2] *= factor1;
 
           t_min_factor = CS_MIN(factor1, t_min_factor);
           t_max_factor = CS_MAX(factor1, t_max_factor);
@@ -855,7 +855,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
       for (ii = 0; ii < n_cells; ii++) {
 
         for (ll = 0; ll < 3; ll++)
-          dpdxyz[ii][ll] *= clip_factor[ii];
+          grad[ii][ll] *= clip_factor[ii];
 
         if (clip_factor[ii] < 0.99) {
           t_max_factor = CS_MAX(t_max_factor, clip_factor[ii]);
@@ -915,7 +915,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
                  "   minimum factor = %14.5e; maximum factor = %14.5e\n"),
                (unsigned long long)n_clip, min_factor, max_factor);
 
-  /* Synchronize dpdxyz */
+  /* Synchronize grad */
 
   if (halo != NULL) {
 
@@ -926,7 +926,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
       cs_halo_sync_components_strided(halo,
                                       halo_type,
                                       CS_HALO_ROTATION_IGNORE,
-                                      (cs_real_t *restrict)dpdxyz,
+                                      (cs_real_t *restrict)grad,
                                       3);
 
     }
@@ -934,12 +934,12 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
       cs_halo_sync_var_strided(halo,
                                halo_type,
-                               (cs_real_t *restrict)dpdxyz,
+                               (cs_real_t *restrict)grad,
                                3);
 
       cs_halo_perio_sync_var_vect(halo,
                                   halo_type,
-                                  (cs_real_t *restrict)dpdxyz,
+                                  (cs_real_t *restrict)grad,
                                   3);
 
     }
@@ -970,7 +970,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
  *   ktvar          <-- pressure gradient coefficient variable
- *   dpdxyz         <-> gradient of pvar (halo prepared for periodicity
+ *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *   rhsv           <-> interleaved array for gradient RHS components
  *                      (0, 1, 2) and variable copy (3)
@@ -987,7 +987,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                             const cs_real_t              coefbp[],
                             const cs_real_t              pvar[],
                             const cs_real_t              ktvar[],
-                            cs_real_3_t        *restrict dpdxyz,
+                            cs_real_3_t        *restrict grad,
                             cs_real_4_t        *restrict rhsv)
 {
   const int n_cells = m->n_cells;
@@ -1227,14 +1227,14 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 # pragma omp parallel for private(vol_inv)
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
     vol_inv = 1.0 / cell_vol[cell_id];
-    dpdxyz[cell_id][0] = rhsv[cell_id][0] * vol_inv;
-    dpdxyz[cell_id][1] = rhsv[cell_id][1] * vol_inv;
-    dpdxyz[cell_id][2] = rhsv[cell_id][2] * vol_inv;
+    grad[cell_id][0] = rhsv[cell_id][0] * vol_inv;
+    grad[cell_id][1] = rhsv[cell_id][1] * vol_inv;
+    grad[cell_id][2] = rhsv[cell_id][2] * vol_inv;
   }
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, idimtr, dpdxyz);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, idimtr, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -1263,7 +1263,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
  *   f_ext          <-- exterior force generating pressure
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
- *   dpdxyz         <-> gradient of pvar (halo prepared for periodicity
+ *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *   rhsv           <-> interleaved array for gradient RHS components
  *                      (0, 1, 2) and variable copy (3)
@@ -1284,7 +1284,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                            const cs_real_3_t            f_ext[],
                            const cs_real_t              coefap[],
                            const cs_real_t              coefbp[],
-                           cs_real_3_t        *restrict dpdxyz,
+                           cs_real_3_t        *restrict grad,
                            cs_real_4_t        *restrict rhsv)
 {
   const int n_cells = m->n_cells;
@@ -1446,9 +1446,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      rhsv[cell_id][0] = -dpdxyz[cell_id][0] * cell_vol[cell_id];
-      rhsv[cell_id][1] = -dpdxyz[cell_id][1] * cell_vol[cell_id];
-      rhsv[cell_id][2] = -dpdxyz[cell_id][2] * cell_vol[cell_id];
+      rhsv[cell_id][0] = -grad[cell_id][0] * cell_vol[cell_id];
+      rhsv[cell_id][1] = -grad[cell_id][1] * cell_vol[cell_id];
+      rhsv[cell_id][2] = -grad[cell_id][2] * cell_vol[cell_id];
     }
 
     /* Standard case, without hydrostatic pressure */
@@ -1472,9 +1472,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
             pfac  =        weight[face_id]  * rhsv[ii][3]
                     + (1.0-weight[face_id]) * rhsv[jj][3]
-                    + ( dofij[face_id][0] * (dpdxyz[ii][0]+dpdxyz[jj][0])
-                    +   dofij[face_id][1] * (dpdxyz[ii][1]+dpdxyz[jj][1])
-                    +   dofij[face_id][2] * (dpdxyz[ii][2]+dpdxyz[jj][2])) * 0.5;
+                    + ( dofij[face_id][0] * (grad[ii][0]+grad[jj][0])
+                    +   dofij[face_id][1] * (grad[ii][1]+grad[jj][1])
+                    +   dofij[face_id][2] * (grad[ii][2]+grad[jj][2])) * 0.5;
             fctb[0] = pfac * i_face_normal[face_id][0];
             fctb[1] = pfac * i_face_normal[face_id][1];
             fctb[2] = pfac * i_face_normal[face_id][2];
@@ -1505,17 +1505,17 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             ii = b_face_cells[face_id] - 1;
 
             pip =   rhsv[ii][3]
-                  + diipb[face_id][0] * dpdxyz[ii][0]
-                  + diipb[face_id][1] * dpdxyz[ii][1]
-                  + diipb[face_id][2] * dpdxyz[ii][2];
+                  + diipb[face_id][0] * grad[ii][0]
+                  + diipb[face_id][1] * grad[ii][1]
+                  + diipb[face_id][2] * grad[ii][2];
 
             pfac0 =   coefap[face_id] * inc
                     + coefbp[face_id] * pip;
 
             pfac1 =   rhsv[ii][3]
-                    + (b_face_cog[face_id][0]-cell_cen[ii][0]) * dpdxyz[ii][0]
-                    + (b_face_cog[face_id][1]-cell_cen[ii][1]) * dpdxyz[ii][1]
-                    + (b_face_cog[face_id][2]-cell_cen[ii][2]) * dpdxyz[ii][2];
+                    + (b_face_cog[face_id][0]-cell_cen[ii][0]) * grad[ii][0]
+                    + (b_face_cog[face_id][1]-cell_cen[ii][1]) * grad[ii][1]
+                    + (b_face_cog[face_id][2]-cell_cen[ii][2]) * grad[ii][2];
 
             pfac =          coefbp[face_id]  *(extrap*pfac1 + (1.0-extrap)*pfac0)
                    + (1.0 - coefbp[face_id]) * pfac0;
@@ -1556,11 +1556,11 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             fexd[2] = 0.5 * (f_ext[ii][2] - f_ext[jj][2]);
 
             /* Note: changed expression from:
-             *   fmean = 0.5 * (fext[ii] + fext[jj])
-             *   fii = fext[ii] - fmean
-             *   fjj = fext[jj] - fmean
+             *   fmean = 0.5 * (f_ext[ii] + f_ext[jj])
+             *   fii = f_ext[ii] - fmean
+             *   fjj = f_ext[jj] - fmean
              * to:
-             *   fexd = 0.5 * (fext[ii] - fext[jj])
+             *   fexd = 0.5 * (f_ext[ii] - f_ext[jj])
              *   fii =  fexd
              *   fjj = -fexd
              */
@@ -1576,9 +1576,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                       + (cell_cen[jj][0]-i_face_cog[face_id][0])*fexd[0]
                       + (cell_cen[jj][1]-i_face_cog[face_id][1])*fexd[1]
                       + (cell_cen[jj][2]-i_face_cog[face_id][2])*fexd[2]))
-              +   (  dofij[face_id][0] * (dpdxyz[ii][0]+dpdxyz[jj][0])
-                   + dofij[face_id][1] * (dpdxyz[ii][1]+dpdxyz[jj][1])
-                   + dofij[face_id][2] * (dpdxyz[ii][2]+dpdxyz[jj][2]))*0.5;
+              +   (  dofij[face_id][0] * (grad[ii][0]+grad[jj][0])
+                   + dofij[face_id][1] * (grad[ii][1]+grad[jj][1])
+                   + dofij[face_id][2] * (grad[ii][2]+grad[jj][2]))*0.5;
 
             fctb[0] = pfac * i_face_normal[face_id][0];
             fctb[1] = pfac * i_face_normal[face_id][1];
@@ -1611,9 +1611,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             ii = b_face_cells[face_id] - 1;
 
             pip =   rhsv[ii][3]
-                  + diipb[face_id][0] * dpdxyz[ii][0]
-                  + diipb[face_id][1] * dpdxyz[ii][1]
-                  + diipb[face_id][2] * dpdxyz[ii][2];
+                  + diipb[face_id][0] * grad[ii][0]
+                  + diipb[face_id][1] * grad[ii][1]
+                  + diipb[face_id][2] * grad[ii][2];
 
             pfac0 =      coefap[face_id] * inc
                     +    coefbp[face_id]
@@ -1629,9 +1629,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                              + diipb[face_id][2]) * f_ext[ii][2]);
 
             pfac1 =   rhsv[ii][3]
-                    + (b_face_cog[face_id][0]-cell_cen[ii][0]) * dpdxyz[ii][0]
-                    + (b_face_cog[face_id][1]-cell_cen[ii][1]) * dpdxyz[ii][1]
-                    + (b_face_cog[face_id][2]-cell_cen[ii][2]) * dpdxyz[ii][2];
+                    + (b_face_cog[face_id][0]-cell_cen[ii][0]) * grad[ii][0]
+                    + (b_face_cog[face_id][1]-cell_cen[ii][1]) * grad[ii][1]
+                    + (b_face_cog[face_id][2]-cell_cen[ii][2]) * grad[ii][2];
 
             pfac =          coefbp[face_id]  *(extrap*pfac1 + (1.0-extrap)*pfac0)
                    + (1.0 - coefbp[face_id]) * pfac0;
@@ -1653,20 +1653,20 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      dpdxyz[cell_id][0] +=   cocg[cell_id][0][0] * rhsv[cell_id][0]
-                            + cocg[cell_id][0][1] * rhsv[cell_id][1]
-                            + cocg[cell_id][0][2] * rhsv[cell_id][2];
-      dpdxyz[cell_id][1] +=   cocg[cell_id][1][0] * rhsv[cell_id][0]
-                            + cocg[cell_id][1][1] * rhsv[cell_id][1]
-                            + cocg[cell_id][1][2] * rhsv[cell_id][2];
-      dpdxyz[cell_id][2] +=   cocg[cell_id][2][0] * rhsv[cell_id][0]
-                            + cocg[cell_id][2][1] * rhsv[cell_id][1]
-                            + cocg[cell_id][2][2] * rhsv[cell_id][2];
+      grad[cell_id][0] +=   cocg[cell_id][0][0] * rhsv[cell_id][0]
+                          + cocg[cell_id][0][1] * rhsv[cell_id][1]
+                          + cocg[cell_id][0][2] * rhsv[cell_id][2];
+      grad[cell_id][1] +=   cocg[cell_id][1][0] * rhsv[cell_id][0]
+                          + cocg[cell_id][1][1] * rhsv[cell_id][1]
+                          + cocg[cell_id][1][2] * rhsv[cell_id][2];
+      grad[cell_id][2] +=   cocg[cell_id][2][0] * rhsv[cell_id][0]
+                          + cocg[cell_id][2][1] * rhsv[cell_id][1]
+                          + cocg[cell_id][2][2] * rhsv[cell_id][2];
     }
 
     /* Synchronize halos */
 
-    _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, dpdxyz);
+    _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
 
     /* Convergence test */
 
@@ -1723,7 +1723,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
- *   dpdxyz         <-> gradient of pvar (halo prepared for periodicity
+ *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
@@ -1742,7 +1742,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                      const cs_real_t              coefbp[],
                      const cs_real_t              pvar[],
                      const cs_real_t              ktvar[],
-                     cs_real_3_t        *restrict dpdxyz,
+                     cs_real_3_t        *restrict grad,
                      cs_real_4_t        *restrict rhsv)
 {
   const int n_cells = m->n_cells;
@@ -1815,7 +1815,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                                 coefbp,
                                 pvar,
                                 ktvar,
-                                dpdxyz,
+                                grad,
                                 rhsv);
 
     return;
@@ -2084,12 +2084,12 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
           /* Note: replaced the expressions:
            *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])
-           *  b)   (cell_cen[ii] - ptmid) * fext[ii]
-           *  c) - (cell_cen[jj] - ptmid) * fext[jj]
+           *  b)   (cell_cen[ii] - ptmid) * f_ext[ii]
+           *  c) - (cell_cen[jj] - ptmid) * f_ext[jj]
            * with:
            *  a) dc = cell_cen[jj] - cell_cen[ii]
-           *  b) - 0.5 * dc * fext[ii]
-           *  c) - 0.5 * dc * fext[jj]
+           *  b) - 0.5 * dc * f_ext[ii]
+           *  c) - 0.5 * dc * f_ext[jj]
            */
 
           for (ll = 0; ll < 3; ll++)
@@ -2165,18 +2165,18 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      dpdxyz[cell_id][0] =   cocg[cell_id][0][0] *rhsv[cell_id][0]
-                           + cocg[cell_id][0][1] *rhsv[cell_id][1]
-                           + cocg[cell_id][0][2] *rhsv[cell_id][2]
-                           + f_ext[cell_id][0];
-      dpdxyz[cell_id][1] =   cocg[cell_id][1][0] *rhsv[cell_id][0]
-                           + cocg[cell_id][1][1] *rhsv[cell_id][1]
-                           + cocg[cell_id][1][2] *rhsv[cell_id][2]
-                           + f_ext[cell_id][1];
-      dpdxyz[cell_id][2] =   cocg[cell_id][2][0] *rhsv[cell_id][0]
-                           + cocg[cell_id][2][1] *rhsv[cell_id][1]
-                           + cocg[cell_id][2][2] *rhsv[cell_id][2]
-                           + f_ext[cell_id][2];
+      grad[cell_id][0] =   cocg[cell_id][0][0] *rhsv[cell_id][0]
+                         + cocg[cell_id][0][1] *rhsv[cell_id][1]
+                         + cocg[cell_id][0][2] *rhsv[cell_id][2]
+                         + f_ext[cell_id][0];
+      grad[cell_id][1] =   cocg[cell_id][1][0] *rhsv[cell_id][0]
+                         + cocg[cell_id][1][1] *rhsv[cell_id][1]
+                         + cocg[cell_id][1][2] *rhsv[cell_id][2]
+                         + f_ext[cell_id][1];
+      grad[cell_id][2] =   cocg[cell_id][2][0] *rhsv[cell_id][0]
+                         + cocg[cell_id][2][1] *rhsv[cell_id][1]
+                         + cocg[cell_id][2][2] *rhsv[cell_id][2]
+                         + f_ext[cell_id][2];
     }
 
   }
@@ -2184,22 +2184,22 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      dpdxyz[cell_id][0] =   cocg[cell_id][0][0] *rhsv[cell_id][0]
-                           + cocg[cell_id][0][1] *rhsv[cell_id][1]
-                           + cocg[cell_id][0][2] *rhsv[cell_id][2];
-      dpdxyz[cell_id][1] =   cocg[cell_id][1][0] *rhsv[cell_id][0]
-                           + cocg[cell_id][1][1] *rhsv[cell_id][1]
-                           + cocg[cell_id][1][2] *rhsv[cell_id][2];
-      dpdxyz[cell_id][2] =   cocg[cell_id][2][0] *rhsv[cell_id][0]
-                           + cocg[cell_id][2][1] *rhsv[cell_id][1]
-                           + cocg[cell_id][2][2] *rhsv[cell_id][2];
+      grad[cell_id][0] =   cocg[cell_id][0][0] *rhsv[cell_id][0]
+                         + cocg[cell_id][0][1] *rhsv[cell_id][1]
+                         + cocg[cell_id][0][2] *rhsv[cell_id][2];
+      grad[cell_id][1] =   cocg[cell_id][1][0] *rhsv[cell_id][0]
+                         + cocg[cell_id][1][1] *rhsv[cell_id][1]
+                         + cocg[cell_id][1][2] *rhsv[cell_id][2];
+      grad[cell_id][2] =   cocg[cell_id][2][0] *rhsv[cell_id][0]
+                         + cocg[cell_id][2][1] *rhsv[cell_id][1]
+                         + cocg[cell_id][2][2] *rhsv[cell_id][2];
     }
 
   }
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, dpdxyz);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -3285,13 +3285,13 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              calculation                      */
  const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
  const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
-       cs_real_3_t       fext[],      /* <-- exterior force generating the
+       cs_real_3_t       f_ext[],     /* <-- exterior force generating the
                                              hydrostatic pressure             */
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
        cs_real_t         ktvar[],     /* <-- gradient coefficient variable    */
-       cs_real_t         grad[]       /* <-> gradient                         */
+       cs_real_t         grdini[]     /* <-> gradient (interleaved or not)    */
 )
 {
   cs_lnum_t ii;
@@ -3299,7 +3299,7 @@ void CS_PROCF (cgdcel, CGDCEL)
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
 
-  cs_real_3_t  *restrict dpdxyz;
+  cs_real_3_t  *restrict grad;
 
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
@@ -3315,7 +3315,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   /* Allocate work arrays */
 
-  BFT_MALLOC(dpdxyz, n_cells_ext, cs_real_3_t);
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   /* Choose gradient type */
 
@@ -3326,15 +3326,15 @@ void CS_PROCF (cgdcel, CGDCEL)
   /* Synchronize variable */
 
   if (halo != NULL && *idimtr > 0) {
-    cs_real_t  *restrict dpdx = grad;
-    cs_real_t  *restrict dpdy = grad + n_cells_ext;
-    cs_real_t  *restrict dpdz = grad + n_cells_ext*2;
+    cs_real_t  *restrict dpdx = grdini;
+    cs_real_t  *restrict dpdy = grdini + n_cells_ext;
+    cs_real_t  *restrict dpdz = grdini + n_cells_ext*2;
     _initialize_rotation_values(halo,
                                 halo_type,
                                 dpdx,
                                 dpdy,
                                 dpdz,
-                                dpdxyz);
+                                grad);
   }
 
   /* Compute gradient */
@@ -3352,33 +3352,33 @@ void CS_PROCF (cgdcel, CGDCEL)
                      *epsrgp,
                      *extrap,
                      *climgp,
-                     fext,
+                     f_ext,
                      coefap,
                      coefbp,
                      pvar,
                      weight_var,
-                     dpdxyz);
+                     grad);
 
   /* Copy gradient to component arrays */
 
   if (*ilved == 0) {
 #   pragma omp parallel for
     for (ii = 0; ii < n_cells_ext; ii++) {
-      grad[ii]                 = dpdxyz[ii][0];
-      grad[ii + n_cells_ext]   = dpdxyz[ii][1];
-      grad[ii + n_cells_ext*2] = dpdxyz[ii][2];
+      grdini[ii]                 = grad[ii][0];
+      grdini[ii + n_cells_ext]   = grad[ii][1];
+      grdini[ii + n_cells_ext*2] = grad[ii][2];
     }
   }
   else {
 #   pragma omp parallel for
     for (ii = 0; ii < n_cells_ext; ii++) {
-      grad[ii*3]   = dpdxyz[ii][0];
-      grad[ii*3+1] = dpdxyz[ii][1];
-      grad[ii*3+2] = dpdxyz[ii][2];
+      grdini[ii*3]   = grad[ii][0];
+      grdini[ii*3+1] = grad[ii][1];
+      grdini[ii*3+2] = grad[ii][2];
     }
   }
 
-  BFT_FREE(dpdxyz);
+  BFT_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -3568,7 +3568,7 @@ void cs_gradient_scalar(const char                *var_name,
       if (weight_var != NULL)
         cs_halo_sync_var(halo, halo_type, weight_var);
 
-    /* TODO: check if fext* components are all up to date, in which
+    /* TODO: check if f_ext components are all up to date, in which
      *       case we need no special treatment for tr_dim > 0 */
 
     if (hyd_p_flag == 1) {

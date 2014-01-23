@@ -99,7 +99,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
        cs_real_t         ktvar[],     /* <-- gradient coefficient variable    */
-       cs_real_t         grad[]       /* <-> gradient                         */
+       cs_real_t         grdini[]     /* <-> gradient (interleaved or not)    */
 );
 
 /*----------------------------------------------------------------------------
