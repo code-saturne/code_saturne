@@ -132,36 +132,36 @@ icondf = iclrtp(ivar, icoeff)
 icondd = icondl
 icondc = icondl
 
-call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
+call field_map_values(ivarfl(ivar), rtp(:,ivar), rtpa(:,ivar))
 if (ipass .eq. 1) then
   if (nfabor .gt. 0) then
     call field_map_bc_coeffs(ivarfl(ivar),                           &
-                             coefa(1, icondl), coefb(1, icondl),     &
-                             coefa(1, icondf), coefb(1, icondf),     &
-                             coefa(1, icondd), coefb(1, icondd),     &
-                             coefa(1, icondc), coefb(1, icondc))
+                             coefa(:, icondl), coefb(:, icondl),     &
+                             coefa(:, icondf), coefb(:, icondf),     &
+                             coefa(:, icondd), coefb(:, icondd),     &
+                             coefa(:, icondc), coefb(:, icondc))
   else
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
   endif
 endif
 
 ivar = iu
-call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
+call field_map_values(ivarfl(ivar), rtp(:,ivar), rtpa(:,ivar))
 
 if (ipass.eq.1) then
   if (nfabor .gt. 0) then
     if (ippmod(icompf).ge.0) then
       call field_map_bc_coeffs(ivarfl(ivar),                         &
-                               coefau(1, 1), coefbu(1, 1, 1),        &
-                               cofafu(1, 1), cofbfu(1, 1, 1),        &
-                               coefau(1, 1), coefbu(1, 1, 1),        &
-                               cofacu(1, 1), cofbcu(1, 1, 1))
+                               coefau(:, :), coefbu(:, :, :),        &
+                               cofafu(:, :), cofbfu(:, :, :),        &
+                               coefau(:, :), coefbu(:, :, :),        &
+                               cofacu(:, :), cofbcu(:, :, :))
     else
       call field_map_bc_coeffs(ivarfl(ivar),                         &
-                               coefau(1, 1), coefbu(1, 1, 1),        &
-                               cofafu(1, 1), cofbfu(1, 1, 1),        &
-                               coefau(1, 1), coefbu(1, 1, 1),        &
-                               coefau(1, 1), coefbu(1, 1, 1))
+                               coefau(:, :), coefbu(:, :, :),        &
+                               cofafu(:, :), cofbfu(:, :, :),        &
+                               coefau(:, :), coefbu(:, :, :),        &
+                               coefau(:, :), coefbu(:, :, :))
     endif
   else
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)

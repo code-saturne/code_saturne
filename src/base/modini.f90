@@ -1340,11 +1340,8 @@ enddo
 ! Turbulent fluxes constant for GGDH, AFM and DFM
 if (nscal.gt.0) then
   do iscal = 1, nscal
-    if (iturt(iscal).eq.0) then
-      idften(isca(iscal)) = 1
-
     ! AFM and GGDH on the scalar
-    elseif (ityturt(iscal).eq.1.or.ityturt(iscal).eq.2) then
+    if (ityturt(iscal).eq.1.or.ityturt(iscal).eq.2) then
       idften(isca(iscal)) = 6
       ctheta(iscal) = cthafm
 
