@@ -50,6 +50,10 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  int           is_local;     /* 0 if time step is uniform in space,
+                                 1 if it is local in space (in which case
+                                 the time value is only a reference. */
+
   int           nt_prev;      /* absolute time step number reached by previous
                                  computation */
   int           nt_cur;       /* current absolute time step number */
@@ -73,6 +77,16 @@ extern const cs_time_step_t  *cs_glob_time_step;
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define whether time step is local in space or not
+ *
+ * parameters:
+ *   is_local: 0 if time step is uniform in space, 1 if it is local
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_step_define_local(int  is_local);
 
 /*----------------------------------------------------------------------------
  * Define maximum time step number

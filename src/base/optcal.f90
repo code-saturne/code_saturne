@@ -1040,6 +1040,16 @@ module optcal
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function defining whether time step is local in
+    ! space or not
+
+    subroutine time_step_define_local(is_local)  &
+      bind(C, name='cs_time_step_define_local')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: is_local
+    end subroutine time_step_define_local
+
     ! Interface to C function retrieving pointers to members of the
     ! global time step structure
 

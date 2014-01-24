@@ -334,6 +334,12 @@ call usipgl                                                       &
    iihmpu , nfecra ,                                              &
    idtvar , ipucou , idilat , iphydr , ialgce , iescal )
 
+! If time step is local, pass information to C layer, as it
+! may ne needed for some field (or moment) definitions.
+if (idtvar.eq.2.or.idtvar.eq.-1) then
+  call time_step_define_local(1)
+endif
+
 if (ialgce.ne.-999) call algcen(ialgce)
 
 ! --- Parametres de la methode ALE

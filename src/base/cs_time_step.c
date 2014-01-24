@@ -105,7 +105,7 @@ BEGIN_C_DECLS
 
 /* main time step structure and associated pointer */
 
-static cs_time_step_t  _time_step = {0, 0, -1, 0., 0., -1.};
+static cs_time_step_t  _time_step = {0, 0, 0, -1, 0., 0., -1.};
 
 const cs_time_step_t  *cs_glob_time_step = &_time_step;
 
@@ -170,6 +170,23 @@ cs_f_time_step_get_pointers(int      **nt_prev,
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define whether time step is local in space or not
+ *
+ * \param[in]  is_local  0 if time step is uniform in space, 1 if it is local
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_step_define_local(int  is_local)
+{
+  if (is_local > 0)
+    _time_step.is_local = 1;
+  else
+    _time_step.is_local = 0;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
