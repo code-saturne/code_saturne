@@ -105,11 +105,15 @@ def process_cmd_line(argv, pkg):
                       type="string", metavar="ADDRESS1 ADDRESS2 ...",
                       help="addresses for sending the reports")
 
+    parser.add_option("-l", "--log", dest="log_file", default="auto_vnv.log",
+                      type="string",
+                      help="addresses for sending the reports")
+
     (options, args) = parser.parse_args(argv)
 
     return  options.filename, options.verbose, options.update, \
         options.runcase, options.n_iterations, options.compare, \
-        options.reference, options.post, options.addresses
+        options.reference, options.post, options.log_file, options.addresses
 
 #-------------------------------------------------------------------------------
 # Send the report.
@@ -186,7 +190,7 @@ def release():
 # Start point of Auto V & V script
 #-------------------------------------------------------------------------------
 
-def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_to):
+def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to):
     """
     Main function
       1. parse the command line,
@@ -223,7 +227,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, op
 
     # Read the file of parameters
 
-    studies = Studies(pkg, opt_f, opt_v, opt_r, opt_n, opt_c, opt_d, opt_p, exe, dif)
+    studies = Studies(pkg, opt_f, opt_v, opt_r, opt_n, opt_c, opt_d, opt_p, exe, dif, opt_l)
     os.chdir(studies.getDestination())
 
     # Print header
@@ -311,10 +315,10 @@ def main(argv, pkg):
 
     # Command line
 
-    opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, addresses = process_cmd_line(argv, pkg)
+    opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, addresses = process_cmd_line(argv, pkg)
     opt_to  = addresses.split()
 
-    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_to)
+    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to)
 
     sys.exit(retcode)
 

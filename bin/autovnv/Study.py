@@ -638,7 +638,7 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, pkg, f, v, r, n, c, d, p, exe, dif):
+    def __init__(self, pkg, f, v, r, n, c, d, p, exe, dif, log):
         """
         Constructor.
           1. create if necessary the destination directory,
@@ -697,7 +697,7 @@ class Studies(object):
 
         # build the list of the studies
 
-        doc = os.path.join(self.dest, "auto_vnv.log")
+        doc = os.path.join(self.dest, log)
         self.__log = open(doc, "w")
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
