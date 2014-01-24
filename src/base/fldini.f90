@@ -86,7 +86,7 @@ integer          imom, idtnm
 integer          keycpl, iflid, ikeyid, ikeyvl
 integer          kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3, idim6
-integer          ipcrom, ipcroa
+integer          ipcroa
 logical          ilved, iprev, inoprv, lprev
 integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id, kscavr
@@ -98,7 +98,6 @@ character*80     fname(nvppmx)
 type(var_cal_opt) vcopt
 
 !===============================================================================
-
 
 !===============================================================================
 ! 1. Initialisation
@@ -355,12 +354,21 @@ do imom = 1, nbmomt
   endif
 enddo
 
+! Special case for fields with possible previous value
+
+call field_have_previous(iprpfl(ipproc(irom)), lprev)
+if (lprev) then
+  ipcroa = ipproc(iroma)
+else
+  ipcroa = -1
+endif
+
 ! The choice made in VARPOS specifies that we will only be interested in
 ! properties at cell centers (no mass flux, nor density at the boundary).
 
 imom = 0
 do iprop = 1, nproce
-  if (iprop.eq.ipcrom .or. iprop.eq.ipcroa) cycle
+  if (iprop.eq.ipcroa) cycle
   name = nomprp(iprop)
   if (iapro(iprop).eq.0) then
     if (name(1:4) .eq. '    ') then
