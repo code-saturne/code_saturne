@@ -74,7 +74,7 @@ character     ficsui*32
 character*80  f_label, f_name, s_label, s_name
 integer       ivar  , iscal , irphas , iprop, id
 integer       ii    , jj    , kk    , ll
-integer       iok   , ippok , ipppst
+integer       iok   , ippok , ipppst, kivisl
 integer       iest  , ivisph, ipropp
 integer       imom  , jmom  , imold , jmold , jbmomt, jtcabs
 integer       iiplus, iimoin, jmomok, idto  , jdto
@@ -123,6 +123,7 @@ cindfm = 'YYYY'
 
 if (ipass.eq.1) then
 
+  call field_get_key_id("scalar_diffusivity_id", kivisl)
 
 ! ---> 1.1 VERIFICATIONS
 !      -----------------
@@ -224,6 +225,10 @@ if (ipass.eq.1) then
       iscal = iscavr(ii)
       if (iscal.gt.0.and.iscal.le.nscal) then
         ivisls(ii) = ivisls(iscal)
+        if (ivisls(ii).gt.0) then
+          call field_set_key_int(ivarfl(isca(ii)), kivisl,    &
+                                 iprpfl(ivisls(iscal)))
+        endif
       endif
     enddo
   endif
@@ -390,6 +395,7 @@ if (ipass.eq.1) then
         endif
         ! Now create matching property
         call add_property_field(f_name, f_label, ivisls(ii))
+        call field_set_key_int(ivarfl(isca(ii)), kivisl, iprpfl(ivisls(ii)))
       endif
     enddo
   endif
@@ -407,6 +413,10 @@ if (ipass.eq.1) then
     if (ivisls(ii).gt.0) then
       if (iscavr(ii).gt.0) then
         ivisls(ii) = ivisls(iscavr(ii))
+        if (ivisls(ii).gt.0) then
+          call field_set_key_int(ivarfl(isca(ii)), kivisl,    &
+                                 iprpfl(ivisls(iscavr(ii))))
+        endif
       endif
     endif
   enddo
