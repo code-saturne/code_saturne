@@ -1213,6 +1213,11 @@ class Studies(object):
 
 
     def logs(self):
+        try:
+            self.reportFile.close()
+        except:
+            pass
+        self.reportFile = open(self.report, mode='r')
         return self.reportFile.read()
 
 

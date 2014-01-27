@@ -134,11 +134,12 @@ def sendmail(code_name, report, to, files):
     SERVER  = "localhost"
     FROM    = "saturne-support@edf.fr"
     TO      = to
-    SUBJECT = "%s. Auto V&V %s: " % code_name, date.today()
+    SUBJECT = "%s. Auto V&V %s: " % (code_name, date.today())
     TEXT    = report
     RETOUR  = "An error occurs during the sending of the log mail"
     FILES   = files
     MESSAGE = """From: %s\nTo: %s\nSubject: %s\n\n%s""" % (FROM, ", ".join(TO), SUBJECT, TEXT)
+    retour = "\n"
 
     try:
         send_mail(FROM, TO, SUBJECT, MESSAGE, FILES, SERVER)
@@ -169,7 +170,7 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
         msg.attach(part)
 
     smtp = smtplib.SMTP(server)
-    smtp.sendmail(code_name, send_from, send_to, msg.as_string())
+    smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.close()
 
 #-------------------------------------------------------------------------------
@@ -302,7 +303,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, op
 
     attached_file = studies.build_reports("report_global", "report_detailed")
     if opt_to:
-        sendmail(pkg.code_name, studies.logs(), to, attached_file)
+        sendmail(pkg.code_name, studies.logs(), opt_to, attached_file)
 
 #-------------------------------------------------------------------------------
 # Main
