@@ -313,15 +313,15 @@ class FluidCharacteristicsModel(Variables, Model):
                             'specific_heat', 'thermal_conductivity',
                             'volumic_viscosity'))
         if tag == "density":
-            formula = "rho ="
+            formula = "rho = -1.;"
         elif tag == "molecular_viscosity":
-            formula = "mu ="
+            formula = "mu = -1.;"
         elif tag == "specific_heat":
-            formula = "cp ="
+            formula = "cp = -1.;"
         elif tag == "volumic_viscosity":
-            formula = "Viscv ="
+            formula = "Viscv = -1.;"
         elif tag == "thermal_conductivity":
-            formula = "lambda ="
+            formula = "lambda = -1.;"
 
         return formula
 
