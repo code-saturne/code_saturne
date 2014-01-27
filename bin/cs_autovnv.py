@@ -131,8 +131,12 @@ def sendmail(code_name, report, to, files):
     # a blind copy, add the address to the TO argument, but do not include
     # it in the To header.
 
+    if code_name == "Code_Saturne":
+        FROM    = "saturne-support@edf.fr"
+    else:
+        FROM    = "neptune-cfd-support@edf.fr"
+
     SERVER  = "localhost"
-    FROM    = "saturne-support@edf.fr"
     TO      = to
     SUBJECT = "%s. Auto V&V %s: " % (code_name, date.today())
     TEXT    = report
