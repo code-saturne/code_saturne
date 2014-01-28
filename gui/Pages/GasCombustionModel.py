@@ -142,6 +142,7 @@ class GasCombustionModel(Variables, Model):
 
         if model == 'off':
             self.node_gas['model'] = model
+            self.node_gas['option'] = "off"
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             for tag in ('scalar',
                         'property',
