@@ -132,6 +132,8 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         thermalScalarList = self.thermalModel
 
         for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo, self.node_comp):
+            if node['model'] == "":
+                node['model'] = 'off'
             if node['model'] != 'off':
                 thermalScalarList = ('off',)
 

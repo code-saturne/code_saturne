@@ -428,14 +428,14 @@ if (iihmpr.eq.1) then
               irovar, ivivar, icorio,                                 &
               gx, gy, gz, omegax, omegay, omegaz ,                    &
               ro0, viscl0, viscv0, visls0, cp0, t0,                   &
-              p0, xmasmr, itempk)
+              p0, xmasmr, itempk, itherm, itpscl)
 
 !     Scamin, scamax
   call cssca2(iscavr)
   !==========
 
   ! Diffusivites
-  call cssca3(itherm, iscalt, iscavr, visls0, t0, p0)
+  call cssca3(itherm, iscalt, iscavr, visls0, t0, p0, cp0)
   !==========
 
 !     Init turb (uref, almax) si necessaire (modele RANS)

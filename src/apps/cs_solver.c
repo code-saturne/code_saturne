@@ -109,6 +109,7 @@
 #include "cs_timer.h"
 #include "cs_les_inflow.h"
 #include "cs_turbomachinery.h"
+#include "cs_physical_properties.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -394,6 +395,10 @@ cs_run(void)
   /* Free cooling towers related structures */
 
   cs_ctwr_all_destroy();
+
+  /* Free thermal physical properties */
+
+  cs_thermal_table_finalize();
 
   /* Free turbomachinery related structures */
 

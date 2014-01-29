@@ -71,8 +71,6 @@ if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 3, 0]:
 #-------------------------------------------------------------------------------
 
 import cs_config
-from Base.MainView import MainView
-import Base.MainView
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
@@ -191,6 +189,7 @@ def main(argv, pkg):
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 
+    from Base.MainView import MainView
     mv = MainView(cmd_package = pkg, cmd_case = case)
 
     try:

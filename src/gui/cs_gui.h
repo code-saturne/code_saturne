@@ -395,7 +395,9 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
                                       double *const t0,
                                       double *const p0,
                                       double *const xmasmr,
-                                         int *const itempk);
+                                         int *const itempk,
+                                         int *const itherm,
+                                         int *const itpscl);
 
 /*----------------------------------------------------------------------------
  * User scalar min and max values for clipping.
@@ -415,7 +417,8 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
                                 const    int *const iscavr,
                                 double *const visls0,
                                 double *const t0,
-                                double *const p0);
+                                double *const p0,
+                                double *const cp0);
 
 /*----------------------------------------------------------------------------
  * Array of properties used in the calculation
@@ -620,30 +623,30 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
  * DOUBLE PRECISION RTP      <--  variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
-                              const cs_int_t  *const ncelet,
-                              const cs_int_t  *const nscaus,
-                              const cs_int_t  *const itherm,
-                              const cs_int_t         iviscl[],
-                              const cs_int_t         icp[],
-                              const cs_int_t         ivisls[],
-                              const cs_int_t         irovar[],
-                              const cs_int_t         ivivar[],
-                              const cs_int_t         isca[],
-                              const cs_int_t         iscalt[],
-                              const cs_int_t         iscavr[],
-                              const cs_int_t         ipproc[],
-                              const cs_int_t         iviscv[],
-                              const cs_int_t         itempk[],
-                              const cs_real_t        p0[],
-                              const cs_real_t        t0[],
-                              const cs_real_t        ro0[],
-                              const cs_real_t        cp0[],
-                              const cs_real_t        viscl0[],
-                              const cs_real_t        visls0[],
-                              const cs_real_t        viscv0[],
-                              const cs_real_t        rtp[],
-                                    double           propce[]);
+void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
+                              const cs_int_t  *ncelet,
+                              const cs_int_t  *nscaus,
+                              const cs_int_t  *itherm,
+                              const cs_int_t  *iviscl,
+                              const cs_int_t  *icp,
+                              const cs_int_t   ivisls[],
+                              const cs_int_t  *irovar,
+                              const cs_int_t  *ivivar,
+                              const cs_int_t   isca[],
+                              const cs_int_t  *iscalt,
+                              const cs_int_t   iscavr[],
+                              const cs_int_t   ipproc[],
+                              const cs_int_t  *iviscv,
+                              const cs_int_t  *itempk,
+                              const cs_real_t *p0,
+                              const cs_real_t *t0,
+                              const cs_real_t *ro0,
+                              const cs_real_t *cp0,
+                              const cs_real_t *viscl0,
+                              const cs_real_t *visls0,
+                              const cs_real_t *viscv0,
+                              const cs_real_t  rtp[],
+                                    double     propce[]);
 
 /*----------------------------------------------------------------------------
  * Head losses definition

@@ -72,6 +72,42 @@ typedef enum {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Define thermal table.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_thermal_table_set(const char *material,
+                     const char *method,
+                     const char *phas,
+                     const char *reference,
+                     cs_phys_prop_thermo_plane_type_t thermo_plane,
+                     const int   temp_scale);
+
+/*----------------------------------------------------------------------------
+ * Finalize thermal table
+ *----------------------------------------------------------------------------*/
+
+void
+cs_thermal_table_finalize();
+
+/*----------------------------------------------------------------------------
+ * Compute a property with table.
+ *
+ *   property     <-- property queried
+ *   n_vals       <-- number of values
+ *   var1         <-- values on first plane axis
+ *   var2         <-- values on second plane axis
+ *   val          --> resulting property values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_phys_prop_compute(cs_phys_prop_type_t                property,
+                     const cs_lnum_t                    n_vals,
+                     const cs_real_t                    var1[],
+                     const cs_real_t                    var2[],
+                     cs_real_t                          val[]);
+
+/*----------------------------------------------------------------------------
  * Compute properties with Freesteam in a defined thermal plane.
  *
  * parameters:

@@ -32,18 +32,10 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * EOS library headers
- *----------------------------------------------------------------------------*/
-
-#include <EOS/API/EOS.hxx>
-#include <EOS/API/EOS_Field.hxx>
-#include <EOS/API/EOS_Fields.hxx>
-#include <EOS/API/EOS_Error_Field.hxx>
-#include <EOS/API/EOS_enums.hxx>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "cs_physical_properties.h"
 
 #include "cs_base.h"
 
@@ -73,6 +65,9 @@
  *   EOSRef     <-- reference table for EOS thermo properties
  *----------------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C"
+#endif
 void
 cs_eos_create(char *EOSMethod,
               char *EOSRef);
@@ -81,7 +76,35 @@ cs_eos_create(char *EOSMethod,
  * Delete EOS instances
  *----------------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C"
+#endif
 void
 cs_eos_destroy(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * Computes physical properties in (P,h,Yi) for compressible flow.
+ *
+ * parameters:
+ * thermo_plane <--  type of thermal plane
+ * property     <--  type of property to compute
+ * n_vals       <--  size of properties arrays
+ * var1         <--  array of pressure
+ * var2         <--  array of thermal properties
+ * val          -->  array of property
+ */
+/*----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C"
+#endif
+void
+cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
+                 cs_phys_prop_type_t                property,
+                 const cs_lnum_t                    n_vals,
+                 double                             var1[],
+                 double                             var2[],
+                 cs_real_t                          val[]);
 
 #endif /* __CS_EOS_HXX__ */

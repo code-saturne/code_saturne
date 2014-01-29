@@ -37,6 +37,18 @@ This module contains the following classes and function:
 import logging
 
 #-------------------------------------------------------------------------------
+# EOS
+#-------------------------------------------------------------------------------
+
+EOS = 1
+try:
+   import eosAva
+except:
+   EOS = 0
+else :
+   import eosAva
+
+#-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
 import sys
@@ -154,28 +166,37 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
 
         self.mdl = FluidCharacteristicsModel(self.case)
 
+        if EOS == 1:
+            self.ava = eosAva.EosAvailable()
+
+        import cs_config
+        cfg = cs_config.config()
+        self.freesteam = 0
+        if cfg.libs['freesteam'].have != "no":
+            self.freesteam = 1
+
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            list = [('density', 'Rho'),
-                    ('molecular_viscosity', 'Mu'),
-                    ('specific_heat', 'Cp'),
-                    ('thermal_conductivity', 'Al'),
-                    ('volumic_viscosity', 'Viscv0'),
-                    ('dynamic_diffusion', 'Diftl0')]
+            self.lst = [('density', 'Rho'),
+                        ('molecular_viscosity', 'Mu'),
+                        ('specific_heat', 'Cp'),
+                        ('thermal_conductivity', 'Al'),
+                        ('volumic_viscosity', 'Viscv0'),
+                        ('dynamic_diffusion', 'Diftl0')]
         elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
-            list = [('density', 'Rho'),
-                    ('molecular_viscosity', 'Mu'),
-                    ('specific_heat', 'Cp'),
-                    ('dynamic_diffusion', 'Diftl0')]
+            self.lst = [('density', 'Rho'),
+                        ('molecular_viscosity', 'Mu'),
+                        ('specific_heat', 'Cp'),
+                        ('dynamic_diffusion', 'Diftl0')]
         elif GasCombustionModel(self.case).getGasCombustionModel() != 'off':
-            list = [('density', 'Rho'),
-                    ('molecular_viscosity', 'Mu'),
-                    ('specific_heat', 'Cp'),
-                    ('dynamic_diffusion', 'Diftl0')]
+            self.lst = [('density', 'Rho'),
+                        ('molecular_viscosity', 'Mu'),
+                        ('specific_heat', 'Cp'),
+                        ('dynamic_diffusion', 'Diftl0')]
         else:
-            list = [('density', 'Rho'),
-                    ('molecular_viscosity', 'Mu'),
-                    ('specific_heat', 'Cp'),
-                    ('thermal_conductivity', 'Al')]
+            self.lst = [('density', 'Rho'),
+                        ('molecular_viscosity', 'Mu'),
+                        ('specific_heat', 'Cp'),
+                        ('thermal_conductivity', 'Al')]
 
         self.list_scalars = []
         self.m_th = ThermalScalarModel(self.case)
@@ -200,9 +221,13 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         self.modelNameDiff = ComboModel(self.comboBoxNameDiff,1,1)
         self.modelViscv0   = ComboModel(self.comboBoxViscv0, 3, 1)
         self.modelDiftl0   = ComboModel(self.comboBoxDiftl0, 3, 1)
+        self.modelMaterial = ComboModel(self.comboBoxMaterial, 1, 1)
+        self.modelMethod   = ComboModel(self.comboBoxMethod, 1, 1)
+        self.modelPhas     = ComboModel(self.comboBoxPhas, 2, 1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('user law'), 'user_law')
+        self.modelRho.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_atmo != 'off':
             self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
         elif mdl_joule == 'arc':
@@ -212,6 +237,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
 
         self.modelMu.addItem(self.tr('constant'), 'constant')
         self.modelMu.addItem(self.tr('user law'), 'user_law')
+        self.modelMu.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelMu.addItem(self.tr('defined in elphyv'), 'variable')
         else:
@@ -219,6 +245,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
+        self.modelCp.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelCp.addItem(self.tr('defined in elphyv'), 'variable')
         else:
@@ -226,6 +253,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
 
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
+        self.modelAl.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelAl.addItem(self.tr('defined in elphyv'), 'variable')
         else:
@@ -233,12 +261,39 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
+        self.modelDiff.addItem(self.tr('thermal law'), 'thermal_law')
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
         self.modelViscv0.addItem(self.tr('user law'), 'user_law')
+        self.modelViscv0.addItem(self.tr('thermal law'), 'thermal_law')
         self.modelViscv0.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelDiftl0.addItem(self.tr('constant'), 'constant')
         self.modelDiftl0.addItem(self.tr('user law'), 'user_law')
+        self.modelDiftl0.addItem(self.tr('thermal law'), 'thermal_law')
         self.modelDiftl0.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+        self.modelPhas.addItem(self.tr('liquid'), 'liquid')
+        self.modelPhas.addItem(self.tr('gas'), 'gas')
+
+        if (self.freesteam == 0 and EOS == 0) or \
+            self.m_th.getThermalScalarModel() == "off" or \
+            mdl_joule != 'off' or mdl_comp != 'off':
+            self.groupBoxTableChoice.hide()
+        else:
+            self.groupBoxTableChoice.show()
+            self.lineEditReference.setEnabled(False)
+            # suppress perfect gas
+            self.modelMaterial.addItem(self.tr('user material'), 'user_material')
+            tmp = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
+            if EOS == 1:
+                fls = self.ava.whichFluids()
+                for fli in fls:
+                    if fli not in tmp:
+                        tmp.append(fli)
+                        self.modelMaterial.addItem(self.tr(fli), fli)
+            if self.freesteam == 1 and EOS == 0:
+                self.modelMaterial.addItem(self.tr('Water'), 'Water')
+            material = self.mdl.getMaterials()
+            self.modelMaterial.setItem(str_model=material)
+            self.updateMethod()
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarLabelsList()
@@ -259,6 +314,9 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         self.connect(self.comboBoxDiff,     SIGNAL("activated(const QString&)"), self.slotStateDiff)
         self.connect(self.comboBoxNameDiff, SIGNAL("activated(const QString&)"), self.slotNameDiff)
         self.connect(self.comboBoxViscv0,   SIGNAL("activated(const QString&)"), self.slotStateViscv0)
+        self.connect(self.comboBoxMaterial, SIGNAL("activated(const QString&)"), self.slotMaterial)
+        self.connect(self.comboBoxMethod,   SIGNAL("activated(const QString&)"), self.slotMethod)
+        self.connect(self.comboBoxPhas,     SIGNAL("activated(const QString&)"), self.slotPhas)
         self.connect(self.lineEditRho,      SIGNAL("textChanged(const QString &)"), self.slotRho)
         self.connect(self.lineEditMu,       SIGNAL("textChanged(const QString &)"), self.slotMu)
         self.connect(self.lineEditCp,       SIGNAL("textChanged(const QString &)"), self.slotCp)
@@ -322,12 +380,14 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
 
         # Standard Widget initialization
 
-        for tag, symbol in list:
-            __model  = getattr(self, "model" + symbol)
-            __line   = getattr(self, "lineEdit" + symbol)
+        for tag, symbol in self.lst:
+            __model  = getattr(self, "model"      + symbol)
+            __line   = getattr(self, "lineEdit"   + symbol)
             __button = getattr(self, "pushButton" + symbol)
-            __label  = getattr(self, "label" + symbol)
+            __label  = getattr(self, "label"      + symbol)
+            __labelu = getattr(self, "labelUnit"  + symbol)
             if tag != 'dynamic_diffusion':
+                __labelv = getattr(self, "labelVar"   + symbol)
                 c = self.mdl.getPropertyMode(tag)
                 __model.setItem(str_model=c)
                 if c == 'user_law':
@@ -336,6 +396,20 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
                 else:
                     __button.setEnabled(False)
                     __label.setText(self.tr("Reference value"))
+                if c == 'thermal_law':
+                    __line.hide()
+                    __label.hide()
+                    __labelu.hide()
+                    __labelv.hide()
+                else:
+                    __line.show()
+                    __label.show()
+                    __labelu.show()
+                    __labelv.show()
+                if self.mdl.getMaterials() == "user_material":
+                    __model.disableItem(str_model='thermal_law')
+                else:
+                    __model.enableItem(str_model='thermal_law')
             else:
                 __label.setText(self.tr("Reference value"))
 
@@ -350,7 +424,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         if mdl_gas != 'off' or mdl_coal != 'off':
             self.groupBoxDiftl0.show()
 
-        for tag, symbol in list:
+        for tag, symbol in self.lst:
             __model  = getattr(self, "model" + symbol)
             __line   = getattr(self, "lineEdit" + symbol)
             __button = getattr(self, "pushButton" + symbol)
@@ -430,6 +504,100 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
                     self.groupBoxCp.setTitle('Specific heat')
 
         self.case.undoStartGlobal()
+
+
+    def updateTypeChoice(self):
+        """
+        add/suppress thermo tables for each proprties
+        """
+        for tag, symbol in self.lst:
+            __model  = getattr(self, "model" + symbol)
+            if self.mdl.getMaterials() == "user_material":
+                __model.disableItem(str_model='thermal_law')
+            else:
+                __model.enableItem(str_model='thermal_law')
+            c = self.mdl.getPropertyMode(tag)
+            __model.setItem(str_model=c)
+
+
+    def updateMethod(self):
+        """
+        update method list with material choice
+        """
+        for nb in range(len(self.modelMethod.getItems())):
+            self.modelMethod.delItem(0)
+
+        self.comboBoxPhas.hide()
+        self.labelPhas.hide()
+
+        if self.mdl.getMaterials() == "user_material":
+            self.modelMethod.addItem(self.tr('user properties'), 'user_properties')
+        else :
+            if EOS == 1:
+                material = self.mdl.getMaterials()
+                self.ava.setMethods(material)
+                fls = self.ava.whichMethods()
+                for fli in fls:
+                    self.modelMethod.addItem(self.tr(fli),fli)
+                if self.mdl.getMethod() != "freesteam":
+                    self.comboBoxPhas.show()
+                    self.labelPhas.show()
+            if self.freesteam == 1 and self.mdl.getMaterials() == "Water":
+                self.modelMethod.addItem(self.tr("freesteam"), "freesteam")
+
+        # update comboBoxMethod
+        method = self.mdl.getMethod()
+        self.modelMethod.setItem(str_model=method)
+
+        self.updateReference()
+
+
+    def updateReference(self):
+        """
+        update Reference with material, method and field nature choice
+        """
+        # update lineEditReference
+        self.lineEditReference.setText(self.mdl.getReference())
+
+
+    @pyqtSignature("const QString &")
+    def slotMaterial(self, text):
+        """
+        Method to call 'setMaterial'
+        """
+        choice = self.modelMaterial.dicoV2M[text]
+        self.mdl.setMaterials(choice)
+        self.updateMethod()
+        self.updateTypeChoice()
+
+
+    @pyqtSignature("const QString &")
+    def slotPhas(self, text):
+        """
+        Method to call 'setFieldNature'
+        """
+        choice = self.modelPhas.dicoV2M[text]
+        self.mdl.setFieldNature(choice)
+
+        self.updateReference()
+
+
+    @pyqtSignature("const QString &")
+    def slotMethod(self, text):
+        """
+        Method to call 'setMethod'
+        """
+        choice = self.modelMethod.dicoV2M[text]
+        self.mdl.setMethod(choice)
+
+        self.comboBoxPhas.hide()
+        self.labelPhas.hide()
+        if self.mdl.getMaterials() != "user_material" and \
+           self.mdl.getMethod() != "freesteam":
+            self.comboBoxPhas.show()
+            self.labelPhas.show()
+
+        self.updateReference()
 
 
     @pyqtSignature("const QString &")
@@ -512,6 +680,8 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         __combo  = getattr(self, "comboBox"   + sym)
         __label  = getattr(self, "label"      + sym)
         __button = getattr(self, "pushButton" + sym)
+        __labelu = getattr(self, "labelUnit"  + sym)
+        __labelv = getattr(self, "labelVar"  + sym)
 
         choice = __model.dicoV2M[text]
         log.debug("__changeChoice -> %s, %s" % (text, choice))
@@ -522,6 +692,16 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         else:
             __button.setEnabled(True)
             setGreenColor(__button, True)
+        if choice == 'thermal_law':
+            __line.hide()
+            __label.hide()
+            __labelu.hide()
+            __labelv.hide()
+        else:
+            __line.show()
+            __label.show()
+            __labelu.show()
+            __labelv.show()
 
         self.mdl.setPropertyMode(tag, choice)
 

@@ -47,6 +47,18 @@ from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import XMLmodel, ModelTest
 
 #-------------------------------------------------------------------------------
+# EOS
+#-------------------------------------------------------------------------------
+
+EOS = 1
+try:
+   import eosAva
+except:
+   EOS = 0
+else :
+   import eosAva
+
+#-------------------------------------------------------------------------------
 # Model class
 #-------------------------------------------------------------------------------
 
@@ -68,6 +80,12 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_viscosity = self.setNewFluidProperty(self.node_fluid, 'molecular_viscosity')
         self.node_heat      = self.setNewFluidProperty(self.node_fluid, 'specific_heat')
         self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
+
+        import cs_config
+        cfg = cs_config.config()
+        self.freesteam = 0
+        if cfg.libs['freesteam'].have != "no":
+            self.freesteam = 1
 
 
     def __nodeFromTag(self, name):
@@ -115,6 +133,9 @@ class FluidCharacteristicsModel(Variables, Model):
         default['thermal_conductivity'] = 0.02495
         default['dynamic_diffusion']    = 0.01
         default['volumic_viscosity']    = 0.
+        default['material']             = "user_material"
+        default['method']               = "user_properties"
+        default['phas']                 = "liquid"
 
         return default
 
@@ -179,6 +200,150 @@ class FluidCharacteristicsModel(Variables, Model):
                d['gas_combustion'],    \
                d['solid_fuels'],    \
                d['compressible_model']
+
+
+    @Variables.noUndo
+    def getMaterials(self):
+        """
+        get the nature of materials
+        """
+        nodem = self.node_fluid.xmlGetNode('material')
+        if nodem == None:
+            material = self.defaultFluidCharacteristicsValues()['material']
+            self.setMaterials(material)
+            nodem = self.node_fluid.xmlGetNode('material')
+        material = nodem['choice']
+        return material
+
+
+    @Variables.undoLocal
+    def setMaterials(self, material):
+        """
+        set the nature of materials
+        """
+        childNode = self.node_fluid.xmlInitChildNode('material')
+        m = childNode.xmlGetNode('material')
+        oldMaterial = None
+        if m != None:
+            oldMaterial = m['choice']
+        childNode.xmlSetAttribute(choice = material)
+        self.updateMethod(oldMaterial)
+
+        if material == "user_material":
+            for node in self.node_fluid.xmlGetChildNodeList('property'):
+                if node['choice'] == "thermal_law":
+                    node['choice'] = "variable"
+
+
+    @Variables.noUndo
+    def getMethod(self):
+        """
+        get the nature of materials
+        """
+        nodem = self.node_fluid.xmlGetNode('method')
+        if nodem == None:
+            method = self.defaultFluidCharacteristicsValues()['method']
+            self.setMethod(method)
+            nodem = self.node_fluid.xmlGetNode('method')
+        method = nodem['choice']
+        return method
+
+
+    @Variables.undoLocal
+    def setMethod(self, method):
+        """
+        update reference value for EOS
+        """
+        childNode = self.node_fluid.xmlInitChildNode('method')
+        childNode.xmlSetAttribute(choice = method)
+        self.getReference()
+
+        # suppress phas choice if not EOS
+        if method == self.defaultFluidCharacteristicsValues()['method'] or \
+           method == "freesteam":
+            nodem = self.node_fluid.xmlGetNode('phas')
+            if nodem:
+                nodem .xmlRemoveNode()
+
+
+    @Variables.undoGlobal
+    def updateMethod(self, oldMaterial):
+        """
+        update reference value for EOS
+        """
+        material = self.getMaterials()
+        if oldMaterial != material:
+            if material == self.defaultFluidCharacteristicsValues()['material'] :
+               self.setMethod(self.defaultFluidCharacteristicsValues()['method'])
+            elif EOS == 1:
+               self.ava = eosAva.EosAvailable()
+               self.ava.setMethods(material)
+               self.setMethod(self.ava.whichMethods()[0])
+            else:
+                self.setMethod("freesteam")
+            # suppress phas choice if not EOS
+            if self.getMethod() == self.defaultFluidCharacteristicsValues()['method'] or \
+               self.getMethod() == "freesteam":
+                nodem = self.node_fluid.xmlGetNode('phas')
+                if nodem:
+                   nodem .xmlRemoveNode()
+
+
+    @Variables.noUndo
+    def getReference(self):
+        """
+        return reference value for EOS
+        """
+        reference = ""
+        material = self.getMaterials()
+        method = self.getMethod()
+        if material == "user_material":
+            reference = material
+        else:
+            if self.freesteam == 1:
+                if self.getMethod() == "freesteam":
+                    reference = "freesteam"
+            if EOS == 1:
+                if self.getMethod() != "freesteam":
+                    phas = self.getFieldNature()
+                    self.ava = eosAva.EosAvailable()
+                    self.ava.setMethods(material)
+                    self.ava.setReferences(material, self.getMethod())
+                    ref = self.ava.whichReferences()
+
+                    if phas == "liquid" :
+                        reference = ref[0]
+                    elif phas == "gas" :
+                        reference = ref[1]
+        # update XML
+        childNode = self.node_fluid.xmlInitChildNode('reference')
+        childNode.xmlSetAttribute(choice = reference)
+
+        return reference
+
+
+    @Variables.noUndo
+    def getFieldNature(self):
+        """
+        get field nature for EOS
+        """
+        nodem = self.node_fluid.xmlGetNode('phas')
+        if nodem == None:
+            nature = self.defaultFluidCharacteristicsValues()['phas']
+            self.setFieldNature(nature)
+            nodem = self.node_fluid.xmlGetNode('phas')
+        nature = nodem['choice']
+        return nature
+
+
+    @Variables.noUndo
+    def setFieldNature(self, nature):
+        """
+        set field nature for EOS
+        """
+        self.isInList(nature, ('liquid', 'gas'))
+        childNode = self.node_fluid.xmlInitChildNode('phas')
+        childNode.xmlSetAttribute(choice = nature)
 
 
     @Variables.noUndo
@@ -347,7 +512,7 @@ class FluidCharacteristicsModel(Variables, Model):
                             'volumic_viscosity'))
         node = self.__nodeFromTag(tag)
         c = node['choice']
-        self.isInList(c, ('constant', 'user_law', 'variable'))
+        self.isInList(c, ('constant', 'user_law', 'thermal_law', 'variable'))
         return c
 
 
@@ -357,7 +522,7 @@ class FluidCharacteristicsModel(Variables, Model):
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
                             'volumic_viscosity'))
-        self.isInList(choice, ('constant', 'user_law', 'variable'))
+        self.isInList(choice, ('constant', 'user_law', 'thermal_law', 'variable'))
 
         node = self.__nodeFromTag(tag)
         node['choice'] = choice

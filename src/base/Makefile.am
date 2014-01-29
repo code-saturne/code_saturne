@@ -309,6 +309,7 @@ zufall.f90
 
 # Conditionally compiled extensions
 lib_LTLIBRARIES =
+pkglib_LTLIBRARIES =
 
 if HAVE_PARAMEDMEM
 libcs_paramedmem_la_CPPFLAGS = \
@@ -322,14 +323,16 @@ libcs_paramedmem_la_SOURCES = cs_paramedmem_coupling.cxx
 endif
 
 if HAVE_EOS
-libcs_eos_la_CPPFLAGS = \
+cs_eos_la_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(EOS_CPPFLAGS) $(MPI_CPPFLAGS)
 pkginclude_HEADERS += cs_eos.hxx
-lib_LTLIBRARIES += libcs_eos.la
-libcs_eos_la_SOURCES = cs_eos.cxx
+pkglib_LTLIBRARIES += cs_eos.la
+cs_eos_la_SOURCES = cs_eos.cxx
+cs_eos_la_LDFLAGS = -module -avoid-version
+
 endif
 
 clean-local:
