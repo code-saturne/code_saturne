@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2013 EDF S.A.
+! Copyright (C) 1998-2014 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -497,6 +497,13 @@ if (iappel.eq.1) then
         trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel)
         trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel)
       enddo
+    elseif (ippmod(icompf).ge.0) then
+      do iel = 1, ncel
+        rom = crom(iel)
+        trav(1,iel) = (rom*gx - grad(1,iel)) * volume(iel)
+        trav(2,iel) = (rom*gy - grad(2,iel)) * volume(iel)
+        trav(3,iel) = (rom*gz - grad(3,iel)) * volume(iel)
+      enddo
     else
       do iel = 1, ncel
         drom = (crom(iel)-ro0)
@@ -519,6 +526,13 @@ if (iappel.eq.1) then
         trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel) * porosi(iel)
         trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel) * porosi(iel)
         trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel) * porosi(iel)
+      enddo
+    elseif (ippmod(icompf).ge.0) then
+      do iel = 1, ncel
+        rom = crom(iel)
+        trav(1,iel) = (rom*gx - grad(1,iel)) * volume(iel) * porosi(iel)
+        trav(2,iel) = (rom*gy - grad(2,iel)) * volume(iel) * porosi(iel)
+        trav(3,iel) = (rom*gz - grad(3,iel)) * volume(iel) * porosi(iel)
       enddo
     else
       do iel = 1, ncel

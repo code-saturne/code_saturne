@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix in compressible module (prediction step): compute gravity source term
+  with the full density value (not rho-rho0).
+
 - Fix in compressible module (pressure step): add gravity source term to the
   boundary mass flux at walls if icfgrp=1. This is done to balance the
   hydrostatic pressure gradient taken into account in the pressure B.C. in
