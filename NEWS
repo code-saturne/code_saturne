@@ -11,6 +11,11 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix in compressible module (pressure step): add gravity source term to the
+  boundary mass flux at walls if icfgrp=1. This is done to balance the
+  hydrostatic pressure gradient taken into account in the pressure B.C. in
+  that case.
+
 - Make error explicit for irregular joining with turbomachinery.
 
 - Fix wrong ghost cell sync call for tensorial viscosity, which caused a
