@@ -85,6 +85,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use pointe, only: itypfb
 use field
 
 !===============================================================================
@@ -264,10 +265,27 @@ do ifac = 1, nfac
                  + crom(jj)*(wflmas(ifac)-abs(wflmas(ifac))))
 enddo
 
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-  wflmab(ifac) = -bmasfl(ifac)
-enddo
+! Mass flux at boundary faces.
+if (icfgrp.eq.1) then
+  ! The hydrostatic pressure gradient contribution has to be added to the mass
+  ! flux if it has been taken into account in the pressure B.C. at walls.
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    if (itypfb(ifac).eq.iparoi) then
+      wflmab(ifac) = -bmasfl(ifac)                                              &
+                     -dt(iel)*crom(iel)*(  gx*surfbo(1,ifac)                    &
+                                         + gy*surfbo(2,ifac)                    &
+                                         + gz*surfbo(3,ifac))
+    else
+      wflmab(ifac) = -bmasfl(ifac)
+    endif
+  enddo
+else
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    wflmab(ifac) = -bmasfl(ifac)
+  enddo
+endif
 
 init = 0
 call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                                &
