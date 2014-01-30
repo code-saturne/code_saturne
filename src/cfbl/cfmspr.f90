@@ -85,6 +85,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use pointe, only: itypfb
 use field
 
 !===============================================================================
@@ -185,9 +186,10 @@ endif
 call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
 call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
 
-! Coefficients for the reconstruction of the pressure gradient
-! computed from the diffusion coefficient coefaf, coefbf
-! (A Neumann BC has been stored in coefaf, coefbf)
+! Computation of the boundary coefficients for the pressure gradient
+! recontruction in accordance with the diffusion boundary coefficients (coefaf_p,
+! coefbf_p). Always a homogeneous Neumann except at walls where the hydrostatic
+! pressure is taken into account (icfgrp option).
 do ifac = 1, nfabor
   iel = ifabor(ifac)
   hint = dt(iel) / distb(ifac)
@@ -223,9 +225,9 @@ endif
 !     UNSTEADY TERM
 !     =============
 
-! --- Calculation of the square of sound velocity c2
+! --- Calculation of the square of sound velocity c2.
 !     Pressure is an unsteady variable in this algorithm
-!     Varpos has been modified for that
+!     Varpos has been modified for that.
 
 allocate(c2(ncelet))
 iccfth = 126
@@ -245,8 +247,9 @@ enddo
 ! 3. "MASS FLUX" AND FACE "VISCOSITY" CALCULATION
 !===============================================================================
 
-!     Here VISCF et VISCB are both work arrays.
-!     WFLMAS et WFLMAB are calculated
+! Computation of the "convective flux" for the density:
+! (u + dt f) is computed at internal faces and stored in wflmas,
+! the values at boundary faces in wflmab won't be taken into account.
 
 call cfmsfp                                                                     &
 !==========
@@ -256,6 +259,7 @@ call cfmsfp                                                                     
   ckupdc , smacel ,                                                             &
   wflmas , wflmab )
 
+! Mass flux at internal faces (upwind scheme for the density).
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
@@ -264,10 +268,27 @@ do ifac = 1, nfac
                  + crom(jj)*(wflmas(ifac)-abs(wflmas(ifac))))
 enddo
 
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-  wflmab(ifac) = -bmasfl(ifac)
-enddo
+! Mass flux at boundary faces.
+if (icfgrp.eq.1) then
+  ! The hydrostatic pressure gradient contribution has to be added to the mass
+  ! flux if it has been taken into account in the pressure B.C. at walls.
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    if (itypfb(ifac).eq.iparoi) then
+      wflmab(ifac) = -bmasfl(ifac)                                              &
+                     -dt(iel)*crom(iel)*(  gx*surfbo(1,ifac)                    &
+                                         + gy*surfbo(2,ifac)                    &
+                                         + gz*surfbo(3,ifac))
+    else
+      wflmab(ifac) = -bmasfl(ifac)
+    endif
+  enddo
+else
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    wflmab(ifac) = -bmasfl(ifac)
+  enddo
+endif
 
 init = 0
 call divmas(init,wflmas,wflmab,smbrs)
@@ -403,9 +424,9 @@ call itrmas                                                                     
   dt     , dt     , dt     ,                                                    &
   imasfl, bmasfl)
 
-! incrementation of the flux with [rho (u + dt f)].n = wflmas
-! (added with a negative sign since WFLMAS,WFLMAB was used above
-!  in the right hand side).
+! Incrementation of the flux with [rho (u + dt f)].n = wflmas
+! (added with a negative sign since wflmas,wflmab was used above
+! in the right hand side).
 do ifac = 1, nfac
   imasfl(ifac) = imasfl(ifac) - wflmas(ifac)
 enddo
