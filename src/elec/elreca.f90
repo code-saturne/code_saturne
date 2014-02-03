@@ -1,7 +1,5 @@
 !-------------------------------------------------------------------------------
 
-!VERS
-
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2014 EDF S.A.
@@ -144,42 +142,6 @@ if ( ippmod(ielarc).ge.1 ) then
  1000     format(/,                                               &
  ' Courant impose/Courant= ',E14.5,', Coeff. recalage= ',E14.5)
 
-!       RECALAGE DES VARIABLES ELECTRIQUES
-!       ---------------------------------------
-
-!        Valeur de DPOT
-!        --------------
-
-    dpot = dpot*coepot
-
-!        Potentiel Electrique (on pourrait eviter ; c'est pour le post)
-!        --------------------
-
-    do iel = 1, ncel
-      rtp(iel,isca(ipotr)) = rtp(iel,isca(ipotr))*coepot
-    enddo
-
-
-!        Densite de courant (sert pour A et pour jXB)
-!        ------------------
-
-    if(ippmod(ielarc).ge.1 ) then
-      do idimve = 1, ndimve
-        ipdcrp = ipproc(idjr(idimve))
-        do iel = 1, ncel
-          propce(iel,ipdcrp) = propce(iel,ipdcrp) * coepot
-        enddo
-      enddo
-    endif
-
-!        Effet Joule (sert pour H au pas de temps suivant)
-!        -----------
-
-    ipcefj = ipproc(iefjou)
-    do iel = 1, ncel
-      propce(iel,ipcefj) = propce(iel,ipcefj)*coepot**2
-    enddo
-
   else if ( modrec .eq. 2) then
 
 ! 2.2 : 2eme exemple : Autre methode de recalage
@@ -187,34 +149,16 @@ if ( ippmod(ielarc).ge.1 ) then
 !    Ceci est un cas particulier et doit etre adapte en fonction
 !    du cas et du maillage (intervenir aussi dans uselcl)
 
-!        Calcul de l'integrale sur le Volume de J.E
-!        -----------------------------------
-!        (c'est forcement positif ou nul)
-
+    ipcefj = ipproc(iefjou)
     call uielrc(izreca, crit_reca)
 
-    ipcefj = ipproc(iefjou)
-    somje = 0.d0
-    do iel = 1, ncel
-      somje = somje+propce(iel,ipcefj)*volume(iel)
-    enddo
+!   Calcul de l'intensite du courant d'arc
+!   --------------------------------------
+!      Calcul de l'integrale de J sur une surface plane
+!      perpendiculaire a l'axe de l'arc
 
-    if(irangp.ge.0) then
-      call parsom (somje)
-    endif
-
-    if (somje .ne. 0) then
-      coepot = couimp*dpot/max(somje,epzero)
-    endif
-    write(nfecra,1001) couimp,dpot,somje
-
-!        Calcul de l'intensite du courant d'arc
-!        --------------------------------------
-!          Calcul de l'integrale de J sur une surface plane
-!          perpendiculaire a l'axe de l'arc
-
-!       ATTENTION : changer la valeur des tests sur CDGFAC(3,IFAC)
-!                   en fonction du maillage
+!   ATTENTION : changer la valeur des tests sur CDGFAC(3,IFAC)
+!                en fonction du maillage
 
     ipcdc3 = ipproc(idjr(idreca))
     elcou  = 0.d0
@@ -246,9 +190,13 @@ if ( ippmod(ielarc).ge.1 ) then
     coepot = coepoa
 
     write(nfecra,*) ' ELCOU = ',ELCOU
+  endif
+
+  ! Limitation de l'evolution de l'enthalpie et recalage EM
+  if ( modrec .eq. 1 .or. modrec .eq. 2 ) then
 
     dtj = 1.d15
-    dtjm =dtj
+    dtjm = dtj
     delhsh = 0.d0
     cdtj= 20.d0
 
@@ -281,27 +229,27 @@ if ( ippmod(ielarc).ge.1 ) then
       endif
     endif
 
-    write(nfecra,1008)cpmx,coepoa,coepot
-    write(nfecra,1009)elcou,dpot*coepot
+    write(nfecra,1008) cpmx,coepoa,coepot
+    write(nfecra,1009) dpot*coepot
 
-!        RECALAGE DES VARIABLES ELECTRIQUES
-!        ----------------------------------
+!   RECALAGE DES VARIABLES ELECTRIQUES
+!   ----------------------------------
 
-!         Valeur de DPOT
-!         --------------
+!   Valeur de DPOT
+!   --------------
 
     dpot = dpot*coepot
 
-!         Potentiel Electrique (on pourrait eviter ; c'est pour le post)
-!         --------------------
+!   Potentiel Electrique (on pourrait eviter ; c'est pour le post)
+!   --------------------
 
     do iel = 1, ncel
       rtp(iel,isca(ipotr)) = rtp(iel,isca(ipotr))*coepot
     enddo
 
 
-!      Densite de courant (sert pour A et pour jXB)
-!      ------------------
+!   Densite de courant (sert pour A et pour jXB)
+!   ------------------
 
     if(ippmod(ielarc).ge.1 ) then
       do idimve = 1, ndimve
@@ -312,8 +260,8 @@ if ( ippmod(ielarc).ge.1 ) then
       enddo
     endif
 
-!      Effet Joule (sert pour H au pas de temps suivant)
-!      -----------
+!   Effet Joule (sert pour H au pas de temps suivant)
+!   -----------
 
     ipcefj = ipproc(iefjou)
     do iel = 1, ncel
@@ -411,8 +359,7 @@ endif
           ' COEPOA = ',E14.5,/,                             &
           ' COEPOT = ',E14.5)
 
- 1009  format(/,' Courant calcule = ',E14.5,/,                    &
-          ' Dpot recale     = ',E14.5)
+ 1009  format(/,' Dpot recale     = ',E14.5)
 
 !----
 ! FIN

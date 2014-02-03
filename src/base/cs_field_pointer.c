@@ -232,9 +232,10 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
                 + sizeof(cs_field_t *) * _sub_size;
     BFT_REALLOC(p, _s, unsigned char);
     a = p;
-    v.a = a;
+    a->n = _sub_size;
     for (i = _sub_size_prev; i < index; i++)
       a->p[i] = NULL;
+    v.a = a;
   }
 
   _is_sublist[e] = true;
@@ -439,7 +440,7 @@ cs_field_pointer_map_electric_arcs(int  n_gasses)
   cs_field_pointer_map(CS_ENUMF_(poti), cs_field_by_name_try("elec_pot_i"));
 
   for (int i = 0; i < 3; i++) {
-    snprintf(s, 63, "vec_potential_%1d", i+1); s[63] = '\0';
+    snprintf(s, 63, "vec_potential_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(potva), i, cs_field_by_name_try(s));
   }
 

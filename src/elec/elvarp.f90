@@ -145,8 +145,8 @@ if (ippmod(ielarc).ge.2) then
 
   ! Vector potential
   do idimve = 1, ndimve
-    write(f_name,'(a14,i1.1)') 'vec_potential_',idimve
-    write(f_label,'(a7,i1.1)') 'POT_VEC',idimve
+    write(f_name,'(a14,i2.2)') 'vec_potential_',idimve
+    write(f_label,'(a7,i2.2)') 'POT_VEC',idimve
     call add_model_scalar_field(f_name, f_label, ipotva(idimve))
     f_id = ivarfl(isca(ipotva(idimve)))
     call field_set_key_double(f_id, kscmin, -grand)
