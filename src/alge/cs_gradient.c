@@ -969,7 +969,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
- *   ktvar          <-- pressure gradient coefficient variable
+ *   c_weight       <-- weighted gradient coefficient variable,
+ *                      or NULL
  *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *   rhsv           <-> interleaved array for gradient RHS components
@@ -986,7 +987,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                             const cs_real_t              coefap[],
                             const cs_real_t              coefbp[],
                             const cs_real_t              pvar[],
-                            const cs_real_t              ktvar[],
+                            const cs_real_t              c_weight[],
                             cs_real_3_t        *restrict grad,
                             cs_real_4_t        *restrict rhsv)
 {
@@ -1039,9 +1040,9 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
   if (hyd_p_flag == 0 || hyd_p_flag == 2) {
 
-    /* Pressure gradient coefficient weighting activated */
+    /* Pressure gradient with weighting activated */
 
-    if (ktvar != NULL) {
+    if (c_weight != NULL) {
 
       /* Contribution from interior faces */
 
@@ -1057,9 +1058,9 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
 
-            ktpond =    weight[face_id] * ktvar[ii]
-                     / (       weight[face_id] * ktvar[ii]
-                        + (1.0-weight[face_id])* ktvar[jj]);
+            ktpond =    weight[face_id] * c_weight[ii]
+                     / (       weight[face_id] * c_weight[ii]
+                        + (1.0-weight[face_id])* c_weight[jj]);
             pfac  =        ktpond  * rhsv[ii][3]
                     + (1.0-ktpond) * rhsv[jj][3];
             fctb[0] = pfac * i_face_normal[face_id][0];
@@ -1723,6 +1724,8 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable,
+ *                      or NULL
  *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
@@ -1741,7 +1744,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                      const cs_real_t              coefap[],
                      const cs_real_t              coefbp[],
                      const cs_real_t              pvar[],
-                     const cs_real_t              ktvar[],
+                     const cs_real_t              c_weight[],
                      cs_real_3_t        *restrict grad,
                      cs_real_4_t        *restrict rhsv)
 {
@@ -1814,7 +1817,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                                 coefap,
                                 coefbp,
                                 pvar,
-                                ktvar,
+                                c_weight,
                                 grad,
                                 rhsv);
 
@@ -3303,7 +3306,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
-  cs_real_t *weight_var = (*ipond > 0) ? ktvar : NULL;
+  cs_real_t *c_weight = (*ipond > 0) ? ktvar : NULL;
 
   bool recompute_cocg = (*iccocg) ? true : false;
 
@@ -3356,7 +3359,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                      coefap,
                      coefbp,
                      pvar,
-                     weight_var,
+                     c_weight,
                      grad);
 
   /* Copy gradient to component arrays */
@@ -3498,7 +3501,7 @@ cs_gradient_finalize(void)
  * \param[in]       bc_coeff_a      boundary condition term a
  * \param[in]       bc_coeff_b      boundary condition term b
  * \param[in, out]  var             gradient's base variable
- * \param[in, out]  weight_var      weighted gradient coefficient variable,
+ * \param[in, out]  c_weight        weighted gradient coefficient variable,
  *                                  or NULL
  * \param[out]      grad            gradient
  */
@@ -3521,7 +3524,7 @@ void cs_gradient_scalar(const char                *var_name,
                         const cs_real_t            bc_coeff_a[],
                         const cs_real_t            bc_coeff_b[],
                         cs_real_t        *restrict var,
-                        cs_real_t        *restrict weight_var,
+                        cs_real_t        *restrict c_weight,
                         cs_real_3_t      *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -3565,8 +3568,8 @@ void cs_gradient_scalar(const char                *var_name,
       cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, var);
     else
       cs_halo_sync_var(halo, halo_type, var);
-      if (weight_var != NULL)
-        cs_halo_sync_var(halo, halo_type, weight_var);
+      if (c_weight != NULL)
+        cs_halo_sync_var(halo, halo_type, c_weight);
 
     /* TODO: check if f_ext components are all up to date, in which
      *       case we need no special treatment for tr_dim > 0 */
@@ -3599,7 +3602,7 @@ void cs_gradient_scalar(const char                *var_name,
                                 bc_coeff_a,
                                 bc_coeff_b,
                                 var,
-                                weight_var,
+                                c_weight,
                                 grad,
                                 rhsv);
 
@@ -3637,7 +3640,7 @@ void cs_gradient_scalar(const char                *var_name,
                          bc_coeff_a,
                          bc_coeff_b,
                          var,
-                         weight_var,
+                         c_weight,
                          grad,
                          rhsv);
 
@@ -3660,7 +3663,7 @@ void cs_gradient_scalar(const char                *var_name,
                          bc_coeff_a,
                          bc_coeff_b,
                          var,
-                         weight_var,
+                         c_weight,
                          grad,
                          rhsv);
 
