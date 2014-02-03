@@ -58,6 +58,7 @@ integer          n_fields
 integer          ii, jj, ivar, iok, iest, imom, ikw, iprop
 integer          icompt, ipp, nbccou, nn, keyvar
 integer          nscacp, iscal
+integer          imrgrp
 double precision relxsp
 double precision omgnrm, cosdto, sindto
 double precision ux, uy, uz
@@ -790,8 +791,10 @@ endif
 !          gradients (=-999),
 !        On impose -1 avec gradrc (pas de limitation)
 !               et  1 avec gradmc (limitation)
+imrgrp = abs(imrgra)
+if (imrgrp.ge.10) imrgrp = imrgrp - 10
 
-if (imrgra.eq.0.or.imrgra.ge.4.or.imrgra.le.-4) then
+if (imrgrp.eq.0.or.imrgrp.ge.4) then
   do ii = 1, nvarmx
     if (imligr(ii).eq.-999) then
       imligr(ii) = -1
@@ -1033,7 +1036,7 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
   ineedy = 1
 endif
 
-if (imrgra.eq.0 .or. imrgra.ge.4 .or. imrgra.le.-4) then
+if (imrgrp.eq.0 .or. imrgrp.ge.4) then
   if (imligy.eq.-999) then
     imligy = -1
   endif

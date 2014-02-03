@@ -1996,7 +1996,7 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
 {
   int _gradient_option = CS_ABS(gradient_option);
 
-  assert(_gradient_option <= 6);
+  assert(_gradient_option <= 16);
 
   switch (_gradient_option) {
   case 0:
@@ -2013,6 +2013,22 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
     _compute_cocg_s_it = true;
     _compute_cocg_s_lsq = true;
     break;
+  /* deprecated options */
+  case 10:
+    _compute_cocg_s_it = true;
+    break;
+  case 11:
+  case 12:
+  case 13:
+    _compute_cocg_s_lsq = true;
+    break;
+  case 14:
+  case 15:
+  case 16:
+    _compute_cocg_s_it = true;
+    _compute_cocg_s_lsq = true;
+    break;
+
   default:
     break;
   }

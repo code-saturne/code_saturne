@@ -626,7 +626,7 @@ if (idtvar.lt.0) then
 endif
 
 ! --- Reconstruction des gradients
-if (imrgra.gt.6 .or. imrgra.lt.-6) then
+if (imrgra.gt.16 .or. imrgra.lt.-16) then
   write(nfecra,2205) 'IMRGRA', imrgra
   iok = iok + 1
 endif

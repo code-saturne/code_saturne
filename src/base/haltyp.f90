@@ -70,6 +70,7 @@ ivoset = 0
 
 imrgrl = imrgra
 if (imrgrl.lt.0) imrgrl = - imrgra
+if (imrgrl.ge.10) imrgrl = imrgrl - 10
 
 if (imrgrl.eq.2 .or. imrgrl.eq.3 .or. imrgrl.eq.5 .or. imrgrl.eq.6) ivoset = 1
 

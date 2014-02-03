@@ -54,7 +54,10 @@ typedef enum {
 
   CS_GRADIENT_ITER,              /* Iterative */
   CS_GRADIENT_LSQ,               /* Least-squares */
-  CS_GRADIENT_LSQ_ITER           /* LSQ followed with iterative */
+  CS_GRADIENT_LSQ_ITER,          /* LSQ followed with iterative */
+  CS_GRADIENT_ITER_OLD,          /* Iterative (old)*/
+  CS_GRADIENT_LSQ_OLD,           /* Least-squares (old)*/
+  CS_GRADIENT_LSQ_ITER_OLD       /* LSQ followed with iterative (old)*/
 
 } cs_gradient_type_t;
 
@@ -82,7 +85,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_int_t   *const ilved,       /* <-- 1: interleaved; 0: non-interl.   */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
- const cs_int_t   *const nswrgp,      /* <-- >1: with reconstruction          */
+ const cs_int_t   *const n_r_sweeps,  /* <-- >1: with reconstruction          */
  const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
                                              in case of rotation              */
  const cs_int_t   *const iphydp,      /* <-- use hydrosatatic pressure        */
@@ -93,7 +96,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              calculation                      */
  const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
  const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
-       cs_real_3_t       fext[],      /* <-- exterior force generating the
+       cs_real_3_t       f_ext[],      /* <-- exterior force generating the
                                              hydrostatic pressure             */
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
@@ -111,7 +114,7 @@ void CS_PROCF (cgdvec, CGDVEC)
  const cs_int_t         *const ivar,
  const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
  const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
- const cs_int_t         *const nswrgp,    /* <-- >1: with reconstruction      */
+ const cs_int_t         *const n_r_sweeps,/* <-- >1: with reconstruction      */
  const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
  const cs_int_t         *const imligp,    /* <-- type of clipping             */
  const cs_real_t        *const epsrgp,    /* <-- precision for iterative
