@@ -2469,8 +2469,8 @@ cs_convection_diffusion_vector(
                  --------*/
 
               pifri = blencp*pifri+(1.-blencp)*pir;
-              pifrj = blencp*pifrj+(1.-blencp)*pif;
-              pjfri = blencp*pjfri+(1.-blencp)*pjf;
+              pifrj = blencp*pifrj+(1.-blencp)*pi;
+              pjfri = blencp*pjfri+(1.-blencp)*pj;
               pjfrj = blencp*pjfrj+(1.-blencp)*pjr;
 
               /* Flux
