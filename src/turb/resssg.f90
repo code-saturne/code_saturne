@@ -53,7 +53,8 @@
 !> \param[in]     ipp           index for writing
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itpsmp        type of mass source term for the variables
+!> \param[in]     itypsm        type of mass source term for each variable
+!>                               (see \ref ustsma)
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
@@ -64,9 +65,8 @@
 !> \param[in]     gradro        tableau de travail pour grad rom
 !>                              (sans rho volume) uniqt pour iturb=30
 !> \param[in]     ckupdc        work array for the head loss
-!> \param[in]     smcelp        variable value associated to the mass source
-!>                               term
-!> \param[in]     gamma         valeur du flux de masse
+!> \param[in]     smacel        value associated to each variable in the mass
+!>                               source terms or mass rate (see \ref ustsma)
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
 !> \param[in]     tslagr        coupling term for lagrangian
@@ -79,10 +79,10 @@
 subroutine resssg &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
-   icepdc , icetsm , itpsmp ,                                     &
+   icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    gradv  , gradro ,                                              &
-   ckupdc , smcelp , gamma  ,                                     &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
@@ -119,14 +119,13 @@ integer          ncepdp , ncesmp
 integer          ivar   , isou   , ipp
 
 integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itpsmp(ncesmp)
+integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
-double precision ckupdc(ncepdp,6)
-double precision smcelp(ncesmp), gamma(ncesmp)
+double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision tslage(ncelet),tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
@@ -235,16 +234,13 @@ enddo
 !===============================================================================
 ! 2. User source terms
 !===============================================================================
-!(le deuxieme argument gradv est lu en PRODUC dans ustsri, mais ce
-! tableau n'est dimensionne et utilise qu'en modele Rij standard)
 
-call ustsri &
-!==========
+call cs_user_turbulence_source_terms &
+!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
-   icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smcelp , gamma  , gradv  , gradv ,                    &
+   ivarfl(ivar)    ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
+   ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.
@@ -289,12 +285,12 @@ if (ncesmp.gt.0) then
 !       Entier egal a 1 (pour navsto : nb de sur-iter)
   iiun = 1
 
-!       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  call catsma                                                     &
+! On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  call catsma &
   !==========
- ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,   &
-   icetsm , itpsmp ,                                              &
-   volume , rtpa(1,ivar) , smcelp , gamma  ,                      &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
+   icetsm , itypsm(:,ivar)  ,                                     &
+   volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE

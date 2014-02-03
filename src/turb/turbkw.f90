@@ -434,14 +434,21 @@ do iel = 1, ncel
   usimpw(iel) = 0.d0
 enddo
 
-call ustskw &
-!==========
+call cs_user_turbulence_source_terms &
+!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ivarfl(ik)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , s2kw   , divukw ,                            &
-   gdkgdw , w2     , xf1    ,                                     &
-   smbrk  , smbrw  , usimpk , usimpw )
+   ckupdc , smacel ,                                              &
+   smbrk  , usimpk )
+
+call cs_user_turbulence_source_terms &
+!===================================
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ivarfl(iomg)    ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
+   ckupdc , smacel ,                                              &
+   smbrw  , usimpw )
 
 ! If source terms are extrapolated over time
 if (isto2t.gt.0) then

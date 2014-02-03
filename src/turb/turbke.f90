@@ -724,13 +724,21 @@ do iel = 1, ncel
   w8(iel) = 0.d0
 enddo
 
-call ustske &
-!==========
+call cs_user_turbulence_source_terms &
+!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ivarfl(ik)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , strain , divu   ,                            &
-   w7     , w8     , usimpk , usimpe )
+   ckupdc , smacel ,                                              &
+   w7     , usimpk )
+
+call cs_user_turbulence_source_terms &
+!===================================
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ivarfl(iep)     ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
+   ckupdc , smacel ,                                              &
+   w8     , usimpe )
 
 ! If source terms are extrapolated over time
 if (isto2t.gt.0) then

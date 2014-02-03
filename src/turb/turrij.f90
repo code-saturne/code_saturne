@@ -119,8 +119,7 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:,:) :: gradro
 
-integer,          pointer, dimension(:) :: itpsmp
-double precision, pointer, dimension(:) :: smcelp, gammap, tslage, tslagi
+double precision, pointer, dimension(:) :: tslage, tslagi
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: brom, crom
@@ -131,9 +130,6 @@ double precision, dimension(:), pointer :: brom, crom
 ! 1. Initialization
 !===============================================================================
 
-itpsmp => ivoid1
-smcelp => rvoid1
-gammap => rvoid1
 tslage => rvoid1
 tslagi => rvoid1
 
@@ -332,22 +328,16 @@ do isou = 1, 6
     tslagi => tslagr(1:ncelet,itsli)
   endif
 
-  if (ncesmp.gt.0) then
-    itpsmp => itypsm(1:ncesmp,ivar)
-    smcelp => smacel(1:ncesmp,ivar)
-    gammap => smacel(1:ncesmp,ipr)
-  endif
-
   ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then
     call resrij &
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
-   icepdc , icetsm , itpsmp ,                                     &
+   icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    produc , gradro ,                                              &
-   ckupdc , smcelp , gammap ,                                     &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
@@ -359,10 +349,10 @@ do isou = 1, 6
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
-   icepdc , icetsm , itpsmp ,                                     &
+   icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    gradv  , gradro ,                                              &
-   ckupdc , smcelp , gammap ,                                     &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
@@ -378,20 +368,14 @@ ivar   = iep
 ipp    = ipprtp(ivar)
 isou   = 7
 
-if (ncesmp.gt.0) then
-  itpsmp => itypsm(1:ncesmp,ivar)
-  smcelp => smacel(1:ncesmp,ivar)
-  gammap => smacel(1:ncesmp,ipr)
-endif
-
 call reseps &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
-   icepdc , icetsm , itpsmp ,                                     &
+   icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    gradv  , produc , gradro ,                                     &
-   ckupdc , smcelp , gammap ,                                     &
+   ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
    smbr   , rovsdt )

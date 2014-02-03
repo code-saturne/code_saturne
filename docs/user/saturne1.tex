@@ -5319,8 +5319,8 @@ variable $\varphi$ in the following way:
 The example is valid for a velocity component, for a turbulent variable ($k$, $\varepsilon$, $R_{ij}$, $\omega$,
 $\varphi$ or $\overline{f}$) and for a scalar (or for the average of the
 square of the fluctuations of a scalar), because the syntax of all the
-subroutines \texttt{ustsns}, \texttt{ustske}, \texttt{ustsri}, \texttt{ustsv2},
-\texttt{ustskw}, \texttt{ustssa} and \texttt{ustssc} in the \texttt{cs\_user\_source\_terms} file is similar.
+subroutines \texttt{ustsnv}, \texttt{cs\_user\_turbulence\_source\_terms}
+ and \texttt{ustssc} in the \texttt{cs\_user\_source\_terms} file is similar.
 
 In the finite volume formulation, the solved system is then modified as
 follows:
@@ -5348,11 +5348,6 @@ between the implicit and explicit parts will be done by the user who must
 ensure that $\text{\texttt{crvimp}}_i=\Omega_iS_{impl,i}$ is always negative
 (otherwise the solved equation remains right, but there will not be
 ``implicitation'').
-
-{\em Note}: Without the GUI, if the velocity components coupling algorithm is selected (\texttt{ivelco=1}), the user subroutine of
-the \texttt{cs\_user\_source\_terms} file which must be filled in to add a user source term is \texttt{ustsnv} (and not \texttt{ustsns}
-which is only used the segregated algorithm). However, the formulation is still the same knowing that $\text{\texttt{crvimp}}_i$ and
-$\text{\texttt{crvexp}}_i$ are now global arrays for the three velocity components.
 
 {\em WARNING: When the second-order in time is used along with the extrapolation of the
 source terms\footnote{indicator \texttt{isno2t} for the velocity,
@@ -5399,21 +5394,11 @@ $\text{\texttt{crvexp}}_i=K\Omega_i[\varphi_i^{(n)}]^2$
 
 The source term in Navier-Stokes can be filled in thanks to the GUI or the
 \texttt{cs\_user\_source\_terms} user file.
-Without the GUI, the subroutine \texttt{ustsns} is used to
+Without the GUI, the subroutine \texttt{ustsnv} is used to
 add user source terms to the Navier-Stokes equations (at each time step) when no coupling
  of the velocity components is considered (\texttt{ivelco=0}).
 When the velocity components are coupled (\texttt{ivelco=1}), the subroutine \texttt{ustsnv}
 which must be used.
-
-\texttt{ustsns} is called three times every time
-step, once for each velocity component (\texttt{ivar} is successively
-\texttt{iu}, \texttt{iv} and \texttt{iw}). At each passage, the user must complete
-if necessary the arrays \texttt{crvimp}
-and \texttt{crvexp} expressing respectively the implicit and explicit part of
-the source term. If no other source terms apart from \texttt{ivar=iu} for
-example, are required, \texttt{crvimp} and \texttt{crvexp} must be read over and
-their 2 other components, \texttt{ivar=iv(ihpas)} and \texttt{ivar=iw}
-must be cancelled.
 
 \texttt{ustsnv} is called only one time per time step and for each cell \texttt{iel},
 the vector \texttt{crvexp(.,iel)} (explicit part) and the matrix \texttt{crvimp(.,.,iel)}
@@ -5428,7 +5413,7 @@ the vector \texttt{crvexp(.,iel)} (explicit part) and the matrix \texttt{crvimp(
 \textit{Subroutine called every time step, for the $k-\varepsilon$ and
 the v2f models.}
 
-The subroutine \texttt{ustske} is used to add source terms to the transport equations
+The subroutine \texttt{cs\_user\_turbulence\_source\_terms} is used to add source terms to the transport equations
 related to the turbulent kinetics energy $k$ and to the turbulent
 dissipation $\varepsilon$.
 This subroutine is called every time step (the
@@ -5436,10 +5421,10 @@ treatment of the two variables $k$ and $\varepsilon$ is made
 simultaneously). The user is expected to provide the arrays \texttt{crkimp} and
 \texttt{crkexp} for $k$, and \texttt{creimp} and \texttt{creexp} for
 $\varepsilon$. These arrays are similar to the arrays \texttt{crvimp} and
-\texttt{crvexp} given for the velocity in the user subroutine \texttt{ustsns}.
+\texttt{crvexp} given for the velocity in the user subroutine \texttt{ustsnv}.
 The way of making implicit the resulting source terms is the same as the one
-presented in \texttt{ustsns}. For $\varphi$ and $\bar{f}$
-in the v2f model, see \texttt{ustsv2}, \S\ref{sec:prg_ustsv2}.
+presented in \texttt{ustsnv}. For $\varphi$ and $\bar{f}$
+in the v2f model, see \texttt{cs\_user\_turbulence\_source\_terms}, \S\ref{sec:prg_ustsv2}.
 
 %==================================
 \subsubsection{For $R_{ij}$ and $\varepsilon$}
@@ -5448,19 +5433,19 @@ in the v2f model, see \texttt{ustsv2}, \S\ref{sec:prg_ustsv2}.
 \noindent
 \textit{Subroutine called every time step, for the $R_{ij}-\varepsilon$ models.}
 
-The subroutine \texttt{ustsri} is used to add source terms to the transport equations
+The subroutine \texttt{cs\_user\_turbulence\_source\_terms} is used to add source terms to the transport equations
 related to the Reynolds stress variables $R_{ij}$ and to the turbulent
 dissipation $\varepsilon$.
 This subroutine is called 7 times every time step
 (once for each Reynolds stress component and once for the
 dissipation). The user must provide the arrays \texttt{crvimp} and
-\texttt{crvexp} for the variable \texttt{ivar} (referring successively to
+\texttt{crvexp} for the field variable of index \texttt{f\_id} (referring successively to
 \texttt{ir11}, \texttt{ir22}, \texttt{ir33},
 \texttt{ir12}, \texttt{ir13}, \texttt{ir23} and
 \texttt{iep}). These arrays are similar to the arrays \texttt{crvimp}
 and \texttt{crvexp} given for the velocity in the user subroutine
-\texttt{ustsns}. The method for impliciting the resulting source terms is the
-same as that presented in \texttt{ustsns}.
+\texttt{ustsnv}. The method for impliciting the resulting source terms is the
+same as that presented in \texttt{ustsnv}.
 
 %==================================
 \subsubsection{For $\varphi$ and $\overline{f}$}
@@ -5470,7 +5455,7 @@ same as that presented in \texttt{ustsns}.
 \noindent
 \textit{Subroutine called every time step, for the v2f models.}
 
-The subroutine \texttt{ustsv2} is used to add source terms to the transport equations
+The subroutine \texttt{cs\_user\_turbulence\_source\_terms} is used to add source terms to the transport equations
 related to the variables $\varphi$ and $\overline{f}$ of the v2f
 $\varphi$-model. This subroutine is called twice
 every time step (once for $\varphi$ and once for $\overline{f}$).
@@ -5478,7 +5463,7 @@ The user is expected to provide the arrays \texttt{crvimp} and
 \texttt{crvexp} for \texttt{ivar} referring successively to \texttt{iphi}
 and \texttt{ifb}. Concerning $\varphi$, these arrays are similar to the arrays
 \texttt{crvimp} and \texttt{crvexp} given for the velocity in the user subroutine
-\texttt{ustsns}. Concerning $\overline{f}$, the equation is slightly
+\texttt{ustsnv}. Concerning $\overline{f}$, the equation is slightly
 different:
 \begin{displaymath}
 L^2 div(\grad(\overline{f})) = \overline{f} + \ldots + S_{impl}\times\overline{f}+S_{expl}
@@ -5494,7 +5479,7 @@ $\text{\texttt{crvimp}}_i=\Omega_iS_{impl,i}$\\
 $\text{\texttt{crvexp}}_i=\Omega_iS_{expl,i}$
 
 The way of making implicit the resulting source terms is the same as the
-one presented in \texttt{ustsns}.
+one presented in \texttt{ustsnv}.
 
 %==================================
 \subsubsection{For $k$ and $\omega$}
@@ -5503,7 +5488,7 @@ one presented in \texttt{ustsns}.
 \noindent
 \textit{Subroutine called every time step, for the $k-\omega$ SST model.}
 
-The subroutine \texttt{ustskw} is used to add source terms to the transport equations
+The subroutine \texttt{cs\_user\_turbulence\_source\_terms} is used to add source terms to the transport equations
 related to the turbulent kinetics energy $k$ and to the specific
 dissipation rate $\omega$. This subroutine is
 called every time step (the treatment of the two
@@ -5511,9 +5496,9 @@ variables $k$ and $\omega$ is made simultaneously). The user is expected
 to provide the arrays \texttt{crkimp} and \texttt{crkexp} for the variable
 $k$, and the arrays \texttt{crwimp} and \texttt{crwexp} for the variable $\omega$.
 These arrays are similar to the arrays \texttt{crvimp} and \texttt{crvexp}
-given for the velocity in the user subroutine \texttt{ustsns}. The way of
+given for the velocity in the user subroutine \texttt{ustsnv}. The way of
 making implicit the resulting source terms is the same as the one presented in
-\texttt{ustsns}.
+\texttt{ustsnv}.
 
 %==================================
 \subsubsection{For $\tilde{\nu}_t$}
@@ -5522,14 +5507,14 @@ making implicit the resulting source terms is the same as the one presented in
 \noindent
 \textit{Subroutine called every time step, or Spalart-Allmaras model.}
 
-The subroutine \texttt{ustssa} is used to add source terms to the transport equations
+The subroutine \texttt{cs\_user\_turbulence\_source\_terms} is used to add source terms to the transport equations
 related to the turbulent viscosity $\nu_t$ for the Spalart-Allmaras model.
 This subroutine is called every time step. The user is expected
 to provide the arrays \texttt{crkimp} and \texttt{crkexp} for the variable
 $\tilde{\nu}_t$. These arrays are similar to the arrays \texttt{crvimp} and \texttt{crvexp}
-given for the velocity in the user subroutine \texttt{ustsns}. The way of
+given for the velocity in the user subroutine \texttt{ustsnv}. The way of
 making implicit the resulting source terms is the same as the one presented in
-\texttt{ustsns}.
+\texttt{ustsnv}.
 
 %==================================
 \subsubsection{For user scalars}
@@ -5543,7 +5528,7 @@ The source term in the transport equations related to the user scalars
 can be filled in thanks to the GUI or the \texttt{cs\_user\_source\_terms} user file.
 Without the GUI, the subroutine \texttt{ustssc} is used to add source terms to the
 transport equations related to the user scalars. In the same way as
-\texttt{ustsns}, this subroutine is called every time step, once for
+\texttt{ustsnv}, this subroutine is called every time step, once for
 each user scalar. The user must provide the arrays \texttt{crvimp}
 and \texttt{crvexp} related to each scalar. \texttt{cvimp} and \texttt{crvexp}
 must be set to 0 for the scalars on which it is not wished for the user source

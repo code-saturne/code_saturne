@@ -251,16 +251,15 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 3.1 TERMES SOURCES  UTILISATEURS
+! 3.1 User source terms
 !===============================================================================
 
-call ustsv2                                                       &
-!==========
+call cs_user_turbulence_source_terms &
+!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
+   ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , prdv2f , w1     ,                            &
+   ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.
@@ -522,16 +521,15 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 4.1 TERMES SOURCES  UTILISATEURS
+! 4.1 User source terms
 !===============================================================================
 
-call ustsv2                                                       &
-!==========
+call cs_user_turbulence_source_terms &
+!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
+   ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , prdv2f , w1     ,                            &
+   ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.

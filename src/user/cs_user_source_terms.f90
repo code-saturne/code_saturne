@@ -582,584 +582,78 @@ end subroutine ustssc
 !===============================================================================
 
 
-subroutine ustske &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , tinstk , divu   ,                            &
-   crkexp , creexp , crkimp , creimp )
-
 !===============================================================================
 ! Purpose:
 ! -------
 
-!    User subroutine.
-
-!    Additional right-hand side source terms for k and epsilon equations
-!    when using:
-!     - k-epsilon model (ITURB=20)
-!     - k-epsilon Linear Production model (ITURB=21)
-!     - v2-f phi-model (ITURB=50)
+!> \brief Additional right-hand side source terms for turbulence models
+!>
+!> \section use  Usage
+!>
+!> The additional source term is decomposed into an explicit part (crvexp) and
+!> an implicit part (crvimp) that must be provided here.
+!> The resulting equations solved by the code are:
+!> \f[
+!>  \rho \norm{\vol{\celli}} \DP{\varia} + ....
+!>   = \tens{crvimp} \varia + \vect{crvexp}
+!> \f]
+!> where \f$ \varia \f$ is the turbulence field of index \c f_id
+!>
+!> Note that crvexp, crvimp are defined after the Finite Volume
+!> integration over the cells, so they include the "volume" term. More precisely:
+!>   - crvexp is expressed in kg.m2/s2
+!>   - crvimp is expressed in kg/s
+!>
+!> The crvexp, crvimp arrays are already initialized to 0 before
+!> entering the routine. It is not needed to do it in the routine (waste of CPU time).
+!>
+!> For stability reasons, Code_Saturne will not add -crvimp directly to the
+!> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
+!> treated implicitely only if it strengthens the diagonal of the matrix.
+!> However, when using the second-order in time scheme, this limitation cannot
+!> be done anymore and -crvimp is added directly. The user should therefore test
+!> the negativity of crvimp by himself.
+!>
+!> When using the second-order in time scheme, one should supply:
+!>   - crvexp at time n
+!>   - crvimp at time n+1/2
+!>
+!> The selection of cells where to apply the source terms is based on a getcel
+!> command. For more info on the syntax of the \ref getcel command, refer to the
+!> user manual or to the comments on the similar command \ref getfbr in the routine
+!> \ref cs_user_boundary_conditions.
 !
-! Usage
-! -----
-!
-! The additional source term is decomposed into an explicit part (crkexp,creexp) and
-! an implicit part (crkimp,creimp) that must be provided here.
-! The resulting equations solved by the code are:
-!
-!  rho*volume*d(k)/dt   + .... = crkimp*k   + crkexp
-
-!  rho*volume*d(eps)/dt + .... = creimp*eps + creexp
-!
-! Note that crkexp, crkimp, creexp and creimp are defined after the Finite Volume
-! integration over the cells, so they include the "volume" term. More precisely:
-!   - crkexp is expressed in kg.m2/s3
-!   - creexp is expressed in kg.m2/s4
-!   - crkimp is expressed in kg/s
-!   - creimp is expressed in kg/s
-!
-! The crkexp, crkimp, creexp and creimp arrays are already initialized to 0 before
-! entering the routine. It is not needed to do it in the routine (waste of CPU time).
-!
-! For stability reasons, Code_Saturne will not add -crkimp directly to the
-! diagonal of the matrix, but Max(-crkimp,0). This way, the crkimp term is
-! treated implicitely only if it strengthens the diagonal of the matrix.
-! However, when using the second-order in time scheme, this limitation cannot
-! be done anymore and -crkimp is added directly. The user should therefore test
-! the negativity of crkimp by himself.
-! The same mechanism applies to cveimp.
-!
-! When using the second-order in time scheme, one should supply:
-!   - crkexp and creexp at time n
-!   - crkimp and creimp at time n+1/2
-!
-! When entering the routine, two additional work arrays are already set for
-! potential user need:
-!   tinstk =  2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
-!          +  (2 S12)**2 + (2 S13)**2 + (2 S23)**2
-!
-!          where Sij = (dUi/dxj+dUj/dxi)/2
-!
-!   divu = du/dx + dv/dy + dw/dz
-
-
-
-!
-! The selection of cells where to apply the source terms is based on a getcel
-! command. For more info on the syntax of the getcel command, refer to the
-! user manual or to the comments on the similar command getfbr in the routine
-! cs_user_boundary_conditions.
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
-! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
-! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
-!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time steps)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
-! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
-!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
-! tinstk           ! ra ! <-- ! tubulent production term (see comment above)   !
-! divu             ! ra ! <-- ! velocity divergence (see comment above)        !
-! crkexp           ! ra ! --> ! explicit part of the source term for k         !
-! creexp           ! ra ! --> ! explicit part of the source term for epsilon   !
-! crkimp           ! ra ! --> ! implicit part of the source term for k         !
-! creimp           ! ra ! --> ! implicit part of the source term for epsilon   !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss terms
+!> \param[in]     ncesmp        number of cells with mass source terms
+!> \param[in]     f_id          field index of the current turbulent variable
+!> \param[in]     icepdc        index number of cells with head loss terms
+!> \param[in]     icetsm        index number of cells with mass source terms
+!> \param[in]     itypsm        type of mass source term for each variable
+!>                               (see \ref ustsma)
+!> \param[in]     ckupdc        head loss coefficient
+!> \param[in]     smacel        value associated to each variable in the mass
+!>                               source terms or mass rate (see \ref ustsma)
+!> \param[out]    crvexp        explicit part of the source term
+!> \param[out]    crvimp        implicit part of the source term
+!_______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use entsor
-use optcal
-use cstphy
-use parall
-use period
-use mesh
-use field
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision tinstk(ncelet), divu(ncelet)
-double precision crkexp(ncelet), crkimp(ncelet)
-double precision creexp(ncelet), creimp(ncelet)
-
-! Local variables
-
-integer          iel
-double precision ff, tau, xx
-
-integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer ::  crom
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
-! 1. Initialization
-!===============================================================================
-
-! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
-
-
-! --- Index number of the density in the propce array
-call field_get_val_s(icrom, crom)
-
-if (iwarni(ik).ge.1) then
-  write(nfecra,1000)
-endif
-
-!===============================================================================
-! 2. Example of arbitrary additional source term for k and epsilon
-
-!      Source term for k :
-!         rho volume d(k)/dt       = ...
-!                        ... - rho*volume*ff*epsilon - rho*volume*k/tau
-
-!      Source term for epsilon :
-!         rho volume d(epsilon)/dt = ...
-!                        ... + rho*volume*xx
-
-!      With xx = 2.d0, ff=3.d0 and tau = 4.d0
-
-!===============================================================================
-
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
-
-if (.true.) return
-
-! ----------------------------------------------
-
-! --- Explicit source terms
-
-ff  = 3.d0
-tau = 4.d0
-xx  = 2.d0
-
-do iel = 1, ncel
-  crkexp(iel) = -crom(iel)*volume(iel)*ff*rtpa(iel,iep)
-  creexp(iel) =  crom(iel)*volume(iel)*xx
-enddo
-
-! --- Implicit source terms
-!        creimp is already initialized to 0, no need to set it here
-
-do iel = 1, ncel
-  crkimp(iel) = -crom(iel)*volume(iel)/tau
-enddo
-
-!--------
-! Formats
-!--------
-
- 1000 format(' User source terms for k and epsilon',/)
-
-!----
-! End
-!----
-
-! Deallocate the temporary array
-deallocate(lstelt)
-
-return
-end subroutine ustske
-
-
-!===============================================================================
-
-
-subroutine ustskw &
-!================
-
+subroutine cs_user_turbulence_source_terms &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   f_id   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , s2kw   , divukw ,                            &
-   gkgw   , ggrho  , xf1    ,                                     &
-   crkexp , crwexp , crkimp , crwimp )
-
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Additional right-hand side source terms for k and omega equations
-!    when using k-omega SST (ITURB=60)
-!
-! Usage
-! -----
-!
-! The additional source term is decomposed into an explicit part (crkexp,crwexp) and
-! an implicit part (crkimp,crwimp) that must be provided here.
-! The resulting equations solved by the code are:
-!
-!  rho*volume*d(k)/dt     + .... = crkimp*k     + crkexp
-
-!  rho*volume*d(omega)/dt + .... = crwimp*omega + crwexp
-!
-! Note that crkexp, crkimp, crwexp and crwimp are defined after the Finite Volume
-! integration over the cells, so they include the "volume" term. More precisely:
-!   - crkexp is expressed in kg.m2/s3
-!   - crwexp is expressed in kg/s2
-!   - crkimp is expressed in kg/s
-!   - crwimp is expressed in kg/s
-!
-! The crkexp, crkimp, crwexp and crwimp arrays are already initialized to 0 before
-! entering the routine. It is not needed to do it in the routine (waste of CPU time).
-!
-! For stability reasons, Code_Saturne will not add -crkimp directly to the
-! diagonal of the matrix, but Max(-crkimp,0). This way, the crkimp term is
-! treated implicitely only if it strengthens the diagonal of the matrix.
-! However, when using the second-order in time scheme, this limitation cannot
-! be done anymore and -crkimp is added directly. The user should therefore test
-! the negativity of crkimp by himself.
-! The same mechanism applies to cvwimp.
-!
-! When using the second-order in time scheme, one should supply:
-!   - crkexp and crwexp at time n
-!   - crkimp and crwimp at time n+1/2
-!
-! When entering the routine, some additional work arrays are already set for
-! potential user need:
-!   s2kw   =  2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
-!          +  (2 S12)**2 + (2 S13)**2 + (2 S23)**2
-!
-!            where Sij = (dUi/dxj+dUj/dxi)/2
-!
-!   divukw = du/dx + dv/dy + dw/dz
-
-!   gkgw = grad(k).grad(omega)
-
-!   ggrho = -g.grad(rho)/prdtur/rho if igrake>0
-!         = 0                       if igrake=0
-!            where prdtur is the turbulent Prandtl number
-
-!   xf1   = k-eps/k-omega blending coefficient
-
-!
-! The selection of cells where to apply the source terms is based on a getcel
-! command. For more info on the syntax of the getcel command, refer to the
-! user manual or to the comments on the similar command getfbr in the routine
-! cs_user_boundary_conditions.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
-! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
-! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
-!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time steps)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
-! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
-!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
-! s2kw             ! ra ! <-- ! turbulent production term (see comment above)  !
-! divukw           ! ra ! <-- ! velocity divergence (see comment above)        !
-! gkgw             ! ra ! <-- ! grad(k).grad(omega)                            !
-! ggrho            ! ra ! <-- ! gravity source term (see comment above)        !
-! xf1              ! ra ! <-- ! k-eps/k-w blending function (see comment above)!
-! crkexp           ! ra ! --> ! explicit part of the source term for k         !
-! crwexp           ! ra ! --> ! explicit part of the source term for omega     !
-! crkimp           ! ra ! --> ! implicit part of the source term for k         !
-! crwimp           ! ra ! --> ! implicit part of the source term for omega     !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use entsor
-use optcal
-use cstphy
-use parall
-use period
-use mesh
-use field
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision s2kw(ncelet)  , divukw(ncelet)
-double precision gkgw(ncelet)  , ggrho(ncelet), xf1(ncelet)
-double precision crkexp(ncelet), crkimp(ncelet)
-double precision crwexp(ncelet), crwimp(ncelet)
-
-! Local variables
-
-integer          iel
-double precision ff, tau, xx
-
-integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer ::  crom
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
-! 1. Initialization
-!===============================================================================
-
-! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
-
-
-! --- Index number of the density in the propce array
-call field_get_val_s(icrom, crom)
-
-if (iwarni(ik).ge.1) then
-  write(nfecra,1000)
-endif
-
-!===============================================================================
-! 2. Example of arbitrary additional source term for k and omega
-
-!      Source term for k :
-!         rho volume d(k)/dt       = ...
-!                        ... - rho*volume*ff*omega - rho*volume*k/tau
-
-!      Source term for omega :
-!         rho volume d(omega)/dt = ...
-!                        ... + rho*volume*xx
-
-!      With xx = 2.d0, ff=3.d0 and tau = 4.d0
-
-!===============================================================================
-
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
-
-if (.true.) return
-
-! ----------------------------------------------
-
-! --- Explicit source terms
-
-ff  = 3.d0
-tau = 4.d0
-xx  = 2.d0
-
-do iel = 1, ncel
-  crkexp(iel) = -crom(iel)*volume(iel)*ff*rtpa(iel,iomg)
-  crwexp(iel) =  crom(iel)*volume(iel)*xx
-enddo
-
-! --- Implicit source terms
-!        crwimp is already initialized to 0, no need to set it here
-
-do iel = 1, ncel
-  crkimp(iel) = -crom(iel)*volume(iel)/tau
-enddo
-
-!--------
-! Formats
-!--------
-
- 1000 format(' User source terms for k and omega',/)
-
-!----
-! End
-!----
-
-! Deallocate the temporary array
-deallocate(lstelt)
-
-return
-end subroutine ustskw
-
-
-!===============================================================================
-
-
-subroutine ustsri &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
-   icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smcelp , gamma  , gradv  , produc ,                   &
+   ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
 !===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Additional right-hand side source terms for the equations of Rij and
-!    epsilon in Rij-LRR model (ITURB=30) or Rij-SSG model (ITURB=31)
-
-!
-! Usage
-! -----
-! The routine is called for each variable Rij and epsilon. It is therefore
-! necessary to test the value of the variable ivar to separate the treatments
-! of the variables ivar=ir11, ir22, ir33, ir12,
-! ir13, ir23, or iep.
-!
-! The additional source term is decomposed into an explicit part (crvexp) and
-! an implicit part (crvimp) that must be provided here.
-! The resulting equation solved by the code for a variable var is:
-!
-!  rho*volume*d(var)/dt + .... = crvimp*(var) + crvexp
-!
-! Note that crvexp and crvimp are defined after the Finite Volume integration
-! over the cells, so they include the "volume" term. More precisely:
-!   - crvexp is expressed in kg.m2/s3 for Rij
-!   - crvexp is expressed in kg.m2/s4 for epsilon
-!   - crvimp is expressed in kg/s for Rij and epsilon
-!
-! The crvexp and crvimp arrays are already initialized to 0 before entering the
-! the routine. It is not needed to do it in the routine (waste of CPU time).
-!
-! For stability reasons, Code_Saturne will not add -crvimp directly to the
-! diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
-! treated implicitely only if it strengthens the diagonal of the matrix.
-! However, when using the second-order in time scheme, this limitation cannot
-! be done anymore and -crvimp is added directly. The user should therefore test
-! the negativity of crvimp by himself.
-!
-! When using the second-order in time scheme, one should supply:
-!   - crvexp at time n
-!   - crvimp at time n+1/2
-!
-!
-! When entering the routine, two additional work arrays are already set for
-! potential user need:
-!   produc is the turbulent production term
-!          produc(6,ncelet) = (P11, P22, P33, P12, P13, P23)
-!          with Pij=-Rik.dUj/dxk - Rjk.dUi/dxk
-!
-!   gradv is the
-!          gradv(j,i,ncelet) = dUi/dxj
-
-
-! WARNING
-! =======
-! produc is only allocated and defined for the Rij-LRR model (ITURB=30)
-! gradv is only allocated and defined for the Rij-SSG model (ITURB=31)
-! DO NOT USE produc WITH THE SSG MODEL
-! DO NOT USE gradv WITH THE LRR MODEL
-
-
-!
-! The selection of cells where to apply the source terms is based on a getcel
-! command. For more info on the syntax of the getcel command, refer to the
-! user manual or to the comments on the similar command getfbr in the routine
-! cs_user_boundary_conditions.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! ivar             ! i  ! <-- ! index number of the current variable           !
-! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
-! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
-! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
-!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time steps)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
-! smcelp(ncelet)   ! ra ! <-- ! value of variable ivar associated to mass      !
-!                  ! ra !     !  source term (see ustsma)                      !
-! gamma(ncelet)    ! ra ! <-- ! volumic rate of mass source term               !
-! gradv            ! ra ! <-- ! velocity gradient (only for iturb=31)          !
-! produc(6,ncelet) ! ra ! <-- ! turbulent production term (only for iturb=30)  !
-! crvexp           ! ra ! --> ! explicit part of the source term               !
-! crvimp           ! ra ! --> ! implicit part of the source term               !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -1182,286 +676,31 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          ivar
+integer          f_id
 
 integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itpsmp(ncesmp)
+integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision ckupdc(ncepdp,6)
-double precision smcelp(ncesmp), gamma(ncesmp)
-double precision gradv(3, 3, ncelet), produc(6,ncelet)
+double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
 integer          iel
-double precision ff, tau, xx
+double precision ff, tau
+
+character*80     fname
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer ::  pvar
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
-! 1. Initialization
-!===============================================================================
-
-! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
-
-
-! --- Index number of the density in the propce array
-call field_get_val_s(icrom, crom)
-
-if (iwarni(ir11).ge.1) then
-  write(nfecra,1000)
-endif
-
-!===============================================================================
-! 2. Example of arbitrary additional source term for R11 and epsilon
-
-!      Source term for R11 :
-!         rho volume d(R11)/dt       = ...
-!                        ... - rho*volume*ff*epsilon - rho*volume*R11/tau
-
-!      Source term for epsilon :
-!         rho volume d(epsilon)/dt = ...
-!                        ... + rho*volume*xx
-
-!      With xx = 2.d0, ff=3.d0 and tau = 4.d0
-
-!===============================================================================
-
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
 
 if (.true.) return
 
-! ----------------------------------------------
-
-
-! ---  For R11
-!      -------
-
-if (ivar.eq.ir11) then
-
-  ff  = 3.d0
-  tau = 4.d0
-
-!   -- Explicit source term
-
-  do iel = 1, ncel
-    crvexp(iel) = -crom(iel)*volume(iel)                 &
-                                               *ff*rtpa(iel,iep)
-  enddo
-
-!    -- Implicit source term
-
-  do iel = 1, ncel
-    crvimp(iel) = -crom(iel)*volume(iel)/tau
-  enddo
-
-
-! ---  For epsilon
-!      -----------
-
-elseif (ivar.eq.iep) then
-
-  xx  = 2.d0
-
-!   -- Explicit source term
-
-  do iel = 1, ncel
-    crvexp(iel) =  crom(iel)*volume(iel)*xx
-  enddo
-
-!    -- Implicit source term
-!        crvimp is already initialized to 0, no need to set it here
-
-
-endif
-
-!--------
-! Formats
-!--------
-
- 1000 format(' User source terms for Rij and epsilon',/)
-
-!----
-! End
-!----
-
-! Deallocate the temporary array
-deallocate(lstelt)
-
-return
-end subroutine ustsri
-
-
-!===============================================================================
-
-
-subroutine ustsv2 &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , produc , gphigk ,                            &
-   crvexp , crvimp )
-
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Additional right-hand side source terms for the equations of phi and f_bar
-!    with the v2-f phi-model turbulence model (ITURB=50)
-!
-! Usage
-! -----
-! The routine is called for both phi and f_bar. It is therefore necessary
-! to test the value of the variable ivar to separate the treatments of the
-! ivar=iphi or ivar=ifb.
-!
-! The additional source term is decomposed into an explicit part (crvexp) and
-! an implicit part (crvimp) that must be provided here.
-! The resulting equation solved by the code are as follows:
-!
-! For f_bar (ivar=ifb):
-!  volume*div(grad(f_bar))= ( volume*f_bar + ..... + crvimp*f_bar + crvexp )/L^2
-!
-! For phi (ivar=iphi)
-!  rho*volume*d(phi)/dt + .... = crvimp*phi + crvexp
-
-!
-! Note that crvexp and crvimp are defined after the Finite Volume integration
-! over the cells, so they include the "volume" term. More precisely:
-!   - crvexp is expressed in m3/s for f_bar
-!   - crvexp is expressed in kg/s for phi
-!   - crvimp is expressed in m3 for f_bar
-!   - crvimp is expressed in kg/s for phi
-!
-! The crvexp and crvimp arrays are already initialized to 0 before entering the
-! the routine. It is not needed to do it in the routine (waste of CPU time).
-!
-! For stability reasons, Code_Saturne will not add -crvimp directly to the
-! diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
-! treated implicitely only if it strengthens the diagonal of the matrix.
-! However, when using the second-order in time scheme, this limitation cannot
-! be done anymore and -crvimp is added directly. The user should therefore test
-! the negativity of crvimp by himself.
-!
-! When using the second-order in time scheme, one should supply:
-!   - crvexp at time n
-!   - crvimp at time n+1/2
-!
-
-! When entering the routine, two additional work arrays are already set for
-! potential user need:
-!   produc = 2*mu_t*Sij*Sij -2/3*rho*k*div(u) -2/3*mu_t*div(u)**2
-!          + gravity term (when activated)
-!          (produc is the production term in the equation for k)
-!
-!   gphigk = grad(phi).grad(k)
-
-!
-! The selection of cells where to apply the source terms is based on a getcel
-! command. For more info on the syntax of the getcel command, refer to the
-! user manual or to the comments on the similar command getfbr in the routine
-! cs_user_boundary_conditions.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! ivar             ! i  ! <-- ! index number of the current variable           !
-! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
-! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
-! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
-!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time steps)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
-! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
-!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
-! produc(ncelet)   ! ra ! <-- ! production term for k                          !
-! gphigk(ncelet)   ! ra ! <-- ! grad(phi).grad(k)                              !
-! crvexp           ! ra ! --> ! explicit part of the source term               !
-! crvimp           ! ra ! --> ! implicit part of the source term               !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use entsor
-use optcal
-use cstphy
-use parall
-use period
-use mesh
-use field
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-integer          ivar
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision crvexp(ncelet), crvimp(ncelet)
-double precision produc(ncelet), gphigk(ncelet)
-
-! Local variables
-
-integer          iel
-double precision ff, tau, xx
-
-integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer ::  crom
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
@@ -1473,296 +712,65 @@ if (1.eq.1) return
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-
-! --- Index number of the density in the propce array
+! --- Get the density array in crom
 call field_get_val_s(icrom, crom)
 
-if (iwarni(ifb).ge.1) then
-  write(nfecra,1000)
-endif
 
-!===============================================================================
-! 2. Example of arbitrary additional source term for k and epsilon
-
-!      Source term for f_bar :
-!         volume div(grad f_barre) = (... + volume*xx )/L^2
-
-!      Source term for phi :
-!         rho volume d(phi)/dt       = ...
-!                        ... + rho*volume*ff*f_bar - rho*volume*phi/tau
-
-!      With xx = 2.d0, ff=3.d0 and tau = 4.d0
-
-!===============================================================================
-
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
-
-if (.true.) return
-
-! ----------------------------------------------
-
-! ---  For f_bar
-!      ---------
-
-if (ivar.eq.ifb) then
-
-  xx  = 2.d0
-
-!    -- Explicit source term
-
-  do iel = 1, ncel
-    crvexp(iel) =  volume(iel)*xx
-  enddo
-
-!    -- Implicit source term
-!
-!       crvimp is already initialized to 0, no need to set it here
-
-
-! ---  For phi
-!      -------
-
-elseif (ivar.eq.iphi) then
-
-  ff  = 3.d0
-  tau = 4.d0
-
-!   -- Explicit source term
-
-  do iel = 1, ncel
-    crvexp(iel) = crom(iel)*volume(iel)*ff*rtpa(iel,ifb)
-  enddo
-
-!    -- Implicit source term
-
-  do iel = 1, ncel
-    crvimp(iel) = -crom(iel)*volume(iel)/tau
-  enddo
-
-
-endif
-
-!--------
-! Formats
-!--------
-
- 1000 format(' User source terms for phi and f_bar',/)
-
-!----
-! End
-!----
-
-! Deallocate the temporary array
-deallocate(lstelt)
-
-return
-end subroutine ustsv2
-
-
-!===============================================================================
-
-
-subroutine ustssa &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , tinssa , divu   ,                            &
-   crvexp , crvimp )
-
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Additional right-hand side source terms for the viscosity-like variable
-!    when using the Spalart-Allmaras model (ITURB=70)
-!
-! Usage
-! -----
-!
-! The additional source term is decomposed into an explicit part (crvexp) and
-! an implicit part (crvimp) that must be provided here.
-! The resulting equations solved by the code are:
-!
-!  rho*volume*d(nusa)/dt   + .... = crvimp*nusa   + crvexp
-!
-! Note that crvexp, crvimp are defined after the Finite Volume
-! integration over the cells, so they include the "volume" term. More precisely:
-!   - crvexp is expressed in kg.m2/s2
-!   - crvimp is expressed in kg/s
-!
-! The crvexp, crvimp arrays are already initialized to 0 before
-! entering the routine. It is not needed to do it in the routine (waste of CPU time).
-!
-! For stability reasons, Code_Saturne will not add -crvimp directly to the
-! diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
-! treated implicitely only if it strengthens the diagonal of the matrix.
-! However, when using the second-order in time scheme, this limitation cannot
-! be done anymore and -crvimp is added directly. The user should therefore test
-! the negativity of crvimp by himself.
-!
-! When using the second-order in time scheme, one should supply:
-!   - crvexp at time n
-!   - crvimp at time n+1/2
-!
-! When entering the routine, two additional work arrays are already set for
-! potential user need:
-!   tinssa =  2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
-!          +  (2 S12)**2 + (2 S13)**2 + (2 S23)**2
-!
-!          where Sij = (dUi/dxj+dUj/dxi)/2
-!
-!   divu = du/dx + dv/dy + dw/dz
-
-
-
-!
-! The selection of cells where to apply the source terms is based on a getcel
-! command. For more info on the syntax of the getcel command, refer to the
-! user manual or to the comments on the similar command getfbr in the routine
-! cs_user_boundary_conditions.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
-! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
-! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
-!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time steps)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
-! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
-!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
-! tinssa           ! ra ! <-- ! tubulent production term (see comment above)   !
-! divu             ! ra ! <-- ! velocity divergence (see comment above)        !
-! crvexp           ! ra ! --> ! explicit part of the source term for k         !
-! crvimp           ! ra ! --> ! implicit part of the source term for k         !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use entsor
-use optcal
-use cstphy
-use parall
-use period
-use mesh
-use field
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision tinssa(ncelet), divu(ncelet)
-double precision crvexp(ncelet), crvimp(ncelet)
-
-! Local variables
-
-integer          iel
-double precision ff, tau, xx
-
-integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer ::  crom
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
-! 1. Initialization
-!===============================================================================
-
-! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
-
-
-! --- Index number of the density in the propce array
-call field_get_val_s(icrom, crom)
+! --- Get the array of the current turbulent variable and its name
+call field_get_val_s(f_id, pvar)
+call field_get_name(f_id, fname)
 
 if (iwarni(inusa).ge.1) then
   write(nfecra,1000)
 endif
 
 !===============================================================================
-! 2. Example of arbitrary additional source term for nusa
+! 2. Example of arbitrary additional source term for turbulence models
+!    (Source term on the TKE 'k' here)
 
-!      Source term for k :
-!         rho volume d(k)/dt       = ...
-!                        ... - rho*volume*ff - rho*volume*nusa/tau
+!      Source term for pvar:
+!         rho volume d(pvar)/dt       = ...
+!                        ... - rho*volume*ff - rho*volume*pvar/tau
 
-!      With xx = 2.d0, ff=3.d0 and tau = 4.d0
+!      With ff=3.d0 and tau = 4.d0
 
 !===============================================================================
 
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
+! NB the turbulence varaible names are:
+! - 'k' and 'epsilon' for the k-epsilon models
+! - 'r11', 'r22', 'r33', 'r12', 'r13', 'r23' and 'epsilon'
+!    for the Rij-epsilon LRR and SSG
+! - 'r11', 'r22', 'r33', 'r12', 'r13', 'r23', 'epsilon' and 'alpha' for the EBRSM
+! - 'k', 'epsilon', 'phi' and 'f_bar' for the phi-model
+! - 'k', 'epsilon', 'phi' and 'alpha' for the Bl-v2-k model
+! - 'k' and 'omega' for the k-omega turbulence model
+! - 'nu_tilda' for the Spalart Allmaras model
 
-if (.true.) return
+if (.false.) then
+  if (trim(fname).eq.'k') then
 
-! ----------------------------------------------
+    ff  = 3.d0
+    tau = 4.d0
 
-! --- Explicit source terms
+    ! --- Explicit source terms
+    do iel = 1, ncel
+      crvexp(iel) = -crom(iel)*volume(iel)*ff
+    enddo
 
-ff  = 3.d0
-tau = 4.d0
-xx  = 2.d0
+    ! --- Implicit source terms
+    !        crvimp is already initialized to 0, no need to set it here
+    do iel = 1, ncel
+      crvimp(iel) = -crom(iel)*volume(iel)/tau
+    enddo
 
-do iel = 1, ncel
-  crvexp(iel) = -crom(iel)*volume(iel)*ff
-enddo
-
-! --- Implicit source terms
-!        crvimp is already initialized to 0, no need to set it here
-
-do iel = 1, ncel
-  crvimp(iel) = -crom(iel)*volume(iel)/tau
-enddo
+  endif
+endif
 
 !--------
 ! Formats
 !--------
 
- 1000 format(' User source terms for Spalart-Allmaras',/)
+ 1000 format(' User source terms for turbulence model',/)
 
 !----
 ! End
@@ -1772,4 +780,4 @@ enddo
 deallocate(lstelt)
 
 return
-end subroutine ustssa
+end subroutine cs_user_turbulence_source_terms

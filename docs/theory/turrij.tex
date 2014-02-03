@@ -146,7 +146,7 @@ Le terme de dissipation turbulente $\tens{\varepsilon}$ est trait\'e dans ce qui
 $\Gamma$ est le terme source de masse\footnote{Dans ce cas, l'\'equation de continuit\'e s'\'ecrit : $\displaystyle \frac{\partial \rho}{\partial t} + \dive{(\rho \vect{u})} = \Gamma$.}, $R^{\,in}_{ij}$ est la valeur de $R_{ij}$ associ\'ee \`a la masse inject\'ee ou retir\'ee.
 
 ($\alpha_{R_{ij}}\,R_{ij} + \beta_{R_{ij}}$) repr\'esente le terme source
-utilisateur (sous-programme \fort{ustsri}) \'eventuel avec une d\'ecomposition
+utilisateur (sous-programme \fort{cs\_user\_turbulence\_source\_terms}) \'eventuel avec une d\'ecomposition
 permettant d'impliciter la partie $\alpha_{R_{ij}}\,R_{ij}$ si $\alpha_{R_{ij}} \geqslant 0$.
 
 De m\^eme, on r\'esout une \'equation de convection/diffusion/termes sources pour la dissipation $\varepsilon$. Cette \'equation est tr\`es semblable \`a celle du mod\`ele $k-\varepsilon$ (voir \fort{turbke}), seuls les termes de viscosit\'e turbulente et de gravit\'e changent. On r\'esout :
@@ -561,7 +561,7 @@ reconstruction.}), tous deux de dimension $\var{NCEL}$.
 
 \item Lecture et prise en compte des termes sources utilisateur pour la variable $R_{ij}$
 
-Appel \`a \fort{ustsri} pour charger les termes sources utilisateurs. Ils sont
+Appel \`a \fort{cs\_user\_turbulence\_source\_terms} pour charger les termes sources utilisateurs. Ils sont
 stock\'es comme suit. Pour la cellule $\Omega_l$ de centre $L$, repr\'esent\'ee par $\var{IEL}$, on a :\\
 \begin{equation}\notag
 \left\{\begin{array}{lll}
@@ -828,7 +828,7 @@ On d\'ecrit ci-dessous le sous-programme \fort{reseps}, les commentaires du sous
 
 \item{Lecture et prise en compte des termes sources utilisateur pour la variable $\varepsilon$ :}
 
-Appel de \fort{ustsri} pour charger les termes sources utilisateurs. Ils sont
+Appel de \fort{cs\_user\_turbulence\_source\_terms} pour charger les termes sources utilisateurs. Ils sont
 stock\'es dans les tableaux suivants :\\
 pour la cellule $\Omega_l$ repr\'esent\'ee par $\var{IEL}$ de centre $L$, on a :
 \begin{equation}\notag

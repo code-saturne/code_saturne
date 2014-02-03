@@ -393,12 +393,12 @@ do iel = 1, ncel
   tsexp (iel) = 0.d0
 enddo
 
-call ustssa                                                       &
-!==========
+call cs_user_turbulence_source_terms &
+!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ivarfl(inusa)   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
-   ckupdc , smacel , vort   , trgrdu ,                            &
+   ckupdc , smacel ,                                              &
    tsexp  , tsimp )
 
 !===============================================================================
@@ -477,7 +477,7 @@ if (ncesmp.gt.0) then
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                              isto2t , thetv ,                    &
+   isto2t , thetv  ,                                              &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    rhssa  , tinssa , w1 )
