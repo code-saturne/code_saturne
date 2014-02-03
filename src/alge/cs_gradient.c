@@ -2718,8 +2718,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                             cs_real_33_t        *restrict gradv)
 {
   int g_id, t_id;
-  cs_lnum_t  cell_id, face_id, i, j, cell_id1, cell_id2;
-  cs_real_t  pfac, pond, dvol, dvol1, dvol2;
+  cs_lnum_t face_id;
+  cs_real_t pond;
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
@@ -2756,9 +2756,9 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   /* Initialization */
 
 # pragma omp parallel for private(i, j)
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (i = 0; i < 3; i++) {
-      for (j = 0; j < 3; j++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++)
         gradv[cell_id][i][j] = 0.0;
     }
   }
@@ -2767,26 +2767,34 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, cell_id1, cell_id2, i, j,  \
-                                    pond, dvol1, dvol2, pfac)
+#   pragma omp parallel for private(face_id, pond)
     for (t_id = 0; t_id < n_i_threads; t_id++) {
 
       for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        cell_id1 = i_face_cells[face_id][0] - 1;
-        cell_id2 = i_face_cells[face_id][1] - 1;
+        cs_lnum_t cell_id1 = i_face_cells[face_id][0] - 1;
+        cs_lnum_t cell_id2 = i_face_cells[face_id][1] - 1;
 
         pond = weight[face_id];
-        dvol1 = 1./cell_vol[cell_id1];
-        dvol2 = 1./cell_vol[cell_id2];
+        cs_real_t dvol1 = 1./cell_vol[cell_id1];
+        cs_real_t dvol2 = 1./cell_vol[cell_id2];
 
-        for (i = 0; i < 3; i++) {
-          pfac   = pond * pvar[cell_id1][i] + (1.0-pond) * pvar[cell_id2][i];
-          for (j = 0; j < 3; j++) {
-            gradv[cell_id1][i][j] += pfac * i_face_normal[face_id][j] * dvol1;
-            gradv[cell_id2][i][j] -= pfac * i_face_normal[face_id][j] * dvol2;
+        /*
+           Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                    + (1-\alpha_\ij) \varia_\cellj\f$
+                   but for the cell \f$ \celli \f$ we remove
+                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                   and for the cell \f$ \cellj \f$ we remove
+                   \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
+        for (int i = 0; i < 3; i++) {
+          cs_real_t pfaci = (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+          cs_real_t pfacj = - pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+          for (int j = 0; j < 3; j++) {
+            gradv[cell_id1][i][j] += pfaci * i_face_normal[face_id][j] * dvol1;
+            gradv[cell_id2][i][j] -= pfacj * i_face_normal[face_id][j] * dvol2;
           }
         }
 
@@ -2800,23 +2808,32 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, cell_id, i,j, dvol, pfac)
+#   pragma omp parallel for private(face_id)
     for (t_id = 0; t_id < n_b_threads; t_id++) {
 
       for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        cell_id = b_face_cells[face_id] - 1;
+        cs_lnum_t cell_id = b_face_cells[face_id] - 1;
 
-        dvol = 1./cell_vol[cell_id];
+        cs_real_t dvol = 1./cell_vol[cell_id];
 
-        for (i = 0; i < 3; i++) {
-          pfac =   inc*coefav[face_id][i]
-                 + coefbv[face_id][0][i] * pvar[cell_id][0]
-                 + coefbv[face_id][1][i] * pvar[cell_id][1]
-                 + coefbv[face_id][2][i] * pvar[cell_id][2];
-          for (j = 0; j < 3; j++)
+        /*
+           Remark: for the cell \f$ \celli \f$ we remove
+                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+         */
+        for (int i = 0; i < 3; i++) {
+          cs_real_t pfac = inc*coefav[face_id][i];
+
+          for (int k = 0; k < 3; k++) {
+            if (i == k)
+              pfac += (coefbv[face_id][i][k] - 1.0) * pvar[cell_id][k];
+            else
+              pfac += coefbv[face_id][i][k] * pvar[cell_id][k];
+          }
+
+          for (int j = 0; j < 3; j++)
             gradv[cell_id][i][j] += pfac * b_face_normal[face_id][j]*dvol;
         }
 
@@ -2871,9 +2888,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            cs_real_33_t        *restrict gradv)
 {
   int isweep, g_id, t_id;
-  cs_lnum_t  cell_id, face_id, i, j, k, cell_id1, cell_id2;
-  cs_real_t  pfac, l2_norm, l2_residual, vecfac, pond;
-  cs_real_t  dvol, dvol1, dvol2;
+  cs_lnum_t face_id;
+  cs_real_t l2_norm, l2_residual, vecfac, pond;
 
   cs_real_33_t *rhs;
 
@@ -2924,10 +2940,10 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       /* Computation of the Right Hand Side*/
 
-#     pragma omp parallel for private(i, j)
-      for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-        for (i = 0; i < 3; i++) {
-          for (j = 0; j < 3; j++)
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+        for (int i = 0; i < 3; i++) {
+          for (int j = 0; j < 3; j++)
             rhs[cell_id][i][j] = -gradv[cell_id][i][j];
         }
       }
@@ -2936,31 +2952,47 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, cell_id1, cell_id2, \
-                                        i, j, k, pond, dvol1, dvol2, pfac)
+#       pragma omp parallel for private(face_id, pond)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
 
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            cell_id1 = i_face_cells[face_id][0] - 1;
-            cell_id2 = i_face_cells[face_id][1] - 1;
+            cs_lnum_t cell_id1 = i_face_cells[face_id][0] - 1;
+            cs_lnum_t cell_id2 = i_face_cells[face_id][1] - 1;
             pond = weight[face_id];
 
-            dvol1 = 1./cell_vol[cell_id1];
-            dvol2 = 1./cell_vol[cell_id2];
+            cs_real_t dvol1 = 1./cell_vol[cell_id1];
+            cs_real_t dvol2 = 1./cell_vol[cell_id2];
 
-            for (i = 0; i < 3; i++) {
-              pfac = pond*pvar[cell_id1][i] + (1.0-pond)*pvar[cell_id2][i];
+            /*
+               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                        + (1-\alpha_\ij) \varia_\cellj\f$
+                       but for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                       and for the cell \f$ \cellj \f$ we remove
+                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
 
-              for (k = 0; k < 3; k++)
-                pfac += 0.5 * (gradv[cell_id1][i][k] + gradv[cell_id2][i][k])
-                            * dofij[face_id][k];
+            for (int i = 0; i < 3; i++) {
 
-              for (j = 0; j < 3; j++) {
-                rhs[cell_id1][i][j] += pfac * i_face_normal[face_id][j] * dvol1;
-                rhs[cell_id2][i][j] -= pfac * i_face_normal[face_id][j] * dvol2;
+              /* Reconstruction part */
+              cs_real_t
+              pfaci = 0.5 * ( ( gradv[cell_id1][i][0] + gradv[cell_id2][i][0])
+                              * dofij[face_id][0]
+                            + ( gradv[cell_id1][i][1] + gradv[cell_id2][i][1])
+                              * dofij[face_id][1]
+                            + ( gradv[cell_id1][i][2] + gradv[cell_id2][i][2])
+                              * dofij[face_id][2]
+                            );
+              cs_real_t pfacj = pfaci;
+
+              pfaci += (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+              pfacj -=       pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+              for (int j = 0; j < 3; j++) {
+                rhs[cell_id1][i][j] += pfaci * i_face_normal[face_id][j] * dvol1;
+                rhs[cell_id2][i][j] -= pfacj * i_face_normal[face_id][j] * dvol2;
               }
             }
 
@@ -2974,30 +3006,39 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, cell_id, dvol, i, j, k, \
-                                        pfac, vecfac)
+#       pragma omp parallel for private(face_id, vecfac)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
 
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            cell_id = b_face_cells[face_id] - 1;
-            dvol = 1./cell_vol[cell_id];
+            cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+            cs_real_t dvol = 1./cell_vol[cell_id];
 
-            for (i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) {
 
-              pfac = inc*coefav[face_id][i];
+              /*
+                 Remark: for the cell \f$ \celli \f$ we remove
+                         \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+               */
 
-              for (k = 0; k < 3; k++) {
-                vecfac =   pvar[cell_id][k]
-                         + gradv[cell_id][k][0] * diipb[face_id][0]
-                         + gradv[cell_id][k][1] * diipb[face_id][1]
-                         + gradv[cell_id][k][2] * diipb[face_id][2];
+              cs_real_t pfac = inc*coefav[face_id][i];
+
+              for (int k = 0; k < 3; k++) {
+                /* Reconstruction part */
+                vecfac = gradv[cell_id][k][0] * diipb[face_id][0]
+                       + gradv[cell_id][k][1] * diipb[face_id][1]
+                       + gradv[cell_id][k][2] * diipb[face_id][2];
                 pfac += coefbv[face_id][k][i] * vecfac;
+
+                if (i == k)
+                  pfac += (coefbv[face_id][i][k] - 1.0) * pvar[cell_id][k];
+                else
+                  pfac += coefbv[face_id][i][k] * pvar[cell_id][k];
               }
 
-              for (j = 0; j < 3; j++)
+              for (int j = 0; j < 3; j++)
                 rhs[cell_id][i][j] += pfac * b_face_normal[face_id][j] * dvol;
 
             }
@@ -3010,11 +3051,11 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       /* Increment of the gradient */
 
-#     pragma omp parallel for private(i, j, k)
-      for (cell_id = 0; cell_id < n_cells; cell_id++) {
-        for (j = 0; j < 3; j++) {
-          for (i = 0; i < 3; i++) {
-            for (k = 0; k < 3; k++)
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int j = 0; j < 3; j++) {
+          for (int i = 0; i < 3; i++) {
+            for (int k = 0; k < 3; k++)
               gradv[cell_id][i][j] += rhs[cell_id][i][k] * cocg[cell_id][k][j];
           }
         }
@@ -3324,9 +3365,8 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
-  cs_lnum_t  face_id, ii, jj;
+  cs_lnum_t  ii, jj;
   int        g_id, t_id;
-  cs_real_t  pfac;
 
   /* Initialize gradient */
   /*---------------------*/
@@ -3346,10 +3386,10 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(face_id, ii, jj, pfac)
+#     pragma omp parallel for private(ii, jj)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
@@ -3359,21 +3399,34 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
           cs_real_t dvol1 = 1./cell_vol[ii];
           cs_real_t dvol2 = 1./cell_vol[jj];
 
-          pfac
+          /*
+             Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                      + (1-\alpha_\ij) \varia_\cellj\f$
+                     but for the cell \f$ \celli \f$ we remove
+                     \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                     and for the cell \f$ \cellj \f$ we remove
+                     \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
+
+          /* Reconstruction part */
+          cs_real_t pfaci
             =   (  weight[face_id]
-                 * (  pvar[ii]
-                    - (cell_cen[ii][0] - i_face_cog[face_id][0])*f_ext[ii][0]
-                    - (cell_cen[ii][1] - i_face_cog[face_id][1])*f_ext[ii][1]
-                    - (cell_cen[ii][2] - i_face_cog[face_id][2])*f_ext[ii][2]))
+                 * (  (i_face_cog[face_id][0] - cell_cen[ii][0])*f_ext[ii][0]
+                    + (i_face_cog[face_id][1] - cell_cen[ii][1])*f_ext[ii][1]
+                    + (i_face_cog[face_id][2] - cell_cen[ii][2])*f_ext[ii][2]))
               + ( (1.0 - weight[face_id])
-                 * (  pvar[jj]
-                    - (cell_cen[jj][0] - i_face_cog[face_id][0])*f_ext[jj][0]
-                    - (cell_cen[jj][1] - i_face_cog[face_id][1])*f_ext[jj][1]
-                    - (cell_cen[jj][2] - i_face_cog[face_id][2])*f_ext[jj][2]));
+                 * (  (i_face_cog[face_id][0] - cell_cen[jj][0])*f_ext[jj][0]
+                    + (i_face_cog[face_id][1] - cell_cen[jj][1])*f_ext[jj][1]
+                    + (i_face_cog[face_id][2] - cell_cen[jj][2])*f_ext[jj][2]));
+
+          cs_real_t pfacj = pfaci;
+
+          pfaci += (1.0-weight[face_id]) * (pvar[jj] - pvar[ii]);
+          pfacj -=      weight[face_id]  * (pvar[jj] - pvar[ii]);
 
           for (int j = 0; j < 3; j++) {
-            grad[ii][j] += pfac * i_face_normal[face_id][j] * dvol1;
-            grad[jj][j] -= pfac * i_face_normal[face_id][j] * dvol2;
+            grad[ii][j] += pfaci * i_face_normal[face_id][j] * dvol1;
+            grad[jj][j] -= pfacj * i_face_normal[face_id][j] * dvol2;
           }
 
 
@@ -3387,10 +3440,10 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(face_id, ii, pfac)
+#     pragma omp parallel for private(ii)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
@@ -3398,13 +3451,20 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
           cs_real_t dvol = 1./cell_vol[ii];
 
-          pfac
-            =      coefap[face_id] * inc
-              + (  coefbp[face_id]
-                 * (  pvar[ii]
-                    - (cell_cen[ii][0] - b_face_cog[face_id][0])*f_ext[ii][0]
-                    - (cell_cen[ii][1] - b_face_cog[face_id][1])*f_ext[ii][1]
-                    - (cell_cen[ii][2] - b_face_cog[face_id][2])*f_ext[ii][2]));
+          /*
+             Remark: for the cell \f$ \celli \f$ we remove
+                     \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+           */
+
+          /* Reconstruction part */
+          cs_real_t pfac
+            = coefap[face_id] * inc
+            + coefbp[face_id]
+              * ( (b_face_cog[face_id][0] - cell_cen[ii][0])*f_ext[ii][0]
+                + (b_face_cog[face_id][1] - cell_cen[ii][1])*f_ext[ii][1]
+                + (b_face_cog[face_id][2] - cell_cen[ii][2])*f_ext[ii][2]);
+
+          pfac += (coefbp[face_id] - 1.0) * pvar[ii];
 
           for (int j = 0; j < 3; j++) {
             grad[ii][j] += pfac * b_face_normal[face_id][j] * dvol;
@@ -3432,10 +3492,10 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, ii, jj, pfac)
+#       pragma omp parallel for private(ii, jj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
@@ -3446,14 +3506,23 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
             cs_real_t dvol2 = 1./cell_vol[jj];
 
             cs_real_t ktpond =    weight[face_id] * c_weight[ii]
-                             / (       weight[face_id] * c_weight[ii]
-                                + (1.0-weight[face_id])* c_weight[jj]);
-            pfac  =        ktpond  * pvar[ii]
-                    + (1.0-ktpond) * pvar[jj];
+                             / (      weight[face_id] * c_weight[ii]
+                               + (1.0-weight[face_id])* c_weight[jj]);
+
+            /*
+               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                        + (1-\alpha_\ij) \varia_\cellj\f$
+                       but for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                       and for the cell \f$ \cellj \f$ we remove
+                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
+            cs_real_t pfaci = (1.0-ktpond) * (pvar[jj] - pvar[ii]);
+            cs_real_t pfacj = - ktpond * (pvar[jj] - pvar[ii]);
 
             for (int j = 0; j < 3; j++) {
-              grad[ii][j] += pfac * i_face_normal[face_id][j] * dvol1;
-              grad[jj][j] -= pfac * i_face_normal[face_id][j] * dvol2;
+              grad[ii][j] += pfaci * i_face_normal[face_id][j] * dvol1;
+              grad[jj][j] -= pfacj * i_face_normal[face_id][j] * dvol2;
             }
 
           } /* loop on faces */
@@ -3469,10 +3538,10 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, ii, jj, pfac)
+#       pragma omp parallel for private(ii, jj)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
@@ -3482,12 +3551,20 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
             cs_real_t dvol1 = 1./cell_vol[ii];
             cs_real_t dvol2 = 1./cell_vol[jj];
 
-            pfac  =        weight[face_id]  * pvar[ii]
-                    + (1.0-weight[face_id]) * pvar[jj];
+            /*
+               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                        + (1-\alpha_\ij) \varia_\cellj\f$
+                       but for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                       and for the cell \f$ \cellj \f$ we remove
+                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
+            cs_real_t pfaci = (1.-weight[face_id]) * (pvar[jj] - pvar[ii]);
+            cs_real_t pfacj = - weight[face_id] * (pvar[jj] - pvar[ii]);
 
             for (int j = 0; j < 3; j++) {
-              grad[ii][j] += pfac * i_face_normal[face_id][j] * dvol1;
-              grad[jj][j] -= pfac * i_face_normal[face_id][j] * dvol2;
+              grad[ii][j] += pfaci * i_face_normal[face_id][j] * dvol1;
+              grad[jj][j] -= pfacj * i_face_normal[face_id][j] * dvol2;
             }
 
           } /* loop on faces */
@@ -3502,10 +3579,10 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(face_id, ii, pfac)
+#     pragma omp parallel for private(ii)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
@@ -3513,7 +3590,12 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
           cs_real_t dvol = 1./cell_vol[ii];
 
-          pfac = inc*coefap[face_id] + coefbp[face_id]*pvar[ii];
+          /*
+             Remark: for the cell \f$ \celli \f$ we remove
+                     \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+           */
+
+          cs_real_t pfac = inc*coefap[face_id] + (coefbp[face_id]-1.0)*pvar[ii];
 
           for (int j = 0; j < 3; j++) {
             grad[ii][j] += pfac * b_face_normal[face_id][j] * dvol;
@@ -3614,7 +3696,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
   cs_lnum_t  face_id;
   int        g_id, t_id;
   cs_real_t  rnorm;
-  cs_real_t  pfac, pfac0, pfac1, pip;
   cs_real_3_t  fexd;
   cs_real_3_t *rhs;
 
@@ -3632,7 +3713,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
   /* Compute normalization residual */
 
-  rnorm = _l2_norm_1(3*n_cells, grad);
+  rnorm = _l2_norm_1(3*n_cells, (cs_real_t *)grad);
 
   if (rnorm <= epzero)
     return;
@@ -3664,7 +3745,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, pfac, fexd)
+#       pragma omp parallel for private(face_id, fexd)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
 
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -3691,24 +3772,37 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
              *   fjj = -fexd
              */
 
-            pfac
-              =   (  weight[face_id]
-                   * (  pvar[cell_id1]
-                      - (cell_cen[cell_id1][0]-i_face_cog[face_id][0])*fexd[0]
-                      - (cell_cen[cell_id1][1]-i_face_cog[face_id][1])*fexd[1]
-                      - (cell_cen[cell_id1][2]-i_face_cog[face_id][2])*fexd[2]))
-              +   (  (1.0 - weight[face_id])
-                   * (  pvar[cell_id2]
-                      + (cell_cen[cell_id2][0]-i_face_cog[face_id][0])*fexd[0]
-                      + (cell_cen[cell_id2][1]-i_face_cog[face_id][1])*fexd[1]
-                      + (cell_cen[cell_id2][2]-i_face_cog[face_id][2])*fexd[2]))
-              +   (  dofij[face_id][0] * (grad[cell_id1][0]+grad[cell_id2][0])
-                   + dofij[face_id][1] * (grad[cell_id1][1]+grad[cell_id2][1])
-                   + dofij[face_id][2] * (grad[cell_id1][2]+grad[cell_id2][2]))*0.5;
+            /*
+               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                        + (1-\alpha_\ij) \varia_\cellj\f$
+                       but for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                       and for the cell \f$ \cellj \f$ we remove
+                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
+
+            /* Reconstruction part */
+            cs_real_t pfaci =
+                 weight[face_id]
+                 * ( (i_face_cog[face_id][0]-cell_cen[cell_id1][0])*fexd[0]
+                   + (i_face_cog[face_id][1]-cell_cen[cell_id1][1])*fexd[1]
+                   + (i_face_cog[face_id][2]-cell_cen[cell_id1][2])*fexd[2])
+              +  (1.0 - weight[face_id])
+                 * ( (cell_cen[cell_id2][0]-i_face_cog[face_id][0])*fexd[0]
+                   + (cell_cen[cell_id2][1]-i_face_cog[face_id][1])*fexd[1]
+                   + (cell_cen[cell_id2][2]-i_face_cog[face_id][2])*fexd[2])
+              + ( dofij[face_id][0] * (grad[cell_id1][0]+grad[cell_id2][0])
+                + dofij[face_id][1] * (grad[cell_id1][1]+grad[cell_id2][1])
+                + dofij[face_id][2] * (grad[cell_id1][2]+grad[cell_id2][2]))*0.5;
+
+            cs_real_t pfacj = pfaci;
+
+            pfaci += (1.0-weight[face_id]) * (pvar[cell_id2] - pvar[cell_id1]);
+            pfacj -= weight[face_id] * (pvar[cell_id2] - pvar[cell_id1]);
 
             for (int j = 0; j < 3; j++) {
-              rhs[cell_id1][j] += pfac * i_face_normal[face_id][j] * dvol1;
-              rhs[cell_id2][j] -= pfac * i_face_normal[face_id][j] * dvol2;
+              rhs[cell_id1][j] += pfaci * i_face_normal[face_id][j] * dvol1;
+              rhs[cell_id2][j] -= pfacj * i_face_normal[face_id][j] * dvol2;
             }
 
           } /* loop on faces */
@@ -3721,7 +3815,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, pip, pfac0, pfac1, pfac)
+#       pragma omp parallel for private(face_id)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
 
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -3731,31 +3825,23 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             cs_lnum_t cell_id = b_face_cells[face_id] - 1;
             cs_real_t dvol = 1./cell_vol[cell_id];
 
-            pip =   pvar[cell_id]
-                  + diipb[face_id][0] * grad[cell_id][0]
-                  + diipb[face_id][1] * grad[cell_id][1]
-                  + diipb[face_id][2] * grad[cell_id][2];
+            /*
+               Remark: for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
 
-            pfac0 = coefap[face_id] * inc
-                    + coefbp[face_id]
-                      * (  pip
-                         - (  cell_cen[cell_id][0]
-                            - b_face_cog[face_id][0]
-                            + diipb[face_id][0]) * f_ext[cell_id][0]
-                         - (  cell_cen[cell_id][1]
-                            - b_face_cog[face_id][1]
-                            + diipb[face_id][1]) * f_ext[cell_id][1]
-                         - (  cell_cen[cell_id][2]
-                            - b_face_cog[face_id][2]
-                            + diipb[face_id][2]) * f_ext[cell_id][2]);
+            /* Reconstruction part */
+            cs_real_t
+            pfac = coefap[face_id] * inc
+                 + coefbp[face_id]
+                   * ( diipb[face_id][0] * (grad[cell_id][0] - f_ext[cell_id][0])
+                     + diipb[face_id][1] * (grad[cell_id][1] - f_ext[cell_id][1])
+                     + diipb[face_id][2] * (grad[cell_id][2] - f_ext[cell_id][2])
+                     + (b_face_cog[face_id][0]-cell_cen[cell_id][0])*f_ext[cell_id][0]
+                     + (b_face_cog[face_id][1]-cell_cen[cell_id][1]) * f_ext[cell_id][1]
+                     + (b_face_cog[face_id][2]-cell_cen[cell_id][2]) * f_ext[cell_id][2]);
 
-            pfac1 =   pvar[cell_id]
-                    + (b_face_cog[face_id][0]-cell_cen[cell_id][0]) * grad[cell_id][0]
-                    + (b_face_cog[face_id][1]-cell_cen[cell_id][1]) * grad[cell_id][1]
-                    + (b_face_cog[face_id][2]-cell_cen[cell_id][2]) * grad[cell_id][2];
-
-            pfac =          coefbp[face_id]  *(extrap*pfac1 + (1.0-extrap)*pfac0)
-                   + (1.0 - coefbp[face_id]) * pfac0;
+            pfac += (coefbp[face_id] -1.0) * pvar[cell_id];
 
             rhs[cell_id][0] += pfac * b_face_normal[face_id][0] * dvol;
             rhs[cell_id][1] += pfac * b_face_normal[face_id][1] * dvol;
@@ -3778,7 +3864,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, pfac)
+#       pragma omp parallel for private(face_id)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
 
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -3791,15 +3877,28 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             cs_real_t dvol1 = 1./cell_vol[cell_id1];
             cs_real_t dvol2 = 1./cell_vol[cell_id2];
 
-            pfac  =        weight[face_id]  * pvar[cell_id1]
-                    + (1.0-weight[face_id]) * pvar[cell_id2]
-                    + ( dofij[face_id][0] * (grad[cell_id1][0]+grad[cell_id2][0])
-                    +   dofij[face_id][1] * (grad[cell_id1][1]+grad[cell_id2][1])
-                    +   dofij[face_id][2] * (grad[cell_id1][2]+grad[cell_id2][2])) * 0.5;
+            /*
+               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                        + (1-\alpha_\ij) \varia_\cellj\f$
+                       but for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                       and for the cell \f$ \cellj \f$ we remove
+                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
+
+            /* Reconstruction part */
+            cs_real_t pfaci = 0.5 *
+                     (dofij[face_id][0]*(grad[cell_id1][0]+grad[cell_id2][0])
+                     +dofij[face_id][1]*(grad[cell_id1][1]+grad[cell_id2][1])
+                     +dofij[face_id][2]*(grad[cell_id1][2]+grad[cell_id2][2]));
+            cs_real_t pfacj = pfaci;
+
+            pfaci += (1.0-weight[face_id]) * (pvar[cell_id2] - pvar[cell_id1]);
+            pfacj -= weight[face_id] * (pvar[cell_id2] - pvar[cell_id1]);
 
             for (int j = 0; j < 3; j++) {
-              rhs[cell_id1][j] += pfac * i_face_normal[face_id][j] * dvol1;
-              rhs[cell_id2][j] -= pfac * i_face_normal[face_id][j] * dvol2;
+              rhs[cell_id1][j] += pfaci * i_face_normal[face_id][j] * dvol1;
+              rhs[cell_id2][j] -= pfacj * i_face_normal[face_id][j] * dvol2;
             }
 
           } /* loop on faces */
@@ -3812,7 +3911,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
       for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#       pragma omp parallel for private(face_id, pip, pfac0, pfac1, pfac)
+#       pragma omp parallel for private(face_id)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
 
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -3822,21 +3921,21 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             cs_lnum_t cell_id = b_face_cells[face_id] - 1;
             cs_real_t dvol = 1./cell_vol[cell_id];
 
-            pip =   pvar[cell_id]
-                  + diipb[face_id][0] * grad[cell_id][0]
-                  + diipb[face_id][1] * grad[cell_id][1]
-                  + diipb[face_id][2] * grad[cell_id][2];
+            /*
+               Remark: for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+             */
 
-            pfac0 =   coefap[face_id] * inc
-                    + coefbp[face_id] * pip;
+            /* Reconstruction part */
+            cs_real_t
+            pfac = coefap[face_id] * inc
+                 + coefbp[face_id]
+                   * ( diipb[face_id][0] * grad[cell_id][0]
+                     + diipb[face_id][1] * grad[cell_id][1]
+                     + diipb[face_id][2] * grad[cell_id][2]
+                     );
 
-            pfac1 =   pvar[cell_id]
-                    + (b_face_cog[face_id][0]-cell_cen[cell_id][0]) * grad[cell_id][0]
-                    + (b_face_cog[face_id][1]-cell_cen[cell_id][1]) * grad[cell_id][1]
-                    + (b_face_cog[face_id][2]-cell_cen[cell_id][2]) * grad[cell_id][2];
-
-            pfac =          coefbp[face_id]  *(extrap*pfac1 + (1.0-extrap)*pfac0)
-                   + (1.0 - coefbp[face_id]) * pfac0;
+            pfac += (coefbp[face_id] -1.0) * pvar[cell_id];
 
             rhs[cell_id][0] += pfac * b_face_normal[face_id][0] * dvol;
             rhs[cell_id][1] += pfac * b_face_normal[face_id][1] * dvol;
@@ -3872,7 +3971,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
     /* Convergence test */
 
-    l2_residual = _l2_norm_1(3*n_cells, rhs);
+    l2_residual = _l2_norm_1(3*n_cells, (cs_real_t *)rhs);
 
     if (l2_residual < epsrgp*rnorm) {
       if (verbosity >= 2)
@@ -3961,25 +4060,16 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
-  const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
-  const cs_int_t *isympa = fvq->b_sym_flag;
 
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
 
   cs_lnum_t  cell_id, cidx, face_id, ii, jj, ll;
   int        g_id, t_id;
-  cs_real_t  pfac, det_inv;
+  cs_real_t  pfac;
   cs_real_3_t  dc;
   cs_real_4_t  fctb;
 
