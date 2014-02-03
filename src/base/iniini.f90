@@ -859,10 +859,14 @@ ipucou = 0
 !     ----------
 !      - the dilatable steady algorithm is used (idilat= 1)
 !      - the thermodynamic pressure (pther) is initialized with p0 = p_atmos
+!      - the maximum thermodynamic pressure (pthermax) is initialized with -1
+!        (no maximum by default, this term is used to model a venting effect when
+!         a positive value is given by the user)
 !      - the parameter (epsdp) for diagonal pressure strengthening is equal to 1e-12
 
 idilat = 1
 pther  = 1.013d5
+pthermax= -1.d0
 epsdp  = 1.0d-12
 
 ! --- Take into account the balance or imbalance between the pressure

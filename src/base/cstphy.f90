@@ -189,6 +189,10 @@ module cstphy
   !> Thermodynamic pressure for the previous time step
   double precision, save :: pthera
 
+  !>   pthermax: Thermodynamic maximum pressure for user clipping,
+  !>             used to model a venting effect
+  double precision, save :: pthermax
+
   !> \defgroup csttur Module for turbulence constants
 
   !> \addtogroup csttur

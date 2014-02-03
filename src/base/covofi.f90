@@ -889,7 +889,7 @@ if (iwarni(ivar).ge.2) then
   endif
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                 &
-            - istat(ivar)*xcpp(iel)*(crom(iel)/dt(iel))*volume(iel)&
+            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*volume(iel)&
                 *(rtp(iel,ivar)-rtpa(iel,ivar))*ibcl
   enddo
   isqrt = 1

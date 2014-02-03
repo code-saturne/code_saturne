@@ -86,7 +86,7 @@ integer          iel , ifac, ieltsm
 
 integer          iflmab
 
-double precision ro0amoy,ro0moy
+double precision roamoy, romoy,ro0moy
 double precision debt
 
 double precision debin, debout, debtot
@@ -122,7 +122,13 @@ call field_get_val_s(iflmab, bmasfl)
 ! 1. Flow rate computation for the inlet and oulet conditions
 !===============================================================================
 
-!-----------------
+!-----------------------------------
+!- Update the thermodynamic pressure
+!  for the previous time step
+!-----------------------------------
+pthera = pther
+
+!----------------
 !- Initialization
 !-----------------
 
@@ -135,10 +141,10 @@ debtot = 0.d0
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.ientre) then
     ! the inlet mass flux integrated in space
-    debin = debin + bmasfl(ifac)
+    debin = debin - bmasfl(ifac)
   else if (itypfb(ifac).eq.isolib) then
     ! the outlet mass flux integrated in space:
-    debout = debout + bmasfl(ifac)
+    debout = debout - bmasfl(ifac)
   endif
 enddo
 
@@ -168,21 +174,26 @@ if (isuite.eq.0 .and. ntcabs.eq.1) then
 endif
 
 !initialization
-ro0amoy = 0.d0
-ro0moy  = 0.d0
+roamoy = 0.d0
+romoy  = 0.d0
 
 do iel = 1, ncel
- ro0amoy = ro0amoy + cromo(iel)*volume(iel)
- ro0moy  = ro0moy  + crom(iel)*volume(iel)
+ roamoy = roamoy + cromo(iel)*volume(iel)
+ romoy  = romoy  + crom(iel)*volume(iel)
 enddo
 
 if (irangp.ge.0) then
-  call parsom(ro0amoy)
-  call parsom(ro0moy)
+  call parsom(roamoy)
+  call parsom(romoy)
 endif
 
 ! Compute the thermodynamic pressure p_ther^(n+1)
-pther = pthera*(ro0amoy + dt(1)*debtot)/ro0moy
+pther = pthera*(roamoy/romoy + dt(1)*debtot/romoy)
+
+! pthermodynamic pressure clipping in case of user venting
+if (pthermax.gt.0) then
+  pther = min(pther, pthermax)
+endif
 
 ! Actualize the density rho[p_ther^(n+1)] = rho^(n+1)
 do iel = 1, ncel
@@ -227,7 +238,10 @@ if (mod(ntcabs,ntlist).eq.0 .or. ntcabs.eq.1) then
     call parsom(debt)
   endif
 
-  write (nfecra, 2002) ttcabs, pther, (pther-pthera)/dt(1), ro0, -debt
+  write (nfecra, 2002) ttcabs, pther, pthera,                              &
+                       (pther-pthera)/dt(1), ro0,                          &
+                       roamoy, romoy, roamoy/romoy, (dt(1)*debtot)/romoy,  &
+                       -debt, debtot, (romoy - roamoy)/dt(1)
 
 endif
 
@@ -243,12 +257,13 @@ endif
    '---',                                                          &
    '-------------------------------------------------------',      &
    '-------------'                                             , /,&
-   3X,'    Time      pther^(n+1)    Dp/Dt     ',                   &
-   ' ro0_moy     mass_flux   '                                 , /,&
+   3X,'    Time      pther^(n+1)  pther^n   Dp/Dt   ro0   '    ,   &
+      '   ro^(n-1)   ro^(n)  ro^(n-1)/ro^(n)  dtxdebtot/ro^(n) ',  &
+      '  -debt        deb_inj     drhodt  '                    , /,&
    '---',                                                          &
    '-------------------------------------------------------',      &
    '-------------'                                             , /,&
-   3X, 5e12.4, /,                                                  &
+   3X,12e12.4, /,                                                  &
 
    '---',                                                          &
    '-------------------------------------------------------',      &

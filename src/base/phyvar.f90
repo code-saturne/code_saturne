@@ -177,88 +177,6 @@ if (ippmod(iphpar).ge.1) then
 
 endif
 
-!===============================================================================
-! 5. Density defined by a perfect gas equation of state
-!    for the low-Mach algorithm
-!===============================================================================
-
-if (idilat.eq.3) then
-
-  ! Works only with enthalpy
-  if (iscalt.le.0) call csexit(1)
-  if (itherm.ne.2) call csexit(1)
-  ivarh  = isca(iscalt)
-  call field_get_val_s(icrom, crom)
-
-  ! Count the number of species
-  nscasp = 0
-  do ii = 1, nscamx
-    nscasp = nscasp + iscasp(ii)
-  enddo
-
-  do iel = 1, ncel
-
-    ! Enthalpy over Cp, with Cp specific heat variable or constant
-    if (icp.gt.0) then
-      ipccp  = ipproc(icp)
-      xrtp =  rtp(iel,ivarh)/propce(iel,ipccp)
-    else
-      xrtp =  rtp(iel,ivarh)/cp0
-    endif
-
-    alpha = 0.d0
-
-    if (nscasp.ge.2) then
-      ! Deduced species
-      ym = 1.d0
-
-      do ii = 1, nscaus
-        if (iscasp(ii).eq.1) then
-          yk = rtp(iel, isca(ii))
-
-          ! Clipping of the fraction yk
-          yk = max(yk, 0.d0)
-          yk = min(yk, 1.d0)
-
-          alpha = alpha + yk/wmolsp(ii)
-
-          ym = ym - yk
-        endif
-      enddo
-
-      ! Clipping of remaining species
-      ym = max(ym, 0.d0)
-
-      ! Add to alpha the value due to the deduced fraction
-      alpha = alpha + ym/wmolsp(0)
-
-      ! Check if the values are correct
-      if (alpha.lt.epzero .or. rair.lt.epzero .or.   &
-           xrtp.lt.epzero .or. pther.lt.epzero) then
-        write(nfecra,9004)
-        call csexit(1)
-      endif
-
-      crom(iel) = pther/(alpha*rair*xrtp)
-
-      ! Monospecies: density defined with the perfect state law
-    else
-
-      ! Check if the values are correct
-      if (rair.lt.epzero .or.                       &
-          xrtp.lt.epzero .or. pther.lt.epzero) then
-        write(nfecra,9004)
-        call csexit(1)
-      endif
-
-      crom(iel) = pther/(rair*xrtp)
-
-    endif
-
-  enddo
-
-endif
-
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 
 if (mbrom.eq.0) then
@@ -323,12 +241,12 @@ if (ntcabs.eq.ntpabs+1) then
 endif
 
 !===============================================================================
-! 6. Compute the eddy viscosity
+! 5. Compute the eddy viscosity
 !===============================================================================
 
 if     (iturb.eq. 0) then
 
-! 6.1 Laminar
+! 5.1 Laminar
 ! ===========
 
   ipcvst = ipproc(ivisct)
@@ -339,14 +257,14 @@ if     (iturb.eq. 0) then
 
 elseif (iturb.eq.10) then
 
-! 6.2 Mixing length model
+! 5.2 Mixing length model
 ! =======================
 
   call vislmg(rtpa, propce)
 
 elseif (itytur.eq.2) then
 
-! 6.3 k-epsilon
+! 5.3 k-epsilon
 ! =============
 
   ipcvst = ipproc(ivisct)
@@ -360,7 +278,7 @@ elseif (itytur.eq.2) then
 
 elseif (itytur.eq.3) then
 
-! 6.4 Rij-epsilon
+! 5.4 Rij-epsilon
 ! ===============
 
   ipcvst = ipproc(ivisct)
@@ -374,7 +292,7 @@ elseif (itytur.eq.3) then
 
 elseif (iturb.eq.40) then
 
-! 6.5 LES Smagorinsky
+! 5.5 LES Smagorinsky
 ! ===================
 
   call vissma(rtpa, propce)
@@ -382,7 +300,7 @@ elseif (iturb.eq.40) then
 
 elseif (iturb.eq.41) then
 
-! 6.6 LES dynamic
+! 5.6 LES dynamic
 ! ===============
 
   call visdyn &
@@ -396,7 +314,7 @@ elseif (iturb.eq.41) then
 
 elseif (iturb.eq.42) then
 
-! 6.7 LES WALE
+! 5.7 LES WALE
 ! ============
 
   call viswal(rtpa, propce)
@@ -404,7 +322,7 @@ elseif (iturb.eq.42) then
 
 elseif (itytur.eq.5) then
 
-! 6.8 v2f (phi-model and BL-v2/k)
+! 5.8 v2f (phi-model and BL-v2/k)
 ! ===============================
 
   if (iturb.eq.50) then
@@ -433,7 +351,7 @@ elseif (itytur.eq.5) then
 
 elseif (iturb.eq.60) then
 
-! 6.9 k-omega SST
+! 5.9 k-omega SST
 ! ===============
 
   call vissst(rtpa, propce)
@@ -441,7 +359,7 @@ elseif (iturb.eq.60) then
 
 elseif (iturb.eq.70) then
 
-! 6.10 Spalart-Allmaras
+! 5.10 Spalart-Allmaras
 ! =====================
 
   cv13 = csav1**3
@@ -461,7 +379,7 @@ elseif (iturb.eq.70) then
 endif
 
 !===============================================================================
-! 7. Symmetric tensor diffusivity
+! 6. Symmetric tensor diffusivity
 !===============================================================================
 iok = 0
 do ivar = 1, nvar
@@ -529,7 +447,7 @@ if (iok.eq.1) then
 endif
 
 !===============================================================================
-! 8. User modification of the turbulent viscosity and symmetric tensor
+! 7. User modification of the turbulent viscosity and symmetric tensor
 !    diffusivity
 !===============================================================================
 
@@ -542,7 +460,7 @@ call usvist &
   ckupdc , smacel )
 
 !===============================================================================
-! 9. Clipping of the turbulent viscosity in dynamic LES
+! 8. Clipping of the turbulent viscosity in dynamic LES
 !===============================================================================
 
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
@@ -570,7 +488,7 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 10. User modification of the mesh viscosity in ALE
+! 9. User modification of the mesh viscosity in ALE
 !===============================================================================
 
 if (iale.eq.1.and.ntcabs.eq.0) then
@@ -600,7 +518,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 endif
 
 !===============================================================================
-! 11. Checcking of the user values
+! 10. Checcking of the user values
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions
@@ -854,7 +772,7 @@ if (iok.ne.0) then
 endif
 
 !===============================================================================
-! 12. Parallelism and periodicity
+! 11. Parallelism and periodicity
 !===============================================================================
 
 ! Pour navstv et visecv on a besoin de ROM dans le halo
@@ -955,21 +873,6 @@ endif
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@  Verifier uscfx2 et uscfpv.',                                /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-9004  format( &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========',                                               /,&
-'@    OPTION IDILAT 3',                                         /,&
-'@    LE CALCUL ENGENDRE UN RHO NEGATIF',                       /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier uscfx1 et uscfpv.',                                /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1170,19 +1073,6 @@ endif
 '@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
 '@  Verify uscfx2 and uscfpv.',                                 /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9004  format( &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
-'@    ========',                                                /,&
-'@    OPTION IDILAT 3',                                         /,&
-'@    THE COMPUTATION MAKE RHO NEGATIVE',                       /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
