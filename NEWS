@@ -16,6 +16,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix in convection diffusion of vectors in stationary algorithm and no slope tests.
+
 - Fix paths in MPMD configfile for BlueGene/Q, necessary for code coupling.
 
 - Minor Fixes to info messages for CCMIO output.

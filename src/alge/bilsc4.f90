@@ -697,8 +697,8 @@ elseif (isstpp.eq.1) then
             ! --------
 
             pifri = blencp*pifri+(1.d0-blencp)*pir
-            pifrj = blencp*pifrj+(1.d0-blencp)*pif
-            pjfri = blencp*pjfri+(1.d0-blencp)*pjf
+            pifrj = blencp*pifrj+(1.d0-blencp)*pi
+            pjfri = blencp*pjfri+(1.d0-blencp)*pj
             pjfrj = blencp*pjfrj+(1.d0-blencp)*pjr
 
             ! Flux
