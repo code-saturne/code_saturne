@@ -145,6 +145,21 @@ endif
 iihmpu = iihmpr
 call usipph(iihmpu , nfecra , iturb , irccor , itherm, icp)
 
+! --- ALE parameters
+
+!   - Code_Saturne GUI
+!     ================
+
+if (iihmpr.eq.1) then
+  call uialin (iale, nalinf, nalimx, epalim, iortvm)
+endif
+
+!   - User sub-routines
+!     =================
+
+call usalin
+
+
 !===============================================================================
 ! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
 !===============================================================================
@@ -341,23 +356,6 @@ if (idtvar.eq.2.or.idtvar.eq.-1) then
 endif
 
 if (ialgce.ne.-999) call algcen(ialgce)
-
-! --- Parametres de la methode ALE
-
-!   - Interface Code_Saturne
-!     ======================
-
-if (iihmpr.eq.1) then
-
-  call uialin (iale, nalinf, nalimx, epalim, iortvm)
-  !==========
-endif
-
-!   - Sous-programme utilisateur
-!     ==========================
-
-call usalin
-!==========
 
 ! --- Varpos
 !     Positionnement de pointeurs
