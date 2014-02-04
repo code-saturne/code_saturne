@@ -4404,7 +4404,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
-  cs_real_t *c_weight = (*ipond > 1) ? ktvar : NULL;
+  cs_real_t *c_weight = (*ipond > 0) ? ktvar : NULL;
 
   bool recompute_cocg = (*iccocg) ? true : false;
 
