@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix test on indicator ipond, enabling pressure gradient computation with
+  ponderation coefficient.
+
 - Fix in compressible module (prediction step): compute gravity source term
   with the full density value (not rho-rho0).
 
