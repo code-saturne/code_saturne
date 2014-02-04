@@ -129,6 +129,11 @@ static const char  *_ensight_type_name[FVM_N_ELEMENT_TYPES] = {"bar2",
                                                                "hexa8",
                                                                "nfaced"};
 
+/* for symetric tensors, Code_Saturne assumes xx, yy, zz, xy, yz, xy,
+   xhere EnSight assumes xx, yy, zz, xy, xy, yz, so permutation is required */
+
+static const int _ensight_c_order_6[6] = {0, 1, 2, 3, 5, 4};
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2577,11 +2582,12 @@ _export_field_values_ng(const fvm_to_ensight_writer_t  *w,
     if (i < input_dim) {
 
       int j;
+      const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
 
       /* Main vertices */
 
       fvm_convert_array(input_dim,
-                        i,
+                        i_in,
                         1, /* stride */
                         start_id,
                         end_id,
@@ -2614,7 +2620,7 @@ _export_field_values_ng(const fvm_to_ensight_writer_t  *w,
 
           fvm_tesselation_vertex_values(section->tesselation,
                                         input_dim,
-                                        i,
+                                        i_in,
                                         1, /* stride, */
                                         0,
                                         n_extra_vertices,
@@ -2711,10 +2717,12 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
 
   for (i = 0; i < output_dim; i++) {
 
+    const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
+
     while (fvm_writer_field_helper_step_n(helper,
                                           mesh,
                                           input_dim,
-                                          i,
+                                          i_in,
                                           interlace,
                                           n_parent_lists,
                                           parent_num_shift,
@@ -2949,6 +2957,8 @@ _export_field_values_eg(const fvm_to_ensight_writer_t   *w,
       cs_lnum_t start_id = 0;
       cs_lnum_t src_shift = 0;
 
+      const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
+
       /* loop on sections which should be appended */
 
       current_section = export_section;
@@ -2960,7 +2970,7 @@ _export_field_values_eg(const fvm_to_ensight_writer_t   *w,
           src_shift = export_section->num_shift;
 
         fvm_convert_array(input_dim,
-                          i,
+                          i_in,
                           1,
                           src_shift,
                           section->n_elements + src_shift,
@@ -3099,6 +3109,8 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
     _Bool loop_on_sections = true;
 
+    const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
+
     current_section = export_section;
 
     while (loop_on_sections == true) {
@@ -3106,7 +3118,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
       while (fvm_writer_field_helper_step_e(helper,
                                             current_section,
                                             input_dim,
-                                            i,
+                                            i_in,
                                             interlace,
                                             n_parent_lists,
                                             parent_num_shift,

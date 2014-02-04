@@ -511,6 +511,8 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
   vtkUnstructuredGrid *f =  NULL;
   vtkDoubleArray *tmp = NULL;
 
+  const int dest_dim = (dim == 6) ? 9 : dim;
+
   if (writer->mb->GetMetaData(mesh_id) != NULL) {
 
     f = vtkUnstructuredGrid::SafeDownCast(vtkDataSet::SafeDownCast
@@ -519,7 +521,7 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
     tmp = vtkDoubleArray::New();
     tmp->SetName(fieldname);
 
-    tmp->SetNumberOfComponents(dim);
+    tmp->SetNumberOfComponents(dest_dim);
 
     if (location == FVM_WRITER_PER_NODE) {
       f->GetPointData()->AllocateArrays(f->GetNumberOfPoints());
@@ -825,8 +827,8 @@ _export_nodal_polyhedra(cs_lnum_t                   n_vertices,
  *----------------------------------------------------------------------------*/
 
 static void
-_export_field_values_n(const fvm_nodal_t     *mesh,
-                       const char            *fieldname,
+_export_field_values_n(const fvm_nodal_t    *mesh,
+                       const char           *fieldname,
                        int                   dim,
                        cs_interlace_t        interlace,
                        int                   n_parent_lists,
@@ -837,16 +839,19 @@ _export_field_values_n(const fvm_nodal_t     *mesh,
 {
   assert(f != NULL);
 
-  void *values;
+  double *values = NULL;
+
+  const int dest_dim = (dim == 6) ? 9 : dim;
+
   values = vtkDoubleArray::SafeDownCast
     (f->GetPointData()->GetArray(fieldname))
     ->WritePointer(0, f->GetNumberOfPoints());
 
   fvm_convert_array(dim,
                     0,
-                    dim, 
+                    dest_dim, 
                     0, 
-                    mesh->n_vertices, 
+                    mesh->n_vertices,
                     interlace,
                     datatype,
                     CS_DOUBLE,
@@ -855,6 +860,21 @@ _export_field_values_n(const fvm_nodal_t     *mesh,
                     mesh->parent_vertex_num,
                     field_values,
                     values);
+
+  /* Special case for symmetric tensors */
+
+  if (dim == 6) {
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+      values[9*i + 8] = values[9*i + 2];
+      values[9*i + 7] = values[9*i + 4];
+      values[9*i + 6] = values[9*i + 5];
+      values[9*i + 4] = values[9*i + 1];
+      values[9*i + 2] = values[9*i + 5];
+      values[9*i + 1] = values[9*i + 3];
+      values[9*i + 5] = values[9*i + 7];
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -892,6 +912,8 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
   int  section_id;
   double  *values = NULL;
 
+  const int dest_dim = (dim == 6) ? 9 : dim;
+
   values = vtkDoubleArray::SafeDownCast
     (f->GetCellData()->GetArray(fieldname))
     ->WritePointer(0, dim*f->GetNumberOfCells());
@@ -928,7 +950,21 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
                       field_values,
                       values + start_id);
 
-    start_id += section->n_elements*dim;
+    /* Special case for symmetric tensors */
+
+    if (dim == 6) {
+      for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+        values[9*i + 8] = values[9*i + 2];
+        values[9*i + 7] = values[9*i + 4];
+        values[9*i + 6] = values[9*i + 5];
+        values[9*i + 4] = values[9*i + 1];
+        values[9*i + 2] = values[9*i + 5];
+        values[9*i + 1] = values[9*i + 3];
+        values[9*i + 5] = values[9*i + 7];
+      }
+    }
+
+    start_id += section->n_elements*dest_dim;
     if (n_parent_lists == 0)
       src_shift += section->n_elements;
 

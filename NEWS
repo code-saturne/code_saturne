@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Ensure postprocessing of symmetric tensors for EnSight and Catalyst is consistent
+  with {xx, yy, zz, xy, yz, xz} internal component representation.
+
 - Update some external package versions for automatic installer.
 
 Architectural changes
