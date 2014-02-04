@@ -2755,7 +2755,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   /* Initialization */
 
-# pragma omp parallel for private(i, j)
+# pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++)
