@@ -93,6 +93,7 @@ cs_io.h \
 cs_log.h \
 cs_log_iteration.h \
 cs_map.h \
+cs_math.h \
 cs_measures_util.h \
 cs_numbering.h \
 cs_opts.h \
@@ -152,6 +153,7 @@ cs_file.c \
 cs_interface.c \
 cs_io.c \
 cs_log.c \
+cs_math.c \
 cs_map.c \
 cs_order.c \
 cs_part_to_block.c \
