@@ -191,7 +191,6 @@ if (iphydr.eq.2) then
 else
   grdphd => rvoid2
 endif
-if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(ndimfb))
 if (idften(iu).eq.1) then
   if (itytur.eq.3.and.irijnu.eq.1) then
     allocate(wvisfi(1,1,nfac), wvisbi(ndimfb))
@@ -1221,6 +1220,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   endif
 
+  deallocate(esflum, esflub)
 endif
 
 !===============================================================================
