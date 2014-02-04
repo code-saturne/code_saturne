@@ -31,6 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -78,6 +80,70 @@ void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the product of a matrix of 3x3 real values by a vector of 3
+ * real values.
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     v             vector of 3 real values
+ *
+ * \return the result matrix vector product m.v.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_3_product(cs_real_33_t m,
+                     const cs_real_3_t  v,
+                     cs_real_3_t mv)
+{
+  for (int ii = 0; ii < 3; ii++)
+    mv[ii] = m[ii][0] * v[0] + m[ii][1] * v[1] + m[ii][2] * v[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of two vectors of 3 real values.
+ *
+ * \param[in]     u             vector of 3 real values
+ * \param[in]     v             vector of 3 real values
+ *
+ * \return the resulting dot product u.v.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_3_dot_product(const cs_real_3_t u, const cs_real_3_t v)
+{
+  cs_real_t uv = 0.;
+
+  for (int ii = 0; ii < 3; ii++)
+    uv += u[ii]*v[ii];
+
+  return uv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the square norm of a vector of 3 real values.
+ *
+ * \param[in]     v             vector of 3 real values
+ *
+ * \return square norm of v.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_3_square_norm(const cs_real_3_t v)
+{
+  cs_real_t v2 = 0.;
+
+  for (int ii = 0; ii < 3; ii++)
+    v2 += v[ii]*v[ii];
+
+  return v2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the inverse of a symmetric matrix using Cramer's rule.
  *
  * \param[out]    sout          sout = s1 * s2
@@ -91,9 +157,9 @@ cs_math_sym_33_inv_cramer(cs_real_6_t       sout,
 {
   double detinv;
 
-  sout[0] = s[1]*s[2] - pow(s[4],2);
-  sout[1] = s[0]*s[2] - pow(s[5],2);
-  sout[2] = s[0]*s[1] - pow(s[3],2);
+  sout[0] = s[1]*s[2] - s[4]*s[4];
+  sout[1] = s[0]*s[2] - s[5]*s[5];
+  sout[2] = s[0]*s[1] - s[3]*s[3];
   sout[3] = s[4]*s[5] - s[3]*s[2];
   sout[4] = s[3]*s[5] - s[0]*s[4];
   sout[5] = s[3]*s[4] - s[1]*s[5];

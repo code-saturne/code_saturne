@@ -58,6 +58,7 @@ pkginclude_HEADERS = \
 cs_benchmark.h \
 cs_blas.h \
 cs_convection_diffusion_balance.h \
+cs_face_viscosity.h \
 cs_finite_volume_operators.h \
 cs_gradient.h \
 cs_gradient_perio.h \
@@ -81,6 +82,7 @@ libcsalge_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
 cs_convection_diffusion_balance.c \
+cs_face_viscosity.c \
 cs_finite_volume_operators.c \
 cs_gradient.c \
 cs_gradient_perio.c \
@@ -104,10 +106,7 @@ invers.f90 \
 itrgrv.f90 \
 itrmav.f90 \
 prodsc.f90 \
-viscfa.f90 \
 visort.f90 \
-vitens.f90 \
-vistnv.f90
 libcsalge_la_LDFLAGS = -no-undefined
 
 clean-local:
