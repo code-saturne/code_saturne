@@ -130,8 +130,11 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
 
   /* Allocate memory for the temperature and Debye length arrays */
 
-  BFT_MALLOC(cs_lagr_clog_param.temperature, mesh->n_b_faces, cs_real_t);
-  BFT_MALLOC(cs_lagr_clog_param.debye_length, mesh->n_b_faces, cs_real_t);
+  if (cs_lagr_clog_param.temperature == NULL)
+    BFT_MALLOC(cs_lagr_clog_param.temperature, mesh->n_b_faces, cs_real_t);
+
+  if (cs_lagr_clog_param.debye_length == NULL)
+    BFT_MALLOC(cs_lagr_clog_param.debye_length, mesh->n_b_faces, cs_real_t);
 
   /* Store the temperature */
 
