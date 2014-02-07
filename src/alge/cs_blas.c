@@ -257,6 +257,7 @@ cs_gres(cs_lnum_t         n,
     }
 
     dot += sdot;
+    vtot += svtot;
 
   }
 
@@ -278,6 +279,7 @@ cs_gres(cs_lnum_t         n,
 
   return dot;
 }
+
 /*----------------------------------------------------------------------------
  * Return dot products of a vector with itself: x.x
  *
