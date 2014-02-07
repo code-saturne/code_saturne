@@ -548,7 +548,16 @@ if (ireent.eq.1) then
          nbpres = nbpres + 1
          dnbres = dnbres + tepa(ip, jrpoi)
 
-      else  ! No direct normal lift-off
+         parbor(itepa(ip,jdfac),ires) = parbor(itepa(ip,jdfac),ires) + tepa(ip,jrpoi)
+
+         parbor(itepa(ip,jdfac),iflres) = parbor(itepa(ip,jdfac),iflres) + tepa(ip,jrpoi)  &
+                       + ( tepa(ip,jrpoi) * ettp(ip,jmp) / surfbn(itepa(ip,jdfac)))
+
+         parbor(itepa(ip,jdfac),iflm) = parbor(itepa(ip,jdfac),iflm)                       &
+                       - ( tepa(ip,jrpoi) * ettp(ip,jmp) / surfbn(itepa(ip,jdfac)))
+
+
+         else  ! No direct normal lift-off
 
          ! Calculation of the norm of the hydrodynamic torque and drag (tangential)
 

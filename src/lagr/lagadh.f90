@@ -26,7 +26,7 @@ subroutine lagadh &
  ( ip     ,                                                       &
    nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
-   ettp   , tepa   , adhesion_energ)
+   ettp   , tepa   , rtp , adhesion_energ)
 
 !===============================================================================
 
@@ -57,6 +57,8 @@ subroutine lagadh &
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
+! rtp              ! tr ! <-- ! variables de calcul au centre des              !
+! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! adhesion_energ   ! r  ! --> ! particle adhesion energy                       !
 !__________________!____!_____!________________________________________________!
 
@@ -82,6 +84,8 @@ use lagran
 use ppthch
 use entsor
 use mesh
+use optcal
+use numvar
 
 !===============================================================================
 
@@ -94,6 +98,7 @@ integer          nbpmax , nvp    , nvep  , nivep
 integer          itepa(nbpmax,nivep)
 
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
+double precision rtp (ncelet,*)
 double precision adhesion_energ
 
 ! Local variables
@@ -103,12 +108,15 @@ integer nbasg, nbasp, np, ntmp(1)
 double precision step, rpart, rtmp(1)
 double precision paramh, nmoyap, nmoyag, scovag, scovap
 double precision dismin, distcc, distp
-double precision udlvor(2), uvdwsp, uvdwss
+double precision udlvor(2), uvdwsp, uvdwss, uedlsp, uedlss
 double precision fadhes
+
 
 ! Variables for the adhesion moment
 double precision dismom, omsurf
 
+integer iel, mode
+double precision tempf
 ! ==========================================================================
 ! 0.    initialization
 ! ==========================================================================
@@ -120,6 +128,26 @@ step = 1.0d-11
 
 scovap = denasp * pi * rayasp**2
 scovag = pi * rayasg**2 / espasg**2
+
+! Determination of the temperature
+
+
+  iel = itepa(ip,jisor)
+
+  if (iscalt.gt.0) then
+    if (itherm.eq.1) then
+      if (itpscl.eq.2) then
+        tempf = rtp(iel,isca(iscalt)) + tkelvi
+      else if (itpscl.eq. 1) then
+        tempf = rtp(iel,isca(iscalt))
+      endif
+    else if (itherm.eq.2) then
+      mode = 1
+      call usthht(mode,rtp(iel,isca(iscalt)),tempf)
+    endif
+  else
+    tempf = t0
+  endif
 
 
 ! ==========================================================================
@@ -247,8 +275,9 @@ do np = 1,2
    distp = dismin + dcutof + step * (3-2*np)
 
    call vdwsp(distp, rpart, uvdwsp)
+   call edlsp(distp, rpart, tempf, uedlsp)
 
-   udlvor(np) = uvdwsp
+   udlvor(np) = (uvdwsp + uedlsp) * (1 - scovag - scovap)
 enddo
 
 fadhes = (udlvor(2) - udlvor(1)) / (2.d0 * step)
@@ -262,7 +291,9 @@ do np = 1,2
    distcc =  dcutof + step * (3-2*np) + rpart + rayasp
 
    call vdwsa(distcc, rpart, rayasp, uvdwss)
-   udlvor(np) = uvdwss
+   call edlsa(distcc, rpart, rayasp, tempf , uedlss)
+
+   udlvor(np) = uvdwss + uedlss
 
 enddo
 
@@ -282,8 +313,9 @@ do np = 1,2
    endif
 
    call vdwsa(distcc, rpart, rayasg, uvdwss)
+   call edlsa(distcc, rpart, rayasg, tempf , uedlss)
 
-   udlvor(np) = uvdwss
+   udlvor(np) = uvdwss + uedlss
 enddo
 
 fadhes = fadhes + (udlvor(2) - udlvor(1)) / (2.0d0 * step) * nbasg
@@ -338,7 +370,7 @@ end subroutine lagadh
 !                           and Gregory (small distances)
 ! =========================================================================
 
-subroutine vdwsp (distp,rpart,var)
+subroutine vdwsp (distp, rpart, var)
 
 use cstnum
 use lagran
@@ -368,7 +400,7 @@ end subroutine vdwsp
 !     following the formula from Gregory (1981a)
 ! =========================================================================
 
-subroutine vdwsa (distcc,rpart1,rpart2,var)
+subroutine vdwsa (distcc, rpart1, rpart2, var)
 
 use cstnum
 use lagran
@@ -385,3 +417,117 @@ end subroutine vdwsa
 
 
 
+! =========================================================================
+!     EDL INTERACTION BETWEEN A SPHERE AND A PLANE
+!     following the formula from Bell & al (1970)
+!     based on the McCartney & Levine method
+! =========================================================================
+
+subroutine edlsp &
+!     -----------------
+     (distp, rpart, tempf , var)
+
+use cstnum
+use lagran
+use ppthch
+use entsor
+
+implicit none
+
+double precision alpha, omega1, omega2, gamma
+double precision charge
+double precision distp, rpart, var , tau
+double precision ldebye, tempf ,  lphi1, lphi2
+
+charge = 1.6d-19
+
+ldebye = ((2.d3 * cstfar**2 * fion)                            &
+           /(epseau * epsvid * rr * tempf))**(-0.5)
+
+
+! Reduced zeta potential
+lphi1 =  charge * phi1 /  kboltz / tempf
+lphi2 =  charge * phi2 /  kboltz / tempf
+
+tau = rpart / (1.d0/ldebye)
+
+
+!Extended reduced zeta potential
+!  (following the work from Ohshima et al, 1982, JCIS, 90, 17-26)
+
+
+lphi1 = 8.d0 * tanh(lphi1 / 4.d0) /                       &
+( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
+* tanh(lphi1 / 4.d0)**2) )
+
+lphi2 = 8.d0 * tanh(lphi2 / 4.d0) /                       &
+( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
+* tanh(lphi2 / 4.d0)**2) )
+
+
+alpha = sqrt((distp+rpart)/rpart)+sqrt(rpart/(distp+rpart))
+omega1 = lphi1**2 + lphi2**2 + alpha * lphi1 * lphi2
+omega2 = lphi1**2 + lphi2**2 - alpha * lphi1 * lphi2
+gamma = sqrt(rpart/(distp+rpart))*exp(-1.d0/ldebye*distp)
+
+var = 2 * pi * epseau * epsvid * (kboltz * tempf / charge)**2     &
+     * rpart * (distp + rpart) / (distp + 2 * rpart)              &
+     * (omega1 * log ( 1 + gamma) + omega2 * log( 1 - gamma))
+
+ end subroutine edlsp
+
+
+! =========================================================================
+!     EDL INTERACTION BETWEEN TWO SPHERES
+!     following the formula from Bell & al (1970)
+!     based on the McCartney & Levine method
+! =========================================================================
+
+subroutine edlsa &
+!     -----------------
+     (distcc, rpart1, rpart2, tempf, var)
+
+use cstnum
+use lagran
+use ppthch
+
+implicit none
+
+double precision alpha, omega1, omega2, gamma
+double precision charge, tau
+double precision distcc, rpart1, rpart2, var
+double precision ldebye, tempf , lphi1, lphi2
+
+charge = 1.6e-19
+
+ldebye = ((2.d3 * cstfar**2 * fion)                            &
+           /(epseau * epsvid * rr * tempf))**(-0.5)
+
+tau = rpart1 / (1.d0/ldebye)
+
+! Reduced zeta potential
+lphi1 =  charge * phi1 /  kboltz / tempf
+lphi2 =  charge * phi2 /  kboltz / tempf
+
+lphi1 = 8.d0 * tanh(lphi1 / 4.d0) /                       &
+( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
+* tanh(lphi1 / 4.d0)**2))
+
+lphi2 = 8.d0 * tanh(lphi2 / 4.d0) /                       &
+( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
+* tanh(lphi2 / 4.d0)**2) )
+
+
+alpha = sqrt(rpart2*(distcc-rpart2)/(rpart1*(distcc-rpart1)))     &
+         +sqrt(rpart1*(distcc-rpart1)/(rpart2*(distcc-rpart2)))
+omega1 = lphi1**2 + lphi2**2 + alpha * lphi1 * lphi2
+omega2 = lphi1**2 + lphi2**2 - alpha * lphi1 * lphi2
+gamma = sqrt(rpart1*rpart2/(distcc-rpart1)/(distcc-rpart2))       &
+        *exp(1.d0/ldebye*(rpart1+rpart2-distcc))
+
+var = 2 * pi * epseau * epsvid * (kboltz * tempf / charge)**2     &
+     * rpart1 * rpart2 * (distcc - rpart1) * (distcc - rpart2)    &
+     /(distcc *( distcc * (rpart1 + rpart2) - rpart1**2 - rpart2**2))       &
+     * (omega1 * log(1+gamma) + omega2 *log(1 - gamma))
+
+end subroutine edlsa

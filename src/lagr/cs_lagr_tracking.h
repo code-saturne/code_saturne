@@ -85,6 +85,7 @@ typedef enum {
   CS_LAGR_NEIGHBOR_FACE_ID,
   CS_LAGR_MARKO_VALUE,
   CS_LAGR_DEPOSITION_FLAG,
+  CS_LAGR_RANK_FLAG,
 
   /* Resuspension model additional parameters */
 
@@ -158,6 +159,7 @@ typedef struct {
   cs_lnum_t   close_face_id;
   cs_lnum_t   marko_val;
   cs_lnum_t   depo;                  /* jdepo   */
+  cs_lnum_t   rank_flag;
 
   /* Resuspension model additional parameters */
 
@@ -256,6 +258,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
+                          const cs_int_t    *irough,
                           const cs_int_t    *ireent,
                           const cs_int_t    *iclogst,
                           const cs_int_t    *nvls,

@@ -631,23 +631,29 @@ idepst = 0
 ! Activation of the resuspension model
 ! (default off: 0 ; on: 1)
 
+ireent = 0
+
 ! Caution: OPTION FOR DEVELOPERS ONLY
 ! ========
 
-ireent = 0
+irough = 0  ! dlvo deposition conditions for roughness surface
 
-! Parameters of the particle resuspension model
+! Parameters of the particle resuspension model for the roughness
 
+!average distance between two large-scale asperities
 espasg = 20.d-6
 
+!density of the small-scale asperities
 denasp = 6.36d13
 
-modyeq = 266.d9
-
+!radius of small asperities
 rayasp = 5.d-9
 
+!radius of large asperities
 rayasg = 2.d-6
 
+!Young's modulus (GPa)
+modyeq = 266.d9
 
 !===============================================================================
 ! 12ter. Activation of the clogging model

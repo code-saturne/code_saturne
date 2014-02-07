@@ -777,12 +777,8 @@ if (numtyp.eq.-2) then
 
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
-          if (parbor(ifac,inbr).gt.seuilf) then
-            trafbr(iloc) = parbor(ifac,ivarl) / tstatp
-          else
-            trafbr(iloc) = 0.d0
-          endif
-        enddo
+          trafbr(iloc) = parbor(ifac,ivarl) / tstatp
+       enddo
 
       else
 

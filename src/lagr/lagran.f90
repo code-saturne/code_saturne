@@ -256,6 +256,10 @@ module lagran
   !> - 1: resuspension model
   integer, save ::   ireent
 
+  !> - 0: no DLVO conditions with roughness surface
+  !> - 1: DLVO conditions with roughness surface
+  integer, save ::     irough
+
   !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
   integer, save ::   jroll
   !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
@@ -1130,6 +1134,12 @@ module lagran
 
   !> \ref ivit: mean interaction velocity with the boundary faces
   integer, save ::  ivit
+
+  !> number of resuspended particles
+  integer, save ::  ires
+
+  !> \ref iflres: mass flow of resuspended particles at the boundary faces
+  integer, save ::  iflres
 
   ! TODO
   integer, save ::  iencnb

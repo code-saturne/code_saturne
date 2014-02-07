@@ -59,6 +59,7 @@
 #include "cs_search.h"
 #include "cs_lagr_utils.h"
 #include "cs_halo.h"
+#include "cs_lagr_dlvo.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -256,6 +257,8 @@ clogging_barrier(cs_lagr_particle_t     particle,
 
   if (contact_number[0] != 0) {
 
+    *energy_barrier = 0;
+
     /* Computation of the energy barrier */
     for (i = 0; i < 101; i++) {
 
@@ -263,18 +266,19 @@ clogging_barrier(cs_lagr_particle_t     particle,
 
       cs_real_t distcc = cs_lagr_clog_param.dcutof + i * step + depositing_radius + deposited_radius;
 
-      cs_real_t var1 = vdwsa(distcc,deposited_radius,depositing_radius);
+      cs_real_t var1 = van_der_waals_sphere_sphere(distcc,deposited_radius,depositing_radius,cs_lagr_clog_param.lambwl,cs_lagr_clog_param.cstham);
 
-      cs_real_t var2 = edlsa(face_id,distcc,deposited_radius,depositing_radius);
+      cs_real_t var2 = EDL_sphere_sphere(distcc,deposited_radius,depositing_radius,cs_lagr_clog_param.phi1,cs_lagr_clog_param.phi2, cs_lagr_clog_param.kboltz,cs_lagr_clog_param.temperature[face_id],
+                             cs_lagr_clog_param.debye_length[face_id], cs_lagr_clog_param.free_space_permit, cs_lagr_clog_param.water_permit);
 
       cs_real_t var = contact_number[0] * (var1 + var2);
 
-      if (var > 0.) {
-        *energy_barrier = var / (0.5 * particle.diameter);}
-      else {
-        *energy_barrier = 0;}
+      if (var > *energy_barrier) *energy_barrier = var;
+      if (var < 0)   *energy_barrier = 0;
+
 
     }
+    *energy_barrier =  *energy_barrier / (0.5 * particle.diameter);
   }
 
   *limit = cs_lagr_clog_param.jamming_limit;
@@ -283,77 +287,6 @@ clogging_barrier(cs_lagr_particle_t     particle,
   return contact_number[0];
 }
 
-/*----------------------------------------------------------------------------
- *    Calculation of the Van der Waals interaction between two spheres
- *    following the formula from Gregory (1981a)
- *----------------------------------------------------------------------------*/
-
-cs_real_t
-vdwsa(           cs_real_t              distcc,
-                 cs_real_t              rpart1,
-                 cs_real_t              rpart2
-                 )
-{
-  cs_real_t var = - cs_lagr_clog_param.cstham * rpart1 * rpart2 / (6 * (distcc - rpart1 - rpart2)
-                  * (rpart1 + rpart2)) * (1 - 5.32 * (distcc - rpart1 - rpart2)
-                  / cs_lagr_clog_param.lambwl * log(1 +  cs_lagr_clog_param.lambwl / (distcc - rpart1 - rpart2) / 5.32));
-
-  return var;
-}
-
-/*----------------------------------------------------------------------------
- *     Calculation of the EDL interaction between two spheres
- *     following the formula from Bell & al (1970)
- *     based on the McCartney & Levine method
- *----------------------------------------------------------------------------*/
-
-cs_real_t
-edlsa(            cs_int_t               ifac,
-                  cs_real_t              distcc,
-                  cs_real_t              rpart1,
-                  cs_real_t              rpart2
-                 )
-{
-#define PI 3.141592653589793
-
-  cs_real_t charge = 1.6e-19;
-
- /* Reduced zeta potential */
-  cs_real_t lphi1 =  charge * cs_lagr_clog_param.phi1 /  cs_lagr_clog_param.kboltz / cs_lagr_clog_param.temperature[ifac];
-  cs_real_t lphi2 =  charge * cs_lagr_clog_param.phi1 /  cs_lagr_clog_param.kboltz / cs_lagr_clog_param.temperature[ifac];
-
-  cs_real_t tau = rpart1 / (1. / cs_lagr_clog_param.debye_length[ifac]);
-
-  /* Extended reduced zeta potential */
-  /* (following the work from Ohshima et al, 1982, JCIS, 90, 17-26) */
-
-  lphi1 = 8. * tanh(lphi1 / 4.) /
-         ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
-         * pow(tanh(lphi1 / 4.),2),0.5));
-
-  lphi2 = 8. * tanh(lphi2 / 4.) /
-          ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
-          * pow(tanh(lphi2 / 4.),2),0.5));
-
-  cs_real_t alpha = sqrt(rpart2 * (distcc - rpart2) / (rpart1 * (distcc - rpart1)))
-                   + sqrt(rpart1 * (distcc - rpart1) / (rpart2 * (distcc - rpart2)));
-
-  cs_real_t omega1 = pow(lphi1,2) + pow(lphi2,2) + alpha * lphi1 * lphi2;
-
-  cs_real_t omega2 = pow(lphi1,2) + pow(lphi2,2) - alpha * lphi1 * lphi2;
-
-  cs_real_t gamma = sqrt(rpart1 * rpart2 / (distcc - rpart1) / (distcc - rpart2))
-                    *exp(1 / cs_lagr_clog_param.debye_length[ifac] * (rpart1 + rpart2 - distcc));
-
-  cs_real_t var = 2 * PI * cs_lagr_clog_param.free_space_permit * cs_lagr_clog_param.water_permit
-                   * pow((cs_lagr_clog_param.kboltz * cs_lagr_clog_param.temperature[ifac] / charge),2)
-                   * rpart1 * rpart2 * (distcc - rpart1) * (distcc - rpart2)
-                   / (distcc * ( distcc * ( rpart1  + rpart2) - pow(rpart1,2) - pow(rpart2,2)))
-                   * (omega1 * log(1 + gamma) + omega2 * log(1 - gamma));
-
-  return var;
-
-}
 /*----------------------------------------------------------------------------*/
 
 /* Delete local macro definitions */

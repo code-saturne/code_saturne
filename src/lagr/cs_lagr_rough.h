@@ -25,11 +25,11 @@
  *
  *============================================================================*/
 
-#ifndef __CS_LAGR_CLOGGING_H__
-#define __CS_LAGR_CLOGGING_H__
+#ifndef __CS_LAGR_ROUGH_H__
+#define __CS_LAGR_ROUGH_H__
 
 /*============================================================================
- * Functions and types for the clogging modeling
+ * Functions and types for the roughness modeling
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -54,19 +54,19 @@ typedef struct {
   cs_real_t   free_space_permit;
   cs_real_t   water_permit;
   cs_real_t   ionic_strength;
-  cs_real_t   jamming_limit;
-  cs_real_t   min_porosity;
   cs_real_t   phi1;
   cs_real_t   phi2;
-
   cs_real_t*  temperature;
   cs_real_t*  debye_length;
   cs_real_t   cstham;
   cs_real_t   dcutof;
   cs_real_t   lambwl;
   cs_real_t   kboltz;
-
-} cs_lagr_clog_param_t;
+  cs_real_t   espasg;
+  cs_real_t   denasp;
+  cs_real_t   rayasp;
+  cs_real_t   rayasg;
+} cs_lagr_rough_param_t;
 
 
 /*----------------------------------------------------------------------------
@@ -76,50 +76,41 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
-                              const cs_real_t   *free_space_permit,
-                              const cs_real_t   *water_permit,
-                              const cs_real_t   *ionic_strength,
-                              const cs_real_t   *jamming_limit,
-                              const cs_real_t   *min_porosity,
-                              const cs_real_t    temperature[],
-                              const cs_real_t   *phi1,
-                              const cs_real_t   *phi2,
-                              const cs_real_t   *cstham,
-                              const cs_real_t   *dcutof,
-                              const cs_real_t   *lambwl,
-                              const cs_real_t   *kboltz
+CS_PROCF (rough_init, ROUGH_INIT)(const cs_real_t   *faraday_cst,
+                                  const cs_real_t   *free_space_permit,
+                                  const cs_real_t   *water_permit,
+                                  const cs_real_t   *ionic_strength,
+                                  const cs_real_t    temperature[],
+                                  const cs_real_t   *phi1,
+                                  const cs_real_t   *phi2,
+                                  const cs_real_t   *cstham,
+                                  const cs_real_t   *dcutof,
+                                  const cs_real_t   *lambwl,
+                                  const cs_real_t   *kboltz,
+                                  const cs_real_t   *espasg,
+                                  const cs_real_t   *denasp,
+                                  const cs_real_t   *rayasp,
+                                  const cs_real_t   *rayasg
 );
 
 
 /*----------------------------------------------------------------------------
- * Clogging ending
  * Deallocate the arrays storing temperature and Debye length
  *----------------------------------------------------------------------------*/
 
-void clogend( void );
+void rough_end( void );
 
 
-/*----------------------------------------------------------------------------
- * Clogging:
- *
- *----------------------------------------------------------------------------*/
 
-
-cs_int_t
-clogging_barrier(cs_lagr_particle_t     particle,
+cs_real_t
+rough_barrier(   cs_lagr_particle_t     particle,
                  cs_int_t               face_id,
-                 cs_real_t              face_area,
-                 cs_real_t*             energy_barrier,
-                 cs_real_t*             surface_coverage,
-                 cs_real_t*             limit ,
-                 cs_real_t*             mporos
+                 cs_real_t*             energy_barrier
 
-  );
-
+                  );
 
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_CLOGGING_H__ */
+#endif /* __CS_LAGR_ROUGH_H__ */
 

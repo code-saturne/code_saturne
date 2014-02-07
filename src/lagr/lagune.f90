@@ -200,7 +200,7 @@ endif
 if (idlvo.eq.1) then
 
   allocate(energt(nfabor))
-  if (iclogst.eq.1) then
+  if (iclogst.eq.1 .or.  irough .eq.1) then
      allocate(tempp(nfabor))
   endif
 endif
@@ -262,7 +262,7 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nbpmax , nlayer , iphyla , idepst , ireent , iclogst  ,        &
+ ( nbpmax , nlayer , iphyla , idepst , irough , ireent , iclogst, &
    nvls   , nbclst , icocel , itycel ,                            &
    jisor  , jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
@@ -357,6 +357,39 @@ if ( iclogst.eq.1 ) then
    !===========
    ( cstfar, epsvid, epseau, fion, jamlim, mporos, tempp,          &
      phi1  , phi2  , cstham, dcutof, lambwl, kboltz )
+
+endif
+
+!===============================================================================
+! 1.ter  Initialization for the roughness surface model
+!===============================================================================
+
+if ( irough .eq. 1 ) then
+
+ do ifac = 1,nfabor
+      iel = ifabor(ifac)
+
+      if (iscalt.gt.0) then
+
+         if (itherm.eq.1 .and. itpscl.eq.2) then
+            tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
+         else if (itherm.eq.1 .and. itpscl.eq.2) then
+            tempp(ifac) = rtp(iel,isca(iscalt))
+         else if (itherm.eq.2) then
+            call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
+         endif
+
+      else
+         tempp(ifac) = t0
+      endif
+
+   enddo
+
+call rough_init                                                   &
+   !===========
+   ( cstfar, epsvid, epseau, fion, tempp,          &
+     phi1  , phi2  , cstham, dcutof, lambwl, kboltz , &
+     espasg , denasp , rayasp , rayasg)
 
 endif
 
@@ -738,7 +771,7 @@ if (ireent.gt.0) then
   !==========
  ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
-   ettp   , ettpa  , tepa )
+   ettp   , ettpa  , tepa   , rtp , parbor, nvisbr)
 
 endif
 
@@ -900,7 +933,7 @@ if ((idepst.eq.1).and.(ntcabs.eq.ntmabs)) then
 endif
 if (idlvo.eq.1) then
    deallocate(energt)
-  if (iclogst.eq.1) then
+  if (iclogst.eq.1 .or. irough .eq. 1 ) then
      deallocate(tempp)
   endif
 endif

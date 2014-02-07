@@ -25,7 +25,7 @@ subroutine lagres &
 
  ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
-   ettp   , ettpa  , tepa   )
+   ettp   , ettpa  , tepa   , rtp , parbor, nvisbr)
 
 !===============================================================================
 
@@ -57,6 +57,11 @@ subroutine lagres &
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
+! rtp              ! tr ! <-- ! variables de calcul au centre des              !
+! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
+! parbor           ! tr ! <-->! infos sur interaction des particules           !
+!(nfabor,nvisbr)   !    !     !   aux faces de bord                            !
+! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -88,11 +93,13 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
+integer          nbpmax , nvp    , nvep  , nivep , nvisbr
 integer          itepa(nbpmax,nivep)
 
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
+double precision rtp (ncelet,*)
+double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
@@ -128,7 +135,7 @@ do ip = 1, nbpart
            ( ip   ,                                                   &
            nbpmax , nvp    , nvep   , nivep  ,                        &
            itepa  ,                                                   &
-           ettp   , tepa   , adhesion_energ)
+           ettp   , tepa   , rtp , adhesion_energ)
 
    elseif (itepa(ip,jdepo).eq.2) then
 
@@ -152,7 +159,7 @@ do ip = 1, nbpart
               ( ip   ,                                                   &
               nbpmax , nvp    , nvep   , nivep  ,                        &
               itepa  ,                                                   &
-              ettp   , tepa   , adhesion_energ)
+              ettp   , tepa   , rtp , adhesion_energ)
 
             if ((test_colli.eq.1) .and. (itepa(ip,jnbasg).gt.0)) then
 
@@ -189,6 +196,15 @@ do ip = 1, nbpart
                   nbpres = nbpres + 1
                   dnbres = dnbres + tepa(ip, jrpoi)
 
+                  parbor(itepa(ip,jdfac),ires) = parbor(itepa(ip,jdfac),ires) + tepa(ip,jrpoi)
+
+                  parbor(itepa(ip,jdfac),iflres) = parbor(itepa(ip,jdfac),iflres)                  &
+                              + ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
+
+                  parbor(itepa(ip,jdfac),iflm) = parbor(itepa(ip,jdfac),iflm)                   &
+                              - ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
+
+
                endif
 
             endif
@@ -205,7 +221,7 @@ do ip = 1, nbpart
                  ( ip   ,                                                   &
                  nbpmax , nvp    , nvep   , nivep  ,                        &
                  itepa  ,                                                   &
-                 ettp   , tepa   , adhesion_energ)
+                 ettp   , tepa   , rtp , adhesion_energ)
 
             ! Reconstruct an estimate of the particle velocity
             ! at the current sub-time-step assuming linear variation
@@ -281,6 +297,13 @@ do ip = 1, nbpart
                   nbpres = nbpres + 1
                   dnbres = dnbres + tepa(ip, jrpoi)
 
+                  parbor(itepa(ip,jdfac),ires) = parbor(itepa(ip,jdfac),ires) + tepa(ip,jrpoi)
+
+                  parbor(itepa(ip,jdfac),iflres) = parbor(itepa(ip,jdfac),iflres)                  &
+                                     + ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
+
+                  parbor(itepa(ip,jdfac),iflm) = parbor(itepa(ip,jdfac),iflm)                   &
+                                   - ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
                endif
 
                if (itepa(ip,jnbasg).eq.0) then

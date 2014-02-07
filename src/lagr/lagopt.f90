@@ -1802,6 +1802,18 @@ if (iensi3.eq.1) then
     imoybr(ivit) = 2
   endif
 
+  if (ireent .eq. 1) then
+    irf = irf + 1
+    ires = irf
+    nombrd(ires) = 'Part_resusp_number'
+    imoybr(ires) = 0
+
+    irf = irf + 1
+    iflres = irf
+    nombrd(iflres) = 'Part_resusp_mass_flux'
+    imoybr(iflres) = 1
+  endif
+
   if (iclogst.eq.1) then
     irf = irf + 1
     inclg = irf

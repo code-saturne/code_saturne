@@ -59,6 +59,7 @@
 #include "cs_search.h"
 #include "cs_lagr_utils.h"
 #include "cs_lagr_clogging.h"
+#include "cs_lagr_rough.h"
 #include "cs_halo.h"
 
 /*----------------------------------------------------------------------------
@@ -78,7 +79,7 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  36
+#define  N_VAR_PART_STRUCT  37
 #define  N_VAR_PART_AUX      1
 
 /*============================================================================
@@ -200,6 +201,7 @@ typedef struct {
   int  cs_lagr_nlayer_temp;
 
   int  deposition;
+  int  rough;
   int  resuspension;
   int  clogging;
 
@@ -234,6 +236,16 @@ enum {
   CS_LAGR_PART_STICKED   = 3,
   CS_LAGR_PART_OUT       = 4,
   CS_LAGR_PART_ERR       = 5
+};
+
+
+/* Physical state where a particle can be. */
+
+enum {
+  CS_LAGR_PART_IN_FLOW        = 0,
+  CS_LAGR_PART_DEPOSITED      = 1,
+  CS_LAGR_PART_ROLLING   = 2,
+  CS_LAGR_PART_NO_MOTION      = 10,
 };
 
 enum {
@@ -271,6 +283,7 @@ const char *cs_lagr_attribute_name[] = {
   "CS_LAGR_NEIGHBOR_FACE_ID",
   "CS_LAGR_MARKO_VALUE",
   "CS_LAGR_DEPOSITION_FLAG",
+  "CS_LAGR_RANK_FLAG",
   "CS_LAGR_N_LARGE_ASPERITIES",
   "CS_LAGR_N_SMALL_ASPERITIES",
   "CS_LAGR_ADHESION_FORCE",
@@ -312,7 +325,7 @@ static  MPI_Datatype  _CS_MPI_AUX_PARTICLE;
 static int _jisor = - 1, _jrval = - 1, _jrpoi = -1, _jrtsp = - 1;
 static int _jmp = -1, _jdp = -1, _jxp = -1, _jyp = -1, _jzp = -1;
 static int _jup = -1, _jvp = -1, _jwp = -1, _juf = -1, _jvf = -1, _jwf = -1;
-static int _jtaux = - 1, _jdepo = - 1, _jryplu = - 1, _jrinpf = - 1;
+static int _jtaux = - 1, _jdepo = - 1, _jrank_flag = -1, _jryplu = - 1, _jrinpf = - 1;
 static int _jdfac = - 1, _jimark = -1, _jnbasg = - 1, _jnbasp = - 1;
 static int _jfadh = - 1, _jmfadh = - 1, _jndisp = - 1;
 static int *_jthp, *_jmch, *_jmck, *_jrhock;
@@ -501,7 +514,7 @@ _define_particle_datatype(void)
   int  blocklengths[N_VAR_PART_STRUCT]
     = {1, 1, 1, 1, 1, 1, 1 , 1,
        1, 1, 1, 1, 3, 3, 3 , 1, 1, 1, 1 ,
-       1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1,
        CS_LAGR_N_LAYERS,
        1, 1, 1,
        CS_LAGR_N_LAYERS,
@@ -515,7 +528,7 @@ _define_particle_datatype(void)
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
        0, 0, 0, 0, 0, 0,
        0,
-       0, 0, 0,
+       0, 0, 0, 0,
        0,
        0,
        0, 0, 0,
@@ -542,6 +555,7 @@ _define_particle_datatype(void)
                                             CS_MPI_LNUM,  /* close_face_id */
                                             CS_MPI_LNUM,  /* marko_val */
                                             CS_MPI_LNUM,  /* depo */
+                                            CS_MPI_LNUM,  /* rank_flag */
                                             CS_MPI_LNUM,  /* nb_large_asperities */
                                             CS_MPI_LNUM,  /* nb_small_asperities */
                                             CS_MPI_REAL,  /* adhesion_force */
@@ -588,6 +602,7 @@ _define_particle_datatype(void)
   part.close_face_id = 0;
   part.marko_val = 0;
   part.depo = 0;
+  part.rank_flag = 0;
 
   /* Resuspension submodel */
 
@@ -643,6 +658,7 @@ _define_particle_datatype(void)
   MPI_Get_address(&part.close_face_id, displacements + count++);
   MPI_Get_address(&part.marko_val, displacements + count++);
   MPI_Get_address(&part.depo, displacements + count++);
+  MPI_Get_address(&part.rank_flag, displacements + count++);
 
   MPI_Get_address(&part.nb_large_asperities, displacements + count++);
   MPI_Get_address(&part.nb_small_asperities, displacements + count++);
@@ -2096,6 +2112,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     cs_real_t  energ = 0.5 * particle.mass * (uxn + vyn + wzn) * (uxn + vyn + wzn);
     cs_real_t min_porosity ;
     cs_real_t limit;
+    cs_real_t val;
 
     if (cs_glob_lagr_param.clogging)
     {
@@ -2116,9 +2133,41 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
     }
 
+    if ( cs_glob_lagr_param.rough > 0) {
+
+      val = rough_barrier(particle,
+                          face_id,
+                          &energt[face_id]
+        );
+    }
+
     if ( energ > energt[face_id] * 0.5 * particle.diameter ) {
 
       /* The particle deposits*/
+      if (!cs_glob_lagr_param.clogging && !cs_glob_lagr_param.resuspension ) {
+        move_particle = CS_LAGR_PART_MOVE_OFF;
+        particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
+
+        _particle_set->n_part_dep += 1;
+        _particle_set->weight_dep += particle.stat_weight;
+
+        particle_state = CS_LAGR_PART_STICKED;
+      }
+
+      if ( cs_glob_lagr_param.resuspension > 0) {
+
+        move_particle = CS_LAGR_PART_MOVE_OFF;
+        particle.depo = 1;
+        particle.cur_cell_num =  cs_glob_mesh->b_face_cells[face_id];
+        for (k = 0; k < 3; k++) {
+          particle.velocity[k] = 0.0;
+          particle.coord[k] = intersect_pt[k] - 0.5 * particle.diameter * face_norm[k];
+        }
+        _particle_set->n_part_dep += 1;
+        _particle_set->weight_dep += particle.stat_weight;
+        particle_state = CS_LAGR_PART_TREATED;
+
+      }
 
       if (cs_glob_lagr_param.clogging)
       {
@@ -2333,7 +2382,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
       /* For post-processing purpose */
 
-      if (!cs_glob_lagr_param.clogging) {
+      if (!cs_glob_lagr_param.clogging && !cs_glob_lagr_param.resuspension ) {
         for (k = 0; k < 3; k++) {
           particle.coord[k] = intersect_pt[k] - (0.5 * particle.diameter * face_norm[k]);
           particle.velocity[k] = 0.0;
@@ -4012,6 +4061,8 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
       id = _jndisp  * (*nbpmax) + i;
       cur_part.displacement_norm = tepa[id];
 
+      cur_part.rank_flag = 0;
+
     } else {
 
       cur_part.nb_large_asperities = 0;
@@ -4154,6 +4205,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
+                          const cs_int_t    *irough,
                           const cs_int_t    *ireent,
                           const cs_int_t    *iclogst,
                           const cs_int_t    *nvls,
@@ -4224,6 +4276,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
     cs_glob_lagr_param.cs_lagr_nlayer_temp = 1;
 
   cs_glob_lagr_param.deposition = *idepst;
+  cs_glob_lagr_param.rough = *irough;
   cs_glob_lagr_param.resuspension = *ireent;
   cs_glob_lagr_param.clogging = *iclogst;
 
@@ -4821,7 +4874,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                           const cs_real_t   enc2[],
                           const cs_real_t   *tkelvi)
 {
-  cs_lnum_t  i, j;
+  cs_lnum_t  i, j , k;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
@@ -4842,12 +4895,12 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
   const cs_lnum_t  failsafe_mode = 0; /* If 1 : stop as soon as an error is
                                          detected */
+  int nfabor  = mesh->n_b_faces;
 
   assert(builder != NULL);
   assert(set != NULL && prev_set != NULL);
 
   /* Main loop on  particles : global propagation */
-
 
   while ( _continue_displacement() ) {
 
@@ -4957,6 +5010,25 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
 #endif   /* END COMMENTED OUT */
 
+     /* Treatment of particle mass flow at the boundary faces in case the particle rolls and changes of rank */
+      if (cur_part->state == CS_LAGR_PART_TO_SYNC && cur_part->depo == CS_LAGR_PART_ROLLING) {
+
+        cur_part->rank_flag = 0;
+        _test_wall_cell(prev_part,visc_length,dlgeo);
+        cs_real_t face_normal[3];
+
+        for (k = 0; k < 3; k++) {
+          face_normal[k] = cs_glob_mesh_quantities->b_face_normal[3*prev_part->close_face_id+k];
+        }
+
+        cs_real_t face_area  = _get_norm(face_normal);
+
+        boundary_stat[(*iflm -1) * nfabor + prev_part->close_face_id] -=  prev_part->stat_weight * prev_part->mass / face_area;
+        cur_part->rank_flag = 1;
+
+      }
+
+      prev_part->depo = cur_part->depo;
       prev_part->state = cur_part->state;
       j = cur_part->next_id;
 
@@ -4982,6 +5054,18 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
         n_delete_particles++;
         r_weight += cur_part.stat_weight;
 
+        if (cur_part.depo ==  CS_LAGR_PART_ROLLING) {
+          cs_real_t face_normal[3];
+
+          for (k = 0; k < 3; k++) {
+            face_normal[k] = cs_glob_mesh_quantities->b_face_normal[3*prev_part.close_face_id+k];
+        }
+
+          cs_real_t face_area  = _get_norm(face_normal);
+
+          _test_wall_cell(&prev_part,visc_length,dlgeo);
+          boundary_stat[(*iflm -1) * nfabor + prev_part.close_face_id] -=  prev_part.stat_weight * prev_part.mass / face_area;
+        }
       }
       else {
 
@@ -5024,6 +5108,46 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
   } /* End of while (global displacement) */
 
+   /* Particle resuspension specific treatment */
+   /* Update of particle mass flow at the boundary faces in case the particle rolls */
+  if (cs_glob_lagr_param.resuspension > 0) {
+
+    for (i = 0, j = set->first_used_id; i < set->n_particles; i++) {
+      cs_lagr_particle_t*  cur_part = &set->particles[j];
+      cs_lagr_particle_t*  prev_part = &prev_set->particles[j];
+
+      _test_wall_cell(prev_part,visc_length,dlgeo);
+      _test_wall_cell(cur_part,visc_length,dlgeo);
+
+      cs_real_t face_normal[3];
+
+      for (k = 0; k < 3; k++) {
+        face_normal[k] = cs_glob_mesh_quantities->b_face_normal[3*cur_part->close_face_id + k];
+      }
+
+      cs_real_t face_area  = _get_norm(face_normal);
+
+      if (cur_part->close_face_id != prev_part->close_face_id && prev_part->depo ==  CS_LAGR_PART_ROLLING) {
+
+        boundary_stat[(*iflm -1) * nfabor + cur_part->close_face_id] +=  cur_part->stat_weight * cur_part->mass / face_area;
+
+        for (k = 0; k < 3; k++) {
+          face_normal[k] = cs_glob_mesh_quantities->b_face_normal[3*prev_part->close_face_id + k];
+      }
+
+        face_area  = _get_norm(face_normal);
+
+        if (cur_part->rank_flag == 0){
+
+          boundary_stat[(*iflm -1) * nfabor + prev_part->close_face_id] -=  prev_part->stat_weight * prev_part->mass / face_area;
+        }
+
+      }
+      cur_part->rank_flag = 0;
+      j = cur_part->next_id;
+    }
+  }
+
   /* Deposition sub-model additional loop */
 
   if (lagr_param->deposition > 0) {
@@ -5032,7 +5156,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
       cs_lagr_particle_t*  cur_part = &set->particles[j];
       cs_lagr_particle_t*  prev_part = &prev_set->particles[j];
-
 
       _test_wall_cell(cur_part,visc_length,dlgeo);
 
@@ -5280,6 +5403,13 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
     }
     break;
 
+  case CS_LAGR_RANK_FLAG:
+    if (_jrank_flag > -1) {
+      _p = &(p.rank_flag);
+      _t = CS_LNUM_TYPE;
+    }
+    break;
+
   /* Resuspension model additional parameters */
 
   case CS_LAGR_N_LARGE_ASPERITIES:
@@ -5458,6 +5588,11 @@ cs_lagr_destroy(void)
 
   if (cs_glob_lagr_param.clogging)
     clogend();
+
+ /* Destroy the structure dedicated to roughness surface modeling */
+
+  if (cs_glob_lagr_param.rough)
+       rough_end();
 
   /* Delete MPI_Datatypes */
 
