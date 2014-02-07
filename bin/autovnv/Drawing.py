@@ -88,7 +88,7 @@ class Plot(object):
         @type file: C{String}
         @param file: label of the file which contains data of the curve
         """
-        self.subplot  = 0
+        self.subplots  = []
         self.xspan    = []
         self.yspan    = []
         self.ismesure = False
@@ -99,7 +99,7 @@ class Plot(object):
         self.f = open(file, 'r')
 
         # Read mandatory attributes
-        self.subplot = int(parser.getAttribute(node, "fig"))
+        self.subplots = [int(s) for s in parser.getAttribute(node,"fig").split()]
         ycol         = int(parser.getAttribute(node, "ycol"))
 
         # Read optional attributes
@@ -202,7 +202,7 @@ class Probes(object):
         """
         Constructor of a curve.
         """
-        self.subplot  = int(fig)
+        self.subplots  = [int(fig)]
         self.xspan    = []
         self.yspan    = []
         self.cmd      = []
@@ -263,8 +263,9 @@ class Subplot(object):
         # Store the list of curves to be plotted in this subplot
         self.curves = []
         for curve in curves:
-            if curve.subplot == self.id:
-                self.curves.append(curve)
+            for subplot in curve.subplots:
+                if subplot == self.id:
+                    self.curves.append(curve)
 
         # List of additional matplotlib commands
         self.cmd = []
