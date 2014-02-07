@@ -69,6 +69,12 @@ class TexWriter(object):
         self.appendLine("\\end{verbatim}\n")
 
 
+    def addTexInput(self, filename):
+        f = open(filename)
+        self.rawLine(f.read())
+        f.close()
+
+
     def tabCreate(self, columns):
         assert type(columns) == list
 

@@ -497,8 +497,12 @@ class Parser(object):
             repo = str(node.attributes["repo"].value)
         except:
             repo = None
+        try:
+            tex = str(node.attributes["tex"].value)
+        except:
+            tex = None
 
-        return  f, dest, repo
+        return  f, dest, repo, tex
 
 
     def getProbes(self, node):

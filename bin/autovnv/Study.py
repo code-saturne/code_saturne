@@ -1072,7 +1072,7 @@ class Studies(object):
                         case.check_dirs(self, node, repo, dest)
 
                     for node in self.__parser.getChilds(case.node, "input"):
-                        file, dest, repo = self.__parser.getInput(node)
+                        file, dest, repo, tex = self.__parser.getInput(node)
                         if destination == False:
                             dest = None
                         case.check_dirs(self, node, repo, dest)
@@ -1158,7 +1158,7 @@ class Studies(object):
                         if nodes:
                             doc2.appendLine("\\subsection{Results for case %s}" % case.label)
                             for node in nodes:
-                                f, dest, repo = self.__parser.getInput(node)
+                                f, dest, repo, tex = self.__parser.getInput(node)
                                 doc2.appendLine("\\subsubsection{%s}" % f)
 
                                 if dest:
@@ -1175,6 +1175,8 @@ class Studies(object):
 
                                 if not os.path.isfile(ff):
                                     print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                                elif tex == 'on':
+                                    doc2.addTexInput(ff)
                                 else:
                                     doc2.addInput(ff)
 
@@ -1187,7 +1189,7 @@ class Studies(object):
                             input_nodes = self.__parser.getChilds(nodes[i], "input")
                             if input_nodes:
                                 for node in input_nodes:
-                                    f, dest, repo = self.__parser.getInput(node)
+                                    f, dest, repo, tex = self.__parser.getInput(node)
                                     doc2.appendLine("\\subsubsection{%s}" % f)
 
                                     if dest:
@@ -1204,6 +1206,8 @@ class Studies(object):
 
                                     if not os.path.isfile(ff):
                                         print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                                    elif tex == 'on':
+                                        doc2.addTexInput(ff)
                                     else:
                                         doc2.addInput(ff)
 
