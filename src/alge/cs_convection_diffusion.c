@@ -52,8 +52,10 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_ext_neighborhood.h"
@@ -455,6 +457,71 @@ void CS_PROCF (itrmas, ITRMAS)
                            viselz,
                            i_massflux,
                            b_massflux);
+}
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_face_anisotropic_diffusion_scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (itrmav, ITRMAV)
+(
+ const cs_int_t  *const   init,
+ const cs_int_t  *const   inc,
+ const cs_int_t  *const   imrgra,
+ const cs_int_t  *const   iccocg,
+ const cs_int_t  *const   nswrgp,
+ const cs_int_t  *const   imligp,
+ const cs_int_t  *const   ircflp,
+ const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwarnp,
+ const cs_real_t *const   epsrgp,
+ const cs_real_t *const   climgp,
+ const cs_real_t *const   extrap,
+ cs_real_3_t              frcxt[],
+ cs_real_t                pvar[],
+ const cs_real_t          coefap[],
+ const cs_real_t          coefbp[],
+ const cs_real_t          cofafp[],
+ const cs_real_t          cofbfp[],
+ const cs_real_t          i_visc[],
+ const cs_real_t          b_visc[],
+ cs_real_6_t              viscel[],
+ const cs_real_2_t        weighf[],
+ const cs_real_t          weighb[],
+ cs_real_t                i_massflux[],
+ cs_real_t                b_massflux[]
+)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_face_anisotropic_diffusion_scalar(m,
+                                       fvq,
+                                       *init,
+                                       *inc,
+                                       *imrgra,
+                                       *iccocg,
+                                       *nswrgp,
+                                       *imligp,
+                                       *ircflp,
+                                       *iphydp,
+                                       *iwarnp,
+                                       *epsrgp,
+                                       *climgp,
+                                       *extrap,
+                                       frcxt,
+                                       pvar,
+                                       coefap,
+                                       coefbp,
+                                       cofafp,
+                                       cofbfp,
+                                       i_visc,
+                                       b_visc,
+                                       viscel,
+                                       weighf,
+                                       weighb,
+                                       i_massflux,
+                                       b_massflux);
 }
 
 /*----------------------------------------------------------------------------
@@ -5633,6 +5700,397 @@ cs_face_diffusion_scalar(const cs_mesh_t          *m,
     BFT_FREE(grad);
   }
   BFT_FREE(visel);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the explicit part of the pressure gradient term to the mass flux
+ * in case of anisotropic diffusion of the pressure field \f$ P \f$.
+ *
+ * More precisely, the mass flux side \f$ \dot{m}_\fij \f$ is updated as
+ * follows:
+ * \f[
+ * \dot{m}_\fij = \dot{m}_\fij -
+ *              \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     init           indicator
+ *                               - 1 initialize the mass flux to 0
+ *                               - 0 otherwise
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     iccocg        indicator
+ *                               - 1 re-compute cocg matrix
+                                    (for iterativ gradients)
+ *                               - 0 otherwise
+ * \param[in]     nswrgp        number of reconstruction sweeps for the
+ *                               gradients
+ * \param[in]     imligp        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thank to neighbooring gradients
+ *                               - = 1 thank to the mean gradient
+ * \param[in]     ircflp        indicator
+ *                               - 1 flux reconstruction,
+ *                               - 0 otherwise
+ * \param[in]     iphydp        indicator
+ *                               - 1 hydrostatic pressure taken into account
+ *                               - 0 otherwise
+ * \param[in]     iwarnp        verbosity
+ * \param[in]     epsrgp        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgp        clipping coeffecient for the computation of
+ *                               the gradient
+ * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     frcxt         body force creating the hydrostatic pressure
+ * \param[in]     pvar          solved variable (pressure)
+ * \param[in]     coefap        boundary condition array for the variable
+ *                               (Explicit part)
+ * \param[in]     coefbp        boundary condition array for the variable
+ *                               (Impplicit part)
+ * \param[in]     cofafp        boundary condition array for the diffusion
+ *                               of the variable (Explicit part)
+ * \param[in]     cofbfp        boundary condition array for the diffusion
+ *                               of the variable (Implicit part)
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
+ * \param[in,out] i_massflux    mass flux at interior faces
+ * \param[in,out] b_massflux    mass flux at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_anisotropic_diffusion_scalar(const cs_mesh_t          *m,
+                                     cs_mesh_quantities_t     *fvq,
+                                     int                       init,
+                                     int                       inc,
+                                     int                       imrgra,
+                                     int                       iccocg,
+                                     int                       nswrgp,
+                                     int                       imligp,
+                                     int                       ircflp,
+                                     int                       iphydp,
+                                     int                       iwarnp,
+                                     double                    epsrgp,
+                                     double                    climgp,
+                                     double                    extrap,
+                                     cs_real_3_t     *restrict frcxt,
+                                     cs_real_t       *restrict pvar,
+                                     const cs_real_t           coefap[],
+                                     const cs_real_t           coefbp[],
+                                     const cs_real_t           cofafp[],
+                                     const cs_real_t           cofbfp[],
+                                     const cs_real_t           i_visc[],
+                                     const cs_real_t           b_visc[],
+                                     cs_real_6_t     *restrict viscel,
+                                     const cs_real_2_t         weighf[],
+                                     const cs_real_t           weighb[],
+                                     cs_real_t       *restrict i_massflux,
+                                     cs_real_t       *restrict b_massflux)
+{
+  const cs_halo_t  *halo = m->halo;
+
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+  /* Local variables */
+
+  char var_name[32];
+  int tr_dim = 0;
+
+  bool recompute_cocg = (iccocg) ? true : false;
+
+  double diippf[3], djjppf[3];
+  double visci[3][3], viscj[3][3];
+
+  cs_real_6_t *viscce;
+  cs_real_6_t *w2;
+  cs_real_3_t *grad;
+
+  /*==========================================================================
+    1. Initialization
+    ==========================================================================*/
+
+  /* Choose gradient type */
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+
+  if (init >= 1) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+      i_massflux[face_id] = 0.;
+    }
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      b_massflux[face_id] = 0.;
+    }
+  } else if (init != 0) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("invalid value of init"));
+  }
+
+  /* Porosity fields */
+
+  cs_field_t *fporo = CS_F_(poro);
+  cs_field_t *ftporo = CS_F_(t_poro);
+
+  cs_real_t *porosi = NULL;
+  cs_real_6_t *porosf = NULL;
+
+  if (fporo != NULL) {
+    porosi = fporo->val;
+    if (ftporo != NULL) {
+      porosf = (cs_real_6_t *)ftporo->val;
+    }
+  }
+
+  /* Handle parallelism and periodicity */
+
+  if (halo != NULL || cs_glob_mesh->n_init_perio > 0) {
+    cs_mesh_sync_var_scal(pvar);
+  }
+
+  /*==========================================================================
+    2. Update mass flux without reconstruction technics
+    ==========================================================================*/
+
+  if (nswrgp <= 1) {
+
+    /* ---> Contribution from interior faces */
+
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+
+      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+
+      i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
+
+    }
+
+    /* ---> Contribution from boundary faces */
+
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+
+      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
+
+      b_massflux[face_id] += b_visc[face_id]*pfac;
+
+    }
+
+  }
+
+  /*==========================================================================
+    3. Update mass flux with reconstruction technics
+    ==========================================================================*/
+
+  if (nswrgp > 1) {
+
+    viscce = NULL;
+    w2 = NULL;
+
+    /* Without porosity */
+    if (porosi == NULL) {
+      viscce = viscel;
+
+      /* With porosity */
+    } else if (porosi != NULL && porosf == NULL) {
+      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int isou = 0; isou < 6; isou++) {
+          w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
+        }
+      }
+      viscce = w2;
+
+      /* With tensorial porosity */
+    } else if (porosi != NULL && porosf != NULL) {
+      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        cs_math_sym_33_product(w2[cell_id],
+                               porosf[cell_id],
+                               viscel[cell_id]);
+      }
+      viscce = w2;
+    }
+
+    /* ---> Periodicity and parallelism treatment of symmetric tensors */
+
+    if (halo != NULL || cs_glob_mesh->n_init_perio > 0) {
+      cs_mesh_sync_var_sym_tens((cs_real_t *)viscce);
+    }
+
+    /* Allocate a work array for the gradient calculation */
+    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+    cs_gradient_scalar(var_name,
+                       gradient_type,
+                       halo_type,
+                       inc,
+                       recompute_cocg,
+                       nswrgp,
+                       tr_dim,
+                       iphydp,
+                       iwarnp,
+                       imligp,
+                       epsrgp,
+                       extrap,
+                       climgp,
+                       frcxt,
+                       coefap,
+                       coefbp,
+                       pvar,
+                       NULL, /* Weighted gradient */
+                       grad);
+
+    /* Mass flow through interior faces */
+
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+
+      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+
+      double pi = pvar[ii];
+      double pj = pvar[jj];
+
+      /* Recompute II" and JJ"
+         ----------------------*/
+
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
+
+      /* IF.Ki.S / ||Ki.S||^2 */
+      double fikdvi = weighf[face_id][0];
+
+      /* II" = IF + FI" */
+      for (int i = 0; i < 3; i++) {
+        diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
+                  - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
+                           + visci[1][i]*i_face_normal[face_id][1]
+                           + visci[2][i]*i_face_normal[face_id][2] );
+      }
+
+      viscj[0][0] = viscce[jj][0];
+      viscj[1][1] = viscce[jj][1];
+      viscj[2][2] = viscce[jj][2];
+      viscj[1][0] = viscce[jj][3];
+      viscj[0][1] = viscce[jj][3];
+      viscj[2][1] = viscce[jj][4];
+      viscj[1][2] = viscce[jj][4];
+      viscj[2][0] = viscce[jj][5];
+      viscj[0][2] = viscce[jj][5];
+
+      /* FJ.Kj.S / ||Kj.S||^2 */
+      double fjkdvi = weighf[face_id][1];
+
+      /* JJ" = JF + FJ" */
+      for (int i = 0; i < 3; i++) {
+        djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
+                  + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
+                           + viscj[1][i]*i_face_normal[face_id][1]
+                           + viscj[2][i]*i_face_normal[face_id][2] );
+      }
+
+      /* p in I" and J" */
+      double pipp = pi + ircflp*( grad[ii][0]*diippf[0]
+                         + grad[ii][1]*diippf[1]
+                         + grad[ii][2]*diippf[2]);
+      double pjpp = pj + ircflp*( grad[jj][0]*djjppf[0]
+                         + grad[jj][1]*djjppf[1]
+                         + grad[jj][2]*djjppf[2]);
+
+      i_massflux[face_id] += i_visc[face_id]*(pipp - pjpp);
+
+    }
+
+    /* ---> Contribution from boundary faces */
+
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+
+      cs_lnum_t ii = b_face_cells[face_id] - 1;
+
+      double pi = pvar[ii];
+
+      /* Recompute II"
+         --------------*/
+
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
+
+      /* IF.Ki.S / ||Ki.S||^2 */
+      double fikdvi = weighb[face_id];
+
+      /* II" = IF + FI" */
+      for (int i = 0; i < 3; i++) {
+        diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
+                  - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
+                           + visci[1][i]*b_face_normal[face_id][1]
+                           + visci[2][i]*b_face_normal[face_id][2] );
+      }
+
+      double pipp = pi + ircflp*( grad[ii][0]*diippf[0]
+                         + grad[ii][1]*diippf[1]
+                         + grad[ii][2]*diippf[2]);
+
+
+      double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
+
+      b_massflux[face_id] += b_visc[face_id]*pfac;
+
+    }
+
+    /* Free memory */
+    BFT_FREE(grad);
+
+  }
+
+  BFT_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -103,7 +103,6 @@ grdpot.f90 \
 inimas.f90 \
 invers.f90 \
 itrgrv.f90 \
-itrmav.f90 \
 prodsc.f90 \
 visort.f90
 libcsalge_la_LDFLAGS = -no-undefined

@@ -1030,7 +1030,7 @@ if (arak.gt.0.d0) then
     call itrmav &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp , nfecra ,                                     &
+   iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
    rtpa(1,ipr)  ,                                                 &
@@ -1704,7 +1704,7 @@ else if (idften(ipr).eq.6) then
   call itrmav &
   !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp , nfecra ,                                     &
+   iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    presa  ,                                                       &
@@ -1725,7 +1725,7 @@ else if (idften(ipr).eq.6) then
   call itrmav &
   !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp , nfecra ,                                     &
+   iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
@@ -2061,7 +2061,7 @@ if (idilat.eq.4) then
     call itrmav &
     !==========
    ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp , nfecra ,                                     &
+     iphydr , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
@@ -2080,7 +2080,7 @@ if (idilat.eq.4) then
     call itrmav &
     !==========
    ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp , nfecra ,                                     &
+     iphydr , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      dpvar  ,                                                       &

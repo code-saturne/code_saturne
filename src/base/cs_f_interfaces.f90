@@ -63,7 +63,7 @@ module cs_f_interfaces
 
     subroutine itrmav &
      (init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                       &
-     iphydp, iwarnp, nfecra, epsrgp, climgp, extrap, frcxt,                    &
+     iphydp, iwarnp, epsrgp, climgp, extrap, frcxt,                            &
      pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,               &
      weighf, weighb, flumas, flumab)
       use mesh
