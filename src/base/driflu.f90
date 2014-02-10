@@ -441,7 +441,7 @@ call inimav &
 !==========
  ( ivar   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom   , brom   ,                                              &
    drift  ,                                                       &

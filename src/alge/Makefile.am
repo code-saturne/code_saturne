@@ -101,7 +101,6 @@ grdpre.f90 \
 grdvec.f90 \
 grdpot.f90 \
 inimas.f90 \
-inimav.f90 \
 invers.f90 \
 itrgrv.f90 \
 itrmav.f90 \

@@ -295,7 +295,7 @@ if (ityturt(iscal).ne.3) then
   !==========
   ( ivar   , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
-    iwarnp , nfecra ,                                     &
+    iwarnp ,                                              &
     epsrgp , climgp ,                                     &
     crom   , brom   ,                                     &
     w1     ,                                              &
@@ -354,7 +354,7 @@ else
   !==========
   ( ivar   , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
-    iwarnp , nfecra ,                                     &
+    iwarnp ,                                              &
     epsrgp , climgp ,                                     &
     crom   , brom   ,                                     &
     w1     ,                                              &

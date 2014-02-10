@@ -407,7 +407,7 @@ if (iprco.le.0) then
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom,                                                    &
    vel    ,                                                       &
@@ -446,7 +446,7 @@ if (iprco.le.0) then
     !==========
   ( iu     , itypfl ,                                              &
     iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-    iwarnp , nfecra ,                                              &
+    iwarnp ,                                                       &
     epsrgp , climgp ,                                              &
     crom, brom,                                                    &
     mshvel ,                                                       &
@@ -969,7 +969,7 @@ if (iale.eq.1) then
   !==========
 ( iuma   , itypfl ,                                              &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-  iwarnp , nfecra ,                                              &
+  iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
   crom, brom,                                                    &
   mshvel ,                                                       &
@@ -1147,7 +1147,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom,                                                    &
    vel    ,                                                       &

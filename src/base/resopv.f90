@@ -345,7 +345,7 @@ if(irnpnw.ne.1) then
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
    trav   ,                                                       &
@@ -872,7 +872,7 @@ call inimav &
 !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
    trav   ,                                                       &
@@ -1197,7 +1197,7 @@ if (idilat.eq.4) then
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
    vel    ,                                                       &
@@ -1232,7 +1232,7 @@ if (idilat.eq.4) then
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
    vel    ,                                                       &
@@ -1890,7 +1890,7 @@ if (idilat.eq.4) then
   !==========
  ( ipcrom , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
    trav   ,                                                       &

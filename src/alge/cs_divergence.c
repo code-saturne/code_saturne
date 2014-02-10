@@ -54,6 +54,7 @@
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_ext_neighborhood.h"
@@ -101,6 +102,57 @@ BEGIN_C_DECLS
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_mass_flux
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (inimav, INIMAV)
+(
+ const cs_int_t   *const  f_id,
+ const cs_int_t   *const  itypfl,
+ const cs_int_t   *const  iflmb0,
+ const cs_int_t   *const  init,
+ const cs_int_t   *const  inc,
+ const cs_int_t   *const  imrgra,
+ const cs_int_t   *const  nswrgu,
+ const cs_int_t   *const  imligu,
+ const cs_int_t   *const  iwarnu,
+ const cs_real_t  *const  epsrgu,
+ const cs_real_t  *const  climgu,
+ const cs_real_t          rom[],
+ const cs_real_t          romb[],
+ const cs_real_3_t        vel[],
+ const cs_real_3_t        coefav[],
+ const cs_real_33_t       coefbv[],
+ cs_real_t                i_massflux[],
+ cs_real_t                b_massflux[]
+)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_mass_flux(m,
+               fvq,
+               *f_id,
+               *itypfl,
+               *iflmb0,
+               *init,
+               *inc,
+               *imrgra,
+               *nswrgu,
+               *imligu,
+               *iwarnu,
+               *epsrgu,
+               *climgu,
+               rom,
+               romb,
+               vel,
+               coefav,
+               coefbv,
+               i_massflux,
+               b_massflux);
+}
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_divergence
@@ -199,6 +251,593 @@ void CS_PROCF (projtv, PROJTV)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add \f$ \rho \vect{u} \cdot \vect{s}_\ij\f$ to
+ * the mass flux \f$ \dot{m}_\ij \f$.
+ *
+ * For the reconstruction, \f$ \gradt \left(\rho \vect{u} \right) \f$ is
+ * computed with the following approximated boundary conditions:
+ *  - \f$ \vect{a}_{\rho u} = \rho_\fib \vect{a}_u \f$
+ *  - \f$ \tens{b}_{\rho u} = \tens{b}_u \f$
+ *
+ * For the mass flux at the boundary we have:
+ * \f[
+ * \dot{m}_\ib = \left[ \rho_\fib \vect{a}_u  + \rho_\fib \tens{b}_u \vect{u}
+ * + \tens{b}_u \left(\gradt \vect{u} \cdot \vect{\centi \centip}\right)\right]
+ * \cdot \vect{s}_\ij
+ * \f]
+ * The last equation uses some approximations detailed in the theory guide.
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     f_id          field id (or -1)
+ * \param[in]     itypfl        indicator (take rho into account or not)
+ *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
+ *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
+ * \param[in]     iflmb0        the mass flux is set to 0 on walls and
+ *                               symmetries if = 1
+ * \param[in]     init          the mass flux is initialize to 0 if > 0
+ * \param[in]     inc           indicator
+ *                               - 0 solve an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     nswrgu        number of sweeps for the reconstruction
+ *                               of the gradients
+ * \param[in]     imligu        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thank to neighbooring gradients
+ *                               - = 1 thank to the mean gradient
+ * \param[in]     iwarnu        verbosity
+ * \param[in]     epsrgu        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgu        clipping coeffecient for the computation of
+ *                               the gradient
+ * \param[in]     rom           cell density
+ * \param[in]     romb          border face density
+ * \param[in]     vel           vector variable
+ * \param[in]     coefav        boundary condition array for the variable
+ *                               (explicit part - vector array )
+ * \param[in]     coefbv        boundary condition array for the variable
+ *                               (impplicit part - 3x3 tensor array)
+ * \param[in,out] i_massflux    interior mass flux \f$ \dot{m}_\fij \f$
+ * \param[in,out] b_massflux    border mass flux \f$ \dot{m}_\fib \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mass_flux(const cs_mesh_t          *m,
+             cs_mesh_quantities_t     *fvq,
+             int                       f_id,
+             int                       itypfl,
+             int                       iflmb0,
+             int                       init,
+             int                       inc,
+             int                       imrgra,
+             int                       nswrgu,
+             int                       imligu,
+             int                       iwarnu,
+             double                    epsrgu,
+             double                    climgu,
+             const cs_real_t           rom[],
+             const cs_real_t           romb[],
+             const cs_real_3_t         vel[],
+             const cs_real_3_t         coefav[],
+             const cs_real_33_t        coefbv[],
+             cs_real_t       *restrict i_massflux,
+             cs_real_t       *restrict b_massflux)
+{
+  const cs_halo_t  *halo = m->halo;
+
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_3_t *restrict dofij
+    = (const cs_real_3_t *restrict)fvq->dofij;
+
+  /* Local variables */
+
+  char var_name[32];
+
+  cs_real_3_t *qdm, *coefaq;
+  cs_real_33_t *grdqdm;
+
+  cs_field_t *f;
+
+  BFT_MALLOC(qdm, n_cells_ext, cs_real_3_t);
+  BFT_MALLOC(coefaq, m->n_b_faces, cs_real_3_t);
+
+  /*==========================================================================
+    1.  Initialization
+    ==========================================================================*/
+
+  /* Choose gradient type */
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  if (f_id != -1) {
+    f = cs_field_by_id(f_id);
+    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+  }
+  else
+    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+
+  /* ---> Momentum computation */
+
+  if (init == 1) {
+#   pragma omp parallel for
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+      i_massflux[face_id] = 0.;
+    }
+#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      b_massflux[face_id] = 0.;
+    }
+
+  } else if (init != 0) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of init"));
+  }
+
+  /* Porosity fields */
+
+  cs_field_t *fporo = CS_F_(poro);
+  cs_field_t *ftporo = CS_F_(t_poro);
+
+  cs_real_t *porosi = NULL;
+  cs_real_6_t *porosf = NULL;
+
+  if (fporo != NULL) {
+    porosi = fporo->val;
+    if (ftporo != NULL) {
+      porosf = (cs_real_6_t *)ftporo->val;
+    }
+  }
+
+  /* Standard mass flux */
+  if (itypfl == 1) {
+
+    /* Without porosity */
+    if (porosi == NULL) {
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int isou = 0; isou < 3; isou++) {
+          qdm[cell_id][isou] = rom[cell_id]*vel[cell_id][isou];
+        }
+      }
+      /* With porosity */
+    } else if (porosi != NULL && porosf == NULL) {
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int isou = 0; isou < 3; isou++) {
+          qdm[cell_id][isou] = rom[cell_id]*vel[cell_id][isou]*porosi[cell_id];
+        }
+      }
+      /* With anisotropic porosity */
+    } else if (porosi != NULL && porosf != NULL) {
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        qdm[cell_id][0] = ( porosf[cell_id][0]*vel[cell_id][0]
+                          + porosf[cell_id][3]*vel[cell_id][1]
+                          + porosf[cell_id][5]*vel[cell_id][2] )
+                        * rom[cell_id];
+        qdm[cell_id][1] = ( porosf[cell_id][3]*vel[cell_id][0]
+                          + porosf[cell_id][1]*vel[cell_id][1]
+                          + porosf[cell_id][4]*vel[cell_id][2] )
+                        * rom[cell_id];
+        qdm[cell_id][2] = ( porosf[cell_id][5]*vel[cell_id][0]
+                          + porosf[cell_id][4]*vel[cell_id][1]
+                          + porosf[cell_id][2]*vel[cell_id][2] )
+                        * rom[cell_id];
+      }
+    }
+
+    /* Velocity flux */
+  } else {
+
+    /* Without porosity */
+    if (porosi == NULL) {
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int isou = 0; isou < 3; isou++) {
+          qdm[cell_id][isou] = vel[cell_id][isou];
+        }
+      }
+      /* With porosity */
+    } else if (porosi != NULL && porosf == NULL) {
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int isou = 0; isou < 3; isou++) {
+          qdm[cell_id][isou] = vel[cell_id][isou]*porosi[cell_id];
+        }
+      }
+      /* With anisotropic porosity */
+    } else if (porosi != NULL && porosf != NULL) {
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        qdm[cell_id][0] = porosf[cell_id][0]*vel[cell_id][0]
+                        + porosf[cell_id][3]*vel[cell_id][1]
+                        + porosf[cell_id][5]*vel[cell_id][2];
+        qdm[cell_id][1] = porosf[cell_id][3]*vel[cell_id][0]
+                        + porosf[cell_id][1]*vel[cell_id][1]
+                        + porosf[cell_id][4]*vel[cell_id][2];
+        qdm[cell_id][2] = porosf[cell_id][5]*vel[cell_id][0]
+                        + porosf[cell_id][4]*vel[cell_id][1]
+                        + porosf[cell_id][2]*vel[cell_id][2];
+      }
+    }
+  }
+
+  /* ---> Periodicity and parallelism treatment */
+
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)qdm, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)qdm, 3);
+  }
+
+  /* Standard mass flux */
+  if (itypfl == 1) {
+
+    /* Without porosity */
+    if (porosi == NULL) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        for (int isou = 0; isou < 3; isou++) {
+          coefaq[face_id][isou] = romb[face_id]*coefav[face_id][isou];
+        }
+      }
+      /* With porosity */
+    } else if (porosi != NULL && porosf == NULL) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+        for (int isou = 0; isou < 3; isou++) {
+          coefaq[face_id][isou] = romb[face_id]
+                                 *coefav[face_id][isou]*porosi[cell_id];
+        }
+      }
+      /* With anisotropic porosity */
+    } else if (porosi != NULL && porosf != NULL) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+        coefaq[face_id][0] = ( porosf[cell_id][0]*coefav[face_id][1]
+                             + porosf[cell_id][3]*coefav[face_id][2]
+                             + porosf[cell_id][5]*coefav[face_id][3] )
+                           * romb[face_id];
+        coefaq[face_id][1] = ( porosf[cell_id][3]*coefav[face_id][1]
+                             + porosf[cell_id][1]*coefav[face_id][2]
+                             + porosf[cell_id][4]*coefav[face_id][3] )
+                           * romb[face_id];
+        coefaq[face_id][2] = ( porosf[cell_id][5]*coefav[face_id][1]
+                             + porosf[cell_id][4]*coefav[face_id][2]
+                             + porosf[cell_id][2]*coefav[face_id][3] )
+                           * romb[face_id];
+      }
+    }
+
+    /* Velocity flux */
+  } else {
+
+    /* Without porosity */
+    if (porosi == NULL) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        for (int isou = 0; isou < 3; isou++) {
+          coefaq[face_id][isou] = coefav[face_id][isou];
+        }
+      }
+      /* With porosity */
+    } else if (porosi != NULL && porosf == NULL) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+        for (int isou = 0; isou < 3; isou++) {
+          coefaq[face_id][isou] = coefav[face_id][isou]*porosi[cell_id];
+        }
+      }
+      /* With anisotropic porosity */
+    } else if (porosi != NULL && porosf != NULL) {
+#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+        coefaq[face_id][0] = porosf[cell_id][0]*coefav[face_id][1]
+                           + porosf[cell_id][3]*coefav[face_id][2]
+                           + porosf[cell_id][5]*coefav[face_id][3];
+        coefaq[face_id][1] = porosf[cell_id][3]*coefav[face_id][1]
+                           + porosf[cell_id][1]*coefav[face_id][2]
+                           + porosf[cell_id][4]*coefav[face_id][3];
+        coefaq[face_id][2] = porosf[cell_id][5]*coefav[face_id][1]
+                           + porosf[cell_id][4]*coefav[face_id][2]
+                           + porosf[cell_id][2]*coefav[face_id][3];
+      }
+    }
+
+  }
+
+  /*==========================================================================
+    2. Compute mass flux without recontructions
+    ==========================================================================*/
+
+  if (nswrgu <= 1) {
+
+    /* Interior faces */
+
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
+
+          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          double pnd = weight[face_id];
+          /* u, v, w Components */
+          for (int isou = 0; isou < 3; isou++) {
+            i_massflux[face_id] += (pnd*qdm[ii][isou]+(1.-pnd)*qdm[jj][isou])
+                                  * i_face_normal[face_id][isou];
+          }
+
+        }
+      }
+    }
+
+    /* Boundary faces */
+
+    /* Standard mass flux */
+    if (itypfl == 1) {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               face_id++) {
+
+            cs_lnum_t ii = b_face_cells[face_id] - 1;
+            /* u, v, w Components */
+            for (int isou = 0; isou < 3; isou++) {
+              double pfac = inc*coefaq[face_id][isou];
+
+              /* coefbv is a matrix */
+              for (int jsou = 0; jsou < 3; jsou++) {
+                pfac += romb[face_id]*coefbv[face_id][jsou][isou]*vel[ii][jsou];
+              }
+
+              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+            }
+
+          }
+        }
+      }
+
+      /* Velocity flux */
+    } else {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               face_id++) {
+
+            cs_lnum_t ii = b_face_cells[face_id] - 1;
+            /* u, v, w Components */
+            for (int isou = 0; isou < 3; isou++) {
+              double pfac = inc*coefaq[face_id][isou];
+
+              /* coefbv is a matrix */
+              for (int jsou = 0; jsou < 3; jsou++) {
+                pfac += coefbv[face_id][jsou][isou]*vel[ii][jsou];
+              }
+
+              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+            }
+
+          }
+        }
+      }
+
+    }
+
+  }
+
+  /*==========================================================================
+    4. Compute mass flux with reconstruction technics if the mesh is
+       non orthogonal
+    ==========================================================================*/
+
+  if (nswrgu > 1) {
+
+    BFT_MALLOC(grdqdm, n_cells_ext, cs_real_33_t);
+
+
+    /* Computation of qdm gradient
+       (vectorial gradient, the periodicity has already been treated) */
+
+    cs_gradient_vector(var_name,
+                       gradient_type,
+                       halo_type,
+                       inc,
+                       nswrgu,
+                       iwarnu,
+                       imligu,
+                       epsrgu,
+                       climgu,
+                       (const cs_real_3_t*)coefaq,
+                       coefbv,
+                       qdm,
+                       grdqdm);
+
+    /* Mass flow through interior faces */
+
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
+
+          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+
+          double pnd = weight[face_id];
+
+          double dofx = dofij[face_id][0];
+          double dofy = dofij[face_id][1];
+          double dofz = dofij[face_id][2];
+
+          /* Terms along U, V, W */
+          for (int isou = 0; isou < 3; isou++) {
+
+            i_massflux[face_id] = i_massflux[face_id]
+              /* Non-reconstructed term */
+              + (pnd*qdm[ii][isou] + (1.-pnd)*qdm[jj][isou]
+
+                 /*  --->     ->    -->      ->
+                     (Grad(rho U ) . OFij ) . Sij */
+                 + 0.5*(grdqdm[ii][isou][0] +grdqdm[jj][isou][0])*dofx
+                 + 0.5*(grdqdm[ii][isou][1] +grdqdm[jj][isou][1])*dofy
+                 + 0.5*(grdqdm[ii][isou][2] +grdqdm[jj][isou][2])*dofz
+                 )*i_face_normal[face_id][isou];
+          }
+
+        }
+      }
+
+    }
+
+    /* Mass flow through boundary faces */
+
+    /* Standard mass flux */
+    if (itypfl == 1) {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               face_id++) {
+
+            cs_lnum_t ii = b_face_cells[face_id] - 1;
+            double diipbx = diipb[face_id][0];
+            double diipby = diipb[face_id][1];
+            double diipbz = diipb[face_id][2];
+
+            /* Terms along U, V, W */
+            for (int isou = 0; isou < 3; isou++) {
+
+              double pfac = inc*coefaq[face_id][isou];
+
+              /* coefu is a matrix */
+              for (int jsou = 0; jsou < 3; jsou++) {
+
+                double pip = romb[face_id]*vel[ii][jsou]
+                    + grdqdm[ii][jsou][0]*diipbx
+                    + grdqdm[ii][jsou][1]*diipby
+                    + grdqdm[ii][jsou][2]*diipbz;
+
+                pfac += coefbv[face_id][jsou][isou]*pip;
+
+              }
+
+              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+
+            }
+
+          }
+        }
+      }
+
+      /* Velocity flux */
+    } else {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               face_id++) {
+
+            cs_lnum_t ii = b_face_cells[face_id] - 1;
+            double diipbx = diipb[face_id][0];
+            double diipby = diipb[face_id][1];
+            double diipbz = diipb[face_id][2];
+
+            /* Terms along U, V, W */
+            for (int isou = 0; isou < 3; isou++) {
+
+              double pfac = inc*coefaq[face_id][isou];
+
+              /* coefu is a matrix */
+              for (int jsou = 0; jsou < 3; jsou++) {
+
+                double pip = vel[ii][jsou]
+                    + grdqdm[ii][jsou][0]*diipbx
+                    + grdqdm[ii][jsou][1]*diipby
+                    + grdqdm[ii][jsou][2]*diipbz;
+
+                pfac += coefbv[face_id][jsou][isou]*pip;
+
+              }
+
+              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+
+            }
+
+          }
+        }
+      }
+
+    }
+
+    /* Deallocation */
+    BFT_FREE(grdqdm);
+
+  }
+
+  BFT_FREE(qdm);
+  BFT_FREE(coefaq);
+
+  /*==========================================================================
+    6. Here, we make sure that the mass flux is null at the boundary faces of
+       type symmetry and coupled walls.
+    ==========================================================================*/
+
+  if (iflmb0 == 1) {
+    /* Force flumab to 0 for velocity */
+#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      if (fvq->b_sym_flag[face_id] == 0) {
+        b_massflux[face_id] = 0.;
+      }
+    }
+  }
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

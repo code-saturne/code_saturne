@@ -435,7 +435,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
    trav   ,                                                       &
@@ -1769,7 +1769,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
-   iwarnp , nfecra ,                                              &
+   iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom ,                                                   &
    vel    ,                                                       &

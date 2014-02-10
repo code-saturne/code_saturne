@@ -257,7 +257,7 @@ if (itsqdm.ne.0) then
   !==========
 ( iu     , itypfl ,                                              &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-  iwarnp , nfecra ,                                              &
+  iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
   crom, brom,                                                    &
   vela,                                                          &
@@ -433,7 +433,7 @@ call inimav                                                      &
 !==========
 ( iu     , itypfl ,                                              &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-  iwarnp , nfecra ,                                              &
+  iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
   crom, brom,                                                    &
   tsexp,                                                         &
