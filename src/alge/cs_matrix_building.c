@@ -151,7 +151,8 @@ void CS_PROCF (matrix, MATRIX)
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_vector
+ * Wrapper to cs_matrix_vector (or its counterpart for
+ * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrxv, MATRXV)
@@ -247,7 +248,8 @@ void CS_PROCF (matrdt, MATRDT)
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_tensorial_diffusion
+ * Wrapper to cs_matrix_anisotropic_diffusion (or its counterpart for
+ * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrvv, MATRVV)
@@ -276,37 +278,37 @@ void CS_PROCF (matrvv, MATRVV)
 
   /* Symmetric matrix */
   if (*isym == 1) {
-    cs_sym_matrix_tensorial_diffusion(m,
-                                      *iconvp,
-                                      *idiffp,
-                                      *ndircp,
-                                      *thetap,
-                                      coefbu,
-                                      cofbfu,
-                                      fimp,
-                                      i_massflux,
-                                      b_massflux,
-                                      i_visc,
-                                      b_visc,
-                                      da,
-                                      (cs_real_33_t*) xa);
+    cs_sym_matrix_anisotropic_diffusion(m,
+                                        *iconvp,
+                                        *idiffp,
+                                        *ndircp,
+                                        *thetap,
+                                        coefbu,
+                                        cofbfu,
+                                        fimp,
+                                        i_massflux,
+                                        b_massflux,
+                                        i_visc,
+                                        b_visc,
+                                        da,
+                                        (cs_real_33_t*) xa);
 
   /* Non-symmetric matrix */
   } else {
-    cs_matrix_tensorial_diffusion(m,
-                                  *iconvp,
-                                  *idiffp,
-                                  *ndircp,
-                                  *thetap,
-                                  coefbu,
-                                  cofbfu,
-                                  fimp,
-                                  i_massflux,
-                                  b_massflux,
-                                  i_visc,
-                                  b_visc,
-                                  da,
-                                  (cs_real_332_t*) xa);
+    cs_matrix_anisotropic_diffusion(m,
+                                    *iconvp,
+                                    *idiffp,
+                                    *ndircp,
+                                    *thetap,
+                                    coefbu,
+                                    cofbfu,
+                                    fimp,
+                                    i_massflux,
+                                    b_massflux,
+                                    i_visc,
+                                    b_visc,
+                                    da,
+                                    (cs_real_332_t*) xa);
   }
 
 }
@@ -1155,20 +1157,20 @@ cs_matrix_time_step(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
-                              int                       iconvp,
-                              int                       idiffp,
-                              int                       ndircp,
-                              double                    thetap,
-                              const cs_real_33_t        coefbu[],
-                              const cs_real_33_t        cofbfu[],
-                              const cs_real_33_t        fimp[],
-                              const cs_real_t           i_massflux[],
-                              const cs_real_t           b_massflux[],
-                              const cs_real_33_t        i_visc[],
-                              const cs_real_t           b_visc[],
-                              cs_real_33_t    *restrict da,
-                              cs_real_332_t   *restrict xa)
+cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
+                                int                       iconvp,
+                                int                       idiffp,
+                                int                       ndircp,
+                                double                    thetap,
+                                const cs_real_33_t        coefbu[],
+                                const cs_real_33_t        cofbfu[],
+                                const cs_real_33_t        fimp[],
+                                const cs_real_t           i_massflux[],
+                                const cs_real_t           b_massflux[],
+                                const cs_real_33_t        i_visc[],
+                                const cs_real_t           b_visc[],
+                                cs_real_33_t    *restrict da,
+                                cs_real_332_t   *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1324,20 +1326,20 @@ cs_matrix_tensorial_diffusion(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sym_matrix_tensorial_diffusion(const cs_mesh_t           *m,
-                                  int                       iconvp,
-                                  int                       idiffp,
-                                  int                       ndircp,
-                                  double                    thetap,
-                                  const cs_real_33_t        coefbu[],
-                                  const cs_real_33_t        cofbfu[],
-                                  const cs_real_33_t        fimp[],
-                                  const cs_real_t           i_massflux[],
-                                  const cs_real_t           b_massflux[],
-                                  const cs_real_33_t        i_visc[],
-                                  const cs_real_t           b_visc[],
-                                  cs_real_33_t    *restrict da,
-                                  cs_real_33_t    *restrict xa)
+cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
+                                    int                       iconvp,
+                                    int                       idiffp,
+                                    int                       ndircp,
+                                    double                    thetap,
+                                    const cs_real_33_t        coefbu[],
+                                    const cs_real_33_t        cofbfu[],
+                                    const cs_real_33_t        fimp[],
+                                    const cs_real_t           i_massflux[],
+                                    const cs_real_t           b_massflux[],
+                                    const cs_real_33_t        i_visc[],
+                                    const cs_real_t           b_visc[],
+                                    cs_real_33_t    *restrict da,
+                                    cs_real_33_t    *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;

@@ -1,8 +1,8 @@
-#ifndef __CS_CONVECTION_DIFFUSION_BALANCE_H__
-#define __CS_CONVECTION_DIFFUSION_BALANCE_H__
+#ifndef __CS_CONVECTION_DIFFUSION_H__
+#define __CS_CONVECTION_DIFFUSION_H__
 
 /*============================================================================
- * Explicit convection diffusion balance
+ * Convection-diffusion operators.
  *============================================================================*/
 
 /*
@@ -93,7 +93,8 @@ void CS_PROCF (bilsc2, BILSC2)
  const cs_real_t          b_massflux[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- cs_real_t                rhs[]);
+ cs_real_t                rhs[]
+);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_convection_diffusion_vector
@@ -134,7 +135,8 @@ void CS_PROCF (bilsc4, BILSC4)
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
  const cs_real_t          secvif[],
- cs_real_3_t              rhs[]);
+ cs_real_3_t              rhs[]
+);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_convection_diffusion_thermal
@@ -174,10 +176,11 @@ void CS_PROCF (bilsct, BILSCT)
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
  const cs_real_t          xcpp[],
- cs_real_t                rhs[]);
+ cs_real_t                rhs[]
+);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_tensorial_diffusion_vector
+ * Wrapper to cs_anisotropic_diffusion_vector
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (diftnv, DIFTNV)
@@ -206,40 +209,99 @@ void CS_PROCF (diftnv, DIFTNV)
  const cs_real_33_t       i_visc[],
  const cs_real_t          b_visc[],
  const cs_real_t          secvif[],
- cs_real_3_t              rhs[]);
+ cs_real_3_t              rhs[]
+);
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_face_diffusion_scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (itrmas, ITRMAS)
+(
+ const cs_int_t  *const   init,
+ const cs_int_t  *const   inc,
+ const cs_int_t  *const   imrgra,
+ const cs_int_t  *const   iccocg,
+ const cs_int_t  *const   nswrgp,
+ const cs_int_t  *const   imligp,
+ const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwarnp,
+ const cs_real_t *const   epsrgp,
+ const cs_real_t *const   climgp,
+ const cs_real_t *const   extrap,
+ cs_real_3_t              frcxt[],
+ cs_real_t                pvar[],
+ const cs_real_t          coefap[],
+ const cs_real_t          coefbp[],
+ const cs_real_t          cofafp[],
+ const cs_real_t          cofbfp[],
+ const cs_real_t          i_visc[],
+ const cs_real_t          b_visc[],
+ const cs_real_t          viselx[],
+ const cs_real_t          visely[],
+ const cs_real_t          viselz[],
+ cs_real_t                i_massflux[],
+ cs_real_t                b_massflux[]
+);
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_diffusion_scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (itrgrp, ITRGRP)
+(
+ const cs_int_t  *const   init,
+ const cs_int_t  *const   inc,
+ const cs_int_t  *const   imrgra,
+ const cs_int_t  *const   iccocg,
+ const cs_int_t  *const   nswrgp,
+ const cs_int_t  *const   imligp,
+ const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwarnp,
+ const cs_real_t *const   epsrgp,
+ const cs_real_t *const   climgp,
+ const cs_real_t *const   extrap,
+ cs_real_3_t              frcxt[],
+ cs_real_t                pvar[],
+ const cs_real_t          coefap[],
+ const cs_real_t          coefbp[],
+ const cs_real_t          cofafp[],
+ const cs_real_t          cofbfp[],
+ const cs_real_t          i_visc[],
+ const cs_real_t          b_visc[],
+ const cs_real_t          viselx[],
+ const cs_real_t          visely[],
+ const cs_real_t          viselz[],
+ cs_real_t                diverg[]
+);
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
-/*! \brief This function adds the explicit part of the convection/diffusion
-  terms of a standard transport equation of a scalar field \f$ \varia \f$.
-
-  More precisely, the right hand side \f$ Rhs \f$ is updated as
-  follows:
-  \f[
-  Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
-         \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
-       - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
-  \f]
-
-  Warning:
-  - \f$ Rhs \f$ has already been initialized before calling bilsc2!
-  - mind the sign minus
-
-  Options:
-  - blencp = 0: upwind scheme for the advection
-  - blencp = 1: no upwind scheme except in the slope test
-  - ischcp = 0: second order
-  - ischcp = 1: centred
-
-*/
-/*-------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________*/
+/*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add the explicit part of the convection/diffusion terms of a
+ * standard transport equation of a scalar field \f$ \varia \f$.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as
+ * follows:
+ * \f[
+ * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+ *        \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
+ *      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ Rhs \f$ has already been initialized before calling bilsc2!
+ * - mind the sign minus
+ *
+ * Options:
+ * - blencp = 0: upwind scheme for the advection
+ * - blencp = 1: no upwind scheme except in the slope test
+ * - ischcp = 0: second order
+ * - ischcp = 1: centred
+ *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
  * \param[in]     iconvp        indicator
@@ -273,7 +335,8 @@ void CS_PROCF (diftnv, DIFTNV)
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
  * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix (for iterativ gradients)
+ *                               - 1 re-compute cocg matrix
+ *                                   (for iterative gradients)
  *                               - 0 otherwise
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
@@ -301,7 +364,7 @@ void CS_PROCF (diftnv, DIFTNV)
  * \param[in]     coefap        boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
  *                               of the variable (Explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
@@ -314,7 +377,7 @@ void CS_PROCF (diftnv, DIFTNV)
  *                               at border faces for the r.h.s.
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_scalar(
@@ -354,40 +417,33 @@ cs_convection_diffusion_scalar(
                                cs_real_t       *restrict rhs);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function adds the explicit part of the convection/diffusion
-  terms of a transport equation of a vector field \f$ \vect{\varia} \f$.
-
-  More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
-  follows:
-  \f[
-  \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
-         \dot{m}_\ij \left( \vect{\varia}_\fij - \vect{\varia}_\celli \right)
-       - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
-  \f]
-
-  Remark:
-  if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
-  + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
-  the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
-
-  Warning:
-  - \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
-  - mind the sign minus
-
-  Options:
-  - blencp = 0: upwind scheme for the advection
-  - blencp = 1: no upwind scheme except in the slope test
-  - ischcp = 0: second order
-  - ischcp = 1: centred
-
-*/
-/*-------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________*/
 /*!
+ * \brief Add the explicit part of the convection/diffusion terms of a transport
+ *  equation of a vector field \f$ \vect{\varia} \f$.
+ *
+ * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
+ * follows:
+ * \f[
+ *  \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
+ *         \dot{m}_\ij \left( \vect{\varia}_\fij - \vect{\varia}_\celli \right)
+ *       - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Remark:
+ * if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
+ * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+ * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
+ *
+ * Warning:
+ * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
+ * - mind the sign minus
+ *
+ * Options:
+ * - blencp = 0: upwind scheme for the advection
+ * - blencp = 1: no upwind scheme except in the slope test
+ * - ischcp = 0: second order
+ * - ischcp = 1: centred
+ *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
  * \param[in]     iconvp        indicator
@@ -464,7 +520,7 @@ cs_convection_diffusion_scalar(
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_vector(
@@ -504,35 +560,27 @@ cs_convection_diffusion_vector(
                                cs_real_3_t       *restrict rhs);
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief This function adds the explicit part of the convection/diffusion
-  terms of a transport equation of a scalar field \f$ \varia \f$ such as the
-  temperature.
-
-  More precisely, the right hand side \f$ Rhs \f$ is updated as
-  follows:
-  \f[
-  Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
-         C_p\dot{m}_\ij \varia_\fij
-       - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
-  \f]
-
-  Warning:
-  \f$ Rhs \f$ has already been initialized before calling bilsct!
-
-  Options for the convective scheme:
-  - blencp = 0: upwind scheme for the advection
-  - blencp = 1: no upwind scheme except in the slope test
-  - ischcp = 0: second order
-  - ischcp = 1: centred
-
-*/
-/*-------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________*/
 /*!
+ * \brief Add the explicit part of the convection/diffusion terms of a transport
+ * equation of a scalar field \f$ \varia \f$ such as the temperature.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as
+ * follows:
+ * \f[
+ * Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
+ *        C_p\dot{m}_\ij \varia_\fij
+ *      - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * \f$ Rhs \f$ has already been initialized before calling bilsct!
+ *
+ * Options for the convective scheme:
+ * - blencp = 0: upwind scheme for the advection
+ * - blencp = 1: no upwind scheme except in the slope test
+ * - ischcp = 0: second order
+ * - ischcp = 1: centred
+ *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
  * \param[in]     iconvp        indicator
@@ -563,7 +611,8 @@ cs_convection_diffusion_vector(
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
  * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix (for iterativ gradients)
+ *                               - 1 re-compute cocg matrix
+ *                                 (for iterative gradients)
  *                               - 0 otherwise
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
@@ -588,7 +637,7 @@ cs_convection_diffusion_vector(
  * \param[in]     coefap        boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
  *                               of the variable (Explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
@@ -602,7 +651,7 @@ cs_convection_diffusion_vector(
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_thermal(
@@ -640,30 +689,22 @@ cs_convection_diffusion_thermal(
                                 const cs_real_t           xcpp[],
                                 cs_real_t       *restrict rhs);
 
-/*----------------------------------------------------------------------------*/
-
-/*! \brief This function adds the explicit part of the diffusion
-  terms with a symmetric tensor diffusivity for a transport equation of a
-  vector field \f$ \vect{\varia} \f$.
-
-  More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
-  follows:
-  \f[
-  \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
-       - \tens{\mu}_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
-  \f]
-
-  Warning:
-  - \f$ \vect{Rhs} \f$ has already been initialized before calling diftnv!
-  - mind the sign minus
-
-*/
-/*-------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________*/
+/*-----------------------------------------------------------------------------*/
 /*!
+ * \brief Add the explicit part of the diffusion terms with a symmetric tensorial
+ * diffusivity for a transport equation of a vector field \f$ \vect{\varia} \f$.
+ *
+ * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
+ * follows:
+ * \f[
+ * \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
+ *      - \tens{\mu}_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ \vect{Rhs} \f$ has already been initialized before calling diftnv!
+ * - mind the sign minus
+ *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
  * \param[in]     nswrgp        number of reconstruction sweeps for the
@@ -706,50 +747,224 @@ cs_convection_diffusion_thermal(
  * \param[in]     coefav        boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     cofafv        boundary condition array for the diffusion
  *                               of the variable (Explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
- * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
- * \param[in]     v_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
+ * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
-cs_tensorial_diffusion_vector(
-                              int                         idtvar,
-                              int                         f_id,
-                              int                         nswrgp,
-                              int                         imligp,
-                              int                         ircflp,
-                              int                         inc,
-                              int                         imrgra,
-                              int                         ifaccp,
-                              int                         ivisep,
-                              int                         iwarnp,
-                              double                      epsrgp,
-                              double                      climgp,
-                              double                      relaxp,
-                              double                      thetap,
-                              cs_real_3_t       *restrict pvar,
-                              const cs_real_3_t *restrict pvara,
-                              const cs_int_t              bc_type[],
-                              const cs_real_3_t           coefav[],
-                              const cs_real_33_t          coefbv[],
-                              const cs_real_3_t           cofafv[],
-                              const cs_real_33_t          cofbfv[],
-                              const cs_real_33_t          i_visc[],
-                              const cs_real_t             b_visc[],
-                              const cs_real_t             secvif[],
-                              cs_real_3_t       *restrict rhs);
+cs_anisotropic_diffusion_vector(
+                                int                         idtvar,
+                                int                         f_id,
+                                int                         nswrgp,
+                                int                         imligp,
+                                int                         ircflp,
+                                int                         inc,
+                                int                         imrgra,
+                                int                         ifaccp,
+                                int                         ivisep,
+                                int                         iwarnp,
+                                double                      epsrgp,
+                                double                      climgp,
+                                double                      relaxp,
+                                double                      thetap,
+                                cs_real_3_t       *restrict pvar,
+                                const cs_real_3_t *restrict pvara,
+                                const cs_int_t              bc_type[],
+                                const cs_real_3_t           coefav[],
+                                const cs_real_33_t          coefbv[],
+                                const cs_real_3_t           cofafv[],
+                                const cs_real_33_t          cofbfv[],
+                                const cs_real_33_t          i_visc[],
+                                const cs_real_t             b_visc[],
+                                const cs_real_t             secvif[],
+                                cs_real_3_t       *restrict rhs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the face mass flux with the face pressure (or pressure
+ * increment, or pressure double increment) gradient.
+ *
+ * \f[
+ * \dot{m}_\ij = \dot{m}_\ij
+ *             - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     init          indicator
+ *                               - 1 initialize the mass flux to 0
+ *                               - 0 otherwise
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     iccocg        indicator
+ *                               - 1 re-compute cocg matrix
+ *                                 (for iterative gradients)
+ *                               - 0 otherwise
+ * \param[in]     nswrgp        number of reconstruction sweeps for the
+ *                               gradients
+ * \param[in]     imligp        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thank to neighbooring gradients
+ *                               - = 1 thank to the mean gradient
+ * \param[in]     iphydp        hydrostatic pressure indicator
+ * \param[in]     iwarnp        verbosity
+ * \param[in]     epsrgp        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgp        clipping coeffecient for the computation of
+ *                               the gradient
+ * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     frcxt         body force creating the hydrostatic pressure
+ * \param[in]     pvar          solved variable (current time step)
+ * \param[in]     coefap        boundary condition array for the variable
+ *                               (Explicit part)
+ * \param[in]     coefbp        boundary condition array for the variable
+ *                               (Implicit part)
+ * \param[in]     cofafp        boundary condition array for the diffusion
+ *                               of the variable (Explicit part)
+ * \param[in]     cofbfp        boundary condition array for the diffusion
+ *                               of the variable (Implicit part)
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     viselx        viscosity by cell, dir x
+ * \param[in]     visely        viscosity by cell, dir y
+ * \param[in]     viselz        viscosity by cell, dir z
+ * \param[in,out] i_massflux    mass flux at interior faces
+ * \param[in,out] b_massflux    mass flux at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_diffusion_scalar(const cs_mesh_t          *m,
+                         cs_mesh_quantities_t     *fvq,
+                         int                       init,
+                         int                       inc,
+                         int                       imrgra,
+                         int                       iccocg,
+                         int                       nswrgp,
+                         int                       imligp,
+                         int                       iphydp,
+                         int                       iwarnp,
+                         double                    epsrgp,
+                         double                    climgp,
+                         double                    extrap,
+                         cs_real_3_t     *restrict frcxt,
+                         cs_real_t       *restrict pvar,
+                         const cs_real_t           coefap[],
+                         const cs_real_t           coefbp[],
+                         const cs_real_t           cofafp[],
+                         const cs_real_t           cofbfp[],
+                         const cs_real_t           i_visc[],
+                         const cs_real_t           b_visc[],
+                         const cs_real_t           viselx[],
+                         const cs_real_t           visely[],
+                         const cs_real_t           viselz[],
+                         cs_real_t       *restrict i_massflux,
+                         cs_real_t       *restrict b_massflux);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the cell mass flux divergence with the face pressure (or
+ * pressure increment, or pressure double increment) gradient.
+ *
+ * \f[
+ * \dot{m}_\ij = \dot{m}_\ij
+ *             - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     init          indicator
+ *                               - 1 initialize the mass flux to 0
+ *                               - 0 otherwise
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     iccocg        indicator
+ *                               - 1 re-compute cocg matrix
+ *                                 (for iterative gradients)
+ *                               - 0 otherwise
+ * \param[in]     nswrgp        number of reconstruction sweeps for the
+ *                               gradients
+ * \param[in]     imligp        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thank to neighbooring gradients
+ *                               - = 1 thank to the mean gradient
+ * \param[in]     iphydp        hydrostatic pressure indicator
+ * \param[in]     iwarnp        verbosity
+ * \param[in]     epsrgp        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgp        clipping coeffecient for the computation of
+ *                               the gradient
+ * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     frcxt         body force creating the hydrostatic pressure
+ * \param[in]     pvar          solved variable (current time step)
+ * \param[in]     coefap        boundary condition array for the variable
+ *                               (Explicit part)
+ * \param[in]     coefbp        boundary condition array for the variable
+ *                               (Implicit part)
+ * \param[in]     cofafp        boundary condition array for the diffusion
+ *                               of the variable (Explicit part)
+ * \param[in]     cofbfp        boundary condition array for the diffusion
+ *                               of the variable (Implicit part)
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     viselx        viscosity by cell, dir x
+ * \param[in]     visely        viscosity by cell, dir y
+ * \param[in]     viselz        viscosity by cell, dir z
+ * \param[in,out] diverg        mass flux divergence
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_diffusion_scalar(const cs_mesh_t          *m,
+                    cs_mesh_quantities_t     *fvq,
+                    int                       init,
+                    int                       inc,
+                    int                       imrgra,
+                    int                       iccocg,
+                    int                       nswrgp,
+                    int                       imligp,
+                    int                       iphydp,
+                    int                       iwarnp,
+                    double                    epsrgp,
+                    double                    climgp,
+                    double                    extrap,
+                    cs_real_3_t     *restrict frcxt,
+                    cs_real_t       *restrict pvar,
+                    const cs_real_t           coefap[],
+                    const cs_real_t           coefbp[],
+                    const cs_real_t           cofafp[],
+                    const cs_real_t           cofbfp[],
+                    const cs_real_t           i_visc[],
+                    const cs_real_t           b_visc[],
+                    const cs_real_t           viselx[],
+                    const cs_real_t           visely[],
+                    const cs_real_t           viselz[],
+                    cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CONVECTION_DIFFUSION_BALANCE_H__ */
+#endif /* __CS_CONVECTION_DIFFUSION_H__ */

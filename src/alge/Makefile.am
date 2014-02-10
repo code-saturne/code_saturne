@@ -57,9 +57,9 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_benchmark.h \
 cs_blas.h \
-cs_convection_diffusion_balance.h \
+cs_convection_diffusion.h \
 cs_face_viscosity.h \
-cs_finite_volume_operators.h \
+cs_divergence.h \
 cs_gradient.h \
 cs_gradient_perio.h \
 cs_grid.h \
@@ -81,9 +81,9 @@ $(FCFLAGS_DBG) $(FCFLAGS_HOT)
 libcsalge_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
-cs_convection_diffusion_balance.c \
+cs_convection_diffusion.c \
 cs_face_viscosity.c \
-cs_finite_volume_operators.c \
+cs_divergence.c \
 cs_gradient.c \
 cs_gradient_perio.c \
 cs_grid.c \
