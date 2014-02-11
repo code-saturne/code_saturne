@@ -308,6 +308,38 @@ void CS_PROCF (itrgrp, ITRGRP)
  cs_real_t                diverg[]
 );
 
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_anisotropic_diffusion_scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (itrgrv, ITRGRV)
+(
+ const cs_int_t  *const   init,
+ const cs_int_t  *const   inc,
+ const cs_int_t  *const   imrgra,
+ const cs_int_t  *const   iccocg,
+ const cs_int_t  *const   nswrgp,
+ const cs_int_t  *const   imligp,
+ const cs_int_t  *const   ircflp,
+ const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwarnp,
+ const cs_real_t *const   epsrgp,
+ const cs_real_t *const   climgp,
+ const cs_real_t *const   extrap,
+ cs_real_3_t              frcxt[],
+ cs_real_t                pvar[],
+ const cs_real_t          coefap[],
+ const cs_real_t          coefbp[],
+ const cs_real_t          cofafp[],
+ const cs_real_t          cofbfp[],
+ const cs_real_t          i_visc[],
+ const cs_real_t          b_visc[],
+ cs_real_6_t              viscel[],
+ const cs_real_2_t        weighf[],
+ const cs_real_t          weighb[],
+ cs_real_t                diverg[]
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -1093,6 +1125,104 @@ cs_diffusion_scalar(const cs_mesh_t          *m,
                     const cs_real_t           visely[],
                     const cs_real_t           viselz[],
                     cs_real_t       *restrict diverg);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the explicit part of the divergence of the mass flux due to the
+ * pressure gradient (routine analog to diften).
+ *
+ * More precisely, the divergence of the mass flux side
+ * \f$ \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij \f$ is updated as follows:
+ * \f[
+ * \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij
+ *  = \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij
+ *  - \sum_{\fij \in \Facei{\celli}}
+ *    \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     init           indicator
+ *                               - 1 initialize the mass flux to 0
+ *                               - 0 otherwise
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     iccocg        indicator
+ *                               - 1 re-compute cocg matrix
+                                     (for iterativ gradients)
+ *                               - 0 otherwise
+ * \param[in]     nswrgp        number of reconstruction sweeps for the
+ *                               gradients
+ * \param[in]     imligp        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thank to neighbooring gradients
+ *                               - = 1 thank to the mean gradient
+ * \param[in]     ircflp        indicator
+ *                               - 1 flux reconstruction,
+ *                               - 0 otherwise
+ * \param[in]     iphydp        indicator
+ *                               - 1 hydrostatic pressure taken into account
+ *                               - 0 otherwise
+ * \param[in]     iwarnp        verbosity
+ * \param[in]     epsrgp        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgp        clipping coeffecient for the computation of
+ *                               the gradient
+ * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     frcxt         body force creating the hydrostatic pressure
+ * \param[in]     pvar          solved variable (pressure)
+ * \param[in]     coefap        boundary condition array for the variable
+ *                               (Explicit part)
+ * \param[in]     coefbp        boundary condition array for the variable
+ *                               (Impplicit part)
+ * \param[in]     cofafp        boundary condition array for the diffusion
+ *                               of the variable (Explicit part)
+ * \param[in]     cofbfp        boundary condition array for the diffusion
+ *                               of the variable (Implicit part)
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
+ * \param[in,out] diverg        divergence of the mass flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_anisotropic_diffusion_scalar(const cs_mesh_t          *m,
+                                cs_mesh_quantities_t     *fvq,
+                                int                       init,
+                                int                       inc,
+                                int                       imrgra,
+                                int                       iccocg,
+                                int                       nswrgp,
+                                int                       imligp,
+                                int                       ircflp,
+                                int                       iphydp,
+                                int                       iwarnp,
+                                double                    epsrgp,
+                                double                    climgp,
+                                double                    extrap,
+                                cs_real_3_t     *restrict frcxt,
+                                cs_real_t       *restrict pvar,
+                                const cs_real_t           coefap[],
+                                const cs_real_t           coefbp[],
+                                const cs_real_t           cofafp[],
+                                const cs_real_t           cofbfp[],
+                                const cs_real_t           i_visc[],
+                                const cs_real_t           b_visc[],
+                                cs_real_6_t     *restrict viscel,
+                                const cs_real_2_t         weighf[],
+                                const cs_real_t           weighb[],
+                                cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
 

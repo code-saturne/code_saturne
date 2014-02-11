@@ -1335,7 +1335,7 @@ if (iswdyp.ge.1) then
     call itrgrv &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp , nfecra ,                                     &
+   iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
@@ -1434,7 +1434,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
       call itrgrv &
       !==========
    ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp , nfecra ,                                     &
+     iphydr , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
@@ -1567,7 +1567,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     call itrgrv &
     !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp , nfecra ,                                     &
+   iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
