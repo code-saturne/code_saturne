@@ -213,7 +213,7 @@ void CS_PROCF (diftnv, DIFTNV)
 );
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_face_diffusion_scalar
+ * Wrapper to cs_face_diffusion_potential
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (itrmas, ITRMAS)
@@ -245,7 +245,7 @@ void CS_PROCF (itrmas, ITRMAS)
 );
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_face_anisotropic_diffusion_scalar
+ * Wrapper to cs_face_anisotropic_diffusion_potential
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (itrmav, ITRMAV)
@@ -278,7 +278,7 @@ void CS_PROCF (itrmav, ITRMAV)
 );
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_diffusion_scalar
+ * Wrapper to cs_diffusion_potential
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (itrgrp, ITRGRP)
@@ -309,7 +309,7 @@ void CS_PROCF (itrgrp, ITRGRP)
 );
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_anisotropic_diffusion_scalar
+ * Wrapper to cs_anisotropic_diffusion_potential
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (itrgrv, ITRGRV)
@@ -445,8 +445,7 @@ void CS_PROCF (itrgrv, ITRGRV)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_diffusion_scalar(
-                               int                       idtvar,
+cs_convection_diffusion_scalar(int                       idtvar,
                                int                       f_id,
                                int                       iconvp,
                                int                       idiffp,
@@ -588,8 +587,7 @@ cs_convection_diffusion_scalar(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_diffusion_vector(
-                               int                         idtvar,
+cs_convection_diffusion_vector(int                         idtvar,
                                int                         f_id,
                                int                         iconvp,
                                int                         idiffp,
@@ -719,8 +717,7 @@ cs_convection_diffusion_vector(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_diffusion_thermal(
-                                int                       idtvar,
+cs_convection_diffusion_thermal(int                       idtvar,
                                 int                       f_id,
                                 int                       iconvp,
                                 int                       idiffp,
@@ -827,8 +824,7 @@ cs_convection_diffusion_thermal(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_vector(
-                                int                         idtvar,
+cs_anisotropic_diffusion_vector(int                         idtvar,
                                 int                         f_id,
                                 int                         nswrgp,
                                 int                         imligp,
@@ -915,32 +911,32 @@ cs_anisotropic_diffusion_vector(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_diffusion_scalar(const cs_mesh_t          *m,
-                         cs_mesh_quantities_t     *fvq,
-                         int                       init,
-                         int                       inc,
-                         int                       imrgra,
-                         int                       iccocg,
-                         int                       nswrgp,
-                         int                       imligp,
-                         int                       iphydp,
-                         int                       iwarnp,
-                         double                    epsrgp,
-                         double                    climgp,
-                         double                    extrap,
-                         cs_real_3_t     *restrict frcxt,
-                         cs_real_t       *restrict pvar,
-                         const cs_real_t           coefap[],
-                         const cs_real_t           coefbp[],
-                         const cs_real_t           cofafp[],
-                         const cs_real_t           cofbfp[],
-                         const cs_real_t           i_visc[],
-                         const cs_real_t           b_visc[],
-                         const cs_real_t           viselx[],
-                         const cs_real_t           visely[],
-                         const cs_real_t           viselz[],
-                         cs_real_t       *restrict i_massflux,
-                         cs_real_t       *restrict b_massflux);
+cs_face_diffusion_potential(const cs_mesh_t          *m,
+                            cs_mesh_quantities_t     *fvq,
+                            int                       init,
+                            int                       inc,
+                            int                       imrgra,
+                            int                       iccocg,
+                            int                       nswrgp,
+                            int                       imligp,
+                            int                       iphydp,
+                            int                       iwarnp,
+                            double                    epsrgp,
+                            double                    climgp,
+                            double                    extrap,
+                            cs_real_3_t     *restrict frcxt,
+                            cs_real_t       *restrict pvar,
+                            const cs_real_t           coefap[],
+                            const cs_real_t           coefbp[],
+                            const cs_real_t           cofafp[],
+                            const cs_real_t           cofbfp[],
+                            const cs_real_t           i_visc[],
+                            const cs_real_t           b_visc[],
+                            const cs_real_t           viselx[],
+                            const cs_real_t           visely[],
+                            const cs_real_t           viselz[],
+                            cs_real_t       *restrict i_massflux,
+                            cs_real_t       *restrict b_massflux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -992,7 +988,7 @@ cs_face_diffusion_scalar(const cs_mesh_t          *m,
  * \param[in]     coefap        boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
  *                               of the variable (Explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
@@ -1012,33 +1008,33 @@ cs_face_diffusion_scalar(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_anisotropic_diffusion_scalar(const cs_mesh_t          *m,
-                                     cs_mesh_quantities_t     *fvq,
-                                     int                       init,
-                                     int                       inc,
-                                     int                       imrgra,
-                                     int                       iccocg,
-                                     int                       nswrgp,
-                                     int                       imligp,
-                                     int                       ircflp,
-                                     int                       iphydp,
-                                     int                       iwarnp,
-                                     double                    epsrgp,
-                                     double                    climgp,
-                                     double                    extrap,
-                                     cs_real_3_t     *restrict frcxt,
-                                     cs_real_t       *restrict pvar,
-                                     const cs_real_t           coefap[],
-                                     const cs_real_t           coefbp[],
-                                     const cs_real_t           cofafp[],
-                                     const cs_real_t           cofbfp[],
-                                     const cs_real_t           i_visc[],
-                                     const cs_real_t           b_visc[],
-                                     cs_real_6_t     *restrict viscel,
-                                     const cs_real_2_t         weighf[],
-                                     const cs_real_t           weighb[],
-                                     cs_real_t       *restrict i_massflux,
-                                     cs_real_t       *restrict b_massflux);
+cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
+                                        cs_mesh_quantities_t     *fvq,
+                                        int                       init,
+                                        int                       inc,
+                                        int                       imrgra,
+                                        int                       iccocg,
+                                        int                       nswrgp,
+                                        int                       imligp,
+                                        int                       ircflp,
+                                        int                       iphydp,
+                                        int                       iwarnp,
+                                        double                    epsrgp,
+                                        double                    climgp,
+                                        double                    extrap,
+                                        cs_real_3_t     *restrict frcxt,
+                                        cs_real_t       *restrict pvar,
+                                        const cs_real_t           coefap[],
+                                        const cs_real_t           coefbp[],
+                                        const cs_real_t           cofafp[],
+                                        const cs_real_t           cofbfp[],
+                                        const cs_real_t           i_visc[],
+                                        const cs_real_t           b_visc[],
+                                        cs_real_6_t     *restrict viscel,
+                                        const cs_real_2_t         weighf[],
+                                        const cs_real_t           weighb[],
+                                        cs_real_t       *restrict i_massflux,
+                                        cs_real_t       *restrict b_massflux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1100,31 +1096,31 @@ cs_face_anisotropic_diffusion_scalar(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_diffusion_scalar(const cs_mesh_t          *m,
-                    cs_mesh_quantities_t     *fvq,
-                    int                       init,
-                    int                       inc,
-                    int                       imrgra,
-                    int                       iccocg,
-                    int                       nswrgp,
-                    int                       imligp,
-                    int                       iphydp,
-                    int                       iwarnp,
-                    double                    epsrgp,
-                    double                    climgp,
-                    double                    extrap,
-                    cs_real_3_t     *restrict frcxt,
-                    cs_real_t       *restrict pvar,
-                    const cs_real_t           coefap[],
-                    const cs_real_t           coefbp[],
-                    const cs_real_t           cofafp[],
-                    const cs_real_t           cofbfp[],
-                    const cs_real_t           i_visc[],
-                    const cs_real_t           b_visc[],
-                    const cs_real_t           viselx[],
-                    const cs_real_t           visely[],
-                    const cs_real_t           viselz[],
-                    cs_real_t       *restrict diverg);
+cs_diffusion_potential(const cs_mesh_t          *m,
+                       cs_mesh_quantities_t     *fvq,
+                       int                       init,
+                       int                       inc,
+                       int                       imrgra,
+                       int                       iccocg,
+                       int                       nswrgp,
+                       int                       imligp,
+                       int                       iphydp,
+                       int                       iwarnp,
+                       double                    epsrgp,
+                       double                    climgp,
+                       double                    extrap,
+                       cs_real_3_t     *restrict frcxt,
+                       cs_real_t       *restrict pvar,
+                       const cs_real_t           coefap[],
+                       const cs_real_t           coefbp[],
+                       const cs_real_t           cofafp[],
+                       const cs_real_t           cofbfp[],
+                       const cs_real_t           i_visc[],
+                       const cs_real_t           b_visc[],
+                       const cs_real_t           viselx[],
+                       const cs_real_t           visely[],
+                       const cs_real_t           viselz[],
+                       cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1178,7 +1174,7 @@ cs_diffusion_scalar(const cs_mesh_t          *m,
  * \param[in]     coefap        boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Impplicit part)
+ *                               (Implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
  *                               of the variable (Explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
@@ -1197,32 +1193,32 @@ cs_diffusion_scalar(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_scalar(const cs_mesh_t          *m,
-                                cs_mesh_quantities_t     *fvq,
-                                int                       init,
-                                int                       inc,
-                                int                       imrgra,
-                                int                       iccocg,
-                                int                       nswrgp,
-                                int                       imligp,
-                                int                       ircflp,
-                                int                       iphydp,
-                                int                       iwarnp,
-                                double                    epsrgp,
-                                double                    climgp,
-                                double                    extrap,
-                                cs_real_3_t     *restrict frcxt,
-                                cs_real_t       *restrict pvar,
-                                const cs_real_t           coefap[],
-                                const cs_real_t           coefbp[],
-                                const cs_real_t           cofafp[],
-                                const cs_real_t           cofbfp[],
-                                const cs_real_t           i_visc[],
-                                const cs_real_t           b_visc[],
-                                cs_real_6_t     *restrict viscel,
-                                const cs_real_2_t         weighf[],
-                                const cs_real_t           weighb[],
-                                cs_real_t       *restrict diverg);
+cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
+                                   cs_mesh_quantities_t     *fvq,
+                                   int                       init,
+                                   int                       inc,
+                                   int                       imrgra,
+                                   int                       iccocg,
+                                   int                       nswrgp,
+                                   int                       imligp,
+                                   int                       ircflp,
+                                   int                       iphydp,
+                                   int                       iwarnp,
+                                   double                    epsrgp,
+                                   double                    climgp,
+                                   double                    extrap,
+                                   cs_real_3_t     *restrict frcxt,
+                                   cs_real_t       *restrict pvar,
+                                   const cs_real_t           coefap[],
+                                   const cs_real_t           coefbp[],
+                                   const cs_real_t           cofafp[],
+                                   const cs_real_t           cofbfp[],
+                                   const cs_real_t           i_visc[],
+                                   const cs_real_t           b_visc[],
+                                   cs_real_6_t     *restrict viscel,
+                                   const cs_real_2_t         weighf[],
+                                   const cs_real_t           weighb[],
+                                   cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
 
