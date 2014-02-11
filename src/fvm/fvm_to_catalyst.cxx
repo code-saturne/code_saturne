@@ -503,7 +503,7 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
                     const double               time_value)
 {
   int f_id = writer->n_fields;
-  
+
   BFT_REALLOC(writer->fields,
               writer->n_fields+ 1,
               fvm_catalyst_field_t *);
@@ -550,7 +550,7 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
   writer->fields[f_id]->f = f;
 
   writer->n_fields++;
-  
+
   return f_id;
 }
 
@@ -653,7 +653,7 @@ _write_connect_block(fvm_element_t         type,
   int vertex_order[8];
   cs_lnum_t  i;
   int  j;
-  
+
   vtkIdType *vtx_ids = new vtkIdType[8];
 
   const int  stride = fvm_nodal_n_vertices_element[type];
@@ -849,8 +849,8 @@ _export_field_values_n(const fvm_nodal_t    *mesh,
 
   fvm_convert_array(dim,
                     0,
-                    dest_dim, 
-                    0, 
+                    dest_dim,
+                    0,
                     mesh->n_vertices,
                     interlace,
                     datatype,
@@ -1095,7 +1095,7 @@ fvm_to_catalyst_init_writer(const char             *name,
   w->processor->Initialize();
 
   vtkCPPythonScriptPipeline  *pipeline = vtkCPPythonScriptPipeline::New();
- 
+
   /* read the coprocessing Python file */
 
   char *script_path = NULL;
@@ -1116,11 +1116,11 @@ fvm_to_catalyst_init_writer(const char             *name,
     if (pipeline->Initialize(script_path) == 0)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error initializing pipeline from \"%s\":\n\n"), script_path);
- 
+
     /* pipeline->SetGhostLevel(1); */
     w->processor->AddPipeline(pipeline);
     pipeline->Delete();
- 
+
   }
   else
     bft_error(__FILE__, __LINE__, 0,
