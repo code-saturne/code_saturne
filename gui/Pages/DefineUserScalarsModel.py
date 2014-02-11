@@ -247,16 +247,6 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getThermalScalarLabelsList(self):
-        """Public method.
-        Return the thermal scalar label """
-        lst = []
-        for node in self.node_therm.xmlGetNodeList('scalar'):
-            lst.append(node['label'])
-        return lst
-
-
-    @Variables.noUndo
     def getMeteoScalarsList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')

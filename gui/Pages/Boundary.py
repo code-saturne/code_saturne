@@ -327,7 +327,7 @@ class InletBoundary(Boundary):
         if self.sca_model.getMeteoScalarsList() != None:
             for sca in self.sca_model.getMeteoScalarsList():
                 scalar_list.append(sca)
-        if self.sca_model.getThermalScalarLabelsList() != None:
+        if len(self.sca_model.getThermalScalarLabelsList()) > 0:
             scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
 
         return scalar_list
@@ -1743,7 +1743,7 @@ class OutletBoundary(Boundary) :
         if self.sca_model.getMeteoScalarsList() != None:
             for sca in self.sca_model.getMeteoScalarsList():
                 scalar_list.append(sca)
-        if self.sca_model.getThermalScalarLabelsList() != None:
+        if len(self.sca_model.getThermalScalarLabelsList()) > 0:
             scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
 
         return scalar_list
@@ -2008,7 +2008,7 @@ class WallBoundary(Boundary) :
         if self.sca_model.getMeteoScalarsList() != None:
             for sca in self.sca_model.getMeteoScalarsList():
                 scalar_list.append(sca)
-        if self.sca_model.getThermalScalarLabelsList() != None:
+        if len(self.sca_model.getThermalScalarLabelsList()) > 0:
             scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
 
         return scalar_list
