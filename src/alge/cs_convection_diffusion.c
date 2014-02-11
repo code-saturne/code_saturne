@@ -337,6 +337,68 @@ void CS_PROCF (bilsct, BILSCT)
 }
 
 /*----------------------------------------------------------------------------
+ * Wrapper to cs_anisotropic_diffusion_scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (diften, DIFTEN)
+(
+ const cs_int_t  *const   idtvar,
+ const cs_int_t  *const   f_id,
+ const cs_int_t  *const   nswrgp,
+ const cs_int_t  *const   imligp,
+ const cs_int_t  *const   ircflp,
+ const cs_int_t  *const   inc,
+ const cs_int_t  *const   imrgra,
+ const cs_int_t  *const   iccocg,
+ const cs_int_t  *const   iwarnp,
+ const cs_real_t *const   epsrgp,
+ const cs_real_t *const   climgp,
+ const cs_real_t *const   extrap,
+ const cs_real_t *const   relaxp,
+ const cs_real_t *const   thetap,
+ cs_real_t                pvar[],
+ const cs_real_t          pvara[],
+ const cs_real_t          coefap[],
+ const cs_real_t          coefbp[],
+ const cs_real_t          cofafp[],
+ const cs_real_t          cofbfp[],
+ const cs_real_t          i_visc[],
+ const cs_real_t          b_visc[],
+ cs_real_6_t              viscel[],
+ const cs_real_2_t        weighf[],
+ const cs_real_t          weighb[],
+ cs_real_t                rhs[]
+)
+{
+  cs_anisotropic_diffusion_scalar(*idtvar,
+                                  *f_id,
+                                  *nswrgp,
+                                  *imligp,
+                                  *ircflp,
+                                  *inc,
+                                  *imrgra,
+                                  *iccocg,
+                                  *iwarnp,
+                                  *epsrgp,
+                                  *climgp,
+                                  *extrap,
+                                  *relaxp,
+                                  *thetap,
+                                  pvar,
+                                  pvara,
+                                  coefap,
+                                  coefbp,
+                                  cofafp,
+                                  cofbfp,
+                                  i_visc,
+                                  b_visc,
+                                  viscel,
+                                  weighf,
+                                  weighb,
+                                  rhs);
+}
+
+/*----------------------------------------------------------------------------
  * Wrapper to cs_anisotropic_diffusion_vector
  *----------------------------------------------------------------------------*/
 
@@ -4879,6 +4941,586 @@ cs_convection_diffusion_thermal(int                       idtvar,
   /* Free memory */
   BFT_FREE(grad);
   BFT_FREE(grdpa);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the explicit part of the diffusion terms with a symmetric tensor
+ * diffusivity for a transport equation of a scalar field \f$ \varia \f$.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as
+ * follows:
+ * \f[
+ * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+ *      - \tens{\mu}_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ Rhs \f$ has already been initialized before
+ *   calling cs_anisotropic_diffusion_scalar!
+ * - mind the sign minus
+ *
+ * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     f_id          index of the current variable
+ * \param[in]     nswrgp        number of reconstruction sweeps for the
+ *                               gradients
+ * \param[in]     imligp        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thank to neighbooring gradients
+ *                               - = 1 thank to the mean gradient
+ * \param[in]     ircflp        indicator
+ *                               - 1 flux reconstruction,
+ *                               - 0 otherwise
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     iccocg        indicator
+ *                               - 1 re-compute cocg matrix
+                                (for iterativ gradients)
+ *                               - 0 otherwise
+ * \param[in]     iwarnp        verbosity
+ * \param[in]     epsrgp        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgp        clipping coeffecient for the computation of
+ *                               the gradient
+ * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     relaxp        coefficient of relaxation
+ * \param[in]     thetap        weightening coefficient for the theta-schema,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centred
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     pvar          solved variable (current time step)
+ * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     coefap        boundary condition array for the variable
+ *                               (Explicit part)
+ * \param[in]     coefbp        boundary condition array for the variable
+ *                               (Implicit part)
+ * \param[in]     cofafp        boundary condition array for the diffusion
+ *                               of the variable (Explicit part)
+ * \param[in]     cofbfp        boundary condition array for the diffusion
+ *                               of the variable (Implicit part)
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_anisotropic_diffusion_scalar(int                       idtvar,
+                                int                       f_id,
+                                int                       nswrgp,
+                                int                       imligp,
+                                int                       ircflp,
+                                int                       inc,
+                                int                       imrgra,
+                                int                       iccocg,
+                                int                       iwarnp,
+                                double                    epsrgp,
+                                double                    climgp,
+                                double                    extrap,
+                                double                    relaxp,
+                                double                    thetap,
+                                cs_real_t       *restrict pvar,
+                                const cs_real_t *restrict pvara,
+                                const cs_real_t           coefap[],
+                                const cs_real_t           coefbp[],
+                                const cs_real_t           cofafp[],
+                                const cs_real_t           cofbfp[],
+                                const cs_real_t           i_visc[],
+                                const cs_real_t           b_visc[],
+                                cs_real_6_t     *restrict viscel,
+                                const cs_real_2_t         weighf[],
+                                const cs_real_t           weighb[],
+                                cs_real_t       *restrict rhs)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_halo_t  *halo = m->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+  /* Local variables */
+
+  char var_name[32];
+
+  int face_id,ii,jj,n_upwind,cell_id, g_id, t_id,i;
+  int isou;
+  double pfacd,flux,fluxi,fluxj;
+  double pi, pj, pia, pja;
+  double pir,pjr,pippr,pjppr;
+  double diippf[3], djjppf[3], pipp, pjpp;
+  double visci[3][3], viscj[3][3];
+  double fikdvi, fjkdvi;
+  int tr_dim = 0;
+
+  bool recompute_cocg = (iccocg) ? true : false;
+
+  cs_real_6_t *viscce;
+  cs_real_6_t *w2;
+  cs_real_3_t *grad;
+
+  cs_field_t *f;
+
+  /* 1. Initialization */
+
+  viscce = NULL;
+  w2 = NULL;
+
+  /* Allocate work arrays */
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+  /* Choose gradient type */
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  if (f_id != -1) {
+    f = cs_field_by_id(f_id);
+    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+  }
+  else
+    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+
+  /* Porosity fields */
+  cs_field_t *fporo = CS_F_(poro);
+  cs_field_t *ftporo = CS_F_(t_poro);
+
+  cs_real_t *porosi = NULL;
+  cs_real_6_t *porosf = NULL;
+
+  if (fporo != NULL) {
+    porosi = fporo->val;
+    if (ftporo != NULL) {
+      porosf = (cs_real_6_t *)ftporo->val;
+    }
+  }
+
+  /* Without porosity */
+  if (porosi == NULL) {
+    viscce = viscel;
+
+    /* With porosity */
+  } else if (porosi != NULL && porosf == NULL) {
+    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (isou = 0; isou < 6; isou++) {
+        w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
+      }
+    }
+    viscce = w2;
+
+    /* With tensorial porosity */
+  } else if (porosi != NULL && porosf != NULL) {
+    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+      cs_math_sym_33_product(w2[cell_id],
+                             porosf[cell_id],
+                             viscel[cell_id]);
+    }
+    viscce = w2;
+  }
+
+  /* ---> Periodicity and parallelism treatment of symmetric tensors */
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)viscce, 6);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)viscce);
+  }
+
+  /* 2. Compute the diffusive part with reconstruction technics */
+
+  /* ======================================================================
+     ---> Compute the gradient of the current variable if needed
+     ======================================================================*/
+
+  if (ircflp == 1) {
+
+    cs_gradient_scalar(var_name,
+                       gradient_type,
+                       halo_type,
+                       inc,
+                       recompute_cocg,
+                       nswrgp,
+                       tr_dim,
+                       0, /* hyd_p_flag */
+                       iwarnp,
+                       imligp,
+                       epsrgp,
+                       extrap,
+                       climgp,
+                       NULL, /* f_ext exterior force */
+                       coefap,
+                       coefbp,
+                       pvar,
+                       NULL, /* Weighted gradient */
+                       grad);
+
+  } else {
+#   pragma omp parallel for
+    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+      grad[cell_id][0] = 0.;
+      grad[cell_id][1] = 0.;
+      grad[cell_id][2] = 0.;
+    }
+  }
+
+  /* ======================================================================
+     ---> Contribution from interior faces
+     ======================================================================*/
+
+  n_upwind = 0;
+
+  if (n_cells_ext > n_cells) {
+#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+    for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+      rhs[cell_id] = 0.;
+    }
+  }
+
+  /* Steady */
+  if (idtvar < 0) {
+
+    for (g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for private(face_id, ii, jj, visci, viscj, \
+                                      pipp, pjpp, pippr, pjppr,      \
+                                      fluxi, fluxj, fikdvi,          \
+                                      pi, pj, pir, pjr, pia, pja)    \
+                 reduction(+:n_upwind)
+      for (t_id = 0; t_id < n_i_threads; t_id++) {
+        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
+
+          ii = i_face_cells[face_id][0] - 1;
+          jj = i_face_cells[face_id][1] - 1;
+          /* in parallel, face will be counted by one and only one rank */
+          if (ii < n_cells) {
+            n_upwind++;
+          }
+
+          pi = pvar[ii];
+          pj = pvar[jj];
+          pia = pvara[ii];
+          pja = pvara[jj];
+
+          /* Recompute II" and JJ"
+             ----------------------*/
+
+          visci[0][0] = viscce[ii][0];
+          visci[1][1] = viscce[ii][1];
+          visci[2][2] = viscce[ii][2];
+          visci[1][0] = viscce[ii][3];
+          visci[0][1] = viscce[ii][3];
+          visci[2][1] = viscce[ii][4];
+          visci[1][2] = viscce[ii][4];
+          visci[2][0] = viscce[ii][5];
+          visci[0][2] = viscce[ii][5];
+
+          /* IF.Ki.S / ||Ki.S||^2 */
+          fikdvi = weighf[face_id][0];
+
+          /* II" = IF + FI" */
+          for (i = 0; i < 3; i++) {
+            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
+                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
+                               + visci[1][i]*i_face_normal[face_id][1]
+                               + visci[2][i]*i_face_normal[face_id][2] );
+          }
+
+          viscj[0][0] = viscce[jj][0];
+          viscj[1][1] = viscce[jj][1];
+          viscj[2][2] = viscce[jj][2];
+          viscj[1][0] = viscce[jj][3];
+          viscj[0][1] = viscce[jj][3];
+          viscj[2][1] = viscce[jj][4];
+          viscj[1][2] = viscce[jj][4];
+          viscj[2][0] = viscce[jj][5];
+          viscj[0][2] = viscce[jj][5];
+
+          /* FJ.Kj.S / ||Kj.S||^2 */
+          fjkdvi = weighf[face_id][1];
+
+          /* JJ" = JF + FJ" */
+          for (i = 0; i < 3; i++) {
+            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
+                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
+                               + viscj[1][i]*i_face_normal[face_id][1]
+                               + viscj[2][i]*i_face_normal[face_id][2] );
+          }
+
+          /* p in I" and J" */
+          pipp = pi + ircflp*( grad[ii][0]*diippf[0]
+                             + grad[ii][1]*diippf[1]
+                             + grad[ii][2]*diippf[2]);
+          pjpp = pj + ircflp*( grad[jj][0]*djjppf[0]
+                             + grad[jj][1]*djjppf[1]
+                             + grad[jj][2]*djjppf[2]);
+
+          pir = pi/relaxp - (1.-relaxp)/relaxp * pia;
+          pjr = pj/relaxp - (1.-relaxp)/relaxp * pja;
+
+          /* pr in I" and J" */
+          pippr = pir + ircflp*( grad[ii][0]*diippf[0]
+                               + grad[ii][1]*diippf[1]
+                               + grad[ii][2]*diippf[2]);
+          pjppr = pjr + ircflp*( grad[jj][0]*djjppf[0]
+                               + grad[jj][1]*djjppf[1]
+                               + grad[jj][2]*djjppf[2]);
+
+
+          fluxi = i_visc[face_id]*(pippr - pjpp);
+          fluxj = i_visc[face_id]*(pipp - pjppr);
+
+          rhs[ii] -= fluxi;
+          rhs[jj] += fluxj;
+
+        }
+      }
+    }
+
+    /* Unsteady */
+  } else {
+
+    for (g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for private(face_id, ii, jj,              \
+                                      visci, viscj, fikdvi, fjkdvi, \
+                                      pipp, pjpp, diippf, djjppf,   \
+                                      flux, pi, pj)                 \
+                 reduction(+:n_upwind)
+      for (t_id = 0; t_id < n_i_threads; t_id++) {
+        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
+
+          ii = i_face_cells[face_id][0] - 1;
+          jj = i_face_cells[face_id][1] - 1;
+          /* in parallel, face will be counted by one and only one rank */
+          if (ii < n_cells) {
+            n_upwind++;
+          }
+
+          pi = pvar[ii];
+          pj = pvar[jj];
+
+          /* Recompute II" and JJ"
+             ----------------------*/
+
+          visci[0][0] = viscce[ii][0];
+          visci[1][1] = viscce[ii][1];
+          visci[2][2] = viscce[ii][2];
+          visci[1][0] = viscce[ii][3];
+          visci[0][1] = viscce[ii][3];
+          visci[2][1] = viscce[ii][4];
+          visci[1][2] = viscce[ii][4];
+          visci[2][0] = viscce[ii][5];
+          visci[0][2] = viscce[ii][5];
+
+          /* IF.Ki.S / ||Ki.S||^2 */
+          fikdvi = weighf[face_id][0];
+
+          /* II" = IF + FI" */
+          for (i = 0; i < 3; i++) {
+            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
+                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
+                               + visci[1][i]*i_face_normal[face_id][1]
+                               + visci[2][i]*i_face_normal[face_id][2] );
+          }
+
+          viscj[0][0] = viscce[jj][0];
+          viscj[1][1] = viscce[jj][1];
+          viscj[2][2] = viscce[jj][2];
+          viscj[1][0] = viscce[jj][3];
+          viscj[0][1] = viscce[jj][3];
+          viscj[2][1] = viscce[jj][4];
+          viscj[1][2] = viscce[jj][4];
+          viscj[2][0] = viscce[jj][5];
+          viscj[0][2] = viscce[jj][5];
+
+          /* FJ.Kj.S / ||Kj.S||^2 */
+          fjkdvi = weighf[face_id][1];
+
+          /* JJ" = JF + FJ" */
+          for (i = 0; i < 3; i++) {
+            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
+                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
+                               + viscj[1][i]*i_face_normal[face_id][1]
+                               + viscj[2][i]*i_face_normal[face_id][2] );
+          }
+
+          /* p in I" and J" */
+          pipp = pi + ircflp*( grad[ii][0]*diippf[0]
+                             + grad[ii][1]*diippf[1]
+                             + grad[ii][2]*diippf[2]);
+          pjpp = pj + ircflp*( grad[jj][0]*djjppf[0]
+                             + grad[jj][1]*djjppf[1]
+                             + grad[jj][2]*djjppf[2]);
+
+          flux = i_visc[face_id]*(pipp -pjpp);
+
+          rhs[ii] -= thetap*flux;
+          rhs[jj] += thetap*flux;
+
+        }
+      }
+    }
+  }
+
+  /* ======================================================================
+     ---> Contribution from boundary faces
+     ======================================================================*/
+
+  /* Steady */
+  if (idtvar < 0) {
+
+    for (g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for private(face_id, ii, visci, fikdvi,       \
+                                      pir, pippr, pfacd, flux, pi, pia) \
+                 if(m->n_b_faces > THR_MIN)
+      for (t_id = 0; t_id < n_b_threads; t_id++) {
+        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             face_id++) {
+
+          ii = b_face_cells[face_id] - 1;
+
+          pi = pvar[ii];
+          pia = pvara[ii];
+
+          pir = pi/relaxp - (1.-relaxp)/relaxp*pia;
+
+          /* Recompute II"
+             --------------*/
+
+          visci[0][0] = viscce[ii][0];
+          visci[1][1] = viscce[ii][1];
+          visci[2][2] = viscce[ii][2];
+          visci[1][0] = viscce[ii][3];
+          visci[0][1] = viscce[ii][3];
+          visci[2][1] = viscce[ii][4];
+          visci[1][2] = viscce[ii][4];
+          visci[2][0] = viscce[ii][5];
+          visci[0][2] = viscce[ii][5];
+
+          /* IF.Ki.S / ||Ki.S||^2 */
+          fikdvi = weighb[face_id];
+
+          /* II" = IF + FI" */
+          for (i = 0; i < 3; i++) {
+            diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
+                      - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
+                               + visci[1][i]*b_face_normal[face_id][1]
+                               + visci[2][i]*b_face_normal[face_id][2] );
+          }
+
+          pippr = pir + ircflp*( grad[ii][0]*diippf[0]
+                               + grad[ii][1]*diippf[1]
+                               + grad[ii][2]*diippf[2]);
+
+          pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pippr;
+
+          flux = b_visc[face_id]*pfacd;
+          rhs[ii] -= flux;
+
+        }
+      }
+    }
+
+    /* Unsteady */
+  } else {
+
+    for (g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for private(face_id, ii, visci, fikdvi, \
+                                      pipp, pfacd, flux, pi)      \
+                 if(m->n_b_faces > THR_MIN)
+      for (t_id = 0; t_id < n_b_threads; t_id++) {
+        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             face_id++) {
+
+          ii = b_face_cells[face_id] - 1;
+
+          pi = pvar[ii];
+
+          /* Recompute II"
+             --------------*/
+
+          visci[0][0] = viscce[ii][0];
+          visci[1][1] = viscce[ii][1];
+          visci[2][2] = viscce[ii][2];
+          visci[1][0] = viscce[ii][3];
+          visci[0][1] = viscce[ii][3];
+          visci[2][1] = viscce[ii][4];
+          visci[1][2] = viscce[ii][4];
+          visci[2][0] = viscce[ii][5];
+          visci[0][2] = viscce[ii][5];
+
+          /* IF.Ki.S / ||Ki.S||^2 */
+          fikdvi = weighb[face_id];
+
+          /* II" = IF + FI" */
+          for (i = 0; i < 3; i++) {
+            diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
+                      - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
+                               + visci[1][i]*b_face_normal[face_id][1]
+                               + visci[2][i]*b_face_normal[face_id][2] );
+          }
+
+          pipp = pi + ircflp*( grad[ii][0]*diippf[0]
+                             + grad[ii][1]*diippf[1]
+                             + grad[ii][2]*diippf[2]);
+
+
+          pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
+
+          flux = b_visc[face_id]*pfacd;
+          rhs[ii] -= thetap*flux;
+
+        }
+      }
+    }
+
+  }
+
+  /* Free memory */
+  BFT_FREE(grad);
+  BFT_FREE(w2);
 }
 
 /*-----------------------------------------------------------------------------*/

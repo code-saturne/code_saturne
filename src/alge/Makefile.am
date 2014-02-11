@@ -94,7 +94,6 @@ cs_multigrid.c \
 cs_sles.c \
 bilsca.f90 \
 bilscv.f90 \
-diften.f90 \
 divrij.f90 \
 grdcel.f90 \
 grdpre.f90 \

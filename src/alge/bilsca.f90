@@ -277,7 +277,7 @@ elseif (idftnp.eq.6) then
 
     call diften &
     !==========
-   ( idtvar , ivar   , nswrgp , imligp , ircflp ,                   &
+   ( idtvar , f_id   , nswrgp , imligp , ircflp ,                   &
      inc    , imrgra , iccocg , iwarnp , epsrgp ,                   &
      climgp , extrap , relaxp , thetap ,                            &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
