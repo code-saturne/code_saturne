@@ -5,6 +5,10 @@ if [ ! -d sbin ]; then
   exit 1
 fi
 
+# update POTFILES.in
+
+ls preprocessor/*/*.c src/*/*.c* | grep -v user_examples > po/POTFILES.in
+
 # Remove unversioned files added by previous bootstrap
 
 for d in . libple
