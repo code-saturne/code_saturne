@@ -70,68 +70,86 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+const double _pi = 4 * atan(1);
 
 /*============================================================================
  * Public function for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
-*     Van der Waals interaction between a sphere and a plane
-*     following formulas from Czarnecki (large distances)
-*                           and Gregory (small distances)
-*----------------------------------------------------------------------------*/
+ * Van der Waals interaction between a sphere and a plane
+ * using formulas from Czarnecki (large distances)
+ *                 and Gregory (small distances)
+ *----------------------------------------------------------------------------*/
 
 cs_real_t
-van_der_waals_sphere_plane (   cs_real_t distp,
-                               cs_real_t rpart,
-                               cs_real_t lambwl,
-                               cs_real_t cstham
-
-  )
-
+cs_lagr_van_der_waals_sphere_plane (cs_real_t distp,
+                                    cs_real_t rpart,
+                                    cs_real_t lambwl,
+                                    cs_real_t cstham)
 {
-#define PI 3.141592653589793
   cs_real_t var;
 
-  if (distp < (lambwl / 2 / PI)) {
-    var = -cstham * rpart / (6 * distp) * (1 /
-          (1 + 14 * distp / lambwl + 5 * PI/4.9 *
-          pow(distp,3) / lambwl / pow(rpart,2)));
+  if (distp < (lambwl / 2 / _pi)) {
+    var = -cstham * rpart / (6 * distp)
+          * (1 / (1 + 14 * distp / lambwl + 5 * _pi/4.9
+          *  pow(distp,3) / lambwl / pow(rpart,2)));
   }
-  else
-  {
-    var = cstham * ((2.45 * lambwl ) /( 60 * PI) *
-          ((distp - rpart) / pow(distp,2) - (distp + 3 * rpart) / pow(distp + 2 * rpart,2)
-           - 2.17 / 720 / pow(PI,2) * pow(lambwl,2) * ((distp - 2 * rpart)
-           / pow(distp,3) - (distp + 4 * rpart) / pow(distp + 2 * rpart,3))
-          + 0.59 / 5040 / pow(PI,3) * pow(lambwl,3) *
-         ((distp - 3 * rpart) /  pow(distp,4) - (distp + 5 * rpart) / pow(distp + 2 * rpart,4))));
-   }
+  else {
+    var = cstham
+      * ((2.45 * lambwl ) /(60 * _pi)
+         * (  (distp - rpart) / pow(distp,2)
+            - (distp + 3 * rpart) / pow(distp + 2 * rpart,2)
+            - 2.17 / 720 / pow(_pi,2) * pow(lambwl,2) * ((distp - 2 * rpart)
+            / pow(distp,3) - (distp + 4 * rpart) / pow(distp + 2 * rpart,3))
+            + 0.59 / 5040 / pow(_pi,3) * pow(lambwl,3)
+            * ((distp - 3 * rpart) /  pow(distp,4) - (distp + 5 * rpart)
+            / pow(distp + 2 * rpart,4))));
+  }
 
   return var;
-  }
+}
 
 /*----------------------------------------------------------------------------
- *     Electric Double Layer (EDL) interaction between a sphere and a plane
- *     following the formula from Bell & al (1970)
- *     based on the McCartney & Levine method
-*----------------------------------------------------------------------------*/
+ * Calculation of the Van der Waals interaction between two spheres
+ * following the formula from Gregory (1981a)
+ *----------------------------------------------------------------------------*/
 
 cs_real_t
-EDL_sphere_plane (   cs_real_t distp,
-                     cs_real_t rpart,
-                     cs_real_t phi1,
-                     cs_real_t phi2,
-                     cs_real_t kboltz,
-                     cs_real_t temp,
-                     cs_real_t debye_length,
-                     cs_real_t free_space_permit,
-                     cs_real_t water_permit
-
-  )
-
+cs_lagr_van_der_waals_sphere_sphere(cs_real_t  distcc,
+                                    cs_real_t  rpart1,
+                                    cs_real_t  rpart2,
+                                    cs_real_t  lambwl,
+                                    cs_real_t  cstham)
 {
-#define PI 3.141592653589793
+  cs_real_t var = - cstham * rpart1 * rpart2 / (6 * (distcc - rpart1 - rpart2)
+               * (rpart1 + rpart2)) * (1 - 5.32 * (distcc - rpart1 - rpart2)
+              / lambwl * log(1 + lambwl / (distcc - rpart1 - rpart2) / 5.32));
+
+  return var;
+}
+
+/*----------------------------------------------------------------------------
+ * Electric Double Layer (EDL) interaction between a sphere and a plane
+ * using the formula from Bell & al (1970)
+ * based on the McCartney & Levine method
+ *----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_lagr_edl_sphere_plane(cs_real_t  distp,
+                         cs_real_t  rpart,
+                         cs_real_t  phi1,
+                         cs_real_t  phi2,
+                         cs_real_t  kboltz,
+                         cs_real_t  temp,
+                         cs_real_t  debye_length,
+                         cs_real_t  free_space_permit,
+                         cs_real_t  water_permit)
+{
   cs_real_t charge = 1.6e-19;
   /* Reduced zeta potential */
   cs_real_t lphi1 =  charge * phi1 /  kboltz / temp;
@@ -150,61 +168,38 @@ EDL_sphere_plane (   cs_real_t distp,
           ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
           * pow(tanh(lphi2 / 4.),2),0.5));
 
-
-  cs_real_t alpha = sqrt((distp + rpart) / rpart) + sqrt(rpart / (distp + rpart));
+  cs_real_t alpha =   sqrt((distp + rpart) / rpart)
+                    + sqrt(rpart / (distp + rpart));
   cs_real_t omega1 = pow(lphi1,2) + pow(lphi2,2) + alpha * lphi1 * lphi2;
   cs_real_t omega2 = pow(lphi1,2) + pow(lphi2,2) - alpha * lphi1 * lphi2;
   cs_real_t gamma = sqrt(rpart / (distp + rpart)) * exp(-1./debye_length * distp);
 
-  cs_real_t var = 2 * PI * free_space_permit * water_permit
-    * pow((kboltz * temp / charge),2) *
-    rpart * (distp + rpart) / (distp + 2 * rpart)
-    * (omega1 * log(1 + gamma) + omega2 * log(1 - gamma));
-
-    return var;
-
-}
-/*----------------------------------------------------------------------------
- *    Calculation of the Van der Waals interaction between two spheres
- *    following the formula from Gregory (1981a)
- *----------------------------------------------------------------------------*/
-
-cs_real_t
-van_der_waals_sphere_sphere(           cs_real_t              distcc,
-                                       cs_real_t              rpart1,
-                                       cs_real_t              rpart2,
-                                       cs_real_t              lambwl,
-                                       cs_real_t              cstham
-  )
-{
-  cs_real_t var = - cstham * rpart1 * rpart2 / (6 * (distcc - rpart1 - rpart2)
-               * (rpart1 + rpart2)) * (1 - 5.32 * (distcc - rpart1 - rpart2)
-              / lambwl * log(1 + lambwl / (distcc - rpart1 - rpart2) / 5.32));
+  cs_real_t var = 2 * _pi * free_space_permit * water_permit
+                  * pow((kboltz * temp / charge),2)
+                  * rpart * (distp + rpart) / (distp + 2 * rpart)
+                  * (omega1 * log(1 + gamma) + omega2 * log(1 - gamma));
 
   return var;
 }
 
 /*----------------------------------------------------------------------------
- *     Calculation of the EDL interaction between two spheres
- *     following the formula from Bell & al (1970)
- *     based on the McCartney & Levine method
+ * Calculation of the EDL interaction between two spheres
+ * using the formula from Bell & al (1970)
+ * based on the McCartney & Levine method
  *----------------------------------------------------------------------------*/
 
 cs_real_t
-EDL_sphere_sphere(            cs_real_t              distcc,
-                              cs_real_t              rpart1,
-                              cs_real_t              rpart2,
-                              cs_real_t              phi1,
-                              cs_real_t              phi2,
-                              cs_real_t              kboltz,
-                              cs_real_t              temp,
-                              cs_real_t              debye_length,
-                              cs_real_t              free_space_permit,
-                              cs_real_t              water_permit
-  )
+cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
+                          cs_real_t  rpart1,
+                          cs_real_t  rpart2,
+                          cs_real_t  phi1,
+                          cs_real_t  phi2,
+                          cs_real_t  kboltz,
+                          cs_real_t  temp,
+                          cs_real_t  debye_length,
+                          cs_real_t  free_space_permit,
+                          cs_real_t  water_permit)
 {
-#define PI 3.141592653589793
-
   cs_real_t charge = 1.6e-19;
 
   /* Reduced zeta potential */
@@ -224,28 +219,28 @@ EDL_sphere_sphere(            cs_real_t              distcc,
          ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
           * pow(tanh(lphi2 / 4.),2),0.5));
 
-  cs_real_t alpha = sqrt(rpart2 * (distcc - rpart2) / (rpart1 * (distcc - rpart1)))
-                   + sqrt(rpart1 * (distcc - rpart1) / (rpart2 * (distcc - rpart2)));
+  cs_real_t alpha =    sqrt(rpart2 * (distcc - rpart2)
+                    / (rpart1 * (distcc - rpart1)))
+                     + sqrt(rpart1 * (distcc - rpart1)
+                    / (rpart2 * (distcc - rpart2)));
 
   cs_real_t omega1 = pow(lphi1,2) + pow(lphi2,2) + alpha * lphi1 * lphi2;
 
   cs_real_t omega2 = pow(lphi1,2) + pow(lphi2,2) - alpha * lphi1 * lphi2;
 
-  cs_real_t gamma = sqrt(rpart1 * rpart2 / (distcc - rpart1) / (distcc - rpart2))
+  cs_real_t gamma = sqrt(rpart1 * rpart2 / (distcc-rpart1) / (distcc-rpart2))
                     *exp(1. / debye_length * (rpart1 + rpart2 - distcc));
 
-  cs_real_t var = 2 * PI * free_space_permit * water_permit
-                   * pow((kboltz * temp / charge),2)
-                   * rpart1 * rpart2 * (distcc - rpart1) * (distcc - rpart2)
-                   / (distcc * ( distcc * ( rpart1  + rpart2) - pow(rpart1,2) - pow(rpart2,2)))
-                   * (omega1 * log(1 + gamma) + omega2 * log(1 - gamma));
+  cs_real_t var = 2 * _pi * free_space_permit * water_permit
+                  * pow((kboltz * temp / charge),2)
+                  * rpart1 * rpart2 * (distcc - rpart1) * (distcc - rpart2)
+                  / (distcc * (  distcc * (rpart1  + rpart2)
+                               - pow(rpart1,2) - pow(rpart2,2)))
+                  * (omega1 * log(1 + gamma) + omega2 * log(1 - gamma));
 
   return var;
-
 }
 
 /*----------------------------------------------------------------------------*/
-
-/* Delete local macro definitions */
 
 END_C_DECLS

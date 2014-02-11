@@ -51,16 +51,17 @@
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
+#include "cs_halo.h"
 #include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_search.h"
+
 #include "cs_lagr_utils.h"
 #include "cs_lagr_clogging.h"
-#include "cs_lagr_rough.h"
-#include "cs_halo.h"
+#include "cs_lagr_roughness.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1951,10 +1952,9 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
                const cs_real_t       *tkelvi)
 
 {
-#define PI 3.141592653589793
-
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  const double pi = 4 * atan(1);
+
   int nfabor  = mesh->n_b_faces;
 
   cs_lnum_t  k;
@@ -2114,37 +2114,33 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     cs_real_t limit;
     cs_real_t val;
 
-    if (cs_glob_lagr_param.clogging)
-    {
+    if (cs_glob_lagr_param.clogging) {
+
       /* If the clogging modeling is activated,                 */
       /* computation of the number of particles in contact with */
       /* the depositing particle                                */
 
       surface_coverage = &boundary_stat[(*iscovc -1) * nfabor + face_id];
 
-      contact_number = clogging_barrier(particle,
-                                        face_id,
-                                        face_area,
-                                        &energt[face_id],
-                                        surface_coverage,
-                                        &limit,
-                                        &min_porosity
-                                        );
+      contact_number = cs_lagr_clogging_barrier(particle,
+                                                face_id,
+                                                face_area,
+                                                &energt[face_id],
+                                                surface_coverage,
+                                                &limit,
+                                                &min_porosity);
 
     }
 
-    if ( cs_glob_lagr_param.rough > 0) {
+    if (cs_glob_lagr_param.rough > 0)
+      val = cs_lagr_roughness_barrier(particle,
+                                      face_id,
+                                      &energt[face_id]);
 
-      val = rough_barrier(particle,
-                          face_id,
-                          &energt[face_id]
-        );
-    }
-
-    if ( energ > energt[face_id] * 0.5 * particle.diameter ) {
+    if (energ > energt[face_id] * 0.5 * particle.diameter) {
 
       /* The particle deposits*/
-      if (!cs_glob_lagr_param.clogging && !cs_glob_lagr_param.resuspension ) {
+      if (!cs_glob_lagr_param.clogging && !cs_glob_lagr_param.resuspension) {
         move_particle = CS_LAGR_PART_MOVE_OFF;
         particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
 
@@ -2154,7 +2150,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
         particle_state = CS_LAGR_PART_STICKED;
       }
 
-      if ( cs_glob_lagr_param.resuspension > 0) {
+      if (cs_glob_lagr_param.resuspension > 0) {
 
         move_particle = CS_LAGR_PART_MOVE_OFF;
         particle.depo = 1;
@@ -2177,7 +2173,8 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
           /* The surface coverage increases in the particle has deposited on a naked surface */
 
-          *surface_coverage += (PI * pow(depositing_radius,2)) *  particle.stat_weight / face_area;
+          *surface_coverage += (pi * pow(depositing_radius,2))
+                               *  particle.stat_weight / face_area;
 
           for (k = 0; k < 3; k++) {
             particle.coord[k] = intersect_pt[k] - (0.5 * particle.diameter * face_norm[k]);
@@ -2186,23 +2183,22 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
           }
 
         }
-        else
-        {
+        else {
 
-          cs_int_t i, j, one = 1, two = 2;
+          cs_lnum_t i, j, one = 1, two = 2;
           cs_real_t* random;
 
           cs_real_t nb_depo_part, spher_angle[2];
           cs_lagr_particle_t cur_part,cur_part2;
-          cs_int_t contact;
+          cs_lnum_t contact;
 
           nb_depo_part = boundary_stat[(*inclg -1) * nfabor + face_id];
 
           double norm_vect = 0.5 * (cur_part.diameter + particle.diameter);
           double unit_vect[3];
 
-          cs_int_t compt,compt2;
-          cs_int_t compt_max = 100;
+          cs_lnum_t compt,compt2;
+          cs_lnum_t compt_max = 100;
           cs_real_t dist;
 
           compt2 = 0;
@@ -2239,8 +2235,8 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
                 CS_PROCF(zufall, ZUFALL)(&two, spher_angle);
 
-                spher_angle[0] *= PI;
-                spher_angle[1] *= 2 * PI;
+                spher_angle[0] *= pi;
+                spher_angle[1] *= 2 * pi;
 
                 unit_vect[0] =  sin(spher_angle[0]) * cos(spher_angle[1]);
                 unit_vect[1] =  sin(spher_angle[0]) * sin(spher_angle[1]);
@@ -2280,9 +2276,9 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
           /* Test to prevent the covering of particles */
          }
 
-        cs_int_t  ii;
-        cs_int_t  ncel   = cs_glob_mesh->n_cells;
-        cs_int_t  node;
+        cs_lnum_t  ii;
+        cs_lnum_t  ncel   = cs_glob_mesh->n_cells;
+        cs_lnum_t  node;
         cs_real_t volp[ncel];
         cs_real_t porosity = 0.;
         cs_real_t *xyzcen = cs_glob_mesh_quantities->cell_cen;
@@ -2315,15 +2311,17 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
         particle.cur_cell_num = node;
 
         /* Calculation of the cell porosity */
-        porosity = (volume[particle.cur_cell_num] - volp[particle.cur_cell_num]) / volume[particle.cur_cell_num];
+        porosity = (  volume[particle.cur_cell_num]
+                    - volp[particle.cur_cell_num]) / volume[particle.cur_cell_num];
 
         if (porosity > min_porosity) {
 
           move_particle = CS_LAGR_PART_MOVE_OFF;
 
-          volp[particle.cur_cell_num] +=  particle.stat_weight * 4./3. * PI * pow(particle.diameter/2,3);
+          volp[particle.cur_cell_num]
+            +=  particle.stat_weight * 4./3. * pi * pow(particle.diameter/2,3);
 
-          particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
+          particle.cur_cell_num = - particle.cur_cell_num; /* Store negative value */
 
           _particle_set->n_part_dep += 1;
           _particle_set->weight_dep += particle.stat_weight;
@@ -2331,8 +2329,8 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
           particle_state = CS_LAGR_PART_STICKED;
           particle.depo = 1;
 
-          /* Update of the number of stat. weight of deposited particles       */
-          /* in case of clogging modeling                                      */
+          /* Update of the number of stat. weight of deposited particles */
+          /* in case of clogging modeling                                */
 
           boundary_stat[(*inclg -1) * nfabor + face_id] += particle.stat_weight;
 
@@ -4877,7 +4875,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
   cs_lnum_t  i, j , k;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
 
   cs_lnum_t  n_delete_particles = 0;
   cs_lnum_t  n_failed_particles = 0;
@@ -4921,10 +4918,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
       /* Local copies of the current and previous particles state vectors
          to be used in case of the first pass of _local_propagation fails */
-
-      cs_lagr_particle_t prev_part_aux = *prev_part;
-      cs_lagr_particle_t cur_part_aux = *cur_part;
-
 
       if (cur_part->state == CS_LAGR_PART_TO_SYNC)
         cur_part->state = _local_propagation(prev_part,
@@ -5587,12 +5580,12 @@ cs_lagr_destroy(void)
   /* Destroy the structure dedicated to clogging modeling */
 
   if (cs_glob_lagr_param.clogging)
-    clogend();
+    cs_lagr_clogging_finalize();
 
- /* Destroy the structure dedicated to roughness surface modeling */
+  /* Destroy the structure dedicated to roughness surface modeling */
 
   if (cs_glob_lagr_param.rough)
-       rough_end();
+    cs_lagr_roughness_finalize();
 
   /* Delete MPI_Datatypes */
 

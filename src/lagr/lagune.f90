@@ -385,9 +385,9 @@ if ( irough .eq. 1 ) then
 
    enddo
 
-call rough_init                                                   &
+   call roughness_init                                &
    !===========
-   ( cstfar, epsvid, epseau, fion, tempp,          &
+   ( cstfar, epsvid, epseau, fion, tempp,             &
      phi1  , phi2  , cstham, dcutof, lambwl, kboltz , &
      espasg , denasp , rayasp , rayasg)
 

@@ -19,7 +19,7 @@
 
   You should have received a copy of the GNU General Public License along with
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 /*----------------------------------------------------------------------------*/
@@ -62,7 +62,7 @@
 #include "cs_lagr_dlvo.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_lagr_clogging.h"
@@ -71,22 +71,27 @@
 
 BEGIN_C_DECLS
 
-
 /*============================================================================
  * Local structure declaration
  *============================================================================*/
 
-static cs_lagr_clog_param_t cs_lagr_clog_param;
+static cs_lagr_clogging_param_t cs_lagr_clogging_param;
 
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static const double _pi = 4. * atan(1);
 
 /*============================================================================
  * Public function for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Clogging initialization:
- *  - Retrieve various parameters for storing in global structure
- *  - Compute and store the Debye screening length
+ * Clogging initialization.
+ *
+ * - Retrieve various parameters for storing in global structure.
+ * - Compute and store the Debye screening length
  *----------------------------------------------------------------------------*/
 
 void
@@ -103,162 +108,161 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
                               const cs_real_t   *dcutof,
                               const cs_real_t   *lambwl,
                               const cs_real_t   *kboltz
-  )
+ )
 {
-
 #define PG_CST 8.314  /* Ideal gas constant */
 
-  int ifac;
+  cs_lnum_t ifac;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   /* Retrieve physical parameters related to clogging modeling */
-  /* and fill the global structure cs_lagr_clog_param          */
+  /* and fill the global structure cs_lagr_clogging_param          */
 
-  cs_lagr_clog_param.faraday_cst = *faraday_cst;
-  cs_lagr_clog_param.free_space_permit = *free_space_permit;
-  cs_lagr_clog_param.water_permit = *water_permit;
-  cs_lagr_clog_param.ionic_strength = *ionic_strength;
-  cs_lagr_clog_param.jamming_limit = *jamming_limit;
-  cs_lagr_clog_param.min_porosity = *min_porosity;
-  cs_lagr_clog_param.phi1 = *phi1;
-  cs_lagr_clog_param.phi2 = *phi2;
-  cs_lagr_clog_param.cstham = *cstham;
-  cs_lagr_clog_param.dcutof = *dcutof;
-  cs_lagr_clog_param.lambwl = *lambwl;
-  cs_lagr_clog_param.kboltz = *kboltz;
+  cs_lagr_clogging_param.faraday_cst = *faraday_cst;
+  cs_lagr_clogging_param.free_space_permit = *free_space_permit;
+  cs_lagr_clogging_param.water_permit = *water_permit;
+  cs_lagr_clogging_param.ionic_strength = *ionic_strength;
+  cs_lagr_clogging_param.jamming_limit = *jamming_limit;
+  cs_lagr_clogging_param.min_porosity = *min_porosity;
+  cs_lagr_clogging_param.phi1 = *phi1;
+  cs_lagr_clogging_param.phi2 = *phi2;
+  cs_lagr_clogging_param.cstham = *cstham;
+  cs_lagr_clogging_param.dcutof = *dcutof;
+  cs_lagr_clogging_param.lambwl = *lambwl;
+  cs_lagr_clogging_param.kboltz = *kboltz;
 
   /* Allocate memory for the temperature and Debye length arrays */
 
-  if (cs_lagr_clog_param.temperature == NULL)
-    BFT_MALLOC(cs_lagr_clog_param.temperature, mesh->n_b_faces, cs_real_t);
+  if (cs_lagr_clogging_param.temperature == NULL)
+    BFT_MALLOC(cs_lagr_clogging_param.temperature, mesh->n_b_faces, cs_real_t);
 
-  if (cs_lagr_clog_param.debye_length == NULL)
-    BFT_MALLOC(cs_lagr_clog_param.debye_length, mesh->n_b_faces, cs_real_t);
+  if (cs_lagr_clogging_param.debye_length == NULL)
+    BFT_MALLOC(cs_lagr_clogging_param.debye_length, mesh->n_b_faces, cs_real_t);
 
   /* Store the temperature */
 
-  for (ifac = 0; ifac < mesh->n_b_faces ; ifac++)
-    cs_lagr_clog_param.temperature[ifac] = temperature[ifac];
+  for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
+    cs_lagr_clogging_param.temperature[ifac] = temperature[ifac];
 
   /* Computation and storage of the Debye length                */
 
-  for (ifac = 0; ifac < mesh->n_b_faces ; ifac++)
+  for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
 
-    cs_lagr_clog_param.debye_length[ifac] =
-      pow(2e3 * pow(cs_lagr_clog_param.faraday_cst,2) * cs_lagr_clog_param.ionic_strength /
-      (cs_lagr_clog_param.water_permit * cs_lagr_clog_param.free_space_permit * PG_CST *
-      cs_lagr_clog_param.temperature[ifac]), -0.5);
+    cs_lagr_clogging_param.debye_length[ifac]
+      = pow(2e3 * pow(cs_lagr_clogging_param.faraday_cst,2)
+            * cs_lagr_clogging_param.ionic_strength
+            /  (  cs_lagr_clogging_param.water_permit
+                * cs_lagr_clogging_param.free_space_permit * PG_CST
+                * cs_lagr_clogging_param.temperature[ifac]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(" cstfar = %g\n", cs_lagr_clog_param.faraday_cst);
-  bft_printf(" epsvid = %g\n", cs_lagr_clog_param.free_space_permit);
-  bft_printf(" epseau = %g\n", cs_lagr_clog_param.water_permit);
-  bft_printf(" fion   = %g\n", cs_lagr_clog_param.ionic_strength);
-  bft_printf(" temp[1]   = %g\n", cs_lagr_clog_param.temperature[0]);
-  bft_printf(" debye[1]   = %g\n", cs_lagr_clog_param.debye_length[0]);
-  bft_printf(" phi1   = %g\n", cs_lagr_clog_param.phi1);
-  bft_printf(" phi2  = %g\n", cs_lagr_clog_param.phi2);
+  bft_printf(" cstfar = %g\n", cs_lagr_clogging_param.faraday_cst);
+  bft_printf(" epsvid = %g\n", cs_lagr_clogging_param.free_space_permit);
+  bft_printf(" epseau = %g\n", cs_lagr_clogging_param.water_permit);
+  bft_printf(" fion   = %g\n", cs_lagr_clogging_param.ionic_strength);
+  bft_printf(" temp[1]   = %g\n", cs_lagr_clogging_param.temperature[0]);
+  bft_printf(" debye[1]   = %g\n", cs_lagr_clogging_param.debye_length[0]);
+  bft_printf(" phi1   = %g\n", cs_lagr_clogging_param.phi1);
+  bft_printf(" phi2  = %g\n", cs_lagr_clogging_param.phi2);
 #endif
-
-
-
 }
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Clogging ending
- * Deallocate the arrays storing temperature and Debye length
+ * Clogging finalization.
+ *
+ * Deallocate the arrays storing temperature and Debye length.
  *----------------------------------------------------------------------------*/
 
-
-void clogend()
+void
+cs_lagr_clogging_finalize(void)
 {
-  BFT_FREE(cs_lagr_clog_param.temperature);
-  BFT_FREE(cs_lagr_clog_param.debye_length);
+  BFT_FREE(cs_lagr_clogging_param.temperature);
+  BFT_FREE(cs_lagr_clogging_param.debye_length);
 }
-
 
 /*----------------------------------------------------------------------------
  * Clogging:
  *
- * - Calculation of the number of deposited particles in contact with the
- *   depositing particle
- * - Re-calculation of the energy barrier in this number is greater than zero
+ * - Compute the number of deposited particles in contact with the depositing
+ *   particle
+ * - Re-compute the energy barrier if this number is greater than zero
  *----------------------------------------------------------------------------*/
 
-cs_int_t
-clogging_barrier(cs_lagr_particle_t     particle,
-                 cs_int_t               face_id,
-                 cs_real_t              face_area,
-                 cs_real_t              *energy_barrier,
-                 cs_real_t              *surface_coverage,
-                 cs_real_t              *limit,
-                 cs_real_t              *mporos
-
-  )
+int
+cs_lagr_clogging_barrier(cs_lagr_particle_t    particle,
+                         cs_lnum_t             face_id,
+                         cs_real_t             face_area,
+                         cs_real_t            *energy_barrier,
+                         cs_real_t            *surface_coverage,
+                         cs_real_t            *limit,
+                         cs_real_t            *mporos)
 {
-
-#define PI 3.141592653589793
-
   cs_real_t contact_area;
   cs_real_t depositing_radius = particle.diameter * 0.5;
   cs_real_t deposited_radius;
 
   cs_real_t mean_nb_cont;
 
-  cs_int_t  dim_aux = 1, contact_number[1], nbtemp[12000];
-  cs_real_t param2, value ;
-  cs_int_t  param1;
+  cs_lnum_t  dim_aux = 1, contact_count[1], nbtemp[12000];
+  cs_lnum_t  param1;
+  cs_real_t  param2, value;
   cs_lnum_t  k,i;
 
-/* Computation of the number of particles in contact with */
-/* the depositing particle */
+  /* Computation of the number of particles in contact with */
+  /* the depositing particle */
 
-/* Assuming monodisperse calculation */
+  /* Assuming monodispersed calculation */
 
   deposited_radius = depositing_radius;
 
-  contact_area = particle.stat_weight *
-                 PI * pow(2. * pow(deposited_radius * depositing_radius, 0.5) + deposited_radius,2);
+  contact_area = particle.stat_weight
+                 * _pi * pow(2. * pow(deposited_radius * depositing_radius, 0.5)
+                             + deposited_radius,2);
 
-  mean_nb_cont = contact_area * (*surface_coverage) / (PI * pow(deposited_radius,2));
+  mean_nb_cont =   contact_area
+                 * (*surface_coverage) / (_pi * pow(deposited_radius,2));
 
-/* Assuming Poisson distribution */
+  /* Assuming Poisson distribution */
 
-  CS_PROCF(fische, FISCHE)(&dim_aux, &mean_nb_cont, contact_number);
+  CS_PROCF(fische, FISCHE)(&dim_aux, &mean_nb_cont, contact_count);
 
   value = 700.;
   if (mean_nb_cont > value) {
     param1 = mean_nb_cont / value;
     param2 = fmod(mean_nb_cont,value);
 
-    CS_PROCF(fische, FISCHE)(&dim_aux, &param2, contact_number);
+    CS_PROCF(fische, FISCHE)(&dim_aux, &param2, contact_count);
     CS_PROCF(fische, FISCHE)(&param1, &value ,nbtemp);
 
     for (k = 0; k < param1; k++) {
-      contact_number[0] =  contact_number[0] + nbtemp[k];
+      contact_count[0] =  contact_count[0] + nbtemp[k];
     }
   }
 
-/* If the surface coverage is above the jamming limit,
-   we are in multilayer deposition, so the contact number
-   must be greater than zero  */
+  /* If the surface coverage is above the jamming limit,
+     we are in multilayer deposition, so the contact number
+     must be greater than zero  */
 
-  if (*surface_coverage > 1e-15)   /* The surface coverage must be greater than zero */
+   /* The surface coverage must be greater than zero */
+  if (*surface_coverage > 1e-15)
 
-    if (((PI * pow(depositing_radius,2) *  particle.stat_weight)/face_area + (*surface_coverage)) > cs_lagr_clog_param.jamming_limit)
-
-      contact_number[0] +=1;
+    if (((_pi * pow(depositing_radius,2) * particle.stat_weight)/face_area
+         + (*surface_coverage)) > cs_lagr_clogging_param.jamming_limit)
+      contact_count[0] +=1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (mean_nb_cont > 0) {
     bft_printf("mean number = %g\n", mean_nb_cont);
-    bft_printf("calculated number = %d\n",  contact_number[0]);
+    bft_printf("calculated number = %d\n",  contact_count[0]);
   }
 #endif
 
-
-  if (contact_number[0] != 0) {
+  if (contact_count[0] != 0) {
 
     *energy_barrier = 0;
 
@@ -267,31 +271,45 @@ clogging_barrier(cs_lagr_particle_t     particle,
 
       cs_real_t  step = 1e-10;
 
-      cs_real_t distcc = cs_lagr_clog_param.dcutof + i * step + depositing_radius + deposited_radius;
+      cs_real_t distcc =   cs_lagr_clogging_param.dcutof + i*step
+                         + depositing_radius + deposited_radius;
 
-      cs_real_t var1 = van_der_waals_sphere_sphere(distcc,deposited_radius,depositing_radius,cs_lagr_clog_param.lambwl,cs_lagr_clog_param.cstham);
+      cs_real_t var1
+        = cs_lagr_van_der_waals_sphere_sphere(distcc,
+                                              deposited_radius,
+                                              depositing_radius,
+                                              cs_lagr_clogging_param.lambwl,
+                                              cs_lagr_clogging_param.cstham);
 
-      cs_real_t var2 = EDL_sphere_sphere(distcc,deposited_radius,depositing_radius,cs_lagr_clog_param.phi1,cs_lagr_clog_param.phi2, cs_lagr_clog_param.kboltz,cs_lagr_clog_param.temperature[face_id],
-                             cs_lagr_clog_param.debye_length[face_id], cs_lagr_clog_param.free_space_permit, cs_lagr_clog_param.water_permit);
+      cs_real_t var2
+        = cs_lagr_edl_sphere_sphere(distcc,
+                                    deposited_radius,
+                                    depositing_radius,
+                                    cs_lagr_clogging_param.phi1,
+                                    cs_lagr_clogging_param.phi2,
+                                    cs_lagr_clogging_param.kboltz,
+                                    cs_lagr_clogging_param.temperature[face_id],
+                                    cs_lagr_clogging_param.debye_length[face_id],
+                                    cs_lagr_clogging_param.free_space_permit,
+                                    cs_lagr_clogging_param.water_permit);
 
-      cs_real_t var = contact_number[0] * (var1 + var2);
+      cs_real_t var = contact_count[0] * (var1 + var2);
 
-      if (var > *energy_barrier) *energy_barrier = var;
-      if (var < 0)   *energy_barrier = 0;
-
+      if (var > *energy_barrier)
+        *energy_barrier = var;
+      if (var < 0)
+        *energy_barrier = 0;
 
     }
     *energy_barrier =  *energy_barrier / (0.5 * particle.diameter);
   }
 
-  *limit = cs_lagr_clog_param.jamming_limit;
-  *mporos = cs_lagr_clog_param.min_porosity;
+  *limit = cs_lagr_clogging_param.jamming_limit;
+  *mporos = cs_lagr_clogging_param.min_porosity;
 
-  return contact_number[0];
+  return contact_count[0];
 }
 
 /*----------------------------------------------------------------------------*/
-
-/* Delete local macro definitions */
 
 END_C_DECLS

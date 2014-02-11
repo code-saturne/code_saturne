@@ -6,9 +6,11 @@ Changes:
 --------
 
 - Lagrangian module: Improvements in roughness and resuspension models
-   *Adding of a user keyword 'irough' for roughness surface (calculation of the energy barrier in the case of rough wall)
-   *Consideration of the electrostatic force in the adhesion force for the resuspension
-   *Mass flux update for particles rolling on the wall
+   * added a user keyword 'irough' for roughness surface (calculation of the
+     energy barrier in the case of rough wall)
+   * consideration of the electrostatic force in the adhesion force
+     for the resuspension
+   * mass flux update for particles rolling on the wall
 
 - Ensure postprocessing of symmetric tensors for EnSight and Catalyst is consistent
   with {xx, yy, zz, xy, yz, xz} internal component representation.
