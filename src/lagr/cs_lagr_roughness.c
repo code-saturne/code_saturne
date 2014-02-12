@@ -87,7 +87,7 @@ static cs_lagr_roughness_param_t cs_lagr_roughness_param;
  * Static global variables
  *============================================================================*/
 
-static const double _pi = 4. * atan(1);
+static const double _pi = 3.14159265358979323846;
 
 /*============================================================================
  * Public function for Fortran API

@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-const double _pi = 4 * atan(1);
+static const double _pi = 3.14159265358979323846;
 
 /*============================================================================
  * Public function for Fortran API
