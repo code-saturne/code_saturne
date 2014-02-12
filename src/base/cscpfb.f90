@@ -543,8 +543,6 @@ if (itytur.eq.2) then
 
     do isou = 1, 3
 
-      ivar = iu + isou - 1
-
       ! Velocity gradient has already been computed above
 
       do ipt = 1, nptdis
@@ -1289,8 +1287,6 @@ elseif (iturb.eq.60) then
     !           Termes R12,R13,R23
 
     do isou = 1, 3
-
-      ivar = iu + isou - 1
 
       ! Velocity gradient has already been computed above
 

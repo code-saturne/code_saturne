@@ -11,8 +11,10 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix in some code-code coupling cases (uninitialized loop variable).
+
 - Fix test on indicator ipond, enabling pressure gradient computation with
-  ponderation coefficient.
+  weighting coefficient.
 
 - Fix in compressible module (prediction step): compute gravity source term
   with the full density value (not rho-rho0).
