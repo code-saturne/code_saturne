@@ -480,6 +480,10 @@ do ifac = 1, nfabor
           rcodcl(ifac,ik,1)   = xkent
           rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
+        elseif (iturb.eq.70) then
+
+          rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+
         endif
 
       endif
