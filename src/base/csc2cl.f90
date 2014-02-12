@@ -348,6 +348,8 @@ do ivar = 1, nvcp
 
       if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
 
+        isou = ivar - iu + 1
+
         xip =   rtp(iel,ivar)           &
               + gradv(1,isou,iel)*xiip  &
               + gradv(2,isou,iel)*yiip  &
