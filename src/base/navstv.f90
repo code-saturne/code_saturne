@@ -405,7 +405,7 @@ if (iprco.le.0) then
 
   call inimav                                                     &
   !==========
- ( iu     , itypfl ,                                              &
+ ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
@@ -444,7 +444,7 @@ if (iprco.le.0) then
 
     call inimav &
     !==========
-  ( iu     , itypfl ,                                              &
+  ( ivarfl(iuma)    , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
     iwarnp ,                                                       &
     epsrgp , climgp ,                                              &
@@ -967,7 +967,7 @@ if (iale.eq.1) then
 
   call inimav &
   !==========
-( iuma   , itypfl ,                                              &
+( ivarfl(iuma)    , itypfl ,                                     &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
@@ -1145,7 +1145,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   call inimav                                                     &
   !==========
- ( iu     , itypfl ,                                              &
+ ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &

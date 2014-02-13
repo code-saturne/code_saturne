@@ -87,7 +87,7 @@ integer          nswrgp, imligp, iwarnp
 integer          itypfl
 integer          ivar , ivar0 , iel, ii, jj
 integer          itt
-integer          f_id
+integer          f_id, f_id0
 
 double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
@@ -115,6 +115,8 @@ double precision, dimension(:), pointer :: brom, crom
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+f_id0 = -1
 
 ! Initializations to avoid compiler warnings
 xtt = 0.d0
@@ -293,7 +295,7 @@ if (ityturt(iscal).ne.3) then
 
   call inimav &
   !==========
-  ( ivar   , itypfl ,                                     &
+  ( f_id0  , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp ,                                              &
     epsrgp , climgp ,                                     &
@@ -352,7 +354,7 @@ else
 
   call inimav &
   !==========
-  ( ivar   , itypfl ,                                     &
+  ( f_id0  , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp ,                                              &
     epsrgp , climgp ,                                     &

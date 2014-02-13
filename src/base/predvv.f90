@@ -433,7 +433,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
   call inimav                                                     &
   !==========
- ( iu     , itypfl ,                                              &
+ ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
@@ -1767,7 +1767,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
   call inimav &
   !==========
- ( iu     , itypfl ,                                              &
+ ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &

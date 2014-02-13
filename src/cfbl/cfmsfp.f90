@@ -112,7 +112,7 @@ integer          ivar, ipcvst, ipcvis
 integer          ifac  , iel, ischcp, idftnp, ircflp
 integer          init  , inc   , iccocg, ippu, isstpp
 integer          nswrgp, imligp, iwarnp, iconvp, idiffp
-integer          icvflb
+integer          icvflb, f_id0
 integer          isou  , jsou
 integer          iflmb0, itypfl
 integer          itsqdm
@@ -163,6 +163,8 @@ endif
 if (ivisse.eq.1) then
   allocate(secvif(nfac),secvib(nfabor))
 endif
+
+f_id0 = -1
 
 ! --- Number of the computational variable
 !     Pressure
@@ -255,7 +257,7 @@ if (itsqdm.ne.0) then
   ! Mass flux calculation
   call inimav                                                   &
   !==========
-( iu     , itypfl ,                                              &
+( ivarfl(iu)      , itypfl ,                                     &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
@@ -431,7 +433,7 @@ enddo
 
 call inimav                                                      &
 !==========
-( iu     , itypfl ,                                              &
+( f_id0  , itypfl ,                                              &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp ,                                                       &
   epsrgp , climgp ,                                              &

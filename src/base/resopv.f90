@@ -158,7 +158,7 @@ integer          ireslp, nswmpr
 integer          isweep, niterf, icycle
 integer          iflmb0, ifcsor
 integer          nswrgp, imligp, iwarnp
-integer          ipcrom, iflmas, iflmab
+integer          iflmas, iflmab
 integer          ipp
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
@@ -172,7 +172,7 @@ integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
 integer          insqrt
 
-integer          icvflb
+integer          icvflb, f_id0
 integer          ivoid(1)
 
 double precision residu, phydr0
@@ -235,6 +235,8 @@ allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
 call field_get_name(ivarfl(ipr), chaine)
 lchain = 16
 ipp    = ipprtp(ipr)
+
+f_id0 = -1
 
 ! --- Boundary conditions
 
@@ -333,7 +335,7 @@ if(irnpnw.ne.1) then
   inc    = 1
   iflmb0 = 1
   if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
-  nswrgp  = 1
+  nswrgp = 1
   imligp = imligr(iu )
   iwarnp = iwarni(ipr)
   epsrgp = epsrgr(iu )
@@ -343,7 +345,7 @@ if(irnpnw.ne.1) then
 
   call inimav &
   !==========
- ( iu     , itypfl ,                                              &
+ ( f_id0  , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
@@ -870,7 +872,7 @@ itypfl = 1
 
 call inimav &
 !==========
- ( iu     , itypfl ,                                              &
+ ( f_id0  , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
@@ -1195,7 +1197,7 @@ if (idilat.eq.4) then
 
   call inimav &
   !==========
- ( iu     , itypfl ,                                              &
+ ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
@@ -1230,7 +1232,7 @@ if (idilat.eq.4) then
 
   call inimav &
   !==========
- ( iu     , itypfl ,                                              &
+ ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
@@ -1888,7 +1890,7 @@ if (idilat.eq.4) then
 
   call inimav &
   !==========
- ( ipcrom , itypfl ,                                              &
+ ( f_id0  , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &

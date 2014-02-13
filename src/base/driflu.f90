@@ -97,7 +97,7 @@ integer          iconvp, idiffp
 integer          ircflp, ischcp, isstpp
 integer          ippu  , ippv  , ippw
 integer          isou  , jsou
-integer          f_id
+integer          f_id  , f_id0
 integer          iflmb0, idftnp, iphydp, ivisep, itypfl
 integer          keysca, iscal, keydri, iscdri, icvflb
 integer          ivoid(1)
@@ -426,6 +426,7 @@ do ifac = 1, nfabor
 
 enddo
 
+f_id0  = -1
 init   = 0
 inc    = 1
 iflmb0 = 0
@@ -439,7 +440,7 @@ extrap = extrag(ivar)
 
 call inimav &
 !==========
- ( ivar   , itypfl ,                                              &
+ ( f_id0  , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
