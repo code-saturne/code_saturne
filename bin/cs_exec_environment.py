@@ -1563,25 +1563,6 @@ class exec_environment:
 
         self.mpi_env = mpi_environment(pkg, self.resources, wdir)
 
-        # Modify options based on system-wide or user configuration
-
-        config = configparser.ConfigParser()
-        config.read([pkg.get_configfile(),
-                     os.path.expanduser('~/.' + pkg.configfile)])
-
-        if config.has_section('mpi'):
-            for option in config.items('mpi'):
-               k = option[0]
-               v = option[1]
-               if not v:
-                   v = None
-               elif v[0] in ['"', "'"]:
-                   v = v[1:-1]
-               if k == 'mpmd':
-                   self.mpi_env.mpmd_mode = eval(v)
-               else:
-                   self.mpi_env.__dict__[k] = v
-
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
