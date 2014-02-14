@@ -85,7 +85,7 @@ typedef struct _cs_mesh_location_t cs_mesh_location_t;
  *   m           <-- pointer to associated mesh structure.
  *   location_id <-- id of associated location.
  *   n_elts      --> number of selected elements
- *   elt_list    --> list of selected elements.
+ *   elt_list    --> list of selected elements (0 to n-1 numbering).
  *----------------------------------------------------------------------------*/
 
 typedef void
@@ -245,7 +245,7 @@ cs_mesh_location_get_n_elts(int id);
  *   id <-- id of mesh location
  *
  * returns:
- *   pointer to elements list.
+ *   pointer to elements list (0 to n-1 numbering).
  *----------------------------------------------------------------------------*/
 
 const cs_lnum_t *

@@ -109,7 +109,7 @@ struct _cs_mesh_location_t {
                                              2: with extended ghost elements */
 
   cs_lnum_t                *elt_list;     /* List of associated elements,
-                                             (1 to n numbering) if non
+                                             (0 to n-1 numbering) if non
                                              trivial (i.e. a subset) */
 
 };
@@ -540,7 +540,7 @@ cs_mesh_location_get_n_elts(int id)
  *
  * \param[in]  id  id of mesh location
  *
- * \return  pointer to elements list.
+ * \return  pointer to elements list (0 to n-1 numbering).
  */
 /*----------------------------------------------------------------------------*/
 
