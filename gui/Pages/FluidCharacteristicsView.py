@@ -226,50 +226,43 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         self.modelPhas     = ComboModel(self.comboBoxPhas, 2, 1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
-        self.modelRho.addItem(self.tr('user law'), 'user_law')
+        self.modelRho.addItem(self.tr('variable'), 'variable')
         self.modelRho.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_atmo != 'off':
             self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
         elif mdl_joule == 'arc':
             self.modelRho.addItem(self.tr('defined in elphyv'), 'variable')
-        else:
-            self.modelRho.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
 
         self.modelMu.addItem(self.tr('constant'), 'constant')
-        self.modelMu.addItem(self.tr('user law'), 'user_law')
+        self.modelMu.addItem(self.tr('variable'), 'variable')
         self.modelMu.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelMu.addItem(self.tr('defined in elphyv'), 'variable')
-        else:
-            self.modelMu.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
-        self.modelCp.addItem(self.tr('user law'), 'user_law')
+        self.modelCp.addItem(self.tr('variable'), 'variable')
         self.modelCp.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelCp.addItem(self.tr('defined in elphyv'), 'variable')
-        else:
-            self.modelCp.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
 
         self.modelAl.addItem(self.tr('constant'), 'constant')
-        self.modelAl.addItem(self.tr('user law'), 'user_law')
+        self.modelAl.addItem(self.tr('variable'), 'variable')
         self.modelAl.addItem(self.tr('thermal law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelAl.addItem(self.tr('defined in elphyv'), 'variable')
-        else:
-            self.modelAl.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
-        self.modelDiff.addItem(self.tr('user law'), 'user_law')
+        self.modelDiff.addItem(self.tr('variable'), 'variable')
         self.modelDiff.addItem(self.tr('thermal law'), 'thermal_law')
+
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
-        self.modelViscv0.addItem(self.tr('user law'), 'user_law')
+        self.modelViscv0.addItem(self.tr('variable'), 'variable')
         self.modelViscv0.addItem(self.tr('thermal law'), 'thermal_law')
-        self.modelViscv0.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+
         self.modelDiftl0.addItem(self.tr('constant'), 'constant')
-        self.modelDiftl0.addItem(self.tr('user law'), 'user_law')
+        self.modelDiftl0.addItem(self.tr('variable'), 'variable')
         self.modelDiftl0.addItem(self.tr('thermal law'), 'thermal_law')
-        self.modelDiftl0.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
 
@@ -365,7 +358,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
             diff_choice =  self.m_sca.getScalarDiffusivityChoice(self.scalar)
             self.modelDiff.setItem(str_model=diff_choice)
             self.modelNameDiff.setItem(str_model=str(self.scalar))
-            if diff_choice  != 'user_law':
+            if diff_choice  != 'variable':
                 self.pushButtonDiff.setEnabled(False)
                 setGreenColor(self.pushButtonDiff, False)
             else:
@@ -390,7 +383,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
                 __labelv = getattr(self, "labelVar"   + symbol)
                 c = self.mdl.getPropertyMode(tag)
                 __model.setItem(str_model=c)
-                if c == 'user_law':
+                if c == 'variable':
                     __button.setEnabled(True)
                     __label.setText(self.tr("Reference value"))
                 else:
@@ -442,7 +435,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
                     __line.setText(str(""))
                     __line.setEnabled(False)
                 elif tag == 'dynamic_diffusion':
-                    __model.setItem(str_model='user_law')
+                    __model.setItem(str_model='variable')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
                 else:
@@ -452,7 +445,6 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
             # Joule
             if mdl_joule == 'arc':
                 __model.disableItem(str_model='constant')
-                __model.disableItem(str_model='user_law')
                 __model.disableItem(str_model='variable')
                 __model.setItem(str_model='variable')
                 __combo.setEnabled(False)
@@ -467,7 +459,6 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
             if mdl_atmo != 'off':
                 if tag == 'density':
                     __model.disableItem(str_model='constant')
-                    __model.disableItem(str_model='user_law')
                     __model.disableItem(str_model='variable')
                     __model.setItem(str_model='variable')
                     __combo.setEnabled(False)
@@ -494,7 +485,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
                 if tag == 'volumic_viscosity':
                     __combo.setEnabled(True)
                     c = self.mdl.getPropertyMode(tag)
-                    if c == 'user_law':
+                    if c == 'variable':
                         __button.setEnabled(True)
                     else:
                         __button.setEnabled(False)
@@ -648,7 +639,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         choice = self.modelDiff.dicoV2M[str(text)]
         log.debug("slotStateDiff -> %s" % (text))
 
-        if choice != 'user_law':
+        if choice != 'variable':
             self.pushButtonDiff.setEnabled(False)
             setGreenColor(self.pushButtonDiff, False)
         else:
@@ -686,7 +677,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         choice = __model.dicoV2M[text]
         log.debug("__changeChoice -> %s, %s" % (text, choice))
 
-        if choice != 'user_law':
+        if choice != 'variable':
             __button.setEnabled(False)
             setGreenColor(__button, False)
         else:

@@ -263,6 +263,15 @@ class XMLinit(Variables):
             XMLNumParameterNode.xmlInitNode('hydrostatic_pressure', status=stat)
             node.xmlRemoveNode()
 
+        # properties
+        for prop in ['density', 'molecular_viscosity', 'specific_heat',
+                     'thermal_conductivity', 'volumic_viscosity']:
+            nodeF = XMLPhysicalPropNode.xmlGetNode('fluid_properties')
+            node = nodeF.xmlGetNode(prop)
+            if node:
+                if node['choice'] == 'user_law':
+                    node['choice'] = 'variable'
+
         # Profiles
         compt = 0
         for node in self.case.xmlGetNodeList('profile'):

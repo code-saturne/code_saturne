@@ -365,7 +365,7 @@ void _physical_property(const char *const param,
 
   char *prop_choice = _properties_choice(param);
 
-  if (cs_gui_strcmp(prop_choice, "user_law"))
+  if (cs_gui_strcmp(prop_choice, "variable"))
     user_law = 1;
 
   if (user_law)
@@ -380,93 +380,95 @@ void _physical_property(const char *const param,
     law = cs_gui_get_text_value(path);
     BFT_FREE(path);
 
-    time0 = cs_timer_wtime();
+    if (law != NULL) {
+      time0 = cs_timer_wtime();
 
-    ev_law = mei_tree_new(law);
+      ev_law = mei_tree_new(law);
 
-    mei_tree_insert(ev_law, "p0", *p0);
+      mei_tree_insert(ev_law, "p0", *p0);
 
-    if (cs_gui_strcmp(param, "density"))
-    {
-      mei_tree_insert(ev_law, "rho0", *ro0);
-    }
-    else if (cs_gui_strcmp(param, "molecular_viscosity")) {
-      mei_tree_insert(ev_law, "rho0", *ro0);
-      mei_tree_insert(ev_law, "mu0", *viscl0);
-      mei_tree_insert(ev_law, "rho", 0.0);
-      if (cs_gui_strcmp(vars->model, "compressible_model"))
-        mei_tree_insert(ev_law, "t0", 0.0);
-    }
-    else if (cs_gui_strcmp(param, "specific_heat")) {
-      mei_tree_insert(ev_law, "cp0", *cp0);
-    }
-    else if (cs_gui_strcmp(param, "thermal_conductivity")) {
-      /* for the Temperature, the diffusivity factor is not divided by Cp */
-      if (*itherm != 1)
+      if (cs_gui_strcmp(param, "density"))
       {
-        mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]*(*cp0));
+        mei_tree_insert(ev_law, "rho0", *ro0);
       }
-      else {
-        mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]);
-      }
-    }
-
-    for (i = 0; i < *nscaus; i++)
-      mei_tree_insert(ev_law, _scalar_label(i), 0.0);
-
-    mei_tree_insert(ev_law, _scalar_label(*iscalt - 1), 0.0);
-
-    /* try to build the interpreter */
-
-    if (mei_tree_builder(ev_law))
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error: can not interpret expression: %s\n"), ev_law->string);
-
-    if (mei_tree_find_symbol(ev_law, symbol))
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error: can not find the required symbol: %s\n"), symbol);
-
-    /* for each cell, update the value of the table of symbols for each scalar
-       (including the thermal scalar), and evaluate the interpreter */
-
-    cs_field_t *c_cp = CS_F_(cp);
-    cs_field_t *c_rho = CS_F_(rho);
-    cs_field_t *c_t = CS_F_(t);
-
-    for (iel = 0; iel < *ncel; iel++)
-    {
-      for (i = 0; i < *nscaus; i++)
-        mei_tree_insert(ev_law,
-                        _scalar_label(i),
-                        rtp[(isca[i] -1) * (*ncelet) + iel]);
-      mei_tree_insert(ev_law,
-                      _scalar_label(*iscalt - 1),
-                      rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
-
-      if (cs_gui_strcmp(param, "molecular_viscosity")) {
-        mei_tree_insert(ev_law, "rho", c_rho->val[iel]);
+      else if (cs_gui_strcmp(param, "molecular_viscosity")) {
+        mei_tree_insert(ev_law, "rho0", *ro0);
+        mei_tree_insert(ev_law, "mu0", *viscl0);
+        mei_tree_insert(ev_law, "rho", 0.0);
         if (cs_gui_strcmp(vars->model, "compressible_model"))
-          mei_tree_insert(ev_law, "T", c_t->val[iel]);
+          mei_tree_insert(ev_law, "t0", 0.0);
+      }
+      else if (cs_gui_strcmp(param, "specific_heat")) {
+        mei_tree_insert(ev_law, "cp0", *cp0);
+      }
+      else if (cs_gui_strcmp(param, "thermal_conductivity")) {
+        /* for the Temperature, the diffusivity factor is not divided by Cp */
+        if (*itherm != 1)
+        {
+          mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]*(*cp0));
+        }
+        else {
+          mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]);
+        }
       }
 
-      mei_evaluate(ev_law);
+      for (i = 0; i < *nscaus; i++)
+        mei_tree_insert(ev_law, _scalar_label(i), 0.0);
 
-      if (cs_gui_strcmp(param, "thermal_conductivity")) {
-        if (*itherm == 1)
-          values[iel] = mei_tree_lookup(ev_law, symbol);
-        else if (*icp > 0)
-          values[iel] = mei_tree_lookup(ev_law, symbol) / c_cp->val[iel];
-        else
-          values[iel] = mei_tree_lookup(ev_law, symbol) / *cp0;
+      mei_tree_insert(ev_law, _scalar_label(*iscalt - 1), 0.0);
+
+      /* try to build the interpreter */
+
+      if (mei_tree_builder(ev_law))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not interpret expression: %s\n"), ev_law->string);
+
+      if (mei_tree_find_symbol(ev_law, symbol))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not find the required symbol: %s\n"), symbol);
+
+      /* for each cell, update the value of the table of symbols for each scalar
+         (including the thermal scalar), and evaluate the interpreter */
+
+      cs_field_t *c_cp = CS_F_(cp);
+      cs_field_t *c_rho = CS_F_(rho);
+      cs_field_t *c_t = CS_F_(t);
+
+      for (iel = 0; iel < *ncel; iel++)
+      {
+        for (i = 0; i < *nscaus; i++)
+          mei_tree_insert(ev_law,
+                         _scalar_label(i),
+                          rtp[(isca[i] -1) * (*ncelet) + iel]);
+        mei_tree_insert(ev_law,
+                       _scalar_label(*iscalt - 1),
+                        rtp[(isca[*iscalt -1] -1) * (*ncelet) + iel]);
+
+          if (cs_gui_strcmp(param, "molecular_viscosity")) {
+            mei_tree_insert(ev_law, "rho", c_rho->val[iel]);
+            if (cs_gui_strcmp(vars->model, "compressible_model"))
+              mei_tree_insert(ev_law, "T", c_t->val[iel]);
+          }
+
+          mei_evaluate(ev_law);
+
+          if (cs_gui_strcmp(param, "thermal_conductivity")) {
+            if (*itherm == 1)
+              values[iel] = mei_tree_lookup(ev_law, symbol);
+            else if (*icp > 0)
+              values[iel] = mei_tree_lookup(ev_law, symbol) / c_cp->val[iel];
+            else
+              values[iel] = mei_tree_lookup(ev_law, symbol) / *cp0;
+          }
+          else {
+            values[iel] = mei_tree_lookup(ev_law, symbol);
+          }
       }
-      else {
-        values[iel] = mei_tree_lookup(ev_law, symbol);
-      }
+
+      mei_tree_destroy(ev_law);
+
+      cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
-
-    mei_tree_destroy(ev_law);
-
-    cs_gui_add_mei_time(cs_timer_wtime() - time0);
   }
   else if (cs_gui_strcmp(prop_choice, "thermal_law")) {
     cs_phys_prop_type_t property;
@@ -486,15 +488,12 @@ void _physical_property(const char *const param,
     }
     else if (cs_gui_strcmp(param, "thermal_conductivity")) {
       property = CS_PHYS_PROP_THERMAL_CONDUCTIVITY;
-      bool         th_f_use_cp = false;
 
       cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
-      bool _th_f_use_cp[] = {true, false, false};
 
-      for (int i = 0; i < 3; i++)
+      for (i = 0; i < 3; i++)
           if (_th_f[i]) {
               if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
-                  th_f_use_cp = _th_f_use_cp[i];
                   int k = cs_field_key_id("scalar_diffusivity_id");
                   int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
                   if (cond_diff_id > -1)
@@ -516,9 +515,8 @@ void _physical_property(const char *const param,
       ptot[iel] = c_pres->val[iel] + *p0;
 
     cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
-    bool _th_f_use_cp[] = {true, false, false};
 
-    for (int i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++)
       if (_th_f[i]) {
         if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
           cs_phys_prop_compute(property,
@@ -561,7 +559,7 @@ void _compressible_physical_property(const char *const param,
 
   char *prop_choice = _properties_choice(param);
 
-  if (cs_gui_strcmp(prop_choice, "user_law"))
+  if (cs_gui_strcmp(prop_choice, "variable"))
     user_law = 1;
   BFT_FREE(prop_choice);
 
@@ -569,56 +567,59 @@ void _compressible_physical_property(const char *const param,
     /* return an empty interpreter */
 
     law = cs_gui_get_text_value(path);
-    time0 = cs_timer_wtime();
 
-    ev_law = mei_tree_new(law);
+    if (law != NULL) {
+      time0 = cs_timer_wtime();
 
-    mei_tree_insert(ev_law, "p0", *p0);
-    mei_tree_insert(ev_law, "t0", *t0);
+      ev_law = mei_tree_new(law);
 
-    if (cs_gui_strcmp(param, "thermal_conductivity")) {
-      mei_tree_insert(ev_law, "lambda0", visls0[*itempk -1]);
-      mei_tree_insert(ev_law, "rho0", *ro0);
-    }
-    else if (cs_gui_strcmp(param, "volumic_viscosity")) {
-      mei_tree_insert(ev_law,"viscv0", *viscv0);
-      mei_tree_insert(ev_law,"T", 0.);
-    }
+      mei_tree_insert(ev_law, "p0", *p0);
+      mei_tree_insert(ev_law, "t0", *t0);
 
-    if (cs_gui_strcmp(param, "thermal_conductivity")) {
-      for (i = 0; i < *nscaus; i++)
-        mei_tree_insert(ev_law, _scalar_label(i), 0.0);
-    }
-
-    /* try to build the interpreter */
-
-    if (mei_tree_builder(ev_law))
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error: can not interpret expression: %s\n"), ev_law->string);
-
-    if (mei_tree_find_symbol(ev_law, symbol))
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error: can not find the required symbol: %s\n"), symbol);
-
-    /* for each cell, update the value of the table of symbols for each scalar
-       (including the thermal scalar), and evaluate the interpreter */
-
-    for (iel = 0; iel < *ncel; iel++) {
       if (cs_gui_strcmp(param, "thermal_conductivity")) {
-        for (i = 0; i < *nscaus; i++)
-          mei_tree_insert(ev_law,
-                          _scalar_label(i),
-                          rtp[(isca[i] -1) * (*ncelet) + iel]);
+        mei_tree_insert(ev_law, "lambda0", visls0[*itempk -1]);
+        mei_tree_insert(ev_law, "rho0", *ro0);
+      }
+      else if (cs_gui_strcmp(param, "volumic_viscosity")) {
+        mei_tree_insert(ev_law,"viscv0", *viscv0);
+        mei_tree_insert(ev_law,"T", 0.);
       }
 
-      mei_tree_insert(ev_law, "T", rtp[(isca[*itempk -1] -1) * (*ncelet) + iel]);
+      if (cs_gui_strcmp(param, "thermal_conductivity")) {
+        for (i = 0; i < *nscaus; i++)
+          mei_tree_insert(ev_law, _scalar_label(i), 0.0);
+      }
 
-      mei_evaluate(ev_law);
-      propce[idx * (*ncelet) + iel] = mei_tree_lookup(ev_law, symbol);
+      /* try to build the interpreter */
+
+      if (mei_tree_builder(ev_law))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not interpret expression: %s\n"), ev_law->string);
+
+      if (mei_tree_find_symbol(ev_law, symbol))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not find the required symbol: %s\n"), symbol);
+
+      /* for each cell, update the value of the table of symbols for each scalar
+         (including the thermal scalar), and evaluate the interpreter */
+
+      for (iel = 0; iel < *ncel; iel++) {
+        if (cs_gui_strcmp(param, "thermal_conductivity")) {
+          for (i = 0; i < *nscaus; i++)
+            mei_tree_insert(ev_law,
+                            _scalar_label(i),
+                            rtp[(isca[i] -1) * (*ncelet) + iel]);
+        }
+
+        mei_tree_insert(ev_law, "T", rtp[(isca[*itempk -1] -1) * (*ncelet) + iel]);
+
+        mei_evaluate(ev_law);
+        propce[idx * (*ncelet) + iel] = mei_tree_lookup(ev_law, symbol);
+      }
+      mei_tree_destroy(ev_law);
+
+      cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
-    mei_tree_destroy(ev_law);
-
-    cs_gui_add_mei_time(cs_timer_wtime() - time0);
   }
 }
 
@@ -651,7 +652,7 @@ cs_gui_scalar_properties_choice(const int scalar_num, int *const choice)
   } else {
     ichoice = 1;
 
-    if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "user_law"))
+    if (cs_gui_strcmp(buff, "variable"))
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
@@ -1251,8 +1252,7 @@ cs_gui_properties_choice(const char *const property_name, int *choice)
   if (buff)
   {
     iok = 1;
-    if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "user_law") ||
-        cs_gui_strcmp(buff, "thermal_law"))
+    if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "thermal_law"))
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
@@ -2369,7 +2369,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
     ivisls[*itempk -1] = 0;
 
     char *prop_choice = _properties_choice("thermal_conductivity");
-    if (cs_gui_strcmp(prop_choice, "user_law"))
+    if (cs_gui_strcmp(prop_choice, "variable"))
       ivisls[*itempk -1] = 1;
     BFT_FREE(prop_choice);
   }
@@ -5375,7 +5375,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
     int user_law = 0;
     if (j != *iscalt -1 && iscavr[j] <= 0 && ivisls[j] > 0) {
       char *prop_choice = _properties_choice("name");
-      if (cs_gui_strcmp(prop_choice, "user_law"))
+      if (cs_gui_strcmp(prop_choice, "variable"))
         user_law = 1;
       BFT_FREE(prop_choice);
     }
@@ -5396,57 +5396,59 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       law = cs_gui_get_text_value(path);
       BFT_FREE(path);
 
-      /* return an empty interpreter */
+      if (law != NULL) {
 
-      time0 = cs_timer_wtime();
+        /* return an empty interpreter */
 
-      ev_law = mei_tree_new(law);
-      BFT_FREE(law);
-      for (i = 0; i < *nscaus; i++)
-        mei_tree_insert(ev_law, _scalar_label(i), 0.0);
+        time0 = cs_timer_wtime();
 
-      /* try to build the interpreter */
+        ev_law = mei_tree_new(law);
+        BFT_FREE(law);
+        for (i = 0; i < *nscaus; i++)
+          mei_tree_insert(ev_law, _scalar_label(i), 0.0);
 
-      if (mei_tree_builder(ev_law))
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error: can not interpret expression: %s\n"), ev_law->string);
+        /* try to build the interpreter */
 
-      if (mei_tree_find_symbol(ev_law, "diffusivity"))
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error: can not find the required symbol: %s\n"),
-                  "diffusivity");
+        if (mei_tree_builder(ev_law))
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error: can not interpret expression: %s\n"), ev_law->string);
 
-      /* for each cell, update the value of the table of symbols for each scalar
-         (including the thermal scalar), and evaluate the interpreter */
+        if (mei_tree_find_symbol(ev_law, "diffusivity"))
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error: can not find the required symbol: %s\n"),
+                    "diffusivity");
 
-      if (*irovar == 1) {
-        for (iel = 0; iel < *ncel; iel++) {
-          for (i = 0; i < *nscaus; i++)
-            mei_tree_insert(ev_law,
-                            _scalar_label(i),
-                            rtp[(isca[i] -1) * (*ncelet) + iel]);
+        /* for each cell, update the value of the table of symbols for each scalar
+           (including the thermal scalar), and evaluate the interpreter */
 
-          mei_evaluate(ev_law);
-          propce[ipcvsl * (*ncelet) + iel]
-            = mei_tree_lookup(ev_law, "diffusivity") * c_rho->val[iel];
+        if (*irovar == 1) {
+          for (iel = 0; iel < *ncel; iel++) {
+            for (i = 0; i < *nscaus; i++)
+              mei_tree_insert(ev_law,
+                              _scalar_label(i),
+                              rtp[(isca[i] -1) * (*ncelet) + iel]);
+
+            mei_evaluate(ev_law);
+            propce[ipcvsl * (*ncelet) + iel]
+                = mei_tree_lookup(ev_law, "diffusivity") * c_rho->val[iel];
+          }
         }
-      }
-      else {
-        for (iel = 0; iel < *ncel; iel++) {
-          for (i = 0; i < *nscaus; i++)
-            mei_tree_insert(ev_law,
-                            _scalar_label(i),
-                            rtp[(isca[i] -1) * (*ncelet) + iel]);
+        else {
+          for (iel = 0; iel < *ncel; iel++) {
+            for (i = 0; i < *nscaus; i++)
+              mei_tree_insert(ev_law,
+                              _scalar_label(i),
+                              rtp[(isca[i] -1) * (*ncelet) + iel]);
 
-          mei_evaluate(ev_law);
-          propce[ipcvsl * (*ncelet) + iel] =
-            mei_tree_lookup(ev_law, "diffusivity") * (*ro0);
+            mei_evaluate(ev_law);
+            propce[ipcvsl * (*ncelet) + iel] =
+                mei_tree_lookup(ev_law, "diffusivity") * (*ro0);
+          }
         }
+        mei_tree_destroy(ev_law);
+
+        cs_gui_add_mei_time(cs_timer_wtime() - time0);
       }
-      mei_tree_destroy(ev_law);
-
-      cs_gui_add_mei_time(cs_timer_wtime() - time0);
-
     }
     BFT_FREE(name);
   }
