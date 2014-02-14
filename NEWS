@@ -11,6 +11,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix possible crash when extracting post-processing sub-mesh in parallel.
+
 - Fix for inlet boundary conditions using Spalart-Allmaras turbulence model.
 
 - Fix in some code-code coupling cases (uninitialized loop variable).

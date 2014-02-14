@@ -512,11 +512,11 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   if (cell_list != NULL) {
 
-    BFT_MALLOC(extr_cell_idx, mesh->n_cells, cs_lnum_t);
+    BFT_MALLOC(extr_cell_idx, mesh->n_cells_with_ghosts, cs_lnum_t);
 
     /* Initialize index as marker */
 
-    for (cell_id = 0; cell_id < mesh->n_cells; cell_id++)
+    for (cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++)
       extr_cell_idx[cell_id] = -1;
     for (cell_id = 0; cell_id < cell_list_size; cell_id++) {
       if (cell_list[cell_id] <= mesh->n_cells)
