@@ -826,35 +826,44 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
   if (isOrthotrop)
     variable_nbr = 3;
 
-  if (!aleFormula)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Formula is null for ale.\n"));
-
-  /* Init mei */
-  ev = cs_gui_init_mei_tree(aleFormula, variables,
-                            variable_nbr, symbols, 0, 3,
-                            *dtref, *ttcabs, *ntcabs);
-
-  /* for each cell, update the value of the table of symbols for each scalar
-     (including the thermal scalar), and evaluate the interpreter */
-  for (iel = 0; iel < *ncel; iel++) {
-    /* insert symbols */
-    mei_tree_insert(ev, "x", xyzcen[3 * iel + 0]);
-    mei_tree_insert(ev, "y", xyzcen[3 * iel + 1]);
-    mei_tree_insert(ev, "z", xyzcen[3 * iel + 2]);
-
-    mei_evaluate(ev);
-
-    /* Set viscmx, viscmy and viscmz */
-    viscmx[iel] = mei_tree_lookup(ev, "mesh_vi1");
-    if (isOrthotrop) {
-      viscmy[iel] = mei_tree_lookup(ev, "mesh_vi2");
-      viscmz[iel] = mei_tree_lookup(ev, "mesh_vi3");
+  if (!aleFormula) {
+    bft_printf("Warning : Formula is null for ale. Use constant value\n");
+    for (iel = 0; iel < *ncel; iel++) {
+      viscmx[iel] = 1.;
+      if (isOrthotrop) {
+        viscmy[iel] = 1.;
+        viscmz[iel] = 1.;
+      }
     }
   }
-  mei_tree_destroy(ev);
-  BFT_FREE(aleFormula);
-  BFT_FREE(viscosityType);
+  else {
+
+    /* Init mei */
+    ev = cs_gui_init_mei_tree(aleFormula, variables,
+                              variable_nbr, symbols, 0, 3,
+                              *dtref, *ttcabs, *ntcabs);
+
+    /* for each cell, update the value of the table of symbols for each scalar
+       (including the thermal scalar), and evaluate the interpreter */
+    for (iel = 0; iel < *ncel; iel++) {
+      /* insert symbols */
+      mei_tree_insert(ev, "x", xyzcen[3 * iel + 0]);
+      mei_tree_insert(ev, "y", xyzcen[3 * iel + 1]);
+      mei_tree_insert(ev, "z", xyzcen[3 * iel + 2]);
+
+      mei_evaluate(ev);
+
+      /* Set viscmx, viscmy and viscmz */
+      viscmx[iel] = mei_tree_lookup(ev, "mesh_vi1");
+      if (isOrthotrop) {
+        viscmy[iel] = mei_tree_lookup(ev, "mesh_vi2");
+        viscmz[iel] = mei_tree_lookup(ev, "mesh_vi3");
+      }
+    }
+    mei_tree_destroy(ev);
+    BFT_FREE(aleFormula);
+    BFT_FREE(viscosityType);
+  }
 }
 
 /*----------------------------------------------------------------------------
