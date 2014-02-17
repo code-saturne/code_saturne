@@ -1777,7 +1777,7 @@ non-physical velocities which may appear in highly
 stratified areas or near horizontal walls (thus
 avoiding the use of {\tt extrag} if the non-physical velocities are due only to
 gravity effects).\\
-The improved algorithm also allows to eradicate the velocity oscillations
+The improved algorithm also allows eradicating the velocity oscillations
 which tend to appear at the frontiers of areas with high head losses.\\
 In the case of a stratified flow, the calculation cost is higher when the
 improved algorithm is used (about 30\% depending on the case) because
@@ -1862,7 +1862,7 @@ By definition:
 $$ \eta^{\,pred}_{\,i,k}(\vect{u}^*)= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,pred}(\vect{u}^*)||
 _{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
 \hspace*{0.5cm}$\bullet$ The first family, $k=1$, suppresses the
-volume $|\Omega_i|$ which intrinsicly appears  with the norm
+volume $|\Omega_i|$ which intrinsically appears with the norm
 ${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\
 \hspace*{0.5cm}$\bullet$ The second family, $k=2$, exactly represents the norm
 ${{I\hspace{-.25em}L}^{2}(\Omega_i)}$. The size of the cell therefore
@@ -2011,8 +2011,8 @@ if you need to override this limitation.}
 The following options are related to {\tt icdpar}=1 or -1. The options of
 level 2 are described first. Some options are used only in the case of
 the calculation of the non-dimensional distance to the wall $y^+$ (LES model with
-van Driest damping). Most of these key words are simple copies of the
-key words for the numerical options of the general equations, with a potentially
+van Driest damping). Most of these keywords are simple copies of the
+keywords for the numerical options of the general equations, with a potentially
 specific value in the case of the calculation of the distance to the wall.\\
 
 \motcle{iwarny}{i}{integer}{0}{O}{L2}
@@ -2929,7 +2929,7 @@ The electric arcs module is designed to take into account the Joule effect
 (only with real potential) in the enthalpy equation. The Laplace forces
 are taken into account in the impulse momentum equation.
 
-The key words used in the global settings are quite few. They are
+The keywords used in the global settings are quite few. They are
 found in the subroutine \texttt{useli1} (see the description of this
 user subroutine \S\ref{prg_useli1}).
 
@@ -2987,7 +2987,7 @@ useful if \texttt{modrec}=2}
 \subsection{Compressible module: specificities}
 %==================================
 
-The key words used in the global settings are quite few. They are
+The keywords used in the global settings are quite few. They are
 found in the subroutines \texttt{uscfx1} and \texttt{uscfx2}, in
 the \texttt{cs\_user\_parameters.f90} file (see the
 description of these user subroutines, \S\ref{prg_uscfx12}).
@@ -3013,7 +3013,7 @@ pressure allows to get rid of the disturbances which may appear near the
 horizontal walls when the flow is little convective.\\
 %
 Otherwise, when \texttt{icfgrp}=0, the pressure condition is calculated
-from the solution of the unidimensional Euler equations for a perfect
+from the solution of the one-dimensional Euler equations for a perfect
 gas near a wall, for the variables ``normal velocity'', ``density'' and
 ``pressure'':
 \vspace{0.2cm}
@@ -3075,7 +3075,7 @@ always useful}
 %==================================================
 \label{sec:prg_motscles_lagr}
 
-Most of these key words may be modified in the user subroutines
+Most of these keywords may be modified in the user subroutines
 \texttt{uslag1}, \texttt{uslag2}, \texttt{uslaen},
 \texttt{uslast} and \texttt{uslaed}. It is however strongly recommended
 not to modify those belonging to the level L3.

@@ -2097,7 +2097,7 @@ for mass flux across interior and boundary faces.
 
 \underline{About \texttt{rtp} and \texttt{rtpa}}
 
-The indexes allowing to mark out the different variables (from 1 to
+The indexes allowing marking out the different variables (from 1 to
 \texttt{nvar}) are integers available in a ``module'' called
 \texttt{numvar}.
 
@@ -2805,7 +2805,7 @@ In parallel mode, the user must pay attention during the writing of
       pieces of information. Writing to the ``listing'' can be done
       simply by using the \texttt{nfecra} logical unit (each processor will write
       to its own ``listing'' file): use
-      \texttt{write(nfecra,...}. \\
+      \texttt{write(nfecra, ...}. \\
 If the user wants an operation to be done by only one processor (for
       example, open or write a file), the associated instructions must
       be included inside a test on the value of \texttt{irangp} (generally it is
@@ -3031,7 +3031,7 @@ continuous phase. These source terms are marked out by the following
 \item \texttt{itske}: explicit source term for the turbulent dissipation and the
       turbulent energy if the $k-\varepsilon$ turbulence model is used for the
       continuous phase
-\item \texttt{itsr11},... \texttt{itsr33}: source terms for the Reynolds stress
+\item \texttt{itsr11}, ... \texttt{itsr33}: source terms for the Reynolds stress
       and the turbulent dissipation if the $R_{ij}-\varepsilon$ turbulence model
       is used for the continuous phase
 \item \texttt{itsmas}: mass source term
@@ -3185,8 +3185,8 @@ define a subset of the mesh, for example:
 
 \begin{list}{-}{}
 \item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{usalcl},
-\texttt{usray2}, \texttt{uslag2},...),
-\item volume initialization (cf. \texttt{cs\_user\_initialization},...),
+\texttt{usray2}, \texttt{uslag2}, ...),
+\item volume initialization (cf. \texttt{cs\_user\_initialization}, ...),
 \item head-loss region (cf. \texttt{uskpdc}),
 \item source terms region (cf. \texttt{cs\_user\_source\_terms}),
 \item advanced post-processing (cf. \texttt{cs\_user\_postprocess.c},
@@ -4208,10 +4208,10 @@ has been well defined. The modifiable parameters in each of the subroutines of
       parameters related to the error estimators (don't modify these parameters
       anywhere else).
 \item \texttt{usipsu}: physical parameters of the calculation (thermal scalar, physical
-      properties,...), numerical parameters (time steps, number of iterations, ...),
+      properties, ...), numerical parameters (time steps, number of iterations, ...),
       definition of the time averages.
 \item \texttt{usipes}: post-processing output parameters (periodicity, variable names,
-      probe positions,...)
+      probe positions, ...)
 \end{list}
 
 For more details on the different parameters, see the list of keywords
@@ -6639,7 +6639,9 @@ study case. Their content is described below.
 %==================================
 \subsubsubsection{Initialisation of the variables}\label{sec:Ini-coal}
 %==================================
-For coal combustion, it is possible to initialise the specific variables in the Graphical User Interface (GUI) or in the subroutine \texttt{cs\_user\_initialization}. In the GUI, when a coal combustion physics is selected in the item ``Calculation features'' under the heading ``Thermophysical models'', an additional item appears:``Pulverized coal combustion''. In this item the user can define coal types, its composition, the oxydant and reactions parameters, see \figurename~\ref{fig:Ini-coal1} to \figurename~\ref{fig:Ini-coal5}.
+For coal combustion, it is possible to initialise the specific variables in the Graphical User Interface (GUI) or in the subroutine
+\texttt{cs\_user\_initialization}. In the GUI, when a coal combustion physics is selected in the item ``Calculation features'' under the heading
+``Thermophysical models'', an additional item appears: ``Pulverized coal combustion''. In this item the user can define coal types, their composition, the oxydant and reactions parameters, see \figurename~\ref{fig:Ini-coal1} to \figurename~\ref{fig:Ini-coal5}.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -7664,7 +7666,10 @@ positive integers less than or equal to \texttt{nflagm\index{nflagm}}
 is associated with every zone; it will be used to impose global boundary
 conditions. \emph{WARNING: it is essential that every boundary face belongs to a zone.}}
 
-\variab{iusncl}{iusncl(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones previously identified, the number of classes \texttt{nbclas}\footnote{a class is a set of particles sharing the same physical properties and the same characteristics concerning the injection in the calculation domain} of entering particles is given: \texttt{iusncl(izone)} = \texttt{nbclas}. By default, the number of particle classes is zero. The maximum number of classes is \texttt{nclagm\index{nclagm}} (parameter stored in lagpar, whose default value is 20).}
+\variab{iusncl}{iusncl(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones previously identified, the number of classes \texttt{nbclas}\footnote{a class is
+a set of particles sharing the same physical properties and the same characteristics concerning the injection in the calculation domain} of entering particles
+is given: \texttt{iusncl(izone)} = \texttt{nbclas}. By default, the number of particle classes is zero. The maximum number of classes is
+\texttt{nclagm\index{nclagm}} (parameter stored in \texttt{lagpar}, whose default value is 20).}
 
 \variablist{iusclb}{iusclb(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones
 previously identified, a particle boundary condition type is
@@ -7959,7 +7964,8 @@ The particle relaxation time may be modified in the subroutine \texttt{uslatp} a
 %-------------------------------------------
 
 \noindent
-The particle thermal characteristic time may be modified in the subroutine \texttt{uslatc} according to the chosen correlation for the calculation of the Nusselt number. This subroutine is called ar each Lagrangian sub-step. The thermal characteristic time, modified or not by the user, is available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
+The particle thermal characteristic time may be modified in the subroutine \texttt{uslatc} according to the chosen correlation for the calculation of the
+Nusselt number. This subroutine is called at each Lagrangian sub-step. The thermal characteristic time, modified or not by the user, is available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
 
 
 
@@ -8305,7 +8311,7 @@ specifically for the electric arcs module with \texttt{ippmod(ielarc)}=2~:
 \item magnetic field in $T$ (\vect{B} = \vect{rot}\,\vect{A})
 \end{list}
 
-The post-processing output will be created automatically (on all ouptut volume
+The post-processing output will be created automatically (on all output volume
 meshes for which the automatic output of main variables is active).
 
 %==================================
@@ -8385,16 +8391,16 @@ The following paragraphs are relevant if the GUI is not used.
 \textit{Subroutine called at the beginning.}
 This subroutine completes \texttt{cs\_user\_parameters.f90}.
 
-\texttt{usalin} allows to set options for the ALE module, and in
-particular to active the ALE module (\texttt{iale=1}).
+\texttt{usalin} allows setting options for the ALE module, and in
+particular to activate the ALE module (\texttt{iale=1}).
 
 \minititre{Subroutine \texttt{usstr1}}
 
 \texttt{usstr1} This subroutine reads in \texttt{cs\_user\_fluid\_structure\_interaction.f90}. It allows to specify for the structure module the
 following pieces of information:
 \begin{list}{-}{}
-  \item the index of the structure, (\texttt{idfstr(ifac)} where \texttt{ifac} is the index of the face). Then the total number of structures \texttt{nbstru} is automatically computed by the code. Be carefull, the value must belong to 1, ..., \texttt{nbstru}.
-  \item the initial value of deplacement, velocity and acceleration
+  \item the index of the structure, (\texttt{idfstr(ifac)} where \texttt{ifac} is the index of the face). Then the total number of structures \texttt{nbstru} is automatically computed by the code. Be careful, the value must belong to 1, ..., \texttt{nbstru}.
+  \item the initial value of displacement, velocity and acceleration
     (\texttt{xstr0}, \texttt{xstreq} and \texttt{vstr0}).
 \end{list}
 
@@ -8491,7 +8497,7 @@ words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
 
  \item if \texttt{ialtyb(ifac) = igliss}: sliding wall
 \begin{list}{$\rightarrow$}{}
-\item symmetry boundary condition on the mesh velocity vector, which means an homogeneous Neumann on the tangential mesh velocity and a zero Dirichlet on the normal mesh velocity.
+\item symmetry boundary condition on the mesh velocity vector, which means a homogeneous Neumann on the tangential mesh velocity and a zero Dirichlet on the normal mesh velocity.
 \end{list}
 
  \item if \texttt{ialtyb(ifac) = ifrsf}: free-surface
