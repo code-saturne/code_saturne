@@ -194,6 +194,7 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets , dtsrom
 double precision diipbx, diipby, diipbz
 double precision cx    , cy    , cz
+double precision ccorio
 double precision dvol
 
 double precision rvoid(1)
@@ -255,6 +256,17 @@ else
   iptsna = 0
 endif
 
+! Coefficient of the "Coriolis-type" term
+if (icorio.eq.1) then
+  ! Relative velocity formulation
+  ccorio = 2.d0
+elseif (iturbo.eq.1) then
+  ! Mixed relative/absolute velocity formulation
+  ccorio = 1.d0
+else
+  ccorio = 0.d0
+endif
+
 !===============================================================================
 ! 2. Potential forces (pressure gradient and gravity)
 !===============================================================================
@@ -301,26 +313,15 @@ if (iappel.eq.1.and.iphydr.eq.1) then
     enddo
   endif
 !     Ajout eventuel de la force de Coriolis
-  if (icorio.eq.1) then
-    ! "True" Coriolis term if one solves the relative velocity
-    do iel = 1, ncel
-      cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
-      cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
-      cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) - 2.d0*crom(iel)*cx
-      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) - 2.d0*crom(iel)*cy
-      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) - 2.d0*crom(iel)*cz
-    enddo
-  elseif (iturbo.eq.1) then
-    ! "Coriolis-type" term if one solves the absolute velocity
+  if (icorio.eq.1 .or. iturbo.eq.1) then
     do iel = 1, ncel
       if (irotce(iel).ne.0) then
         cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
         cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
         cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-        dfrcxt(iel,1) = dfrcxt(iel,1) - crom(iel)*cx
-        dfrcxt(iel,2) = dfrcxt(iel,2) - crom(iel)*cy
-        dfrcxt(iel,3) = dfrcxt(iel,3) - crom(iel)*cz
+        dfrcxt(iel,1) = dfrcxt(iel,1) - ccorio*crom(iel)*cx
+        dfrcxt(iel,2) = dfrcxt(iel,2) - ccorio*crom(iel)*cy
+        dfrcxt(iel,3) = dfrcxt(iel,3) - ccorio*crom(iel)*cz
       endif
     enddo
   endif
@@ -910,49 +911,8 @@ endif
 !     (if iphydr=1 then this term is already taken into account)
 
 ! --->  Explicit part
-if (icorio.eq.1.and.iphydr.eq.0) then
 
-  ! At the first iteration on PISO, the explicit part is added
-  if (iterns.eq.1) then
-
-    ! If no iterations: directly in trav array
-    if (nterup.eq.1) then
-
-      do iel = 1, ncel
-        cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
-        cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
-        cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-        romvom = -2.d0*crom(iel)*volume(iel)
-
-        ! With porosity
-        if (iporos.ge.1) romvom = romvom*porosi(iel)
-
-        trav(1,iel) = trav(1,iel) + romvom*cx
-        trav(2,iel) = trav(2,iel) + romvom*cy
-        trav(3,iel) = trav(3,iel) + romvom*cz
-      enddo
-
-    ! If iterations: in trava
-    else
-
-      do iel = 1, ncel
-        cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
-        cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
-        cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-        romvom = -2.d0*crom(iel)*volume(iel)
-
-        ! With porosity
-        if (iporos.ge.1) romvom = romvom*porosi(iel)
-
-        trava(1,iel) = trava(1,iel) + romvom*cx
-        trava(2,iel) = trava(2,iel) + romvom*cy
-        trava(3,iel) = trava(3,iel) + romvom*cz
-      enddo
-
-    endif
-  endif
-
-elseif (iturbo.eq.1 .and. iphydr.eq.0) then
+if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.eq.0) then
 
   ! A la premiere iter sur navsto, on ajoute la partie issue des
   ! termes explicites
@@ -968,7 +928,7 @@ elseif (iturbo.eq.1 .and. iphydr.eq.0) then
           cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
           cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
           cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-          romvom = -crom(iel)*volume(iel)
+          romvom = -ccorio*crom(iel)*volume(iel)
 
           ! With porosity
           if (iporos.ge.1) romvom = romvom*porosi(iel)
@@ -987,7 +947,7 @@ elseif (iturbo.eq.1 .and. iphydr.eq.0) then
           cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
           cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
           cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-          romvom = -crom(iel)*volume(iel)
+          romvom = -ccorio*crom(iel)*volume(iel)
 
           ! With porosity
           if (iporos.ge.1) romvom = romvom*porosi(iel)
@@ -1006,22 +966,24 @@ endif
 
 !  At the second call, fimp is not needed anymore
 if(iappel.eq.1) then
-  if (icorio.eq.1) then
+  if (icorio.eq.1 .or. iturbo.eq.1) then
     ! The theta-scheme for the Coriolis term is the same as the other terms
     thetap = thetav(iu)
 
     do iel = 1, ncel
-      romvom = crom(iel)*volume(iel)*thetap
+      if (irotce(iel).ne.0) then
+        romvom = crom(iel)*volume(iel)*thetap
 
-      ! With porosity
-      if (iporos.ge.1) romvom = romvom*porosi(iel)
+        ! With porosity
+        if (iporos.ge.1) romvom = romvom*porosi(iel)
 
-      fimp(1,2,iel) = fimp(1,2,iel) + 2.d0*romvom*omegaz
-      fimp(2,1,iel) = fimp(2,1,iel) - 2.d0*romvom*omegaz
-      fimp(1,3,iel) = fimp(1,3,iel) - 2.d0*romvom*omegay
-      fimp(3,1,iel) = fimp(3,1,iel) + 2.d0*romvom*omegay
-      fimp(2,3,iel) = fimp(2,3,iel) + 2.d0*romvom*omegax
-      fimp(3,2,iel) = fimp(3,2,iel) - 2.d0*romvom*omegax
+        fimp(1,2,iel) = fimp(1,2,iel) + ccorio*romvom*rotax(3)
+        fimp(2,1,iel) = fimp(2,1,iel) - ccorio*romvom*rotax(3)
+        fimp(1,3,iel) = fimp(1,3,iel) - ccorio*romvom*rotax(2)
+        fimp(3,1,iel) = fimp(3,1,iel) + ccorio*romvom*rotax(2)
+        fimp(2,3,iel) = fimp(2,3,iel) + ccorio*romvom*rotax(1)
+        fimp(3,2,iel) = fimp(3,2,iel) - ccorio*romvom*rotax(1)
+      endif
     enddo
 
   endif

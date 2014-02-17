@@ -498,38 +498,9 @@ if (iprco.le.0) then
 
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
-  ! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
-  if (imobil.eq.1) then
-
+  ! En turbomachine, on connait exactement la vitesse de maillage a ajouter
+  if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
     !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
-    do ifac = 1, nfac
-      iel1 = ifacel(1,ifac)
-      iel2 = ifacel(2,ifac)
-      dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
-      rhofac = 0.5d0*(crom(iel1) + crom(iel2))
-      vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
-      vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
-      vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
-      imasfl(ifac) = imasfl(ifac) - rhofac*(        &
-           vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
-    enddo
-    !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
-    !$omp          if(nfabor > thr_n_min)
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      dtfac  = dt(iel)
-      rhofac = brom(ifac)
-      vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
-      vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
-      vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
-      bmasfl(ifac) = bmasfl(ifac) - rhofac*(        &
-           vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
-    enddo
-
-  endif
-
-  if (iturbo.eq.1 .or. iturbo.eq.2) then
-
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
@@ -544,7 +515,8 @@ if (iprco.le.0) then
                                               + vitboz*surfac(3,ifac))
       endif
     enddo
-
+    !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
+    !$omp          if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       if (irotce(iel).ne.0) then
@@ -558,7 +530,6 @@ if (iprco.le.0) then
                                               + vitboz*surfbo(3,ifac))
       endif
     enddo
-
   endif
 
   ! Interleaved values of vel and vela
@@ -1022,41 +993,13 @@ endif
 !FIXME for me we should do that before predvv
 ! Ajout de la vitesse du solide dans le flux convectif,
 ! si le maillage est mobile (solide rigide)
-! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
+! En turbomachine, on connait exactement la vitesse de maillage a ajouter
+if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
-if (imobil.eq.1) then
+  if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t3)
+                                  !==========
 
   !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
-  do ifac = 1, nfac
-    iel1 = ifacel(1,ifac)
-    iel2 = ifacel(2,ifac)
-    dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
-    rhofac = 0.5d0*(crom(iel1) + crom(iel2))
-    vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
-    vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
-    vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
-    imasfl(ifac) = imasfl(ifac) - rhofac*(        &
-         vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
-  enddo
-  !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
-  !$omp             if(nfabor > thr_n_min)
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    dtfac  = dt(iel)
-    rhofac = brom(ifac)
-    vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
-    vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
-    vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
-    bmasfl(ifac) = bmasfl(ifac) - rhofac*(        &
-         vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
-  enddo
-endif
-
-if (iturbo.eq.1 .or. iturbo.eq.2) then
-
-  call dmtmps(t3)
-  !==========
-
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
@@ -1071,7 +1014,8 @@ if (iturbo.eq.1 .or. iturbo.eq.2) then
                                             + vitboz*surfac(3,ifac))
     endif
   enddo
-
+  !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
+  !$omp             if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     if (irotce(iel).ne.0) then
@@ -1086,8 +1030,8 @@ if (iturbo.eq.1 .or. iturbo.eq.2) then
     endif
   enddo
 
-  call dmtmps(t4)
-  !==========
+  if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t4)
+                                  !==========
 
   ellap2 = t2-t1 + t4-t3
 

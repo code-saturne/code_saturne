@@ -1086,8 +1086,10 @@ cs_turbomachinery_initialize(void)
 
   /* Complete the mesh with rotor-stator joining */
 
-  cs_real_t t_elapsed;
-  cs_turbomachinery_update_mesh(0.,&t_elapsed);
+  if (cs_glob_n_joinings > 0) {
+    cs_real_t t_elapsed;
+    cs_turbomachinery_update_mesh(0.,&t_elapsed);
+  }
 
   /* Adapt postprocessing options if required;
      must be called before cs_post_init_meshes(). */

@@ -92,28 +92,49 @@ contains
 
   !=============================================================================
 
-  ! Map turbomachinery module components to global c turbomachinery structure
+  ! Initialization of turbomachinery module variables
 
-  subroutine turbomachinery_init_mapping
+  subroutine turbomachinery_init
 
     use, intrinsic :: iso_c_binding
     use mesh
+    use cstphy
+    use cplsat, only: imobil
 
     implicit none
 
     ! Local variables
 
+    integer iel
     type(c_ptr) :: c_p
 
-    ! Synchronize the list of rotating cells
+    ! Map turbomachinery module components to global c turbomachinery structure
 
     call map_turbomachinery_module(iturbo, rotax, c_p)
 
     call c_f_pointer(c_p, irotce, [ncelet])
 
+    ! In case of relative frame computation or turbomachinery computation
+    ! with code/code coupling, the data management is merged with the one
+    ! of turbomachinery module
+
+    if (iturbo.eq.0) then
+      if (icorio.eq.1.or.imobil.eq.1) then
+
+        rotax(1) = omegax
+        rotax(2) = omegay
+        rotax(3) = omegaz
+
+        allocate(irotce(ncelet))
+        do iel = 1, ncelet
+          irotce(iel) = 1
+        enddo
+      endif
+    endif
+
     return
 
-  end subroutine turbomachinery_init_mapping
+  end subroutine turbomachinery_init
 
   !=============================================================================
 
@@ -141,6 +162,23 @@ contains
     return
 
   end subroutine turbomachinery_update
+
+  !=============================================================================
+
+  ! Finalization of turbomachinery module variables
+
+  subroutine turbomachinery_finalize
+
+    use cstphy, only: icorio
+    use cplsat, only: imobil
+
+    if (iturbo.eq.0) then
+      if (icorio.eq.1.or.imobil.eq.1)  deallocate(irotce)
+    endif
+
+    return
+
+  end subroutine turbomachinery_finalize
 
   !=============================================================================
 

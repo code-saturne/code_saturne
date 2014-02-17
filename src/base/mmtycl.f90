@@ -65,7 +65,7 @@ use paramx
 use numvar
 use optcal
 use cstnum
-use cstphy
+use turbomachinery
 use entsor
 use parall
 use mesh
@@ -105,47 +105,51 @@ do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-  ! --- En turbomachine on conna�t la valeur exacte de la vitesse de maillage
+  if (irotce(iel).ne.0) then
 
-  vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
-  vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
-  vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
+    ! --- En turbomachine on connait la valeur exacte de la vitesse de maillage
 
-  if (itypfb(ifac).eq.isymet) then
-    rcodcl(ifac,iu,1) = vitbox
-    rcodcl(ifac,iv,1) = vitboy
-    rcodcl(ifac,iw,1) = vitboz
-  endif
+    vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
+    vitboy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
+    vitboz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
 
-  if (itypfb(ifac).eq.iparoi) then
-    ! Si une des composantes de vitesse de glissement a ete
-    !    modifiee par l'utilisateur, on ne fixe que la vitesse
-    !    normale
-    if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
-         rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.              &
-         rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+    if (itypfb(ifac).eq.isymet) then
       rcodcl(ifac,iu,1) = vitbox
       rcodcl(ifac,iv,1) = vitboy
       rcodcl(ifac,iw,1) = vitboz
-    else
-      ! On met a 0 les composantes de RCODCL non specifiees
-      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = 0.d0
-      if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = 0.d0
-      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = 0.d0
+    endif
 
-      srfbnf = surfbn(ifac)
-      rnx = surfbo(1,ifac)/srfbnf
-      rny = surfbo(2,ifac)/srfbnf
-      rnz = surfbo(3,ifac)/srfbnf
-      rcodcx = rcodcl(ifac,iu,1)
-      rcodcy = rcodcl(ifac,iv,1)
-      rcodcz = rcodcl(ifac,iw,1)
-      rcodsn = (vitbox - rcodcx)*rnx                            &
-           + (vitboy - rcodcy)*rny                            &
-           + (vitboz - rcodcz)*rnz
-      rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
-      rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
-      rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz
+    if (itypfb(ifac).eq.iparoi) then
+      ! Si une des composantes de vitesse de glissement a ete
+      !    modifiee par l'utilisateur, on ne fixe que la vitesse
+      !    normale
+      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
+          rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.              &
+          rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+        rcodcl(ifac,iu,1) = vitbox
+        rcodcl(ifac,iv,1) = vitboy
+        rcodcl(ifac,iw,1) = vitboz
+      else
+        ! On met a 0 les composantes de RCODCL non specifiees
+        if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = 0.d0
+        if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = 0.d0
+        if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = 0.d0
+
+        srfbnf = surfbn(ifac)
+        rnx = surfbo(1,ifac)/srfbnf
+        rny = surfbo(2,ifac)/srfbnf
+        rnz = surfbo(3,ifac)/srfbnf
+        rcodcx = rcodcl(ifac,iu,1)
+        rcodcy = rcodcl(ifac,iv,1)
+        rcodcz = rcodcl(ifac,iw,1)
+        rcodsn = (vitbox - rcodcx)*rnx                            &
+             + (vitboy - rcodcy)*rny                            &
+             + (vitboz - rcodcz)*rnz
+        rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
+        rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
+        rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz
+      endif
+
     endif
 
   endif

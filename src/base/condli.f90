@@ -295,13 +295,8 @@ if (iale.eq.1) then
    rcodcl , xyzno0 , depale )
 endif
 
-if (imobil.eq.1) then
+if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
   call mmtycl(itypfb, rcodcl)
-  !==========
-endif
-
-if (iturbo.eq.1 .or. iturbo.eq.2) then
-  call mmtyc2 (itypfb, rcodcl)
   !==========
 endif
 

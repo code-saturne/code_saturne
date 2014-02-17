@@ -223,56 +223,7 @@ if (numtyp .eq. -1) then
 
   ! Vitesse et pression relatives en cas de calcul en repère fixe
 
-  if (imobil.eq.1) then
-
-    call field_get_val_s(icrom, crom)
-
-    idimt = 1
-    ientla = .true.
-    ivarpr = .false.
-
-    do iloc = 1, ncelps
-
-      iel = lstcel(iloc)
-
-      pcentr =   0.5d0*((omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
-                      + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
-                      + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2)
-
-      tracel(iloc) = rtp(iel,ipr) - crom(iel)*pcentr
-
-    enddo
-
-    call post_write_var(nummai, 'Rel Pressure', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, tracel, rbid, rbid)
-
-    idimt = 3
-    ientla = .true.
-    ivarpr = .false.
-
-    do iloc = 1, ncelps
-
-      iel = lstcel(iloc)
-
-      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu) &
-          - (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))
-
-      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv) &
-          - (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))
-
-      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw) &
-          - (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
-
-    enddo
-
-    call post_write_var(nummai, 'Rel Velocity', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, tracel, rbid, rbid)
-
-  endif
-
-  ! Vitesse et pression relatives en cas de calcul en repère fixe
-
-  if (iturbo.eq.1 .or. iturbo.eq.2) then
+  if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
     call field_get_val_s(icrom, crom)
 

@@ -389,8 +389,8 @@ endif
 call init_aux_arrays(ncelet, nfabor)
 !===================
 
-call turbomachinery_init_mapping
-!===============================
+call turbomachinery_init
+!=======================
 
 if (ippmod(iatmos).ge.0) then
 
@@ -1231,6 +1231,8 @@ if (iilagr.gt.0) then
   if (associated(dlgeo)) deallocate(dlgeo)
 
 endif
+
+call turbomachinery_finalize
 
 call finalize_quadrature
 
