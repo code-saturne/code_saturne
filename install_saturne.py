@@ -226,9 +226,17 @@ class Package:
 
     def download(self):
 
-        import urllib
+        if sys.version_info[0] < (3):
+            import urllib2
+            u = urllib2.urlopen(self.url)
+            data = u.read()
+            f = open(self.archive, 'wb')
+            f.write(data)
+            f.close()
 
-        urllib.urlretrieve(self.url, self.archive)
+        else:
+            import urllib.request
+            urllib.request.urlretrieve(self.url, self.archive)
 
     #---------------------------------------------------------------------------
 
@@ -383,7 +391,7 @@ class Package:
                                  stderr=subprocess.PIPE)
             output = p.communicate()[0]
             if output.find("--no-as-needed") > -1:
-                ldflags_add = '-Wl,--no-as-needed'
+                ldflags_add = ' -Wl,--no-as-needed\n'
         except Exception:
             pass
 
@@ -408,7 +416,7 @@ class Package:
             line = re.sub(re_intsize64, '', line)
             line = re.sub(re_idxsize64, '-DIDXSIZE64 -DINTSIZE64', line)
             if ldflags_add and line[0:7] == 'LDFLAGS':
-                line += ' ' + ldflags_add
+                line = line[:-1] + ldflags_add
 
             fd.write(line)
 
@@ -1306,7 +1314,7 @@ salome    %(salome)s
         fc = self.fc
         mpicc = self.mpicc
         cxx = self.cxx
-        mpicxx = self.mpicc
+        mpicxx = self.mpicxx
         python = self.python
         salome = self.salome
 
@@ -1317,7 +1325,7 @@ salome    %(salome)s
         if not fc: fc = 'NEEDS_DEFINITION'
         if not mpicc: mpicc = 'auto'
         if not cxx: cxx = 'auto'
-        if not mpicxx: mpicc = 'auto'
+        if not mpicxx: mpicxx = 'auto'
         if not python: python = 'NEEDS_DEFINITION'
         if not salome: salome = 'no'
 
