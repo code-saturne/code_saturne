@@ -27,7 +27,7 @@
 %==================================
 %==================================
 
-\CS is a system designed to solve the Navier-Stokes
+\CS is an application designed to solve the Navier-Stokes
 equations in the cases of 2D, 2D axi-symmetric or 3D flows. Its main module is
 designed for the simulation of flows which may be steady or
 unsteady, laminar or turbulent, incompressible or potentially dilatable,
@@ -71,33 +71,33 @@ as shown on \figurename~\ref{fig:elements}:
 \end{figure}
 
 \indent\CS also relies on the PLE (Parallel Location and Exchange) library (by
-the same team, under LGPL licence) for the management of code coupling;
+the same team, under LGPL license) for the management of code coupling;
 this library can also be used independently.
 
-The present document is a practical user's guide for \CS version \verscs.
+This document is a practical user guide for \CS version \verscs.
 It is the result of the joint effort of
 all the members in the development team.
 
-The aim of this document is to give practical information to the users of
-\CS. It is therefore strictly oriented towards the usage of the code.
-For more details about the algorithms and their numerical
-implementation, please refer to the reports \cite{ijvf},
- \cite{boucker00} and \cite{mechitoua98}, and to the theoretical documentation \cite{theory},
-which is newer and more detailed
-(the latest updated version of this document
-is available on-line with the version of \CS and accessible through the command
-\texttt{code\_saturne info --guide theory}).
+This document provides practical information for the usage of \CS.
+For more details about the algorithms and their numerical implementation,
+please refer to the reports
+ \cite{ijvf}, \cite{boucker00} and \cite{mechitoua98},
+and to the theoretical documentation \cite{theory}.
 
-The present document first
+The latest updated version of this document is available on-line with the version of \CS
+and accessible through the command
+\texttt{code\_saturne info --guide theory}.
+
+This document first
 presents all the necessary elements to run a calculation
 with \CS version \verscs. It then lists all the variables of the code
-which may be useful for more advanced utilisation.
+which may be useful for more advanced users.
 The user subroutines of all the modules within the code are then documented.
-Eventually, for each key word and user-modifiable parameter in the code,
+Eventually, for each keyword and user-modifiable parameter in the code,
 their definition, allowed values, default values and conditions for use are given.
-These key words and parameters are grouped under headings
-based on their function. An alphabetical index list is also given at the end of
-the document for easier consultation.
+These keywords and parameters are grouped under headings
+based on their function. An alphabetical index is also given at the end of
+the document for easier reference.
 
 %==================================
 \section{Quick start}
@@ -113,7 +113,7 @@ The first thing to do before running \CS is to define an alias to the \texttt{co
 \texttt{alias cs='\$\{prefix\}/bin/code\_saturne'}.
 \end{center}
 When using the \emph{bash} shell, a completion file may be sourced so as to
-allow for syntax auto-completion: 
+allow for syntax auto-completion:
 \begin{center}
 \texttt{source \$\{prefix\}/etc/bash\_completion.d/code\_saturne'}.
 \end{center}
@@ -121,7 +121,8 @@ The second thing is to prepare the computation directories. For instance, the st
 \begin{center}
 \texttt{code\_saturne create -s T\_JUNCTION}\
 \end{center}
-The mesh files should be copied in the directory \texttt{MESH} (but they may be selected from another directory, see \S\ref{sec:prg_stepbystepcalculation}), and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{case\_name.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
+The mesh files should be copied in the directory \texttt{MESH} (though they may also be selected from another directory, see \S\ref{sec:prg_stepbystepcalculation}),
+and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{case\_name.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
 Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI case\_name.xml} to load the calculation file into the interface. A window similar to \figurename\ref{fig:3_e1} will appear. Click on the heading ``Calculation management'', select the heading ``Prepare batch calculation'', see \figurename~\ref{fig:43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
 
 \begin{figure}[!ht]
@@ -288,10 +289,7 @@ version of the code, ...).
 \end{tabular}
 \end{table}
 
-Note that the code may be run directly in the final \texttt{RESU/<run\_id>}
-directory, or in a scratch directory (which may be recommended if the
-compute environment includes different file-systems, some better suited
-to data storage, others to intensive I/O). When running, the code
+When running, the code
 may use additional files or directories inside its execution directory, set
 by the execution script, which include a \texttt{mesh\_input} file or directory,
 as well as a \texttt{restart} directory (which is a link or copy of a previous
@@ -643,8 +641,8 @@ The comprehensive list of the user subroutines and their instructions
 %==================================
 \label{sec:prg_temporarydirectory}%
 During a calculation, \CS may use a temporary directory for the compilation and
-the execution if such a ``scratch'' directory is defined in the GUI, in the
-\texttt{cs\_user\_scripts.py} file or in the \texttt{code\_saturne.cfg} file.
+the execution if such a ``scratch'' directory is defined in the GUI, by setting the
+\texttt{CS\_SCRATCHDIR} environment variable, or in the \texttt{code\_saturne.cfg} file.
 In that case, the result files are only copied at the end in the directory
 \texttt{RESU}. This is recommended if the compute environment includes different
 file-systems, some better suited to data storage, others to intensive I/O.
@@ -704,12 +702,19 @@ The GUI presents the range of possibilities as 4 execution modes:
 
 \end{list}
 
-Note that to allow preprocessing in multiple passes, all defined preprocessing operations are run even on previously preprocessed meshes. In most cases, those will not produce additional changes (such as joining already joined meshes), but in the case of mesh smoothing, they might lead to small changes. So when using a previously preprocessed mesh it is recommended not to define any preprocessing stage.
+Note that to allow preprocessing in multiple passes, all defined preprocessing operations are run even on previously preprocessed meshes. In most cases, those will not produce additional changes (such as joining already joined meshes), but in the case of mesh smoothing, they might lead to small changes. So when using a previously preprocessed mesh it is recommended
+not to define any preprocessing operations, so as to skip the preprocessing stage.
 
 It is encouraged to separate the preprocessing and calculation runs, as
 this not only speeds up calculations, but also ensures that the mesh is identical, regardless of the architecture or number of processors it is run on. Indeed, when running the same pre-processing stages such as mesh joining on a different machine or a different number of processors, very minor floating-point truncation errors may lead to very slightly different preprocessed meshes.
 
-Note also that mesh partitioning is done directly by the Kernel. Depending on the partitioning algorithm used, a partition map (\texttt{partition\_output/domain\_number\_*}) may be output, allowing the use of the same partitioning in an ulterior calculation. By default, this file is output when using graph-based partitioner, which may use randomization and do not guarantee a reproducible output, and is not output when using a deterministic space-filling curve based partition.
+Note also that mesh partitioning is done directly by the Kernel.
+Depending on the partitioning algorithm used, a partition map
+(\texttt{partition\_output/domain\_number\_*}) may be output,
+allowing the use of the same partitioning in future calculations.
+By default, this file is output when using graph-based partitioners, which may
+use randomization and do not guarantee a reproducible output, and is not output
+when using a deterministic space-filling curve based partitioning.
 
 If the code was built only with a serial partitioning library,
 graph-based partitioning may best be run in a serial pre-processing stage.
@@ -806,7 +811,13 @@ executed in the directory \texttt{STUDY} adds the case directories
 \texttt{Flow3} and \texttt{Flow4}. Whenever multiple cases are created simultaneously, it is assumed they may be coupled, so a \texttt{runcase\_coupling} file and \texttt{RESU\_COUPLING} directory are also created.
 
 In the directory \texttt{DATA}, the \texttt{code\_saturne~create} command
-places a subdirectory \texttt{REFERENCE} containing examples of thermochemical data files used for pulverised coal combustion, gas combustion, electric arcs, or a meteo profile. The file to be used for the calculation must be copied directly in the \texttt{DATA} directory and its name may either need to be unchanged, or be referenced using the GUI or using the \texttt{usppmo} subroutine in \texttt{cs\_user\_parameters.f90}. As a rule of thumb, all files in \texttt{DATA} except for \texttt{SaturneGUI} are copied, but subdirectories are not.\\
+places a subdirectory \texttt{REFERENCE} containing examples of thermochemical
+data files used for pulverised coal combustion, gas combustion, electric arcs, or
+a meteo profile. The file to be used for the calculation must be copied directly
+in the \texttt{DATA} directory and its name may either be unchanged, or
+be referenced using the GUI or using the \texttt{usppmo} subroutine in
+\texttt{cs\_user\_parameters.f90}. As a rule of thumb, all files in \texttt{DATA}
+except for \texttt{SaturneGUI} are copied, but subdirectories are not.\\
 The \texttt{code\_saturne~create} command also places in the directory
 \texttt{DATA} the launch script for the Graphical User Interface:
 \texttt{SaturneGUI}.
@@ -844,7 +855,7 @@ each other. The following formats are currently supported by \CS:
 \item \hyperref[sec:fmtdesc_ensightg]{\ensightg}
 \item \hyperref[sec:fmtdesc_neu]{\gambit neutral}
 \item \hyperref[sec:fmtdesc_gmsh]{\gmsh}
-\item \hyperref[fmtdesc:ccm]{STAR-CCM+}
+\item \hyperref[sec:fmtdesc:ccm]{STAR-CCM+}
 \end{list}
 
 These formats are described in greater detail in the following sections.
@@ -869,7 +880,7 @@ other than MED or CGNS, which use specific external libraries) on most machines.
 \subsubsubsection{NOPO/\simail (INRIA/Distene)%
 \label{sec:fmtdesc_des}}
 
-This format is output by \simail, which was used heavily at EDF up until
+This format is output by \simail, which was used heavily at EDF until
 a few years ago. We do not
 currently handle cylindrical or spherical coordinates, but it seems that
 \simail always outputs meshes in Cartesian coordinates, even if points
@@ -1010,7 +1021,7 @@ so we simply convert their numbers to group names.
 
 Also note that files produced by \harpoon may contain badly oriented
 prisms, so the \pcs orientation correction option
-(\texttt{--reorient}) may need to be used. Meshes built by this tool also
+(\texttt{--reorient}) may must be used. Meshes built by this tool also
 contain hanging nodes, with non-conforming elements sharing some vertices.
 Mesh joining must thus also be used, and is not activated automatically,
 as the user may prefer to specify which surfaces should be joined,
@@ -1179,7 +1190,7 @@ color/attribute and group combinations), as well as handling calculation data,
 with the possibility (unused by \CS) of defining variables only on a subset
 (``profile'') of a mesh.
 
-The \med library is available under a \href{http://www.gnu.org}{LGPL} licence,
+The \med library is available under a \href{http://www.gnu.org}{LGPL} license,
 and is even packaged in some Linux distributions
 (at least Debian and Ubuntu). \CS requires at least \med 3.0.2, which in turn
 requires HDF5 1.8. This format is upwards-compatible with \med 2.3,
@@ -1224,7 +1235,7 @@ Slightly older than \med, this library was free from the start, with a good
 English documentation, and is thus much better known. It is more focused
 on CFD, where \med is more generic. A certain number of tools accompany
 the CGNS distribution, including a mesh visualizer (which does not handle
-polygonale faces although the format defines them), and an interpolation
+polygonal faces although the format defines them), and an interpolation
 tool.
 
 We should be able to read almost any mesh written in this format, though
@@ -1311,7 +1322,7 @@ Documentation:        & See CGNS site: \url{http://www.cgns.org}\\
 \end{tabular}
 
 \subsubsubsection{\starccmp%
-\label{fmtdesc:ccm}}
+\label{sec:fmtdesc:ccm}}
 
 This polyhedral format is the current CD-Adapco format, and is based on
 CD-Adapco's libccmio, which is based on ADF (the low-level file format
@@ -1364,7 +1375,7 @@ Zone selection:    & named face and cell sets\\
 \hline
 Compatibility:     & all files of this type?\\
 \hline
-Documentation:     & documentation and source code provided by CD-adapco\\
+Documentation:     & documentation and source code provided by CD-Adapco\\
 \hline
 \end{tabular}
 
@@ -1396,7 +1407,7 @@ also possible, but has some limitations).
 {\em WARNING: }
 Some turbulence models ($k-\varepsilon$, $R_{ij}-\varepsilon$ SSG, ...) used in
 \CS are ``High-Reynolds'' models. Therefore the size of the cells
-neighbouring the wall needs to be greater than the thickness of the viscous
+neighbouring the wall must be greater than the thickness of the viscous
 sub-layer (at the wall, $y^+>2.5$ is required, and $30<y^+<100$ is
 preferable). If the mesh does not match this constraint, the results may
 be false (particularly if thermal phenomena are involved). For more details
@@ -1412,7 +1423,7 @@ The main options are:
 
 \item \texttt{<mesh>}: the last argument is used to specify the name of the mesh file.
 The launch script automatically calls the Preprocessor for every
-mesh in the \texttt{MESHES[]} list specified by th user.
+mesh in the \texttt{MESHES[]} list specified by the user.
 
 \item \texttt{--reorient}: try to re-orient badly-oriented cells
 if it is necessary to compensate for mesh-generation software
@@ -1445,17 +1456,18 @@ this option is redundant. It is only kept for the rare case in which the
 MPI environment might not be detected.
 
 \item \texttt{--preprocess}: triggers the preprocessing-only mode.
-The code may run without any Interface parameter file nor any user subroutine.
+The code may run without any Interface parameter file or any user subroutine.
 Only the initial operations such as mesh joining and modification are
 executed.
 
 \item \texttt{-q} or \texttt{--quality}: triggers the verification mode.
-The code may run without any Interface parameter file nor any user subroutine.
+The code may run without any Interface parameter file or any user subroutine.
 This mode includes the preprocessing stages, and adds elementary tests:\\
 \begin{list}{-}{}
 \item the quality criteria of the mesh are calculated (non-orthogonality angles,
-internal faces off-set, \ldots) and corresponding EnSight
-post-processing parts are created.\\
+internal faces off-set, \ldots) and corresponding
+visualizable post-processing output is generated.\\
+\item a few additional mesh consistency tests are run.\\
 \item test calculation of the gradient of $sin(x+2y+3z)$. The calculated
 value is compared to the exact value, and an EnSight part for the
 corresponding error is created. The gradient is calculated with each
@@ -1531,7 +1543,7 @@ execution directory. An additional \texttt{runcase\_batch} file will
 contain batch submission options when a batch system is available
 (and is the file that should be submitted when using a batch system).
 
-When not using the GUI, or if additional options need to be accessed,
+When not using the GUI, or if additional options must be accessed,
 the \texttt{cs\_user\_scripts.py} file may be copied from
 the \texttt{DATA/REFERENCE} to the \texttt{DATA} and edited.
 This file contains several Python functions:
@@ -1587,7 +1599,7 @@ atmospheric flows, Lagrangian module,  electrical model, compressible model and 
 transfers (user subroutines can still be completed though).
 
 The Interface is optional. Every data that can be specified through the
-Interface can also still be specified in the user subroutines. In case of
+Interface can also be specified in the user subroutines. In case of
 conflict, all calculation parameters, initialisation value or boundary condition
 set directly in the user subroutines will prevail over what is defined by the
 Interface. However, it is no longer necessary to redefine everything in the
@@ -1613,7 +1625,7 @@ should:\\
 using the Graphical Interface\\
 - set a dummy boundary condition for the inlet (uniform velocity for instance)
 - set the proper velocity profile at inlet in \texttt{cs\_user\_boundary\_conditions}. The wall and
-output areas do not need to appear in \texttt{cs\_user\_boundary\_conditions}. The dummy velocity
+output areas must not appear in \texttt{cs\_user\_boundary\_conditions}. The dummy velocity
 entered in the Interface will not be taken into account.
 
 The Graphical User Interface is launched with the \texttt{./SaturneGUI} command
@@ -1717,10 +1729,10 @@ in the file name. For example, a basic example for
 to atmospheric flows is provided in
 {cs\_user\_boundary\_conditions-atmospheric.f90}.
 
-The user is encouraged to check which examples are available, and to study
-those relevant to a given setup.
+The user is encouraged to check what examples are available, and to study
+those that are relevant to a given setup.
 
-Template user subroutines contain three sections the user may need to define,
+Template user subroutines contain three sections the user may define,
 marked by the following strings:
 
 \begin{itemize}
@@ -1805,7 +1817,7 @@ to say the temperature and other scalars (passive or not, user-defined or
 not). These scalars can be divided into two distinct groups: \texttt{nscaus}
 user-defined scalars and \texttt{nscapp} scalars related to a ``specific
 physics''. \texttt{nscal=nscaus+nscapp}, and \texttt{nscal}
-must be inferior or equal to \texttt{nscamx}}
+must be less than or equal to \texttt{nscamx}}
 
 \variabsize{nscapp}{Effective number of scalars related to a
 ``specific physics''. These scalars are solutions of an advection
@@ -1848,7 +1860,7 @@ faces. They will be stored in the array \texttt{propfb}}
 (in the case where \texttt{ushist} is used)}
 
 \variabsize{nbmomt}{Effective number of calculated time-averages.
-\texttt{nbmomt} must be inferior or equal to \texttt{nbmomx}}
+\texttt{nbmomt} must be less than or equal to \texttt{nbmomx}}
 
 \variabsize{nbmomx}{Maximum number of calculated time-averages (default
 value: 50)}
@@ -1863,7 +1875,7 @@ value: 50)}
 \variabsize{nclacp}{Number of coal classes for the pulverised
 coal combustion module. It is the total number of classes, {\it i.e.}
 the sum of the number of classes for every represented coal. \texttt{nclacp} must
-be inferior or equal to \texttt{nclcpm}}
+be less than or equal to \texttt{nclcpm}}
 
 \variabsize{nclcpm}{Maximum number of coal classes for the
 pulverised coal combustion module}
@@ -1893,7 +1905,7 @@ fictitious cells). The calculations (loops) are made on \texttt{ncel} cells (onl
 the real cells, the fictitious cells are only used to store information).
 
 \minititre{Note 2: internal faces}
-An internal face is an inferface shared by two cells (real or ghost
+An internal face is an interface shared by two cells (real or ghost
 ones) of the mesh. A boundary face is a face which has only one real
 neighbouring cell. In the case of periodic calculations, a periodic face
 is an internal face. In the case of parallel running calculations, the
@@ -1979,7 +1991,7 @@ on a straight line orthogonal to the face and passing through its center}
 \variab{diipb}{diipb(ndim,nfabor)}{ra}{For every boundary
 face, the three components of the vector $\vect{II'}$. I' is the
 orthogonal projection of I, center of the neighbouring cell, on the
-straight line perpendicular to the face and passign through its center}
+straight line perpendicular to the face and passing through its center}
 
 \variab{idist}{dist(nfac)}{ra}{For every internal face,
 dot product of the vectors $\vect{IJ}$ and $\vect{n}$.
@@ -2004,7 +2016,7 @@ least one boundary face}
 
 \variab{pond}{pond(nfac)}{ra}{For every internal face,
 $\displaystyle\frac{\vect{FJ}.\vect{n}}{\vect{IJ}.\vect{n}}$.
-With regard to the mesh quality, its ideal value is 0.5}
+Regarding the quality of mesh, its ideal value is 0.5}
 
 \variab{surfan}{surfan(nfac)}{ra}{Norm of the surface vector of
 the internal faces}
@@ -2041,7 +2053,7 @@ variables at the previous time step}
 
 \underline{About \texttt{rtp} and \texttt{rtpa}}
 
-The indexes allowing to mark out the different variables (from 1 to
+The indexes allowing marking out the different variables (from 1 to
 \texttt{nvar}) are integers available in a ``module'' called
 \texttt{numvar}.
 
@@ -2104,7 +2116,7 @@ $\overline{f}$, $\alpha$, $\nu_t$), the following are highly important:
       ``scalar'', too. The scalars may be divided into two groups:
       \texttt{nscaus} ``user'' scalars and \texttt{nscapp}
       ``specific physics'' scalars, with
-      \texttt{nscal=nscaus+nscapp}. \texttt{nscal} must be inferior or
+      \texttt{nscal=nscaus+nscapp}. \texttt{nscal} must be less than or
        equal to \texttt{nscamx}.
 \item The \texttt{j}$^{\text{th}}$ user scalar is, in
       the whole list of the \texttt{nscal} scalars, the scalar number
@@ -2164,7 +2176,7 @@ given automatically by the code and stored in an integer or an integer array
 (its size may be the maximum number of scalars
 or the maximum number of variables).
 
-\item The indexes referring  to the different properties stored in the
+\item The indexes referring to the different properties stored in the
 \texttt{prop{\bf xx}} arrays are given respectively by the following integer arrays:
 
 \variab{ipproc}{ipproc(npromx)}{ia}{Rank \texttt{i} in \texttt{propce(.,i)} of the
@@ -2222,12 +2234,12 @@ second-order extrapolation in time.\\
 Stored at the cells}
 
 \variab{icp}{icp}{ia}{Property number
-corresponding to the specific heat, in case where it is variable
+corresponding to the specific heat, when it is variable
 ({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$). See note below.\\
 Stored at the cells}
 
 \variab{icpa}{icpa}{ia}{Property number
-corresponding to the specific heat, in case where it is variable
+corresponding to the specific heat, when it is variable
 ({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$), at the previous time step,
 in the case of a second-order extrapolation in time. See note below.\\
 Stored at the cells}
@@ -2452,10 +2464,10 @@ faces. See note 1}
 \variab{iprfml}{iprfml(nfml,nprfml)}{ia}{Properties of the
 families of referenced entities. See note 1}
 
-\variab{isympa}{isympa(nfabor)}{i}{Integer to mark out the %FIXME``wall'' (\texttt{itypfb=iparoi} or \texttt{iparug}) or 
+\variab{isympa}{isympa(nfabor)}{i}{Integer to mark out the %FIXME``wall'' (\texttt{itypfb=iparoi} or \texttt{iparug}) or
 ``symmetry'' (\texttt{itypfb=isymet}) boundary faces where the
 mass flow has to be canceled when the ALE module is switched off (these faces are impermeable). For instance,
-if the face \texttt{ifac} is %FIXME a wall or 
+if the face \texttt{ifac} is %FIXME a wall or
 symmetry face,
 \texttt{isympa(ifac)=0}, otherwise \texttt{isympa(ifac)=1}}
 
@@ -2488,7 +2500,7 @@ and when \texttt{icdpar=1}. The distance between the center of the cell
 
 \variab{yplpar}{yplpar}{ra}{Non-dimensional distance $y^+$ between a given
 volume and the closest wall, when it is necessary (LES with van
-Driest-wall damping) and when \texttt{icdpar=1}. The adimensional distance $y^+$
+Driest-wall damping) and when \texttt{icdpar=1}. The dimensionless wall distance $y^+$
 between the center of the cell \texttt{iel} and the closest wall is therefore
 \texttt{yplpar(iel1)}}
 
@@ -2531,7 +2543,7 @@ value. See the user subroutine \texttt{ustsma}}
 \variab{nfpt1d}{nfpt1d}{i}{Number of boundary faces which are coupled
 with a wall 1D thermal module. See the user subroutine \texttt{uspt1d}}
 
-\variab{ifpt1d}{ifpt1d}{ia} {Array allowing to mark out the numbers of
+\variab{ifpt1d}{ifpt1d}{ia} {Array allowing marking out the numbers of
 the \texttt{nfpt1d} boundary faces which are coupled with a wall 1D
 thermal module. The numbers of these boundary faces are
 given by \texttt{ifpt1d(ii)}, with
@@ -2539,14 +2551,14 @@ given by \texttt{ifpt1d(ii)}, with
 See the user subroutine \texttt{uspt1d}}
 
 \variab{nppt1d}{nppt1d}{ia}{Number of discretisation cells in the 1D wall for the
-\texttt{nfpt1d} boundary faces which are coupled with a wall 1D thermal module. The
+\texttt{nfpt1d} boundary faces which are coupled with a 1D wall thermal module. The
 number of cells for these boundary faces is given by
 \texttt{nppt1d(ii)}, with
 1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}. See
 the user subroutine \texttt{uspt1d}}
 
 \variab{eppt1d}{eppt1d}{ia}{Thickness of the 1D wall for the
-\texttt{nfpt1d} boundary faces which are coupled with a wall 1D thermal
+\texttt{nfpt1d} boundary faces which are coupled with a 1D wall thermal
 module. The wall thickness for these boundary faces is therefore given
 by \texttt{eppt1d(ii)}, with
 1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}. See the user subroutine
@@ -2584,7 +2596,7 @@ For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^g , \, B_{\fib}^g$ 
 stored in \texttt{coefa(ifac,iclvar)} and
 \texttt{coefb(ifac,iclvar)}, where the integer \texttt{iclvar=iclrtp(ivar,icoef)}
 determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
-gradient conditions of the variable \texttt{ivar}. 
+gradient conditions of the variable \texttt{ivar}.
 
 The \textbf{flux} boundary conditions in \CS boil down to determine the value of the diffusive
 flux of the
@@ -2601,10 +2613,10 @@ For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^f , \, B_{\fib}^f$ 
 stored in \texttt{coefa(ifac,iclvaf)} and
 \texttt{coefb(ifac,iclvaf)}, where the integer \texttt{iclvaf=iclrtp(ivar,icoeff)}
 determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
-diffusive flux conditions of the variable \texttt{ivar}. 
+diffusive flux conditions of the variable \texttt{ivar}.
 
 The \textbf{divergence} boundary conditions in \CS boil down to determine a value for the
-current variable $\varia$ (mainly the Reynolds stress components, the divergence $\divv \left(\tens{R} \right)$ used in the calculation of the momentum equation) at the boundary faces $\fib$, 
+current variable $\varia$ (mainly the Reynolds stress components, the divergence $\divv \left(\tens{R} \right)$ used in the calculation of the momentum equation) at the boundary faces $\fib$,
 that is to say $\varia_\fib$,
 value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
 projection of the center of the adjacent cell on the straight line
@@ -2617,7 +2629,7 @@ For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^d , \, B_{\fib}^d$ 
 stored in \texttt{coefa(ifac,iclvrr)} and
 \texttt{coefb(ifac,iclvrr)}, where the integer \texttt{iclvrr=iclrtp(ivar,icoefr)}
 determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
-divergence conditions of the variable \texttt{ivar}. 
+divergence conditions of the variable \texttt{ivar}.
 
 \clearpage
 %==================================
@@ -2760,11 +2772,11 @@ It is in particular the case when the following operations are made on a
 \item calculation of an internal face value from the values of $A$  in
       the neighbouring cells (use of \texttt{ifacel}).
 \end{list}
-The variable $A$ needs to be exchanged before these operations can be
+The variable $A$ must be exchanged before these operations can be
       made: to allow it, the subroutine \texttt{synsca} may be called.
 
 \item {\bf Global operations in parallel mode}.\\
-In parallel mode, the user must pay attention during the realisation of
+In parallel mode, the user must pay attention when performing
       global operations. The following list is not exhaustive:
         \begin{list}{-}{}
 \item calculation of extreme values on the domain (for instance, minimum
@@ -2795,7 +2807,7 @@ In parallel mode, the user must pay attention during the writing of
       pieces of information. Writing to the ``listing'' can be done
       simply by using the \texttt{nfecra} logical unit (each processor will write
       to its own ``listing'' file): use
-      \texttt{write(nfecra,...}. \\
+      \texttt{write(nfecra, ...}. \\
 If the user wants an operation to be done by only one processor (for
       example, open or write a file), the associated instructions must
       be included inside a test on the value of \texttt{irangp} (generally it is
@@ -2849,7 +2861,7 @@ integer array [ia], real array [ra].
 
 \variab{lndnod}{lndnod}{i}{Size of the array \texttt{icocel} concerning the
 cells $\rightarrow$ faces connectivity (the faces $\rightarrow$ nodes connectivity
-needs to be given to allow the construction of this connectivity. See note 3
+must be given to allow the construction of this connectivity. See note 3
 of section \ref{sec:prg_dimensions})}
 
 \variab{nbpmax}{nbpmax}{i}{Maximum number of particles
@@ -3021,7 +3033,7 @@ continuous phase. These source terms are marked out by the following
 \item \texttt{itske}: explicit source term for the turbulent dissipation and the
       turbulent energy if the $k-\varepsilon$ turbulence model is used for the
       continuous phase
-\item \texttt{itsr11},... \texttt{itsr33}: source terms for the Reynolds stress
+\item \texttt{itsr11}, ... \texttt{itsr33}: source terms for the Reynolds stress
       and the turbulent dissipation if the $R_{ij}-\varepsilon$ turbulence model
       is used for the continuous phase
 \item \texttt{itsmas}: mass source term
@@ -3175,8 +3187,8 @@ define a subset of the mesh, for example:
 
 \begin{list}{-}{}
 \item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{usalcl},
-\texttt{usray2}, \texttt{uslag2},...),
-\item volume initialization (cf. \texttt{cs\_user\_initialization},...),
+\texttt{usray2}, \texttt{uslag2}, ...),
+\item volume initialization (cf. \texttt{cs\_user\_initialization}, ...),
 \item head-loss region (cf. \texttt{uskpdc}),
 \item source terms region (cf. \texttt{cs\_user\_source\_terms}),
 \item advanced post-processing (cf. \texttt{cs\_user\_postprocess.c},
@@ -3251,7 +3263,7 @@ property of this family is the color \texttt{icoul}, obtained for the face
 \texttt{ifac} with \texttt{icoul=iprfml(ifml,1)}. In order to know the
 property number corresponding to a group, the utility function
 \texttt{numgrp(nomgrp, lngnom)} (with a name
-\texttt{nomgrp} of the type \texttt{character*} and its lenght
+\texttt{nomgrp} of the type \texttt{character*} and its length
 \texttt{lngnom} of the type \texttt{integer}) may be used.
 
 %==================================
@@ -3455,7 +3467,7 @@ may also be done using the GUI or the mesh quality check mode
 of the general run script.
 
 The \pcs is controlled using command-line arguments.
-A few environment variables allow an expert user to modify
+A few environment variables allow advanced users to modify
 some behaviours or to obtain a trace of memory management.
 
 %==================================
@@ -3653,7 +3665,7 @@ avoid creating a \pcs output file.
 
 Conforming joining of possibly non-conforming meshes may be done by the
 solver, and defined either using the Graphical User Interface (GUI) or the
-\texttt{cs\_user\_join} user function. In the GUI, the user needs to
+\texttt{cs\_user\_join} user function. In the GUI, the user must
 add entries in the ``Face joining'' section of the ``Meshes'' tab in the item
 ``Calculation environment $\rightarrow$ Meshes selection''.
 The user may specify faces to be joined, and can also modify basic joining
@@ -3758,7 +3770,8 @@ The call to the function '\texttt{cs\_join\_set\_advanced\_param}' allows defini
 
 The list of advanced modifiable parameters is given below:
 \begin{list}{-}{}
-\item \texttt{mtf}: a merge tolerance factor, used to locally modify the tolerance associated to each vertex before the merge step. Depending on its value, four scenarii are possible:
+\item \texttt{mtf}: a merge tolerance factor, used to locally modify the tolerance associated to each vertex before the merge step. Depending on its value, four
+scenarios are possible:
 \begin{list}{$\rightarrow$}{}
 \item if $mtf=0$, no vertex merge
 \item if $mtf<1$, the vertex merge is more strict. It may increase the number of tolerance reduction and therefore define smaller subset of vertices to merge together but it can drive to loose intersections.
@@ -3793,7 +3806,7 @@ The following are advanced parameters used in the search algorithm for face inte
 \subsubsection{Parameters for periodicity}
 %==================================
 
-Periodicities can be set directly in the Graphical User Interface (GUI) or using the user function \texttt{cs\_user\_periodicity} (called once during the calculation initialisation). In both cases, the user can choose between 3 types of periodicities: translation, rotation, or mixed 
+Periodicities can be set directly in the Graphical User Interface (GUI) or using the user function \texttt{cs\_user\_periodicity} (called once during the calculation initialisation). In both cases, the user can choose between 3 types of periodicities: translation, rotation, or mixed
 (see \figurename\ref{fig:periodicities}).
 Then specific parameters must be set.
 
@@ -3822,8 +3835,8 @@ for advanced modification of the main \texttt{cs\_mesh\_t}} structure.
 
 {\em WARNING: Caution must be exercised when using this function
 along with periodicity. Indeed, the periodicity parameters are not
-updated accordingly, meaning that the periodicity may be unadapted
-after one changes the mesh vertex coordinates. It is particularly
+updated accordingly, meaning that the periodicity may not be valid
+after mesh vertex coordinates have changed. It is particularly
 true when one rescales the mesh. Rescaling should thus be done
 in a separate run, before defining periodicity.}
 
@@ -3846,7 +3859,7 @@ output mesh.
 The smoothing utilities may be useful when the calculation mesh has local
 defects.
 The principle of smoothers is to mitigate the local defects by averaging
-the mesh quality. This procedure can help for the calculus robustness or/and
+the mesh quality. This procedure can help for calculation robustness or/and
 results quality.
 
 The user function \texttt{cs\_user\_mesh\_smoothe} allows to use different
@@ -3881,7 +3894,7 @@ the smoothing algorithm's effectiveness.
 
 \subsubsection{Warped faces smoother}
 
-The function \texttt{cs\_mesh\_smoother\_unwarp} allows to reduce face warping
+The function \texttt{cs\_mesh\_smoother\_unwarp} allows reducing face warping
 in the calculation mesh.
 
 Be aware that, in some cases, this algorithm may degrade other mesh quality
@@ -3906,7 +3919,7 @@ a previous partitioning may optionally be re-used.
 
 Without a graph-based partitioning library, or based on the user's choice,
 the Kernel will use a built-in partitioning using a space-filling curve
-(Z or Hilber curve) technique. This usually leads to partitionings
+(Z or Hilbert curve) technique. This usually leads to partitionings
 of lower quality than with graph partitioning, but parallel
 performance remains reasonable.
 
@@ -3996,7 +4009,7 @@ are the followings:
       turbulence model, thermal model and species transport (definition of the scalars and their variances),
 see \figurename~\ref{fig:gui_calculation_features} to \figurename~\ref{fig:gui_species}. If a thermal scalar, temperature or enthalpy, is selected,
 two other headings on conjugate heat transfer and radiative transfers can be filled in (see \figurename~\ref{fig:gui_thermal_scalar}).
-\item Physical properties: reference pressure, velocity and lenght, fluid properties (density, viscosity, thermal conductivity,
+\item Physical properties: reference pressure, velocity and length, fluid properties (density, viscosity, thermal conductivity,
 specific heat and scalar diffusivity), gravity, see \figurename~\ref{fig:gui_reference_values} to \figurename~\ref{fig:gui_gravity}.
 If non-constant values are used for the fluid properties, and if the GUI is not used, the \\ \texttt{cs\_user\_physical\_properties}
 file must be used, see \S~\ref{sec:usphyv}.
@@ -4061,7 +4074,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 \begin{figure}[!ht]
 \begin{center}
 \includegraphics[width=13cm]{gui_phys_prop_reference_values}
-\caption{Setting of the reference values for pressure, velocity and lenght}
+\caption{Setting of the reference values for pressure, velocity and length}
 \label{fig:gui_reference_values}
 \end{center}
 \end{figure}
@@ -4176,14 +4189,14 @@ It is called only during the calculation initialisation.
 For more details about the different parameters, please refer to the key
 word list (\S\ref{sec:prg_motscles}).
 
-\texttt{cs\_user\_parameters.f90} is in fact constituted of 6 seperate subroutines:  \texttt{usipph},
+\texttt{cs\_user\_parameters.f90} is in fact constituted of 6 separate subroutines:  \texttt{usipph},
  \texttt{usinsc}, \texttt{usipsc}, \texttt{usipgl},
 \texttt{usipsu} and \texttt{usipes}. Each one controls various
- specific parameters. The key words which are not featured in the supplied example
+ specific parameters. The keywords which are not featured in the supplied example
 can be provided by the user in \texttt{SRC/REFERENCE/base}; in this case,
-understanding of the comments is required to add the key words in the appropriate
+understanding of the comments is required to add the keywords in the appropriate
 subroutine, it will ensure that the value
-has been well defined). The modifiable parameters in each of the subroutines of
+has been well defined. The modifiable parameters in each of the subroutines of
 \texttt{cs\_user\_parameters.f90} are:
 
 \begin{list}{$\bullet$}{}
@@ -4197,14 +4210,15 @@ has been well defined). The modifiable parameters in each of the subroutines of
       parameters related to the error estimators (don't modify these parameters
       anywhere else).
 \item \texttt{usipsu}: physical parameters of the calculation (thermal scalar, physical
-      properties,...), numerical parameters (time steps, number of iterations, ...),
+      properties, ...), numerical parameters (time steps, number of iterations, ...),
       definition of the time averages.
 \item \texttt{usipes}: post-processing output parameters (periodicity, variable names,
-      probe positions,...)
+      probe positions, ...)
 \end{list}
 
-For more details on the different parameters, see the list of key words  (\S~\ref{sec:prg_motscles}).
- The names of the key words can also be seen in the help sections of the interface.
+For more details on the different parameters, see the list of keywords
+(\S~\ref{sec:prg_motscles}).
+ The names of the keywords can also be seen in the help sections of the interface.
 
 \minititre{Notes}
 $\bullet\ $ The table \texttt{iscavr} is filled with the user scalars which represent the mean square fluctuations of another scalar amongst the list of the \texttt{nscaus} scalars. For the other scalars, \texttt{iscavr} does not need to be completed (by default,
@@ -4274,7 +4288,7 @@ The subroutine \texttt{cs\_user\_initialization} allows if necessary to initiali
 variables to values closer to their estimated final values, in order to
 obtain a faster convergence.
 
-This subroutine allows also to make a non-standard initialisation of
+This subroutine allows also making a non-standard initialisation of
 physical parameters (density, viscosity, ...), to impose a local
 value of the time step, or to modify some parameters (time step,
 variable specific heat, ...) in the case of a calculation restart.
@@ -4304,7 +4318,7 @@ variable specific heat, ...) in the case of a calculation restart.
 It follows, that for a calculation with a non-constant time step (\texttt{idtvar}=1
 or 2) which is a restart of a calculation in which
 \texttt{idtvar} had the same value, \texttt{dtref} does not allow to modify the
-time step. The user subroutine \texttt{cs\_user\_initialization} allows to modify the array
+time step. The user subroutine \texttt{cs\_user\_initialization} allows modifying the array
 \texttt{dt} which contains the value of the time step read from the restart file
 (array whose size is \texttt{ncelet}, defined at the cell centres whatever the
 chosen time step type is).
@@ -4313,12 +4327,12 @@ chosen time step type is).
 \subsection{Manage boundary conditions}
 %==================================
 \label{sec:prg_boundaryconditions}
-The boundary conditions can be specified in the Graphical User Interface (GUI) under the heading ``Boundary conditions'' 
-or in the user subroutine \texttt{cs\_user\_boundary\_conditions} called every time step. 
-With the GUI, each region and the type of boundary condition associated to it are defined in 
+The boundary conditions can be specified in the Graphical User Interface (GUI) under the heading ``Boundary conditions''
+or in the user subroutine \texttt{cs\_user\_boundary\_conditions} called every time step.
+With the GUI, each region and the type of boundary condition associated to it are defined in
 \figurename~\ref{fig:gui_bc_regions}. Then, the parameters of the boundary condition are specified
- in \figurename~\ref{fig:gui_bc_parameters}. The colors of the boundary faces may be read directly from 
-a ``listing'' file created by the Preprocessor. This file can be generated directly by the interface 
+ in \figurename~\ref{fig:gui_bc_parameters}. The colors of the boundary faces may be read directly from
+a ``listing'' file created by the Preprocessor. This file can be generated directly by the interface
 under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor listing $\rightarrow$ import groups and references from Preprocessor listing'', see \figurename~\ref{fig:gui_bc_regions}.
 %
 \begin{figure}[!ht]
@@ -4349,7 +4363,7 @@ interface, all the boundary conditions must appear in \texttt{cs\_user\_boundary
 \texttt{cs\_user\_boundary\_conditions} is essentially constituted of loops on boundary
 face subsets. Several sequences
 of \verb+call getfbr+ \verb+('criterion', nlelt, lstelt)+ (cf.
-\S\ref{sec:fvm_selector}) allow to select
+\S\ref{sec:fvm_selector}) allow selecting
 the boundary faces with respect to their group(s), their
 color(s) or geometric criteria. If needed, geometric and
 physical variables are also available to the user. These allow him
@@ -4386,7 +4400,7 @@ conditions (see \S\ref{sec:prg_clnonstandard}), the arrays \texttt{icodcl} and
 \subsubsection{Coding of standard boundary conditions}
 %==================================
 \label{sec:prg_clstandard}%
-The standard key words used by the indicator \texttt{itypfb} are:
+The standard keywords used by the indicator \texttt{itypfb} are:
 \texttt{ientre\index{ientre}}, \texttt{iparoi\index{iparoi}},
 \texttt{iparug\index{iparug}}, \texttt{isymet\index{isymet}},
 \texttt{isolib\index{isolib}} and \texttt{iindef\index{iindef}}.
@@ -4438,7 +4452,7 @@ The standard key words used by the indicator \texttt{itypfb} are:
       given by \texttt{rcodcl(ifac,ivar,1)} (\texttt{ivar} being
       \texttt{iu}, \texttt{iv} or \texttt{iw}). The initial
       value of \texttt{rcodcl(ifac,ivar,1)} is zero for
-      the three velocity components (and therefore needs to be specified
+      the three velocity components (and therefore must be specified
       only in the case of the existence of a slipping velocity). \\
 {\em WARNING: the wall moving velocity must be in the boundary face
       plane. By security, the code uses only the projection of this
@@ -4506,13 +4520,13 @@ coefficient):\\
 \hspace*{2cm}\texttt{itypfb(ifac)=isymet}\\
 \hspace*{2cm}\texttt{icodcl(ifac,isca(1))=1}\\
 \hspace*{2cm}\texttt{rcodcl(ifac,isca(1),1)=23.8}\\
-(\texttt{rcodcl(ifac,isca(1),2)=rinfin} is the default value, therfore it is
+(\texttt{rcodcl(ifac,isca(1),2)=rinfin} is the default value, therefore it is
 not necessary to specify a value)\\
 The boundary conditions for the other variables are automatically
 defined.
 
 \noindent
-$\bullet\ $The user can define new types of boundary faces. He only needs to
+$\bullet\ $The user can define new types of boundary faces. He only must
 choose a value $N$ and to fully specify the boundary conditions (see
 \S\ref{sec:prg_clnonstandard}). He must specify
 \texttt{itypfb(ifac)}=$N$ where $N$ range is 1 to
@@ -4597,7 +4611,7 @@ must be filled as follows:
       at the previous time step.
       It corresponds to:
 \item \texttt{rcodcl(ifac,ivar,2)} is CFL number based on the parameter $C$,
-      the distance to the boundary $\centip \centf$ and the time step:  
+      the distance to the boundary $\centip \centf$ and the time step:
       $CFL = \dfrac{C dt }{\centip \centf}$,
 
 \end{list}
@@ -4684,8 +4698,8 @@ $\displaystyle -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\
       If the mass flow at the face is positive, the velocity at the face is set to zero (but not the mass flow).\\
 \texttt{rcodcl} is not used.
 
-\item If \texttt{icodcl(ifac,ivar)}=14: generalized symmetry boundary condition for vectors (Marangoni      
-      effect for the velocity for instance). 
+\item If \texttt{icodcl(ifac,ivar)}=14: generalized symmetry boundary condition for vectors (Marangoni
+      effect for the velocity for instance).
       This condition is only applicable to vectors and set a Dirichlet boundary condition on the normal
       component and a Neumann condition on the tangential components.\\
       If the three components are  \texttt{ivar1, ivar2, ivar3}, the required values are:
@@ -4698,7 +4712,7 @@ $\displaystyle -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\
       \item \texttt{rcodcl(ifac,ivar2,3)}: flux value for the $y$ direction.
       \item \texttt{rcodcl(ifac,ivar3,3)}: flux value for the $z$ direction.
 \end{list}
-      Therefore, the code automatically compute the boundary condition to impose to th normal and to
+      Therefore, the code automatically computes the boundary condition to impose to the normal and to
       the tangential components.
 
 \end{list}
@@ -4771,7 +4785,7 @@ code execution listing.
 %===============================================================
 \subsubsubsection{Vortex method}
 \label{sec:prg_usvort}%
-The subroutine \texttt{usvort} allows to generate the non-stationary inlet boundary
+The subroutine \texttt{usvort} allows generating the unsteady inlet boundary
 conditions for the LES by the vortex method. The method is based on
  the generation of vortices in the 2D inlet plane with help from
 the pre-defined functions. The fluctuation normal to the inlet plane
@@ -4784,7 +4798,7 @@ is generated by a Langevin equation. It is in the subroutine \texttt{usvort}
 To allow the application of the vortex method, an indicator must be informed of
 the method in the user subroutine \texttt{cs\_user\_parameters.f90} (ivrtex=1)
 
-The subroutine \texttt{usvort} contains 3 seperate parts:
+The subroutine \texttt{usvort} contains 3 separate parts:
 
 \begin{list}{-}{}
 \item The 1st part defines the number of inlets concerned with the vortex
@@ -4793,7 +4807,7 @@ method (\texttt{nnentt\index{nnent}}) and the number of vortex for each inlet
 \item The 2nd part (\texttt{iappel=1}) defines the boundary faces at which the
       vortex method is applicable. The \texttt{irepvo\index{irepvo}} array is informed
       by \texttt{ient} which defines the number of inlets concerned with the vortex
-(essentially, the vortex method can be applied with many independant inlets).
+(essentially, the vortex method can be applied with many independent inlets).
 \item The 3rd section defines the main parameters of the method at each inlet.
       With the complexity of any given geometry, 4 cases are distinguished
       (the first 3 use the data file \texttt{ficvor} and in the final case only 1
@@ -4945,11 +4959,11 @@ $ is the derivative in the direction normal to the
 
 \subsubsubsection{Synthetic Eddy Method}
 The user file \texttt{cs\_user\_les\_inflow.f90} allows to generate the
-non-stationary boundary conditions for the LES by the Synthetic Eddy
+unsteady boundary conditions for the LES by the Synthetic Eddy
 Method.
 The basic principle of this method is illustrated in figure
 \ref{sem_principle}: the turbulent fluctuations at the inlet are generated
-by a set of synthetic eddies advected accross the inlet
+by a set of synthetic eddies advected across the inlet
 boundaries. The eddies evolve in a virtual ``box'' surrounding the inlet
 boudaries and each of them contributes to the normalized velocity
 fluctuations, depending on its relative position with the inlet faces
@@ -4979,7 +4993,7 @@ subroutine (\texttt{rcodcl(ifac,ivar,1)} array), they are erased by
 those provided by the Synthetic Eddy Method.
 
 In the current version of \CS, the Synthetic Eddy Method is not
-available through the GUI but only throug the
+available through the GUI but only through the
 \texttt{cs\_user\_les\_inflow.f90} user file. The user file contains 3
 subroutines:
 
@@ -5048,7 +5062,7 @@ the specific parameters of each LES inlet. These parameters are:
   \texttt{cs\_user\_les\_inflow\_advanced} subroutine (see below).
 
 \item \texttt{dspent}: reference dissipation rate $\varepsilon$ at
-  inlet. This parameter is used to compute the size of the syntetic
+  inlet. This parameter is used to compute the size of the synthetic
   eddies (see remark 1). A finer (non homogeneous) definition of
   the dissipation rate can be done in the
   \texttt{cs\_user\_les\_inflow\_advanced} subroutine (see below).
@@ -5064,7 +5078,7 @@ one given in \texttt{cs\_user\_les\_inflow\_define} subroutine
 
 {\bf \underline{REMARK 1}}: The specification of the dissipation rate
 $\varepsilon$ at inlet is used to compute the size $\sigma_i$ of the
-synthetic eddies in the $i$ cartesian direction. One have:
+synthetic eddies in the $i$ cartesian direction. One has:
 $$\sigma_i=\max\left\{C\frac{\big(\frac{3}{2}R_{ii}\big)^{3/2}}{\varepsilon},\Delta\right\},\qquad
 C=0.5.$$
 $\Delta$ is a reference size of the grid, in order to assume that all
@@ -5075,7 +5089,7 @@ with $\mathcal{V}$ the subset of the vertices of the boundary face $F$
 and $C$ the cell adjacent to $F$.
 
 {\bf \underline{REMARK 2}}: For the sake of comparison, others LES inflow methods are
-available through the 
+available through the
 \texttt{cs\_user\_les\_inflow.f90} user file, in addition to the
 Synthetic Eddy Method:
 
@@ -5092,7 +5106,7 @@ Synthetic Eddy Method:
   an accurate local description in the
   \texttt{cs\_user\_les\_inflow\_advanced} subroutine.
 
-\item \texttt{typent=1}: turbulent fluctations are given by a gaussian
+\item \texttt{typent=1}: turbulent fluctuations are given by a Gaussian
   noise. The mean velocity and Reynolds stresses have to be specified
   (in \texttt{cs\_user\_les\_inflow\_define} or in
   \texttt{cs\_user\_les\_inflow\_advanced}). The other parameters of
@@ -5404,7 +5418,7 @@ example, are required, \texttt{crvimp} and \texttt{crvexp} must be read over and
 their 2 other components, \texttt{ivar=iv(ihpas)} and \texttt{ivar=iw}
 must be cancelled.
 
-\texttt{ustsnv} is called only one time per time step and for each cell \texttt{iel},
+\texttt{ustsnv} is called only once per time step and for each cell \texttt{iel},
 the vector \texttt{crvexp(.,iel)} (explicit part) and the matrix \texttt{crvimp(.,.,iel)}
 (implicit part) must be filled in for the whole velocity vector.
 
@@ -5533,7 +5547,7 @@ can be filled in thanks to the GUI or the \texttt{cs\_user\_source\_terms} user 
 Without the GUI, the subroutine \texttt{ustssc} is used to add source terms to the
 transport equations related to the user scalars. In the same way as
 \texttt{ustsns}, this subroutine is called every time step, once for
-each user scalar. The user needs to provide the arrays \texttt{crvimp}
+each user scalar. The user must provide the arrays \texttt{crvimp}
 and \texttt{crvexp} related to each scalar. \texttt{cvimp} and \texttt{crvexp}
 must be set to 0 for the scalars on which it is not wished for the user source
 term to be applied (the arrays are initially set to 0 at each inlet in the subroutine).
@@ -5629,7 +5643,7 @@ the domain (called at each time step). The mass conservation equation is then mo
 $\Gamma$ is the mass source term expressed in $kg.m^{-3}.s^{-1}$.
 
 The presence of a mass source term modifies the evolution equation of
-the other variables, too. Let $\varphi$ be a any solved variable apart
+the other variables, too. Let $\varphi$ be any solved variable apart
 from the pressure (velocity component, turbulent energy, dissipation,
 scalar, ...). Its evolution equation becomes:
 \begin{displaymath}
@@ -5710,7 +5724,7 @@ where $\varphi\ne\varphi_i$ generates a variance source.
 \subsection{User law editor of the GUI}
 %==================================
 
-A formula interpretor is embedded in \CS, which can be use throught the GUI.
+A formula interpreter is embedded in \CS, which can be used through the GUI.
 In order to call the formula editor of the GUI, click on the button:
 
 \begin{figure}[!ht]
@@ -5720,17 +5734,17 @@ In order to call the formula editor of the GUI, click on the button:
 \end{center}
 \end{figure}
 
-The formula editor is a window composed from three tab:
+The formula editor is a window with three tabs:
 \begin{list}{$\bullet$}{}
 \item User expression
 
 This tab is the formula editor. At the opening of the
-window only the required symbols are display.
-The syntax colourization shows to the user symbols which are
+window only the required symbols are displayed.
+The syntax colorization shows to the user symbols which are
 required symbols, functions, or user variables.
 Each expression must be closed by a semicolon (``;''). The
 required symbols must be present in the final user law. A
-syntax checker is used when the user click on the OK button.
+syntax checker is used when the user clicks on the OK button.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -5742,7 +5756,7 @@ syntax checker is used when the user click on the OK button.
 
 \item Predefined symbols
 
-There are three types of symbol \\
+There are three types of symbols \\
 
 \underline{Useful functions:}
 
@@ -5815,15 +5829,15 @@ from a data file (\texttt{.dat} or \texttt{.csv}) by selecting two columns in th
 for the abscissa and ordinate of a function. In a ``\texttt{.dat}'' data file, tabular
 values are stored in plain-text form and are separated by a blank. In a comma-separated values
 (``\texttt{.csv}'') file, values are separated by a comma ``\texttt{,}''.
-For both format, lines begining by ``\texttt{\#}'' are considered as a commentary.
+For both formats, lines beginning by ``\texttt{\#}'' are considered as comments.
 
 To use this function:
 
 \texttt{interp1d(file.csv, i, j, x)}
 
-with :
+with:
 \begin{itemize}
-\item file.csv, the name of the the file
+\item file.csv, the name of the file
 \item i, the column number for the abscissa
 \item j, the column number for the ordinate
 \item x, the number for which the linear interpolation is looked
@@ -5832,7 +5846,7 @@ The function return a linear interpolation for the x value
 if it is in the range of the abscissa definition, or a
 linear extrapolation if it is out of this range.
 
-NB : the abscissa value must be in the growing order.
+NB: the abscissa value must be in the growing order.
 
 %==================================
 \section{Results analysis}
@@ -5857,7 +5871,7 @@ mesh, or ``part'' created. The arguments of the function
 \texttt{cs\_post\_define\_writer} are as follows:
 
 \begin{list}{$\bullet$}{}
-       \item \texttt{writer\_id}: id the the associated writer.\\
+       \item \texttt{writer\_id}: id of the associated writer.\\
              negative ids are reserved (-1 for the main output),
              but the matching writer's options may be redefined by
              calls to this function.
@@ -6013,7 +6027,7 @@ mesh would become impossible, leading to probable deadlocks or crashes.}
 %==================================
 
 By default, a post-processing frequency is defined for each writer,
-as defined using the GUI or through the The
+as defined using the GUI or through the
 \texttt{cs\_user\_postprocess\_writers}
 function of the \texttt{cs\_user\_postprocess.c} file. For each writer,
 the user may define if an output is automatically generated at the end
@@ -6243,7 +6257,7 @@ At the moment, \CS allows to use two ``pulverised coal'' modules
 (with Lagrangian coupling or not) and one ``pulverised heavy fuel'' module,
 two ``gas combustion'' modules, two ``electrical'' modules,
 a ``compressible'' module and an ``atmospheric'' module. To activate one of
-these modules, the user needs to complete one (and only one) of the
+these modules, the user must complete one (and only one) of the
 indicators \texttt{ippmod(i.....)\index{ippmod}} in the subroutine
 \texttt{usppmo}. By default, all the indicators \texttt{ippmod(i.....)} are
 initialised at -1, which means that no specific physics is activated.
@@ -6282,11 +6296,11 @@ initialised at -1, which means that no specific physics is activated.
           \end{list}
         \item Multi-coals and multi-classes pulverised coal combustion:
               indicator {\bf \tt ippmod(iccoal\index{iccoal})}
-              The number of different coals must be inferior or equal to
+              The number of different coals must be less than or equal to
               \texttt{ncharm\index{ncharm}} = 3. The number of particle size
              classes \texttt{nclpch\index{nclpch}(icha)} for the coal
              \texttt{icha}, must
-             be inferior or equal to \texttt{ncpcmx\index{ncpcmx}} = 10.
+             be less than or equal to \texttt{ncpcmx\index{ncpcmx}} = 10.
          \begin{list}{$\rightarrow$}{}
                 \item \texttt{ippmod(iccoal)} = 0 imbalance between the
                       temperature of the continuous and the solid phases
@@ -6304,10 +6318,10 @@ initialised at -1, which means that no specific physics is activated.
         \item Lagrangian modelling of multi-coals and
              multi-classes pulverised coal combustion:
                  indicator {\bf \tt ippmod(icpl3c\index{icpl3c})}
-              The number of different coals must be inferior or equal to
+              The number of different coals must be less than or equal to
               \texttt{ncharm\index{ncharm}} = 3. The number of particle size
              classes \texttt{nclpch\index{nclpch}(icha)} for the coal
-             \texttt{icha}, must be inferior or equal to
+             \texttt{icha}, must be less than or equal to
              \texttt{ncpcmx\index{ncpcmx}} = 10.
          \begin{list}{$\rightarrow$}{}
                 \item \texttt{ippmod(icpl3c)} = 1 coupling with the Lagrangian
@@ -6405,7 +6419,7 @@ study case. Their content is described below.
  13     &         3         &  \texttt{ngazg\index{ngazg}} & Number of global species                         \\
         &                   &                              & Here, \texttt{ngazg} = 3 (Fuel, Oxidiser and Products)    \\ \hline
  14     &  1. 0. 0. 0. 0.   &                              & Composition of the global species as a           \\
- 15     &  0. 1. 0. 0. 3.76 &\texttt{compog\index{compog}}(\texttt{ngaze},\texttt{ngazg})& fonction of the current species of the line 6 \\
+ 15     &  0. 1. 0. 0. 3.76 &\texttt{compog\index{compog}}(\texttt{ngaze},\texttt{ngazg})& function of the current species of the line 6 \\
  16     &  0. 0. 1. 2. 7.52 &                              & In the order: Fuel (line 15),                    \\
         &                   &                              & Oxidiser (line 16) and Product (line 17)         \\ \hline
  17     &         1         &  \texttt{nrgaz\index{nrgaz}} & Number of global reactions                       \\
@@ -6526,7 +6540,7 @@ study case. Their content is described below.
 %  34    &      0.         0.             & \texttt{xwatch\index{cpashc}}(\texttt{ncharb})   & humidity rate of the ashes (mass.-\%) for each coal     \\ \hline
 %  35    &  Devolatilisation (Kobayashi)  &                             & Comment line                                         \\ \hline
 %  36    &  1  0.37      0  0.37          & \texttt{iy1ch\index{iy1ch}}(\texttt{ncharb}),   & For each coal, pairs (\texttt{iy1ch}, \texttt{y1ch}).                  \\
-%        &                                & \texttt{y1ch\index{y1ch}}(\texttt{ncharb})     & The real \texttt{y1ch} is the adimensional stoich. coefficient\\
+%        &                                & \texttt{y1ch\index{y1ch}}(\texttt{ncharb})     & The real \texttt{y1ch} is the dimensionless stoich. coefficient\\
 %        &                                &                               & If the integer \texttt{iy1ch} is worth 1,                     \\
 %        &                                &                               & the provided value of \texttt{y1ch} is adopted and            \\
 %        &                                &                               & the composition of the light volatile matters        \\
@@ -6642,7 +6656,9 @@ study case. Their content is described below.
 %==================================
 \subsubsubsection{Initialisation of the variables}\label{sec:Ini-coal}
 %==================================
-For coal combustion, it is possible to initialise the specific variables in the Graphical User Interface (GUI) or in the subroutine \texttt{cs\_user\_initialization}. In the GUI, when a coal combustion physics is selected in the item ``Calculation features'' under the heading ``Thermophysical models'', an additional item appears:``Pulverized coal combustion''. In this item the user can define coal types, its composition, the oxydant and reactions parameters, see \figurename~\ref{fig:Ini-coal1} to \figurename~\ref{fig:Ini-coal5}.
+For coal combustion, it is possible to initialise the specific variables in the Graphical User Interface (GUI) or in the subroutine
+\texttt{cs\_user\_initialization}. In the GUI, when a coal combustion physics is selected in the item ``Calculation features'' under the heading
+``Thermophysical models'', an additional item appears: ``Pulverized coal combustion''. In this item the user can define coal types, their composition, the oxydant and reactions parameters, see \figurename~\ref{fig:Ini-coal1} to \figurename~\ref{fig:Ini-coal5}.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -6833,7 +6849,7 @@ view concerns the faces whose boundary conditions belong to the type
 
        \item for the ``3 points'' diffusion flame module:
              \begin{list}{$\rightarrow$}{}
-                    \item the user can choose between the ``oxydiser
+                    \item the user can choose between the ``oxidiser
                           inlet'' type marked out by
                           \texttt{ientox\index{ientox}(izone)}=1 and the ``fuel
                           inlet'' type marked out by
@@ -6842,11 +6858,11 @@ view concerns the faces whose boundary conditions belong to the type
                           velocity, the method is the same as for the
                           EBU pre-mixed flame module
                     \item finally, the user sets the temperatures
-                          \texttt{tinoxy\index{tinoxy}} for each oxydiser inlet
+                          \texttt{tinoxy\index{tinoxy}} for each oxidiser inlet
                           and \texttt{tinfue\index{tinfue}}, for each fuel inlet
 
 {\em Note: In the standard version, only the cases with only one
-                          oxydising inlet type and one fuel inlet type
+                          oxidising inlet type and one fuel inlet type
                           can be treated. In particular, there must be
                           only one input temperature for the oxidiser
                           (\texttt{tinoxy}) and one input temperature for the
@@ -7060,9 +7076,9 @@ The variables which can be activated by the user for each specific
 
  \item set the relaxation coefficient of the density \texttt{srrom}, with \\
 $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n+1}$\\
-(by default, the adopted value is \texttt{srrom\index{srrom}} = 0.8. At the
+(the default value is \texttt{srrom\index{srrom}} = 0.8. At the
       beginning of a calculation, a sub-relaxation of 0.95 may reduce
-      the numerical ``schocks'').
+      the numerical ``shocks'').
 
  \item set the dynamic viscosity \texttt{diftl0}. By default
       \texttt{diftl0\index{diftl0}}= 4.25 $kgm^{-1}s^{-1}$
@@ -7108,8 +7124,8 @@ Boundary conditions are defined as usual on a per-face basis in
 \subsubsection{Initialisation of the radiation main parameters}
 %==================================
 
-The main radiation parameters can be initialise in the Graphical User Interface (GUI) or in the user subroutine \texttt{usray1}. In the GUI, under the heading ``Thermophysical models'', when one of the two thermal radiative transfers models is selected, see \figurename~\ref{fig:0_ray}, additional items appear. The user is asked to choose the number of directions for angular discretisation, to define the absorption coefficient and select if the radiative calculation are restarted or not, 
-see \figurename~\ref{fig:1_ray} and \figurename~\ref{fig:3_ray}. When ``Advanced options'' is selected for both models \figurename~\ref{fig:2_ray} or \figurename~\ref{fig:4_ray} appear, the user must fill the resolution frequency and verbosity levels. In addition, the activation of the radiative transfer leads to the creation of an item ``Surface solution control'' under the heading ``Calculation control'', 
+The main radiation parameters can be initialise in the Graphical User Interface (GUI) or in the user subroutine \texttt{usray1}. In the GUI, under the heading ``Thermophysical models'', when one of the two thermal radiative transfers models is selected, see \figurename~\ref{fig:0_ray}, additional items appear. The user is asked to choose the number of directions for angular discretisation, to define the absorption coefficient and select if the radiative calculation are restarted or not,
+see \figurename~\ref{fig:1_ray} and \figurename~\ref{fig:3_ray}. When ``Advanced options'' is selected for both models \figurename~\ref{fig:2_ray} or \figurename~\ref{fig:4_ray} appear, the user must fill the resolution frequency and verbosity levels. In addition, the activation of the radiative transfer leads to the creation of an item ``Surface solution control'' under the heading ``Calculation control'',
 see \figurename~\ref{fig:5_ray}, where radiative transfer variables can be selected to appear in the output listing.
 
 \begin{figure}[ht]
@@ -7147,7 +7163,7 @@ see \figurename~\ref{fig:5_ray}, where radiative transfer variables can be selec
 \begin{figure}[ht]
 \begin{center}
 \includegraphics[width=7cm]{gui_rad_transf_p1_advanced}
-\caption{Radiative transfers - advanced parameters of th P-1 model}
+\caption{Radiative transfers - advanced parameters of the P-1 model}
 \label{fig:4_ray}
 \end{center}
 \end{figure}
@@ -7177,7 +7193,7 @@ boundary faces.\\
 
 \noindent
 For more details about the different parameters, the user may refer to the
-key word list (\S~\ref{sec:prg_motscles}).
+keyword list (\S~\ref{sec:prg_motscles}).
 
 
 %==================================
@@ -7214,7 +7230,7 @@ A zone number must be given to each boundary face \footnote{this must be less
  in \texttt{radiat} and cannot be modified.}and, specifically for
 the walls, a boundary condition type and an initialisation temperature
 (in Kelvin). The initialisation temperature is only used to make the
-solving implicit at the first time step. The zone number allows to assign
+solving implicit at the first time step. The zone number allows assigning
 an arbitrary integer to a set of boundary faces having the same
 radiation boundary condition type. This gathering is used by the
 calculation, and in the listing to print some physical values (mean
@@ -7247,7 +7263,7 @@ each boundary face. There are five different types:
 
 \noindent
 Depending on the selected boundary condition type at every wall face,
-the code needs to be given some supplementary pieces of information:
+the code needs to be given some additional information:
 
 \begin{list}{$\bullet$}{}
 
@@ -7387,7 +7403,7 @@ consistent with the example of the intensity boundary conditions given when the 
 
 This subroutine takes into account the affected thermal inertia by a wall.
  Some boundary faces are treated as a solid wall with a given thickness, on
- which the code resolves an unidimensional equation for the heat conduction.
+ which the code resolves a one-dimensional equation for the heat conduction.
  The coupling between the 1D module and the fluid works in a similar way to
  the coupling with the \syrthes. In construction, the user is not able to
  account for the heat transfer between different parts of the wall. A physical
@@ -7414,8 +7430,8 @@ This procedure  is called twice, at initialisation and again at each time step.
  as a coupled wall are marked out. This figure is written noted as
  \texttt{nfkpt1d}. It applies dimension to the arrays in the thermal module.
  \texttt{nfkpt1d} will be at 0 if there are no coupled faces (it is in fact the
- default value, the remainer of the subroutine is not used in this case).
- The parameter \texttt{isuit1} also need to be defined, this indicates if the
+ default value, the remainder of the subroutine is not used in this case).
+ The parameter \texttt{isuit1} also must be defined, this indicates if the
  temperature of the wall must be initialised or written in the file (stored in
  the variable \texttt{filmt1}).
 \item The 2nd call (initialisation) again concern the wall faces, it completes
@@ -7439,7 +7455,7 @@ Other than for re-reading a file (\texttt{ficmt1}), \texttt{tppt1d} is not used.
 \texttt{nppt1d}, \texttt{ifpt1d}, \texttt{rgpt1d} and \texttt{eppt1d} are
 compared to data from the follow-up file and they must be identical.
 
-{\em WARNING: The test in \texttt{ifpt1d} implicilty assumes that the array is completed
+{\em WARNING: The test in \texttt{ifpt1d} implicitly assumes that the array is completed
  in ascending order (i.e \texttt{ifpt1d(ii)}$>$\texttt{ifpt1d(jj)} if ii$>$jj.
  This will be the case if the coupled faces are defined starting from the unique loop on the
 boundary faces (as in the example). If this is not the case, contact the development
@@ -7521,7 +7537,7 @@ these options are global to all \syrthes and \CS couplings.
 
 \item[-] The particle-tracking (or Lagrangian) module enables the simulation of poly-dispersed particulate flows, by calculating the trajectories of individual particles, mainly characterized by their diameter and density (if no heat nor mass transfer between particle and fluid are activated).
 
-\item[-] The standard use of the particle-tracking module follows the \textbf{Moments/PDF approach} : the instantaneous properties of the underlying flow needed to calculate the particle motion are reconstructed from the averaged values (obtained by Reynolds-Averaged Navier-Stokes simulation) by using stochastic processes. The statistics of interest are then obtained through Monte-Carlo simulation.
+\item[-] The standard use of the particle-tracking module follows the \textbf{Moments/PDF approach}: the instantaneous properties of the underlying flow needed to calculate the particle motion are reconstructed from the averaged values (obtained by Reynolds-Averaged Navier-Stokes simulation) by using stochastic processes. The statistics of interest are then obtained through Monte-Carlo simulation.
 
 \item[-] As a consequence, is is important to emphasize that the most important (and physically meaningful) results of a particle-tracking calculation following the Moments/PDF approach are \mbox{\textbf{statistics}}. Volume and surface statistics, steady or unsteady, can be calculated. Individual particle trajectories (as 1D, \textit{EnSight}-readable cases) and displacements (as \textit{EnSight}-readable animations) can also be provided, but only for illustrative purposes.
 
@@ -7545,7 +7561,7 @@ The activation of the particle-tracking module is performed either:
 Except for cases in which the flow conditions depend on time, it is generally recommended to perform a first Lagrangian calculation whose aim is to reach a steady-state (i.e. to reach a time starting from which the relevant statistics do not depend on time anymore). In a second step, a calculation restart is done to calculate the statistics. When the single-phase flow is steady and the particle volume fraction is low enough to neglect the particles influence on the continuous phase behaviour, it is recommended to perform a Lagrangian calculation on a frozen field.\\
 
 It is then possible to calculate steady-state volumetric statistics and to give a statistical weight higher than 1 to the particles, in order to reduce the number of simulated (``numerical'') particles to treat while keeping the right concentrations. Otherwise, when the continuous phase flow is stationary, but the two-coupling coupling must be taken into consideration, it is still possible to activate stationary statistics. \\
-When the continuous phase flow is non-stationary, it is no longer possible to use stationary statistics. To have correct statistics at every moment in the whole calculation domain, it is imperative to have an established particle seeding and it is recommended (when it is possible) not to impose statistical weights different from the unity. \\
+When the continuous phase flow is unsteady, it is no longer possible to use stationary statistics. To have correct statistics at every moment in the whole calculation domain, it is imperative to have an established particle seeding and it is recommended (when it is possible) not to impose statistical weights different from the unity. \\
 
 Finally, when the so-called complete model is used for turbulent dispersion modelling, the user must make sure that the volumetric statistics are directly used for the calculation of the locally undisturbed fluid flow field.\\
 
@@ -7610,7 +7626,8 @@ In the GUI, the selection of the Lagrangian module activates the heading \texttt
 \minititre{Use of the subroutine \texttt{uslag1}}
 
 \noindent
-When the GUI is not used, \texttt{uslag1} must be completed. This subroutine gathers in different headings all the key words which are
+When the GUI is not used, \texttt{uslag1} must be completed. This subroutine
+gathers in different headings all the keywords which are
 necessary to configure the Lagrangian module. The different headings refer to:
 \begin{list}{$\bullet$}{}
 \item the global configuration parameters
@@ -7625,7 +7642,7 @@ necessary to configure the Lagrangian module. The different headings refer to:
 %
 \noindent
 For more details about the different parameters, the user may refer to the
-key word list (\S~\ref{sec:prg_motscles_lagr}).%FIXME
+keyword list (\S~\ref{sec:prg_motscles_lagr}).%FIXME
 
 
 
@@ -7637,7 +7654,7 @@ In the framework of the multiphase Lagrangian modelling, the management of the b
 
 \minititre{Use of the GUI}
 
- In the GUI, selecting the Lagrangian module in the activates the item \texttt{Particle boundary conditions} under the heading \texttt{Boundary conditions} in the tree menu. Different options are available depending on the type of standard boundary conditions selected (wall, inlet/outlet, etc...), 
+ In the GUI, selecting the Lagrangian module in the activates the item \texttt{Particle boundary conditions} under the heading \texttt{Boundary conditions} in the tree menu. Different options are available depending on the type of standard boundary conditions selected (wall, inlet/outlet, etc...),
  see \figurename~\ref{fig:CL-Lag}.
 
 \begin{figure}[ht]
@@ -7652,14 +7669,28 @@ In the framework of the multiphase Lagrangian modelling, the management of the b
 
 The main numerical variables are described below.
 
-\variab{ifrlag}{ifrlag(nfabor)}{ia}{In the Lagrangian module, the user defines \texttt{nfrlag\index{nfrlag}} boundary zones from the color of the boundary faces, or more generally from their properties (colors, groups...), from the boundary conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even from their coordinates. To do so, the array \texttt{ifrlag(nfabor)} giving for each face \texttt{ifac} the number \texttt{ifrlag(ifac)} corresponding to the zone to which it belongs, is completed. The zone numbers ({\em i.e.} the values of \texttt{ifrlag(ifac)}) are chosen freely by the user, but must be strictly positive integers inferior or equal to \texttt{nflagm\index{nflagm}} (parameter stored in lagpar, whose default value is 100). A zone type is associated with every zone; it will be used to impose global boundary conditions. \emph{WARNING: it is essential that every boundary face belongs to a zone.}}
+\variab{ifrlag}{ifrlag(nfabor)}{ia}{In the Lagrangian module, the user defines
+\texttt{nfrlag\index{nfrlag}} boundary zones from the color of the boundary faces,
+or more generally from their properties (colors, groups...), from the boundary
+conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even from their
+coordinates. To do so, the array \texttt{ifrlag(nfabor)} giving for each face
+\texttt{ifac} the number \texttt{ifrlag(ifac)} corresponding to the zone to
+which it belongs, is completed. The zone numbers ({\em i.e.} the values of
+\texttt{ifrlag(ifac)}) are chosen freely by the user, but must be strictly
+positive integers less than or equal to \texttt{nflagm\index{nflagm}}
+(parameter stored in \texttt{lagpar}, whose default value is 100). A zone type
+is associated with every zone; it will be used to impose global boundary
+conditions. \emph{WARNING: it is essential that every boundary face belongs to a zone.}}
 
-\variab{iusncl}{iusncl(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones previously identified, the number of classes \texttt{nbclas}\footnote{a class is a set of particles sharing the same physical properties and the same characteristics concerning the injection in the calculation domain} of entering particles is given: \texttt{iusncl(izone)} = \texttt{nbclas}. By default, the number of particle classes is zero. The maximum number of classes is \texttt{nclagm\index{nclagm}} (parameter stored in lagpar, whose default value is 20).}
+\variab{iusncl}{iusncl(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones previously identified, the number of classes \texttt{nbclas}\footnote{a class is
+a set of particles sharing the same physical properties and the same characteristics concerning the injection in the calculation domain} of entering particles
+is given: \texttt{iusncl(izone)} = \texttt{nbclas}. By default, the number of particle classes is zero. The maximum number of classes is
+\texttt{nclagm\index{nclagm}} (parameter stored in \texttt{lagpar}, whose default value is 20).}
 
 \variablist{iusclb}{iusclb(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones
 previously identified, a particle boundary condition type is
 given. The categories of particle boundary condition types are marked out by the
-key words \texttt{ientrl\index{ientrl}}, \texttt{isortl\index{isortl}},
+keywords \texttt{ientrl\index{ientrl}}, \texttt{isortl\index{isortl}},
 \texttt{irebol\index{irebol}}, \texttt{idepo1\index{idepo1}},
 \texttt{idepo2\index{idepo2}}, \texttt{iencrl\index{iencrl}}).
 
@@ -7673,7 +7704,7 @@ key words \texttt{ientrl\index{ientrl}}, \texttt{isortl\index{isortl}},
 
  \item if \texttt{iusclb(izone)} = \texttt{idepo1}, the particles settle definitely on the boundary zone \texttt{izone}. These particles leave the calculation domain and are definitely erased from the calculation
 
- \item if \texttt{iusclb(izone)} = \texttt{idepo2}, the particles settle definitevely on the boundary zone \texttt{izone} and they are kept in the calculation
+ \item if \texttt{iusclb(izone)} = \texttt{idepo2}, the particles settle definitively on the boundary zone \texttt{izone} and they are kept in the calculation
    domain: the particles do not disappear after touching the boundary zone. However, using \texttt{idepo2} type zones necessitates more memory than using \texttt{idepo1} type zones.
 
  \item if \texttt{iusclb(izone)} = \texttt{iencrl}, the particles which are coal particles
@@ -7843,7 +7874,7 @@ In the case of a more advanced use, it is possible to modify here all the arrays
 % second-order scheme is used elsewhere.
 
 %==================================
-\minititre{User-defined volume statistics : \texttt{uslast} and \texttt{uslaen}}
+\minititre{User-defined volume statistics: \texttt{uslast} and \texttt{uslaen}}
 %==================================
 \noindent
 An intervention in both subroutines \texttt{uslast} and \texttt{uslaen}
@@ -7869,7 +7900,7 @@ situations may happen:
 \end{list}
 
 According to the user parameter settings, it may happen that during the
-same calculation, the statistics will be non-stationary in a first part and
+same calculation, the statistics will be unsteady in a first part and
 stationary in second part.
 
 \noindent
@@ -7949,7 +7980,8 @@ The particle relaxation time may be modified in the subroutine \texttt{uslatp} a
 %-------------------------------------------
 
 \noindent
-The particle thermal characteristic time may be modified in the subroutine \texttt{uslatc} according to the chosen correlation for the calculation of the Nusselt number. This subroutine is called ar each Lagrangian sub-step. The thermal characteristic time, modified or not by the user, is available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
+The particle thermal characteristic time may be modified in the subroutine \texttt{uslatc} according to the chosen correlation for the calculation of the
+Nusselt number. This subroutine is called at each Lagrangian sub-step. The thermal characteristic time, modified or not by the user, is available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
 
 
 
@@ -7958,7 +7990,7 @@ The particle thermal characteristic time may be modified in the subroutine \text
 
 \noindent
 An intervention in the subroutine \texttt{uslaru} is required when the particle
-cloning/merging option is activated {\em via} the key word \texttt{iroule}. The
+cloning/merging option is activated {\em via} the keyword \texttt{iroule}. The
 important function '\texttt{croule}' must then be completed. \\
 The aim of this technique is to reduce the number of particles to treat in
 the whole flow and to refine the description of the particle cloud only
@@ -8151,7 +8183,7 @@ All the laws of the variation of physical data of the fluid are written (when ne
 in the subroutine \texttt{cs\_user\_physical\_properties}. It is called at each time step.
 
 {\em WARNING: For the electric module, it is here that all the physical variables are defined
- (including the relative cells and the eventuel user scalars):} \texttt{cs\_user\_physical\_properties} {\em {is not used.}}
+ (including the relative cells and the eventual user scalars):} \texttt{cs\_user\_physical\_properties} {\em {is not used.}}
 
 The user should ensure that the defined variation laws are valid for the whole range of
 variables. Particular care should be taken with non-linear laws (for example, a
@@ -8161,8 +8193,8 @@ variables. Particular care should be taken with non-linear laws (for example, a
  and are therefore stored in the \texttt{propce} array. \texttt{cp0}, \texttt{viscls0}, \texttt{viscl0}
  are not used}
 
-For the Joule effect, the user is required to supply the physical properties in the sub-
-routine. Examples are given which are to be adapted by the user. If the temperature is
+For the Joule effect, the user is required to supply the physical properties in the
+subroutine. Examples are given which are to be adapted by the user. If the temperature is
 to be determined to calculate the physical properties, the solved variable, enthalpy must
  be deduced. The preferred temperature-enthalpy law can be selected in the subroutine
  \texttt{usthht} (an example of the interpolation is given from the law table. This
@@ -8295,7 +8327,7 @@ specifically for the electric arcs module with \texttt{ippmod(ielarc)}=2~:
 \item magnetic field in $T$ (\vect{B} = \vect{rot}\,\vect{A})
 \end{list}
 
-The post-processing output will be created automatically (on all ouptut volume
+The post-processing output will be created automatically (on all output volume
 meshes for which the automatic output of main variables is active).
 
 %==================================
@@ -8375,16 +8407,16 @@ The following paragraphs are relevant if the GUI is not used.
 \textit{Subroutine called at the beginning.}
 This subroutine completes \texttt{cs\_user\_parameters.f90}.
 
-\texttt{usalin} allows to set options for the ALE module, and in
-particular to active the ALE module (\texttt{iale=1}).
+\texttt{usalin} allows setting options for the ALE module, and in
+particular to activate the ALE module (\texttt{iale=1}).
 
 \minititre{Subroutine \texttt{usstr1}}
 
 \texttt{usstr1} This subroutine reads in \texttt{cs\_user\_fluid\_structure\_interaction.f90}. It allows to specify for the structure module the
 following pieces of information:
 \begin{list}{-}{}
-  \item the index of the structure, (\texttt{idfstr(ifac)} where \texttt{ifac} is the index of the face). Then the total number of structures \texttt{nbstru} is automatically computed by the code. Be carefull, the value must belong to 1, ..., \texttt{nbstru}.
-  \item the initial value of deplacement, velocity and acceleration
+  \item the index of the structure, (\texttt{idfstr(ifac)} where \texttt{ifac} is the index of the face). Then the total number of structures \texttt{nbstru} is automatically computed by the code. Be careful, the value must belong to 1, ..., \texttt{nbstru}.
+  \item the initial value of displacement, velocity and acceleration
     (\texttt{xstr0}, \texttt{xstreq} and \texttt{vstr0}).
 \end{list}
 
@@ -8481,7 +8513,7 @@ words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
 
  \item if \texttt{ialtyb(ifac) = igliss}: sliding wall
 \begin{list}{$\rightarrow$}{}
-\item symmetry boundary condition on the mesh velocity vector, which means an homogeneous Neumann on the tangential mesh velocity and a zero Dirichlet on the normal mesh velocity.
+\item symmetry boundary condition on the mesh velocity vector, which means a homogeneous Neumann on the tangential mesh velocity and a zero Dirichlet on the normal mesh velocity.
 \end{list}
 
  \item if \texttt{ialtyb(ifac) = ifrsf}: free-surface
@@ -8501,7 +8533,7 @@ The user subroutine \texttt{usvima} is used along the ALE (Arbitrary Lagrangian 
 The user can modify mesh viscosity values to prevent cells and nodes from huge
  displacements in awkward areas, such as boundary layer for example.
 If \texttt{iortvm} = 0, the mesh viscosity modelling is considered as isotropic and
- therefore only the \texttt{viscmx} array needs to be filled.
+ therefore only the \texttt{viscmx} array must be filled.
 If \texttt{iortvm} = 1, mesh viscosity modelling is orthotropic therefore all arrays
  \texttt{viscmy}, \texttt{viscmx}, and \texttt{viscmz} need to be filled.
 Note that \texttt{viscmx}, \texttt{viscmy} and \texttt{viscmz} arrays are initialized
@@ -8516,7 +8548,7 @@ In the subroutine \texttt{cs\_user\_fluid\_structure\_interaction} the user prov
  and initialise the internal structures where Fluid-Structure coupling occurs.
 For each boundary face \texttt{ifac}, \texttt{idfstr(ifac)} is the index of the structure
  the face belongs to (if \texttt{idfstr(ifac)} = 0, the face \texttt{ifac} doesn't belong
- to any structure). When using internal coupling, structure index necessarily needs to be
+ to any structure). When using internal coupling, structure index necessarily must be
  strictly positive and smaller than the number of structures. The number of "internal" structures is automatically defined with the maximum
  value of the \texttt{idfstr} table, meaning that internal structure numbers must be defined
  sequentially with positive values, beginning with integer value '1'.
@@ -8539,7 +8571,7 @@ When starting a calculation using ALE, or re-starting a calculation with ALE, ba
  \text{usalin}, so that the code can deal with the arrays \text{xstr0}, \text{vstr0} and \text{xstreq}.
 
 When \texttt{ihistr} is set to 1, the code writes in the output the history of the
- displacement, of the structural velocity, of the structural acceleration anf of the
+ displacement, of the structural velocity, of the structural acceleration and of the
  fluid force. The value of structural history output step is the same as the one for
  standard variables \text{nthist}.
 
@@ -8555,14 +8587,14 @@ The second subroutine, \text{usstr2}, is called at each iteration. One defines i
  \item \text{vstr} array stands for structural velocity.
 \end{list}
 \text{xstr}, \text{xstr0} and \text{vstr} are \text{DATA} tables that can be used to
- define arrays Mass, Friction and Stiffness. Those are not to be modidfied.
+ define arrays Mass, Friction and Stiffness. These are not to be modified.
 
 The 3D structural equation that is solved is the following one:
 \begin{equation}\label{eq:FluidStruct}
 \displaystyle
 \tens{m}.\partial_{tt}\vect{x}+\tens{c}.\partial_{t}\vect{x}+\tens{k}.\left(\vect{x}+\vect{x_0}\right)=\vect{f},
 \end{equation}
-where $x$ stands for the structural displacement compared to initial mesh postition
+where $x$ stands for the structural displacement compared to initial mesh position
  \text{xstr}, $x_0$ represents
  the displacement of the structure in initial mesh compared to equilibrium.
 Note that $\tens{m}$,$\tens{c}$, and $\tens{k}$ are 3\text{x}3 matrices.
@@ -8576,7 +8608,7 @@ Note that the time step used to solve this equation, \text{dtstr}, can be
 \subsection{Management of the structure property}
 %==================================
 
-The use of \texttt{usstr2} is mandatory to run a calculation using the ALE 
+The use of \texttt{usstr2} is mandatory to run a calculation using the ALE
  module with a structure module. It is called at each time step.
 
 For each structure, the system that will be solved is:
@@ -8588,9 +8620,9 @@ M.x^{''}+C.x^{''}+K.(x-x_{0} = 0
 where
 
 \begin{list}{-}{}
- \item $M$ is the mass stucture (\texttt{xmstru}).
- \item $C$ is the dumping coefficient of the stucture (\texttt{xcstru}).
- \item $K$ is the spring constant or force constant of the stucture (\texttt{xkstru}).
+ \item $M$ is the mass structure (\texttt{xmstru}).
+ \item $C$ is the dumping coefficient of the structure (\texttt{xcstru}).
+ \item $K$ is the spring constant or force constant of the structure (\texttt{xkstru}).
  \item $x_{0}$ is the initial position.
 \end{list}
 
@@ -8599,19 +8631,19 @@ Below is a list of the different variables that might be modified:
 \begin{list}{$\bullet$}{}
 
 \item{\texttt{xmstru(i,j,k})} \\
-{the mass stucture of the structure, where \texttt{i},\texttt{j} is
+{the mass structure of the structure, where \texttt{i},\texttt{j} is
 the array of mass structure and \texttt{k} the index of the structure.}
 
 \item{\texttt{xcstru(i,j,k})}\\
-{dumping coefficient of the stucture, where \texttt{i},\texttt{j} is the array of
+{dumping coefficient of the structure, where \texttt{i},\texttt{j} is the array of
 dumping coefficient and \texttt{k} the index of the structure.}
 
 \item{\texttt{xkstru(i,j,k)}}\\
-{spring constant of the stucture, where \texttt{i},\texttt{j} is the array of spring
+{spring constant of the structure, where \texttt{i},\texttt{j} is the array of spring
 constant and \texttt{k} the index of the structure.}
 
 \item{\texttt{forstr(i,k)}}\\
-{force vector of the stucture, where \texttt{i} is the force vector and
+{force vector of the structure, where \texttt{i} is the force vector and
 \texttt{k} the index of the structure.}
 \end{list}
 
@@ -8621,14 +8653,14 @@ constant and \texttt{k} the index of the structure.}
 
 The selection can be done in the Graphical User Interface (GUI)
  under the heading ``Thermophysical models'' item ``Calculation features''
-or in the routine usppmo as described in the section ``Advanced modelling setup''.
- 
-One of the followind atmospheric flow model can be selected:
+or in the routine \texttt{usppmo} as described in the section ``Advanced modelling setup''.
+
+One of the following atmospheric flow model can be selected:
 \begin{list}{-}{}
- \item ``constant density'' : no thermal variable, to simulate neutral atmosphere,
- \item ``dry atmosphere'' : potential temperature is used as thermal variable to simulate dry stratified
+ \item ``constant density'': no thermal variable, to simulate neutral atmosphere,
+ \item ``dry atmosphere'': potential temperature is used as thermal variable to simulate dry stratified
 atmospheric flows,
- \item ``humid atmosphere'' : liquid potential temperature, total water content, and droplet number are
+ \item ``humid atmosphere'': liquid potential temperature, total water content, and droplet number are
 used to simulate stratified atmospheric flows with water (liquid and vapor) together with phase changes.
 The model is described in (Bouzereau, 2004).
 \end{list}
@@ -8637,15 +8669,15 @@ When one of the atmospheric option is selected, it activates an item under the s
 ``Atmospheric flows'' where the path leading to a file containing meteorological data can be specified, see
  fig. \ref {fig:Ini-atmo}. An example is given in the DATA/REFERENCE/meteo file.
 
-The user can  use the standard set of \CS boundary conditions but is warned that even small 
+The user can  use the standard set of \CS boundary conditions but is warned that even small
 inconsistencies can create very large buoyancy forces and spurious circulations.
 
 Alternatively, the meteorological profile can be used to initialize the fields and to set up the inlet boundary
-conditions. Optionally, the inlet can be detected automatically according to the direction of the wind given 
+conditions. Optionally, the inlet can be detected automatically according to the direction of the wind given
 in the meteorological file. This is often used for the lateral boundaries of the atmospheric domain.
 
-WARNING : the definition of the potential temperature (and the liquid potential temperature) requires that the
-vertical component of the gravity is set at GZ=-9.81 (GX=GY=0) otherwise pressure and density are not 
+WARNING: the definition of the potential temperature (and the liquid potential temperature) requires that the
+vertical component of the gravity is set at GZ=-9.81 (GX=GY=0) otherwise pressure and density are not
 correctly computed.
 
 %==================================
@@ -8655,10 +8687,10 @@ correctly computed.
 If a meteorological file is given, it is used by default for initializing the
 variables. If not the standard initialization is performed.
 The initialisation can be modified in the Graphical User Interface (GUI)
- or in the subroutine \texttt{cs\_user\_initialization\_atmospheric} example.  
+ or in the subroutine \texttt{cs\_user\_initialization\_atmospheric} example.
 In addition if the atmospheric flow model chosen is
   ``dry atmosphere'',  the additional variable ``PotTemp'' appear below the other
-code variables. For the ``humid atmosphere'', the additional variables are :
+code variables. For the ``humid atmosphere'', the additional variables are:
 ``LiqPotTemp'', ``TotWater'' and ``NbDrop''.
 
 \begin{figure}[ht]
@@ -8672,18 +8704,18 @@ code variables. For the ``humid atmosphere'', the additional variables are :
 When the GUI is not used, \texttt{cs\_user\_initialization\_atmospheric} example (called only during the calculation
  initialisation) allows to initialise or modify
 (in case of a restarted calculation) the calculation variables and the values of
-the time step. 
-The example provided in the user file performs the initialisation of the 
+the time step.
+The example provided in the user file performs the initialisation of the
 variables from meteorological profiles using the interpolation routine \texttt{intprf}.
 
 %==================================
 \subsubsection{Management of the boundary conditions}
 %==================================
 
-Boundary conditions can be set with the GUI, including the automatic use of the meteorological 
+Boundary conditions can be set with the GUI, including the automatic use of the meteorological
 profile for inlets.
 If not managed by the GUI, the boundary conditions must be managed by the \texttt{cs\_user\_boundary\_conditions\_atmospheric} subroutine
-which gives various examples . For each type of boundary condition, faces should be grouped as physical zones characterised 
+which gives various examples . For each type of boundary condition, faces should be grouped as physical zones characterised
 by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is retrieved from a meteorological profile,
  the variable \texttt{iprofm(izone)} of the zone must be set to 1.
 

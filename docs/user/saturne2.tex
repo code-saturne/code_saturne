@@ -22,12 +22,12 @@
 
 %==================================
 %==================================
-\section{Key word list}
+\section{Keyword list}
 %==================================
 %==================================
 \label{sec:prg_motscles}
 
-The key words are classified under headings. For each key word of the Kernel of \CS,
+The keywords are classified under headings. For each keyword of the Kernel of \CS,
 the following data are given:
 
 \noindent
@@ -39,7 +39,7 @@ the following data are given:
 
 
 \begin{list}{$\bullet$}{}
-\item \textbf{Variable name}: Name of the variable containing the key word.
+\item \textbf{Variable name}: Name of the variable containing the keyword.
 
 \item \textbf{Type}: a (Array), i (Integer), r (Real number), c
       (Character string).
@@ -47,7 +47,7 @@ the following data are given:
 \item \textbf{Allowed values}: list or range of allowed values.
 
 \item \textbf{Default}: value defined by the code before any user
-      modification (every key word has one). In some cases, a
+      modification (every keyword has one). In some cases, a
       non-allowed value is given (generally $-999$ or $-10^{12}$), to force the
       user to specify a value. If he does not do it, the code may:
 \begin{list}{-}{}
@@ -55,41 +55,41 @@ the following data are given:
       choice of the variables for which chronological records will be
       generated).
 
-\item stop, if the key word is essential.
+\item stop, if the keyword is essential.
 \end{list}
 
 \item \textbf{O/C}: Optional/Compulsory
 \begin{list}{-}{}
-\item O: optional key word, whose default value may be enough.
+\item O: optional keyword, whose default value may be enough.
 
-\item C: key word which must imperatively be specified.
+\item C: keyword which must imperatively be specified.
 \end{list}
 
 \item \textbf{Level}: L1, L2 or L3
 \begin{list}{-}{}
 \item L1 (level 1): the users will have to modify it in the framework of
-      standard applications. The L1 key words are written in bold.
+      standard applications. The L1 keywords are written in bold.
 
 \item L2 (level 2): the users may have to modify it in the framework of
-      advanced applications. The L2 key word are all optional.
+      advanced applications. The L2 keywords are all optional.
 
-\item L3 (level 3): the developers may have to modify it ; it keeps its
-      default value in any other case. The L3 key word are all optional.
+\item L3 (level 3): the developers may have to modify it; it keeps its
+      default value in any other case. The L3 keywords are all optional.
 \end{list}
 
-\item \textbf{Description}:  key word description, with its potential
+\item \textbf{Description}:  keyword description, with its potential
       dependences.
 
 \end{list}
 
-The L1 key words can be modifed through the Graphical Use Interface or
-in the \texttt{cs\_user\_parameters.f90} file. L2 and L3 key words can only be modified through
+The L1 keywords can be modified through the Graphical Use Interface or
+in the \texttt{cs\_user\_parameters.f90} file. L2 and L3 keywords can only be modified through
 the \texttt{cs\_user\_parameters.f90} file, even if they do not appear in the version proposed
 as example it the \texttt{SRC/REFERENCE/base} directory.\\
-It is however recommended not to modify the key words which do not belong to the L1
+It is however recommended not to modify the keywords which do not belong to the L1
 level.
 
-The alphabetical key word list is displayed in the index, in the end of
+The alphabetical keyword list is displayed in the index, in the end of
 this report.
 
 \minititre{Notes}
@@ -262,7 +262,7 @@ or physical property defined at the cell centers.
 With {\tt ihisvr(n, 1)}=-999 or -1, {\tt ihisvr(n, j$>$1)} is useless.\\
 \hspace*{.5cm} $\bullet$ {\tt ihisvr(n, 1)}: number of record probes to use
 for the variable N\\
-\hspace*{1.3cm}= -999: by default: chronogical records are generated on
+\hspace*{1.3cm}= -999: by default: chronological records are generated on
 all the probes if N is one of the main variables (pressure, velocity,
 turbulence, scalars), the local time step or the turbulent
 viscosity. For the other quantities, no chronological record is generated.\\
@@ -391,7 +391,7 @@ the user must:
 \end{list}
 
 The total number of averages ($p$={\tt nbmomt}) is automatically determined by
-the code from the values of {\tt idtmom}. The user must not specify specify it.
+the code from the values of {\tt idtmom}. The user must not specify it.
 
 \motcleb{idfmom}{ia}{0, $\pm$ variable index-number}{0}{O}{L1}
 {Index-number of the variables composing a time average of the type
@@ -539,7 +539,7 @@ always useful}
 
 \motcleb{isuite}{i}{0 or 1}{0}{C}{L1}
 {indicator of a calculation restart (=1) or not (=0)\\
-always useful. This value is set automatically be the code, depending on
+always useful. This value is set automatically by the code, depending on
 whether a restart directory is present, and should not be modified by
 the user}
 
@@ -629,7 +629,7 @@ always useful}
 {if the scalar {\tt iscal} is the average of the square of the fluctuations of a
 scalar {\tt kk}, then \mbox{{\tt iscavr(iscal)=kk}}.
 Otherwise {\tt iscavr(iscal)}=0. For {\tt iscal} and {\tt kk}, the user
-can only use index-numbers refering to user scalars ($\leqslant$ {\tt nscaus}). \\
+can only use index-numbers referring to user scalars ($\leqslant$ {\tt nscaus}). \\
 always useful}
 
 \motcleb{iscalt}{ia}{-1 or integer $>$ 0}{-1}{O}{L1}
@@ -715,7 +715,7 @@ useful in case of coupling with \syrthes}
 
 \motcle{istat}{ia}{0 or 1}{1 or 0}{O}{L2}
 {for each unknown {\tt ivar} to calculate, indicates if
-non-stationary terms are present ({\tt istat(ivar)}=1) or not (0) in the matrices.\\
+unsteady terms are present ({\tt istat(ivar)}=1) or not (0) in the matrices.\\
 By default, {\tt istat} is set to 0 for the pressure (variable {\tt ivar=ipr})
 or $\overline{f}$ in v2f modelling (variable {\tt ivar=ifb}) and set to
 1 for the other unknowns.\\
@@ -793,7 +793,7 @@ otherwise numerical instabilities may appear\\
 {\tt iptlro} indicates whether the time step should be limited to the local thermal
 time step (=1) or not (=0)\\
 when {\tt iptlro}=1, the listing shows the number of cells where the time step has
-been clipped due to the thermal criterium, as well as the maximum ratio between
+been clipped due to the thermal criterion, as well as the maximum ratio between
 the time step and the maximum thermal time step. If {\tt idtvar}=0, since the time
 step is fixed and cannot be clipped, this ratio can be larger than
 1\footnote{it is then the user's
@@ -811,7 +811,7 @@ The size of the array {\tt cdtvar} is {\tt nvar}. For instance, the multiplicati
 coefficient applied to the scalar 2 is {\tt cdtvar(isca(2))}). Yet, the value of
 {\tt cdtvar} for the velocity components and the pressure is not used. Also,
 although it is possible to change the value of {\tt cdtvar} for the turbulent
-variables, it is highly unrecommended\\
+variables, it is highly not recommended\\
 useful if and only if {\tt nscal} $\geqslant$ 1}
 
 
@@ -846,7 +846,7 @@ useful if {\tt idtvar} $\ne$ 0}
 
 \motcle{varrdt}{r}{strictly positive real number}{0.1}{O}{L3}
 {maximum allowed relative increase in the calculated time step value
-between two succesive time steps (to ensure stability, any decrease in the time step
+between two successive time steps (to ensure stability, any decrease in the time step
 is immediate and without limit)\\
 useful if {\tt idtvar} $\ne$ 0}
 
@@ -868,7 +868,7 @@ algorithm, deduced from the value of {\tt relxst} (defaulting to
  {\tt relaxv(ivar} $eq$  {1. - \tt relxst})\\
 useful only for the pressure and for turbulent variables
 if and only if ($k-\varepsilon$, v2f or $k-\omega$ models without coupling)
- with the usteady algorithm\\
+ with the unsteady algorithm\\
 always useful with the steady algorithm}
 
 
@@ -914,7 +914,7 @@ The $k-\varepsilon$ (standard and linear production) and $R_{ij}-\varepsilon$
 (LRR and SSG) turbulence
 models implemented in \CS are ``High-Reynolds'' models. It is therefore
 necessary to make sure that the thickness of the first cell neighboring
-the wall is larger than the thickness of the viscous sublayer (at the
+the wall is larger than the thickness of the viscous sub-layer (at the
 wall, $y^+>2.5$ is required as a minimum, and preferably between 30 and
 100)\footnote{While creating the mesh, $y^+=\frac{yu*}{\nu}$ is
 generally unknown. It can be roughly estimated as $\frac{yU}{10\nu}$, where
@@ -922,13 +922,13 @@ $U$ is the characteristic velocity, $\nu$ is the kinematic viscosity of the flui
  and $y$ is the mid-height of the first cell near the wall.}. If the mesh does
  not respect this condition, the results may be biased
 (particularly if thermal processes are involved). Using scalable wall-functions
-(cf. key word {\tt ideuch}) may help avoiding this problem.\\
+(cf. keyword {\tt ideuch}) may help avoiding this problem.\\
 The v2-f model is a ``Low-Reynolds'' model, it is therefore necessary to
 make sure that the thickness of the first cell neighboring the wall is
-smaller than the thickness of the viscous sublayer ($y^+<1$).\\
+smaller than the thickness of the viscous sub-layer ($y^+<1$).\\
 The $k-\omega$ SST model provides correct results whatever the thickness of the first cell.
 Yet, it requires the knowledge of the distance to the wall in every
-cell of the calculation domain. The user may refer to the key word
+cell of the calculation domain. The user may refer to the keyword
 {\tt icdpar\index{icdpar}} for more details about the potential limitations.\\
 The $k-\varepsilon$ model with linear production allows to correct the
 known flaw of the standard $k-\varepsilon$ model which overestimates the
@@ -987,7 +987,7 @@ useful if {\tt iturb} is different from 50}
 always useful}
 
 \motcle{ypluli}{ra}{real number $>$ 0}{\tt 1/xkappa, 10.88}{O}{L3}
-{limit value of $y^+$ for the viscous sublayer\\
+{limit value of $y^+$ for the viscous sub-layer\\
 {\tt ypluli} depends on the chosen wall function: it is
 initialised to 10.88 for the scalable wall function ({\tt ideuch}=2),
 otherwise it is initialised to $1/\kappa\approx 2,38$\\
@@ -1116,7 +1116,7 @@ useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
 different inlet boundaries with the LES model (generation of unsteady synthetic
 eddies)\\
 useful if {\tt iturb}=40, 41 or 42\\
-this key word requires the completion of the routine
+this keyword requires the completion of the routine
 \texttt{usvort}}
 
 \motcle{isuivo}{i}{0 or 1}{isuite}{O}{L1}
@@ -1140,7 +1140,7 @@ $1-e^{-y^+/{\tt cdries}}$, where $y^+$ designates the non-dimensional
 distance to the nearest wall). The default value is 1 for the
 Smagorinsky model and 0 for the dynamic model.\\
 the van Driest wall-damping requires the knowledge of the distance to the
-nearest wall for each cell in the domain. Refer to key word {\tt icdpar}
+nearest wall for each cell in the domain. Refer to keyword {\tt icdpar}
 for potential limitations\\
 useful if and only if {\tt iturb} = 40 or 41}
 
@@ -1228,7 +1228,7 @@ second-order. It it possible to modify this by means of the
 following indicators.\\
 due to specific coupling between certain variables, the source terms in the
 turbulence equations (except convection and diffusion) cannot be second order,
-except with the $R_{ij}$ models (cf. key word {\tt isto2t})\\
+except with the $R_{ij}$ models (cf. keyword {\tt isto2t})\\
 by default, {\tt ischtp} is initialised to 2 with the LES model and 1
 otherwise\\
 always useful}
@@ -1774,7 +1774,7 @@ non-physical velocities which may appear in highly
 stratified areas or near horizontal walls (thus
 avoiding the use of {\tt extrag} if the non-physical velocities are due only to
 gravity effects).\\
-The improved algorithm also allows to eradicate the velocity oscillations
+The improved algorithm also allows eradicating the velocity oscillations
 which tend to appear at the frontiers of areas with high head losses.\\
 In the case of a stratified flow, the calculation cost is higher when the
 improved algorithm is used (about 30\% depending on the case) because
@@ -1859,7 +1859,7 @@ By definition:
 $$ \eta^{\,pred}_{\,i,k}(\vect{u}^*)= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,pred}(\vect{u}^*)||
 _{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
 \hspace*{0.5cm}$\bullet$ The first family, $k=1$, suppresses the
-volume $|\Omega_i|$ which intrinsicly appears  with the norm
+volume $|\Omega_i|$ which intrinsically appears with the norm
 ${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\
 \hspace*{0.5cm}$\bullet$ The second family, $k=2$, exactly represents the norm
 ${{I\hspace{-.25em}L}^{2}(\Omega_i)}$. The size of the cell therefore
@@ -2008,8 +2008,8 @@ if you need to override this limitation.}
 The following options are related to {\tt icdpar}=1 or -1. The options of
 level 2 are described first. Some options are used only in the case of
 the calculation of the non-dimensional distance to the wall $y^+$ (LES model with
-van Driest damping). Most of these key words are simple copies of the
-key words for the numerical options of the general equations, with a potentially
+van Driest damping). Most of these keywords are simple copies of the
+keywords for the numerical options of the general equations, with a potentially
 specific value in the case of the calculation of the distance to the wall.\\
 
 \motcle{iwarny}{i}{integer}{0}{O}{L2}
@@ -2315,7 +2315,7 @@ viscosity in the subroutine \texttt{usphyv}}
  is the sub-relaxation coefficient for the density, following the formula:\\
 $\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}$\\
 hence, with a zero value, there is no sub-relaxation.
-With combustion and pulversied coal, {\tt srrom} is initialised to {\tt -grand}
+With combustion and pulverised coal, {\tt srrom} is initialised to {\tt -grand}
 and the user must specify a proper value through the Interface or the
 initialisation subroutines (\texttt{usd3p1},
  \texttt{usebu1}, \texttt{uslwc1}, \texttt{uscpi1} or
@@ -2355,7 +2355,7 @@ total pressure\\
 when there are no Dirichlet conditions for the pressure (closed domain), {\tt xyzp0}
 does not need to be specified (unless the total pressure has a clear physical
 meaning in the configuration treated)\\
-when Dirichlet conditions on the pressure are specified but only through stantard
+when Dirichlet conditions on the pressure are specified but only through standard
 outlet conditions (as it is in most configurations),
 {\tt xyzp0} does not need to be specified by the user, since it will be set to the
 coordinates of the reference outlet face ({\em i.e.} the code will automatically
@@ -2418,7 +2418,7 @@ molecular diffusivity in the appropriate user subroutine (\texttt{usphyv} for
 the standard physics) ({\tt ivisls(iscal)} $>$ 0)\\
 {\em Warning: {\tt visls0} corresponds to the diffusivity. For the temperature, it is
 therefore defined as $\lambda/C_p$ where $\lambda$ and $C_p$ are the
-conductivity and specific heat. When using the Graphical Inteface, $\lambda$ and
+conductivity and specific heat. When using the Graphical Interface, $\lambda$ and
 $C_p$ are specified separately, and {\tt visls0} is calculated automatically\\
 With the compressible module, {\tt visls0} (given in \texttt{uscfx2}) is directly the
 thermal conductivity $W.m^{-1}.K^{-1}$\\
@@ -2548,8 +2548,6 @@ useful if and only if {\tt iturb}= 20, 21 or 30
 case of two-way coupling\\
 useful in case of Lagrangian modelling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
 with two-way coupling}
-%c'est aussi implante en k-omega mais en ``imitant''le k-eps et sans aucune verif
-% ... et d'ailleurs ca ne marche pas !!
 
 \motcle{sigmak}{r}{real number $>$ 0}{1.0}{O}{L3}
 {Prandtl number for $k$ with $k-\varepsilon$ and v2f models\\
@@ -2769,7 +2767,7 @@ useful if and only if {\tt iturb}=60
 {$gamma$ newmark's method}
 
 \motcleb{nalimx}{i}{positive integer}{15}{C}{L2}
-{maximum number of imlicitation iterations of of the structure displacement}
+{maximum number of implicitation iterations of of the structure displacement}
 
 \motcleb{epalim}{r}{positive real}{$1.10^{-5}$}{C}{L2}
 {Relative precision of implicitation of the structure displacement }
@@ -2783,8 +2781,8 @@ useful if and only if {\tt iturb}=60
 \subsection{Thermal radiative transfers: global settings}
 %==================================
 
-All the following key words may be modified in the user subroutines
-\texttt{usray*} (or, for some of them, by through the thermochemical data files).
+All the following keywords may be modified in the user subroutines
+\texttt{usray*} (or, for some of them, through the thermochemical data files).
 It is however not recommended to modify those which do not belong to
 level L1.
 
@@ -2843,7 +2841,7 @@ useful if and only if the radiation module is activated with the P-1 method}
 media)\\
 \hspace*{1.3cm}= 1: conservative calculation\\
 \hspace*{1.3cm}= 2: semi-analytic calculation corrected in order to be
-globally consevative\\
+globally conservative\\
 useful if and only if the radiation module is activated\\
 {\em Note: if the medium is transparent, the choice has no effect on the calculation}}
 
@@ -2907,11 +2905,11 @@ boundary faces ($W/m/K$)\\
 ($W/m^2/K$)\\
 useful if and only if the radiation module is activated}
 
-\motcle{tmin}{r}{real number positif}{0}{O}{L3}
+\motcle{tmin}{r}{positive real number}{0}{O}{L3}
 {minimum allowed value for the wall temperatures in Kelvin\\
 useful if and only if the radiation module is activated}
 
-\motcle{tmax}{r}{real number positif}{{\tt grand} + 273.15}{O}{L3}
+\motcle{tmax}{r}{positive real number}{{\tt grand} + 273.15}{O}{L3}
 {maximum allowed value for the wall temperatures in Kelvin\\
 useful if and only if the radiation module is activated}
 
@@ -2933,7 +2931,7 @@ The electric arcs module is designed to take into account the Joule effect
 (only with real potential) in the enthalpy equation. The Laplace forces
 are taken into account in the impulse momentum equation.
 
-The key words used in the global settings are quite few. They are
+The keywords used in the global settings are quite few. They are
 found in the subroutine \texttt{useli1} (see the description of this
 user subroutine \S\ref{prg_useli1}).
 
@@ -2986,14 +2984,14 @@ Useful if \texttt{ielcor}=1}
 \subsection{Compressible module: specificities}
 %==================================
 
-The key words used in the global settings are quite few. They are
+The keywords used in the global settings are quite few. They are
 found in the subroutines \texttt{uscfx1} and \texttt{uscfx2}, in
 the \texttt{cs\_user\_parameters.f90} file (see the
 description of these user subroutines, \S\ref{prg_uscfx12}).
 
 \motcleb{ieos}{i}{1}{1}{C}{L1}
 {\texttt{ieos} indicates the equation of state. Only perfect gas with a constant adiabatic coefficient,
-\texttt{ieos=1} is available, but the user can complete the subroutine 
+\texttt{ieos=1} is available, but the user can complete the subroutine
 \texttt{cfther}, which is not a user subroutine, to add new equations of state.\\
 always useful
 }
@@ -3012,7 +3010,7 @@ pressure allows to get rid of the disturbances which may appear near the
 horizontal walls when the flow is little convective.\\
 %
 Otherwise, when \texttt{icfgrp}=0, the pressure condition is calculated
-from the solution of the unidimensional Euler equations for a perfect
+from the solution of the one-dimensional Euler equations for a perfect
 gas near a wall, for the variables ``normal velocity'', ``density'' and
 ``pressure'':
 \vspace{0.2cm}
@@ -3074,14 +3072,14 @@ always useful}
 %==================================================
 \label{sec:prg_motscles_lagr}
 
-Most of these key words may be modified in the user subroutines
+Most of these keywords may be modified in the user subroutines
 \texttt{uslag1}, \texttt{uslag2}, \texttt{uslaen},
 \texttt{uslast} and \texttt{uslaed}. It is however strongly recommended
 not to modify those belonging to the level L3.
 
 First of all, it should be noted that the Lagrangian module is compliant with
-all the RANS turbulence models and with laminar flows. However, the particule
-turbulent diffusion is not specially adapted to the second order
+almost all the RANS turbulence models and with laminar flows. However, the standard particle
+turbulent dispersion model does not take fully advantage of the second-order
 $R_{ij}-\varepsilon$ models. The same isotropic model is used as in the
 $k-\varepsilon$ models, with $k$ calculated from the trace of $R_{ij}$. Also,
 two-way coupling is not compatible with the $k-\omega$ SST model.
@@ -3095,13 +3093,10 @@ the different values correspond to the following modellings: \\
 \hspace*{1.3cm} = 1 Lagrangian two-phase flow in one-way coupling (no influence of
 the particles on the continuous phase)\\
 \hspace*{1.3cm} = 2 Lagrangian two-phase flow with two-way coupling (influence of
-the particles on the dynamics of the continuous phase).
-It must be noted that the two-way coupling is taken
-into account only for the first eulerian phase. Dynamics,
-temperature and mass may be coupled independently\\
+the particles on the dynamics of the continuous phase). Dynamics, temperature and mass may be coupled independently.
 \hspace*{1.3cm} = 3 Lagrangian two-phase flow on frozen continuous phase. This option can
 only be used in case of a calculation restart. All the
-eulerian fields are frozen (including the scalar fields). This option
+Eulerian fields are frozen (including the scalar fields). This option
 automatically implies \texttt{iccvfg} = 1\\
 always useful}
 
@@ -3268,7 +3263,7 @@ useful if \texttt{iilagr} = 2, \texttt{iphyla} = 1 and \texttt{impvar} = 1}
 {if \texttt{iphyla} = 1 and \texttt{itpvar} = 1, \texttt{ltsthe}
  activates (=1) or not (=0) the two-way coupling on temperature\\
 if \texttt{iphyla} = 2, \texttt{ltsthe} activates (=1) or not (=0) the
-two-way coupling on the eulerian variables related to pulverised coal
+two-way coupling on the Eulerian variables related to pulverised coal
 combustion\\
 useful if \texttt{iilagr} = 2}
 
@@ -3343,12 +3338,12 @@ post-processing outputs)\\
 useful if \texttt{istala} = 1}
 
 \motcleb{idstnt}{i}{strictly positive integer}{1}{C}{L1}
-{absolute Lagrangian iteration number (includings the restarts) after
+{absolute Lagrangian iteration number (including the restarts) after
 which the calculation of the volume statistics is activated\\
 useful if \texttt{istala} = 1}
 
 \motcleb{nstist}{i}{integer $\geqslant$ \texttt{idstnt}}{\texttt{idstnt}}{O}{L1}
-{absolute Lagrangian iteration number (includings the restarts) after
+{absolute Lagrangian iteration number (including the restarts) after
 which the volume statistics are cumulated over time (they are then said to be
 stationary)\\
 if the absolute Lagrangian iteration number is lower than \texttt{nstist},
@@ -3622,7 +3617,7 @@ its value is not to be modified by the user}
 {if the recording of the boundary statistics is stationary, \texttt{tstatp}
 contains the cumulated physical duration of the recording of the boundary
 statistics\\
-if the recording of the boundary statisticss is non-stationary, then
+if the recording of the boundary statistics is non-stationary, then
 \texttt{tstat=dtp\index{dtp}} (it is the Lagrangian time step, because the
 statistics are reset to zero at every time step)\\
 useful if \texttt{iensi3}=1}
