@@ -78,16 +78,15 @@ This document is a practical user guide for \CS version \verscs.
 It is the result of the joint effort of
 all the members in the development team.
 
-
-This document gives practical information for the usage of \CS.
+This document provides practical information for the usage of \CS.
 For more details about the algorithms and their numerical implementation,
 please refer to the reports
  \cite{ijvf}, \cite{boucker00} and \cite{mechitoua98},
 and to the theoretical documentation \cite{theory}.
 
 The latest updated version of this document is available on-line with the version of \CS
- and accessible through the command
-\texttt{code\_saturne info --guide theory} .
+and accessible through the command
+\texttt{code\_saturne info --guide theory}.
 
 This document first
 presents all the necessary elements to run a calculation
@@ -122,7 +121,7 @@ The second thing is to prepare the computation directories. For instance, the st
 \begin{center}
 \texttt{code\_saturne create -s T\_JUNCTION}\
 \end{center}
-The mesh files should be copied in the directory \texttt{MESH}
+The mesh files should be copied in the directory \texttt{MESH} (though they may also be selected from another directory, see \S\ref{sec:prg_stepbystepcalculation}),
 and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{case\_name.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
 Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI case\_name.xml} to load the calculation file into the interface. A window similar to \figurename\ref{fig:3_e1} will appear. Click on the heading ``Calculation management'', select the heading ``Prepare batch calculation'', see \figurename~\ref{fig:43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
 
@@ -289,11 +288,6 @@ version of the code, ...).
                                      system keywords)\\
 \end{tabular}
 \end{table}
-
-%%%  Note that the code may be run directly in the final \texttt{RESU/<run\_id>}
-%%%  directory, or in a scratch directory (which may be recommended if the
-%%%  compute environment includes different file-systems, some better suited
-%%%  to data storage, others to intensive I/O).
 
 When running, the code
 may use additional files or directories inside its execution directory, set
@@ -647,11 +641,11 @@ The comprehensive list of the user subroutines and their instructions
 %==================================
 \label{sec:prg_temporarydirectory}%
 During a calculation, \CS may use a temporary directory for the compilation and
-the execution if such a ``scratch'' directory is defined in the global or user
-\texttt{code\_saturne.cfg} file. In that case, the result files are only copied
-at the end in the directory \texttt{RESU}. This is recommended if the compute
-environment includes different file-systems, some better suited to data storage,
-others to intensive I/O.
+the execution if such a ``scratch'' directory is defined in the GUI, by setting the
+\texttt{CS\_SCRATCHDIR} environment variable, or in the \texttt{code\_saturne.cfg} file.
+In that case, the result files are only copied at the end in the directory
+\texttt{RESU}. This is recommended if the compute environment includes different
+file-systems, some better suited to data storage, others to intensive I/O.
 If this is not the case, there is no point in running in a scratch directory
 rather than the results directory, as this incurs additional file copies.
 
@@ -709,7 +703,7 @@ The GUI presents the range of possibilities as 4 execution modes:
 \end{list}
 
 Note that to allow preprocessing in multiple passes, all defined preprocessing operations are run even on previously preprocessed meshes. In most cases, those will not produce additional changes (such as joining already joined meshes), but in the case of mesh smoothing, they might lead to small changes. So when using a previously preprocessed mesh it is recommended
-to skip the preprocessing stage.
+not to define any preprocessing operations, so as to skip the preprocessing stage.
 
 It is encouraged to separate the preprocessing and calculation runs, as
 this not only speeds up calculations, but also ensures that the mesh is identical, regardless of the architecture or number of processors it is run on. Indeed, when running the same pre-processing stages such as mesh joining on a different machine or a different number of processors, very minor floating-point truncation errors may lead to very slightly different preprocessed meshes.
@@ -718,7 +712,7 @@ Note also that mesh partitioning is done directly by the Kernel.
 Depending on the partitioning algorithm used, a partition map
 (\texttt{partition\_output/domain\_number\_*}) may be output,
 allowing the use of the same partitioning in future calculations.
-By default, this file is output when using graph-based partitioner, which may
+By default, this file is output when using graph-based partitioners, which may
 use randomization and do not guarantee a reproducible output, and is not output
 when using a deterministic space-filling curve based partitioning.
 
@@ -5396,12 +5390,9 @@ $\text{\texttt{crvexp}}_i=K\Omega_i[\varphi_i^{(n)}]^2$
 The source term in Navier-Stokes can be filled in thanks to the GUI or the
 \texttt{cs\_user\_source\_terms} user file.
 Without the GUI, the subroutine \texttt{ustsnv} is used to
-add user source terms to the Navier-Stokes equations (at each time step) when no coupling
- of the velocity components is considered (\texttt{ivelco=0}).
-When the velocity components are coupled (\texttt{ivelco=1}), the subroutine \texttt{ustsnv}
-which must be used.
+add user source terms to the Navier-Stokes equations (at each time step).
 
-\texttt{ustsnv} is called only one time per time step and for each cell \texttt{iel},
+\texttt{ustsnv} is called only once per time step; for each cell \texttt{iel},
 the vector \texttt{crvexp(.,iel)} (explicit part) and the matrix \texttt{crvimp(.,.,iel)}
 (implicit part) must be filled in for the whole velocity vector.
 
@@ -7246,8 +7237,7 @@ each boundary face. There are five different types:
 
 \noindent
 Depending on the selected boundary condition type at every wall face,
-the code needs to
-be given some supplementary pieces of information:
+the code needs to be given some additional information:
 
 \begin{list}{$\bullet$}{}
 
