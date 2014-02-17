@@ -39,6 +39,9 @@ module turbomachinery
 
   integer, dimension(:), pointer :: irotce
 
+  !
+  double precision, save :: rs_ell(2)
+
   !=============================================================================
 
   interface
@@ -131,6 +134,9 @@ contains
         enddo
       endif
     endif
+
+    rs_ell(1) = 0.d0
+    rs_ell(2) = 0.d0
 
     return
 

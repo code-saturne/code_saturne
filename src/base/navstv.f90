@@ -130,7 +130,7 @@ double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
 double precision vitbox, vitboy, vitboz
 
-double precision t1, t2, t3, t4, ellap1, ellap2
+double precision t1, t2, t3, t4
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -558,15 +558,15 @@ endif
 ! 4. Update mesh for unsteady turbomachinery computations
 !===============================================================================
 
-if (iturbo.eq.2) then
-
-  call dmtmps(t1)
-  !==========
+if (iturbo.eq.2 .and. iterns.eq.1) then
 
   ! Update mesh
 
-  call turbomachinery_update_mesh (ttcmob, ellap1)
+  call turbomachinery_update_mesh (ttcmob, rs_ell(1))
   !==============================
+
+  call dmtmps(t1)
+  !==========
 
   do ifac = 1, nfabor
     isympa(ifac) = 1
@@ -680,6 +680,8 @@ if (iturbo.eq.2) then
 
   call dmtmps(t2)
   !==========
+
+  rs_ell(2) = t2-t1
 
 endif
 
@@ -1033,7 +1035,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
   if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t4)
                                   !==========
 
-  ellap2 = t2-t1 + t4-t3
+  rs_ell(2) = rs_ell(2) + t4-t3
 
 endif
 
@@ -1353,7 +1355,11 @@ if (iwarni(iu).ge.1) then
 endif
 
 if (iturbo.eq.2) then
-  if (mod(ntcabs,ntlist).eq.0)  write(nfecra,3000) ellap1, ellap2
+  if (mod(ntcabs,ntlist).eq.0.and.iterns.eq.nterup) then
+     write(nfecra,3000) rs_ell(1), rs_ell(1) + rs_ell(2)
+     rs_ell(1) = 0.d0
+     rs_ell(2) = 0.d0
+  endif
 endif
 
 ! Free memory
