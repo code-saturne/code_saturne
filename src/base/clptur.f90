@@ -76,10 +76,8 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell centers
 !>                               (at current time step)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -108,7 +106,7 @@
 
 subroutine clptur &
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , propce , rcodcl ,                                     &
+   rtp    , rcodcl ,                                              &
    velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
@@ -148,7 +146,6 @@ integer          nscal, isvhb
 integer          icodcl(nfabor,nvarcl)
 
 double precision rtp(ncelet,*)
-double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision visvdr(ncelet)
@@ -161,7 +158,7 @@ integer          iscal
 integer          modntl
 integer          iuntur
 integer          nlogla, nsubla, iuiptn
-integer          ipcvis, ipcvst, ipccp , ipccv
+integer          ifccp
 integer          iwallf
 
 double precision rnx, rny, rnz, rxnn
@@ -185,8 +182,9 @@ double precision rinfiv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
-double precision, dimension(:), allocatable :: byplus, bdplus, buk
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: viscl, visct, cp
+double precision, dimension(:), allocatable :: byplus, bdplus, buk
 
 double precision, dimension(:,:), pointer :: coefau, cofafu
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -227,7 +225,6 @@ save             ntlast , iaff
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
-ipccv = 0
 
 cofimp  = 0.d0
 ek = 0.d0
@@ -431,21 +428,13 @@ endif
 
 ! --- Physical quantities
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 if (icp.gt.0) then
-  ipccp  = ipproc(icp)
+  ifccp  = iprpfl(icp)
+  call field_get_val_s(ifccp, cp)
 else
-  ipccp = 0
-endif
-
-! --- Compressible
-if (ippmod(icompf) .ge. 0) then
-  if (icv.gt.0) then
-    ipccv  = ipproc(icv)
-  else
-    ipccv = 0
-  endif
+  ifccp = -1
 endif
 
 ! min. and max. of wall tangential velocity
@@ -497,8 +486,8 @@ do ifac = 1, nfabor
     iel = ifabor(ifac)
 
     ! Physical properties
-    visclc = propce(iel,ipcvis)
-    visctc = propce(iel,ipcvst)
+    visclc = viscl(iel)
+    visctc = visct(iel)
     romc   = crom(iel)
 
     ! Geometric quantities
@@ -713,10 +702,9 @@ do ifac = 1, nfabor
     if (itytur.eq.4.and.idries.eq.1) then
       uetbor(ifac) = uet !TODO remove, this information is in cofaf cofbf
       if (visvdr(iel).lt.-900.d0) then
-        propce(iel,ipcvst) = propce(iel,ipcvst)                   &
-             *(1.d0-exp(-(yplus-dplus)/cdries))**2
-        visvdr(iel) = propce(iel,ipcvst)
-        visctc = propce(iel,ipcvst)
+        visct(iel) = visct(iel)*(1.d0-exp(-(yplus-dplus)/cdries))**2
+        visvdr(iel) = visct(iel)
+        visctc      = visct(iel)
       endif
     else if (iilagr.gt.0.and.idepst.gt.0) then
       uetbor(ifac) = uet
@@ -1421,7 +1409,7 @@ do iscal = 1, nscal
     call clptur_scalar &
     !=================
  ( iscal  , isvhb  , icodcl ,                                     &
-   propce , rcodcl ,                                              &
+   rcodcl ,                                                       &
    byplus , bdplus , buk    ,                                     &
    hbord  , theipb ,                                              &
    tetmax , tetmin , tplumx , tplumn )
@@ -1785,7 +1773,6 @@ end subroutine
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -1815,7 +1802,7 @@ end subroutine
 
 subroutine clptur_scalar &
  ( iscal  , isvhb  , icodcl ,                                     &
-   propce , rcodcl ,                                              &
+   rcodcl ,                                                       &
    byplus , bdplus , buk    ,                                     &
    hbord  , theipb ,                                              &
    tetmax , tetmin , tplumx , tplumn )
@@ -1853,7 +1840,6 @@ integer          iscal, isvhb
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision byplus(nfabor), bdplus(nfabor)
 double precision hbord(nfabor), theipb(nfabor), buk(nfabor)
@@ -1863,7 +1849,7 @@ double precision tetmax, tetmin, tplumx, tplumn
 
 integer          ivar, f_id, isvhbl
 integer          ifac, iel, isou, jsou
-integer          ipccp, ipccv, ipcvsl, itplus, itstar
+integer          ifccp, ifccv, ifcvsl, itplus, itstar
 
 double precision cpp, rkl, prdtl, pfac, visclc, romc, tplus, cofimp, cpscv
 double precision distfi, distbf, fikis, hint, heq, yptp, hflui, hext
@@ -1874,7 +1860,9 @@ double precision visci(3,3), hintt(6)
 
 character(len=80) :: fname
 
-double precision, dimension(:), pointer :: val_s, crom
+double precision, dimension(:), pointer :: val_s, crom, viscls
+double precision, dimension(:), pointer :: viscl, visct, cp, cv
+
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
@@ -1888,6 +1876,15 @@ f_id = ivarfl(ivar)
 
 call field_get_val_s(ivarfl(ivar), val_s)
 
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
+
+call field_get_key_int (f_id, kivisl, ifcvsl)
+
+if (ifcvsl .ge. 0) then
+  call field_get_val_s(ifcvsl, viscls)
+endif
+
 call field_get_coefa_s(f_id, coefap)
 call field_get_coefb_s(f_id, coefbp)
 call field_get_coefaf_s(f_id, cofafp)
@@ -1895,17 +1892,17 @@ call field_get_coefbf_s(f_id, cofbfp)
 
 call field_get_val_s(icrom, crom)
 if (icp.gt.0) then
-  ipccp  = ipproc(icp)
+  ifccp = iprpfl(icp)
+  call field_get_val_s(ifccp, cp)
 else
-  ipccp = 0
+  ifccp = -1
 endif
 
-ipccv = 0
+ifccv = -1
 if (ippmod(icompf) .ge. 0) then
   if (icv.gt.0) then
-    ipccv  = ipproc(icv)
-  else
-    ipccv = 0
+    ifccv  = iprpfl(icv)
+    call field_get_val_s(ifccv, cv)
   endif
 endif
 
@@ -1984,8 +1981,8 @@ do ifac = 1, nfabor
 
     ! Physical quantities
 
-    visclc = propce(iel,ipproc(iviscl))
-    visctc = propce(iel,ipproc(ivisct))
+    visclc = viscl(iel)
+    visctc = visct(iel)
     romc   = crom(iel)
 
     xnuii = visclc / romc
@@ -1995,23 +1992,18 @@ do ifac = 1, nfabor
 
     cpp = 1.d0
     if (iscacp(iscal).eq.1) then
-      if (ipccp.gt.0) then
-        cpp = propce(iel,ipccp)
+      if (ifccp.ge.0) then
+        cpp = cp(iel)
       else
         cpp = cp0
       endif
     endif
 
-    if (ivisls(iscal).gt.0) then
-      ipcvsl = ipproc(ivisls(iscal))
-    else
-      ipcvsl = 0
-    endif
-    if (ipcvsl.le.0) then
+    if (ifcvsl.lt.0) then
       rkl = visls0(iscal)
       prdtl = cpp*visclc/rkl
     else
-      rkl = propce(iel,ipcvsl)
+      rkl = viscls(iel)
       prdtl = cpp*visclc/rkl
     endif
 
@@ -2023,13 +2015,13 @@ do ifac = 1, nfabor
     ! Mu*Cv/Lambda.
 
     if (iscal.eq.iscalt .and. itherm.eq.3) then
-      if (ipccp.gt.0) then
-        prdtl = prdtl*propce(iel,ipccp)
+      if (ifccp.ge.0) then
+        prdtl = prdtl*cp(iel)
       else
         prdtl = prdtl*cp0
       endif
-      if (ipccv.gt.0) then
-        prdtl = prdtl/propce(iel,ipccv)
+      if (ifccv.ge.0) then
+        prdtl = prdtl/cv(iel)
       else
         prdtl = prdtl/cv0
       endif
@@ -2039,13 +2031,13 @@ do ifac = 1, nfabor
     if (idften(ivar).eq.1) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
-        if (ipccp.gt.0) then
-          cpscv = propce(iel,ipproc(icp))
+        if (ifccp.ge.0) then
+          cpscv = cp(iel)
         else
           cpscv = cp0
         endif
-        if (ipccv.gt.0) then
-          cpscv = cpscv/propce(iel,ipproc(icv))
+        if (ifccv.ge.0) then
+          cpscv = cpscv/cv(iel)
         else
           cpscv = cpscv/cv0
         endif
@@ -2058,13 +2050,13 @@ do ifac = 1, nfabor
     elseif (idften(ivar).eq.6) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
-        if (ipccp.gt.0) then
-          cpscv = propce(iel,ipproc(icp))
+        if (ifccp.ge.0) then
+          cpscv = cp(iel)
         else
           cpscv = cp0
         endif
-        if (ipccv.gt.0) then
-          cpscv = cpscv/propce(iel,ipproc(icv))
+        if (ifccv.ge.0) then
+          cpscv = cpscv/cv(iel)
         else
           cpscv = cpscv/cv0
         endif
@@ -2280,8 +2272,8 @@ do ifac = 1, nfabor
         ! Enthalpy
         if (itherm.eq.2) then
           ! If Cp is variable
-          if (ipccp.gt.0) then
-            bhconv(ifac) = hflui*propce(iel, ipccp)
+          if (ifccp.ge.0) then
+            bhconv(ifac) = hflui*cp(iel)
           else
             bhconv(ifac) = hflui*cp0
           endif
@@ -2289,8 +2281,8 @@ do ifac = 1, nfabor
           ! Energie (compressible module)
         elseif (itherm.eq.3) then
           ! If Cv is variable
-          if (ipccv.gt.0) then
-            bhconv(ifac) = hflui*propce(iel,ipccv)
+          if (ifccv.ge.0) then
+            bhconv(ifac) = hflui*cv(iel)
           else
             bhconv(ifac) = hflui*cv0
           endif

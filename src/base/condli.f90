@@ -668,7 +668,7 @@ if (ipatur.ne.0) then
   call clptur &
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , propce , rcodcl ,                                     &
+   rtp    , rcodcl ,                                              &
    velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
@@ -680,7 +680,7 @@ if (ipatrg.ne.0) then
   call clptrg &
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , propce , rcodcl ,                                     &
+   rtp    , rcodcl ,                                              &
    velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 

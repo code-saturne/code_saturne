@@ -110,6 +110,8 @@ call field_get_key_id("post_id", keyipp)
 call field_get_key_id("inner_mass_flux_id", kimasf)
 call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
+call field_get_key_id("scalar_diffusivity_id", kivisl)
+
 icrom = -1
 ibrom = -1
 
@@ -393,15 +395,13 @@ call tstjpe(iperio, iperot)
 !===============================================================================
 
 ! --- Nombre de scalaires, de scalaires a diffusivite
-!            variable, de variables
+!            variable, de variables, de proprietes
 
 nscal  = 0
 nscaus = 0
 nscapp = 0
 nscasp = 0
 nvar   = 0
-
-! --- Nombre de proprietes physiques (utile ?)
 
 nproce = 0
 
@@ -465,6 +465,8 @@ icour  = 0
 ifour  = 0
 icp    = 0
 iprtot = 0
+
+ibeta  = 0
 
 do iscal = 1, nscamx
   ivisls(iscal) = -1

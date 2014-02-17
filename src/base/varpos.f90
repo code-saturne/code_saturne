@@ -74,7 +74,7 @@ character     ficsui*32
 character*80  f_label, f_name, s_label, s_name
 integer       ivar  , iscal , irphas , iprop, id
 integer       ii    , jj    , kk    , ll
-integer       iok   , ippok , ipppst, kivisl
+integer       iok   , ippok , ipppst
 integer       iest  , ivisph, ipropp
 integer       imom  , jmom  , imold , jmold , jbmomt, jtcabs
 integer       iiplus, iimoin, jmomok, idto  , jdto
@@ -122,8 +122,6 @@ cindfm = 'YYYY'
 !===============================================================================
 
 if (ipass.eq.1) then
-
-  call field_get_key_id("scalar_diffusivity_id", kivisl)
 
 ! ---> 1.1 VERIFICATIONS
 !      -----------------

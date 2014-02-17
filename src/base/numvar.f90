@@ -178,6 +178,9 @@ module numvar
   !> interior and boundary convective mass flux key ids of the variables
   integer, save :: kimasf, kbmasf
 
+  !> variable diffusivity field id key for scalars
+  integer, save :: kivisl
+
   !> convective mass flux of the variables at the previous time-step
   integer, save :: ifluaa(nvarmx)
 
