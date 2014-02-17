@@ -127,6 +127,8 @@ endif
 
 ! ---> Physique particuliere : Atmospherique
 
+! ---> Atmospheric modules:
+!      dry and humid atmosphere (ippmod(iatmos) = 1,2)
 if ( ippmod(iatmos).ge.1 ) then
   call atprop(ipropp,ipppst)
   !==========

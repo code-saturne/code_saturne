@@ -153,7 +153,7 @@ endif
 ! 6. Atmospheric model
 !---------------------
 
-if (ippmod(iatmos).ge.1) then
+if (ippmod(iatmos).ge.0) then
   call atvarp
   !==========
 endif
