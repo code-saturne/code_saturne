@@ -589,15 +589,21 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 
 \subsection{Shared or static builds\label{sec:config:shared}}
 
-By default, on most architectures, both shared and static libraries
-for \CS will be built, and the executables will be linked with shared
-libraries. To disable either shared or static libraries,
-add either {\tt --disable-shared} or {\tt --disable-static}
-to the options passed to {\tt configure}. This will speed-up the build,
-process as each file will only be built once, and not twice.
+By default, on most architectures, \CS will be built with shared libraries.
+Shared libraries may be disabled (in which case static libraries
+are automatically enabled) by adding  {\tt --disable-shared} to the options
+passed to {\tt configure}.
+On some systems, such as BlueGene/Q, the build may default to static libraries
+instead.
+
+It is possible to build both shared and static libraries by adding
+{\tt --disable-static} to the {\tt configure} options, but the
+executables will be linked with the shared version of the libraries,
+so this is rarely useful (the build process is also slower in this case, as
+each file is compiled twice).
 
 In some cases, a shared build may fail due to some dependencies
-on static-only MPI libraries. In this case, {\tt --disable-shared}
+on static-only libraries. In this case, {\tt --disable-shared}
 will be necessary. Disabling shared libraries has also been seen
 to avoid issues with linking on Mac OSX systems.
 

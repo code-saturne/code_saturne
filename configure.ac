@@ -300,7 +300,7 @@ AC_SUBST(enable_shared)
 
 # Initialize libtool.
 
-LT_INIT([win32-dll])
+LT_INIT([disable-static, win32-dll])
 
 # In static mode, multiple definitions must be allowed for the linker.
 # On some systems, such as Mac OS X in static mode, limitations
