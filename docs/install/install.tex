@@ -751,10 +751,10 @@ In practice, we have encountered a limit with slightly smaller meshes,
 around 150 million cells.
 
 Above 150 million hexahedral cells or so, it is thus imperative to configure
-the build to use 64-bit global element ids, with the
-{\tt --enable-long-gnum} option. Local indexes will still use
-the default {int} size, so memory consumption will only be slightly
-increased.
+the build to use 64-bit global element ids. This is the default.
+Local indexes use the default {int} size. To slightly decrease memory
+consumption if meshes of this size are never expected (for example on a workstation
+or a small cluster), the {\tt --disable-long-gnum} option may be used.
 
 Recent versions of some third-party libraries may also optionally use 64-bit ids,
 independently of each other or of \CS.
@@ -767,11 +767,9 @@ when the number of cells or vertices approaches 2 billion.
 Practical limits may be lower, if some intermediate internal counts
 reach these limits earlier.
 
-Note also that \metis 4 is known to crash for meshes in the range of
-35 million cells and above, so \metis 5 or \scotch are necessary.
-Partitoning a 158 million hexahedral mesh using \metis 5
+Partitoning a 158 million hexahedral mesh using serial \metis 5 or \scotch
 on a front-end node with 128 Gb memory is possible,
-but partitioning the same mesh on cluster nodes with 24 Gb each
+but partitioning the same mesh on cluster nodes with ``only'' 24 Gb each
 may not, so using parallel partitioning \ptscotch or \parmetis
 should be preferred.
 

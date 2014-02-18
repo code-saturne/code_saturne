@@ -369,7 +369,7 @@ AC_ARG_ENABLE(long-gnum,
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-long-gnum]) ;;
     esac
   ],
-  [ cs_have_long_gnum=no ]
+  [ cs_have_long_gnum=yes ]
 )
 
 if test "x$cs_have_long_gnum" = "xyes"; then
