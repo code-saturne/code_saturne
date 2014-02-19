@@ -81,7 +81,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
     """
     density = """# Density of air
 
-rho = 1.293 * (273.15 / Temp_K);
+rho = 1.293 * (273.15 / TempK);
 
 # density for mixtures of gases
 #
@@ -110,8 +110,8 @@ CST = 120;
 T0 = 291.15;
 mu0 = 18.27e-6;
 
-if ( Temp_K > 0 && Temp_K < 555) {
-mu = mu0 * (T0+CST / Temp_K+CST) * (Temp_K/T0)^(3./2.);
+if ( TempK > 0 && TempK < 555) {
+mu = mu0 * (T0+CST / TempK+CST) * (TempK/T0)^(3./2.);
 } else {
 mu = -999.0;
 }
@@ -129,13 +129,13 @@ cp = Y1 * Cp1 + Y2 *Cp2;
     volumic_viscosity="""# volumic_viscosity
 """
     thermal_conductivity="""# oxygen
-lambda = 6.2e-5 * Temp_K + 8.1e-3;
+lambda = 6.2e-5 * TempK + 8.1e-3;
 
 # nitrogen
-lambda = 6.784141e-5 * Temp_K + 5.564317e-3;
+lambda = 6.784141e-5 * TempK + 5.564317e-3;
 
 # hydrogen
-lambda = 4.431e-4 * Temp_K + 5.334e-2;
+lambda = 4.431e-4 * TempK + 5.334e-2;
 
 """
     def __init__(self, parent, case):
