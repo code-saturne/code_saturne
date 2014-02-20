@@ -3504,7 +3504,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   /* Compute the new size of vars->properties_name,
      vars->properties_ipp and vars->propce */
 
-  if (*ismago != -1 ) nbp++;
+  if (*ismago>0) nbp++;
 
   if (*icp>0) nbp++;
 
@@ -3563,7 +3563,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("fourier_number")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "fourier_number");
 
-    if (*ismago != -1 ) {
+    if (*ismago>0) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ismago-1 ]-1 ];
       cs_glob_var->propce[n] = *ismago -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("smagorinsky_constant")+1, char);
