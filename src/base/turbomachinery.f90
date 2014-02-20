@@ -39,8 +39,13 @@ module turbomachinery
 
   integer, dimension(:), pointer :: irotce
 
-  !
+  ! Elapsed time for logging
+
   double precision, save :: rs_ell(2)
+
+  ! Arrays associated to wall BC update
+
+  double precision, dimension(:), allocatable :: coftur, hfltur
 
   !=============================================================================
 
@@ -135,8 +140,14 @@ contains
       endif
     endif
 
+    ! Initialization of elapsed times
+
     rs_ell(1) = 0.d0
     rs_ell(2) = 0.d0
+
+    ! Allocate arrays for wall velocity BC update
+
+    if (iturbo.eq.2)  allocate(coftur(nfabor), hfltur(nfabor))
 
     return
 
@@ -181,6 +192,8 @@ contains
     if (iturbo.eq.0) then
       if (icorio.eq.1.or.imobil.eq.1)  deallocate(irotce)
     endif
+
+    if (iturbo.eq.2)  deallocate(coftur, hfltur)
 
     return
 

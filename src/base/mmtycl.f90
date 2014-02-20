@@ -69,6 +69,7 @@ use turbomachinery
 use entsor
 use parall
 use mesh
+use field
 
 !===============================================================================
 
@@ -83,11 +84,25 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 integer          ifac, iel
+integer          ipcvis, ipcvst
+integer          idefau
+
 double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision vitbox, vitboy, vitboz
+double precision visclc, visctc, distbf, hint
+
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
+
+!===============================================================================
+! Initialization
+!===============================================================================
+
+! --- Physical quantities
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 !===============================================================================
 ! VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES
@@ -119,7 +134,8 @@ do ifac = 1, nfabor
       rcodcl(ifac,iw,1) = vitboz
     endif
 
-    if (itypfb(ifac).eq.iparoi) then
+    if (itypfb(ifac).eq.iparoi .or.                        &
+        itypfb(ifac).eq.iparug ) then
       ! Si une des composantes de vitesse de glissement a ete
       !    modifiee par l'utilisateur, on ne fixe que la vitesse
       !    normale
@@ -143,8 +159,8 @@ do ifac = 1, nfabor
         rcodcy = rcodcl(ifac,iv,1)
         rcodcz = rcodcl(ifac,iw,1)
         rcodsn = (vitbox - rcodcx)*rnx                            &
-             + (vitboy - rcodcy)*rny                            &
-             + (vitboz - rcodcz)*rnz
+               + (vitboy - rcodcy)*rny                            &
+               + (vitboz - rcodcz)*rnz
         rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
         rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
         rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz
@@ -154,6 +170,59 @@ do ifac = 1, nfabor
 
   endif
 enddo
+
+! In case of transient turbomachinery computations, assign the default values
+! of coefficients associated to turbulent or rough wall velocity BC, in order
+! to update the wall velocity after the geometry update (between prediction and
+! correction step).
+! Note that the velocity BC update is made only if the user has not specified
+! any specific Dirichlet condition for velocity.
+
+if (iturbo.eq.2) then
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.  &
+        rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.  &
+        rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+      idefau = 1
+    else
+      idefau = 0
+    endif
+
+    if (idefau.eq.1 .and. irotce(iel).ne.0 .and. &
+      (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug)) then
+
+      ! --- Physical Properties
+      visclc = viscl(iel)
+      visctc = visct(iel)
+
+      ! --- Geometrical quantities
+      distbf = distb(ifac)
+
+      if (itytur.eq.3) then
+        hint =   visclc         /distbf
+      else
+        hint = ( visclc+visctc )/distbf
+      endif
+
+      ! Coefficients associated to laminar wall Dirichlet BC
+
+      coftur(ifac) = 0.d0
+      hfltur(ifac) = hint
+
+    else
+
+      ! Large coefficient in others cases (unused)
+
+      coftur(ifac) = rinfin
+      hfltur(ifac) = rinfin
+
+    endif
+
+  enddo
+endif
 
 !===============================================================================
 ! FORMATS

@@ -129,8 +129,10 @@ double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
 double precision vitbox, vitboy, vitboz
-
 double precision t1, t2, t3, t4
+double precision visclc, visctc
+double precision distbf, srfbnf, hint
+double precision rnx, rny, rnz, rcodcx, rcodcy, rcodcz, rcodcn
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -160,7 +162,7 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: brom, crom, viscl, visct
 double precision, dimension(:,:), pointer :: trav
 
 !===============================================================================
@@ -299,6 +301,10 @@ if (nterup.gt.1) then
   endif
 
 endif
+
+! --- Physical quantities
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 ! Initialize timers
 t1 = 0.d0
@@ -677,6 +683,59 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ibrom, brom)
+
+  ! Update the Dirichlet wall boundary conditions for velocity (based on the
+  ! solid body rotation on the new mesh).
+  ! Note that the velocity BC update is made only if the user has not specified
+  ! any specific Dirichlet condition for velocity.
+
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    if (coftur(ifac).lt.rinfin*0.5d0) then
+
+      ! --- Physical Propreties
+      visclc = viscl(iel)
+      visctc = visct(iel)
+
+      ! --- Geometrical quantities
+      distbf = distb(ifac)
+      srfbnf = surfbn(ifac)
+
+      ! Unit normal
+      rnx = surfbo(1,ifac)/srfbnf
+      rny = surfbo(2,ifac)/srfbnf
+      rnz = surfbo(3,ifac)/srfbnf
+
+      if (itytur.eq.3) then
+        hint =   visclc         /distbf
+      else
+        hint = ( visclc+visctc )/distbf
+      endif
+
+      rcodcx = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
+      rcodcx = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
+      rcodcx = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
+
+      ! Gradient boundary conditions (Dirichlet)
+      !-----------------------------
+      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
+
+      coefau(1,ifac) = (1.d0-coftur(ifac))*(rcodcx - rcodcn*rnx) + rcodcn*rnx
+      coefau(2,ifac) = (1.d0-coftur(ifac))*(rcodcy - rcodcn*rny) + rcodcn*rny
+      coefau(3,ifac) = (1.d0-coftur(ifac))*(rcodcz - rcodcn*rnz) + rcodcn*rnz
+
+      ! Flux boundary conditions (Dirichlet)
+      !-------------------------
+
+      cofafu(1,ifac) = -hfltur(ifac)*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
+      cofafu(2,ifac) = -hfltur(ifac)*(rcodcy - rcodcn*rny) - hint*rcodcn*rny
+      cofafu(3,ifac) = -hfltur(ifac)*(rcodcz - rcodcn*rnz) - hint*rcodcn*rnz
+
+    endif
+
+  enddo
 
   call dmtmps(t2)
   !==========
