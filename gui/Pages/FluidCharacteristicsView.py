@@ -888,7 +888,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         exa = FluidCharacteristicsView.volumic_viscosity
         symbols_viscv0 = []
         for s in self.list_scalars:
-           symbols_cp.append(s)
+           symbols_viscv0.append(s)
         viscv0_value = self.mdl.getInitialValueVolumicViscosity()
         ref_pressure = ReferenceValuesModel(self.case).getPressure()
         ref_temperature = ReferenceValuesModel(self.case).getTemperature()
