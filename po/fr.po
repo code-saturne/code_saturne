@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-01-20 13:44+0100\n"
+"POT-Creation-Date: 2014-02-20 17:58+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4431,6 +4431,36 @@ msgid ""
 "Application \"%s\" (%s) requested last iteration.\n"
 msgstr ""
 
+#, c-format
+msgid "EOS error in call function %s\n"
+msgstr ""
+
+#, c-format
+msgid "EOS bad return in call function %s\n"
+msgstr ""
+
+#, c-format
+msgid "bad choice: you chose to work in the %i plane with EOS."
+msgstr ""
+
+msgid "bad choice: you can't choose pressure as an output variable"
+msgstr ""
+
+msgid "bad choice: isochoric heat capacity not available yet"
+msgstr ""
+
+msgid "bad choice: specific volume not available yet"
+msgstr ""
+
+msgid "bad choice: internal energy not available yet"
+msgstr ""
+
+msgid "bad choice: quality not available yet"
+msgstr ""
+
+msgid "bad choice: speed of sound not available yet"
+msgstr ""
+
 msgid ""
 "\n"
 "WARNING\n"
@@ -5434,7 +5464,11 @@ msgid "      %-19s  %-12.3g\n"
 msgstr ""
 
 #, c-format
-msgid "bad choice: you chose to work in the %s plane."
+msgid "Error unloading library: %s."
+msgstr "Erreur au déchargement de la bibliothèque : %s."
+
+#, c-format
+msgid "bad choice: you choose to work in the %s plane."
 msgstr ""
 
 msgid "Freesteam support not available in this build."
@@ -6841,6 +6875,10 @@ msgstr ""
 "du module thermique 1D en paroi.\n"
 "Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
+#, fuzzy
+msgid "Added boundary faces"
+msgstr "faces de bord"
+
 #, c-format
 msgid ""
 "Error in turbomachinery mesh update:\n"
@@ -7433,6 +7471,21 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
+#, fuzzy, c-format
+msgid ""
+"Error initializing pipeline from \"%s\":\n"
+"\n"
+msgstr ""
+"Erreur à l'écriture du fichier \"%s\" :\n"
+"\n"
+"  %s"
+
+#, c-format
+msgid ""
+"Missing Catalyst pipeline file \"%s\":\n"
+"\n"
+msgstr ""
+
 #, c-format
 msgid "CCMIO error %d writing state."
 msgstr ""
@@ -7912,6 +7965,27 @@ msgstr ""
 
 #, c-format
 msgid ""
+"MEDCoupling field \"%s\" already defined for\n"
+"coupling \"%s\" and mesh \"%s\" with %d components,\n"
+"but re-defined with %d components."
+msgstr ""
+
+#, c-format
+msgid ""
+"MEDCoupling field \"%s\" already defined for\n"
+"coupling \"%s\" and mesh \"%s\" with type %d,\n"
+"but re-defined with type %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"MEDCoupling field \"%s\" already defined for writer\n"
+"\"%s\" and mesh \"%s\" with time discretization %d,\n"
+"but re-defined with time discretization %d."
+msgstr ""
+
+#, c-format
+msgid ""
 "\n"
 "Memory use summary: %s\n"
 "\n"
@@ -7946,10 +8020,6 @@ msgstr "coordonées variables"
 
 msgid "transient connectivity"
 msgstr "connectivité variable"
-
-#, c-format
-msgid "Error unloading library: %s."
-msgstr "Erreur au déchargement de la bibliothèque : %s."
 
 #, c-format
 msgid "Format type \"%s\" required for case \"%s\" is unknown"
@@ -8085,6 +8155,10 @@ msgid "Invalid thermal model: %s\n"
 msgstr ""
 
 #, c-format
+msgid "Error: can not use evaluate property: %s\n"
+msgstr ""
+
+#, c-format
 msgid ""
 "Invalid xpath: %s\n"
 " name not found"
@@ -8110,9 +8184,6 @@ msgstr ""
 msgid ""
 "The kernel variables number %i and the calculated one by the GUI %i are not "
 "the same.\n"
-msgstr ""
-
-msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
 msgid "mass molar value is zero or not found in the xml file.\n"
@@ -8173,9 +8244,6 @@ msgstr ""
 
 #, c-format
 msgid "Formula is null for %s %s"
-msgstr ""
-
-msgid "Formula is null for ale.\n"
 msgstr ""
 
 #, c-format

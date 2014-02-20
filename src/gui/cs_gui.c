@@ -550,7 +550,7 @@ void _compressible_physical_property(const char *const param,
                                      const cs_real_t  rtp[],
                                            double     propce[])
 {
-  int user_law = 0;
+  int variable = 0;
   char *law = NULL;
   double time0;
   char *path = NULL;
@@ -560,13 +560,20 @@ void _compressible_physical_property(const char *const param,
   char *prop_choice = _properties_choice(param);
 
   if (cs_gui_strcmp(prop_choice, "variable"))
-    user_law = 1;
+    variable = 1;
   BFT_FREE(prop_choice);
 
-  if (user_law) {
-    /* return an empty interpreter */
+  if (variable) {
+    /* search the formula for the law */
+    path = cs_xpath_short_path();
+    cs_xpath_add_element(&path, "property");
+    cs_xpath_add_test_attribute(&path, "name", param);
+    cs_xpath_add_element(&path, "formula");
+    cs_xpath_add_function_text(&path);
 
     law = cs_gui_get_text_value(path);
+
+    BFT_FREE(path);
 
     if (law != NULL) {
       time0 = cs_timer_wtime();
