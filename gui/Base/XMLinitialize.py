@@ -264,10 +264,10 @@ class XMLinit(Variables):
             node.xmlRemoveNode()
 
         # properties
+        nodeF = XMLPhysicalPropNode.xmlInitNode('fluid_properties')
         for prop in ['density', 'molecular_viscosity', 'specific_heat',
                      'thermal_conductivity', 'volumic_viscosity']:
-            nodeF = XMLPhysicalPropNode.xmlInitNode('fluid_properties')
-            node = nodeF.xmlGetNode(prop)
+            node = nodeF.xmlGetNode('property', name=prop)
             if node:
                 if node['choice'] == 'user_law':
                     node['choice'] = 'variable'
