@@ -777,7 +777,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarLabel()
         if s == "TempC":
-            TempInContext = "("+s+" - 273.15)"
+            TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.density.replace("TempK", TempInContext)
         else:
             exa = FluidCharacteristicsView.density
@@ -815,7 +815,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarLabel()
         if s == "TempC":
-            TempInContext = "("+s+" - 273.15)"
+            TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.molecular_viscosity.replace("TempK", TempInContext)
         else:
             exa = FluidCharacteristicsView.molecular_viscosity
@@ -919,7 +919,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarLabel()
         if s == "TempC":
-            TempInContext = "("+s+" - 273.15)"
+            TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.thermal_conductivity.replace("TempK", TempInContext)
         else:
             exa = FluidCharacteristicsView.thermal_conductivity
