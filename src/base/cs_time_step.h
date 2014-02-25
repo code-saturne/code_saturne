@@ -50,6 +50,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  int           is_variable;  /* 0 if time step is fixed in time,
+                                 1 if the time step is variable. */
   int           is_local;     /* 0 if time step is uniform in space,
                                  1 if it is local in space (in which case
                                  the time value is only a reference. */
@@ -79,10 +81,20 @@ extern const cs_time_step_t  *cs_glob_time_step;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Define whether time step is variable or not
+ *
+ * parameters:
+ *   is_variable <-- 0 if time step is variable in time, 1 if it is fixed
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_step_define_variable(int  is_variable);
+
+/*----------------------------------------------------------------------------
  * Define whether time step is local in space or not
  *
  * parameters:
- *   is_local: 0 if time step is uniform in space, 1 if it is local
+ *   is_local <-- 0 if time step is uniform in space, 1 if it is local
  *----------------------------------------------------------------------------*/
 
 void
@@ -92,7 +104,7 @@ cs_time_step_define_local(int  is_local);
  * Define maximum time step number
  *
  * parameters:
- *   nt_max  maximum time step number (unlimited if negative)
+ *   nt_max <-- maximum time step number (unlimited if negative)
  *----------------------------------------------------------------------------*/
 
 void

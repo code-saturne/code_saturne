@@ -349,8 +349,11 @@ call usipgl                                                       &
    iihmpu , nfecra ,                                              &
    idtvar , ipucou , idilat , iphydr , ialgce , iescal )
 
-! If time step is local, pass information to C layer, as it
+! If time step is local or variable, pass information to C layer, as it
 ! may ne needed for some field (or moment) definitions.
+if (idtvar.ne.0) then
+  call time_step_define_variable(1)
+endif
 if (idtvar.eq.2.or.idtvar.eq.-1) then
   call time_step_define_local(1)
 endif

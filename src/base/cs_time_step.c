@@ -75,6 +75,11 @@ BEGIN_C_DECLS
   Members of this time step are publicly accessible, to allow for concise
   syntax, as it is expected to be used in many places.
 
+  \var  cs_time_step_t::is_variable
+        0 if time step is fixed in time, 0 otherwise
+  \var  cs_time_step_t::is_local
+        0 if time step is uniform in space, 0 if is is local
+        (in which case the time value is only a reference)
   \var  cs_time_step_t::nt_prev
         absolute time step number reached by previous computation
   \var  cs_time_step_t::nt_cur
@@ -105,7 +110,7 @@ BEGIN_C_DECLS
 
 /* main time step structure and associated pointer */
 
-static cs_time_step_t  _time_step = {0, 0, 0, -1, 0., 0., -1.};
+static cs_time_step_t  _time_step = {0, 0, 0, 0, -1, 0., 0., -1.};
 
 const cs_time_step_t  *cs_glob_time_step = &_time_step;
 
@@ -170,6 +175,23 @@ cs_f_time_step_get_pointers(int      **nt_prev,
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define whether time step is variable or not
+ *
+ * \param[in]  is_variable  0 if time step is variable in time, 1 if it is fixed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_step_define_variable(int  is_variable)
+{
+  if (is_variable > 0)
+    _time_step.is_variable = 1;
+  else
+    _time_step.is_variable = 0;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1040,6 +1040,16 @@ module optcal
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function defining whether time step is variable in
+    ! time or not
+
+    subroutine time_step_define_variable(is_variable)  &
+      bind(C, name='cs_time_step_define_variable')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: is_variable
+    end subroutine time_step_define_variable
+
     ! Interface to C function defining whether time step is local in
     ! space or not
 
