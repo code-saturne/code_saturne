@@ -225,7 +225,7 @@ const char *cs_glob_field_comp_name_3[] = {"[X]", "[Y]", "[Z]"};
 
 /*! \var field name extension for symmetric tensor components */
 const char *cs_glob_field_comp_name_6[] = {"[XX]", "[YY]", "[ZZ]",
-                                           "[XY]", "[XZ]", "[YZ]"};
+                                           "[XY]", "[YZ]", "[XZ]"};
 
 /*! \var field name extension for tensor components */
 const char *cs_glob_field_comp_name_9[] = {"[XX]", "[XY]", "[XZ]",
