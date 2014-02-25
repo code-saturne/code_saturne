@@ -94,6 +94,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Read restart metadata.
+
+    subroutine parameters_read_restart_info()  &
+      bind(C, name='cs_parameters_read_restart_info')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine parameters_read_restart_info
+
+    !---------------------------------------------------------------------------
+
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
