@@ -107,6 +107,7 @@ use mesh
 use field
 use field_operator
 use cs_f_interfaces
+use turbomachinery
 
 !===============================================================================
 
@@ -158,6 +159,7 @@ double precision d1s2, d1s3, d2s3
 double precision alpha3
 double precision pij, phiij1, phiij2, epsij
 double precision phiijw, epsijw
+double precision ccorio
 
 double precision rvoid(1)
 
@@ -229,6 +231,17 @@ enddo
 do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
+
+! Coefficient of the "Coriolis-type" term
+if (icorio.eq.1) then
+  ! Relative velocity formulation
+  ccorio = 2.d0
+elseif (iturbo.eq.1) then
+  ! Mixed relative/absolute velocity formulation
+  ccorio = 1.d0
+else
+  ccorio = 0.d0
+endif
 
 !===============================================================================
 ! 2. User source terms
@@ -375,12 +388,12 @@ if (iturb.eq.32) then
 
 endif
 
-if (icorio.eq.1) then
+if (icorio.eq.1 .or. iturbo.eq.1) then
 
-  ! Compute the rotation matrix (dual antisymmetric matrix of the rotation vector)
-  matrot(1,2) = -omegaz
-  matrot(1,3) =  omegay
-  matrot(2,3) = -omegax
+  ! Compute the rotation matrix (dual matrix of the rotation vector)
+  matrot(1,2) = -rotax(3)
+  matrot(1,3) =  rotax(2)
+  matrot(2,3) = -rotax(1)
 
   do ii = 1, 3
     matrot(ii,ii) = 0.d0
@@ -459,16 +472,18 @@ do iel=1,ncel
                        rtpa(iel,ir33)*gradv(3, 3, iel) )
 
   ! Rotating frame of reference => "Coriolis production" term
-  if (icorio.eq.1) then
-    do ii = 1, 3
-      do jj = ii, 3
-        do kk = 1, 3
-          xprod(ii,jj) = xprod(ii,jj)                                   &
-                       - 2.d0*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk))   &
-                              + matrot(jj,kk)*rtpa(iel,indrey(ii,kk)) )
+  if (icorio.eq.1 .or. iturbo.eq.1) then
+    if (irotce(iel).gt.0) then
+      do ii = 1, 3
+        do jj = ii, 3
+          do kk = 1, 3
+            xprod(ii,jj) = xprod(ii,jj)                             &
+                 - ccorio*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk))   &
+                 + matrot(jj,kk)*rtpa(iel,indrey(ii,kk)) )
+          enddo
         enddo
       enddo
-    enddo
+    endif
   endif
 
   xprod(2,1) = xprod(1,2)

@@ -272,7 +272,6 @@ majgeo.f90 \
 memfin.f90 \
 modini.f90 \
 mmtycl.f90 \
-mmtyc2.f90 \
 navstv.f90 \
 newmrk.f90 \
 numvec.f90 \

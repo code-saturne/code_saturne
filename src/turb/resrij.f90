@@ -106,6 +106,7 @@ use pointe, only:visten
 use mesh
 use field
 use cs_f_interfaces
+use turbomachinery
 
 !===============================================================================
 
@@ -151,7 +152,7 @@ double precision epsrsp
 double precision trprod, trrij , deltij
 double precision tuexpr, thets , thetv , thetp1
 double precision d1s3  , d2s3
-double precision matrot(3,3)
+double precision ccorio, matrot(3,3)
 
 double precision rvoid(1)
 
@@ -222,6 +223,17 @@ enddo
 do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
+
+! Coefficient of the "Coriolis-type" term
+if (icorio.eq.1) then
+  ! Relative velocity formulation
+  ccorio = 2.d0
+elseif (iturbo.eq.1) then
+  ! Mixed relative/absolute velocity formulation
+  ccorio = 1.d0
+else
+  ccorio = 0.d0
+endif
 
 !===============================================================================
 ! 2. User source terms
@@ -434,16 +446,16 @@ endif
 ! 6-bis. Coriolis terms in the Phi1 and production
 !===============================================================================
 
-if (icorio.eq.1) then
+if (icorio.eq.1 .or. iturbo.eq.1) then
 
   do iel = 1, ncel
     w7(iel) = 0.d0
   enddo
 
   ! Rotation matrix: dual antisymmetric matrix of the rotation vector omega
-  matrot(1,2) = -omegaz
-  matrot(1,3) =  omegay
-  matrot(2,3) = -omegax
+  matrot(1,2) = -rotax(3)
+  matrot(1,3) =  rotax(2)
+  matrot(2,3) = -rotax(1)
 
   do ii = 1, 3
     matrot(ii,ii) = 0.d0
@@ -483,23 +495,25 @@ if (icorio.eq.1) then
     jj = 3
   endif
 
+  ! Compute Gij: (i,j) component of the Coriolis production
   do iel = 1, ncel
-    ! Compute Gij: (i,j) component of the Coriolis production
     do kk = 1, 3
-      w7(iel) = w7(iel) - 2.d0*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk)) &
+      w7(iel) = w7(iel) - ccorio*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk)) &
                                + matrot(jj,kk)*rtpa(iel,indrey(ii,kk)) )
     enddo
-    ! Coriolis contribution in the Phi1 term:
-    ! (1-C2/2)Gij
-    w7(iel) = crom(iel) * volume(iel)                   &
-            * (1.d0 - 0.5d0*crij2)*w7(iel)
   enddo
+
+  ! Coriolis contribution in the Phi1 term: (1-C2/2)Gij
+  if (icorio.eq.1) then
+    do iel = 1, ncel
+      w7(iel) = crom(iel)*volume(iel)*(1.d0 - 0.5d0*crij2)*w7(iel)
+    enddo
+  endif
 
   ! If source terms are extrapolated
   if (isto2t.gt.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+isou-1) =                                 &
-      propce(iel,iptsta+isou-1) + w7(iel)
+      propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
     enddo
   ! Otherwise, directly in smbr
   else

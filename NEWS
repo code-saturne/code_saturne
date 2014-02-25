@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix missing update of wall velocity Dirichlet B.C. for transient
+  turbomachinery model.
+
 - Fix compilation of PT-SCOTCH and ParMetis and handle https urls
   (required by PT-SCOTCH) when the https_proxy environment variable is set.
 

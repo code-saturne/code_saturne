@@ -89,6 +89,7 @@ use ppincl
 use mesh
 use field
 use cs_c_bindings
+use turbomachinery
 
 !===============================================================================
 
@@ -586,7 +587,7 @@ if (idtvar.ge.0) then
       call log_iteration_clipping_field(flid, icfmin, icfmax, dt, dt)
 
       ttcabs = ttcabs + (dtloc - dt(1))
-      if (imobil.eq.1) then
+      if (imobil.eq.1 .or. iturbo.eq.2) then
         ttcmob = ttcmob + (dtloc - dt(1))
       endif
 

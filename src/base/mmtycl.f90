@@ -23,7 +23,7 @@
 subroutine mmtycl &
 !================
 
- ( itypfb , rcodcl )
+ ( itypfb , propce , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -38,6 +38,7 @@ subroutine mmtycl &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! itypfb           ! ia ! <-- ! boundary face types                            !
+! propce           ! tr ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! tr ! <-- ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -65,10 +66,11 @@ use paramx
 use numvar
 use optcal
 use cstnum
-use cstphy
+use turbomachinery
 use entsor
 use parall
 use mesh
+use field
 
 !===============================================================================
 
@@ -78,16 +80,29 @@ implicit none
 
 integer          itypfb(nfabor)
 
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
 integer          ifac, iel
+integer          ipcvis, ipcvst
+integer          idefau
+
 double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision vitbox, vitboy, vitboz
+double precision visclc, visctc, distbf, hint
 
 !===============================================================================
+
+!===============================================================================
+! Initialization
+!===============================================================================
+
+! --- Physical quantities
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 
 !===============================================================================
 ! VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES
@@ -105,51 +120,109 @@ do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-  ! --- En turbomachine on conna�t la valeur exacte de la vitesse de maillage
+  if (irotce(iel).ne.0) then
 
-  vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
-  vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
-  vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
+    ! --- En turbomachine on connait la valeur exacte de la vitesse de maillage
 
-  if (itypfb(ifac).eq.isymet) then
-    rcodcl(ifac,iu,1) = vitbox
-    rcodcl(ifac,iv,1) = vitboy
-    rcodcl(ifac,iw,1) = vitboz
-  endif
+    vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
+    vitboy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
+    vitboz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
 
-  if (itypfb(ifac).eq.iparoi) then
-    ! Si une des composantes de vitesse de glissement a ete
-    !    modifiee par l'utilisateur, on ne fixe que la vitesse
-    !    normale
-    if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
-         rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.              &
-         rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+    if (itypfb(ifac).eq.isymet) then
       rcodcl(ifac,iu,1) = vitbox
       rcodcl(ifac,iv,1) = vitboy
       rcodcl(ifac,iw,1) = vitboz
-    else
-      ! On met a 0 les composantes de RCODCL non specifiees
-      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = 0.d0
-      if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = 0.d0
-      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = 0.d0
+    endif
 
-      srfbnf = surfbn(ifac)
-      rnx = surfbo(1,ifac)/srfbnf
-      rny = surfbo(2,ifac)/srfbnf
-      rnz = surfbo(3,ifac)/srfbnf
-      rcodcx = rcodcl(ifac,iu,1)
-      rcodcy = rcodcl(ifac,iv,1)
-      rcodcz = rcodcl(ifac,iw,1)
-      rcodsn = (vitbox - rcodcx)*rnx                            &
-           + (vitboy - rcodcy)*rny                            &
-           + (vitboz - rcodcz)*rnz
-      rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
-      rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
-      rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz
+    if (itypfb(ifac).eq.iparoi .or.                        &
+        itypfb(ifac).eq.iparug ) then
+      ! Si une des composantes de vitesse de glissement a ete
+      !    modifiee par l'utilisateur, on ne fixe que la vitesse
+      !    normale
+      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
+          rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.              &
+          rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+        rcodcl(ifac,iu,1) = vitbox
+        rcodcl(ifac,iv,1) = vitboy
+        rcodcl(ifac,iw,1) = vitboz
+      else
+        ! On met a 0 les composantes de RCODCL non specifiees
+        if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = 0.d0
+        if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = 0.d0
+        if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = 0.d0
+
+        srfbnf = surfbn(ifac)
+        rnx = surfbo(1,ifac)/srfbnf
+        rny = surfbo(2,ifac)/srfbnf
+        rnz = surfbo(3,ifac)/srfbnf
+        rcodcx = rcodcl(ifac,iu,1)
+        rcodcy = rcodcl(ifac,iv,1)
+        rcodcz = rcodcl(ifac,iw,1)
+        rcodsn = (vitbox - rcodcx)*rnx                            &
+               + (vitboy - rcodcy)*rny                            &
+               + (vitboz - rcodcz)*rnz
+        rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
+        rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
+        rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz
+      endif
+
     endif
 
   endif
 enddo
+
+! In case of transient turbomachinery computations, assign the default values
+! of coefficients associated to turbulent or rough wall velocity BC, in order
+! to update the wall velocity after the geometry update (between prediction and
+! correction step).
+! Note that the velocity BC update is made only if the user has not specified
+! any specific Dirichlet condition for velocity.
+
+if (iturbo.eq.2) then
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.  &
+        rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.  &
+        rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+      idefau = 1
+    else
+      idefau = 0
+    endif
+
+    if (idefau.eq.1 .and. irotce(iel).ne.0 .and. &
+      (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug)) then
+
+      ! --- Physical Properties
+      visclc = propce(iel,ipcvis)
+      visctc = propce(iel,ipcvst)
+
+      ! --- Geometrical quantities
+      distbf = distb(ifac)
+
+      if (itytur.eq.3) then
+        hint =   visclc         /distbf
+      else
+        hint = ( visclc+visctc )/distbf
+      endif
+
+      ! Coefficients associated to laminar wall Dirichlet BC
+
+      coftur(ifac) = 0.d0
+      hfltur(ifac) = hint
+
+    else
+
+      ! Large coefficient in others cases (unused)
+
+      coftur(ifac) = rinfin
+      hfltur(ifac) = rinfin
+
+    endif
+
+  enddo
+endif
 
 !===============================================================================
 ! FORMATS

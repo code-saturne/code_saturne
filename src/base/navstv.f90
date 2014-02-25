@@ -123,6 +123,7 @@ integer          nswrgp, imligp, iwarnp
 integer          nbrval, iappel, iescop
 integer          ndircp, icpt
 integer          numcpl
+integer          ipcvis, ipcvst
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, surf  , rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3)
@@ -131,8 +132,10 @@ double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
 double precision vitbox, vitboy, vitboz
-
-double precision t1, t2, t3, t4, ellap1, ellap2
+double precision t1, t2, t3, t4
+double precision visclc, visctc
+double precision distbf, srfbnf, hint
+double precision rnx, rny, rnz, rcodcx, rcodcy, rcodcz, rcodcn
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -298,6 +301,10 @@ if (nterup.gt.1) then
   endif
 
 endif
+
+! --- Physical quantities
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 
 ! Initialize timers
 t1 = 0.d0
@@ -488,38 +495,9 @@ if (iprco.le.0) then
 
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
-  ! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
-  if (imobil.eq.1) then
-
+  ! En turbomachine, on connait exactement la vitesse de maillage a ajouter
+  if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
     !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
-    do ifac = 1, nfac
-      iel1 = ifacel(1,ifac)
-      iel2 = ifacel(2,ifac)
-      dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
-      rhofac = 0.5d0*(crom(iel1) + crom(iel2))
-      vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
-      vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
-      vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
-      imasfl(ifac) = imasfl(ifac) - rhofac*(        &
-           vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
-    enddo
-    !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
-    !$omp          if(nfabor > thr_n_min)
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      dtfac  = dt(iel)
-      rhofac = brom(ifac)
-      vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
-      vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
-      vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
-      bmasfl(ifac) = bmasfl(ifac) - rhofac*(        &
-           vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
-    enddo
-
-  endif
-
-  if (iturbo.eq.1 .or. iturbo.eq.2) then
-
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
@@ -534,7 +512,8 @@ if (iprco.le.0) then
                                               + vitboz*surfac(3,ifac))
       endif
     enddo
-
+    !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
+    !$omp          if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       if (irotce(iel).ne.0) then
@@ -548,7 +527,6 @@ if (iprco.le.0) then
                                               + vitboz*surfbo(3,ifac))
       endif
     enddo
-
   endif
 
   ! Interleaved values of vel and vela
@@ -577,15 +555,15 @@ endif
 ! 4. Update mesh for unsteady turbomachinery computations
 !===============================================================================
 
-if (iturbo.eq.2) then
-
-  call dmtmps(t1)
-  !==========
+if (iturbo.eq.2 .and. iterns.eq.1) then
 
   ! Update mesh
 
-  call turbomachinery_update_mesh (ttcmob, ellap1)
+  call turbomachinery_update_mesh (ttcmob, rs_ell(1))
   !==============================
+
+  call dmtmps(t1)
+  !==========
 
   do ifac = 1, nfabor
     isympa(ifac) = 1
@@ -697,8 +675,63 @@ if (iturbo.eq.2) then
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ibrom, brom)
 
+  ! Update the Dirichlet wall boundary conditions for velocity (based on the
+  ! solid body rotation on the new mesh).
+  ! Note that the velocity BC update is made only if the user has not specified
+  ! any specific Dirichlet condition for velocity.
+
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    if (coftur(ifac).lt.rinfin*0.5d0) then
+
+      ! --- Physical Propreties
+      visclc = propce(iel,ipcvis)
+      visctc = propce(iel,ipcvst)
+
+      ! --- Geometrical quantities
+      distbf = distb(ifac)
+      srfbnf = surfbn(ifac)
+
+      ! Unit normal
+      rnx = surfbo(1,ifac)/srfbnf
+      rny = surfbo(2,ifac)/srfbnf
+      rnz = surfbo(3,ifac)/srfbnf
+
+      if (itytur.eq.3) then
+        hint =   visclc         /distbf
+      else
+        hint = ( visclc+visctc )/distbf
+      endif
+
+      rcodcx = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
+      rcodcy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
+      rcodcz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
+
+      ! Gradient boundary conditions (Dirichlet)
+      !-----------------------------
+      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
+
+      coefau(1,ifac) = (1.d0-coftur(ifac))*(rcodcx - rcodcn*rnx) + rcodcn*rnx
+      coefau(2,ifac) = (1.d0-coftur(ifac))*(rcodcy - rcodcn*rny) + rcodcn*rny
+      coefau(3,ifac) = (1.d0-coftur(ifac))*(rcodcz - rcodcn*rnz) + rcodcn*rnz
+
+      ! Flux boundary conditions (Dirichlet)
+      !-------------------------
+
+      cofafu(1,ifac) = -hfltur(ifac)*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
+      cofafu(2,ifac) = -hfltur(ifac)*(rcodcy - rcodcn*rny) - hint*rcodcn*rny
+      cofafu(3,ifac) = -hfltur(ifac)*(rcodcz - rcodcn*rnz) - hint*rcodcn*rnz
+
+    endif
+
+  enddo
+
   call dmtmps(t2)
   !==========
+
+  rs_ell(2) = t2-t1
 
 endif
 
@@ -1009,41 +1042,13 @@ endif
 !FIXME for me we should do that before predvv
 ! Ajout de la vitesse du solide dans le flux convectif,
 ! si le maillage est mobile (solide rigide)
-! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
+! En turbomachine, on connait exactement la vitesse de maillage a ajouter
+if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
-if (imobil.eq.1) then
+  if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t3)
+                                  !==========
 
   !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
-  do ifac = 1, nfac
-    iel1 = ifacel(1,ifac)
-    iel2 = ifacel(2,ifac)
-    dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
-    rhofac = 0.5d0*(crom(iel1) + crom(iel2))
-    vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
-    vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
-    vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
-    imasfl(ifac) = imasfl(ifac) - rhofac*(        &
-         vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
-  enddo
-  !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
-  !$omp             if(nfabor > thr_n_min)
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    dtfac  = dt(iel)
-    rhofac = brom(ifac)
-    vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
-    vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
-    vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
-    bmasfl(ifac) = bmasfl(ifac) - rhofac*(        &
-         vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
-  enddo
-endif
-
-if (iturbo.eq.1 .or. iturbo.eq.2) then
-
-  call dmtmps(t3)
-  !==========
-
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
@@ -1058,7 +1063,8 @@ if (iturbo.eq.1 .or. iturbo.eq.2) then
                                             + vitboz*surfac(3,ifac))
     endif
   enddo
-
+  !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
+  !$omp             if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     if (irotce(iel).ne.0) then
@@ -1073,10 +1079,10 @@ if (iturbo.eq.1 .or. iturbo.eq.2) then
     endif
   enddo
 
-  call dmtmps(t4)
-  !==========
+  if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t4)
+                                  !==========
 
-  ellap2 = t2-t1 + t4-t3
+  rs_ell(2) = rs_ell(2) + t4-t3
 
 endif
 
@@ -1398,7 +1404,11 @@ if (iwarni(iu).ge.1) then
 endif
 
 if (iturbo.eq.2) then
-  if (mod(ntcabs,ntlist).eq.0)  write(nfecra,3000) ellap1, ellap2
+  if (mod(ntcabs,ntlist).eq.0.and.iterns.eq.nterup) then
+     write(nfecra,3000) rs_ell(1), rs_ell(1) + rs_ell(2)
+     rs_ell(1) = 0.d0
+     rs_ell(2) = 0.d0
+  endif
 endif
 
 ! Free memory
