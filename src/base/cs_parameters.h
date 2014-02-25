@@ -109,6 +109,15 @@ enum {
 void
 cs_parameters_define_field_keys(void);
 
+/*----------------------------------------------------------------------------
+ * Read general restart info.
+ *
+ * This updates the previous time step info.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parameters_read_restart_info(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

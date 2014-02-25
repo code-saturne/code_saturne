@@ -75,6 +75,7 @@ use ppincl
 use ppcpfu
 use radiat
 use cs_coal_incl
+use cs_c_bindings
 use field
 
 !===============================================================================
@@ -93,6 +94,10 @@ integer          iappel, ivar
 double precision relaxp, extrap
 
 !===============================================================================
+
+! Check for restart and read matching time steps
+
+call parameters_read_restart_info
 
 !===============================================================================
 ! 0. INITIALISATION DE L'INFORMATION "FICHIER XML (IHM) REQUIS & EXISTE"

@@ -49,6 +49,7 @@
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parall.h"
+#include "cs_restart.h"
 #include "cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
@@ -182,6 +183,67 @@ cs_parameters_define_field_keys(void)
                              _log_func_var_opt_cal,
                              sizeof(cs_var_cal_opt_t),
                              CS_FIELD_VARIABLE);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read general restart info.
+ *
+ * This updates the previous time step info.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_read_restart_info(void)
+{
+  if (cs_restart_present()) {
+
+    cs_int_t _n_ts;
+    cs_real_t _ts;
+    int retval;
+
+    cs_restart_t *r
+      = cs_restart_create("main", "restart", CS_RESTART_MODE_READ);
+
+    /* First syntax */
+
+    retval = cs_restart_read_section(r,
+                                     "nbre_pas_de_temps",
+                                     0,
+                                     1,
+                                     CS_TYPE_cs_int_t,
+                                     &_n_ts);
+    if (retval == CS_RESTART_SUCCESS)
+      retval = cs_restart_read_section(r,
+                                       "instant_precedent",
+                                       0,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       &_ts);
+
+    /* Second syntax */
+
+    else {
+      retval = cs_restart_read_section(r,
+                                       "ntcabs",
+                                       0,
+                                       1,
+                                       CS_TYPE_cs_int_t,
+                                       &_n_ts);
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(r,
+                                         "ttcabs",
+                                         0,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         &_ts);
+    }
+
+    r = cs_restart_destroy(r);
+
+    if (retval == CS_RESTART_SUCCESS)
+      cs_time_step_define_prev(_n_ts, _ts);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
