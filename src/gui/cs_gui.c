@@ -527,6 +527,7 @@ void _physical_property(const char *const param,
     BFT_FREE(ptot);
   }
   BFT_FREE(prop_choice);
+  BFT_FREE(law);
 
 }
 
