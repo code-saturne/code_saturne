@@ -2398,15 +2398,15 @@ void CS_PROCF (csidtv, CSIDTV) (int *const idtvar)
 {
   double param;
   int steady = 0;
-  char* algo_choice = NULL;
 
   cs_gui_get_steady_status(&steady);
   if (steady) {
-    algo_choice = cs_gui_velocity_pressure_algo_choice();
+    char *algo_choice = cs_gui_velocity_pressure_algo_choice();
     if (cs_gui_strcmp(algo_choice, "simple"))
       *idtvar = -1;
     else
       *idtvar = 2;
+    BFT_FREE(algo_choice);
   } else {
     param = (double) *idtvar;
     cs_gui_time_parameters("time_passing", &param);
