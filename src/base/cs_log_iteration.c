@@ -424,7 +424,10 @@ _log_array_info(const char        *prefix,
   for (c_id = 0; c_id < _dim; c_id++) {
 
     if (dim == 3) {
-      snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_3[c_id]);
+      if (c_id < 3)
+        snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_3[c_id]);
+      else
+        snprintf(tmp_s[1], 63, "ǁ%sǁ", name);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
     }
