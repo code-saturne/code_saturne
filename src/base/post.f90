@@ -55,21 +55,6 @@ module post
 
     !---------------------------------------------------------------------------
 
-    !> \brief Output post-processing meshes using associated writers.
-
-    !> \param[in]  nt_cur_abs  current time step number
-    !> \param[in]  t_cur_abs   current physical time
-
-    subroutine cs_post_write_meshes(nt_cur_abs, t_cur_abs)  &
-      bind(C, name='cs_post_write_meshes')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: nt_cur_abs
-      real(c_double), value :: t_cur_abs
-    end subroutine cs_post_write_meshes
-
-    !---------------------------------------------------------------------------
-
     !> \brief Update "active" or "inactive" flag of writers based on the
     !>        time step.
 

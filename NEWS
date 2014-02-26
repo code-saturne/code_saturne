@@ -4,6 +4,9 @@ Release 3.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix incorrect Fortran binding for mesh postprocessing output which could
+  lead to crash in some cases.
+
 - GUI: fix activating/deactivating Lagrangian particle tracking bug.
 
 
