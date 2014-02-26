@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix incorrect Fortran binding for mesh postprocessing output which could
+  lead to crash in some cases.
+
 - Fix missing update of wall velocity Dirichlet B.C. for transient
   turbomachinery model.
 
