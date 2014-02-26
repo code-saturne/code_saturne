@@ -43,6 +43,7 @@ except Exception:
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
@@ -51,10 +52,11 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
+from Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Pages.SolutionDomainForm import Ui_SolutionDomainForm
 from Pages.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 from Pages.FacesSelectionView import StandardItemModelFaces
-from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
 
 #-------------------------------------------------------------------------------
 # log config
@@ -93,7 +95,7 @@ class MeshNameDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.DisplayRole)
             if value != None:
-                text = str(value)
+                text = from_qvariant(value, to_text_string)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
             painter.restore()
 
@@ -143,7 +145,7 @@ class MeshFormatDelegate(QItemDelegate):
         for i in range(len(self.lst)):
             if value == self.lst[i][1] + self.lst[i][2]:
                 key = self.lst[i][0]
-        model.setData(index, key)
+        model.setData(index, to_qvariant(key))
         if self.updateLayout != None:
             self.updateLayout()
 
@@ -174,7 +176,7 @@ class MeshFormatDelegate(QItemDelegate):
             value = index.data(Qt.DisplayRole)
             if value != None:
                 if value.isValid():
-                    text = str(value)
+                    text = from_qvariant(value, to_text_string)
                     painter.drawText(option.rect, Qt.AlignLeft, text)
             painter.restore()
 
@@ -204,7 +206,7 @@ class MeshNumberDelegate(QItemDelegate):
 
     def setModelData(self, lineEdit, model, index):
         value = str(lineEdit.text()).strip()
-        model.setData(index, value)
+        model.setData(index, to_qvariant(value))
 
 
 #-------------------------------------------------------------------------------
@@ -238,7 +240,7 @@ class GroupDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, value)
+        model.setData(index, to_qvariant(value))
 
 
 #-------------------------------------------------------------------------------
@@ -291,7 +293,7 @@ class StandardItemModelMeshes(QStandardItemModel):
                 if column != 1:
                     self.setData(index, value)
                 else:
-                    self.setData(index, self.dataMeshes[row][1])
+                    self.setData(index, to_qvariant(self.dataMeshes[row][1]))
 
 
     def populateModel(self):
@@ -326,42 +328,42 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return None
+            return to_qvariant()
 
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return self.tooltip[col]
+            return to_qvariant(self.tooltip[col])
 
         elif role == Qt.DisplayRole:
             d = self.dataMeshes[index.row()][col]
             if d:
                 if col == 1:
-                    return self.formatDict[d]
+                    return to_qvariant(self.formatDict[d])
                 elif col == 3:
-                    return None
+                    return to_qvariant()
                 else:
-                    return d
+                    return to_qvariant(d)
             else:
-                return None
+                return to_qvariant()
 
         elif role == Qt.TextAlignmentRole:
             if col == 6:
-                return Qt.AlignLeft
+                return to_qvariant(Qt.AlignLeft)
             else:
-                return Qt.AlignCenter
+                return to_qvariant(Qt.AlignCenter)
 
         elif role == Qt.CheckStateRole:
             if col == 3:
                 d = self.dataMeshes[index.row()][3]
                 if d == True:
-                    return Qt.Checked
+                    return to_qvariant(Qt.Checked)
                 else:
-                    return Qt.Unchecked
+                    return to_qvariant(Qt.Unchecked)
             else:
-                return None
+                return to_qvariant()
 
-        return None
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -384,8 +386,8 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return None
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role=None):
@@ -396,19 +398,19 @@ class StandardItemModelMeshes(QStandardItemModel):
         mesh = (self.dataMeshes[row][0], self.dataMeshes[row][6])
 
         if col == 1:
-            v = str(value)
+            v = from_qvariant(value, to_text_string)
             self.dataMeshes[row][col] = v
             if v:
                 self.mdl.setMeshFormat(mesh, v)
 
         elif col == 2:
-            v = str(value)
+            v = from_qvariant(value, to_text_string)
             self.dataMeshes[row][col] = v
             if value:
                 self.mdl.setMeshNumbers(mesh, v)
 
         elif col == 3 and role == Qt.CheckStateRole:
-            state = int(value)
+            v = from_qvariant(value, int)
             if state == Qt.Unchecked:
                 self.dataMeshes[row][col] = False
             else:
@@ -417,7 +419,7 @@ class StandardItemModelMeshes(QStandardItemModel):
 
         elif col == 4:
             if value:
-                v = str(value)
+                v = from_qvariant(value, to_text_string)
             else:
                 v = ''
             self.dataMeshes[row][col] = v
@@ -426,7 +428,7 @@ class StandardItemModelMeshes(QStandardItemModel):
 
         elif col == 5:
             if value:
-                v = str(value)
+                v = from_qvariant(value, to_text_string)
             else:
                 v = ''
             self.dataMeshes[row][col] = v

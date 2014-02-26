@@ -36,10 +36,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -48,10 +44,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
-
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
+from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+
+from Pages.BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ThermalScalarModel import ThermalScalarModel
@@ -524,7 +520,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             if self.thermal_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.thermal, self.thermal_type, value)
             elif self.thermal_type == 'exchange_coefficient':
@@ -536,7 +532,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             if self.species_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.species, self.species_type, value)
             elif self.species_type == 'exchange_coefficient' :
@@ -548,7 +544,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             if self.meteo_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.meteo, self.meteo_type, value)
             elif self.meteo_type == 'exchange_coefficient':
@@ -560,7 +556,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.thermal, 'exchange_coefficient', value)
 
 
@@ -569,7 +565,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.species, 'exchange_coefficient', value)
 
 
@@ -578,7 +574,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.meteo, 'exchange_coefficient', value)
 
 

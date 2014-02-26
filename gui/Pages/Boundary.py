@@ -1519,38 +1519,38 @@ class CoalInletBoundary(InletBoundary) :
         Model().isInt(coal_idx)
         Model().isLowerOrEqual(coal_idx, self.coalNumber-1)
 
-        list = []
+        lst = []
         for i in range(0, self.coalClassesNumber[coal_idx]):
-            list.append(self.__getClassCoalRatio(coal_idx, i))
+            lst.append(self.__getClassCoalRatio(coal_idx, i))
 
         # check if sum of ratios of coal mass is equal to 100%
         som = 0.
         for i in range(0, self.coalClassesNumber[coal_idx]):
-            som += list[i]
+            som += lst[i]
         Model().isFloatEqual(som, 100.)
 
-        return list
+        return lst
 
 
     @Variables.undoLocal
-    def setCoalRatios(self, coal, list):
+    def setCoalRatios(self, coal, lst):
         """
         Put list of values of classe's ratio for one coal
         """
         Model().isInt(coal)
-        Model().isIntEqual(len(list), self.coalClassesNumber[coal])
+        Model().isIntEqual(len(lst), self.coalClassesNumber[coal])
         som = 0.
         for i in range(0, self.coalClassesNumber[coal]):
-            som += list[i]
+            som += lst[i]
         Model().isFloatEqual(som, 100.)
 
         n = self.boundNode.xmlInitNode('velocity_pressure')
         num = '%2.2i' % (coal+1)
         nc = n.xmlInitNode('coal', name="coal"+ num)
 
-        for i in range(0, len(list)):
+        for i in range(0, len(lst)):
             num = '%2.2i' % (i+1)
-            nc.xmlSetData('ratio', list[i], name="class"+ num)
+            nc.xmlSetData('ratio', lst[i], name="class"+ num)
 
 
     def deleteCoalFlow(self, coal, nbCoals):
@@ -2341,17 +2341,17 @@ class RadiativeWallBoundary(Boundary) :
         Return list of radiative variables according to choice's
         """
         Model().isInList(choice, self._radiativeChoices)
-        list = []
+        lst = []
         if choice == 'itpimp':
-            list = ('emissivity', 'internal_temperature_profile', 'output_zone')
+            lst = ('emissivity', 'internal_temperature_profile', 'output_zone')
         elif choice == 'ipgrno':
-            list = ('emissivity', 'wall_thermal_conductivity', 'thickness',
+            lst = ('emissivity', 'wall_thermal_conductivity', 'thickness',
                     'external_temperature_profile',
                     'internal_temperature_profile', 'output_zone')
         elif choice == 'ifgrno':
-            list = ('emissivity', 'flux', 'internal_temperature_profile', 'output_zone')
+            lst = ('emissivity', 'flux', 'internal_temperature_profile', 'output_zone')
 
-        return list
+        return lst
 
 
     def __defaultValues(self):
@@ -2392,8 +2392,8 @@ class RadiativeWallBoundary(Boundary) :
 
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond['choice'] = choice
-        list = self._getListValRay(choice)
-        for i in list:
+        lst = self._getListValRay(choice)
+        for i in lst:
             if not nod_ray_cond.xmlGetChildNode(i):
                 nod_ray_cond.xmlSetData(i, self.__defaultValues()[i])
 

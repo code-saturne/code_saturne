@@ -51,10 +51,6 @@ except Exception:
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
-
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
@@ -71,6 +67,7 @@ from Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIte
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
+from Base.QtPage import to_qvariant, from_qvariant
 from Base.CommandMgrDialogView import CommandMgrDialogView
 from Pages.BatchRunningModel import BatchRunningModel
 from Pages.ScriptRunningModel import ScriptRunningModel
@@ -315,7 +312,7 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
         Private slot to set a iteration number to stop the code.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            iter = int(text)
+            iter = from_qvariant(text, int)
             self.iter = iter
 
 
@@ -1027,10 +1024,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 self.getClassList()
                 if len(self.class_list) > 0:
                     for c in self.class_list:
-                        self.comboBoxClass.addItem(self.tr(c), c)
+                        self.comboBoxClass.addItem(self.tr(c), to_qvariant(c))
                 else:
                     c = self.job_class
-                    self.comboBoxClass.addItem(self.tr(c), c)
+                    self.comboBoxClass.addItem(self.tr(c), to_qvariant(c))
 
             # All passes
             try:

@@ -36,10 +36,6 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -52,7 +48,7 @@ from Pages.BoundaryConditionsTurbulenceInletForm import Ui_BoundaryConditionsTur
 from Pages.TurbulenceModel import TurbulenceModel
 
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
+from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
 from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -189,7 +185,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         INPUT hydraulic diameter
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            diam = float(text)
+            diam = from_qvariant(text, float)
             self.__boundary.setHydraulicDiameter(diam)
 
 
@@ -199,7 +195,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         INPUT turbulent intensity
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            intens = float(text)
+            intens = from_qvariant(text, float)
             self.__boundary.setTurbulentIntensity(intens)
 
 

@@ -36,10 +36,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -49,8 +45,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
-import Base.QtPage as QtPage
 from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 from Pages.SteadyManagementModel import SteadyManagementModel
 
@@ -89,9 +85,9 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.line_5.hide()
 
         # Combo models
-        self.modelEXTRAG = QtPage.ComboModel(self.comboBoxEXTRAG,2,1)
-        self.modelIMRGRA = QtPage.ComboModel(self.comboBoxIMRGRA,5,1)
-        self.modelNTERUP = QtPage.ComboModel(self.comboBoxNTERUP,3,1)
+        self.modelEXTRAG = ComboModel(self.comboBoxEXTRAG,2,1)
+        self.modelIMRGRA = ComboModel(self.comboBoxIMRGRA,5,1)
+        self.modelNTERUP = ComboModel(self.comboBoxNTERUP,3,1)
 
         self.modelEXTRAG.addItem(self.tr("Neumann 1st order"), 'neumann')
         self.modelEXTRAG.addItem(self.tr("Extrapolation"), 'extrapolation')
@@ -122,9 +118,9 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.connect(self.spinBoxNTERUP, SIGNAL("valueChanged(int)"), self.slotNTERUP2)
 
         # Validators
-        validatorRELAXP = QtPage.DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
+        validatorRELAXP = DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
         validatorRELAXP.setExclusiveMin(True)
-        validatorSRROM = QtPage.DoubleValidator(self.lineEditSRROM, min=0., max=1.)
+        validatorSRROM = DoubleValidator(self.lineEditSRROM, min=0., max=1.)
         validatorSRROM.setExclusiveMin(True)
         self.lineEditRELAXP.setValidator(validatorRELAXP)
         self.lineEditSRROM.setValidator(validatorSRROM)
@@ -279,7 +275,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         Set value for parameter RELAXP
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            relaxp = float(text)
+            relaxp = from_qvariant(text, float)
             self.model.setPressureRelaxation(relaxp)
             log.debug("slotRELAXP-> %s" % relaxp)
 
@@ -290,7 +286,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         Set value for parameter SRROM
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            srrom = float(text)
+            srrom = from_qvariant(text, float)
             self.model.setDensityRelaxation(srrom)
             log.debug("slotSRROM-> %s" % srrom)
 

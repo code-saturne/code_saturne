@@ -36,10 +36,6 @@ import os, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -48,12 +44,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from ElectricalForm import Ui_ElectricalForm
 
 from Base.Toolbox import GuiParam
 from Base.Common import LABEL_LENGTH_MAX
-from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, setGreenColor
+from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
+from Base.QtPage import setGreenColor, from_qvariant
 
+from Pages.ElectricalForm import Ui_ElectricalForm
 from Pages.ElectricalModel import ElectricalModel
 
 #-------------------------------------------------------------------------------
@@ -245,7 +242,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input Relaxation coefficient for mass density
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            srrom = float(text)
+            srrom = from_qvariant(text, float)
             self.model.setSRROM(srrom)
 
 
@@ -255,7 +252,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input Imposed Power
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            power = float(text)
+            power = from_qvariant(text, float)
             self.model.setPower(power)
 
 
@@ -265,7 +262,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input Imposed current intensity
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            current = float(text)
+            current = from_qvariant(text, float)
             self.model.setCurrent(current)
 
 
@@ -316,7 +313,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input define plane
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            current = float(text)
+            current = from_qvariant(text, float)
             self.model.setPlaneDefinition("A", current)
 
 
@@ -326,7 +323,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input define plane
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            current = float(text)
+            current = from_qvariant(text, float)
             self.model.setPlaneDefinition("B", current)
 
 
@@ -336,7 +333,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input define plane
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            current = float(text)
+            current = from_qvariant(text, float)
             self.model.setPlaneDefinition("C", current)
 
 
@@ -346,7 +343,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input define plane
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            current = float(text)
+            current = from_qvariant(text, float)
             self.model.setPlaneDefinition("D", current)
 
 
@@ -356,7 +353,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         Input define plane
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            current = float(text)
+            current = from_qvariant(text, float)
             self.model.setPlaneDefinition("epsilon", current)
 
 

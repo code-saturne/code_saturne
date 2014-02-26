@@ -36,10 +36,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -49,8 +45,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from BodyForcesForm import Ui_BodyForcesForm
-import Base.QtPage as QtPage
+from Base.QtPage import DoubleValidator, from_qvariant
+from Pages.BodyForcesForm import Ui_BodyForcesForm
 from Pages.BodyForcesModel import BodyForcesModel
 
 #-------------------------------------------------------------------------------
@@ -92,9 +88,9 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.connect(self.lineEditZ, SIGNAL("textChanged(const QString &)"), self.slotGravityZ)
 
         # Validators
-        validatorX = QtPage.DoubleValidator(self.lineEditX)
-        validatorY = QtPage.DoubleValidator(self.lineEditY)
-        validatorZ = QtPage.DoubleValidator(self.lineEditZ)
+        validatorX = DoubleValidator(self.lineEditX)
+        validatorY = DoubleValidator(self.lineEditY)
+        validatorZ = DoubleValidator(self.lineEditZ)
 
         self.lineEditX.setValidator(validatorX)
         self.lineEditY.setValidator(validatorY)
@@ -119,7 +115,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         Input GX
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            gravity_x = float(text)
+            gravity_x = from_qvariant(text, float)
             self.mdl.setGravity('gravity_x', gravity_x)
 
 
@@ -129,7 +125,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         Input GY
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            gravity_y = float(text)
+            gravity_y = from_qvariant(text, float)
             self.mdl.setGravity('gravity_y', gravity_y)
 
 
@@ -139,7 +135,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         Input GZ
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            gravity_z = float(text)
+            gravity_z = from_qvariant(text, float)
             self.mdl.setGravity('gravity_z', gravity_z)
 
 

@@ -486,14 +486,14 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         Update command-line options at each modification of
         post processing format
         """
-        list = line.split(',')
+        lst = line.split(',')
         format = self.modelFMTCHR.dicoV2M[str(self.comboBoxFMTCHR.currentText())]
         log.debug("__updateOptionsFormat-> FMTCHR = %s" % format)
         log.debug("__updateOptionsFormat-> OPTCHR = %s" % line)
 
         # update widgets from the options list
 
-        for opt in list:
+        for opt in lst:
 
             if opt == 'binary' or opt == 'text' :
                 self.modelFormat.setItem(str_model=opt)
@@ -508,11 +508,11 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
                 if opt == 'big_endian':
                     self.checkBoxBigEndian.setChecked(True)
 
-        if 'discard_polygons' not in list and 'divide_polygons' not in list:
+        if 'discard_polygons' not in lst and 'divide_polygons' not in lst:
             self.modelPolygon.setItem(str_model="display")
-        if 'discard_polyhedra' not in list and 'divide_polyhedra' not in list:
+        if 'discard_polyhedra' not in lst and 'divide_polyhedra' not in lst:
             self.modelPolyhedra.setItem(str_model="display")
-        if 'big_endian' not in list:
+        if 'big_endian' not in lst:
             self.checkBoxBigEndian.setChecked(False)
 
         # enable and disable options related to the format

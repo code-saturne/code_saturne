@@ -36,10 +36,6 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -48,10 +44,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsRoughWallForm import Ui_BoundaryConditionsRoughWallForm
-
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel
+from Base.QtPage import DoubleValidator, ComboModel, from_qvariant
+
+from Pages.BoundaryConditionsRoughWallForm import Ui_BoundaryConditionsRoughWallForm
 
 #-------------------------------------------------------------------------------
 # log config
@@ -152,7 +148,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         @param text: roughness height.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            r = float(text)
+            r = from_qvariant(text, float)
             self.__boundary.setRoughness(r)
 
 

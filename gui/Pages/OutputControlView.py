@@ -44,10 +44,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -58,9 +54,10 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from Base.Common import LABEL_LENGTH_MAX
-from OutputControlForm import Ui_OutputControlForm
-import Base.QtPage as QtPage
-from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, setGreenColor
+from Base.QtPage import ComboModel, DoubleValidator, IntValidator
+from Base.QtPage import RegExpValidator, setGreenColor, to_qvariant
+from Base.QtPage import from_qvariant, to_text_string
+from Pages.OutputControlForm import Ui_OutputControlForm
 from Pages.OutputControlModel import OutputControlModel
 from Pages.QMeiEditorView import QMeiEditorView
 from Pages.LagrangianModel import LagrangianModel
@@ -98,7 +95,7 @@ class LabelWriterDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = int(index.model().data(index, Qt.DisplayRole))
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -126,7 +123,7 @@ class LabelWriterDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, new_plabel, Qt.DisplayRole)
+            model.setData(index, to_qvariant(new_plabel), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -154,7 +151,7 @@ class LabelMeshDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = int(index.model().data(index, Qt.DisplayRole))
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -182,7 +179,7 @@ class LabelMeshDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, new_plabel, Qt.DisplayRole)
+            model.setData(index, to_qvariant(new_plabel), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -234,7 +231,7 @@ class FormatWriterDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value)
+                model.setData(idx, to_qvariant(value))
 
 
 #-------------------------------------------------------------------------------
@@ -281,7 +278,7 @@ class TypeMeshDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value)
+                model.setData(idx, to_qvariant(value))
 
 
     def paint(self, painter, option, index):
@@ -305,7 +302,7 @@ class TypeMeshDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.DisplayRole)
             if value.isValid():
-                text = str(value)
+                text = from_qvariant(value, to_text_string)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
             painter.restore()
 
@@ -327,7 +324,7 @@ class LocationSelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = str(index.model().data(index, Qt.DisplayRole))
+        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(self.value)
 
 
@@ -341,7 +338,7 @@ class LocationSelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -357,13 +354,13 @@ class DensitySelectorDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator = QtPage.DoubleValidator(editor, min=0., max=1.)
+        validator = DoubleValidator(editor, min=0., max=1.)
         editor.setValidator(validator)
         return editor
 
 
     def setEditorData(self, editor, index):
-        self.value = str(index.model().data(index, Qt.DisplayRole))
+        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(self.value)
 
 
@@ -377,7 +374,7 @@ class DensitySelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -416,7 +413,7 @@ class AssociatedWriterDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -467,7 +464,7 @@ class StandardItemModelMesh(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
 
         if role == Qt.DisplayRole:
 
@@ -476,23 +473,23 @@ class StandardItemModelMesh(QStandardItemModel):
             dico = self.dataMesh[row]
 
             if index.column() == 0:
-                return dico['name']
+                return to_qvariant(dico['name'])
             elif index.column() == 1:
-                return dico['id']
+                return to_qvariant(dico['id'])
             elif index.column() == 2:
-                return self.dicoM2V[dico['type']]
+                return to_qvariant(self.dicoM2V[dico['type']])
             elif index.column() == 3:
-                return dico['location']
+                return to_qvariant(dico['location'])
             else:
-                return
+                return to_qvariant()
 
         elif role == Qt.TextAlignmentRole:
             if index.column() != 3:
-                return Qt.AlignCenter
+                return to_qvariant(Qt.AlignCenter)
             else:
-                return Qt.AlignLeft | Qt.AlignVCenter
+                return to_qvariant(Qt.AlignLeft | Qt.AlignVCenter)
 
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -512,14 +509,14 @@ class StandardItemModelMesh(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return self.tr("Name")
+                return to_qvariant(self.tr("Name"))
             elif section == 1:
-                return self.tr("Id")
+                return to_qvariant(self.tr("Id"))
             elif section == 2:
-                return self.tr("Type")
+                return to_qvariant(self.tr("Type"))
             elif section == 3:
-                return self.tr("Selection Criteria")
-        return
+                return to_qvariant(self.tr("Selection Criteria"))
+        return to_qvariant()
 
 
     def setData(self, index, value, role=None):
@@ -531,12 +528,12 @@ class StandardItemModelMesh(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
-            new_plabel = str(value)
+            new_plabel = str(from_qvariant(value, to_text_string))
             self.dataMesh[row]['name'] = new_plabel
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
-            self.dataMesh[row]['type'] = self.dicoV2M[str(value)]
+            self.dataMesh[row]['type'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
             self.mdl.setMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
@@ -621,7 +618,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return None
+            return to_qvariant()
 
         if role == Qt.DisplayRole:
 
@@ -630,25 +627,25 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
             dico = self.dataMesh[row]
 
             if index.column() == 0:
-                return dico['name']
+                return to_qvariant(dico['name'])
             elif index.column() == 1:
-                return dico['id']
+                return to_qvariant(dico['id'])
             elif index.column() == 2:
-                return self.dicoM2V[dico['type']]
+                return to_qvariant(self.dicoM2V[dico['type']])
             elif index.column() == 3:
-                return dico['density']
+                return to_qvariant(dico['density'])
             elif index.column() == 4:
-                return dico['location']
+                return to_qvariant(dico['location'])
             else:
-                return None
+                return to_qvariant()
 
         elif role == Qt.TextAlignmentRole:
             if index.column() != 4:
-                return Qt.AlignCenter
+                return to_qvariant(Qt.AlignCenter)
             else:
-                return Qt.AlignLeft | Qt.AlignVCenter
+                return to_qvariant(Qt.AlignLeft | Qt.AlignVCenter)
 
-        return None
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -668,16 +665,16 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return self.tr("Name")
+                return to_qvariant(self.tr("Name"))
             elif section == 1:
-                return self.tr("Id")
+                return to_qvariant(self.tr("Id"))
             elif section == 2:
-                return self.tr("Type")
+                return to_qvariant(self.tr("Type"))
             elif section == 3:
-                return self.tr("Density")
+                return to_qvariant(self.tr("Density"))
             elif section == 4:
-                return self.tr("Selection Criteria")
-        return None
+                return to_qvariant(self.tr("Selection Criteria"))
+        return to_qvariant()
 
 
     def setData(self, index, value, role=None):
@@ -689,20 +686,20 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
-            new_plabel = str(value)
+            new_plabel = str(from_qvariant(value, to_text_string))
             self.dataMesh[row]['name'] = new_plabel
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
-            self.dataMesh[row]['type'] = self.dicoV2M[str(value)]
+            self.dataMesh[row]['type'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
             self.mdl.setLagrangianMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
-            self.dataMesh[row]['density'] = str(value)
+            self.dataMesh[row]['density'] = str(from_qvariant(value, to_text_string))
             self.mdl.setMeshDensity(self.dataMesh[row]['id'], self.dataMesh[row]['density'])
 
         if index.column() == 4:
-            new_location = str(value)
+            new_location = str(from_qvariant(value, to_text_string))
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
 
@@ -788,7 +785,7 @@ class StandardItemModelWriter(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
 
         if role == Qt.DisplayRole:
 
@@ -797,20 +794,20 @@ class StandardItemModelWriter(QStandardItemModel):
             dico = self.dataWriter[row]
 
             if index.column() == 0:
-                return dico['name']
+                return to_qvariant(dico['name'])
             elif index.column() == 1:
-                return dico['id']
+                return to_qvariant(dico['id'])
             elif index.column() == 2:
-                return self.dicoM2V[dico['format']]
+                return to_qvariant(self.dicoM2V[dico['format']])
             elif index.column() == 3:
-                return dico['directory']
+                return to_qvariant(dico['directory'])
             else:
-                return
+                return to_qvariant()
 
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
+            return to_qvariant(Qt.AlignCenter)
 
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -826,14 +823,14 @@ class StandardItemModelWriter(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return self.tr("Name")
+                return to_qvariant(self.tr("Name"))
             elif section == 1:
-                return self.tr("Id")
+                return to_qvariant(self.tr("Id"))
             elif section == 2:
-                return self.tr("Format")
+                return to_qvariant(self.tr("Format"))
             elif section == 3:
-                return self.tr("Directory")
-        return
+                return to_qvariant(self.tr("Directory"))
+        return to_qvariant()
 
 
     def setData(self, index, value, role=None):
@@ -846,20 +843,20 @@ class StandardItemModelWriter(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataWriter[row]['name']
-            new_plabel = str(value)
+            new_plabel = str(from_qvariant(value, to_text_string))
             self.dataWriter[row]['name'] = new_plabel
             self.mdl.setWriterLabel(writer_id, new_plabel)
 
         elif col == 2:
             f_old = self.mdl.getWriterFormat(writer_id)
-            self.dataWriter[row]['format'] = self.dicoV2M[str(value)]
+            self.dataWriter[row]['format'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
             if self.dataWriter[row]['format'] != f_old:
                 self.mdl.setWriterFormat(writer_id,
                                          self.dataWriter[row]['format'])
                 self.mdl.setWriterOptions(writer_id, "")
         elif col == 3:
             old_rep = self.dataWriter[row]['directory']
-            new_rep = str(value)
+            new_rep = str(from_qvariant(value, to_text_string))
             self.dataWriter[row]['directory'] = new_rep
             self.mdl.setWriterDirectory(writer_id, new_rep)
 
@@ -924,15 +921,15 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
 
         row = index.row()
         col = index.column()
 
         if role == Qt.DisplayRole:
-            return self._data[row]
+            return to_qvariant(self._data[row])
 
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -943,8 +940,8 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -956,7 +953,7 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
         # Label
         if col == 0:
-            writer = str(value)
+            writer = str(from_qvariant(value, to_text_string))
             self._data[row] = writer
             writer_list = []
             for r in range(self.rowCount()):
@@ -1029,7 +1026,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
 
         if role == Qt.DisplayRole:
 
@@ -1037,20 +1034,20 @@ class StandardItemModelMonitoring(QStandardItemModel):
             dico = self.dataMonitoring[row]
 
             if index.column() == 0:
-                return dico['n']
+                return to_qvariant(dico['n'])
             elif index.column() == 1:
-                return dico['X']
+                return to_qvariant(dico['X'])
             elif index.column() == 2:
-                return dico['Y']
+                return to_qvariant(dico['Y'])
             elif index.column() == 3:
-                return dico['Z']
+                return to_qvariant(dico['Z'])
             else:
-                return
+                return to_qvariant()
 
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
+            return to_qvariant(Qt.AlignCenter)
 
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -1065,29 +1062,29 @@ class StandardItemModelMonitoring(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return self.tr("n")
+                return to_qvariant(self.tr("n"))
             elif section == 1:
-                return self.tr("X")
+                return to_qvariant(self.tr("X"))
             elif section == 2:
-                return self.tr("Y")
+                return to_qvariant(self.tr("Y"))
             elif section == 3:
-                return self.tr("Z")
-        return
+                return to_qvariant(self.tr("Z"))
+        return to_qvariant()
 
 
     def setData(self, index, value, role=None):
         row = index.row()
         if index.column() == 0:
-            n = int(value)
+            n = from_qvariant(value, int)
             self.dataMonitoring[row]['n'] = n
         elif index.column() == 1:
-            X = float(value)
+            X = from_qvariant(value, float)
             self.dataMonitoring[row]['X'] = X
         elif index.column() == 2:
-            Y = float(value)
+            Y = from_qvariant(value, float)
             self.dataMonitoring[row]['Y'] = Y
         elif index.column() == 3:
-            Z = float(value)
+            Z = from_qvariant(value, float)
             self.dataMonitoring[row]['Z'] = Z
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -1161,7 +1158,7 @@ class MonitoringPointDelegate(QItemDelegate):
             editor = QFrame(parent)
         else:
             editor = QLineEdit(parent)
-            editor.setValidator(QtPage.DoubleValidator(editor))
+            editor.setValidator(DoubleValidator(editor))
             editor.setFrame(False)
             self.connect(editor, SIGNAL("returnPressed()"), self.commitAndCloseEditor)
             editor.setCursorPosition(0)
@@ -1189,7 +1186,7 @@ class MonitoringPointDelegate(QItemDelegate):
             item = editor.text()
             selectionModel = self.table.selectionModel()
             for index in selectionModel.selectedRows(index.column()):
-                model.setData(index, item, Qt.DisplayRole)
+                model.setData(index, to_qvariant(item), Qt.DisplayRole)
                 dico = model.dataMonitoring[index.row()]
                 x = float(dico['X'])
                 y = float(dico['Y'])
@@ -1226,15 +1223,15 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Combo models
 
-        self.modelOutput         = QtPage.ComboModel(self.comboBoxOutput,3,1)
-        self.modelNTLAL          = QtPage.ComboModel(self.comboBoxNTLAL,3,1)
-        self.modelFrequency      = QtPage.ComboModel(self.comboBoxFrequency,4,1)
-        self.modelTimeDependency = QtPage.ComboModel(self.comboBoxTimeDependency,3,1)
-        self.modelFormat         = QtPage.ComboModel(self.comboBoxFormat,2,1)
-        self.modelPolygon        = QtPage.ComboModel(self.comboBoxPolygon,3,1)
-        self.modelPolyhedra      = QtPage.ComboModel(self.comboBoxPolyhedra,3,1)
-        self.modelHisto          = QtPage.ComboModel(self.comboBoxHisto,3,1)
-        self.modelProbeFmt       = QtPage.ComboModel(self.comboBoxProbeFmt,2,1)
+        self.modelOutput         = ComboModel(self.comboBoxOutput,3,1)
+        self.modelNTLAL          = ComboModel(self.comboBoxNTLAL,3,1)
+        self.modelFrequency      = ComboModel(self.comboBoxFrequency,4,1)
+        self.modelTimeDependency = ComboModel(self.comboBoxTimeDependency,3,1)
+        self.modelFormat         = ComboModel(self.comboBoxFormat,2,1)
+        self.modelPolygon        = ComboModel(self.comboBoxPolygon,3,1)
+        self.modelPolyhedra      = ComboModel(self.comboBoxPolyhedra,3,1)
+        self.modelHisto          = ComboModel(self.comboBoxHisto,3,1)
+        self.modelProbeFmt       = ComboModel(self.comboBoxProbeFmt,2,1)
 
         self.modelOutput.addItem(self.tr("No output"), 'None')
         self.modelOutput.addItem(self.tr("Output listing at each time step"), 'At each step')
@@ -1395,13 +1392,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Validators
 
-        validatorNTLIST = QtPage.IntValidator(self.lineEditNTLIST, min=1)
-        validatorNTLAL = QtPage.IntValidator(self.lineEditNTLAL)
-        validatorFrequency = QtPage.IntValidator(self.lineEditFrequency, min=1)
-        validatorNTHIST = QtPage.IntValidator(self.lineEditHisto, min=1)
-        validatorFrequencyTime = QtPage.DoubleValidator(self.lineEditFrequencyTime)
-        validatorFRHIST = QtPage.DoubleValidator(self.lineEditFRHisto)
-        validatorRadius = QtPage.DoubleValidator(self.lineEditProbesRadius, min=0.)
+        validatorNTLIST = IntValidator(self.lineEditNTLIST, min=1)
+        validatorNTLAL = IntValidator(self.lineEditNTLAL)
+        validatorFrequency = IntValidator(self.lineEditFrequency, min=1)
+        validatorNTHIST = IntValidator(self.lineEditHisto, min=1)
+        validatorFrequencyTime = DoubleValidator(self.lineEditFrequencyTime)
+        validatorFRHIST = DoubleValidator(self.lineEditFRHisto)
+        validatorRadius = DoubleValidator(self.lineEditProbesRadius, min=0.)
         validatorRadius.setExclusiveMin(True)
 
         self.lineEditNTLIST.setValidator(validatorNTLIST)
@@ -1544,7 +1541,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         elif listing == "Frequency_l":
             self.lineEditNTLIST.setEnabled(True)
-            ntlist = int(self.lineEditNTLIST.text())
+            ntlist = from_qvariant(self.lineEditNTLIST.text(), int)
             if ntlist < 1:
                 ntlist = 1
                 self.lineEditNTLIST.setText(str(ntlist))
@@ -1572,7 +1569,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         elif listing == "Frequency_l":
             self.lineEditNTLAL.setEnabled(True)
-            ntlist = int(self.lineEditNTLAL.text())
+            ntlist = from_qvariant(self.lineEditNTLAL.text(), int)
             if ntlist < 1:
                 ntlist = 1
                 self.mdl.setListingFrequencyLagrangian(ntlist)
@@ -1585,7 +1582,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Input the frequency of the listing output
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            n = int(text)
+            n = from_qvariant(text, int)
             log.debug("slotListingFrequency-> NTLIST = %s" % n)
             self.mdl.setListingFrequency(n)
 
@@ -1596,7 +1593,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Input the frequency of the listing output for lagrangian variables
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            n = int(text)
+            n = from_qvariant(text, int)
             log.debug("slotNTLAL-> NTLIST = %s" % n)
             self.mdl.setListingFrequencyLagrangian(n)
 
@@ -1841,7 +1838,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
             self.lineEditFrequency.setEnabled(True)
-            n = int(self.lineEditFrequency.text())
+            n = from_qvariant(self.lineEditFrequency.text(), int)
             if self.sender().validator().state == QValidator.Acceptable:
                 log.debug("slotPostproFrequency-> NTCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
@@ -1857,7 +1854,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
             if self.sender().validator().state == QValidator.Acceptable:
-                n = float(text)
+                n = from_qvariant(text, float)
                 log.debug("slotPostproFrequencyTime-> FRCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
@@ -2381,7 +2378,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Input the frequency of the monitoring point output
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            n = float(text)
+            n = from_qvariant(text, float)
             log.debug("slotMonitoringPointFrequencyTime-> FRHIST = %s" % n)
             self.mdl.setMonitoringPointFrequencyTime(n)
 
@@ -2392,7 +2389,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Input the frequency of the monitoring point output
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            n = int(text)
+            n = from_qvariant(text, int)
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
 
@@ -2527,7 +2524,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         @param text: radius for display probes
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            r = float(text)
+            r = from_qvariant(text, float)
             self.case['probes'].setRadius(r)
 
 

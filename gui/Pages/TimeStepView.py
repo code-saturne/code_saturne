@@ -36,10 +36,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -49,8 +45,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from Pages.TimeStepForm import Ui_TimeStepForm
-import Base.QtPage as QtPage
 from Pages.TimeStepModel import TimeStepModel
 from Pages.SteadyManagementModel import SteadyManagementModel
 
@@ -84,7 +80,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
        # Combo model
 
-        self.modelTimeOptions = QtPage.ComboModel(self.comboBoxOptions,2,1)
+        self.modelTimeOptions = ComboModel(self.comboBoxOptions,2,1)
         self.modelTimeOptions.addItem(self.tr("Constant"), '0')
         self.modelTimeOptions.addItem(self.tr("Variable"), '1')
 
@@ -102,17 +98,17 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         # Validators
 
-        validatorDTREF = QtPage.DoubleValidator(self.lineEditDTREF, min=0.0)
+        validatorDTREF = DoubleValidator(self.lineEditDTREF, min=0.0)
         validatorDTREF.setExclusiveMin(True)
-        validatorNTMABS = QtPage.IntValidator(self.lineEditNTMABS, min=1)
-        validatorCOUMAX = QtPage.DoubleValidator(self.lineEditCOUMAX, min=0.0)
+        validatorNTMABS = IntValidator(self.lineEditNTMABS, min=1)
+        validatorCOUMAX = DoubleValidator(self.lineEditCOUMAX, min=0.0)
         validatorCOUMAX.setExclusiveMin(True)
-        validatorFOUMAX = QtPage.DoubleValidator(self.lineEditFOUMAX, min=0.0)
+        validatorFOUMAX = DoubleValidator(self.lineEditFOUMAX, min=0.0)
         validatorFOUMAX.setExclusiveMin(True)
-        validatorCDTMIN = QtPage.DoubleValidator(self.lineEditCDTMIN, min=0.0, max=1.0)
+        validatorCDTMIN = DoubleValidator(self.lineEditCDTMIN, min=0.0, max=1.0)
         validatorCDTMIN.setExclusiveMin(True)
-        validatorCDTMAX = QtPage.DoubleValidator(self.lineEditCDTMAX, min=1.0)
-        validatorVARRDT = QtPage.DoubleValidator(self.lineEditVARRDT, min=0.0, max=1.0)
+        validatorCDTMAX = DoubleValidator(self.lineEditCDTMAX, min=1.0)
+        validatorVARRDT = DoubleValidator(self.lineEditVARRDT, min=0.0, max=1.0)
         validatorVARRDT.setExclusiveMin(True)
 
         self.lineEditDTREF.setValidator(validatorDTREF)
@@ -222,7 +218,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input DTREF.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            time_step = float(text)
+            time_step = from_qvariant(text, float)
             self.mdl.setTimeStep(time_step)
 
 
@@ -232,7 +228,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input NTMABS.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            iteration = int(text)
+            iteration = from_qvariant(text, int)
             self.mdl.setIterationsNumber(iteration)
 
 
@@ -242,7 +238,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input COUMAX.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            courant_max = float(text)
+            courant_max = from_qvariant(text, float)
             self.mdl.setOptions('max_courant_num', courant_max)
 
 
@@ -252,7 +248,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input FOUMAX.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            fourier_max = float(text)
+            fourier_max = from_qvariant(text, float)
             self.mdl.setOptions('max_fourier_num', fourier_max)
 
 
@@ -262,7 +258,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input CDTMIN.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            time_step_min_factor = float(text)
+            time_step_min_factor = from_qvariant(text, float)
             self.mdl.setOptions('time_step_min_factor', time_step_min_factor)
 
 
@@ -272,7 +268,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input CDTMAX.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            time_step_max_factor = float(text)
+            time_step_max_factor = from_qvariant(text, float)
             self.mdl.setOptions('time_step_max_factor', time_step_max_factor)
 
 
@@ -282,7 +278,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input VARRDT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            time_step_var = float(text)
+            time_step_var = from_qvariant(text, float)
             self.mdl.setOptions('time_step_var', time_step_var)
 
 

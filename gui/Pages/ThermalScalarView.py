@@ -38,10 +38,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -51,8 +47,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel
 from Pages.ThermalScalarForm import Ui_ThermalScalarForm
-import Base.QtPage as QtPage
 from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.ElectricalModel import ElectricalModel
 from Pages.CoalCombustionModel import CoalCombustionModel
@@ -92,7 +88,7 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
 
         # combo Model
 
-        self.modelThermal = QtPage.ComboModel(self.comboBoxThermal, 4, 1)
+        self.modelThermal = ComboModel(self.comboBoxThermal, 4, 1)
         self.modelThermal.addItem(self.tr("No thermal scalar"), 'off')
         self.modelThermal.addItem(self.tr("Temperature (Celsius)"), 'temperature_celsius')
         self.modelThermal.addItem(self.tr("Temperature (Kelvin)"), 'temperature_kelvin')

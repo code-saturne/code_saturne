@@ -39,9 +39,6 @@ import sys, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -51,10 +48,10 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import DoubleValidator, ComboModel
+from Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Pages.HeadLossesForm import Ui_HeadLossesForm
 from Pages.LocalizationModel import LocalizationModel, Zone
-import Base.QtPage as QtPage
-from Base.QtPage import DoubleValidator, ComboModel
 from Pages.HeadLossesModel import HeadLossesModel
 
 #-------------------------------------------------------------------------------
@@ -81,13 +78,13 @@ class ValueDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, editor, index):
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
-            value = float(editor.text())
-            model.setData(index, value, Qt.DisplayRole)
+            value = from_qvariant(editor.text(), float)
+            model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Head Losses Zones in a QTreeView
@@ -105,10 +102,10 @@ class StandardItemModelHeadLosses(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
         if role == Qt.DisplayRole:
-            return self.dataHeadLossesZones[index.row()][index.column()]
-        return
+            return to_qvariant(self.dataHeadLossesZones[index.row()][index.column()])
+        return to_qvariant()
 
     def flags(self, index):
         if not index.isValid():
@@ -118,8 +115,8 @@ class StandardItemModelHeadLosses(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -269,7 +266,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setCoefficient(name,'kxx',value )
 
     @pyqtSignature("const QString&")
@@ -280,7 +277,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setCoefficient(name,'kyy',value )
 
     @pyqtSignature("const QString&")
@@ -291,7 +288,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setCoefficient(name,'kzz',value )
 
     @pyqtSignature("bool")
@@ -333,7 +330,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a11',value )
 
     @pyqtSignature("const QString&")
@@ -344,7 +341,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a12',value )
 
     @pyqtSignature("const QString&")
@@ -355,7 +352,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a13',value )
 
     @pyqtSignature("const QString&")
@@ -366,7 +363,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a21',value )
 
     @pyqtSignature("const QString&")
@@ -377,7 +374,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a22',value )
 
     @pyqtSignature("const QString&")
@@ -388,7 +385,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a23',value )
 
     @pyqtSignature("const QString&")
@@ -399,7 +396,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a31',value )
 
     @pyqtSignature("const QString&")
@@ -410,7 +407,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a32',value )
 
     @pyqtSignature("const QString&")
@@ -421,7 +418,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
             if self.sender().validator().state == QValidator.Acceptable:
-                value = float(text)
+                value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a33',value )
 
 

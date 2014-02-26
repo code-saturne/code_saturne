@@ -36,10 +36,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -48,10 +44,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.InitializationForm import Ui_InitializationForm
-
 from Base.Toolbox import GuiParam
 from Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
+
+from Pages.InitializationForm import Ui_InitializationForm
 from Pages.TurbulenceModel import TurbulenceModel
 from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel

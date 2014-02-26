@@ -36,10 +36,6 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -52,7 +48,7 @@ from Pages.BoundaryConditionsSlidingWallForm import Ui_BoundaryConditionsSliding
 from Pages.MobileMeshModel import MobileMeshModel
 
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel
+from Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 
@@ -169,7 +165,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @param text: sliding wall U velocity component.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.__boundary.setVelocityComponent(value, 'velocity_U')
 
 
@@ -184,7 +180,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @param text: sliding wall V velocity component.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.__boundary.setVelocityComponent(value, 'velocity_V')
 
 
@@ -199,7 +195,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @param text: sliding wall W velocity component.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.__boundary.setVelocityComponent(value, 'velocity_W')
 
 

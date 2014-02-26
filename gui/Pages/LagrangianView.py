@@ -39,10 +39,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -51,10 +47,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.LagrangianForm import Ui_LagrangianForm
-from Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, DoubleValidator
+from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from Pages.LagrangianForm import Ui_LagrangianForm
+from Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
 from Pages.LagrangianModel import LagrangianModel
 from Pages.StartRestartModel import StartRestartModel
 
@@ -188,7 +185,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         Input MODCPL.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            self.result['complete_model_iteration'] = int(text)
+            self.result['complete_model_iteration'] = from_qvariant(text, int)
 
 
     @pyqtSignature("const QString&")
@@ -252,7 +249,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -278,7 +275,7 @@ class ValueDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -286,10 +283,10 @@ class ValueDelegate(QItemDelegate):
         if not editor.isModified():
             return
         if editor.validator().state == QValidator.Acceptable:
-            value = float(editor.text())
+            value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, to_qvariant(value), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel for Coals
@@ -334,17 +331,17 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return self.tr("Code_Saturne key word: " + self.kwords[index.column()])
+            return to_qvariant(self.tr("Code_Saturne key word: " + self.kwords[index.column()]))
 
         # Display
         if role == Qt.DisplayRole:
-            return self.dataCoals[index.row()][index.column()]
+            return to_qvariant(self.dataCoals[index.row()][index.column()])
 
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -358,15 +355,15 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
         row = index.row()
         col = index.column()
 
-        val = float(value)
+        val = from_qvariant(value, float)
         self.dataCoals[row][col] = val
 
         if col == 1:
@@ -597,7 +594,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Input NBPMAX.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.setMaxNumber(value)
 
 
@@ -704,7 +701,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Input NSTITS.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.set2WayCouplingStartIteration(value)
 
 

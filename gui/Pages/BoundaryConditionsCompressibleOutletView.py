@@ -36,10 +36,6 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -48,10 +44,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsCompressibleOutletForm import Ui_BoundaryConditionsCompressibleOutletForm
-
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
+from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+
+from Pages.BoundaryConditionsCompressibleOutletForm import \
+     Ui_BoundaryConditionsCompressibleOutletForm
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 from Pages.CompressibleModel import CompressibleModel
@@ -160,7 +157,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         INPUT outlet pressure
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            t = float(text)
+            t = from_qvariant(text, float)
             self.__boundary.setPressureValue(t)
 
 

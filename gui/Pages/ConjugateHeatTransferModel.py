@@ -97,7 +97,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         @rtype: C{List}
         """
         node_list = self.__node_syr.xmlGetNodeList('syrthes')
-        list = []
+        lst = []
         for index in range(len(node_list)):
             num = index + 1
             syrthes_name  = self.getSyrthesInstanceName(num)
@@ -105,10 +105,10 @@ class ConjugateHeatTransferModel(Variables, Model):
             visualization = self.getSyrthesVisualization(num)
             proj_axis     = self.getSyrthesProjectionAxis(num)
             location      = self.getSelectionCriteria(num)
-            list.append([syrthes_name, verbosity, visualization,
+            lst.append([syrthes_name, verbosity, visualization,
                          proj_axis, location])
 
-        return list
+        return lst
 
 
     @Variables.undoGlobal

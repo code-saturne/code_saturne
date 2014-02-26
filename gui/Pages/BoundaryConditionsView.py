@@ -48,7 +48,7 @@ from PyQt4.QtGui  import *
 from Pages.BoundaryConditionsForm import Ui_BoundaryConditionsForm
 
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel
+from Base.QtPage import DoubleValidator, ComboModel, to_qvariant
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 from Pages.MobileMeshModel import MobileMeshModel
@@ -78,10 +78,10 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
         if role == Qt.DisplayRole:
-            return self.dataBoundary[index.row()][index.column()]
-        return
+            return to_qvariant(self.dataBoundary[index.row()][index.column()])
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -93,8 +93,8 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -140,9 +140,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         # Fill the model with the boundary zone
 
         if MobileMeshModel(self.__case).getMethod() == "off":
-            list = ('wall', 'inlet', 'outlet')
+            lst = ('wall', 'inlet', 'outlet')
         else:
-            list = ('wall', 'inlet', 'outlet', 'symmetry')
+            lst = ('wall', 'inlet', 'outlet', 'symmetry')
 
         d = LocalizationModel('BoundaryZone', self.__case)
         for zone in d.getZones():
@@ -150,7 +150,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             nature = zone.getNature()
             codeNumber = zone.getCodeNumber()
             local = zone.getLocalization()
-            if nature in list:
+            if nature in lst:
                 self.__modelBoundaries.insertItem(label, codeNumber, nature, local)
 
         self.connect(self.treeViewBoundaries,

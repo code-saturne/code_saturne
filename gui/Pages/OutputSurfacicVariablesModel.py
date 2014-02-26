@@ -133,11 +133,11 @@ class OutputSurfacicVariablesModel(Model):
         """
         Return list of labels for all properties .....Only for the View
         """
-        list = []
+        lst = []
         for nodeList in self.listNodeSurface:
             for node in nodeList:
-                list.append(node['label'])
-        return list
+                lst.append(node['label'])
+        return lst
 
 
     @Variables.undoLocal

@@ -334,28 +334,28 @@ class NumericalParamEquatModel(Model):
     @Variables.noUndo
     def getClippingList(self):
         """ Return the variables label list for clipping parameters """
-        list = []
+        lst = []
         for node in self._getClippingNodesList():
             for n in node:
                 if n['type'] != 'model':
-                    list.append(n['label'])
-        return list
+                    lst.append(n['label'])
+        return lst
 
 
     @Variables.noUndo
     def getSchemeList(self):
         """ Return the variables label list for scheme parameters """
-        list = []
+        lst = []
         for node in self._getSchemeNodesList():
             for n in node:
-                list.append(n['label'])
-        return list
+                lst.append(n['label'])
+        return lst
 
 
     @Variables.noUndo
     def getSolverList(self):
         """ Return the variables label list for solver parameters """
-        list = []
+        lst = []
         from Pages.CompressibleModel import CompressibleModel
         comp_model = CompressibleModel(self.case).getCompressibleModel()
         del CompressibleModel
@@ -364,11 +364,11 @@ class NumericalParamEquatModel(Model):
             for n in node:
                 if self._isPressure(n):
                     if comp_model == 'off':
-                        list.append(n['label'])
+                        lst.append(n['label'])
                 else:
-                    list.append(n['label'])
+                    lst.append(n['label'])
 
-        return list
+        return lst
 
 
     def isScalar(self, label):

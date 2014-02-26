@@ -86,7 +86,8 @@ except:
 from Pages.WelcomeView import WelcomeView
 from Pages.IdentityAndPathesModel import IdentityAndPathesModel
 from Pages.XMLEditorView import XMLEditorView
-from Base.QtPage import setGreenColor
+from Base.QtPage import setGreenColor, getexistingdirectory
+from Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 
 
 #-------------------------------------------------------------------------------
@@ -238,10 +239,10 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         dataPath = os.path.join(path, "..", "DATA")
         if os.path.isdir(dataPath): path = datapath
 
-        dirName = str(QFileDialog.getExistingDirectory(self, title,
-                                                       path,
-                                                       QFileDialog.ShowDirsOnly |
-                                                       QFileDialog.DontResolveSymlinks))
+        dirName = getexistingdirectory(self, title,
+                                       path,
+                                       QFileDialog.ShowDirsOnly |
+                                       QFileDialog.DontResolveSymlinks)
         if not dirName:
             self.copyFromName = None
         else:
@@ -391,13 +392,23 @@ class MainView(object):
 
         settings = QSettings()
 
-        if settings.value("RecentFiles", []) is not None:
-            self.recentFiles = settings.value("RecentFiles", [])
-        else:
-            self.recentFiles = []
-
-        self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray()))
-        self.restoreState(settings.value("MainWindow/State", QByteArray()))
+        try:
+            self.recentFiles = settings.value("RecentFiles", [], type=QStringList)
+            self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray(), type=QByteArray))
+            self.restoreState(settings.value("MainWindow/State", QByteArray(), type=QByteArray))
+        except:
+            if settings.value("RecentFiles", []) is not None:
+                try:
+                    recentFiles = settings.value("RecentFiles").toStringList()
+                    self.recentFiles = []
+                    for f in recentFiles:
+                        self.recentFiles.append(str(f))
+                except:
+                    self.recentFiles = list(settings.value("RecentFiles", []))
+            else:
+                self.recentFiles = []
+            self.restoreGeometry(from_qvariant(settings.value("MainWindow/Geometry", QByteArray()), to_text_string))
+            self.restoreState(from_qvariant(settings.value("MainWindow/State", QByteArray()), to_text_string))
 
         color = settings.value("MainWindow/Color",
                   self.palette().color(QPalette.Window).name())
@@ -412,7 +423,7 @@ class MainView(object):
 
         if f:
             font = QFont()
-            if (font.fromString(f)):
+            if (font.fromString(from_qvariant(f, to_text_string))):
                 self.setFont(font)
                 app = QCoreApplication.instance()
                 app.setFont(font)
@@ -551,7 +562,8 @@ class MainView(object):
             if self.recentFiles:
                 recentFiles = self.recentFiles
             else:
-                recentFiles = None
+                recentFiles = []
+
             settings.setValue("RecentFiles", recentFiles)
             settings.setValue("MainWindow/Geometry",
                               self.saveGeometry())
@@ -833,7 +845,7 @@ class MainView(object):
 
         filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
 
-        file_name = str(QFileDialog.getOpenFileName(self, title, path, filetypes))
+        file_name = str(getopenfilename(self, title, path, filetypes))
 
         if not file_name:
             msg = self.tr("Loading aborted")
@@ -955,10 +967,10 @@ class MainView(object):
 
         if hasattr(self,'case'):
             filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
-            fname = str(QFileDialog.getSaveFileName(self,
-                                                    self.tr("Save File As"),
-                                                    self.case['data_path'],
-                                                    filetypes))
+            fname = str(getsavefilename(self,
+                                        self.tr("Save File As"),
+                                        self.case['data_path'],
+                                        filetypes))
 
             if fname:
                 f = str(fname)

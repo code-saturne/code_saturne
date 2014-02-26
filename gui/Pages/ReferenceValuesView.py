@@ -38,10 +38,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -51,8 +47,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from Pages.ReferenceValuesForm import Ui_ReferenceValuesForm
-import Base.QtPage as QtPage
 from Pages.ReferenceValuesModel import ReferenceValuesModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.CompressibleModel import CompressibleModel
@@ -89,7 +85,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.mdl = ReferenceValuesModel(self.case)
 
         # Combo models
-        self.modelLength = QtPage.ComboModel(self.comboBoxLength,2,1)
+        self.modelLength = ComboModel(self.comboBoxLength,2,1)
         self.modelLength.addItem(self.tr("Automatic"), 'automatic')
         self.modelLength.addItem(self.tr("Prescribed"), 'prescribed')
         self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
@@ -106,28 +102,28 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
 
         # Validators
 
-        validatorP0 = QtPage.DoubleValidator(self.lineEditP0, min=0.0)
+        validatorP0 = DoubleValidator(self.lineEditP0, min=0.0)
         self.lineEditP0.setValidator(validatorP0)
 
-        validatorV0 = QtPage.DoubleValidator(self.lineEditV0, min=0.0)
+        validatorV0 = DoubleValidator(self.lineEditV0, min=0.0)
         self.lineEditV0.setValidator(validatorV0)
 
-        validatorL0 = QtPage.DoubleValidator(self.lineEditL0, min=0.0)
+        validatorL0 = DoubleValidator(self.lineEditL0, min=0.0)
         self.lineEditL0.setValidator(validatorL0)
 
-        validatorT0 = QtPage.DoubleValidator(self.lineEditT0,  min=0.0)
+        validatorT0 = DoubleValidator(self.lineEditT0,  min=0.0)
         validatorT0.setExclusiveMin(True)
         self.lineEditT0.setValidator(validatorT0)
 
-        validatorOxydant = QtPage.DoubleValidator(self.lineEditOxydant,  min=0.0)
+        validatorOxydant = DoubleValidator(self.lineEditOxydant,  min=0.0)
         validatorOxydant.setExclusiveMin(True)
         self.lineEditOxydant.setValidator(validatorOxydant)
 
-        validatorFuel = QtPage.DoubleValidator(self.lineEditFuel,  min=0.0)
+        validatorFuel = DoubleValidator(self.lineEditFuel,  min=0.0)
         validatorFuel.setExclusiveMin(True)
         self.lineEditFuel.setValidator(validatorFuel)
 
-        validatorMM = QtPage.DoubleValidator(self.lineEditMassMolar, min=0.0)
+        validatorMM = DoubleValidator(self.lineEditMassMolar, min=0.0)
         validatorMM.setExclusiveMin(True)
         self.lineEditMassMolar.setValidator(validatorMM)
 
@@ -205,7 +201,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         Input PRESS.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            p = float(text)
+            p = from_qvariant(text, float)
             self.mdl.setPressure(p)
 
 
@@ -215,7 +211,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         Input Velocity.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            v = float(text)
+            v = from_qvariant(text, float)
             self.mdl.setVelocity(v)
 
 
@@ -242,7 +238,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         Input reference length.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            l = float(text)
+            l = from_qvariant(text, float)
             self.mdl.setLength(l)
 
 
@@ -252,7 +248,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         Input TEMPERATURE.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            t = float(text)
+            t = from_qvariant(text, float)
             self.mdl.setTemperature(t)
 
 
@@ -262,7 +258,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         Input oxydant TEMPERATURE.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            t = float(text)
+            t = from_qvariant(text, float)
             self.mdl.setTempOxydant(t)
 
 
@@ -272,7 +268,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         Input fuel TEMPERATURE.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            t = float(text)
+            t = from_qvariant(text, float)
             self.mdl.setTempFuel(t)
 
 
@@ -282,7 +278,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         Input Mass molar.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            m = float(text)
+            m = from_qvariant(text, float)
             self.mdl.setMassemol(m)
 
 

@@ -53,7 +53,7 @@ from PyQt4.QtGui  import *
 
 from CommandMgrDialogForm import Ui_CommandMgrDialogForm
 from CommandMgrLinesDisplayedDialogForm import Ui_CommandMgrLinesDisplayedDialogForm
-from QtPage import IntValidator
+from QtPage import IntValidator, from_qvariant, to_text_string
 
 #-------------------------------------------------------------------------------
 # log config
@@ -106,7 +106,7 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
         """
         Private slot. Manage the number of lines allowed in the display zone.
         """
-        lines = int(text)
+        lines = from_qvariant(text, int)
         if self.sender().validator().state == QValidator.Acceptable:
             self.lines = lines
 

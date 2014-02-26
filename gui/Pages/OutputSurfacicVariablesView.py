@@ -45,8 +45,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
-import Base.QtPage as QtPage
 from Pages.OutputControlModel import OutputControlModel
 from Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
 from Pages.OutputVolumicVariablesView import LabelDelegate
@@ -99,29 +99,29 @@ class StandardItemModelOutput(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
 
         # ToolTips BUG
         if role == Qt.ToolTipRole:
             if index.column() == 0 and index.column() > 3:
-                return self.tr("Code_Saturne keyword: nbrvaf")
+                return to_qvariant(self.tr("Code_Saturne keyword: nbrvaf"))
             elif index.column() == 1 and index.column() > 3:
-                return self.tr("Code_Saturne keyword: irayvf")
+                return to_qvariant(self.tr("Code_Saturne keyword: irayvf"))
             elif index.column() == 1 and index.column() <= 3:
-                return self.tr("Code_Saturne keyword: ipstdv")
+                return to_qvariant(self.tr("Code_Saturne keyword: ipstdv"))
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 1:
-                return "Post-processing"
+                return to_qvariant("Post-processing")
 
         # Display
         if role == Qt.DisplayRole:
             row = index.row()
             if index.column() == 0:
-                return self.dataLabel[row]
+                return to_qvariant(self.dataLabel[row])
             else:
-                return
+                return to_qvariant()
 
         # CheckState
         if role == Qt.CheckStateRole:
@@ -129,11 +129,11 @@ class StandardItemModelOutput(QStandardItemModel):
             if index.column() == 1:
                 value = self.dataPost[row]
                 if value == 'on':
-                    return Qt.Checked
+                    return to_qvariant(Qt.Checked)
                 else:
-                    return Qt.Unchecked
+                    return to_qvariant(Qt.Unchecked)
 
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -153,22 +153,22 @@ class StandardItemModelOutput(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return self.tr("Name")
+                return to_qvariant(self.tr("Name"))
             elif section == 1:
-                return self.tr("Post-\nprocessing")
-        return
+                return to_qvariant(self.tr("Post-\nprocessing"))
+        return to_qvariant()
 
 
     def setData(self, index, value, role=None):
         row = index.row()
         if index.column() == 0:
-            label = str(value)
+            label = str(from_qvariant(value, to_text_string))
             if label == "": label = self.dataLabel[row]
             self.mdl.setPropertyLabel(self.dataLabel[row], label)
             self.dataLabel[row] = label
 
         elif index.column() == 1:
-            v = int(value)
+            v = from_qvariant(value, int)
             if v == Qt.Checked:
                 self.dataPost[row] = "on"
             else:

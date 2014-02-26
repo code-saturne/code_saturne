@@ -36,10 +36,6 @@ import logging, os
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -49,10 +45,9 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from GasCombustionForm import Ui_GasCombustionForm
-import Base.QtPage as QtPage
+from Base.QtPage import ComboModel, setGreenColor
+from Pages.GasCombustionForm import Ui_GasCombustionForm
 from Pages.GasCombustionModel import GasCombustionModel
-from Base.QtPage import setGreenColor
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,7 +81,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.mdl = GasCombustionModel(self.case)
 
         # Set models and number of elements for combo boxes
-        self.modelGasCombustionOption = QtPage.ComboModel(self.comboBoxGasCombustionOption,1,1)
+        self.modelGasCombustionOption = ComboModel(self.comboBoxGasCombustionOption,1,1)
 
         # Connections
         self.connect(self.comboBoxGasCombustionOption, SIGNAL("activated(const QString&)"), self.slotGasCombustionOption)

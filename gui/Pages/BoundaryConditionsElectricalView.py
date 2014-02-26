@@ -36,10 +36,6 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -48,11 +44,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from Base.Toolbox import GuiParam
+from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+
 from Pages.BoundaryConditionsElectricalForm import Ui_BoundaryConditionsElectricalForm
 from Pages.ElectricalModel import ElectricalModel
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.QMeiEditorView import QMeiEditorView
 from Pages.Boundary import Boundary
@@ -289,7 +286,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             self.__b.setElecScalarValue(self.potElec, self.potElec_type, value)
 
 
@@ -298,7 +295,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
 
@@ -307,7 +304,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(var)
+            value = from_qvariant(var, float)
             self.__b.setElecScalarValue(self.species, 'dirichlet', value)
 
 

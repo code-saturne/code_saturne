@@ -38,10 +38,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -52,7 +48,7 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox   import GuiParam
 from Pages.MobileMeshForm  import Ui_MobileMeshForm
-from Base.QtPage    import setGreenColor, IntValidator,  ComboModel
+from Base.QtPage    import setGreenColor, IntValidator,  ComboModel, from_qvariant
 from Pages.MobileMeshModel import MobileMeshModel
 
 from Pages.QMeiEditorView import QMeiEditorView
@@ -192,7 +188,7 @@ if (xray2 < xr2) {
         Input viscosity type of mesh : isotrop or orthotrop.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            nalinf = int(text)
+            nalinf = from_qvariant(text, int)
             self.mdl.setSubIterations(nalinf)
 
 

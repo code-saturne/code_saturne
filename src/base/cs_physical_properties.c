@@ -103,7 +103,7 @@ typedef struct {
                                                        * 1 for freesteam
                                                        * 2 (other) */
   cs_phys_prop_thermo_plane_type_t   thermo_plane;
-  int          temp_scale                             /* temperature scale if needed
+  int          temp_scale;                            /* temperature scale if needed
                                                        *     1 for kelvin
                                                        *     2 for Celsius */
 

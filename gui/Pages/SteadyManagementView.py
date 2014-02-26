@@ -38,10 +38,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -52,7 +48,7 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from Pages.SteadyManagementForm import Ui_SteadyManagementForm
-import Base.QtPage as QtPage
+from Base.QtPage import DoubleValidator, IntValidator, from_qvariant
 from Base.XMLvariables import Variables
 from Pages.SteadyManagementModel import SteadyManagementModel
 
@@ -93,11 +89,11 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
 
         # Validators
 
-        validatorRELXST = QtPage.DoubleValidator(self.lineEditRELXST, min=0.0, max=1.0)
+        validatorRELXST = DoubleValidator(self.lineEditRELXST, min=0.0, max=1.0)
         validatorRELXST.setExclusiveMin(True)
         self.lineEditRELXST.setValidator(validatorRELXST)
 
-        validatorNTMABS = QtPage.IntValidator(self.lineEditNTMABS, min=0)
+        validatorNTMABS = IntValidator(self.lineEditNTMABS, min=0)
         self.lineEditNTMABS.setValidator(validatorNTMABS)
 
         # Initialization
@@ -122,7 +118,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         Input relaxation coefficient.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            relax_coef = float(text)
+            relax_coef = from_qvariant(text, float)
             self.mdl.setRelaxCoefficient(relax_coef)
 
 
@@ -132,7 +128,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         Input itarations number.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            nb_iter = int(text)
+            nb_iter = from_qvariant(text, int)
             self.mdl.setNbIter(nb_iter)
 
 

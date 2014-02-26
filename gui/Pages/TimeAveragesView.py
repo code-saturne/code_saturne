@@ -38,10 +38,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -52,8 +48,8 @@ from PyQt4.QtGui  import *
 
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
+from Base.QtPage import IntValidator, RegExpValidator, ComboModel, to_qvariant, from_qvariant
 from Pages.TimeAveragesForm import Ui_TimeAveragesForm
-from Base.QtPage import IntValidator, RegExpValidator, ComboModel
 from Pages.StartRestartModel import StartRestartModel
 from Pages.TimeAveragesModel import TimeAveragesModel
 
@@ -84,12 +80,12 @@ class StandardItemModelAverage(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
         if role == Qt.DisplayRole:
-            return self.dataAverage[index.row()][index.column()]
+            return to_qvariant(self.dataAverage[index.row()][index.column()])
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
-        return
+            return to_qvariant(Qt.AlignCenter)
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -101,10 +97,10 @@ class StandardItemModelAverage(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
+            return to_qvariant(self.headers[section])
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
-        return
+            return to_qvariant(Qt.AlignCenter)
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -112,13 +108,13 @@ class StandardItemModelAverage(QStandardItemModel):
         return True
 
 
-    def addItem(self, label, ntdmom, imoold, list):
+    def addItem(self, label, ntdmom, imoold, lst):
         """
         Add a row in the table.
         """
         row = self.rowCount()
         imom = row + 1
-        item = [imom, label, ntdmom, imoold, list]
+        item = [imom, label, ntdmom, imoold, lst]
         self.dataAverage.append(item)
         if row +1 > 50:
             title = self.tr("Information")
@@ -128,12 +124,12 @@ class StandardItemModelAverage(QStandardItemModel):
             self.setRowCount(row+1)
 
 
-    def replaceItem(self, row, label, ntdmom, imoold, list):
+    def replaceItem(self, row, label, ntdmom, imoold, lst):
         """
         Replace a row in the table.
         """
         imom = row + 1
-        self.dataAverage[row] = [imom, label, ntdmom, imoold, list]
+        self.dataAverage[row] = [imom, label, ntdmom, imoold, lst]
 
 
     def deleteRow(self, row):
@@ -285,7 +281,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         Return an integer for ntdmom, value of start of calculation.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            start = int(text)
+            start = from_qvariant(text, int)
             self.start = start
         else:
             self.start = self.mdl.defaultValues()['start']
@@ -314,7 +310,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         Return an integer for imoold, value of restart of calculation.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            restart = int(text)
+            restart = from_qvariant(text, int)
             self.restart = restart
         else:
             self.restart = self.mdl.defaultValues()['restart']

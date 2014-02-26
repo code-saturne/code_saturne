@@ -39,10 +39,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -53,9 +49,9 @@ from PyQt4.QtGui  import *
 
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
-from Pages.ProfilesForm import Ui_ProfilesForm
 from Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from Base.QtPage import setGreenColor
+from Base.QtPage import setGreenColor, to_qvariant, from_qvariant
+from Pages.ProfilesForm import Ui_ProfilesForm
 from Pages.ProfilesModel import ProfilesModel
 from Pages.QMeiEditorView import QMeiEditorView
 
@@ -83,12 +79,12 @@ class StandardItemModelProfile(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
         if role == Qt.DisplayRole:
-            return self.dataProfile[index.row()][index.column()]
+            return to_qvariant(self.dataProfile[index.row()][index.column()])
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
-        return
+            return to_qvariant(Qt.AlignCenter)
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -101,12 +97,12 @@ class StandardItemModelProfile(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return self.tr("Filename")
+                return to_qvariant(self.tr("Filename"))
             elif section == 1:
-                return self.tr("Variables")
+                return to_qvariant(self.tr("Variables"))
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
-        return
+            return to_qvariant(Qt.AlignCenter)
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -300,7 +296,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         elif choice == "frequency":
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
-            nfreq = int(self.lineEditFreq.text())
+            nfreq = from_qvariant(self.lineEditFreq.text(), int)
             if nfreq == -1: nfreq = 1
             self.lineEditFreq.setEnabled(True)
             self.lineEditFreq.setText(str(nfreq))
@@ -313,7 +309,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             if self.lineEditFreqTime.text() == "":
                 nfreq = 1.
             else:
-                nfreq = float(self.lineEditFreqTime.text())
+                nfreq = from_qvariant(self.lineEditFreqTime.text(), float)
             self.lineEditFreqTime.setText(str(nfreq))
             self.labelBaseName.setText("Filename")
 
@@ -383,7 +379,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             format = self.slotFormatType(self.comboBoxFormat.currentText())
             title = str(self.lineEditTitle.text())
             if not title: title = label
-            nb_point = int(self.lineEditNbPoint.text())
+            nb_point = from_qvariant(self.lineEditNbPoint.text(), int)
             formula = self.line_formula
 
             self.mdl.setProfile(label, title, format, var_prof, choice, freq, formula, nb_point)
@@ -450,7 +446,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 format = self.slotFormatType(self.comboBoxFormat.currentText())
                 title = str(self.lineEditTitle.text())
                 if not title: title = new_label
-                nb_point = int(self.lineEditNbPoint.text())
+                nb_point = from_qvariant(self.lineEditNbPoint.text(), int)
                 formula = self.line_formula
 
                 self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, choice, freq, formula, nb_point)

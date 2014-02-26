@@ -37,10 +37,6 @@ This module defines the following classes:
 
 import sys
 
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
-
 from PyQt4 import QtGui, QtCore
 
 #-------------------------------------------------------------------------------

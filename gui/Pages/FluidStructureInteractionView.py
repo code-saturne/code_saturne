@@ -45,10 +45,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import Qt, SIGNAL, pyqtSignature
 from PyQt4.QtGui  import QDialog, QHeaderView, QStandardItemModel, QWidget
@@ -58,8 +54,9 @@ from PyQt4.QtGui  import QAbstractItemView, QItemSelectionModel, QValidator
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from Base.QtPage                          import DoubleValidator, IntValidator
+from Base.QtPage                          import to_qvariant, from_qvariant
 from Pages.FluidStructureInteractionForm  import Ui_FluidStructureInteractionForm
-from Base                                 import QtPage
 from Pages.FluidStructureInteractionModel import FluidStructureInteractionModel
 from Pages.LocalizationModel              import LocalizationModel
 from Pages.Boundary                       import Boundary
@@ -122,15 +119,15 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         """
         Set the validator
         """
-        validator = QtPage.DoubleValidator(self.lineEditDisplacementAlpha,
-                                           min=0.0)
+        validator = DoubleValidator(self.lineEditDisplacementAlpha,
+                                    min=0.0)
         self.lineEditDisplacementAlpha.setValidator(validator)
 
-        validator = QtPage.DoubleValidator(self.lineEditDisplacementBeta,
-                                           min=0.0)
+        validator = DoubleValidator(self.lineEditDisplacementBeta,
+                                    min=0.0)
         self.lineEditDisplacementBeta.setValidator(validator)
 
-        validator = QtPage.DoubleValidator(self.lineEditStressAlpha, min=0.0)
+        validator = DoubleValidator(self.lineEditStressAlpha, min=0.0)
         self.lineEditStressAlpha.setValidator(validator)
 
 
@@ -229,9 +226,9 @@ class StandardItemModel(QStandardItemModel):
         if index.isValid() and role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
-            return self.__data[row][col]
+            return to_qvariant(self.__data[row][col])
 
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -246,8 +243,8 @@ class StandardItemModel(QStandardItemModel):
         Return the header column data.
         """
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -370,7 +367,7 @@ class LineEditCoupling(Coupling):
         Coupling.__init__(self, lineEdit, getter, setter)
 
         # Add validator.
-        validator = QtPage.DoubleValidator(lineEdit)
+        validator = DoubleValidator(lineEdit)
         lineEdit.setValidator(validator)
         lineEdit.connect(lineEdit, SIGNAL("textChanged(const QString &)"),
                          self.__slotTextChanged)
@@ -749,10 +746,10 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         Add the validator for NALIMX and EPALIM
         """
-        validatorNALIMX = QtPage.IntValidator(self.lineEditNALIMX, min=1)
+        validatorNALIMX = IntValidator(self.lineEditNALIMX, min=1)
         self.lineEditNALIMX.setValidator(validatorNALIMX)
 
-        validatorEPALIM = QtPage.DoubleValidator(self.lineEditEPALIM, min=0.0)
+        validatorEPALIM = DoubleValidator(self.lineEditEPALIM, min=0.0)
         validatorEPALIM.setExclusiveMin(True)
         self.lineEditEPALIM.setValidator(validatorEPALIM)
 
@@ -811,7 +808,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         Input viscosity type of mesh : isotrop or orthotrop.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            nalimx = int(text)
+            nalimx = from_qvariant(text, int)
             self.__model.setMaxIterations(nalimx)
 
 
@@ -821,7 +818,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         Input viscosity type of mesh : isotrop or orthotrop.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            epalim = float(text)
+            epalim = from_qvariant(text, float)
             self.__model.setPrecision(epalim)
 
 

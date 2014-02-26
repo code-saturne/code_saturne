@@ -142,17 +142,17 @@ class MeshModel:
         @return: List of number, format and description for view of popup.
         @rtype: C{List} of C{2-tuple}
         """
-        list = [('ensight', 'EnSight',          ' (*.case)' ),
-                ('cgns',    'CGNS',             ' (*.cgns)' ),
-                ('des',     'Simail/NOPO',      ' (*.des)'  ),
-                ('med',     'MED',              ' (*.med)'  ),
-                ('gmsh',    'Gmsh',             ' (*.msh)'  ),
-                ('gambit',  'GAMBIT Neutral',   ' (*.neu)'  ),
-                ('ccm',     'STAR-CCM+',        ' (*.ccm)'  ),
-                ('ngeom',   'pro-STAR/STAR4',   ' (*.ngeom)'),
-                ('ideas',   'I-deas universal', ' (*.unv)'  )]
+        lst = [('ensight', 'EnSight',          ' (*.case)' ),
+               ('cgns',    'CGNS',             ' (*.cgns)' ),
+               ('des',     'Simail/NOPO',      ' (*.des)'  ),
+               ('med',     'MED',              ' (*.med)'  ),
+               ('gmsh',    'Gmsh',             ' (*.msh)'  ),
+               ('gambit',  'GAMBIT Neutral',   ' (*.neu)'  ),
+               ('ccm',     'STAR-CCM+',        ' (*.ccm)'  ),
+               ('ngeom',   'pro-STAR/STAR4',   ' (*.ngeom)'),
+               ('ideas',   'I-deas universal', ' (*.unv)'  )]
 
-        return list
+        return lst
 
 
     def getFileFormatList(self):
@@ -162,18 +162,18 @@ class MeshModel:
         @return: List of format and associated text for research file.
         @rtype: C{List} of C{2-tuple}
         """
-        list = [("All files",                 "*"      ),
-                ("EnSight (6 or Gold) files", "*.case" ),
-                ("CGNS files",                "*.cgns" ),
-                ("Simail (NOPO) files",       "*.des"  ),
-                ("MED files",                 "*.med"  ),
-                ("GMSH files",                "*.msh"  ),
-                ("GAMBIT Neutral files",      "*.neu"  ),
-                ("STAR-CCM+",                 "*.ccm"  ),
-                ("pro-STAR/STAR4 files",      "*.ngeom"),
-                ("I-deas universal files",    "*.unv"  )]
+        lst = [("All files",                 "*"      ),
+               ("EnSight (6 or Gold) files", "*.case" ),
+               ("CGNS files",                "*.cgns" ),
+               ("Simail (NOPO) files",       "*.des"  ),
+               ("MED files",                 "*.med"  ),
+               ("GMSH files",                "*.msh"  ),
+               ("GAMBIT Neutral files",      "*.neu"  ),
+               ("STAR-CCM+",                 "*.ccm"  ),
+               ("pro-STAR/STAR4 files",      "*.ngeom"),
+               ("I-deas universal files",    "*.unv"  )]
 
-        return list
+        return lst
 
 
 #-------------------------------------------------------------------------------

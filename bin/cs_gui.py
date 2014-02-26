@@ -41,12 +41,13 @@ if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
-    sip.setapi('QVariant', 2)
-    sip.setapi('QTime', 2)
-    sip.setapi('QUrl', 2)
+# to use PyQt API 2
+#if sys.version_info[0] == 2:
+#    import sip
+#    sip.setapi('QString', 2)
+#    sip.setapi('QVariant', 2)
+#    sip.setapi('QTime', 2)
+#    sip.setapi('QUrl', 2)
 
 try:
     from PyQt4.QtCore import *

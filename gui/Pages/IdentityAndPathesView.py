@@ -37,11 +37,6 @@ This module contains the following classes:
 import os, string
 import logging
 
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
-
 from PyQt4 import QtGui, QtCore
 
 #-------------------------------------------------------------------------------
@@ -49,8 +44,7 @@ from PyQt4 import QtGui, QtCore
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from IdentityAndPathesForm import Ui_IdentityAndPathesForm
-import Base.QtPage as QtPage
+from Pages.IdentityAndPathesForm import Ui_IdentityAndPathesForm
 from Pages.IdentityAndPathesModel import IdentityAndPathesModel
 
 #-------------------------------------------------------------------------------

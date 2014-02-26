@@ -39,10 +39,6 @@ import sys, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -52,9 +48,9 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from Pages.TurbulenceForm import Ui_TurbulenceForm
 from Pages.TurbulenceAdvancedOptionsDialogForm import Ui_TurbulenceAdvancedOptionsDialogForm
-import Base.QtPage as QtPage
 from Pages.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
@@ -105,14 +101,14 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         if default['model'] == 'Spalart-Allmaras' or \
            default['model'] == 'v2f-BL-v2/k' or \
            default['model'] == 'Rij-EBRSM':
-            self.modelScales = QtPage.ComboModel(self.comboBoxScales, 1, 1)
+            self.modelScales = ComboModel(self.comboBoxScales, 1, 1)
             self.modelScales.addItem(self.tr("One scale model"), '0')
             self.checkBoxGravity.setChecked(False)
             self.checkBoxGravity.setEnabled(False)
             self.comboBoxScales.setEnabled(False)
         else:
             # Combo
-            self.modelScales = QtPage.ComboModel(self.comboBoxScales, 3, 1)
+            self.modelScales = ComboModel(self.comboBoxScales, 3, 1)
 
             self.modelScales.addItem(self.tr("One scale model"), '0')
             self.modelScales.addItem(self.tr("Two scale model"), '1')
@@ -186,7 +182,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         # Combo model
 
-        self.modelTurbModel = QtPage.ComboModel(self.comboBoxTurbModel,10,1)
+        self.modelTurbModel = ComboModel(self.comboBoxTurbModel,10,1)
 
         self.modelTurbModel.addItem(self.tr("No model (i.e. laminar flow)"), "off")
         self.modelTurbModel.addItem(self.tr("Mixing length"), "mixing_length")
@@ -215,7 +211,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         # Validator
 
-        validator = QtPage.DoubleValidator(self.lineEditLength, min=0.0)
+        validator = DoubleValidator(self.lineEditLength, min=0.0)
         validator.setExclusiveMin(True)
         self.lineEditLength.setValidator(validator)
 
@@ -247,7 +243,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         Input XLOMLG.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            l_scale = float(text)
+            l_scale = from_qvariant(text, float)
             self.model.setLengthScale(l_scale)
 
 

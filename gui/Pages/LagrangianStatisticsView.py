@@ -33,17 +33,11 @@ This module contains the following classes and function:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-
 import logging
-
 
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -53,10 +47,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-
-from Pages.LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, DoubleValidator
+from Base.QtPage import from_qvariant, to_text_string
+from Pages.LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
 from Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
 from Pages.LagrangianModel import LagrangianModel
 
@@ -158,16 +152,17 @@ class StandardItemModelVolumicNames(QStandardItemModel):
     def setData(self, index, value, role):
         #
         if index.column() == 0:
-            self.dataVolumicNames[index.row()][index.column()] =  str(value)
+            self.dataVolumicNames[index.row()][index.column()] = \
+                        str(from_qvariant(value, to_text_string))
             vname = self.dataVolumicNames[index.row()][0]
 
         elif index.column() == 1:
-            labelv = str(value)
+            labelv = str(from_qvariant(value, to_text_string))
             self.dataVolumicNames[index.row()][index.column()] = labelv
             name = self.dataVolumicNames[index.row()][0]
 
         elif index.column() == 2:
-            v = int(value)
+            v = from_qvariant(value, int)
             if v == Qt.Unchecked:
                 status = "off"
                 self.dataVolumicNames[index.row()][index.column()] = "off"
@@ -261,7 +256,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
     def setData(self, index, value, role):
 
         if index.column() == 1:
-            v = int(value)
+            v = from_qvariant(value, int)
             if v == Qt.Unchecked:
                 status = "off"
                 self.dataBoundariesNames[index.row()][index.column()] = "off"
@@ -412,7 +407,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input NBCLST.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.setGroupOfParticlesValue(value)
 
 
@@ -449,14 +444,14 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         if self.sender().validator().state == QValidator.Acceptable:
             text = self.lineEditIDSTNT.text()
-            value = int(text)
+            value = from_qvariant(text, int)
             valnds =  self.model.getIterSteadyStartVolume()
 
             if value > valnds:
                 self.lineEditNSTIST.setText(str(value))
                 self.model.setIterSteadyStartVolume(value)
             else:
-                valndsl = int(self.lineEditNSTIST.text())
+                valndsl = from_qvariant(self.lineEditNSTIST.text(), int)
                 self.model.setIterSteadyStartVolume(valndsl)
 
             self.model.setIterationStartVolume(value)
@@ -469,14 +464,14 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         if self.sender().validator().state == QValidator.Acceptable:
             text = self.lineEditNSTIST.text()
-            value = int(text)
+            value = from_qvariant(text, int)
             valids =  self.model.getIterationStartVolume()
 
             if value < valids:
                 self.lineEditIDSTNT.setText(str(value))
                 self.model.setIterationStartVolume(value)
             else:
-                validsl = int(self.lineEditIDSTNT.text())
+                validsl = from_qvariant(self.lineEditIDSTNT.text(), int)
                 self.model.setIterationStartVolume(validsl)
 
             self.model.setIterSteadyStartVolume(value)
@@ -488,7 +483,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input SEUIL.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setThresholdValueVolume(value)
 
 
@@ -521,7 +516,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input NSTBOR.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.setIterationStartBoundary(value)
 
 
@@ -531,7 +526,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input SEUILF.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setThresholdValueBoundary(value)
 
 

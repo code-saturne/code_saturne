@@ -37,7 +37,11 @@ This module defines the following classes:
 #-------------------------------------------------------------------------------
 
 import sys
+import os
 import logging
+Py2 = sys.version[0] == '2'
+Py3 = sys.version[0] == '3'
+
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -59,6 +63,238 @@ from Base.Common import LABEL_LENGTH_MAX
 logging.basicConfig()
 log = logging.getLogger("QtPage")
 log.setLevel(GuiParam.DEBUG)
+
+#-------------------------------------------------------------------------------
+# Compatibility PyQt API #1 and #2 and PySide
+#-------------------------------------------------------------------------------
+
+#==============================================================================
+# Data types
+#==============================================================================
+if Py2:
+    TEXT_TYPES = (str, unicode)
+else:
+    TEXT_TYPES = (str,)
+
+#==============================================================================
+# Strings
+#==============================================================================
+
+def is_text_string(obj):
+    """Return True if `obj` is a text string,
+              False if it is anything else,
+                    like binary data (Python 3) or
+                    QString (Python 2, PyQt API #1)"""
+    if Py2:
+        return isinstance(obj, basestring)
+    else:
+        return isinstance(obj, str)
+
+def to_text_string(obj, encoding=None):
+    """Convert `obj` to (unicode) text string"""
+    if Py2:
+        if encoding is None:
+            return unicode(obj)
+        else:
+            return unicode(obj, encoding)
+    else:
+        if encoding is None:
+            return str(obj)
+        elif isinstance(obj, str):
+            # In case this function is not used properly, this could happen
+            return obj
+        else:
+            return str(obj, encoding)
+
+#==============================================================================
+# QVariant conversion utilities
+#==============================================================================
+PYQT_API_1 = False
+import collections
+
+if os.environ.get('QT_API', 'pyqt') == 'pyqt':
+    import sip
+    try:
+        PYQT_API_1 = sip.getapi('QVariant') == 1
+    except AttributeError:
+        PYQT_API_1 = True
+
+    def to_qvariant(pyobj=None):
+        """Convert Python object to QVariant
+        This is a transitional function from PyQt API #1 (QVariant exist)
+        to PyQt API #2 and Pyside (QVariant does not exist)"""
+        if PYQT_API_1:
+            from PyQt4.QtCore import QVariant
+            return QVariant(pyobj)
+        else:
+            return pyobj
+
+    def from_qvariant(qobj=None, convfunc=None):
+        """Convert QVariant object to Python object
+        This is a transitional function from PyQt API #1 (QVariant exist)
+        to PyQt API #2 and Pyside (QVariant does not exist)"""
+        if PYQT_API_1:
+            assert isinstance(convfunc, collections.Callable)
+            if convfunc in TEXT_TYPES or convfunc is to_text_string:
+                return convfunc(qobj.toString())
+            elif convfunc is bool:
+                return qobj.toBool()
+            elif convfunc is int:
+                return qobj.toInt()[0]
+            elif convfunc is float:
+                return qobj.toDouble()[0]
+            else:
+                return convfunc(qobj)
+        else:
+            if convfunc in TEXT_TYPES or convfunc is to_text_string:
+                return str(qobj)
+            elif convfunc is int:
+                return int(qobj)
+            elif convfunc is float:
+                return float(qobj)
+            else:
+                return qobj
+
+else:
+    def to_qvariant(obj=None):
+        """Convert Python object to QVariant
+        This is a transitional function from PyQt API#1 (QVariant exist)
+        to PyQt API#2 and Pyside (QVariant does not exist)"""
+        return obj
+
+    def from_qvariant(qobj=None, pytype=None):
+        """Convert QVariant object to Python object
+        This is a transitional function from PyQt API #1 (QVariant exist)
+        to PyQt API #2 and Pyside (QVariant does not exist)"""
+        return qobj
+
+def qbytearray_to_str(qba):
+    """Convert QByteArray object to str in a way compatible with Python 2/3"""
+    return str(bytes(qba.toHex().data()).decode())
+
+
+#==============================================================================
+# Wrappers around QFileDialog static methods
+#==============================================================================
+
+def getexistingdirectory(parent=None, caption='', basedir='',
+                         options=QtGui.QFileDialog.ShowDirsOnly):
+    """Wrapper around QtGui.QFileDialog.getExistingDirectory static method
+    Compatible with PyQt >=v4.4 (API #1 and #2) and PySide >=v1.0"""
+    # Calling QFileDialog static method
+    if sys.platform == "win32":
+        # On Windows platforms: redirect standard outputs
+        _temp1, _temp2 = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = None, None
+    try:
+        result = QtGui.QFileDialog.getExistingDirectory(parent, caption, basedir,
+                                                        options)
+    finally:
+        if sys.platform == "win32":
+            # On Windows platforms: restore standard outputs
+            sys.stdout, sys.stderr = _temp1, _temp2
+    if not is_text_string(result):
+        # PyQt API #1
+        result = to_text_string(result)
+    return result
+
+
+def _qfiledialog_wrapper(attr, parent=None, caption='', basedir='',
+                         filters='', selectedfilter='', options=None):
+    if options is None:
+        options = QtGui.QFileDialog.Options(0)
+
+    try:
+        from QtCore import QString
+    except ImportError:
+        QString = None  # analysis:ignore
+
+    tuple_returned = True
+    try:
+        func = getattr(QtGui.QFileDialog, attr+'AndFilter')
+    except AttributeError:
+        func = getattr(QtGui.QFileDialog, attr)
+        if QString is not None:
+            selectedfilter = QString()
+            tuple_returned = False
+
+    if sys.platform == "win32":
+        # On Windows platforms: redirect standard outputs
+        _temp1, _temp2 = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = None, None
+    try:
+        result = func(parent, caption, basedir,
+                      filters, selectedfilter, options)
+    except TypeError:
+        result = func(parent, caption, basedir, filters, options)
+    finally:
+        if sys.platform == "win32":
+            # On Windows platforms: restore standard outputs
+            sys.stdout, sys.stderr = _temp1, _temp2
+
+    # Processing output
+    if tuple_returned:
+        output, selectedfilter = result
+    else:
+        output = result
+    if QString is not None:
+        # PyQt API #1: conversions needed from QString/QStringList
+        selectedfilter = to_text_string(selectedfilter)
+        if isinstance(output, QString):
+            # Single filename
+            output = to_text_string(output)
+        else:
+            # List of filenames
+            output = [to_text_string(fname) for fname in output]
+
+    # Always returns the tuple (output, selectedfilter)
+    return output, selectedfilter
+
+
+def getopenfilename(parent=None,
+                    caption='',
+                    basedir='',
+                    filters='',
+                    selectedfilter='',
+                    options=None):
+    return _qfiledialog_wrapper('getOpenFileName',
+                                parent=parent,
+                                caption=caption,
+                                basedir=basedir,
+                                filters=filters,
+                                selectedfilter=selectedfilter,
+                                options=options)
+
+
+def getopenfilenames(parent=None,
+                     caption='',
+                     basedir='',
+                     filters='',
+                     selectedfilter='',
+                     options=None):
+    return _qfiledialog_wrapper('getOpenFileNames',
+                                parent=parent,
+                                caption=caption,
+                                basedir=basedir,
+                                filters=filters,
+                                selectedfilter=selectedfilter,
+                                options=options)
+
+
+def getsavefilename(parent=None,
+                    caption='',
+                    basedir='',
+                    filters='',
+                    selectedfilter='',
+                    options=None):
+    return _qfiledialog_wrapper('getSaveFileName',
+                                parent=parent,
+                                caption=caption,
+                                basedir=basedir,
+                                filters=filters,
+                                selectedfilter=selectedfilter,
+                                options=options)
+
 
 #-------------------------------------------------------------------------------
 # QComboBox model
@@ -372,7 +608,7 @@ class IntValidator(QtGui.QIntValidator):
         state = QtGui.QIntValidator.validate(self, stri, pos)[0]
 
         try:
-            x = int(stri)
+            x = from_qvariant(stri, int)
             valid = True
             pass
         except (TypeError, ValueError):
@@ -398,7 +634,10 @@ class IntValidator(QtGui.QIntValidator):
 
         self.state = state
 
-        return (state, stri, pos)
+        if PYQT_API_1:
+            return (state, pos)
+        else:
+            return (state, stri, pos)
 
 
     def tr(self, text):
@@ -501,7 +740,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         state = QtGui.QDoubleValidator.validate(self, stri, pos)[0]
 
         try:
-            x = float(stri)
+            x = from_qvariant(stri, float)
             valid = True
             pass
         except (TypeError, ValueError):
@@ -525,7 +764,10 @@ class DoubleValidator(QtGui.QDoubleValidator):
 
         self.state = state
 
-        return (state, stri, pos)
+        if PYQT_API_1:
+            return (state, pos)
+        else:
+            return (state, stri, pos)
 
 
     def tr(self, text):
@@ -574,7 +816,10 @@ class RegExpValidator(QtGui.QRegExpValidator):
 
         self.state = state
 
-        return (state, stri, pos)
+        if PYQT_API_1:
+            return (state, pos)
+        else:
+            return (state, stri, pos)
 
 
     def tr(self, text):

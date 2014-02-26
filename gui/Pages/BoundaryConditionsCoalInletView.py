@@ -39,10 +39,6 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -51,14 +47,15 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from Base.Toolbox import GuiParam
+from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
+from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+
 from Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
 import Pages.CoalCombustionModel as CoalCombustion
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
-
 from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -82,17 +79,16 @@ class ValueDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         validator = DoubleValidator(editor, min=0.)
         editor.setValidator(validator)
-        #editor.installEventFilter(self)
         return editor
 
     def setEditorData(self, editor, index):
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
-            value = float(editor.text())
-            model.setData(index, value, Qt.DisplayRole)
+            value = from_qvariant(editor.text(), float)
+            model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coals in a QTableView
@@ -115,10 +111,10 @@ class StandardItemModelCoal(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
         if role == Qt.DisplayRole:
-            return self.dataCoal[index.row()][index.column()]
-        return
+            return to_qvariant(self.dataCoal[index.row()][index.column()])
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -132,8 +128,8 @@ class StandardItemModelCoal(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -142,7 +138,7 @@ class StandardItemModelCoal(QStandardItemModel):
         if not hasattr(self, "modelBoundary"):
             log.debug("ERROR in setData (StandardItemModelCoal) : no Boundary model defined")
             return
-        v = float(value)
+        v = from_qvariant(value, float)
         self.dataCoal[row][col] = v
         if col == 1:
             self.modelBoundary.setCoalFlow(v, row)
@@ -194,16 +190,16 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
         if role == Qt.DisplayRole:
             classe = index.row()
             coal   = index.column()
             if classe < self.coalClassesNumber[coal]:
                 try:
-                    return self.ratio[coal][classe]
+                    return to_qvariant(self.ratio[coal][classe])
                 except:
                     log.debug("ERROR no data for self.ratio[%i][%i] "%(coal, classe))
-        return
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -217,10 +213,10 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return "Coal" + " " + str(section+1)
+            return to_qvariant("Coal" + " " + str(section+1))
         if orientation == Qt.Vertical and role == Qt.DisplayRole:
-            return "Class" + " " + str(section+1)
-        return
+            return to_qvariant("Class" + " " + str(section+1))
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -229,23 +225,23 @@ class StandardItemModelCoalMass(QStandardItemModel):
             return
         classe = index.row()
         coal   = index.column()
-        v = float(value)
+        v = from_qvariant(value, float)
         self.ratio[coal][classe] = v
         log.debug("setData v = %f "%v)
 
-        liste = self.modelBoundary.getCoalRatios(coal)
+        lst = self.modelBoundary.getCoalRatios(coal)
         lastValue = 0
         for iclasse in range(0, self.coalClassesNumber[coal]-1):
             lastValue += self.ratio[coal][iclasse]
 
         if lastValue < 100.+ 1e-6 :
-            liste[classe] = self.ratio[coal][classe]
+            lst[classe] = self.ratio[coal][classe]
             lastValue = 100 - lastValue
             self.ratio[coal][self.coalClassesNumber[coal]-1] = lastValue
-            liste[self.coalClassesNumber[coal]-1] = lastValue
-            self.modelBoundary.setCoalRatios(coal, liste)
+            lst[self.coalClassesNumber[coal]-1] = lastValue
+            self.modelBoundary.setCoalRatios(coal, lst)
         else :
-            self.ratio[coal][classe] = liste[classe]
+            self.ratio[coal][classe] = lst[classe]
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -479,9 +475,9 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         for coal in range(0, self.__coalNumber) :
             lastValue = 0.
             for coalClass in range(0, self.__coalClassesNumber[coal]-1):
-                list = self.__boundary.getCoalRatios(coal)
-                lastValue += list[coalClass]
-                self.__ratio[coal][coalClass] = list[coalClass]
+                lst = self.__boundary.getCoalRatios(coal)
+                lastValue += lst[coalClass]
+                self.__ratio[coal][coalClass] = lst[coalClass]
 
             # last class is computed in order to assure that sum is egal to 100%
             coalClass = self.__coalClassesNumber[coal]-1
@@ -544,7 +540,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         @param text: value
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            v = float(text)
+            v = from_qvariant(text, float)
             self.__boundary.setVelocity(v)
 
 
@@ -617,7 +613,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         INPUT value into direction of inlet flow
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.__boundary.setDirection('direction_x', value)
 
 
@@ -627,7 +623,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         INPUT value into direction of inlet flow
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.__boundary.setDirection('direction_y', value)
 
 
@@ -637,7 +633,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         INPUT value into direction of inlet flow
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.__boundary.setDirection('direction_z', value)
 
 
@@ -696,7 +692,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
     @pyqtSignature("const QString&")
     def __slotTemperature(self, text):
         if self.sender().validator().state == QValidator.Acceptable:
-            t = float(text)
+            t = from_qvariant(text, float)
             self.__boundary.setOxydantTemperature(t)
 
 

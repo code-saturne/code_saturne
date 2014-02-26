@@ -36,10 +36,6 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -48,11 +44,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsMobileMeshForm import Ui_BoundaryConditionsMobileMeshForm
-from Pages.MobileMeshModel import MobileMeshModel
-
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, setGreenColor
+
+from Pages.BoundaryConditionsMobileMeshForm import Ui_BoundaryConditionsMobileMeshForm
+from Pages.MobileMeshModel import MobileMeshModel
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 

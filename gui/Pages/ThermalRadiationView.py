@@ -38,10 +38,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -51,9 +47,9 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
+from Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from Pages.ThermalRadiationForm import Ui_ThermalRadiationForm
 from Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
-import Base.QtPage as QtPage
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 from Pages.OutputControlModel import OutputControlModel
 
@@ -91,9 +87,9 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         # Combo models
 
-        self.modelTSRay  = QtPage.ComboModel(self.comboBoxTSRay, 3, 1)
-        self.modelPrintT = QtPage.ComboModel(self.comboBoxPrintT, 3, 1)
-        self.modelPrintL = QtPage.ComboModel(self.comboBoxPrintL, 3, 1)
+        self.modelTSRay  = ComboModel(self.comboBoxTSRay, 3, 1)
+        self.modelPrintT = ComboModel(self.comboBoxPrintT, 3, 1)
+        self.modelPrintL = ComboModel(self.comboBoxPrintL, 3, 1)
 
         self.modelTSRay.addItem('0', '0')
         self.modelTSRay.addItem('1', '1')
@@ -129,7 +125,7 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         # Validator
 
-        validatorFreq = QtPage.IntValidator(self.lineEditFreq, min=1)
+        validatorFreq = IntValidator(self.lineEditFreq, min=1)
         self.lineEditFreq.setValidator(validatorFreq)
 
         self.case.undoStartGlobal()
@@ -140,10 +136,10 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
         What to do when user clicks on 'OK'.
         """
         if self.lineEditFreq.validator().state == QValidator.Acceptable:
-            self.result['frequency'] = int(self.lineEditFreq.text())
-        self.result['idiver']    = int(self.comboBoxTSRay.currentText())
-        self.result['tempP']     = int(self.comboBoxPrintT.currentText())
-        self.result['intensity'] = int(self.comboBoxPrintL.currentText())
+            self.result['frequency'] = from_qvariant(self.lineEditFreq.text(), int)
+        self.result['idiver']    = from_qvariant(self.comboBoxTSRay.currentText(), int)
+        self.result['tempP']     = from_qvariant(self.comboBoxPrintT.currentText(), int)
+        self.result['intensity'] = from_qvariant(self.comboBoxPrintL.currentText(), int)
 
         QDialog.accept(self)
 
@@ -193,9 +189,9 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         # Combo models
 
-        self.modelRadModel   = QtPage.ComboModel(self.comboBoxRadModel, 3, 1)
-        self.modelDirection  = QtPage.ComboModel(self.comboBoxQuadrature, 8, 1)
-        self.modelAbsorption = QtPage.ComboModel(self.comboBoxAbsorption, 3, 1)
+        self.modelRadModel   = ComboModel(self.comboBoxRadModel, 3, 1)
+        self.modelDirection  = ComboModel(self.comboBoxQuadrature, 8, 1)
+        self.modelAbsorption = ComboModel(self.comboBoxAbsorption, 3, 1)
 
         self.modelRadModel.addItem("No radiative transfers", 'off')
         self.modelRadModel.addItem("Discrete ordinates method", 'dom')
@@ -239,10 +235,10 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         # Validator
 
-        validatorCoeff = QtPage.DoubleValidator(self.lineEditCoeff, min=0.0)
+        validatorCoeff = DoubleValidator(self.lineEditCoeff, min=0.0)
         self.lineEditCoeff.setValidator(validatorCoeff)
 
-        validatorNdir = QtPage.IntValidator(self.lineEditNdirec, min=3)
+        validatorNdir = IntValidator(self.lineEditNdirec, min=3)
         self.lineEditNdirec.setValidator(validatorNdir)
 
         self.modelAbsorption.addItem('constant',                   'constant')
@@ -343,7 +339,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            n = int(text)
+            n = from_qvariant(text, int)
             self.mdl.setNbDir(n)
 
 
@@ -367,7 +363,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         """
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            c  = float(text)
+            c  = from_qvariant(text, float)
             self.mdl.setAbsorCoeff(c)
 
 

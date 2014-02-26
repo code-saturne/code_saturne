@@ -51,10 +51,6 @@ else :
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -64,7 +60,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
+from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
 from Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
@@ -703,7 +699,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         Update the density
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            rho = float(text)
+            rho = from_qvariant(text, float)
             self.mdl.setInitialValueDensity(rho)
 
 
@@ -713,7 +709,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         Update the molecular viscosity
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            mu = float(text)
+            mu = from_qvariant(text, float)
             self.mdl.setInitialValueViscosity(mu)
 
 
@@ -723,7 +719,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         Update the specific heat
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            cp = float(self.lineEditCp.text())
+            cp = from_qvariant(text, float)
             self.mdl.setInitialValueHeat(cp)
 
 
@@ -733,7 +729,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         Update the volumic viscosity
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            viscv0 = float(self.lineEditViscv0.text())
+            viscv0 = from_qvariant(text, float)
             self.mdl.setInitialValueVolumicViscosity(viscv0)
 
 
@@ -743,7 +739,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         Update the thermal conductivity
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            al = float(text)
+            al = from_qvariant(text, float)
             self.mdl.setInitialValueCond(al)
 
 
@@ -753,7 +749,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         Update the thermal conductivity
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            diftl0 = float(text)
+            diftl0 = from_qvariant(text, float)
             self.mdl.setInitialValueDyn(diftl0)
 
 
@@ -763,7 +759,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         Update the thermal conductivity
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            diff = float(text)
+            diff = from_qvariant(text, float)
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 

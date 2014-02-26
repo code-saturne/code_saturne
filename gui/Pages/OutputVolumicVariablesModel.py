@@ -338,11 +338,11 @@ class OutputVolumicVariablesModel(Model):
         """
         Return list of labels for all variables, properties .....Only for the View
         """
-        list = []
+        lst = []
         for nodeList in self.listNodeVolum:
             for node in nodeList:
-                list.append(node['label'])
-        return list
+                lst.append(node['label'])
+        return lst
 
 
     @Variables.noUndo

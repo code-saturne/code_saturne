@@ -37,25 +37,20 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
-
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
-
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 
-from Pages.LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
-
 from Base.Toolbox import GuiParam
 from Base.QtPage import IntValidator, DoubleValidator, ComboModel
+from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+
+from Pages.LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.LagrangianBoundariesModel import LagrangianBoundariesModel
 from Pages.LagrangianModel import LagrangianModel
@@ -67,16 +62,13 @@ from Pages.CoalCombustionModel import CoalCombustionModel
 # log config
 #-------------------------------------------------------------------------------
 
-
 logging.basicConfig()
 log = logging.getLogger("LagrangianBoundariesView")
 log.setLevel(GuiParam.DEBUG)
 
-
 #-------------------------------------------------------------------------------
 # Line edit delegate with an integere validator
 #-------------------------------------------------------------------------------
-
 
 class ValueDelegate(QItemDelegate):
     def __init__(self, parent=None):
@@ -90,13 +82,13 @@ class ValueDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, editor, index):
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
-            value = float(editor.text())
-            model.setData(index, value, Qt.DisplayRole)
+            value = from_qvariant(editor.text(), float)
+            model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -138,7 +130,7 @@ class ParticleBoundaryInteractionDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -205,7 +197,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
 
         if role == Qt.DisplayRole:
             row = index.row()
@@ -213,16 +205,16 @@ class StandardItemModelBoundaries(QStandardItemModel):
             if col == 2:
                 nature = self._data[row][1]
                 dico = self.dicoM2V[nature]
-                return dico[self._data[row][col]]
+                return to_qvariant(dico[self._data[row][col]])
             else:
-                return self._data[row][col]
+                return to_qvariant(self._data[row][col])
 
         if role == Qt.ToolTipRole:
             if index.column() == 2:
-                return self.tr("Code_Saturne keyword: IUSCLB")
+                return to_qvariant(self.tr("Code_Saturne keyword: IUSCLB"))
             elif index.column() == 3:
-                return self.tr("Code_Saturne keyword: NBCLAS")
-        return
+                return to_qvariant(self.tr("Code_Saturne keyword: NBCLAS"))
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -241,8 +233,8 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
@@ -250,7 +242,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
         col = index.column()
 
         if col == 2:
-            interaction = str(value)
+            interaction = from_qvariant(value, to_text_string)
             self._data[row][col] = interaction
             label = self._data[row][0]
             nature = self._data[row][1]
@@ -259,7 +251,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
                 self._data[row][3] = 0
 
         elif col == 3:
-            nclasses = int(value)
+            nclasses = from_qvariant(value, int)
             self._data[row][col] = nclasses
             label = self._data[row][0]
             nn = self.model.getNumberOfClassesValue(label)
@@ -484,14 +476,14 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         choice = self.model.getStatisticalWeightChoice(self.label, self.iclass)
         self.modelIPOIT.setItem(str_model=choice)
         text = self.modelIPOIT.dicoM2V[choice]
-        self.slotIPOITChoice(str(text))
+        self.slotIPOITChoice(from_qvariant(text, to_text_string))
 
         # Velocity
         self.groupBoxVelocity.show()
         choice = self.model.getVelocityChoice(self.label, self.iclass)
         self.modelIJUVW.setItem(str_model=choice)
         text = self.modelIJUVW.dicoM2V[choice]
-        self.slotIJUVW(str(text))
+        self.slotIJUVW(from_qvariant(text, to_text_string))
 
         # Temperature
         status = self.LM.getHeating()
@@ -500,7 +492,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             choice = self.model.getTemperatureChoice(self.label, self.iclass)
             self.modelIJRTP.setItem(str_model=choice)
             text = self.modelIJRTP.dicoM2V[choice]
-            self.slotIJRTP(str(text))
+            self.slotIJRTP(from_qvariant(text, to_text_string))
 
             cp = self.model.getSpecificHeatValue(self.label, self.iclass)
             self.lineEditICPT.setText(str(cp))
@@ -526,7 +518,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         else:
             self.modelIJRDP.setItem(str_model=choice)
             text = self.modelIJRDP.dicoM2V[choice]
-            self.slotIJRDP(str(text))
+            self.slotIJRDP(from_qvariant(text, to_text_string))
 
         if choice == "prescribed":
             self.frameDiameter.show()
@@ -556,7 +548,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IJNBP.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.setNumberOfParticulesInClassValue(self.label, self.iclass, value)
 
 
@@ -566,7 +558,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IJFRE.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.setInjectionFrequencyValue(self.label, self.iclass, value)
 
 
@@ -576,7 +568,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input ICLST.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.setParticleGroupNumberValue(self.label, self.iclass, value)
 
 
@@ -586,7 +578,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IDEBT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setMassFlowRateValue(self.label, self.iclass, value)
 
 
@@ -618,7 +610,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IPOIT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setStatisticalWeightValue(self.label, self.iclass, value)
 
 
@@ -628,7 +620,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IROPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setDensityValue(self.label, self.iclass, value)
 
 
@@ -661,7 +653,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IUNO.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setVelocityNormValue(self.label, self.iclass, value)
 
 
@@ -671,7 +663,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IUPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "u", value)
 
 
@@ -681,7 +673,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IVPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "v", value)
 
 
@@ -691,7 +683,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IWPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "w", value)
 
 
@@ -716,7 +708,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input ITPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setTemperatureValue(self.label, self.iclass, value)
 
 
@@ -726,7 +718,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input ICPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setSpecificHeatValue(self.label, self.iclass, value)
 
 
@@ -736,7 +728,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IEPSI.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setEmissivityValue(self.label, self.iclass, value)
 
 
@@ -763,7 +755,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IDPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setDiameterValue(self.label, self.iclass, value)
 
 
@@ -773,7 +765,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IVDPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setDiameterVarianceValue(self.label, self.iclass, value)
 
 
@@ -783,7 +775,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IHPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = int(text)
+            value = from_qvariant(text, int)
             self.model.setCoalNumberValue(self.label, self.iclass, value)
 
 
@@ -793,7 +785,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IHPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
+            value = from_qvariant(text, float)
             self.model.setCoalTemperatureValue(self.label, self.iclass, value)
 
 

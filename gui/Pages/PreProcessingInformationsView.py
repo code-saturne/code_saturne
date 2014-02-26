@@ -47,7 +47,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-import Base.QtPage as QtPage
+from Base.QtPage import getopenfilename
 
 #-------------------------------------------------------------------------------
 # log config
@@ -70,7 +70,7 @@ def preprocessorFile(parent, initdir):
     filetypes = "Preprocessor log (*.log);;All Files (*)"
     filt = "All files (*)"
     initdir = os.path.join(initdir, 'check_mesh')
-    file_name = QFileDialog.getOpenFileName(parent, title, initdir, filetypes)
+    file_name = getopenfilename(parent, title, initdir, filetypes)
     file_name = str(file_name)
 
     if file_name:

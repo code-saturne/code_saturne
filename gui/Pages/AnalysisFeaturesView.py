@@ -48,10 +48,10 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
 
 import Base.QtPage as QtPage
 
+from Pages.AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
 from Pages.TurbulenceModel import TurbulenceModel
 from Pages.LagrangianModel import LagrangianModel
 from Pages.GasCombustionModel import GasCombustionModel

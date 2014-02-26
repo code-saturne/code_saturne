@@ -38,10 +38,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -50,11 +46,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsWallRadiativeTransferForm import Ui_BoundaryConditionsWallRadiativeTransferForm
+from Pages.BoundaryConditionsWallRadiativeTransferForm import \
+     Ui_BoundaryConditionsWallRadiativeTransferForm
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
+from Base.QtPage import to_qvariant, from_qvariant
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 
@@ -77,9 +75,9 @@ class StandardItemModelScalars(QStandardItemModel):
                         self.tr("Unit")]
         self.setColumnCount(len(self.headers))
         self.bdModel = bdModel
-        self.liste = self.getListVariablesForCondition()
-        self.setRowCount(len(self.liste))
-        log.debug("StandardItemModelScalars.__init__  liste = %s " % str(self.liste))
+        self.lst = self.getListVariablesForCondition()
+        self.setRowCount(len(self.lst))
+        log.debug("StandardItemModelScalars.__init__  lst = %s " % str(self.lst))
 
         self.dataScalars = {}
         self.dataScalars["EPSP"]  = bdModel.getEmissivity()
@@ -92,19 +90,19 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return to_qvariant()
         if role == Qt.DisplayRole:
             if index.column() == 0:
-                return self.liste[index.row()][1]
+                return to_qvariant(self.lst[index.row()][1])
             elif index.column() == 1:
-                key = self.liste[index.row()][3]
-                return self.dataScalars[key]
+                key = self.lst[index.row()][3]
+                return to_qvariant(self.dataScalars[key])
             elif index.column() == 2:
-                return self.liste[index.row()][2]
+                return to_qvariant(self.lst[index.row()][2])
         if role == Qt.ToolTipRole:
-            kword = self.liste[index.row()][3]
-            return self.tr("Code_Saturne keyword: " + kword)
-        return
+            kword = self.lst[index.row()][3]
+            return to_qvariant(self.tr("Code_Saturne keyword: " + kword))
+        return to_qvariant()
 
 
     def flags(self, index):
@@ -118,16 +116,16 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
 
 
     def setData(self, index, value, role):
         if index.column() == 1:
             row = index.row()
-            key = self.liste[row][3]
-            tag = self.liste[row][4]
-            val = float(value)
+            key = self.lst[row][3]
+            tag = self.lst[row][4]
+            val = from_qvariant(value, float)
             self.bdModel.setValRay(val, tag)
             self.dataScalars[key] = val
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -156,19 +154,19 @@ class StandardItemModelScalars(QStandardItemModel):
         cond = self.bdModel.getRadiativeChoice()
 
         if cond == 'itpimp':
-            liste = [(0, self.tr("Emissivite"), '',  'EPSP',  'emissivity'),
-                     (1, self.tr("Initial temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
+            lst = [(0, self.tr("Emissivite"), '',  'EPSP',  'emissivity'),
+                   (1, self.tr("Initial temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
         if cond == 'ipgrno':
-            liste = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),
-                     (1, self.tr("Conductivity"), 'W/m/K', 'XLAMP', 'wall_thermal_conductivity'),
-                     (2, self.tr("Thickness"), 'm', 'EPAP' , 'thickness'),
-                     (3, self.tr("Profile of external temperature"), 'K', 'TEXTP', 'external_temperature_profile'),
-                     (4, self.tr("Profile of internal temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
+            lst = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),
+                   (1, self.tr("Conductivity"), 'W/m/K', 'XLAMP', 'wall_thermal_conductivity'),
+                   (2, self.tr("Thickness"), 'm', 'EPAP' , 'thickness'),
+                   (3, self.tr("Profile of external temperature"), 'K', 'TEXTP', 'external_temperature_profile'),
+                   (4, self.tr("Profile of internal temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
         if cond == 'ifgrno':
-            liste = [(0, self.tr("Emissivity"),'', 'EPSP', 'emissivity'),
-                     (1, self.tr("Flux of conduction"), 'W/m2', 'FLUX',  'flux'),
-                     (2, self.tr("Inital temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
-        return liste
+            lst = [(0, self.tr("Emissivity"),'', 'EPSP', 'emissivity'),
+                   (1, self.tr("Flux of conduction"), 'W/m2', 'FLUX',  'flux'),
+                   (2, self.tr("Inital temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
+        return lst
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -257,7 +255,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
     @pyqtSignature("const QString&")
     def slotZone(self, text):
         if self.sender().validator().state == QValidator.Acceptable:
-            nb_zone = int(text)
+            nb_zone = from_qvariant(text, int)
             self.__boundary.setOutputRadiativeZone(nb_zone)
             return nb_zone
 

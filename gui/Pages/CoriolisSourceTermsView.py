@@ -36,10 +36,6 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-import sys
-if sys.version_info[0] == 2:
-    import sip
-    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -49,8 +45,9 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from CoriolisSourceTermsForm import Ui_CoriolisSourceTermsForm
-import Base.QtPage as QtPage
+from Base.QtPage import DoubleValidator, from_qvariant
+
+from Pages.CoriolisSourceTermsForm import Ui_CoriolisSourceTermsForm
 from Pages.CoriolisSourceTermsModel import CoriolisSourceTermsModel
 
 #-------------------------------------------------------------------------------
@@ -92,9 +89,9 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         self.connect(self.lineEditOMEGAZ, SIGNAL("textChanged(const QString &)"), self.slotOmegaZ)
 
         # Validators
-        validatorOmegaX = QtPage.DoubleValidator(self.lineEditOMEGAX)
-        validatorOmegaY = QtPage.DoubleValidator(self.lineEditOMEGAY)
-        validatorOmegaZ = QtPage.DoubleValidator(self.lineEditOMEGAZ)
+        validatorOmegaX = DoubleValidator(self.lineEditOMEGAX)
+        validatorOmegaY = DoubleValidator(self.lineEditOMEGAY)
+        validatorOmegaZ = DoubleValidator(self.lineEditOMEGAZ)
 
         self.lineEditOMEGAX.setValidator(validatorOmegaX)
         self.lineEditOMEGAY.setValidator(validatorOmegaY)
@@ -118,7 +115,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         Input OMEGAX
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            omega_x = float(text)
+            omega_x = from_qvariant(text, float)
             self.mdl.setOmega('omega_x', omega_x)
 
 
@@ -128,7 +125,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         Input OMEGAY
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            omega_y = float(text)
+            omega_y = from_qvariant(text, float)
             self.mdl.setOmega('omega_y', omega_y)
 
 
@@ -138,7 +135,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         Input OmegaZ
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            omega_z = float(text)
+            omega_z = from_qvariant(text, float)
             self.mdl.setOmega('omega_z', omega_z)
 
 
