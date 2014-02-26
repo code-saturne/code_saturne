@@ -11,6 +11,8 @@ Changes:
 Bug fixes:
 ----------
 
+- GUI: fixes for handling of thermal scalar.
+
 - Fix incorrect Fortran binding for mesh postprocessing output which could
   lead to crash in some cases.
 

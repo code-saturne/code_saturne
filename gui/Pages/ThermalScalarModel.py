@@ -158,16 +158,16 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.node_therm['model'] = thermal_scalar
 
         if thermal_scalar != 'off':
-            node = self.scalar_node.xmlGetNode('scalar', type='thermal')
+            node = self.node_therm.xmlGetNode('scalar', type='thermal')
             if node:
                 if node['name'] != thermal_scalar:
-                    self.deleteScalar(node['label'])
+                    self.deleteThermalScalar(node['label'])
             self._setNewThermalScalar(thermal_scalar)
 
         else:
-            node = self.scalar_node.xmlGetNode('scalar', type='thermal')
+            node = self.node_therm.xmlGetNode('scalar', type='thermal')
             if node:
-                self.deleteScalar(node['label'])
+                self.deleteThermalScalar(node['label'])
             self._removeThermalTimeStep()
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             ConjugateHeatTransferModel(self.case).deleteConjugateHeatTransfer()
