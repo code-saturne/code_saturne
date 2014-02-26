@@ -302,6 +302,23 @@ _write_additional_vars(void                  *input,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Output post-processing meshes using associated writers.
+ *
+ * Fortran interface:
+ *
+ * subroutine pstgeo
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstgeo, PSTGEO)
+(
+ void
+)
+{
+  cs_post_write_meshes(cs_glob_time_step);
+}
+
+/*----------------------------------------------------------------------------
  * Loop on post-processing meshes to output variables
  *
  * Fortran interface:

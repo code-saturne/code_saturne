@@ -58,6 +58,20 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Output post-processing meshes using associated writers.
+ *
+ * Fortran interface:
+ *
+ * subroutine pstgeo
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstgeo, PSTGEO)
+(
+ void
+);
+
+/*----------------------------------------------------------------------------
  * Loop on post-processing meshes to output variables
  *
  * Fortran interface:
