@@ -116,7 +116,7 @@ endif
 ! 3. Write time-independent post-processing meshes
 !===============================================================================
 
-call cs_post_write_meshes (ntcabs, ttcabs)
+call pstgeo
 
 !===============================================================================
 ! 4. Filter extended neighborhood for least-squares gradients
