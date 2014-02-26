@@ -28,7 +28,6 @@ Common
 
 """
 from PyQt4.QtCore import QObject
-from PyQt4.QtGui  import QMessageBox
 
 #-------------------------------------------------------------------------------
 # Standard modules

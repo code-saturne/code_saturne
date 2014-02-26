@@ -40,9 +40,8 @@ import os, re, shutil, logging
 #-------------------------------------------------------------------------------
 
 from PyQt4 import QtCore, QtGui
-from PyQt4.QtGui import QMessageBox, QDialog, QPushButton, QToolTip, QColor, \
-                        QRadioButton, QTableWidget, QTableWidgetItem
-from PyQt4.QtCore import Qt, QStringList, QString, SIGNAL
+from PyQt4.QtGui import QMessageBox, QDialog, QPushButton, QRadioButton
+from PyQt4.QtCore import Qt, QString, SIGNAL
 
 #For Testing
 from PyQt4.QtCore import QTranslator

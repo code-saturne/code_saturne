@@ -41,8 +41,8 @@ import os, sys, string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtGui import QApplication, QMainWindow, QDockWidget, QTreeView, QMessageBox
-from PyQt4.QtCore import Qt, QObject, QEvent, SIGNAL, SLOT
+from PyQt4.QtGui import QDockWidget, QTreeView, QMessageBox
+from PyQt4.QtCore import Qt, QObject, SIGNAL
 
 #-------------------------------------------------------------------------------
 # Salome modules

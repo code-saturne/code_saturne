@@ -43,15 +43,16 @@ import logging
 #-------------------------------------------------------------------------------
 
 from PyQt4.QtGui import QApplication, QCursor, QDialog, QMessageBox
-from PyQt4.QtCore import Qt, QObject, SIGNAL, QFileInfo, QString
+from PyQt4.QtCore import Qt, QObject, SIGNAL, QFileInfo
 
 #-------------------------------------------------------------------------------
 # Salome modules
 #-------------------------------------------------------------------------------
 
 import SALOMEDS #Si on veut changer de couleur...
-import salome,smesh
+import salome
 import SMESH
+from salome.smesh import smeshBuilder
 
 #-------------------------------------------------------------------------------
 # Application modules
@@ -96,7 +97,8 @@ CopyInSRCAction               = 25
 CopyCaseFileAction            = 26
 
 #export/convert actions
-ExportInPostProAction         = 40
+
+ExportInParaViSAction         = 40
 ExportInSMESHAction           = 41
 ConvertMeshToMed              = 42
 
@@ -398,14 +400,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if self.myParavisEngine :
             action = sgPyQt.createAction(-1,
-                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TEXT"),
-                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_TIP"),
-                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_SB"),
-                                          ObjectTR.tr("EXPORT_IN_POSTPRO_ACTION_ICON"))
+                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TEXT"),
+                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TIP"),
+                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_SB"),
+                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_ICON"))
             self.connect(action, SIGNAL("activated()"), self.slotExportInParavis)
             action_id = sgPyQt.actionId(action)
             self._ActionMap[action_id] = action
-            self._CommonActionIdMap[ExportInPostProAction] = action_id
+            self._CommonActionIdMap[ExportInParaViSAction] = action_id
 
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("EXPORT_IN_SMESH_ACTION_TEXT"),\
@@ -862,9 +864,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["HISTFile"]:
             popup.addAction(self.commonAction(ViewAction))
-            popup.addAction(self.commonAction(ExportInPostProAction))
+            popup.addAction(self.commonAction(ExportInParaViSAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESMEDFile"]:
-            popup.addAction(self.commonAction(ExportInPostProAction))
+            popup.addAction(self.commonAction(ExportInParaViSAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SCRPTLanceFile"]:
             popup.addAction(self.commonAction(ViewAction))
             popup.addAction(self.commonAction(RunScriptAction))
@@ -1218,8 +1220,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sobj = self._singleSelectedObject()
         if not sobj == None:
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            if re.match(".*\.med$", sobj.GetName()):
-                #export Med file
+            if re.match(".*\.med$", sobj.GetName()) or re.match(".*\.csv$", sobj.GetName()) :
+                #export Med file or csv file
                 import paravisSM
                 paravisSM.ImportFile(path)
             if salome.sg.hasDesktop():
@@ -1248,9 +1250,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if not sobj == None:
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
             studyId = salome.sg.getActiveStudyId()
-            if smesh and re.match(".*\.med$", sobj.GetName()):
-                smesh.SetCurrentStudy(salome.myStudy)
-                aMeshes, aStatus = smesh.CreateMeshesFromMED(path)
+            if smeshBuilder and re.match(".*\.med$", sobj.GetName()):
+                smesh = smeshBuilder.New(salome.myStudy)
+                aMeshes, aStatus = smeshBuilder.CreateMeshesFromMED(path)
                 if not aStatus:
                     QApplication.restoreOverrideCursor()
                     mess = ObjectTR("EXPORT_IN_SMESH_ACTION_WARNING")

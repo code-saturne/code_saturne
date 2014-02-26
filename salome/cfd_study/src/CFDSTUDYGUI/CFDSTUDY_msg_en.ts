@@ -402,16 +402,16 @@
             <translation>Copy into an other Case</translation>
         </message>
         <message>
-            <source>EXPORT_IN_POSTPRO_ACTION_TEXT</source>
-            <translation>Export In Post-Pro</translation>
+            <source>EXPORT_IN_PARAVIS_ACTION_TEXT</source>
+            <translation>Export In ParaViS</translation>
         </message>
         <message>
-            <source>EXPORT_IN_POSTPRO_ACTION_TIP</source>
-            <translation>Export In Post-Pro</translation>
+            <source>EXPORT_IN_PARAVIS_ACTION_TIP</source>
+            <translation>Export In ParaViS</translation>
         </message>
         <message>
-            <source>EXPORT_IN_POSTPRO_ACTION_SB</source>
-            <translation>Export In Post-Pro</translation>
+            <source>EXPORT_IN_PARAVIS_ACTION_SB</source>
+            <translation>Export In ParaViS</translation>
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_TEXT</source>

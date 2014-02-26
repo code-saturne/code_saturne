@@ -40,8 +40,8 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtGui import QApplication, QCursor, QDialog, QMessageBox, QDockWidget
-from PyQt4.QtCore import Qt, QObject, QVariant, SIGNAL
+from PyQt4.QtGui import QDialog, QMessageBox, QDockWidget
+from PyQt4.QtCore import Qt, QObject, SIGNAL
 
 #-------------------------------------------------------------------------------
 # Salome modules

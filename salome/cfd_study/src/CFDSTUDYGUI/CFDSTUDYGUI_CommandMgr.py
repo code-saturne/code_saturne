@@ -38,11 +38,8 @@ import os, logging
 #-------------------------------------------------------------------------------
 
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QApplication, QCursor, QDialog, QLabel, QGridLayout, \
-                        QCloseEvent, QTextEdit, QTextOption, QDockWidget, QWidget, QFont
-from PyQt4.QtCore import Qt, QObject, QVariant, SIGNAL, QEvent, QProcess, QString
-
-#from PyQt4.QtCore import QProcessEnvironment
+from PyQt4.QtGui import QApplication, QCursor, QDialog, QCloseEvent
+from PyQt4.QtCore import Qt, SIGNAL, QEvent, QProcess, QString
 
 #-------------------------------------------------------------------------------
 # Salome modules
