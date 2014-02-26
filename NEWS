@@ -11,6 +11,8 @@ Changes:
 Bug fixes:
 ----------
 
+- GUI: fix for velocity boundary condition when using MEI.
+
 - GUI: fixes for handling of thermal scalar.
 
 - Fix incorrect Fortran binding for mesh postprocessing output which could

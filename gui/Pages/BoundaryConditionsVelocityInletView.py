@@ -408,13 +408,15 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         exp = self.__boundary.getVelocity()
         c = self.__boundary.getVelocityChoice()
-        req = [('u_norm', 'Norm of the velocity')]
         if c == 'norm_formula':
             exa = "u_norm = 1.0;"
+            req = [('u_norm', 'Norm of the velocity')]
         elif c == 'flow1_formula':
             exa = "q_m = 1.0;"
+            req = [('q_m', 'mass flow rate')]
         elif c == 'flow2_formula':
             exa = "q_v = 1.0;"
+            req = [('q_v', 'volumic flow rate')]
 
         sym = [('x', "X face's gravity center"),
                ('y', "Y face's gravity center"),
