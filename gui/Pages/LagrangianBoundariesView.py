@@ -476,14 +476,14 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         choice = self.model.getStatisticalWeightChoice(self.label, self.iclass)
         self.modelIPOIT.setItem(str_model=choice)
         text = self.modelIPOIT.dicoM2V[choice]
-        self.slotIPOITChoice(from_qvariant(text, to_text_string))
+        self.slotIPOITChoice(text)
 
         # Velocity
         self.groupBoxVelocity.show()
         choice = self.model.getVelocityChoice(self.label, self.iclass)
         self.modelIJUVW.setItem(str_model=choice)
         text = self.modelIJUVW.dicoM2V[choice]
-        self.slotIJUVW(from_qvariant(text, to_text_string))
+        self.slotIJUVW(text)
 
         # Temperature
         status = self.LM.getHeating()
@@ -492,7 +492,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             choice = self.model.getTemperatureChoice(self.label, self.iclass)
             self.modelIJRTP.setItem(str_model=choice)
             text = self.modelIJRTP.dicoM2V[choice]
-            self.slotIJRTP(from_qvariant(text, to_text_string))
+            self.slotIJRTP(text)
 
             cp = self.model.getSpecificHeatValue(self.label, self.iclass)
             self.lineEditICPT.setText(str(cp))
@@ -518,7 +518,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         else:
             self.modelIJRDP.setItem(str_model=choice)
             text = self.modelIJRDP.dicoM2V[choice]
-            self.slotIJRDP(from_qvariant(text, to_text_string))
+            self.slotIJRDP(text)
 
         if choice == "prescribed":
             self.frameDiameter.show()
