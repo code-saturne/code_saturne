@@ -371,10 +371,10 @@ module pointe
 
   double precision, pointer, dimension(:,:) :: ettp => null(), ettpa => null()
   double precision, pointer, dimension(:,:) :: tepa => null()
-  double precision, pointer, dimension(:,:) :: statis => null(), stativ
+  double precision, pointer, dimension(:,:) :: statis => null()
   double precision, pointer, dimension(:,:) :: parbor => null()
   double precision, pointer, dimension(:,:) :: tslagr => null()
-  double precision, pointer, dimension(:,:) :: dlgeo
+  double precision, pointer, dimension(:,:) :: stativ, dlgeo
 
   !> \}
 
