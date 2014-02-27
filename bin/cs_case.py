@@ -496,6 +496,14 @@ class case:
             r += '_COUPLING'
             if os.path.isdir(r):
                 self.result_dir = os.path.join(r, name)
+            else:
+                r = os.path.join(self.case_dir, 'RESU')
+                err_str = \
+                    '\nResults directory: ' + r + '\n' \
+                    + '               or: ' + r + '_COUPLING' + '\n' \
+                    + 'does not exist.\n' \
+                    + 'Calculation will not be run.\n'
+                raise RunCaseError(err_str)
 
         if not os.path.isdir(self.result_dir):
             os.mkdir(self.result_dir)
