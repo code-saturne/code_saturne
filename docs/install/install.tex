@@ -551,7 +551,7 @@ Select configuration options, then run {\tt configure}, for example:
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/3.0/arch/prod
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
-\textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc \textcolor{red}{FC}=gfortran
+\textcolor{red}{CC}=/home/user/opt/mpich-3.0/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
 In the rest of this section, we will assume that we are in
@@ -584,7 +584,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
-\textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc \textcolor{red}{FC}=gfortran
+\textcolor{red}{CC}=/home/user/opt/mpich-3.0/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
 \subsection{Shared or static builds\label{sec:config:shared}}
@@ -816,33 +816,33 @@ libraries are installed:
 For an install on which multiple
 versions and architectures of the code should be available,
 configure commands with all bells and whistles (except SALOME support) for a
-build on a cluster named \texttt{ivanoe}, using the Intel compilers
+build on a cluster named \texttt{athos}, using the Intel compilers
 (made available through environment modules) may look like this:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{Magenta}{module purge} \\
-\$ \textcolor{Magenta}{module load} intel\_compilers/12.1.1.256 \\
-\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.5 \\
+\$ \textcolor{Magenta}{module load} intel\_compilers/14.0.0.080 \\
+\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.6.5 \\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/athos\_ompi
 \textbackslash \\
-\textcolor{Violet}{--with-blas}=/opt/intel/composerxe\_xe\_2011\_sp1.7.256/mkl \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/ivanoe
+\textcolor{Violet}{--with-blas}=/opt/intel/l\_ics2013.1.039/composerxe\_xe\_2013\_sp1/mkl \textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/athos \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.10/arch/athos
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/ivanoe
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/athos
 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{Violet}{--with-eos}/\textcolor{OliveGreen}{\$CS\_OPT}/eos-1.2.0/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/athos \textbackslash \\
+\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/athos \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/athos\_ompi \textbackslash \\
+\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/athos\_ompi \textbackslash \\
+\textcolor{Violet}{--with-eos}/\textcolor{OliveGreen}{\$CS\_OPT}/eos-1.2.0/arch/athos\_ompi \textbackslash \\
 \textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort \textcolor{red}{CXX}=icpc
 }\end{minipage}}
 
 In the example above, we have appended the \texttt{\_ompi} postfix
 to the architecture name for libraries using MPI, in case we intend
-to install 2 builds, with different MPI libraries (such as Open MPI and MPICH2).
+to install 2 builds, with different MPI libraries (such as Open MPI and MPICH-based Intel MPI).
 Note that optional libraries using MPI must also use the same MPI
 library. This is the case for \ptscotch or \parmetis, but also HDF5,
 CGNS, and MED if they are built with MPI-IO support.
@@ -857,7 +857,7 @@ as \CS does not yet exploit MPI-IO for these libraries.
 \subsection{Cross-compiling}
 
 On machines with different front-end and compute node architectures,
-such as IBM Blue Gene/P, cross-compiling is necessary.
+such as IBM Blue Gene/Q, cross-compiling is necessary.
 To install and run \CS, 2 builds are required:
 
 \begin{itemize}
@@ -897,83 +897,6 @@ either for the front-end, for the compute nodes, or both:
       compute nodes.
 \end{itemize}
 
-\subsubsection{Cross-compiling configuaration for Blue Gene/P}
-
-For an example, let us start with the front-end build:
-
-\fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \textbackslash \\
-\textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/frontend/bin/python \textbackslash \\
-\textcolor{red}{CFLAGS}="-m64" \textcolor{red}{FCFLAGS}="-m64" \textcolor{red}{CXXFLAGS}="-m64"
-}\end{minipage}}
-
-In this example, the front-end node is based on an IBM Power architecture,
-on which the GCC compiler is available, but produces 32-bit code by default.
-Adding the \texttt{"-m64"} flags force the compiler into 64-bit mode, allowing
-the Preprocessor to import meshes up into the 100-million cell range.
-
-For the compute node, we use the same version of Python (which
-is used only for the GUI and scripts, which only run on the front-end
-or service nodes), but the compilers are cross-compilers for the
-compute nodes:
-
-\fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp
-\textbackslash \\
-\textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/4.4 \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/bgp
-\textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgp
-\textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgp \textbackslash \\
-\textcolor{Violet}{
---disable-sockets --disable-dlloader -disable-nls \textbackslash \\
---disable-frontend --enable-long-gnum \textbackslash
-} \\
-\textcolor{Magenta}{--build}=ppc64
-\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
-\textcolor{red}{CC}=mpixlc\_r \textcolor{red}{FC}=bgxlf90\_r
-\textcolor{red}{CXX}=mpixlcxx\_r \textbackslash \\
-\textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/bgp/bin/python
-}\end{minipage}}
-
-Here, the \texttt{--build=ppc64 --host=bluegenep} options ensure the
-\texttt{configure} script into cross-compilation mode.
-With a front-end base on an Intel or AMD, architecture,
-\texttt{--build=x86\_64} or \texttt{--build=amd64} should be used
-instead of \texttt{--build=ppc64}. For the host (target) architecture,
-\texttt{--host=bluegenep} is recognized by current GNU Autoconf versions,
-so it is preferred, but \texttt{--host=ppc} also works well. Actually,
-any choice of build and host architectures recognized by Autoconf would
-probably work, as long as build and host are different.
-
-The C++ compiler is also specified, as it will be needed for
-the link stage due to C++ dependencies in the MED library,
-which is a static library in this example (see \S\ref{sec:ext:med}).
-
-The thread-safe compiler wrappers used here should not be necessary for \CS, but in our
-experience, the ESSL BLAS are correctly detected only with those wrappers,
-not with the single-threaded versions.\footnote{This might be due to a bug in the ESSL
-BLAS detection of \CS, although the code has been checked.}
-
-Note that in the above examples, we specified an install of the \scotch
-partitioning library both for the front-end and for the compute nodes.
-The implies a serial build of \scotch on the front-end node, and a parallel
-build (\ptscotch) on the compute nodes. Both are optional.
-Similarly, \metis could be used on the front-end node, and \parmetis
-on the compute nodes.
-
 \subsubsection{Cross-compiling configuration for Blue Gene/Q}
 
 In our example, the front-end node is based on an IBM Power architecture,
@@ -983,7 +906,7 @@ administrators. If this is not possible, the Python/Qt4 aspects of the
 Blue Gene/P example may be adapted here.
 
 On the compute nodes, the IBM XL compilers produce static object files
-by default, so the \texttt{--disable-shared} option is not necessary
+by default, so specifying the \texttt{--disable-shared} option is not necessary
 for libraries using Autotools-based installs when using those compilers,
 though using \texttt{--build=ppc64 --host=bluegeneq} in this case ensures
 the cross-compiling environment is detected. This environment
@@ -1007,14 +930,14 @@ and \texttt{--without-modules} options may be used with \texttt{configure}.
 is a pain\footnote{It requires running a \texttt{yodconfigure}
 script and adapting other scripts (see documentation), then running
 this as a submitted job (or under a SLURM allocation if you are lucky
-enough to use this resource manager).}, but installing HDF5 1.8.9
+enough to use this resource manager).}, but installing HDF5 1.8.9 or above
 using CMake is as simple as on a workstation, and simply requires
 choosing the correct compilers and possibly a few other options (in
 the EDF \CS build, the GCC compilers were chosen to reduce risks, and
 the Fortran wrappers were not needed, so not built).
 \item CGNS: building CGNS 3.1 is based on CMake, and no specific
 problems have been observed.
-\item MED: building MED 3.0.5 for \CS is easier than previous versions,
+\item MED: building MED 3.0.5 or above for \CS is easier than previous versions,
 as a new \\ \texttt{--disable-fortan} option is available for the
 \texttt{configure} script. Both the C and C++ compiler wrappers
 must be specified, and the link may fail with the GNU compilers, due
@@ -1081,6 +1004,69 @@ should supercede serial partitioning, as it allows for a simpler
 toolchain even for large meshes.
 Similarly, \metis could be used on the front-end node, and \parmetis
 on the compute nodes.
+
+\subsubsection{Cross-compiling configuration for Blue Gene/P}
+
+For an example, let us start with the front-end build:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
+\textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/frontend/bin/python \textbackslash \\
+\textcolor{red}{CFLAGS}="-m64" \textcolor{red}{FCFLAGS}="-m64" \textcolor{red}{CXXFLAGS}="-m64"
+}\end{minipage}}
+
+In this example, the front-end node is based on an IBM Power architecture,
+on which the GCC compiler is available, but produces 32-bit code by default.
+Adding the \texttt{"-m64"} flags force the compiler into 64-bit mode, allowing
+the Preprocessor to import meshes up into the 100-million cell range.
+
+For the compute node, we use the same version of Python (which
+is used only for the GUI and scripts, which only run on the front-end
+or service nodes), but the compilers are cross-compilers for the
+compute nodes:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp
+\textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/bgp \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/bgp
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgp
+\textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgp \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgp \textbackslash \\
+\textcolor{Violet}{
+--disable-sockets --disable-dlloader -disable-nls \textbackslash \\
+--disable-frontend --enable-long-gnum \textbackslash
+} \\
+\textcolor{Magenta}{--build}=ppc64
+\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
+\textcolor{red}{CC}=mpixlc\_r \textcolor{red}{FC}=bgxlf90\_r
+\textcolor{red}{CXX}=mpixlcxx\_r \textbackslash \\
+\textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/bgp/bin/python
+}\end{minipage}}
+
+Here, the \texttt{--build=ppc64 --host=bluegenep} options ensure the
+\texttt{configure} script into cross-compilation mode.
+With a front-end base on an Intel or AMD architecture,
+\texttt{--build=x86\_64} or \texttt{--build=amd64} should be used
+instead of \texttt{--build=ppc64}. For the host (target) architecture,
+\texttt{--host=bluegenep} is recognized by current GNU Autoconf versions,
+so it is preferred, but \texttt{--host=ppc} also works well. Actually,
+any choice of build and host architectures recognized by Autoconf would
+probably work, as long as build and host are different.
+
+The C++ compiler is also specified, as it will be needed for
+the link stage due to C++ dependencies in the MED library,
+which is a static library in this example (see \S\ref{sec:ext:med}).
 
 \subsection{Troubleshooting\label{sec:config:troubleshoot}}
 
