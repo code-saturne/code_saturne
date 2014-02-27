@@ -614,9 +614,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="3.1.4",
-                    archive="cgnslib_3.1.4-2.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
+                    version="3.2.1",
+                    archive="cgnslib_3.2.1.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.2/%s/download")
 
         p = self.packages['cgns']
         p.config_opts = "-DENABLE_64BIT=ON -DENABLE_SCOPING=ON"
