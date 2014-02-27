@@ -1,5 +1,5 @@
-Release 3.2.2 (unreleased)
-==========================
+Release 3.2.2 (27 Feb 2014)
+===========================
 
 Changes:
 --------
@@ -14,6 +14,8 @@ Bug fixes:
 - GUI: fix for velocity boundary condition when using MEI.
 
 - GUI: fixes for handling of thermal scalar.
+
+- Fix possible issue for Lagrangian pointer deallocation.
 
 - Fix incorrect Fortran binding for mesh postprocessing output which could
   lead to crash in some cases.

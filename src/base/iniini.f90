@@ -1406,10 +1406,10 @@ ettp => rvoid2
 ettpa => rvoid2
 tepa => rvoid2
 statis => rvoid2
-stativ => rvoid2
+nullify(stativ)
 parbor => rvoid2
 tslagr => rvoid2
-dlgeo => rvoid2
+nullify(dlgeo)
 
 !===============================================================================
 ! 14. SORTIE
