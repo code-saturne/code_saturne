@@ -401,7 +401,7 @@ cs_control_check_file(void)
 
 #if defined(HAVE_MPI)
   if (cs_glob_rank_id >= 0)
-    MPI_Bcast(buffer, f_size, MPI_CHAR, 0, cs_glob_mpi_comm);
+    MPI_Bcast(buffer, f_size + 1, MPI_CHAR, 0, cs_glob_mpi_comm);
 #endif
 
   /* Now all ranks have required buffer */
