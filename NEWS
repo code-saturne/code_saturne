@@ -4,6 +4,9 @@ Release 3.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix control_file reading with non-empty last line in case of parallel
+  calculation.
+
 - Fix incorrect Fortran binding for mesh postprocessing output which could
   lead to crash in some cases.
 
@@ -45,7 +48,7 @@ Bug fixes:
 - Minor Fixes to info messages for CCMIO output.
 
 - Fix parallel mesh joining bug appearing in some partitioning situations.
-  A previous "fix" in release 3.1.1 had only made the issue appear in 
+  A previous "fix" in release 3.1.1 had only made the issue appear in
   different partitioning situations. This fix to single/coupled edge handling
   is hopefully final, and is more in-depth, using full selected edge
   definition exchanges at parallel interfaces rather than attempting to rebuild
@@ -120,7 +123,7 @@ Changes:
 
 - Use field structure for the scalar with drift and add a drift
   model for coal combustion.
-	  
+
 - New key words are added to the field structure:
   * scalar_id (inverse of the array isca(iscal))
   * scalar_class (class of the scalar which belongs to, in particular sharing
@@ -289,7 +292,7 @@ Changes:
 - Unset default "relaxation" on k-omega.
 
 - MAJOR fix in k-omega turbulence model. Buoyancy term and -2/3divu term are
-  implicit in the equation of k if they are negative. 
+  implicit in the equation of k if they are negative.
   It prevents from clippings on k (if an upwind scheme is used and if ircflu=0).
 
 - MAJOR change in "k-epsilon" turbulence models (iturb = 20, 21, 50, 51):
@@ -387,7 +390,7 @@ Changes:
   tensorial diffusion). Add bricks for tensorial diffusion for vectorial fields
   (matrvv, vistnv, diftnv).
 
-- Modify iterative process to print the proper residual in the listing. 
+- Modify iterative process to print the proper residual in the listing.
   That means we always compute the residual (whereas we didn't before), so
   it might be a little bit more costly.
 
@@ -421,7 +424,7 @@ Changes:
 - Major Fix on Boundary conditions with the coupled velocity components algo (ivelco=1).
   - The Gradient boundary term for the velocity in k-epsilon, 2 scales of velocity was
     not computed correctly.
-  - The wall shear stress in Rij-epsilon was counted twice. 
+  - The wall shear stress in Rij-epsilon was counted twice.
     Note: The previous versions of CS for Rij didn't ensure that rho uk*uet was
           the wall shear stress.
     Note 2: The 2 scales of velocity for Rij does not work properly in a channel,
@@ -557,7 +560,7 @@ Changes:
   Note: humididy, soil and 1D radiation models are experimental.
 
 - MAJOR change: the Temperature transport equation is multiplied by
-  Cp (specific Heat) so that the equation has now the dimension of energy. 
+  Cp (specific Heat) so that the equation has now the dimension of energy.
   The change is expected to have NO influence when Cp is constant.
   When Cp is variable in space, this change fixes the error done on this
   equation.
@@ -593,14 +596,14 @@ Changes:
   clptur, clptrg, clsyvt) which are rewritten (and doxygened).
   The changes should not impact the results (to the truncature error precision).
   A new boundary condition is added: convective/radiative outlet (icodcl=2).
-  The radiative transfer module has been widely modified: 
+  The radiative transfer module has been widely modified:
   - a new solved variable (in rtp) call ilum has been created,
   - the boundary coefficient are now in the same array as for the
     other variables,
   - the new Boundary condition (radiative) is used and user set BCs with
     rcodcl and icodcl
   This may have introduced bugs in the compressible module.
- 
+
 - Lagrangian module: removal of the 'snap_to_grid' (legacy) method of
   particle localization
 
@@ -652,7 +655,7 @@ GUI changes
 - Modification of min, max and initialization for scalars and variance.
 
 - Langrangian module: modification of the oundary conditions:
-  - Rename of the classical boundary conditions 
+  - Rename of the classical boundary conditions
 
 - Lagrangian module: modification of the volume and boundary
   statistics management:
@@ -685,7 +688,7 @@ User and pre/post processing changes
 - Add a user example for LES inflow.
 
 - SYRTHES coupling: in case of unlocated Code_Saturne elements in SYRTHES mesh,
-  these elements are now post-processed. 
+  these elements are now post-processed.
 
 - In case of a single SYRTHES coupling, adjust name to automatic match.
 
@@ -791,7 +794,7 @@ Release 2.2.0 (30 Mar 2012)
 Changes:
 --------
 
-- Add a porosity formulation. 
+- Add a porosity formulation.
   The transport equations (espacially in turbulence) have to be checked.
   We also have to check if the formulation is all right in presence of
   Coriolis forces.
