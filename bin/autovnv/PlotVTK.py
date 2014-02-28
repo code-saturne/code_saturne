@@ -34,6 +34,7 @@ from math import sqrt
 #-------------------------------------------------------------------------------
 
 import vtk
+from matplotlib import colors as mpl_colors
 
 #-------------------------------------------------------------------------------
 # log config
@@ -78,7 +79,7 @@ class Scalar(object):
         self.center = parser.getAttributeTuple(node, "center", ())
         self.stretch = parser.getAttributeTuple(node, "stretch", ())
         self.time_step = float(parser.getAttribute(node, "time-step", -1.))
-        self.size = parser.getAttributeTuple(node, "size", (500, 400))
+        self.size = map(int, parser.getAttributeTuple(node, "size", (500, 400)))
         self.zoom = float(parser.getAttribute(node, "zoom", 1.))
         self.wireframe = parser.getAttribute(node, "wireframe", "off")
 
@@ -121,7 +122,7 @@ class Scalar(object):
 
         # title
         #------
- 
+
         n_title = parser.getChild(node, "title")
 
         if n_title:
@@ -154,6 +155,22 @@ class Scalar(object):
             self.axes_xlabel = ""
             self.axes_ylabel = ""
             self.axes_zlabel = ""
+
+        # contours
+        #------
+
+        n_cont = parser.getChild(node, "contours")
+
+        if n_cont:
+            self.cont = parser.getAttribute(n_cont, "status", "off")
+            self.cont_nval = int(parser.getAttribute(n_cont, "nval", 10))
+            self.cont_range = parser.getAttributeTuple(n_cont, "range", ())
+            self.cont_color = parser.getAttributeTuple(n_cont, "color", "k")
+        else:
+            self.cont = "off"
+            self.cont_nval = 10
+            self.cont_range = ()
+            self.cont_color = "k"
 
         # raw commands
         #-------------
@@ -211,7 +228,7 @@ class PlotVTK(object):
                         self.figures.append(Scalar(nn, self.parser, f))
 
         for options in self.figures:
-            # Plot 
+            # Plot
             figure = Builder(options)
 
             # save the figure
@@ -247,37 +264,73 @@ class Builder(object):
         self.cam = self.ren.GetActiveCamera()
         self.ren.ResetCamera()
 
-        self.mapper = vtk.vtkPolyDataMapper()
+        # mapper for the plane cut
+        self.cutMapper = vtk.vtkPolyDataMapper()
 
+        # define the cut plane and the cut input
         cut = self.cutPlane(convert)
 
         if self.opt.stretch:
             t = vtk.vtkTransform()
             m = vtk.vtkTransformPolyDataFilter()
+
             t.Scale(self.opt.stretch[0],
                     self.opt.stretch[1],
                     self.opt.stretch[2])
 
             m.SetInputConnection(cut.GetOutputPort())
             m.SetTransform(t)
-            self.mapper.SetInputConnection(m.GetOutputPort())
+
+            self.cutMapper.SetInputConnection(m.GetOutputPort())
         else:
-            self.mapper.SetInputConnection(cut.GetOutputPort())
+            self.cutMapper.SetInputConnection(cut.GetOutputPort())
 
         if not self.opt.color_map:
-            self.mapper.CreateDefaultLookupTable()
-            lut = self.mapper.GetLookupTable()
+            self.cutMapper.CreateDefaultLookupTable()
+            lut = self.cutMapper.GetLookupTable()
         else:
             lut = eval("self." + self.opt.color_map + "()")
 
-        self.colorDataSetByArray(convert, lut)
-
+        self.colorDataSetByArray(convert.GetOutput(), lut, self.cutMapper)
         grid = vtk.vtkLODActor()
-        #grid = vtk.vtkActor()
-        grid.SetMapper(self.mapper)
+
+        grid.SetMapper(self.cutMapper)
+
         if self.opt.wireframe == "on":
             grid.GetProperty().SetRepresentationToWireframe()
+
         self.ren.AddActor(grid)
+
+        if self.opt.cont:
+            # mapper for the contours
+            self.contoursMapper = vtk.vtkPolyDataMapper()
+            # define contours on cut plane
+            contours = self.contoursFilterOnCutPlane(convert, cut)
+
+            # apply same transformation as to the cut
+            if self.opt.stretch:
+                t = vtk.vtkTransform()
+                cm = vtk.vtkTransformPolyDataFilter()
+
+                t.Scale(self.opt.stretch[0],
+                        self.opt.stretch[1],
+                        self.opt.stretch[2])
+
+                cm.SetInputConnection(contours.GetOutputPort())
+                cm.SetTransform(t)
+
+                self.contoursMapper.SetInputConnection(cm.GetOutputPort())
+            else:
+                self.contoursMapper.SetInputConnection(contours.GetOutputPort())
+
+            self.colorDataSetByArray(convert.GetOutput(), lut, self.contoursMapper)
+
+            # create actor and add it to the renderer
+            cont_grid = vtk.vtkLODActor()
+            cont_grid.SetMapper(self.contoursMapper)
+            rgb = mpl_colors.ColorConverter().to_rgb(self.opt.cont_color)
+            cont_grid.GetProperty().SetColor(rgb)
+            self.ren.AddActor(cont_grid)
 
         if self.opt.axes:
             if self.opt.stretch:
@@ -380,7 +433,7 @@ class Builder(object):
 
 
     def cutPlane(self, ptDataSet):
-        """Extract a slice from the 3D computation domain."""
+        """Extract a slice from the 3D computational domain."""
         # The (implicit) plane is used to do the cutting
         plane = vtk.vtkPlane()
         if self.opt.center:
@@ -403,6 +456,21 @@ class Builder(object):
         #cut.GenerateCutScalarsOn()
         #cut.SetSortByToSortByCell()
         return cut
+
+    def contoursFilterOnCutPlane(self, convert, cut):
+        """Create contours on a slice from the 3D computational domain."""
+        # create the contour filter
+        contours = vtk.vtkContourFilter()
+        # set the plane as input
+        contours.SetInputConnection(cut.GetOutputPort())
+        # select the variable
+        contours.SetInputArrayToProcess(0,0,0,0,self.opt.variable)
+        # define the iso values
+        self.isoValuesByArray(convert.GetOutput(), contours)
+
+        contours.Update()
+
+        return contours
 
 
     def textProperty(self, fontsize = 20):
@@ -509,38 +577,57 @@ class Builder(object):
         return axes
 
 
-    def colorDataSetByArray(self, convert, lut):
+    def colorDataSetByArray(self, data, lut, mapper):
         """Build the color map."""
         array = None
         flag = True
-        data = convert.GetOutput()
-        self.mapper.Modified()
+        mapper.Modified()
 
         if data.GetCellData() and data.GetCellData().HasArray(self.opt.variable):
-            array = data.GetCellData().GetArray(variable)
+            array = data.GetCellData().GetArray(self.opt.variable)
             if array:
-                self.mapper.SetScalarModeToUseCellFieldData()
+                mapper.SetScalarModeToUseCellFieldData()
 
         if not array and data.GetPointData() and data.GetPointData().HasArray(self.opt.variable):
             array = data.GetPointData().GetArray(self.opt.variable)
             if array:
-                self.mapper.SetScalarModeToUsePointFieldData()
+                mapper.SetScalarModeToUsePointFieldData()
 
         if not array:
-            self.mapper.SetScalarModeToDefault()
-            self.mapper.SetInterpolateScalarsBeforeMapping(1)
+            mapper.SetScalarModeToDefault()
+            mapper.SetInterpolateScalarsBeforeMapping(1)
             print("Variable name not found in data set.")
             flag = False
 
         if flag:
-            self.mapper.SetLookupTable(lut)
+            mapper.SetLookupTable(lut)
             if self.opt.color_srange:
-                self.mapper.SetScalarRange(self.opt.color_srange[0],
-                                           self.opt.color_srange[1])
+                mapper.SetScalarRange(self.opt.color_srange[0],
+                                      self.opt.color_srange[1])
             else:
-                self.mapper.SetScalarRange(array.GetRange())
-            self.mapper.SetInterpolateScalarsBeforeMapping(1)
-            self.mapper.SelectColorArray(array.GetName())
+                mapper.SetScalarRange(array.GetRange())
+            mapper.SetInterpolateScalarsBeforeMapping(1)
+            mapper.SelectColorArray(array.GetName())
+
+
+    def isoValuesByArray(self, data, contours):
+        """Generate the isovalues from data range."""
+        array = None
+
+        if data.GetCellData() and data.GetCellData().HasArray(self.opt.variable):
+            array = data.GetCellData().GetArray(self.opt.variable)
+
+        if not array and data.GetPointData() and data.GetPointData().HasArray(self.opt.variable):
+            array = data.GetPointData().GetArray(self.opt.variable)
+
+        if not array:
+            print("Error: variable %s not found." % self.opt.variable)
+            sys.exit(1)
+
+        if self.opt.cont_range:
+            contours.GenerateValues(self.opt.cont_nval, self.opt.cont_range)
+        else:
+            contours.GenerateValues(self.opt.cont_nval, array.GetRange())
 
 
     def screenshot(self, f, mode = "PNG"):
