@@ -845,7 +845,7 @@ class MainView(object):
 
         filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
 
-        file_name = str(getopenfilename(self, title, path, filetypes))
+        file_name, _selfilter = getopenfilename(self, title, path, filetypes)
 
         if not file_name:
             msg = self.tr("Loading aborted")
@@ -967,10 +967,10 @@ class MainView(object):
 
         if hasattr(self,'case'):
             filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
-            fname = str(getsavefilename(self,
-                                        self.tr("Save File As"),
-                                        self.case['data_path'],
-                                        filetypes))
+            fname, _selfilter = getsavefilename(self,
+                                                self.tr("Save File As"),
+                                                self.case['data_path'],
+                                                filetypes)
 
             if fname:
                 f = str(fname)
