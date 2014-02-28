@@ -301,7 +301,7 @@ class Builder(object):
 
         self.ren.AddActor(grid)
 
-        if self.opt.cont:
+        if self.opt.cont == 'on':
             # mapper for the contours
             self.contoursMapper = vtk.vtkPolyDataMapper()
             # define contours on cut plane

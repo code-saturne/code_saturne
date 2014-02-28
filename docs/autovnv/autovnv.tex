@@ -979,13 +979,13 @@ are \texttt{line} and \texttt{lines} (with \texttt{line = lines[0]}).
 The post-processing is activated if the option \texttt{-p, --post} is present
 in the command line.
 
-\textsc{Autovnv} is able to draw colored maps from results on cut planes of the
-computational domain. The results must be a set of ensight files. The following
-example shows the drawing of a scalar map using the master file of result
-\texttt{RESULTS.case}. The figure will be saved on the disk in a
-\textbf{png} format, in the \texttt{POST} directory of the related study in the
-\textbf{destination}. Each drawing of a single scalar map is defined as a markup
-child of a file of data inside a case.
+\textsc{Autovnv} is able to draw colored maps, with optional contours, from
+results on cut planes of the computational domain. The results must be a set of
+ensight files. The following example shows the drawing of a scalar map using the
+master file of result \texttt{RESULTS.case}. The figure will be saved on the
+disk in a \textbf{png} format, in the \texttt{POST} directory of the related
+study in the \textbf{destination}. Each drawing of a single scalar map is
+defined as a markup child of a file of data inside a case.
 
 \small
 \begin{verbatim}
@@ -993,6 +993,7 @@ child of a file of data inside a case.
     <resu file="RESULTS.case" dest="">
         <scalar name="alpha1" variable="alpha1" normal="(0,0,1)">
             <scale legend="Water fraction" levels="10" />
+            <contours status="on" nval="20"/>
             <title label="Grid level 1" fontsize="15"/>
             <axes/>
         </scalar>
@@ -1003,9 +1004,9 @@ child of a file of data inside a case.
 \normalsize
 
 In the file of parameters, scalar map are defined with two markups:
-\texttt{<resu>} and \texttt{<scalar>}. Three other markups can be used:
-\texttt{<scale>}, \texttt{<title>} and \texttt{<axes>} as childs of
-the markups \texttt{<scalar>}.
+\texttt{<resu>} and \texttt{<scalar>}. Four other markups can be used:
+\texttt{<scale>}, \texttt{<contours>}, \texttt{<title>} and \texttt{<axes>} as
+childs of the markups \texttt{<scalar>}.
 
 \begin{list}{$\bullet$}{}
 \item \texttt{<resu>}: child of markup \texttt{<case>}, defines the master file
@@ -1106,6 +1107,34 @@ format & \%4.4f \\
 
 No attribute is mandatory.
 
+\item \texttt{<contours>}: child of markup \texttt{<scalar>}, draw iso-contours of the selected variable on the cut plane;
+\begin{list}{$\rightarrow$}{}
+\item \texttt{status}: must be equal to \texttt{on} or \texttt{off}, activate or desactivate the markup
+\item \texttt{nval}: number of isovalues
+\item \texttt{range}: tuple to set the range of iso-values to display
+\item \texttt{color}: any matplotlib color.
+\end{list}
+
+See default values for these attributes in the table \ref{table:contours}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Attributes} & \textbf{Default values} \\
+\hline
+status & off \\
+nval & 10 \\
+range & \textit{all variable values} \\
+color & k \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Default attributes values of the markup \texttt{contours}.}
+\label{table:contours}
+\end{table}
+
+No attribute is mandatory.
 
 \item \texttt{<title>}: child of markup \texttt{<scalar>}, defines a title for the scalarmap;
 \begin{list}{$\rightarrow$}{}
