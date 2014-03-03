@@ -246,7 +246,7 @@ if (idftnp.eq.1) then
 ! Symmetric tensor diffusivity
 elseif (idftnp.eq.6) then
 
-  ! Nor diffusive part neither secodary viscosity or transpose of grandient
+  ! Nor diffusive part neither secondary viscosity or transpose of gradient
   idiflc = 0
   vcopt%idiff  = idiflc
   ! Convective part
