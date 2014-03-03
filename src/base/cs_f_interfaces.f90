@@ -29,6 +29,8 @@ module cs_f_interfaces
 
   use, intrinsic :: iso_c_binding
 
+  use cs_c_bindings, only: var_cal_opt
+
   implicit none
 
   !=============================================================================
@@ -38,17 +40,17 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine diften &
-      (idtvar, ivar, nswrgp, imligp, ircflp,                                   &
-      inc, imrgra, iccocg, iwarnp, epsrgp,                                     &
-      climgp, extrap, relaxp, thetap,                                          &
+      (idtvar, ivar, vcopt,                                                    &
+      inc, iccocg,                                                             &
       pvar, pvara, coefap, coefbp, cofafp, cofbfp,                             &
       viscf, viscb, viscel,                                                    &
       weighf, weighb,                                                          &
       smbrp)
       use mesh
-      integer :: idtvar, ivar, nswrgp, imligp, ircflp
-      integer :: inc, imrgra, iccocg, iwarnp
-      double precision :: epsrgp, climgp, extrap, relaxp, thetap
+      use cs_c_bindings, only: var_cal_opt
+      integer :: idtvar, ivar
+      type(var_cal_opt) :: vcopt
+      integer :: inc, iccocg
       double precision, dimension(ncelet) :: pvar, pvara
       double precision, dimension(nfabor) :: coefap, coefbp, cofafp, cofbfp
       double precision, dimension(nfac) :: viscf

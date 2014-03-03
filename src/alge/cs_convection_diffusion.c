@@ -110,63 +110,35 @@ BEGIN_C_DECLS
 
 void CS_PROCF (bilsc2, BILSC2)
 (
- const cs_int_t  *const   idtvar,
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   ircflp,
- const cs_int_t  *const   ischcp,
- const cs_int_t  *const   isstpp,
- const cs_int_t  *const   icvflb,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   iccocg,
- const cs_int_t  *const   ifaccp,
- const cs_int_t  *const   iwarnp,
- const cs_real_t *const   blencp,
- const cs_real_t *const   epsrgp,
- const cs_real_t *const   climgp,
- const cs_real_t *const   extrap,
- const cs_real_t *const   relaxp,
- const cs_real_t *const   thetap,
- cs_real_t                pvar[],
- const cs_real_t          pvara[],
- const cs_int_t           bc_type[],
- const cs_int_t           icvfli[],
- const cs_real_t          coefap[],
- const cs_real_t          coefbp[],
- const cs_real_t          cofafp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_t                rhs[]
+ const cs_int_t          *const   idtvar,
+ const cs_int_t          *const   f_id,
+ const cs_var_cal_opt_t  *const   var_cal_opt,
+ const cs_int_t          *const   icvflb,
+ const cs_int_t          *const   inc,
+ const cs_int_t          *const   iccocg,
+ const cs_int_t          *const   ifaccp,
+ cs_real_t                        pvar[],
+ const cs_real_t                  pvara[],
+ const cs_int_t                   bc_type[],
+ const cs_int_t                   icvfli[],
+ const cs_real_t                  coefap[],
+ const cs_real_t                  coefbp[],
+ const cs_real_t                  cofafp[],
+ const cs_real_t                  cofbfp[],
+ const cs_real_t                  i_massflux[],
+ const cs_real_t                  b_massflux[],
+ const cs_real_t                  i_visc[],
+ const cs_real_t                  b_visc[],
+ cs_real_t                        rhs[]
 )
 {
   cs_convection_diffusion_scalar(*idtvar,
                                  *f_id,
-                                 *iconvp,
-                                 *idiffp,
-                                 *nswrgp,
-                                 *imligp,
-                                 *ircflp,
-                                 *ischcp,
-                                 *isstpp,
+                                 *var_cal_opt,
                                  *icvflb,
                                  *inc,
-                                 *imrgra,
                                  *iccocg,
                                  *ifaccp,
-                                 *iwarnp,
-                                 *blencp,
-                                 *epsrgp,
-                                 *climgp,
-                                 *extrap,
-                                 *relaxp,
-                                 *thetap,
                                  pvar,
                                  pvara,
                                  bc_type,
@@ -188,62 +160,36 @@ void CS_PROCF (bilsc2, BILSC2)
 
 void CS_PROCF (bilsc4, BILSC4)
 (
- const cs_int_t  *const   idtvar,
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   ircflp,
- const cs_int_t  *const   ischcp,
- const cs_int_t  *const   isstpp,
- const cs_int_t  *const   icvflb,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   ifaccp,
- const cs_int_t  *const   ivisep,
- const cs_int_t  *const   iwarnp,
- const cs_real_t *const   blencp,
- const cs_real_t *const   epsrgp,
- const cs_real_t *const   climgp,
- const cs_real_t *const   relaxp,
- const cs_real_t *const   thetap,
- cs_real_3_t              pvar[],
- const cs_real_3_t        pvara[],
- const cs_int_t           bc_type[],
- const cs_int_t           icvfli[],
- const cs_real_3_t        coefav[],
- const cs_real_33_t       coefbv[],
- const cs_real_3_t        cofafv[],
- const cs_real_33_t       cofbfv[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- const cs_real_t          secvif[],
- cs_real_3_t              rhs[]
+ const cs_int_t          *const   idtvar,
+ const cs_int_t          *const   f_id,
+ const cs_var_cal_opt_t  *const   var_cal_opt,
+ const cs_int_t          *const   icvflb,
+ const cs_int_t          *const   inc,
+ const cs_int_t          *const   ifaccp,
+ const cs_int_t          *const   ivisep,
+ cs_real_3_t                      pvar[],
+ const cs_real_3_t                pvara[],
+ const cs_int_t                   bc_type[],
+ const cs_int_t                   icvfli[],
+ const cs_real_3_t                coefav[],
+ const cs_real_33_t               coefbv[],
+ const cs_real_3_t                cofafv[],
+ const cs_real_33_t               cofbfv[],
+ const cs_real_t                  i_massflux[],
+ const cs_real_t                  b_massflux[],
+ const cs_real_t                  i_visc[],
+ const cs_real_t                  b_visc[],
+ const cs_real_t                  secvif[],
+ cs_real_3_t                      rhs[]
 )
 {
   cs_convection_diffusion_vector(*idtvar,
                                  *f_id,
-                                 *iconvp,
-                                 *idiffp,
-                                 *nswrgp,
-                                 *imligp,
-                                 *ircflp,
-                                 *ischcp,
-                                 *isstpp,
+                                 *var_cal_opt,
                                  *icvflb,
                                  *inc,
-                                 *imrgra,
                                  *ifaccp,
                                  *ivisep,
-                                 *iwarnp,
-                                 *blencp,
-                                 *epsrgp,
-                                 *climgp,
-                                 *relaxp,
-                                 *thetap,
                                  pvar,
                                  pvara,
                                  bc_type,
@@ -266,61 +212,33 @@ void CS_PROCF (bilsc4, BILSC4)
 
 void CS_PROCF (bilsct, BILSCT)
 (
- const cs_int_t  *const   idtvar,
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   ircflp,
- const cs_int_t  *const   ischcp,
- const cs_int_t  *const   isstpp,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   iccocg,
- const cs_int_t  *const   ifaccp,
- const cs_int_t  *const   iwarnp,
- const cs_real_t *const   blencp,
- const cs_real_t *const   epsrgp,
- const cs_real_t *const   climgp,
- const cs_real_t *const   extrap,
- const cs_real_t *const   relaxp,
- const cs_real_t *const   thetap,
- cs_real_t                pvar[],
- const cs_real_t          pvara[],
- const cs_int_t           bc_type[],
- const cs_real_t          coefap[],
- const cs_real_t          coefbp[],
- const cs_real_t          cofafp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- const cs_real_t          xcpp[],
- cs_real_t                rhs[]
+ const cs_int_t          *const   idtvar,
+ const cs_int_t          *const   f_id,
+ const cs_var_cal_opt_t  *const   var_cal_opt,
+ const cs_int_t          *const   inc,
+ const cs_int_t          *const   iccocg,
+ const cs_int_t          *const   ifaccp,
+ cs_real_t                        pvar[],
+ const cs_real_t                  pvara[],
+ const cs_int_t                   bc_type[],
+ const cs_real_t                  coefap[],
+ const cs_real_t                  coefbp[],
+ const cs_real_t                  cofafp[],
+ const cs_real_t                  cofbfp[],
+ const cs_real_t                  i_massflux[],
+ const cs_real_t                  b_massflux[],
+ const cs_real_t                  i_visc[],
+ const cs_real_t                  b_visc[],
+ const cs_real_t                  xcpp[],
+ cs_real_t                        rhs[]
 )
 {
   cs_convection_diffusion_thermal(*idtvar,
                                   *f_id,
-                                  *iconvp,
-                                  *idiffp,
-                                  *nswrgp,
-                                  *imligp,
-                                  *ircflp,
-                                  *ischcp,
-                                  *isstpp,
+                                  *var_cal_opt,
                                   *inc,
-                                  *imrgra,
                                   *iccocg,
                                   *ifaccp,
-                                  *iwarnp,
-                                  *blencp,
-                                  *epsrgp,
-                                  *climgp,
-                                  *extrap,
-                                  *relaxp,
-                                  *thetap,
                                   pvar,
                                   pvara,
                                   bc_type,
@@ -342,48 +260,30 @@ void CS_PROCF (bilsct, BILSCT)
 
 void CS_PROCF (diften, DIFTEN)
 (
- const cs_int_t  *const   idtvar,
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   ircflp,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   iccocg,
- const cs_int_t  *const   iwarnp,
- const cs_real_t *const   epsrgp,
- const cs_real_t *const   climgp,
- const cs_real_t *const   extrap,
- const cs_real_t *const   relaxp,
- const cs_real_t *const   thetap,
- cs_real_t                pvar[],
- const cs_real_t          pvara[],
- const cs_real_t          coefap[],
- const cs_real_t          coefbp[],
- const cs_real_t          cofafp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_6_t              viscel[],
- const cs_real_2_t        weighf[],
- const cs_real_t          weighb[],
- cs_real_t                rhs[]
+ const cs_int_t          *const   idtvar,
+ const cs_int_t          *const   f_id,
+ const cs_var_cal_opt_t  *const   var_cal_opt,
+ const cs_int_t          *const   inc,
+ const cs_int_t          *const   iccocg,
+ cs_real_t                        pvar[],
+ const cs_real_t                  pvara[],
+ const cs_real_t                  coefap[],
+ const cs_real_t                  coefbp[],
+ const cs_real_t                  cofafp[],
+ const cs_real_t                  cofbfp[],
+ const cs_real_t                  i_visc[],
+ const cs_real_t                  b_visc[],
+ cs_real_6_t                      viscel[],
+ const cs_real_2_t                weighf[],
+ const cs_real_t                  weighb[],
+ cs_real_t                        rhs[]
 )
 {
   cs_anisotropic_diffusion_scalar(*idtvar,
                                   *f_id,
-                                  *nswrgp,
-                                  *imligp,
-                                  *ircflp,
+                                  *var_cal_opt,
                                   *inc,
-                                  *imrgra,
                                   *iccocg,
-                                  *iwarnp,
-                                  *epsrgp,
-                                  *climgp,
-                                  *extrap,
-                                  *relaxp,
-                                  *thetap,
                                   pvar,
                                   pvara,
                                   coefap,
@@ -404,47 +304,31 @@ void CS_PROCF (diften, DIFTEN)
 
 void CS_PROCF (diftnv, DIFTNV)
 (
- const cs_int_t  *const   idtvar,
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   ircflp,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   ifaccp,
- const cs_int_t  *const   ivisep,
- const cs_int_t  *const   iwarnp,
- const cs_real_t *const   epsrgp,
- const cs_real_t *const   climgp,
- const cs_real_t *const   relaxp,
- const cs_real_t *const   thetap,
- cs_real_3_t              pvar[],
- const cs_real_3_t        pvara[],
- const cs_int_t           bc_type[],
- const cs_real_3_t        coefav[],
- const cs_real_33_t       coefbv[],
- const cs_real_3_t        cofafv[],
- const cs_real_33_t       cofbfv[],
- const cs_real_33_t       i_visc[],
- const cs_real_t          b_visc[],
- const cs_real_t          secvif[],
- cs_real_3_t              rhs[]
+ const cs_int_t          *const   idtvar,
+ const cs_int_t          *const   f_id,
+ const cs_var_cal_opt_t  *const   var_cal_opt,
+ const cs_int_t          *const   inc,
+ const cs_int_t          *const   ifaccp,
+ const cs_int_t          *const   ivisep,
+ cs_real_3_t                      pvar[],
+ const cs_real_3_t                pvara[],
+ const cs_int_t                   bc_type[],
+ const cs_real_3_t                coefav[],
+ const cs_real_33_t               coefbv[],
+ const cs_real_3_t                cofafv[],
+ const cs_real_33_t               cofbfv[],
+ const cs_real_33_t               i_visc[],
+ const cs_real_t                  b_visc[],
+ const cs_real_t                  secvif[],
+ cs_real_3_t                      rhs[]
 )
 {
   cs_anisotropic_diffusion_vector(*idtvar,
                                   *f_id,
-                                  *nswrgp,
-                                  *imligp,
-                                  *ircflp,
+                                  *var_cal_opt,
                                   *inc,
-                                  *imrgra,
                                   *ifaccp,
                                   *ivisep,
-                                  *iwarnp,
-                                  *epsrgp,
-                                  *climgp,
-                                  *relaxp,
-                                  *thetap,
                                   pvar,
                                   pvara,
                                   bc_type,
@@ -731,44 +615,15 @@ void CS_PROCF (itrgrv, ITRGRV)
  * - \f$ Rhs \f$ has already been initialized before calling bilsc2!
  * - mind the sign minus
  *
- * Options:
- * - blencp = 0: upwind scheme for the advection
- * - blencp = 1: no upwind scheme except in the slope test
- * - ischcp = 0: second order
- * - ischcp = 1: centred
- *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
- * \param[in]     iconvp        indicator
- *                               - 1 convection,
- *                               - 0 sinon
- * \param[in]     idiffp        indicator
- *                               - 1 diffusion,
- *                               - 0 sinon
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
- * \param[in]     ircflp        indicator
- *                               - 1 flux reconstruction,
- *                               - 0 otherwise
- * \param[in]     ischcp        indicator
- *                               - 1 centred
- *                               - 0 2nd order
- * \param[in]     isstpp        indicator
- *                               - 1 without slope test
- *                               - 0 with slope test
+ * \param[in]     var_cal_opt   variable calculation options
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least square gradient
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix
  *                                   (for iterative gradients)
@@ -776,20 +631,6 @@ void CS_PROCF (itrgrv, ITRGRV)
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
  *                               - 0 coupling not activated
- * \param[in]     iwarnp        verbosity
- * \param[in]     blencp        fraction of upwinding
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
- * \param[in]     relaxp        coefficient of relaxation
- * \param[in]     thetap        weightening coefficient for the theta-schema,
- *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
- *                               scheme (mix between Crank-Nicolson and
- *                               Adams-Bashforth)
- *                               - thetap = 1: implicit scheme
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_type       boundary condition type
@@ -817,25 +658,11 @@ void CS_PROCF (itrgrv, ITRGRV)
 void
 cs_convection_diffusion_scalar(int                       idtvar,
                                int                       f_id,
-                               int                       iconvp,
-                               int                       idiffp,
-                               int                       nswrgp,
-                               int                       imligp,
-                               int                       ircflp,
-                               int                       ischcp,
-                               int                       isstpp,
+                               const cs_var_cal_opt_t    var_cal_opt,
                                int                       icvflb,
                                int                       inc,
-                               int                       imrgra,
                                int                       iccocg,
                                int                       ifaccp,
-                               int                       iwarnp,
-                               double                    blencp,
-                               double                    epsrgp,
-                               double                    climgp,
-                               double                    extrap,
-                               double                    relaxp,
-                               double                    thetap,
                                cs_real_t       *restrict pvar,
                                const cs_real_t *restrict pvara,
                                const cs_int_t            bc_type[],
@@ -850,6 +677,22 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                const cs_real_t           b_visc[],
                                cs_real_t       *restrict rhs)
 {
+  const int iconvp = var_cal_opt.iconv;
+  const int idiffp = var_cal_opt.idiff;
+  const int nswrgp = var_cal_opt.nswrgr;
+  const int imrgra = var_cal_opt.imrgra;
+  const int imligp = var_cal_opt.imligr;
+  const int ircflp = var_cal_opt.ircflu;
+  const int ischcp = var_cal_opt.ischcv;
+  const int isstpp = var_cal_opt.isstpc;
+  const int iwarnp = var_cal_opt.iwarni;
+  const double blencp = var_cal_opt.blencv;
+  const double epsrgp = var_cal_opt.epsrgr;
+  const double climgp = var_cal_opt.climgr;
+  const double extrap = var_cal_opt.extrag;
+  const double relaxp = var_cal_opt.relaxv;
+  const double thetap = var_cal_opt.thetav;
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -2098,44 +1941,15 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
  * - mind the sign minus
  *
- * Options:
- * - blencp = 0: upwind scheme for the advection
- * - blencp = 1: no upwind scheme except in the slope test
- * - ischcp = 0: second order
- * - ischcp = 1: centred
- *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     iconvp        indicator
- *                               - 1 convection,
- *                               - 0 sinon
- * \param[in]     idiffp        indicator
- *                               - 1 diffusion,
- *                               - 0 sinon
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
- * \param[in]     ircflp        indicator
- *                               - 1 flux reconstruction,
- *                               - 0 otherwise
- * \param[in]     ischcp        indicator
- *                               - 1 centred
- *                               - 0 2nd order
- * \param[in]     isstpp        indicator
- *                               - 1 without slope test
- *                               - 0 with slope test
+ * \param[in]     var_cal_opt   variable calculation options
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least square gradient
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
  *                               - 0 coupling not activated
@@ -2144,19 +1958,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
  *                               - 1 take into account,
  *                               - 0 otherwise
- * \param[in]     iwarnp        verbosity
- * \param[in]     blencp        fraction of upwinding
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
- * \param[in]     relaxp        coefficient of relaxation
- * \param[in]     thetap        weightening coefficient for the theta-schema,
- *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
- *                               scheme (mix between Crank-Nicolson and
- *                               Adams-Bashforth)
- *                               - thetap = 1: implicit scheme
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     bc_type       boundary condition type
@@ -2185,24 +1986,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
 void
 cs_convection_diffusion_vector(int                         idtvar,
                                int                         f_id,
-                               int                         iconvp,
-                               int                         idiffp,
-                               int                         nswrgp,
-                               int                         imligp,
-                               int                         ircflp,
-                               int                         ischcp,
-                               int                         isstpp,
+                               const cs_var_cal_opt_t      var_cal_opt,
                                int                         icvflb,
                                int                         inc,
-                               int                         imrgra,
                                int                         ifaccp,
                                int                         ivisep,
-                               int                         iwarnp,
-                               double                      blencp,
-                               double                      epsrgp,
-                               double                      climgp,
-                               double                      relaxp,
-                               double                      thetap,
                                cs_real_3_t       *restrict pvar,
                                const cs_real_3_t *restrict pvara,
                                const cs_int_t              bc_type[],
@@ -2218,6 +2006,21 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             secvif[],
                                cs_real_3_t       *restrict rhs)
 {
+  const int iconvp = var_cal_opt.iconv;
+  const int idiffp = var_cal_opt.idiff;
+  const int nswrgp = var_cal_opt.nswrgr;
+  const int imrgra = var_cal_opt.imrgra;
+  const int imligp = var_cal_opt.imligr;
+  const int ircflp = var_cal_opt.ircflu;
+  const int ischcp = var_cal_opt.ischcv;
+  const int isstpp = var_cal_opt.isstpc;
+  const int iwarnp = var_cal_opt.iwarni;
+  const double blencp = var_cal_opt.blencv;
+  const double epsrgp = var_cal_opt.epsrgr;
+  const double climgp = var_cal_opt.climgr;
+  const double relaxp = var_cal_opt.relaxv;
+  const double thetap = var_cal_opt.thetav;
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -3718,41 +3521,12 @@ cs_convection_diffusion_vector(int                         idtvar,
  * Warning:
  * \f$ Rhs \f$ has already been initialized before calling bilsct!
  *
- * Options for the convective scheme:
- * - blencp = 0: upwind scheme for the advection
- * - blencp = 1: no upwind scheme except in the slope test
- * - ischcp = 0: second order
- * - ischcp = 1: centred
- *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     iconvp        indicator
- *                               - 1 convection,
- *                               - 0 sinon
- * \param[in]     idiffp        indicator
- *                               - 1 diffusion,
- *                               - 0 sinon
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
- * \param[in]     ircflp        indicator
- *                               - 1 flux reconstruction,
- *                               - 0 otherwise
- * \param[in]     ischcp        indicator
- *                               - 1 centred
- *                               - 0 2nd order
- * \param[in]     isstpp        indicator
- *                               - 1 without slope test
- *                               - 0 with slope test
+ * \param[in]     var_cal_opt   variable calculation options
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least square gradient
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix
  *                                 (for iterative gradients)
@@ -3760,20 +3534,6 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
  *                               - 0 coupling not activated
- * \param[in]     iwarnp        verbosity
- * \param[in]     blencp        fraction of upwinding
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
- * \param[in]     relaxp        coefficient of relaxation
- * \param[in]     thetap        weightening coefficient for the theta-schema,
- *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
- *                               scheme (mix between Crank-Nicolson and
- *                               Adams-Bashforth)
- *                               - thetap = 1: implicit scheme
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_type       boundary condition type
@@ -3799,24 +3559,10 @@ cs_convection_diffusion_vector(int                         idtvar,
 void
 cs_convection_diffusion_thermal(int                       idtvar,
                                 int                       f_id,
-                                int                       iconvp,
-                                int                       idiffp,
-                                int                       nswrgp,
-                                int                       imligp,
-                                int                       ircflp,
-                                int                       ischcp,
-                                int                       isstpp,
+                                const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
-                                int                       imrgra,
                                 int                       iccocg,
                                 int                       ifaccp,
-                                int                       iwarnp,
-                                double                    blencp,
-                                double                    epsrgp,
-                                double                    climgp,
-                                double                    extrap,
-                                double                    relaxp,
-                                double                    thetap,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
                                 const cs_int_t            bc_type[],
@@ -3831,6 +3577,22 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                 const cs_real_t           xcpp[],
                                 cs_real_t       *restrict rhs)
 {
+  const int iconvp = var_cal_opt.iconv ;
+  const int idiffp = var_cal_opt.idiff ;
+  const int nswrgp = var_cal_opt.nswrgr;
+  const int imrgra = var_cal_opt.imrgra;
+  const int imligp = var_cal_opt.imligr;
+  const int ircflp = var_cal_opt.ircflu;
+  const int ischcp = var_cal_opt.ischcv;
+  const int isstpp = var_cal_opt.isstpc;
+  const int iwarnp = var_cal_opt.iwarni;
+  const double blencp = var_cal_opt.blencv;
+  const double epsrgp = var_cal_opt.epsrgr;
+  const double climgp = var_cal_opt.climgr;
+  const double extrap = var_cal_opt.extrag;
+  const double relaxp = var_cal_opt.relaxv;
+  const double thetap = var_cal_opt.thetav;
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -4962,38 +4724,14 @@ cs_convection_diffusion_thermal(int                       idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
- * \param[in]     ircflp        indicator
- *                               - 1 flux reconstruction,
- *                               - 0 otherwise
+ * \param[in]     var_cal_opt   variable calculation options
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least square gradient
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix
                                 (for iterativ gradients)
  *                               - 0 otherwise
- * \param[in]     iwarnp        verbosity
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
- * \param[in]     relaxp        coefficient of relaxation
- * \param[in]     thetap        weightening coefficient for the theta-schema,
- *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
- *                               scheme (mix between Crank-Nicolson and
- *                               Adams-Bashforth)
- *                               - thetap = 1: implicit scheme
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -5020,18 +4758,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
 void
 cs_anisotropic_diffusion_scalar(int                       idtvar,
                                 int                       f_id,
-                                int                       nswrgp,
-                                int                       imligp,
-                                int                       ircflp,
+                                const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
-                                int                       imrgra,
                                 int                       iccocg,
-                                int                       iwarnp,
-                                double                    epsrgp,
-                                double                    climgp,
-                                double                    extrap,
-                                double                    relaxp,
-                                double                    thetap,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
                                 const cs_real_t           coefap[],
@@ -5045,6 +4774,17 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                 const cs_real_t           weighb[],
                                 cs_real_t       *restrict rhs)
 {
+  const int nswrgp = var_cal_opt.nswrgr;
+  const int imrgra = var_cal_opt.imrgra;
+  const int imligp = var_cal_opt.imligr;
+  const int ircflp = var_cal_opt.ircflu;
+  const int iwarnp = var_cal_opt.iwarni;
+  const double epsrgp = var_cal_opt.epsrgr;
+  const double climgp = var_cal_opt.climgr;
+  const double extrap = var_cal_opt.extrag;
+  const double relaxp = var_cal_opt.relaxv;
+  const double thetap = var_cal_opt.thetav;
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -5541,21 +5281,10 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
- * \param[in]     ircflp        indicator
- *                               - 1 flux reconstruction,
- *                               - 0 otherwise
+ * \param[in]     var_cal_opt   variable calculation options
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least square gradient
  * \param[in]     ifaccp        indicator
  *                               - 1 coupling activated
  *                               - 0 coupling not activated
@@ -5563,18 +5292,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
  *                               - 1 take into account,
- * \param[in]     iwarnp        verbosity
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
- * \param[in]     relaxp        coefficient of relaxation
- * \param[in]     thetap        weightening coefficient for the theta-schema,
- *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
- *                               scheme (mix between Crank-Nicolson and
- *                               Adams-Bashforth)
- *                               - thetap = 1: implicit scheme
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_type       boundary condition type
@@ -5596,21 +5313,12 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_vector(
-                                int                         idtvar,
+cs_anisotropic_diffusion_vector(int                         idtvar,
                                 int                         f_id,
-                                int                         nswrgp,
-                                int                         imligp,
-                                int                         ircflp,
+                                const cs_var_cal_opt_t      var_cal_opt,
                                 int                         inc,
-                                int                         imrgra,
                                 int                         ifaccp,
                                 int                         ivisep,
-                                int                         iwarnp,
-                                double                      epsrgp,
-                                double                      climgp,
-                                double                      relaxp,
-                                double                      thetap,
                                 cs_real_3_t       *restrict pvar,
                                 const cs_real_3_t *restrict pvara,
                                 const cs_int_t              bc_type[],
@@ -5623,6 +5331,16 @@ cs_anisotropic_diffusion_vector(
                                 const cs_real_t             secvif[],
                                 cs_real_3_t       *restrict rhs)
 {
+  const int nswrgp = var_cal_opt.nswrgr;
+  const int imrgra = var_cal_opt.imrgra;
+  const int imligp = var_cal_opt.imligr;
+  const int ircflp = var_cal_opt.ircflu;
+  const int iwarnp = var_cal_opt.iwarni;
+  const double epsrgp = var_cal_opt.epsrgr;
+  const double climgp = var_cal_opt.climgr;
+  const double relaxp = var_cal_opt.relaxv;
+  const double thetap = var_cal_opt.thetav;
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;

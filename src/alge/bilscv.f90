@@ -166,6 +166,7 @@ use parall
 use period
 use cplsat
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -194,14 +195,40 @@ double precision secvif(nfac), secvib(nfabor)
 double precision smbr(3,ncelet)
 
 ! Local variables
+
 integer          idiflc, f_id
+
+type(var_cal_opt) vcopt
 
 !===============================================================================
 
 if (ivar.eq.0) then
   f_id = -1
+  vcopt%iwarni = iwarnp
+  vcopt%iconv  = iconvp
+  vcopt%istat  = -1
+  vcopt%idiff  = idiffp
+  vcopt%idifft = -1
+  vcopt%idften = idftnp
+  vcopt%iswdyn = -1
+  vcopt%ischcv = ischcp
+  vcopt%isstpc = isstpp
+  vcopt%nswrgr = nswrgp
+  vcopt%nswrsm = -1
+  vcopt%imrgra = imrgra
+  vcopt%imligr = imligp
+  vcopt%ircflu = ircflp
+  vcopt%thetav = thetap
+  vcopt%blencv = blencp
+  vcopt%epsilo = -1.d0
+  vcopt%epsrsm = -1.d0
+  vcopt%epsrgr = epsrgp
+  vcopt%climgr = climgp
+  vcopt%extrag = -1.d0
+  vcopt%relaxv = relaxp
 else
   f_id = ivarfl(ivar)
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
 endif
 
 ! Scalar diffusivity
@@ -209,10 +236,8 @@ if (idftnp.eq.1) then
 
   call bilsc4 &
   !==========
-   ( idtvar , f_id   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , ivisep , &
-     iwarnp ,                                                       &
-     blencp , epsrgp , climgp , relaxp , thetap ,                   &
+   ( idtvar , f_id   , vcopt  ,                                     &
+     icvflb , inc    , ifaccp , ivisep ,                            &
      pvar   , pvara  ,                                              &
      itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
      flumas , flumab , viscf  , viscb  , secvif ,                   &
@@ -223,15 +248,14 @@ elseif (idftnp.eq.6) then
 
   ! Nor diffusive part neither secodary viscosity or transpose of grandient
   idiflc = 0
+  vcopt%idiff  = idiflc
   ! Convective part
   if (iconvp.eq.1) then
 
     call bilsc4 &
     !==========
-   ( idtvar , f_id   , iconvp , idiflc , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , icvflb , inc    , imrgra , ifaccp , idiflc , &
-     iwarnp ,                                                       &
-     blencp , epsrgp , climgp , relaxp , thetap ,                   &
+   ( idtvar , f_id   , vcopt  ,                                     &
+     icvflb , inc    , ifaccp , idiflc ,                            &
      pvar   , pvara  ,                                              &
      itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
      flumas , flumab , viscf  , viscb  , secvif ,                   &
@@ -244,10 +268,8 @@ elseif (idftnp.eq.6) then
 
     call diftnv &
     !==========
-   ( idtvar , f_id   , nswrgp , imligp , ircflp ,                   &
-     inc    , imrgra , ifaccp , ivisep ,                            &
-     iwarnp , epsrgp ,                                              &
-     climgp , relaxp , thetap ,                                     &
+   ( idtvar , f_id   , vcopt  ,                                     &
+     inc    , ifaccp , ivisep ,                                     &
      pvar   , pvara  ,                                              &
      itypfb , coefav , coefbv , cofafv , cofbfv ,                   &
      viscf  , viscb  , secvif ,                                     &
