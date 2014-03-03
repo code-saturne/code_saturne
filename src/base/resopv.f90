@@ -987,18 +987,21 @@ if (arak.gt.0.d0) then
 
       ! A 0 boundary coefficient coefbf_dp is passed to projts
       ! to cancel boundary terms
+      allocate(cofbfp(ndimfb))
       do ifac = 1,nfabor
-        coefbf_dp(ifac) = 0.d0
+        cofbfp(ifac) = 0.d0
       enddo
 
       call projts &
       !==========
  ( init   , nswrgp ,                                              &
    frcxt  ,                                                       &
-   coefbf_dp       ,                                              &
+   cofbfp ,                                                       &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     )
+
+      deallocate(cofbfp)
 
     endif
 
@@ -1054,19 +1057,22 @@ if (arak.gt.0.d0) then
 
      ! A 0 boundary coefficient coefbf_dp is passed to projtv
      ! to cancel boundary terms
+     allocate(cofbfp(ndimfb))
      do ifac = 1, nfabor
-       coefbf_dp(ifac) = 0.d0
+       cofbfp(ifac) = 0.d0
      enddo
 
      call projtv &
      !==========
    ( init   , nswrgp , ircflp ,                                     &
      frcxt  ,                                                       &
-     coefbf_dp       ,                                              &
+     cofbfp ,                                                       &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf ,                                                       &
      imasfl, bmasfl )
+
+     deallocate(cofbfp)
 
    endif
 
