@@ -5947,7 +5947,7 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  if (imrgra > 10)
+  if (imrgra >= 10)
     imrgra = 10;
   else if (imrgra > 0)
     imrgra = 0;
@@ -6271,7 +6271,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  if (imrgra > 10)
+  if (imrgra >= 10)
     imrgra = 10;
   else if (imrgra > 0)
     imrgra = 0;
@@ -6674,7 +6674,7 @@ cs_diffusion_potential(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  if (imrgra > 10)
+  if (imrgra >= 10)
     imrgra = 10;
   else if (imrgra > 0)
     imrgra = 0;
@@ -7014,7 +7014,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  if (imrgra > 10)
+  if (imrgra >= 10)
     imrgra = 10;
   else if (imrgra > 0)
     imrgra = 0;

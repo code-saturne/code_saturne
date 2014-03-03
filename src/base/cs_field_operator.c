@@ -195,7 +195,7 @@ void cs_f_field_gradient_potential(int                    f_id,
   bool _use_previous_t = use_previous_t ? true : false;
   bool _recompute_cocg = recompute_cocg ? true : false;
 
-  if (imrgra > 10)
+  if (imrgra >= 10)
     imrgra = 10;
   else if (imrgra > 0)
     imrgra = 0;
