@@ -283,7 +283,7 @@ cs_thermal_table_set(const char *material,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_table_finalize()
+cs_thermal_table_finalize(void)
 {
   if (cs_glob_thermal_table != NULL) {
 #if defined(HAVE_EOS)
