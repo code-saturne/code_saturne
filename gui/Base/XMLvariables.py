@@ -290,24 +290,16 @@ class Variables:
             vv['label'] = Toolbox.dicoLabel(vv['name'])
 
 
-    def setNewTurbulenceVariable(self, node, tag):
+    def setNewVariable(self, node, tag, dim=None):
         """
         Input a new <variable name="my_variable" label="ma_variable">
         in the xmldoc.
         """
         if not node.xmlGetNode('variable', name=tag):
-            n = node.xmlInitNode('variable', name=tag)
-
-            self.updateLabel(n)
-
-
-    def setNewVariable(self, node, tag):
-        """
-        Input a new <variable name="my_variable" label="ma_variable">
-        in the xmldoc.
-        """
-        if not node.xmlGetNode('variable', name=tag):
-            v1 = node.xmlInitNode('variable', name=tag)
+            if dim != None:
+                v1 = node.xmlInitNode('variable', name=tag, dimension=dim)
+            else:
+                v1 = node.xmlInitNode('variable', name=tag)
             self.updateLabel(v1)
 
 

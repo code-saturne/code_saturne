@@ -273,9 +273,7 @@ def dicoLabel(name):
     Correspondence between the names and the labels according to
     whether one is in French or in English.
     """
-    for (n, labF, labE) in [('velocity_U',                    "VitesseX",   "VelocityX"),
-                            ('velocity_V',                    "VitesseY",   "VelocityY"),
-                            ('velocity_W',                    "VitesseZ",   "VelocityZ"),
+    for (n, labF, labE) in [('velocity',                      "Vitesse",   "Velocity"),
                             ('pressure',                      "Pression",   "Pressure"),
                             ('turb_k',                        "EnerTurb",   "TurbEner"),
                             ('turb_eps',                      "Dissip",     "Dissip"),

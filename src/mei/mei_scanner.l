@@ -102,7 +102,7 @@ size_t len;
 "print"         {mei_glob_column+=5; return PRINT; }
 
 
-[_a-zA-Z][\._a-zA-Z0-9]* {
+[_a-zA-Z][\[\]\._a-zA-Z0-9]* {
     strncpy(yylval.sIndex, yytext, yyleng+1);
     if (yyleng+1 > 200)
         bft_error(__FILE__, __LINE__, 0, "Error: identifier is to long\n");

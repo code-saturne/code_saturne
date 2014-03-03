@@ -87,11 +87,8 @@ class XMLinit(Variables):
 
         self.node_models = self.case.xmlInitNode('thermophysical_models')
         node = self.node_models.xmlInitNode('velocity_pressure')
-        for tag in ('pressure',
-                    'velocity_U',
-                    'velocity_V',
-                    'velocity_W'):
-            self.setNewVariable(node, tag)
+        self.setNewVariable(node, 'pressure')
+        self.setNewVariable(node, 'velocity', dim = '3')
         self.setNewProperty(node, 'total_pressure')
         n = self.setNewProperty(node, 'yplus')
         n['support'] = 'boundary'
@@ -332,6 +329,20 @@ class XMLinit(Variables):
             nthvar['label'] = n['label']
             nthvar.xmlChildsCopy(n)
             n.xmlRemoveNode()
+
+        # update velocity node
+        nodeV = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity_U")
+        if nodeV:
+            nodeV['name'] = 'velocity'
+            nodeV['dimension'] = '3'
+
+            nodeTmp = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity_V")
+            if nodeTmp:
+                nodeTmp.xmlRemoveNode()
+            nodeTmp = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity_W")
+            if nodeTmp:
+                nodeTmp.xmlRemoveNode()
+
 
 
 #-------------------------------------------------------------------------------

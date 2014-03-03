@@ -230,11 +230,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
 
-        label = self.m_out.getVariableLabel("velocity_U")
+        label = self.m_out.getVariableLabel("velocity") + "[0]"
         sym.append( (label, 'X velocity component'))
-        label = self.m_out.getVariableLabel("velocity_V")
+        label = self.m_out.getVariableLabel("velocity") + "[1]"
         sym.append( (label, 'Y velocity component'))
-        label = self.m_out.getVariableLabel("velocity_W")
+        label = self.m_out.getVariableLabel("velocity") + "[2]"
         sym.append( (label, 'Z velocity component'))
 
         dialog = QMeiEditorView(self,

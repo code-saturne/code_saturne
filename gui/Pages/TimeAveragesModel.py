@@ -112,9 +112,16 @@ class TimeAveragesModel(Model):
                 if not label:
                     raise ValueError("Node has no label")
 
-                if not (node['support'] and node['support'] == "boundary"):
-                    if name != 'local_time_step':
-                        self.dicoLabel2Name[label] = name
+                dim = node['dimension']
+                if dim and int(dim) > 1:
+                    for ii in range(int(dim)):
+                        label1 = label + "[" + str(ii) + "]"
+                        if not (node['support'] and node['support'] == "boundary"):
+                            self.dicoLabel2Name[label1] = (name, str(ii))
+                else:
+                    if not (node['support'] and node['support'] == "boundary"):
+                        if name != 'local_time_step':
+                            self.dicoLabel2Name[label] = (name, str(0))
 
         return list(self.dicoLabel2Name.keys())
 
@@ -145,7 +152,8 @@ class TimeAveragesModel(Model):
 
         for var in lst:
             self.isInList(var, list(self.dicoLabel2Name.keys()))
-            node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
+            (name, comp) = self.dicoLabel2Name[var]
+            node.xmlAddChild('var_prop', name=name, component=comp)
 
         node.xmlSetData('time_step_start', start)
 
@@ -242,7 +250,7 @@ class TimeAveragesModel(Model):
 
         for var in node.xmlGetChildNodeList('var_prop'):
             for label in list(self.dicoLabel2Name.keys()):
-                if self.dicoLabel2Name[label] == var['name']:
+                if self.dicoLabel2Name[label] == (var['name'], var['component']):
                     lst.append(label)
         return node['label'], start, restart, lst
 

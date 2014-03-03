@@ -209,7 +209,7 @@ class TurbulenceModel(Variables, Model):
         elif model_turb in ('k-epsilon', 'k-epsilon-PL'):
             lst = ('turb_k', 'turb_eps')
             for v in lst:
-                self.setNewTurbulenceVariable(self.node_turb, v)
+                self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
@@ -219,7 +219,7 @@ class TurbulenceModel(Variables, Model):
                    'component_R12', 'component_R13', 'component_R23',
                    'turb_eps')
             for v in lst:
-                self.setNewTurbulenceVariable(self.node_turb, v)
+                self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
@@ -229,7 +229,7 @@ class TurbulenceModel(Variables, Model):
                    'component_R12', 'component_R13', 'component_R23',
                    'turb_eps', 'turb_alpha')
             for v in lst:
-                self.setNewTurbulenceVariable(self.node_turb, v)
+                self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
@@ -251,7 +251,7 @@ class TurbulenceModel(Variables, Model):
         elif model_turb == 'v2f-BL-v2/k':
             lst = ('turb_k', 'turb_eps', 'turb_phi', 'turb_alpha')
             for v in lst:
-                self.setNewTurbulenceVariable(self.node_turb, v)
+                self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
@@ -259,14 +259,14 @@ class TurbulenceModel(Variables, Model):
         elif model_turb == 'k-omega-SST':
             lst = ('turb_k', 'turb_omega')
             for v in lst:
-                self.setNewTurbulenceVariable(self.node_turb, v)
+                self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb == 'Spalart-Allmaras':
             lst = ('turb_nusa')
-            self.setNewTurbulenceVariable(self.node_turb, 'turb_nusa')
+            self.setNewVariable(self.node_turb, 'turb_nusa')
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')

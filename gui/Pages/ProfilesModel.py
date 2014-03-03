@@ -115,9 +115,16 @@ class ProfilesModel(Model):
                 if not label:
                     raise ValueError("Node has no label")
 
-                if not (node['support'] and node['support'] == "boundary"):
-                    if name != 'local_time_step':
-                        self.dicoLabel2Name[label] = name
+                dim = node['dimension']
+                if dim and int(dim) > 1:
+                    for ii in range(int(dim)):
+                        label1 = label + "[" + str(ii) + "]"
+                        if not (node['support'] and node['support'] == "boundary"):
+                            self.dicoLabel2Name[label1] = (name, str(ii))
+                else:
+                    if not (node['support'] and node['support'] == "boundary"):
+                        if name != 'local_time_step':
+                            self.dicoLabel2Name[label] = (name, str(0))
 
         return list(self.dicoLabel2Name.keys())
 
@@ -194,7 +201,8 @@ class ProfilesModel(Model):
         node.xmlAddChild('format', name=format)
         for var in lst:
             self.isInList(var, self.__var_prop_list)
-            node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
+            (name, comp) = self.dicoLabel2Name[var]
+            node.xmlAddChild('var_prop', name=name, component=comp)
         node.xmlSetData('output_type', choice)
         node.xmlSetData('output_frequency', freq)
         node['title'] = title
@@ -224,7 +232,8 @@ class ProfilesModel(Model):
             node.xmlAddChild('format', name=format)
             for var in lst:
                 self.isInList(var, self.__var_prop_list)
-                node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
+                (name, comp) = self.dicoLabel2Name[var]
+                node.xmlAddChild('var_prop', name=name, component=comp)
             node['label'] = label_xml
             node.xmlSetData('output_type', choice)
             node.xmlSetData('output_frequency', freq)
@@ -271,7 +280,7 @@ class ProfilesModel(Model):
         NbPoint = self.__getNbPoint(label)
         for var in node.xmlGetChildNodeList('var_prop'):
             for name in self.__var_prop_list:
-                if self.dicoLabel2Name[name] == var['name']:
+                if self.dicoLabel2Name[name] == (var['name'], var['component']) :
                     lst.append(name)
         label_xml = node['label']
         label = label_xml

@@ -1374,6 +1374,38 @@ _get_time_average_n_variables(const int id)
 }
 
 /*----------------------------------------------------------------------------
+ * Return the component of variables or properties or scalar for a given time average
+ *
+ * parameters:
+ *   id           -->  number of 1D profile
+ *   nm           -->  number of the variable name of the idst 1D profile
+ *----------------------------------------------------------------------------*/
+
+static int _get_time_average_component(const int id, const int nm)
+{
+  char *path = NULL;
+  char *comp = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
+  cs_xpath_add_element_num(&path, "time_average", id);
+  cs_xpath_add_element_num(&path, "var_prop", nm);
+  cs_xpath_add_attribute(&path, "component");
+
+  comp = cs_gui_get_attribute_value(path);
+  if (comp == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Invalid xpath: %s\n component not found"), path);
+  BFT_FREE(path);
+
+  int compId = atoi(comp);
+
+  BFT_FREE(comp);
+
+  return compId;
+}
+
+/*----------------------------------------------------------------------------
  * Get value of a parameter for a given time average.
  *
  * parameters:
@@ -1710,6 +1742,38 @@ static char *_get_profile(const char *kw, const int id)
   BFT_FREE(path);
 
   return label;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the component of variables or properties or scalar for 1D profile
+ *
+ * parameters:
+ *   id           -->  number of 1D profile
+ *   nm           -->  number of the variable name of the idst 1D profile
+ *----------------------------------------------------------------------------*/
+
+static int _get_profile_component(const int id, const int nm)
+{
+  char *path = NULL;
+  char *comp = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+  cs_xpath_add_element_num(&path, "profile", id + 1);
+  cs_xpath_add_element_num(&path, "var_prop", nm + 1);
+  cs_xpath_add_attribute(&path, "component");
+
+  comp = cs_gui_get_attribute_value(path);
+  if (comp == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Invalid xpath: %s\n component not found"), path);
+  BFT_FREE(path);
+
+  int compId = atoi(comp);
+
+  BFT_FREE(comp);
+
+  return compId;
 }
 
 /*----------------------------------------------------------------------------
@@ -2545,8 +2609,8 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
   strcpy(cs_glob_var->name[n++], "pressure");
 
   cs_glob_var->rtp[n] = *iu  -1;
-  BFT_MALLOC(cs_glob_var->name[n], strlen("velocity_U")+1, char);
-  strcpy(cs_glob_var->name[n++], "velocity_U");
+  BFT_MALLOC(cs_glob_var->name[n], strlen("velocity")+1, char);
+  strcpy(cs_glob_var->name[n++], "velocity");
 
   cs_glob_var->rtp[n] = *iv  -1;
   BFT_MALLOC(cs_glob_var->name[n], strlen("velocity_V")+1, char);
@@ -3707,7 +3771,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 {
   int imom = 0;
   int isuite = 0;
-  int i, j, n;
+  int i, j, n, idim;
   char *name = NULL;
 
   cs_glob_var->ntimaver
@@ -3734,7 +3798,8 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 
       for (j=0; j < cs_glob_var->nvar; j++) {
         if (cs_gui_strcmp(name,  cs_glob_var->name[j])) {
-          idfmom[(imom-1)*(*ndgmox) + n] = cs_glob_var->rtp[j] +1;
+          idim = _get_time_average_component(imom, n + 1);
+          idfmom[(imom-1)*(*ndgmox) + n] = cs_glob_var->rtp[j + idim] +1;
         }
       }
 
@@ -3968,6 +4033,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
   char *labelU = NULL;
   char *labelV = NULL;
   char *labelW = NULL;
+  char *label  = NULL;
 
   mei_tree_t *ev_formula  = NULL;
 
@@ -4005,11 +4071,18 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
         mei_tree_insert(ev_formula,"x",0.0);
         mei_tree_insert(ev_formula,"y",0.0);
         mei_tree_insert(ev_formula,"z",0.0);
-        labelU = cs_gui_variable_label("velocity_U");
+        label = cs_gui_variable_label("velocity");
+        BFT_MALLOC(labelU, strlen(label) + 6, char);
+        strcpy(labelU, label);
+        strcat(labelU, "[0]");
         mei_tree_insert(ev_formula, labelU, 0.0);
-        labelV = cs_gui_variable_label("velocity_V");
+        BFT_MALLOC(labelV, strlen(label) + 6, char);
+        strcpy(labelV, label);
+        strcat(labelV, "[1]");
         mei_tree_insert(ev_formula, labelV, 0.0);
-        labelW = cs_gui_variable_label("velocity_W");
+        BFT_MALLOC(labelW, strlen(label) + 6, char);
+        strcpy(labelW, label);
+        strcat(labelW, "[2]");
         mei_tree_insert(ev_formula, labelW, 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
@@ -4077,6 +4150,10 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
           tsexp[iel][2] *= cell_vol[iel];
         }
         mei_tree_destroy(ev_formula);
+        BFT_FREE(label);
+        BFT_FREE(labelU);
+        BFT_FREE(labelV);
+        BFT_FREE(labelW);
       }
       BFT_FREE(cells_list);
       BFT_FREE(zone_id);
@@ -5527,7 +5604,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
   int output_format = 0;
   int fic_nbr = 0;
-  int i, ii, iii, j;
+  int i, ii, iii, j, idim;
   int npoint, iel1, irang1, iel, irangv;
   int nvar_prop, nvar_prop4, output_frequency;
   double time_output;
@@ -5718,10 +5795,11 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
             for (iii=0; iii < nvar_prop; iii++) {
 
               name = _get_profile_name(i, iii);
+              idim = _get_profile_component(i, iii);
 
               for (j=0; j < vars->nvar; j++) {
                 if (cs_gui_strcmp(name,  vars->name[j]))
-                  array[iii+4] = rtp[vars->rtp[j] * (*ncelet) + iel];
+                  array[iii+4] = rtp[vars->rtp[j] * (*ncelet) + idim * (*ncelet) + iel];
               }
 
               for (j=0; j < vars->nprop; j++) {

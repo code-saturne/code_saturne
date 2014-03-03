@@ -552,7 +552,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         """
         Method to call 'setMaterial'
         """
-        choice = self.modelMaterial.dicoV2M[text]
+        choice = self.modelMaterial.dicoV2M[str(text)]
         self.mdl.setMaterials(choice)
         self.updateMethod()
         self.updateTypeChoice()
@@ -563,7 +563,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         """
         Method to call 'setFieldNature'
         """
-        choice = self.modelPhas.dicoV2M[text]
+        choice = self.modelPhas.dicoV2M[str(text)]
         self.mdl.setFieldNature(choice)
 
         self.updateReference()
@@ -574,7 +574,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         """
         Method to call 'setMethod'
         """
-        choice = self.modelMethod.dicoV2M[text]
+        choice = self.modelMethod.dicoV2M[str(text)]
         self.mdl.setMethod(choice)
 
         self.comboBoxPhas.hide()

@@ -69,8 +69,6 @@ class SourceTermsModel(Model):
         self.node_therm    = self.models.xmlGetNode('thermal_scalar', 'model')
         self.node_sterm   = self.models.xmlInitNode('source_terms')
 
-        self.VelocityList = ('velocity_U', 'velocity_V', 'velocity_W')
-
 
     def __verifyZone(self, zone):
         """Private method.
