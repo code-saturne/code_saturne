@@ -111,6 +111,7 @@ cs_blas_test \
 cs_core_test \
 cs_file_test \
 cs_interface_test \
+cs_moment_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
 cs_sizes_test
@@ -148,6 +149,10 @@ cs_file_test_LDADD    = $(LDADD_CS_TESTS)
 cs_interface_test_SOURCES  = cs_interface_test.c
 cs_interface_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_interface_test_LDADD    = $(LDADD_CS_TESTS)
+
+cs_moment_test_SOURCES  = cs_moment_test.c
+cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
 
 fvm_selector_test_SOURCES  = fvm_selector_test.c
 fvm_selector_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
