@@ -1728,16 +1728,16 @@ endif
 !     We calculate temporal means of the type <f1*f2*f3*...*fn>
 !     The fi's are cell-defined variables (arrays rtp and propce).
 
-!        idfmom(i,imom) ientifies the variable fi of moment imom
+!        idfmom(i,imom) identifies the variable fi of moment imom
 !          if idfmom > 0 it is a resolved variable (rtp)
 !          if idfmom < 0 it is an auxiliary variable (propce)
-!        imoold(imom) defined in the case of a restart the number, in the
+!        imoold(imom) defines in the case of a restart the number, in the
 !          previous calculation, of the moment to use to initialize moment
 !          imom of the new calculation (by default imoold(imom)=imom).
 !            Value -1 indicates the we must reinitialize moment imom.
 !        ntdmom(imom) defined the time step at which the moment calculation
 !          is started.
-!        ttdmom(imom) defined the time at which the moment calculation is started.
+!        ttdmom(imom) defines the time at which the moment calculation is started.
 
 !     We give below the example of the calculation of moments <u> and <rho u v>
 !       the moment <u> is reread in the restart file if we are restarting,
@@ -1759,7 +1759,6 @@ if (.false.) then
   ! idfmom(1,imom) = -irom
   ! idfmom(2,imom) =  iu
   ! idfmom(3,imom) =  iv
-  ! imoold(imom)   = -1
   ! ntdmom(imom)   =  10000
   ! ttdmom(imom)   =  10.d0
 

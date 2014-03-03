@@ -998,18 +998,6 @@ if (icalhy.ne.-1.and.icalhy.ne.0.and.icalhy.ne.1) then
 endif
 
 
-! ---> IDGMOM
-!      Calcul du degre des moments
-
-do imom = 1, nbmomx
-  idgmom(imom) = 0
-enddo
-do imom = 1, nbmomt
-  do ii = 1, ndgmox
-    if (idfmom(ii,imom).ne.0) idgmom(imom) = idgmom(imom) + 1
-  enddo
-enddo
-
 ! ---> ICDPAR
 !      Calcul de la distance a la paroi. En standard, on met ICDPAR a -1, au cas
 !      ou les faces de bord auraient change de type d'un calcul a l'autre. En k-omega,

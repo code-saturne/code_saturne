@@ -65,18 +65,15 @@ character        nompre*300, nomhis*300
 logical          interleaved
 integer          tplnum, ii, lpre, lnom, lng
 integer          icap, ncap, ipp, ippf
-integer          iel, keymom
-integer          mom_id, c_id, f_id, f_dim, f_type, n_fields
+integer          c_id, f_id, f_dim, f_type, n_fields
 integer          nbcap(nvppmx)
 double precision varcap(ncaptm)
 
 integer, dimension(:), allocatable :: lsttmp
-double precision, dimension(:), allocatable, target :: momtmp
 double precision, dimension(:,:), allocatable :: xyztmp
 
 double precision, dimension(:,:), pointer :: val_v
 double precision, dimension(:), pointer :: val_s
-double precision, dimension(:), pointer :: num_s, div_s
 
 character*3, dimension(3), save :: nomext3 = (/'[X]', '[Y]', '[Z]'/)
 character*4, dimension(3), save :: nomext63 = (/'[11]', '[22]', '[33]'/)
@@ -233,7 +230,6 @@ endif
 if (modhis.eq.0 .or. modhis.eq.1) then
 
   call field_get_n_fields(n_fields)
-  call field_get_key_id('moment_dt', keymom)
 
   ! Loop on fields
 
@@ -245,11 +241,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
     call field_get_dim (f_id, f_dim, interleaved)
     call field_get_type(f_id, f_type)
 
-    mom_id = -1
-    if (iand(f_type, FIELD_PROPERTY) .eq. 1) then
-      call field_get_key_int(f_id, keymom, mom_id)
-    endif
-
     do c_id = 1, min(f_dim, 3)
 
       ipp = ippf + c_id - 1
@@ -260,23 +251,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
 
         if (f_dim .eq. 1) then
 
-          if (mom_id.eq.-1) then
-            call field_get_val_s(f_id, val_s)
-          else
-            allocate(momtmp(ncel))
-            val_s => momtmp
-            call field_get_val_s(f_id, num_s)
-            if (mom_id.ge.0) then
-              call field_get_val_s(mom_id, div_s)
-              do iel = 1, ncel
-                momtmp(iel) = num_s(iel)/max(div_s(iel),epzero)
-              enddo
-            else
-              do iel = 1, ncel
-                momtmp(iel) = num_s(iel)/max(dtcmom(-mom_id -1),epzero)
-              enddo
-            endif
-          endif
+          call field_get_val_s(f_id, val_s)
 
           if (ihisvr(ipp,1).lt.0) then
             do icap = 1, ncapt
@@ -300,10 +275,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
               endif
             enddo
             ncap = ihisvr(ipp,1)
-          endif
-
-          if (mom_id.ne.-1) then
-            deallocate(momtmp)
           endif
 
           if (irangp.le.0 .and. ncap.gt.0) then

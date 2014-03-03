@@ -88,7 +88,7 @@ cs_thermal_table_set(const char *material,
  *----------------------------------------------------------------------------*/
 
 void
-cs_thermal_table_finalize();
+cs_thermal_table_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Compute a property with table.

@@ -5,6 +5,15 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Rewrite of temporal moments handling. Moments handling is now more modular,
+  and allows for variances in addition to means. Also, numerically stable recurrence
+  relations are used to update moments, whose values are now directly usable at any
+  given time. Weight accumulators are handled inside the module, and not seen as
+  fields anymore. Also, support for user functions is added.
+  Currently, this is mapped to the legacy data setup, and tested only in this
+  context, but the added functionality will be exposed with future changes in
+  case setup.
+
 - Lagrangian module: Improvements in roughness and resuspension models
    * added a user keyword 'irough' for roughness surface (calculation of the
      energy barrier in the case of rough wall)
@@ -165,7 +174,7 @@ Changes:
 
 - Use field structure for the scalar with drift and add a drift
   model for coal combustion.
-        
+
 - New key words are added to the field structure:
   * scalar_id (inverse of the array isca(iscal))
   * scalar_class (class of the scalar which belongs to, in particular sharing

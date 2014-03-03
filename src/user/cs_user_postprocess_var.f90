@@ -282,21 +282,10 @@ if (ipart .eq. -1) then
 
     allocate(scel(ncelps))
 
-    if (idtmom(imom1).gt.0) then
-      idtcm = ipproc(icdtmo(idtmom(imom1)))
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        scel(iloc) =    propce(iel,ipcmo2)/max(propce(iel,idtcm),epzero)      &
-                     - (propce(iel,ipcmo1)/max(propce(iel,idtcm),epzero))**2
-      enddo
-    else if (idtmom(imom1).lt.0) then
-      idtcm = -idtmom(imom1)
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        scel(iloc) =    propce(iel,ipcmo2)/max(dtcmom(idtcm),epzero)      &
-                     - (propce(iel,ipcmo1)/max(dtcmom(idtcm),epzero))**2
-      enddo
-    endif
+    do iloc = 1, ncelps
+      iel = lstcel(iloc)
+      scel(iloc) =    propce(iel,ipcmo2) - (propce(iel,ipcmo1))
+    enddo
 
     idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
     ientla = .true.  ! dimension 1 here, so no effect

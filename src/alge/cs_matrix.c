@@ -4110,7 +4110,7 @@ _matrix_tune_create_assign_title(int                    struct_flag,
     char tmp_s[4][24] =  {"", "", "", ""};
 
     cs_log_strpadl(tmp_s[0], _("time (s)"), 16, 24);
-    cs_log_strpadl(tmp_s[1], _("mean"), 12, 24);
+    cs_log_strpadl(tmp_s[1], _(" mean"), 12, 24);
     cs_log_strpadl(tmp_s[2], _("min"), 12, 24);
     cs_log_strpadl(tmp_s[3], _("max"), 12, 24);
 
@@ -4228,10 +4228,10 @@ _matrix_tune_spmv_title(cs_matrix_fill_type_t  fill_type,
 
     cs_log_strpadl(tmp_s[0], _("time (s)"), 16, 24);
     cs_log_strpadl(tmp_s[1], _("speedup"), 16, 24);
-    cs_log_strpadl(tmp_s[2], _("mean"), 12, 24);
+    cs_log_strpadl(tmp_s[2], _(" mean"), 12, 24);
     cs_log_strpadl(tmp_s[3], _("min"), 12, 24);
     cs_log_strpadl(tmp_s[4], _("max"), 12, 24);
-    cs_log_strpadl(tmp_s[5], _("mean"), 8, 24);
+    cs_log_strpadl(tmp_s[5], _(" mean"), 8, 24);
     cs_log_strpadl(tmp_s[6], _("min"), 8, 24);
     cs_log_strpadl(tmp_s[7], _("max"), 8, 24);
 

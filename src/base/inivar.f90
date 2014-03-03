@@ -64,6 +64,7 @@ use ppincl
 use mesh
 use field
 use cfpoin, only:ithvar
+use cs_c_bindings
 
 !===============================================================================
 
@@ -78,20 +79,19 @@ double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 ! Local variables
 
 character*80     chaine
-integer          ivar  , iscal , imom
+integer          ivar  , iscal
 integer          iel
 integer          iccfth
 integer          iclip , iok   , ii
-integer          idtcm , ipcmom, iiptot
-integer          ibormo(nbmomx), imodif
+integer          iiptot
+integer          imodif
 integer          kscmin, kscmax, keypp, keyvar, iflid, n_fields
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
 double precision xekmin, xepmin, xomgmn, xphmin, xphmax
 double precision xnumin
-double precision x11min, x22min, x33min, valmom
-double precision vmomax(nbmomx), vmomin(nbmomx)
+double precision x11min, x22min, x33min
 double precision xxp0, xyp0, xzp0
 double precision xalmin, xalmax
 double precision scmaxp, scminp
@@ -655,51 +655,6 @@ do iflid = 0, n_fields-1
 enddo
 write(nfecra,2020)
 
-!     Moyennes  : on affiche les bornes
-if(nbmomt.gt.0) then
-  do imom = 1, nbmomt
-    ipcmom = ipproc(icmome(imom))
-
-!       Si on ne (re)initialise pas
-    if(imoold(imom).ne.-1) then
-      valmax = -grand
-      valmin =  grand
-!         Si le cumul en temps est variable en espace
-      if(idtmom(imom).gt.0) then
-        idtcm  = ipproc(icdtmo(idtmom(imom)))
-        do iel = 1, ncel
-          valmom = propce(iel,ipcmom) / max(propce(iel,idtcm),epzero)
-          valmax = max(valmax,valmom)
-          valmin = min(valmin,valmom)
-        enddo
-!         Si le cumul en temps est uniforme
-      else
-        idtcm  =-idtmom(imom)
-        do iel = 1, ncel
-          valmom = propce(iel,ipcmom)/ max(dtcmom(idtcm),epzero)
-          valmax = max(valmax,valmom)
-          valmin = min(valmin,valmom)
-        enddo
-      endif
-      if (irangp.ge.0) then
-        call parmax (valmax)
-        !==========
-        call parmin (valmin)
-        !==========
-      endif
-!       Si on  (re)initialise
-    else
-      valmax = 0.d0
-      valmin = 0.d0
-    endif
-
-    chaine = nomprp(ipcmom)
-    write(nfecra,2010)chaine(1:16),valmin,valmax
-
-  enddo
-  write(nfecra,2020)
-endif
-
 if (idtvar.ge.0) then
 !     Pas de temps : on affiche les bornes
 !                    si < 0 on s'arrete
@@ -728,78 +683,7 @@ endif
 !     Cumul du temps associe aux moments : on affiche les bornes
 !                                          si < 0 on s'arrete
 
-if(nbmomt.gt.0) then
-
-!     Indicateur de calcul des bornes pour les cumuls non uniformes
-  do imom = 1, nbmomt
-    if(idtmom(imom).gt.0) then
-      ibormo(imom) =  0
-      vmomax(imom) = -grand
-      vmomin(imom) =  grand
-    endif
-  enddo
-
-!     Calcul des bornes des cumuls non uniformes
-  do imom = 1, nbmomt
-    if(idtmom(imom).gt.0) then
-      if(ibormo(imom).eq.0) then
-        idtcm  = ipproc(icdtmo(idtmom(imom)))
-        vdtmax = -grand
-        vdtmin =  grand
-        do iel = 1, ncel
-          vdtmax = max(vdtmax,propce(iel,idtcm))
-          vdtmin = min(vdtmin,propce(iel,idtcm))
-        enddo
-        if (irangp.ge.0) then
-          call parmax (vdtmax)
-          !==========
-          call parmin (vdtmin)
-          !==========
-        endif
-        vmomax(imom) = vdtmax
-        vmomin(imom) = vdtmin
-        ibormo(imom) = 1
-      endif
-    endif
-  enddo
-
-!     Impression des bornes
-  write(nfecra,2030)
-  do imom = 1, nbmomt
-    if(idtmom(imom).gt.0) then
-      write(nfecra,2040) imom,vmomin(imom),       &
-                              vmomax(imom),       &
-                              'Variable'
-    elseif(idtmom(imom).lt.0) then
-#if defined(_CS_LANG_FR)
-      write(nfecra,2040) imom,dtcmom(-idtmom(imom)),              &
-                              dtcmom(-idtmom(imom)),              &
-                              'Uniforme'
-#else
-      write(nfecra,2040) imom,dtcmom(-idtmom(imom)),              &
-                              dtcmom(-idtmom(imom)),              &
-                              'Uniform'
-#endif
-    endif
-  enddo
-  write(nfecra,2050)
-
-!     On s'arrete si des cumuls sont negatifs
-  do imom = 1, nbmomt
-    if(idtmom(imom).gt.0) then
-      if(vmomin(imom).lt.zero) then
-        write(nfecra,3011) imom,vmomin(imom)
-        iok = iok + 1
-      endif
-    elseif(idtmom(imom).lt.0) then
-      if(dtcmom(-idtmom(imom)).lt.zero) then
-        write(nfecra,3011) imom,dtcmom(-idtmom(imom))
-        iok = iok + 1
-      endif
-    endif
-  enddo
-
-endif
+call time_moment_log_iteration
 
 !===============================================================================
 ! 7.  ARRET GENERAL SI PB
@@ -834,15 +718,6 @@ write(nfecra,3000)
  2x,     a16,      e12.4,      e12.4                             )
  2020 format(                                                     &
 ' ---------------------------------',                           /)
- 2030 format(                                                     &
-' Duree cumulee :',                                             /,&
-' ------------------------------------------------------------',/,&
-'   Moyenne  Valeur min  Valeur max Uniforme/Variable en espac',/,&
-' ------------------------------------------------------------'  )
- 2040 format(                                                     &
-        i10,      e12.4,      e12.4,1x,   a8                     )
- 2050 format(                                                     &
-' ------------------------------------------------------------',/)
 
  3000 format(/,/,                                                 &
 '-------------------------------------------------------------',/)
@@ -862,28 +737,6 @@ write(nfecra,3000)
 '@  Dans le cas ou les valeurs lues dans le fichier',           /,&
 '@    de reprise sont incorrectes, on peut les modifier via',   /,&
 '@    cs_user_initialization.f90 ou via l''interface.',         /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3011 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
-'@    =========',                                               /,&
-'@    CUMUL DE DUREE POUR LES MOYENNES NEGATIVE',               /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  La valeur minimale de la duree cumulee pour la moyenne',    /,&
-'@    IMOM = ',i10,   ' est ',e14.5,                            /,&
-'@',                                                            /,&
-'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
-'@',                                                            /,&
-'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
-'@    de reprise sont incorrectes, on peut reinitialiser',      /,&
-'@    la moyenne et le cumul temporel associe en imposant',     /,&
-'@    IMOOLD(IMOM) = -1.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1177,15 +1030,6 @@ write(nfecra,3000)
  2x,     a16,      e12.4,      e12.4                             )
  2020 format(                                                     &
 ' ---------------------------------',                           /)
- 2030 format(                                                     &
-' Time averages (sum over the time-steps)',                     /,&
-' ------------------------------------------------------------',/,&
-'   Average  Min. value  Max. value Uniform/Variable in space', /,&
-' ------------------------------------------------------------'  )
- 2040 format(                                                     &
-        i10,      e12.4,      e12.4,1x,   a8                     )
- 2050 format(                                                     &
-' ------------------------------------------------------------',/)
 
  3000 format(/,/,                                                 &
 '-------------------------------------------------------------',/)
@@ -1204,26 +1048,6 @@ write(nfecra,3000)
 '@  In the case where the values read in the restart file',     /,&
 '@    are incorrect, they may be modified with',                /,&
 '@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3011 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@    NEGATIVE CUMULATIVE TIME FOR THE MOMENTS',                /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@  The minimum value of the cumulative time for the moment',   /,&
-'@    IMOM = ',i10,   ' est ',e14.5,                            /,&
-'@',                                                            /,&
-'@  Verify the initialization or the restart file.',            /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, the moment and the associated cumulative', /,&
-'@    time may be re-initialized by setting IMOOLD(IMOM) = -1.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

@@ -106,6 +106,7 @@
 #include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
 #include "cs_system_info.h"
+#include "cs_time_moment.h"
 #include "cs_timer.h"
 #include "cs_les_inflow.h"
 #include "cs_turbomachinery.h"
@@ -268,6 +269,9 @@ cs_run(void)
   cs_field_log_defs();
   cs_field_log_key_defs();
   cs_field_log_all_key_vals(true);
+
+  cs_time_moment_log_setup();
+
   cs_log_printf_flush(CS_LOG_SETUP);
 
   /* Preprocess mesh */
@@ -417,6 +421,10 @@ cs_run(void)
   /* Switch logging back to C (may be moved depending on Fortran dependencies) */
 
   cs_base_fortran_bft_printf_to_c();
+
+  /* Free moments info */
+
+  cs_time_moment_destroy_all();
 
   /* Free field info */
 

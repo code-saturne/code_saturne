@@ -53,6 +53,7 @@
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_time_moment.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
@@ -133,10 +134,6 @@ static cs_gnum_t *_clips_count = NULL;
 static double *_clips_vmin = NULL;
 static double *_clips_vmax = NULL;
 static cs_log_clip_t  *_clips = NULL;
-
-/* Additional variable for moments */
-
-static const cs_real_t  *_cumulative_mom_time = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -325,68 +322,6 @@ _find_clip(int  f_id,
 }
 
 /*----------------------------------------------------------------------------
- * Build moments array for logging
- *
- * If of dimension > 1, the moments array is always interleaved, whether
- * the accumulator field is interleaved or not.
- *
- * parameters:
- *   f          <-- pointer to field structure
- *   moment_id  <-- id of associated moment divisor:
- *                  - if moment_id == -1, the field is not a moment;
- *                  - if moment_id >= 0, it is the field id for the divisor;
- *                  - if moment_id < -1, (-1 -moment_id) is the moment id
- *                    in the Fortran "dtcmom" array of the optcal module
- *   n_elts     <-- local number of elements
- *   moment     --> resulting moment array (size: n_elts)
- *----------------------------------------------------------------------------*/
-
-static void
-_build_moment(const cs_field_t  *f,
-              int                moment_id,
-              cs_lnum_t          n_elts,
-              cs_real_t          moment[])
-{
-  cs_lnum_t i, j;
-  cs_lnum_t  d_mult = 0;
-  const cs_real_t ep_zero = 1.e-12;
-  const cs_real_t *denom = NULL;
-
-  assert(moment_id != -1);
-
-  if (moment_id > -1) {
-    const cs_field_t  *fd = cs_field_by_id(moment_id);
-    assert(fd->dim == 1);
-    denom = fd->val;
-    d_mult = 1;
-  }
-  else if (moment_id < -1) {
-    denom = &(_cumulative_mom_time[(- moment_id - 1) - 1]);
-    /* d_mult = 0 is set above */
-  }
-
-  if (f->dim == 1) {
-    for (i = 0; i < n_elts; i++)
-      moment[i] = f->val[i] / CS_MAX(denom[i*d_mult], ep_zero);
-  }
-  else {
-    cs_lnum_t i_mult = 1, j_mult = 1;
-    if (f->interleaved)
-      i_mult = f->dim;
-    else {
-      const cs_lnum_t *n_loc_elts
-        = cs_mesh_location_get_n_elts(f->location_id);
-      j_mult = n_loc_elts[2];
-    }
-    for (i = 0; i < n_elts; i++) {
-      for (j = 0; j < f->dim; j++)
-        moment[i*f->dim + j] =   f->val[i*i_mult + j*j_mult]
-                                 / CS_MAX(denom[i*d_mult], ep_zero);
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Log information for a given array.
  *
  * parameters:
@@ -433,6 +368,11 @@ _log_array_info(const char        *prefix,
     }
     else if (dim == 6) {
       snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_6[c_id]);
+      tmp_s[1][63] = '\0';
+      cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
+    }
+    else if (dim == 9) {
+      snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_9[c_id]);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
     }
@@ -557,16 +497,16 @@ _log_fields(void)
   int f_id, li, log_count;
 
   int log_count_max = 0;
-  int     *log_id = NULL;
+  int     *log_id = NULL, *moment_id = NULL;
   double  *vmin = NULL, *vmax = NULL, *vsum = NULL, *wsum = NULL;
 
   char tmp_s[5][64] =  {"", "", "", "", ""};
 
   const char _underline[] = "---------------------------------";
   const int n_fields = cs_field_n_fields();
+  const int n_moments = cs_time_moment_n_moments();
   const int log_key_id = cs_field_key_id("log");
   const int label_key_id = cs_field_key_id("label");
-  const int moment_key_id = cs_field_key_id("moment_dt");
 
   const cs_mesh_location_type_t m_l[] = {CS_MESH_LOCATION_CELLS,
                                          CS_MESH_LOCATION_BOUNDARY_FACES};
@@ -584,6 +524,17 @@ _log_fields(void)
   BFT_MALLOC(vsum, log_count_max, double);
   BFT_MALLOC(wsum, log_count_max, double);
 
+  if (n_moments > 0) {
+    BFT_MALLOC(moment_id, n_fields, int);
+    for (f_id = 0; f_id < n_fields; f_id++)
+      moment_id[f_id] = -1;
+    for (int m_id = 0; m_id < n_moments; m_id++) {
+      const cs_field_t *f = cs_time_moment_get_field(m_id);
+      if (f != NULL)
+        moment_id[f->id] = m_id;
+    }
+  }
+
   /* Loop on locations */
 
   for (li = 0; li < 2; li++) {
@@ -593,7 +544,7 @@ _log_fields(void)
     int have_weight = 0;
     double total_weight = -1;
     cs_gnum_t n_g_elts = 0;
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);;
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);
     const cs_lnum_t _n_elts = n_elts[0];
     const cs_real_t *weight = NULL;
 
@@ -627,14 +578,22 @@ _log_fields(void)
 
       int _dim, c_id;
 
-      cs_real_t *vmom = NULL;
-
       const cs_field_t  *f = cs_field_by_id(f_id);
-      const cs_real_t *val = f->val;
 
       if (f->location_id != loc_id || ! (cs_field_get_key_int(f, log_key_id))) {
         log_id[f_id] = -1;
         continue;
+      }
+
+      /* Only log active moments */
+
+      if (moment_id != NULL) {
+        if (moment_id[f_id] > -1) {
+          if (!cs_time_moment_is_active(moment_id[f_id])) {
+            log_id[f_id] = -1;
+            continue;
+          }
+        }
       }
 
       /* Position in log */
@@ -651,32 +610,13 @@ _log_fields(void)
         BFT_REALLOC(wsum, log_count_max, double);
       }
 
-      /* A property field might be a moment */
-
-      if (f->type & CS_FIELD_ACCUMULATOR) {
-
-        int moment_id = cs_field_get_key_int(f, moment_key_id);
-
-        /* if moment_id == -1, the field is not a moment;
-           if moment_id > 0, it is the field id for the divisor;
-           if moment_id < -1, (-1 -moment_id) is the moment id in "dtcmom" */
-
-        if (moment_id != -1) {
-          BFT_MALLOC(vmom, _n_elts*f->dim, cs_real_t);
-          _build_moment(f, moment_id, _n_elts, vmom);
-        }
-
-        val = vmom;
-
-      } /* End of test on properties/moments */
-
       if (have_weight && (f->type | CS_FIELD_INTENSIVE)) {
         if (f->interleaved)
           cs_array_reduce_simple_stats_l_w(_n_elts,
                                            f->dim,
                                            NULL,
                                            NULL,
-                                           val,
+                                           f->val,
                                            weight,
                                            vmin + log_count,
                                            vmax + log_count,
@@ -689,7 +629,7 @@ _log_fields(void)
                                              1,
                                              NULL,
                                              NULL,
-                                             val + n_elts[2]*c_id,
+                                             f->val + n_elts[2]*c_id,
                                              weight,
                                              vmin + log_count + c_id,
                                              vmax + log_count + c_id,
@@ -702,7 +642,7 @@ _log_fields(void)
           cs_array_reduce_simple_stats_l(_n_elts,
                                          f->dim,
                                          NULL,
-                                         val,
+                                         f->val,
                                          vmin + log_count,
                                          vmax + log_count,
                                          vsum + log_count);
@@ -712,7 +652,7 @@ _log_fields(void)
             cs_array_reduce_simple_stats_l(_n_elts,
                                            1,
                                            NULL,
-                                           val + n_elts[2]*c_id,
+                                           f->val + n_elts[2]*c_id,
                                            vmin + log_count + c_id,
                                            vmax + log_count + c_id,
                                            vsum + log_count + c_id);
@@ -724,9 +664,6 @@ _log_fields(void)
       }
 
       log_count += _dim;
-
-      val = NULL;
-      BFT_FREE(vmom);
 
       const char *name = cs_field_get_key_str(f, label_key_id);
       if (name == NULL)
@@ -826,7 +763,13 @@ _log_fields(void)
       if (total_weight > 0 && (f->type | CS_FIELD_INTENSIVE))
         t_weight = total_weight;
 
-      _log_array_info("v  ",
+      char prefix[] = "v  ";
+      if (moment_id != NULL) {
+        if (moment_id[f_id] > -1)
+          prefix[0] = 'm';
+      }
+
+      _log_array_info(prefix,
                       name,
                       max_name_width,
                       f->interleaved,
@@ -844,6 +787,7 @@ _log_fields(void)
 
   } /* End of loop on mesh locations */
 
+  BFT_FREE(moment_id);
   BFT_FREE(wsum);
   BFT_FREE(vsum);
   BFT_FREE(vmax);
@@ -1332,21 +1276,6 @@ _log_clips(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize logging of moments
- *
- * Currently, an external cumulative time array is simply mapped to
- * the logging API.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_log_init_moments(const cs_real_t  *cumulative_time)
-{
-  _cumulative_mom_time = cumulative_time;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Free arrays possible used by logging of array statistics.
  */
 /*----------------------------------------------------------------------------*/
@@ -1398,6 +1327,8 @@ cs_log_iteration(void)
 
   if (_n_sstats > 0)
     _log_sstats();
+
+  cs_time_moment_log_iteration();
 }
 
 /*----------------------------------------------------------------------------*/

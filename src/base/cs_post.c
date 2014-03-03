@@ -336,10 +336,6 @@ static cs_real_t  *_cs_post_ini_vtx_coo = NULL;
 
 fvm_writer_time_dep_t  _cs_post_mod_flag_min = FVM_WRITER_FIXED_MESH;
 
-/* Array for moments */
-
-static const cs_real_t  *_cs_post_cumulative_mom_time = NULL;
-
 /* Flag to indicate output of domain number in parallel mode */
 
 static bool        _cs_post_domain = true;
@@ -2642,88 +2638,6 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Build moments array for post-processing.
- *
- * If of dimension > 1, the moments array is always interleaved, whether
- * the accumulator field is interleaved or not.
- *
- * parameters:
- *   f          <-- pointer to field structure
- *   moment_id  <-- id of associated moment divisor:
- *                  - if moment_id == -1, the field is not a moment;
- *                  - if moment_id >= 0, it is the field id for the divisor;
- *                  - if moment_id < -1, (-1 -moment_id) is the moment id
- *                    in the Fortran "dtcmom" array of the optcal module
- *   n_elts     <-- local number of elements
- *   elt_list   <-- list of cells (1 to n), or NULL
- *   moment     --> resulting moment array (size: n_elts)
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_post_build_moment(const cs_field_t  *f,
-                      int                moment_id,
-                      cs_lnum_t          n_elts,
-                      const cs_lnum_t    elt_list[],
-                      cs_real_t          moment[])
-{
-  cs_lnum_t ii, jj;
-  cs_lnum_t  d_mult = 0;
-  const cs_real_t ep_zero = 1.e-12;
-  const cs_real_t *denom = NULL;
-
-  assert(moment_id != -1);
-
-  if (moment_id > -1) {
-    const cs_field_t  *fd = cs_field_by_id(moment_id);
-    assert(fd->dim == 1);
-    denom = fd->val;
-    d_mult = 1;
-  }
-  else if (moment_id < -1) {
-    denom = &(_cs_post_cumulative_mom_time[(- moment_id - 1) - 1]);
-    /* d_mult = 0 is set above */
-  }
-
-  if (f->dim == 1) {
-    if (elt_list == NULL) {
-      for (ii = 0; ii < n_elts; ii++)
-        moment[ii] = f->val[ii] / CS_MAX(denom[ii*d_mult], ep_zero);
-    }
-    else {
-      for (ii = 0; ii < n_elts; ii++) {
-        cs_lnum_t c_id = elt_list[ii] - 1;
-        moment[ii] = f->val[c_id] / CS_MAX(denom[c_id*d_mult], ep_zero);
-      }
-    }
-  }
-  else {
-    cs_lnum_t ii_mult = 1, jj_mult = 1;
-    if (f->interleaved)
-      ii_mult = f->dim;
-    else {
-      const cs_lnum_t *n_loc_elts
-        = cs_mesh_location_get_n_elts(f->location_id);
-      jj_mult = n_loc_elts[2];
-    }
-    if (elt_list == NULL) {
-      for (ii = 0; ii < n_elts; ii++) {
-        for (jj = 0; jj < f->dim; jj++)
-          moment[ii*f->dim + jj] =   f->val[ii*ii_mult + jj*jj_mult]
-                                   / CS_MAX(denom[ii*d_mult], ep_zero);
-      }
-    }
-    else {
-      for (ii = 0; ii < n_elts; ii++) {
-        cs_lnum_t c_id = elt_list[ii] - 1;
-        for (jj = 0; jj < f->dim; jj++)
-          moment[ii*f->dim + jj] =   f->val[c_id*ii_mult + jj*jj_mult]
-                                   / CS_MAX(denom[ii*d_mult], ep_zero);
-      }
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Main post-processing output of variables.
  *
  * parameters:
@@ -2758,7 +2672,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
     const int n_fields = cs_field_n_fields();
     const int vis_key_id = cs_field_key_id("post_vis");
     const int label_key_id = cs_field_key_id("label");
-    const int moment_key_id = cs_field_key_id("moment_dt");
     const cs_real_t *cell_val = NULL, *b_face_val = NULL;
 
     /* Loop on fields */
@@ -2778,8 +2691,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       interleaved = f->interleaved;
       use_parent = true;
 
-      _val = NULL;
-
       if (location_id == CS_MESH_LOCATION_CELLS)
         cell_val = f->val;
       else /* if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES) */
@@ -2788,37 +2699,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       name = cs_field_get_key_str(f, label_key_id);
       if (name == NULL)
         name = f->name;
-
-      /* A property field might be a moment */
-
-      if (f->type & CS_FIELD_ACCUMULATOR) {
-
-        int moment_id = cs_field_get_key_int(f, moment_key_id);
-
-        /* if moment_id == -1, the field is not a moment;
-           if moment_id > 0, it is the field id for the divisor;
-           if moment_id < -1, (-1 -moment_id) is the moment id in "dtcmom" */
-
-        if (moment_id != -1) {
-          const cs_lnum_t n_elts = (location_id == CS_MESH_LOCATION_CELLS) ?
-            n_cells : n_b_faces;
-          const cs_lnum_t *elt_list = (location_id == CS_MESH_LOCATION_CELLS) ?
-            cell_list : b_face_list;
-          const cs_lnum_t *n_parent_elts
-            = cs_mesh_location_get_n_elts(location_id);
-          BFT_MALLOC(_val, n_elts*f->dim, cs_real_t);
-          _cs_post_build_moment(f, moment_id, n_elts, elt_list, _val);
-          if (location_id == CS_MESH_LOCATION_CELLS)
-            cell_val = _val;
-          else /* if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES) */
-            b_face_val = _val;
-
-          interleaved = true;
-          if (n_elts < n_parent_elts[0] || elt_list != NULL)
-            use_parent = false;
-        }
-
-      } /* End of test on properties/moments */
 
       cs_post_write_var(post_mesh->id,
                         name,
@@ -2830,9 +2710,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                         NULL,
                         b_face_val,
                         ts);
-
-      if (_val != NULL)
-        BFT_FREE(_val);
 
     } /* End of loop on fields */
 
@@ -4999,21 +4876,6 @@ void
 cs_post_set_changing_connectivity(void)
 {
   _cs_post_mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize post-processing of moments
- *
- * Currently, an external cumulative time array is simply mapped to
- * the post-processing API.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_post_init_moments(const cs_real_t  *cumulative_time)
-{
-  _cs_post_cumulative_mom_time = cumulative_time;
 }
 
 /*----------------------------------------------------------------------------*/

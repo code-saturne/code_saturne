@@ -109,7 +109,7 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 
 
 character        rubriq*64,car4*4,car2*2
-character        cnum4*4, car54*54
+character        car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
 character        cphase*2
@@ -120,13 +120,11 @@ logical          lprev
 integer          iel   , ifac, ii, istr
 integer          ivar  , iscal , jphas , isco
 integer          idecal, iclapc, icha  , icla
-integer          imom  , imold
 integer          jdtvar
 integer          jortvm, ipcvmx, ipcvmy, ipcvmz
-integer          idtcm
 integer          iptsna, iptsta, iptsca
 integer          numero, ipcefj, ipcla1, ipcla2, ipcla3
-integer          iok   , inifok, iokdt
+integer          inifok
 integer          ncelok, nfaiok, nfabok, nsomok
 integer          ierror, irtyp,  itysup, nbval
 integer          nberro, inierr, ivers
@@ -137,7 +135,7 @@ integer          nfmtst
 integer          jturb , jtytur, jale
 integer          f_id, nfld, iflmas, iflmab
 integer          ngbstr(2)
-double precision d2s3  , tsrii , cdtcm
+double precision d2s3  , tsrii
 double precision tmpstr(27)
 
 integer, allocatable, dimension(:) :: mflnum
@@ -1538,153 +1536,7 @@ endif
 ! 8. MOYENNES
 !===============================================================================
 
-!     Indicateur ok (=0) ou non (>0)
-iok = 0
-
-ilu = 0
-
-do imom = 1, nbmomt
-
-  imold = imoold(imom)
-!     Si on doit lire la moyenne
-  if(imold.gt.0) then
-    ilu = 1
-!     Si ce correspondant est ok pour le format
-    if(imold.le.nfmtmo) then
-      WRITE(CAR4,'(I4.4)')IMOLD
-    else
-      car4 = cindfm
-    endif
-
-!       On la lit
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    RUBRIQ = 'cumul_ce_moment'//CAR4
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipproc(icmome(imom))),ierror)
-    nberro=nberro+ierror
-
-!       Si ca ne marche pas, on s'arrete
-!         (on pourrait tenter de prendre des mesures correctives,
-!          mais le cumul de la duree associee sert peut etre a d'autres
-!            moyennes
-!          en outre, si l'utilisateur a indique qu'il voulait relire
-!            une moyenne, c'est qu'il veut faire un calcul propre
-    if(ierror.ne.0) then
-      write(nfecra,9300)imold,imom,imom
-      iok = iok + 1
-    endif
-
-
-
-!       Si on a reussi a lire la moyenne, il faut obligatoirement disposer
-!         du cumul de duree associe, sinon, on devra s'arreter.
-!       IOKDT different de 0 indiquera qu'on n'a pas pu l'obtenir.
-    iokdt = 0
-
-!       On cherche le numero (local au fichier suite)
-!         du cumul de temps de la moyenne du calcul precedent
-!         correspondant a la moyenne IMOM du calcul courant (ouf          !)
-    itysup = 0
-    nbval  = 1
-    irtyp  = 1
-    RUBRIQ = 'numero_cumul_temps_moment'//CAR4
-    numero = 0
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                numero,ierror)
-    nberro=nberro+ierror
-
-!       Si on n'a pas trouve, on a echoue
-    if(numero.eq.0.or.ierror.ne.0) then
-      iokdt = 1
-
-!       Sinon, on a trouve un cumul en temps correspondant
-    else
-
-!         Si NUMERO > 0, il s'agissait d'un cumul variable en espace
-!             et le cumul courant est forcement variable en espace
-      if(numero.gt.0) then
-
-        if(numero.le.nfmtmo) then
-          WRITE(CNUM4,'(I4.4)')NUMERO
-        else
-          cnum4 = cindfm
-        endif
-
-        itysup = 1
-        nbval  = 1
-        irtyp  = 2
-        RUBRIQ = 'cumul_temps_ce_'//CNUM4
-        idtcm  = ipproc(icdtmo(idtmom(imom)))
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,idtcm),ierror)
-        nberro=nberro+ierror
-
-!           Si on n'a pas lu, on a echoue
-        if(ierror.ne.0) then
-          iokdt = 1
-        endif
-
-!         Si NUMERO < 0, il s'agissait d'un cumul uniforme
-!             et le cumul courant est variable en espace ou non
-      elseif(numero.lt.0) then
-
-        numero = -numero
-        if(numero.le.nfmtmo) then
-          WRITE(CNUM4,'(I4.4)')NUMERO
-        else
-          cnum4 = cindfm
-        endif
-
-        itysup = 0
-        nbval  = 1
-        irtyp  = 2
-        RUBRIQ = 'cumul_temps_'//CNUM4
-        cdtcm  = 0.d0
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    cdtcm,ierror)
-        nberro=nberro+ierror
-
-!           Si on n'a pas lu, on a echoue
-        if(ierror.ne.0) then
-          iokdt = 1
-
-!           Sinon, selon la nature du cumul actuel, on l'affecte
-        else
-          if(idtmom(imom).gt.0) then
-            idtcm  = ipproc(icdtmo(idtmom(imom)))
-            do iel = 1, ncel
-              propce(iel,idtcm) = cdtcm
-            enddo
-          elseif(idtmom(imom).lt.0) then
-            idtcm  = -idtmom(imom)
-            dtcmom(idtcm) = cdtcm
-          endif
-        endif
-
-      endif
-
-    endif
-
-    if(iokdt.ne.0) then
-      write(nfecra,9310)imold,imom,imom
-      iok = iok + 1
-    endif
-
-  endif
-enddo
-
-!     Si pb on s'arrete car si on cherche a faire des moyennes
-!       c'est qu'on veut vraiement les relire
-if(iok.ne.0) then
-  call csexit(1)
-endif
-
-if(ilu.gt.0) then
-  CAR54 = ' Fin de la lecture des moyennes temporelles           '
-  write(nfecra,1110)car54
-endif
+call time_moment_restart_read(impamx)
 
 !===============================================================================
 ! 9. DISTANCE A LA PAROI
@@ -3249,45 +3101,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9300 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@    La relecture de l''ancienne moyenne ',I10  ,' qui doit  ',/,&
-'@      permettre d''initialiser la nouvelle moyenne ',I10     ,/,&
-'@      a echoue                                              ',/ &
-'@                                                            ',/,&
-'@    Le calcul ne sera pas  execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier le fichier suite auxiliaire ou                 ',/,&
-'@      specifier dans usipsu que la moyenne doit etre        ',/,&
-'@      reinitialisee, en indiquant : IMOOLD(',I10   ,') = -1 ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9310 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@    La relecture du cumul de la duree associee a            ',/,&
-'@                    l''ancienne moyenne ',I10  ,' qui doit  ',/,&
-'@      permettre d''initialiser la nouvelle moyenne ',I10     ,/,&
-'@      a echoue                                              ',/ &
-'@                                                            ',/,&
-'@    Le calcul ne sera pas  execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier le fichier suite auxiliaire ou                 ',/,&
-'@      specifier dans usipsu que la moyenne doit etre        ',/,&
-'@      reinitialisee, en indiquant : IMOOLD(',I10   ,') = -1 ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3457,45 +3270,6 @@ return
 '@      ALE data.                                             ',/,&
 '@                                                            ',/,&
 '@    Verify that the restart file used has not been damaged. ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9300 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: STOP WHILE READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@    The reading of the previous average ',I10  ,' that will ',/,&
-'@      allow the initialisation of the new average ',I10      ,/,&
-'@      has failed                                            ',/ &
-'@                                                            ',/,&
-'@    The run will not be executed.                           ',/,&
-'@                                                            ',/,&
-'@    Verify the auxiliary restart file or specify            ',/,&
-'@      in usipsu that the average has to be reinitialised,   ',/,&
-'@      by indicating: IMOOLD(',I10   ,') = -1                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9310 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: STOP WHILE READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@    The reading of the accumulated period associated with   ',/,&
-'@                   the previous average ',I10  ,' that will ',/,&
-'@      allow to initialise the new average ',I10              ,/,&
-'@      has failed                                            ',/ &
-'@                                                            ',/,&
-'@    The run will not be executed.                           ',/,&
-'@                                                            ',/,&
-'@    Verify the auxiliary restart file or specify            ',/,&
-'@      in usipsu that the average has to be reinitialised,   ',/,&
-'@      by indicating: IMOOLD(',I10   ,') = -1                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

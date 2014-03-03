@@ -336,7 +336,7 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
   }
 
   sprintf(tmp_s[0], "%-36s", "");
-  cs_log_strpadl(tmp_s[1], _("mean"), 12, 64);
+  cs_log_strpadl(tmp_s[1], _(" mean"), 12, 64);
   cs_log_strpadl(tmp_s[2], _("minimum"), 12, 64);
   cs_log_strpadl(tmp_s[3], _("maximum"), 12, 64);
 
@@ -367,7 +367,7 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
                      mg->info.t_tot);
 
   sprintf(tmp_s[0], "%-36s", "");
-  cs_log_strpadl(tmp_s[1], _("mean"), 12, 64);
+  cs_log_strpadl(tmp_s[1], _(" mean"), 12, 64);
   cs_log_strpadl(tmp_s[2], _("minimum"), 12, 64);
   cs_log_strpadl(tmp_s[3], _("maximum"), 12, 64);
 

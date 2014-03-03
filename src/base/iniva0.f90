@@ -564,14 +564,6 @@ do imom = 1, nbmomt
     propce(iel,ipproc(icmome(imom))) = 0.d0
   enddo
 enddo
-do ii = 1,  nbdtcm
-  do iel = 1, ncel
-    propce(iel,ipproc(icdtmo(ii))) = 0.d0
-  enddo
-enddo
-do ii = 1,  nbmomx
-  dtcmom(ii) = 0.d0
-enddo
 
 !===============================================================================
 ! 10.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE

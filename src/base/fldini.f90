@@ -81,21 +81,23 @@ implicit none
 
 ! Local variables
 
-integer          ii, ivar, iprop
-integer          imom, idtnm
-integer          keycpl, iflid, ikeyid, ikeyvl
+integer          ii, jj, ivar, iprop
+integer          imom, idgmom
+integer          keycpl, iflid, ikeyvl
 integer          kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3, idim6
 integer          ipcroa
 logical          ilved, iprev, inoprv, lprev
 integer          ifvar(nvppmx), iapro(npromx)
-integer          f_id, kscavr
+integer          f_id, kscavr, mom_id
 
 character*80     name
 character*80     f_name
 character*80     fname(nvppmx)
 
 type(var_cal_opt) vcopt
+
+integer(c_int), dimension(ndgmox) ::  mom_f_id, mom_c_id
 
 !===============================================================================
 
@@ -339,19 +341,7 @@ enddo
 do imom = 1, nbmomt
   ! property id matching moment
   iprop = ipproc(icmome(imom))
-  if (idtmom(imom).ne.0) then
-    iapro(iprop) = 1
-  endif
-enddo
-
-! Mark moment accumulators
-
-do imom = 1, nbmomt
-  idtnm = idtmom(imom)
-  if (idtnm.gt.0) then
-    iprop = ipproc(icdtmo(idtnm))
-    iapro(iprop) = -idtnm
-  endif
+  iapro(iprop) = 1
 enddo
 
 ! Special case for fields with possible previous value
@@ -368,56 +358,61 @@ endif
 
 imom = 0
 do iprop = 1, nproce
+
   if (iprop.eq.ipcroa) cycle
+
   name = nomprp(iprop)
   if (iapro(iprop).eq.0) then
     if (name(1:4) .eq. '    ') then
       write(name, '(a, i3.3)') 'property_', iprop
     endif
-    itycat = FIELD_PROPERTY
+
   else
-    if (iapro(iprop).gt.0) then
-      imom = imom + 1
-      if (name(1:4) .eq. '    ') then
-        write(name, '(a, i3.3)') 'moment_', imom
-      endif
-    else if (iapro(iprop).lt.0) then
-      imom = imom + 1
-      if (name(1:4) .eq. '    ') then
-        write(name, '(a, i3.3)') 'accumulator_', -iapro(iprop)
-      endif
+    imom = imom + 1
+    if (name(1:4) .eq. '    ') then
+      write(name, '(a, i3.3)') 'moment_', imom
     endif
-    itycat = FIELD_PROPERTY + FIELD_ACCUMULATOR
+
+    idgmom = 0
+    do ii = 1, ndgmox
+      if (idfmom(ii,imom).ne.0) then
+        idgmom = idgmom + 1
+        mom_c_id(idgmom) = 0
+        if (idfmom(ii,imom).gt.0) then
+          mom_f_id(idgmom) = ivarfl(idfmom(ii,imom))
+          jj = idfmom(ii,imom)
+          if (jj.gt.1) then
+            do while (jj.gt.1 .and. ivarfl(jj-1).eq.ivarfl(idfmom(ii,imom)))
+              jj = jj-1
+              mom_c_id(idgmom) = mom_c_id(idgmom) + 1
+            enddo
+          endif
+        else if (idfmom(ii,imom).lt.0) then
+          mom_f_id(idgmom) = iprpfl(-idfmom(ii,imom))
+        endif
+      endif
+    enddo
+    call time_moment_define_by_field_ids(name, idgmom,                      &
+                                         mom_f_id, mom_c_id,                &
+                                         0, ntdmom(imom), ttdmom(imom),     &
+                                         imoold(imom), mom_id)
+    call time_moment_field_id(mom_id, f_id)
+    iprpfl(iprop) = f_id
+
   endif
+
   if (iprpfl(iprop).le.0) then
+    itycat = FIELD_PROPERTY
     call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
   endif
+
   call field_set_key_str(iprpfl(iprop), keylbl, name)
   if (ipppro(iprop).gt.1) then
     call field_set_key_int(iprpfl(iprop), keyvis, ichrvr(ipppro(iprop)))
     call field_set_key_int(iprpfl(iprop), keylog, ilisvr(ipppro(iprop)))
     call field_set_key_int(iprpfl(iprop), keyipp, ipppro(iprop))
   endif
-enddo
 
-! Add moment accumulators metadata
-!---------------------------------
-
-name = 'moment_dt'
-call field_get_key_id(name, ikeyid)
-
-do imom = 1, nbmomt
-  ! property id matching moment
-  iprop = ipproc(icmome(imom))
-  ! dt type and number
-  idtnm = idtmom(imom)
-  ikeyvl = -1
-  if (idtnm.gt.0) then
-    ikeyvl = iprpfl(ipproc(icdtmo(idtnm)))
-  elseif(idtnm.lt.0) then
-    ikeyvl = idtnm - 1
-  endif
-  call field_set_key_int(iprpfl(iprop), ikeyid, ikeyvl)
 enddo
 
 ! Reserved fields whose ids are not saved (may be queried by name)

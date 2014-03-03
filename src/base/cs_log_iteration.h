@@ -63,16 +63,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize logging of moments
- *
- * Currently, an external cumulative time array is simply mapped to
- * the logging API.
- *----------------------------------------------------------------------------*/
-
-void
-cs_log_init_moments(const cs_real_t  *cumulative_time);
-
-/*----------------------------------------------------------------------------
  * Free arrays possible used by logging of array statistics.
  *----------------------------------------------------------------------------*/
 

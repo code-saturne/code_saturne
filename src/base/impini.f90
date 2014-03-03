@@ -83,8 +83,8 @@ integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok51 , iok60
 integer          iok32
 integer          iok70
 integer          iokss , iokcaz
-integer          ii    , jj    , iiesca, iest
-integer          ipp   , iwar  , imom
+integer          ii    , iiesca, iest
+integer          ipp   , iwar
 integer          nbccou, nbsucp, nbvocp, issurf, isvol
 integer          kscmin, kscmax, keypp, keyvar
 integer          c_id, f_id, f_dim, n_fields
@@ -1663,20 +1663,6 @@ if(iiesca.gt.0) then
   write(nfecra,9900)
 endif
 
-! --- Calcul de moyennes temporelles
-
-write(nfecra,4900) nbmomt
-if(nbmomt.gt.0) then
-  write(nfecra,4901)
-  do imom = 1, nbmomt
-    write(nfecra,4920)imom,imoold(imom),                          &
-         ntdmom(imom),ttdmom(imom),(idfmom(jj,imom),jj=1,ndgmox)
-  enddo
-  write(nfecra,4930)
-endif
-write(nfecra,9900)
-
-
 ! --- Calcul de la distance a la paroi
 
 if(ineedy.eq.1) then
@@ -1795,34 +1781,6 @@ endif
 '               sauf pour IESCOR : on calcule',                 /,&
 '                 abs(I)*Volume_cellule pour mesurer',          /,&
 '                 un ecart en kg/s',                            /)
-
- 4900 format(                                                     &
-                                                                /,&
-' ** CALCUL DES MOYENNES TEMPORELLES (MOMENTS)',                /,&
-'    -----------------------------------------',                /,&
-                                                                /,&
-'       NBMOMT = ',4x,i10,    ' (Nombre de moments           )'  )
- 4901 format(                                                     &
-                                                                /,&
-'------------------------------------------------------',       /,&
-' IMOM IMOOLD NDTMOM TTDMOM IDFMOM',                            /,&
-'------------------------------------------------------'         )
- 4920 format(                                                     &
- 1x,i4,    i7,    i7, e14.5, 5(i7)                               )
- 4930 format(                                                     &
-'------------------------------------------------------',       /,&
-                                                                /,&
-'       IMOM   = 0 ou > 0       (numero du moment            )',/,&
-'       IMOOLD =-1 ou > 0       (ancien moment correspondant )',/,&
-'                               (  en suite de calcul ou     )',/,&
-'                               (-1 si le moment est         )',/,&
-'                               (  reinitialise              )',/,&
-'       NTDMOM = 0 ou > 0       (numero du pas de temps de   )',/,&
-'                               (debut de calcul du moment   )',/,&
-'       TTDMOM = 0 ou > 0       (instant de                  )',/,&
-'                               (debut de calcul du moment   )',/,&
-'       IDFMOM = 0 ou > 0       (numero des variables        )',/,&
-'                               (composant le moment         )',/)
 
  4950 format(                                                     &
                                                                 /,&
@@ -1952,34 +1910,6 @@ endif
 '               except for IESCOR: we calculate',               /,&
 '                 abs(I)*Cell_volume to measure',               /,&
 '                 a difference in kg/s',                        /)
-
- 4900 format(                                                     &
-                                                                /,&
-' ** CALCULATION OF TEMPORAL MEANS (MOMENTS)',                  /,&
-'    ---------------------------------------',                  /,&
-                                                                /,&
-'       NBMOMT = ',4x,i10,    ' (Number of moments           )'  )
- 4901 format(                                                     &
-                                                                /,&
-'------------------------------------------------------',       /,&
-' IMOM IMOOLD NDTMOM IDFMOM',                                   /,&
-'------------------------------------------------------'         )
- 4920 format(                                                     &
- 1x,i4,    i7,    i7, e14.5, 5(i7)                               )
- 4930 format(                                                     &
-'------------------------------------------------------',       /,&
-                                                                /,&
-'       IMOM   = 0 ou > 0       (moment number               )',/,&
-'       IMOOLD =-1 ou > 0       (old moment corresponding    )',/,&
-'                               (  to calculation restart or )',/,&
-'                               (-1 if the moment is         )',/,&
-'                               (  reinitialized             )',/,&
-'       NTDMOM = 0 ou > 0       (moment calculation starting )',/,&
-'                               (time step number            )',/,&
-'       TTDMOM = 0 ou > 0       (moment calculation starting )',/,&
-'                               (time                        )',/,&
-'       IDFMOM = 0 ou > 0       (number of variables of      )',/,&
-'                               (which the moment is composed)',/)
 
  4950 format(                                                     &
                                                                 /,&

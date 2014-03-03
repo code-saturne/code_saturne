@@ -104,6 +104,60 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Update temporal moments.
+
+    subroutine time_moment_update_all()  &
+      bind(C, name='cs_time_moment_update_all')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine time_moment_update_all
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Log temporal moments initialization
+
+    subroutine time_moment_log_iteration()  &
+      bind(C, name='cs_time_moment_log_iteration')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine time_moment_log_iteration
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Read temporal moments checkpoint information.
+
+    subroutine time_moment_field_id(m_id, f_id)  &
+      bind(C, name='cs_f_time_moment_field_id')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer, intent(in)  :: m_id
+      integer, intent(out) :: f_id
+    end subroutine time_moment_field_id
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Read temporal moments checkpoint information.
+
+    subroutine time_moment_restart_read(r_num)  &
+      bind(C, name='cs_f_time_moment_restart_read')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: r_num
+    end subroutine time_moment_restart_read
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Checkpoint temporal moments.
+
+    subroutine time_moment_restart_write(r_num)  &
+      bind(C, name='cs_f_time_moment_restart_write')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: r_num
+    end subroutine time_moment_restart_write
+
+    !---------------------------------------------------------------------------
+
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
@@ -138,17 +192,6 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_gradient_perio_finalize
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function initializoing post-processing of moments
-
-    subroutine cs_log_init_moments(cumulative_time)     &
-      bind(C, name='cs_log_init_moments')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(in) :: cumulative_time
-    end subroutine cs_log_init_moments
 
     !---------------------------------------------------------------------------
 
@@ -312,6 +355,31 @@ module cs_c_bindings
       implicit none
       type(c_ptr), value :: restart
     end subroutine cs_restart_write_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
+    ! Define a moment of a product of existing fields components.
+
+    ! Moments will involve the tensor products of their component fields,
+    ! and only scalar, vector, or rank-2 tensors are handled (for
+    ! post-processing output reasons), so a moment may not involve more than
+    ! 2 vectors or 1 tensor, unless single components are specified.
+
+    function cs_f_time_moment_define_by_field_ids(name, n_fields,              &
+                                                  field_id, component_id,      &
+                                                  type, nt_start, t_start,     &
+                                                  restart_mode_or_id)          &
+      result(moment_id)                                                        &
+      bind(C, name='cs_f_time_moment_define_by_field_ids')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      integer(c_int), value :: n_fields, restart_mode_or_id
+      integer(kind=c_int), dimension(*) :: field_id, component_id
+      integer(c_int), value :: type, nt_start
+      real(kind=c_double), value :: t_start
+      integer(c_int) :: moment_id
+    end function cs_f_time_moment_define_by_field_ids
 
     !---------------------------------------------------------------------------
 
@@ -751,6 +819,68 @@ contains
 
   end subroutine restart_write_bc_coeffs
 
+  !---------------------------------------------------------------------------
+
+  !> \brief Define a moment of a product of existing fields components.
+
+  !> Moments will involve the tensor products of their component fields,
+  !> and only scalar, vector, or rank-2 tensors are handled (for
+  !> post-processing output reasons), so a moment may not involve more than
+  !> 2 vectors or 1 tensor, unless single components are specified.
+  !>
+  !> \param[in]   name          name of associated moment
+  !> \param[in]   n_fields      number of associated fields
+  !> \param[in]   field_id      ids of associated fields
+  !> \param[in]   component_id  ids of matching field components (-1 for all)
+  !> \param[in]   type          moment type
+  !> \param[in]   nt_start      starting time step (or -1 to use t_start)
+  !> \param[in]   t_start       starting time
+  !> \param[in]   restart_id    -2: automatic, -1: reset, >= 0: id of
+  !>                            matching moment in restart data
+  !> \param[out]  moment_id     id of new moment in case of success,
+  !>                            -1 in case of error.
+
+  subroutine time_moment_define_by_field_ids(name, n_fields,                    &
+                                             field_id, component_id,            &
+                                             type, nt_start, t_start,           &
+                                             restart_id,                        &
+                                             moment_id)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in)             :: name
+    integer, intent(in)                      :: n_fields
+    integer(c_int), intent(in), dimension(*) :: field_id, component_id
+    integer, intent(in)                      :: type, nt_start, restart_id
+    double precision, intent(in)             :: t_start
+    integer, intent(out)                     :: moment_id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: c_n_fields, c_type, c_nt_start, c_moment_id
+    integer(c_int) :: c_restart_id
+    real(c_double) :: c_t_start
+
+    c_name = trim(name)//c_null_char
+    c_n_fields = n_fields
+    c_type = type
+    c_nt_start = nt_start
+    c_t_start = t_start
+    c_restart_id = restart_id
+
+    c_moment_id = cs_f_time_moment_define_by_field_ids(c_name, c_n_fields,    &
+                                                       field_id,              &
+                                                       component_id, c_type,  &
+                                                       c_nt_start, c_t_start, &
+                                                       c_restart_id)
+
+    moment_id = c_moment_id
+
+  end subroutine time_moment_define_by_field_ids
+
   !=============================================================================
 
-end module cs_c_bindings
+  end module cs_c_bindings

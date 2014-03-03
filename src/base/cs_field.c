@@ -33,6 +33,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -348,6 +349,7 @@ _field_create(const char   *name,
 {
   int key_id;
   int field_id = -1;
+  size_t l = strlen(name);
   const char *addr_0 = NULL, *addr_1 = NULL;
 
   cs_field_t *f =  NULL;
@@ -360,8 +362,16 @@ _field_create(const char   *name,
   else
     addr_0 = cs_map_name_to_id_reverse(_field_map, 0);
 
-  if (strlen(name) == 0)
+  if (l == 0)
     bft_error(__FILE__, __LINE__, 0, _("Defining a field requires a name."));
+
+  for (size_t i = 0; i < l; i++) {
+    if (name[i] == '[' || name[i] == ']')
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" is not allowed,\n"
+                  "as \'[\' and \']\' are reserved for component access."),
+                name);
+  }
 
   /* Find or insert entry in map */
 
@@ -1886,6 +1896,96 @@ cs_field_id_by_name(const char *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return the id of a defined field and an associated component
+ *  based on a component name.
+ *
+ * If no field with the given name exists, -1 is returned.
+ *
+ * \param[in]   name   field or field+component name
+ * \param[out]  f_id   field id, or -1 if no match was found
+ * \param[out]  c_id   component id, or -1 for all components
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_component_id_by_name(const char  *name,
+                              int         *f_id,
+                              int         *c_id)
+{
+  size_t l = strlen(name);
+
+  *f_id = -1;
+  *c_id = -1;
+
+  /* Case with an extension */
+
+  if (l > 3) {
+    if (name[l-1] == ']') {
+      size_t l0 = -1;
+      char _name0[128];
+      char *name0 = _name0;
+      if (l >= 128)
+        BFT_MALLOC(name0, l + 1, char);
+      strcpy(name0, name);
+      for (l0 = l-2; l0 > 0; l0--) {
+        if (name0[l0] == '[') {
+          name0[l0] = '\0';
+          *f_id = cs_map_name_to_id_try(_field_map, name0);
+          break;
+        }
+        else
+          name0[l0] = toupper(name0[l0]);
+      }
+      if (*f_id > -1) {
+        cs_field_t *f = cs_field_by_id(*f_id);
+        const char **c_name;
+        switch (f->dim) {
+        case 3:
+          c_name = cs_glob_field_comp_name_3;
+          break;
+        case 6:
+          c_name = cs_glob_field_comp_name_6;
+          break;
+        case 9:
+          c_name = cs_glob_field_comp_name_9;
+          break;
+        default:
+          c_name = NULL;
+        }
+        if (c_name != NULL) {
+          for (int _c_id = 0; *c_id < 0 &&_c_id < f->dim; _c_id++) {
+            if (strcmp(name0 + l0 + 1, c_name[_c_id]) == 0)
+              *c_id = _c_id;
+          }
+        }
+        if (*c_id < 0 && l-l0 < 63) {
+          char c_str[64], c_ref[64];
+          strncpy(c_str, name0 + l0 + 1, 63);
+          c_str[l - l0 - 2] = '\0';
+          for (int _c_id = 0; *c_id < 0 &&_c_id < f->dim; _c_id++) {
+            sprintf(c_ref, "%d", _c_id);
+            if (strcmp(c_str, c_ref) == 0)
+              *c_id = _c_id;
+          }
+        }
+        if (*c_id < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Field \"%s\" does not have a component \"%s\"."),
+                    f->name, name + l0 - 1);
+      }
+      if (name0 != _name0)
+        BFT_FREE(name0);
+    }
+  }
+
+  /* Case with no extension */
+
+  if (*f_id == -1)
+    *f_id = cs_map_name_to_id_try(_field_map, name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return an id associated with a given key name.
  *
  * The key must have been defined previously.
@@ -3302,7 +3402,8 @@ cs_field_log_all_key_vals(bool  log_defaults)
  *   "post_vis"     (integer)
  *   "post_probes"  (integer)
  *   "coupled"      (integer, restricted to CS_FIELD_VARIABLE)
- *   "moment_dt"    (integer, restricted to CS_FIELD_PROPERTY);
+ *   "moment_id"    (integer, restricted to
+ *                   CS_FIELD_ACCUMULATOR | CS_FIELD_POSTPROCESS);
  *
  * A recommened practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.
@@ -3319,7 +3420,8 @@ cs_field_define_keys_base(void)
   cs_field_define_key_int("post_vis", 0, 0);
   cs_field_define_key_int("post_probes", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
-  cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
+  cs_field_define_key_int("moment_id", -1,
+                          CS_FIELD_ACCUMULATOR | CS_FIELD_POSTPROCESS);
 }
 
 /*----------------------------------------------------------------------------*/

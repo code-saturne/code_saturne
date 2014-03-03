@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-02-20 17:58+0100\n"
+"POT-Creation-Date: 2014-03-03 15:08+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3183,8 +3183,8 @@ msgstr "création/destruction de la structure de la matrice"
 msgid "time (s)"
 msgstr "temps (s)"
 
-msgid "mean"
-msgstr "moyen"
+msgid " mean"
+msgstr " moyen"
 
 msgid "min"
 msgstr "min"
@@ -4522,6 +4522,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Field \"%s\" is not allowed,\n"
+"as '[' and ']' are reserved for component access."
+msgstr ""
+
+#, c-format
+msgid ""
 "Field \"%s\"\n"
 " may not be defined as both intensive and extensive."
 msgstr ""
@@ -4611,6 +4617,10 @@ msgstr "Le champ avec id %d n'est pas défini."
 #, c-format
 msgid "Field \"%s\" is not defined."
 msgstr "Le champ \"%s\" n'est pas défini."
+
+#, c-format
+msgid "Field \"%s\" does not have a component \"%s\"."
+msgstr "Le champ \"%s\" n'a pas de composante \"%s\"."
 
 #, c-format
 msgid ""
@@ -6021,6 +6031,10 @@ msgid "  %s: section \"%s\" has %d values and not %d.\n"
 msgstr ""
 
 #, c-format
+msgid "  %s: section \"%s\" is not of character type.\n"
+msgstr ""
+
+#, c-format
 msgid "  %s: section \"%s\" is not of integer type.\n"
 msgstr ""
 
@@ -6552,6 +6566,195 @@ msgstr "Ordonnancement dynamique possible"
 msgid "Processors/node:     "
 msgstr "Processeurs/noeud :  "
 
+msgid "mean"
+msgstr "moyenne"
+
+msgid "variance"
+msgstr "variable"
+
+msgid "Error reading expected section in restart file."
+msgstr "Erreur à la lecture d'une section attendue dans un fichier de reprise."
+
+#, c-format
+msgid ""
+"\n"
+"Restart data for time moment \"%s\"\n"
+" (previously \"%s\") does not match.\n"
+"  previous values:\n"
+"    weight accumulator location_id: %d\n"
+"    type:                           %d\n"
+"    location_id:                    %d\n"
+"    dimension:                      %d\n"
+"    start time step:                %d\n"
+"    start time:                     %12.5e\n"
+msgstr ""
+"\n"
+"Les donées de reprise pour le moment temporel \"%s\"\n"
+" (anciennement \"%s\") ne correspondent pas.\n"
+"  valeurs précédentes:\n"
+"    id support accumulateur poids : %d\n"
+"    type:                           %d\n"
+"    id support                      %d\n"
+"    dimension:                      %d\n"
+"    pas de temps de départ :        %d\n"
+"    temps de départ :               %12.5e\n"
+
+#, c-format
+msgid ""
+"\n"
+"Warning: computation of time moment \"%s\" will be reset,\n"
+"         as restart data for \"%s\" does not match.\n"
+msgstr ""
+"\n"
+"Attention: le calcul du moment temporel \"%s\" sera remis à zéro,\n"
+"           car les données de reprise pour \"%s\" ne correspondent pas.\n"
+
+#, c-format
+msgid ""
+"Restart data for time moment \"%s\"\n"
+" (previously \"%s\") does not match."
+msgstr ""
+"Les données de reprise pour le moment temporel \"%s\"\n"
+" (anciennement \"%s\") ne correpondent pas."
+
+#, c-format
+msgid ""
+"\n"
+"Warning: computation of time moment \"%s\"will be reset,\n"
+"           as restart data for \"%s\" is not available.\n"
+msgstr ""
+"\n"
+"Attention: le calcul du moment temporel \"%s\" sera remis à zéro,\n"
+"           car les données de reprise pour \"%s\" ne sont pas disponibles.\n"
+
+#, c-format
+msgid ""
+"Restart data for time moment \"%s\"\n"
+" (previously \"%s\") not available."
+msgstr ""
+"Les données de reprise pour le moment temporel \"%s\"\n"
+" (anciennement \"%s\") ne sont pas disponibles."
+
+#, c-format
+msgid ""
+"Restart data for time moment \"%s\"\n"
+" (previously \"%s\") seems inconsistent:\n"
+"   lower order moment of type %s was \"%s\",\n"
+"   but has non-matching attributes:\n"
+"    weight accumulator id: %d (expected %d)\n"
+"    type:                  %d\n"
+"    location_id:           %d\n"
+"    dimension:             %d\n"
+msgstr ""
+"Les données de reprise pour le moment temporel \"%s\"\n"
+" (anciennement \"%s\") semblent incohérentes :\n"
+"   lem oment d'ordre inférieur de type %s était \"%s\",\n"
+"   mais a des attributs qui ne correspondent pas :\n"
+"    id accumulateur poids : %d (attendu %d)\n"
+"    type:                   %d\n"
+"    id support:             %d\n"
+"    dimension:              %d\n"
+
+msgid "Definition of simple data requires at least one field id."
+msgstr "La définition de données simples nécessite ua moins un id de champ"
+
+#, c-format
+msgid ""
+"Definition of simple data used for %s:\n"
+"%s\n"
+"mixes fields with location id %d and location id %d."
+msgstr ""
+"La définition de données simples utilisée pour %s :\n"
+"%s\n"
+"mélange des champs avec support %d et support %d."
+
+#, c-format
+msgid ""
+"Definition of simple data used for %s:\n"
+"%s\n"
+"includes field of dimension different from 1, 3, 6, or 9.\n"
+"The definition must be split."
+msgstr ""
+"La définition de données simples utilisée pour %s:\n"
+"%s\n"
+"inclut un champ de dimension différente de 1, 3, 6, ou 9.\n"
+"La définition doit être découpée."
+
+#, c-format
+msgid ""
+"Definition of simple data used for %s:\n"
+"%s\n"
+"leads to a field of dimension > 9.\n"
+"The definition must be split."
+msgstr ""
+"La définition de données simples utilisée pour %s:\n"
+"%s\n"
+"Mène à un champ de dimension > 9.\n"
+"La définition doit être découpée."
+
+#, c-format
+msgid ""
+"Definition of simple data used for %s:\n"
+"%s\n"
+"includes a component id incompatible with field dimension."
+msgstr ""
+"La définition de données simples utilisée pour %s:\n"
+"%s\n"
+"inclut un id. de composante incompatible avec le définition du champ."
+
+#, c-format
+msgid ""
+"Weighting of time-value moments for mesh locations of type:\n"
+"%s is not currently supported."
+msgstr ""
+"La pondération de moments temporels pour des supports de type :\n"
+"%s n'est pas encore supportée."
+
+msgid ""
+"\n"
+"Temporal moments\n"
+"----------------\n"
+msgstr ""
+"\n"
+"Moments temporels\n"
+"-----------------\n"
+
+msgid "Accumulator"
+msgstr "Accumulateur"
+
+msgid "Start"
+msgstr "Début"
+
+msgid "Weight"
+msgstr "Poids"
+
+msgid "Moment"
+msgstr "Moment"
+
+msgid "Acc."
+msgstr "Acc."
+
+msgid "Lower"
+msgstr "Inf."
+
+msgid ""
+"\n"
+"  ** Temporal moment accumulated weights\n"
+"     -----------------------------------\n"
+msgstr ""
+"\n"
+"  ** Poids cumulés pour moments temporels\n"
+"     ------------------------------------\n"
+
+msgid "id"
+msgstr ""
+
+msgid "n it."
+msgstr ""
+
+msgid "location"
+msgstr "support"
+
 #, c-format
 msgid "Error opening file: \"%s\""
 msgstr "Erreur à l'ouverture du fichier \"%s\"."
@@ -6875,9 +7078,8 @@ msgstr ""
 "du module thermique 1D en paroi.\n"
 "Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
-#, fuzzy
 msgid "Added boundary faces"
-msgstr "faces de bord"
+msgstr "Faces de bord ajoutées"
 
 #, c-format
 msgid ""
@@ -7471,14 +7673,13 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Error initializing pipeline from \"%s\":\n"
 "\n"
 msgstr ""
-"Erreur à l'écriture du fichier \"%s\" :\n"
+"Erreur à l'initialisation du pipeline depuis \"%s\" :\n"
 "\n"
-"  %s"
 
 #, c-format
 msgid ""
@@ -9787,6 +9988,21 @@ msgstr "    Création du halo distant\n"
 msgid "    Updating the faces -> cells connectivity\n"
 msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 
+msgid "none"
+msgstr ""
+
+msgid "cells"
+msgstr "cellules"
+
+msgid "vertices"
+msgstr "sommets"
+
+msgid "particles"
+msgstr "particules"
+
+msgid "other"
+msgstr "autre"
+
 #, c-format
 msgid ""
 "The requested mesh location\n"
@@ -9798,17 +10014,11 @@ msgstr ""
 msgid "global"
 msgstr "global"
 
-msgid "cells"
-msgstr "cellules"
-
 msgid "interior_faces"
 msgstr "faces intérieures"
 
 msgid "boundary_faces"
 msgstr "faces de bord"
-
-msgid "vertices"
-msgstr "sommets"
 
 #, c-format
 msgid ""

@@ -491,6 +491,9 @@ _read_ent_values(cs_restart_t           *r,
   /* Initialization */
 
   switch (val_type) {
+  case CS_TYPE_char:
+    nbr_byte_ent = n_location_vals;
+    break;
   case CS_TYPE_cs_int_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
     cs_io_set_cs_lnum(header, r->fh);
@@ -584,6 +587,10 @@ _write_ent_values(const cs_restart_t     *r,
   /* Initialization */
 
   switch (val_type) {
+  case CS_TYPE_char:
+    nbr_byte_ent = n_location_vals;
+    elt_type = CS_CHAR;
+    break;
   case CS_TYPE_cs_int_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
     elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
@@ -801,6 +808,26 @@ _restart_permute_read(cs_int_t                n_ents,
 
   switch (val_type) {
 
+  case CS_TYPE_char:
+    {
+      char  *val_ord;
+      char  *val_cur = (char *)vals;
+
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, char);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[ii++]
+            = val_cur[(ini_ent_num[ent_id] - 1) * n_location_vals + jj];
+      }
+
+      for (ii = 0; ii < n_ents * n_location_vals; ii++)
+        val_cur[ii] = val_ord[ii];
+
+      BFT_FREE(val_ord);
+    }
+    break;
+
   case CS_TYPE_cs_int_t:
     {
       cs_int_t  *val_ord;
@@ -898,6 +925,23 @@ _restart_permute_write(cs_int_t                n_ents,
     return NULL;
 
   switch (val_type) {
+
+  case CS_TYPE_char:
+    {
+      char  *val_ord;
+      const char  *val_cur = (const char *)vals;
+
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, char);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[(ini_ent_num[ent_id] - 1) * n_location_vals + jj]
+            = val_cur[ii++];
+      }
+
+      return (cs_byte_t *)val_ord;
+    }
+    break;
 
   case CS_TYPE_cs_int_t:
     {
@@ -2657,6 +2701,127 @@ cs_restart_dump_index(const cs_restart_t  *restart)
 }
 
 /*----------------------------------------------------------------------------
+ * Check the presence of a given section in a restart file.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location (interlaced)
+ *   val_type        <-- value type
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_check_section(cs_restart_t           *restart,
+                         const char             *sec_name,
+                         int                     location_id,
+                         int                     n_location_vals,
+                         cs_restart_val_type_t   val_type)
+{
+  cs_int_t   n_ents;
+  cs_gnum_t n_glob_ents;
+
+  size_t rec_id, rec_id_tmp;
+  cs_io_sec_header_t header;
+
+  cs_int_t _n_location_vals = n_location_vals;
+  size_t index_size = 0;
+
+  index_size = cs_io_get_index_size(restart->fh);
+
+  assert(restart != NULL);
+
+  /* Check associated location */
+
+  if (location_id == 0) {
+    n_glob_ents = n_location_vals;
+    n_ents  = n_location_vals;
+    _n_location_vals = 1;
+  }
+
+  else {
+    if (location_id < 0 || location_id > (int)(restart->n_locations))
+      return CS_RESTART_ERR_LOCATION;
+    n_glob_ents = (restart->location[location_id-1]).n_glob_ents;
+    if ((restart->location[location_id-1]).n_glob_ents_f != n_glob_ents)
+      return CS_RESTART_ERR_LOCATION;
+    n_ents  = (restart->location[location_id-1]).n_ents;
+  }
+
+  /* Search for the corresponding record in the index */
+
+  for (rec_id = 0; rec_id < index_size; rec_id++) {
+    const char * cmp_name = cs_io_get_indexed_sec_name(restart->fh, rec_id);
+    if (strcmp(cmp_name, sec_name) == 0)
+      break;
+  }
+
+  /* If the record was not found */
+
+  if (rec_id >= index_size)
+    return CS_RESTART_ERR_EXISTS;
+
+  /*
+    If the location does not fit: we search for a location of same
+    name with the correct location.
+  */
+
+  header = cs_io_get_indexed_sec_header(restart->fh, rec_id);
+
+  if (header.location_id != (size_t)location_id) {
+
+    rec_id_tmp = rec_id;
+    rec_id++;
+
+    while (rec_id < index_size) {
+      header = cs_io_get_indexed_sec_header(restart->fh, rec_id);
+      if (   (strcmp(header.sec_name, sec_name) == 0)
+          && (header.location_id == (size_t)location_id))
+        break;
+      rec_id++;
+    }
+
+    if (rec_id >= index_size)
+      return CS_RESTART_ERR_LOCATION;
+  }
+
+  /* If the number of values per location does not match */
+
+  if (   header.location_id > 0
+      && header.n_location_vals != (size_t)n_location_vals)
+    return CS_RESTART_ERR_N_VALS;
+  else if (header.location_id == 0 && header.n_vals != n_ents)
+    return CS_RESTART_ERR_N_VALS;
+
+  /* If the type of value does not match */
+
+  if (header.elt_type == CS_CHAR) {
+    if (val_type != CS_TYPE_char)
+      return CS_RESTART_ERR_VAL_TYPE;
+  }
+  else if (header.elt_type == CS_INT32 || header.elt_type == CS_INT64) {
+    cs_io_set_cs_lnum(&header, restart->fh);
+    if (val_type != CS_TYPE_cs_int_t)
+      return CS_RESTART_ERR_VAL_TYPE;
+  }
+  else if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
+    if (val_type != CS_TYPE_cs_gnum_t && val_type != CS_TYPE_cs_int_t)
+      return CS_RESTART_ERR_VAL_TYPE;
+  }
+  else if (header.elt_type == CS_FLOAT || header.elt_type == CS_DOUBLE) {
+    if (val_type != CS_TYPE_cs_real_t)
+      return CS_RESTART_ERR_VAL_TYPE;
+  }
+
+  /* Return */
+
+  return CS_RESTART_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------
  * Read a section from a restart file.
  *
  * parameters:
@@ -2675,7 +2840,7 @@ int
 cs_restart_read_section(cs_restart_t           *restart,
                         const char             *sec_name,
                         int                     location_id,
-                        cs_int_t                n_location_vals,
+                        int                     n_location_vals,
                         cs_restart_val_type_t   val_type,
                         void                   *val)
 {
@@ -2790,7 +2955,14 @@ cs_restart_read_section(cs_restart_t           *restart,
 
   /* If the type of value does not match */
 
-  if (header.elt_type == CS_INT32 || header.elt_type == CS_INT64) {
+  if (header.elt_type == CS_CHAR) {
+    if (val_type != CS_TYPE_char) {
+      bft_printf(_("  %s: section \"%s\" is not of character type.\n"),
+                 restart->name, sec_name);
+      return CS_RESTART_ERR_VAL_TYPE;
+    }
+  }
+  else if (header.elt_type == CS_INT32 || header.elt_type == CS_INT64) {
     cs_io_set_cs_lnum(&header, restart->fh);
     if (val_type != CS_TYPE_cs_int_t) {
       bft_printf(_("  %s: section \"%s\" is not of integer type.\n"),
@@ -2891,7 +3063,7 @@ void
 cs_restart_write_section(cs_restart_t           *restart,
                          const char             *sec_name,
                          int                     location_id,
-                         cs_int_t                n_location_vals,
+                         int                     n_location_vals,
                          cs_restart_val_type_t   val_type,
                          const void             *val)
 {
@@ -2929,6 +3101,9 @@ cs_restart_write_section(cs_restart_t           *restart,
   /* Set val_type */
 
   switch (val_type) {
+  case CS_TYPE_char:
+    elt_type = CS_CHAR;
+    break;
   case CS_TYPE_cs_int_t:
     elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
     break;
@@ -3782,6 +3957,30 @@ cs_restart_print_stats(void)
                "  Elapsed time for writing:         %12.3f\n"),
              _restart_n_opens[0], _restart_n_opens[1],
              _restart_wtime[0], _restart_wtime[1]);
+}
+
+/*----------------------------------------------------------------------------
+ * Return pointer to restart file based on Fortran id
+ *
+ * parameters:
+ *   r_num  <-- associated fortran restart number
+ *
+ * returns:
+ *   pointer to restart file, or NULL
+ *----------------------------------------------------------------------------*/
+
+cs_restart_t *
+cs_restart_by_fortran_id(int  r_num)
+{
+  int r_id = r_num - 1;
+  cs_restart_t *retval = NULL;
+
+  /* Associated structure pointer */
+
+  if (r_id >= 0 && r_id < (int)_restart_pointer_size)
+    retval = _restart_pointer[r_id];
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

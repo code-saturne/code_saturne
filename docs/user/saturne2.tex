@@ -354,7 +354,7 @@ useful if and only if the subroutine \texttt{ushist} is used}
 
 The code allows the calculation of time averages of the type
 $<f_1*f_2...*f_n>$. The variables $f_i$ (defined at the cell centres)
-which may be taken into account are the followings:
+which may be taken into account are the following:
 \begin{list}{-}{}
 \item the solved calculation variables (velocity, pressure ...),
 \item the auxiliary variables from the array {\tt propce} (density and
@@ -362,16 +362,9 @@ which may be taken into account are the followings:
 \end{list}
 
 The averages are treated like auxiliary variables defined at the cell
-centers and stored in the {\tt propce} array. The standard post-processing
+centers and stored as fields. The standard post-processing
 actions may therefore be activated, like the writing in the listing or
-the output of result files (EnSight, MED, ...). However, if the user
-wants to manipulate the averages in a more advanced way, it is
-recommended to refer first to the user examples for subroutine
-\texttt{cs\_user\_extra\_operations}. Indeed, the {\tt propce} array
-does not contain the time averages directly, but only the cumulated value
-of the product $f_1*f_2...*f_n$ of the selected
-variables $f_i$. The division by the cumulated duration is done only
-before the writing of the results. See also page \pageref{sec:prg_moyennes}.
+the output of result files (EnSight, MED, ...).
 
 To calculate $p$ time averages of the type $<f_1*f_2...*f_{n(imom)}>$,
 the user must:
@@ -385,9 +378,9 @@ the user must:
       without skipping any index-number) by marking out the $n({\tt imom})$
       variables which form it by means of the array {\tt idfmom(ii,imom)} (with
       1$\leqslant${\tt ii}$\leqslant$n({\tt imom})),
-\item define for each average {\tt imom} the time step number at which the
-      calculation of the cumulated value must begin, by means of the
-      array {\tt ntdmom(imom)}.
+\item define for each average {\tt imom} the time step number or time value
+      at which the calculation of the cumulated value must begin, by means of
+      the array {\tt ntdmom(imom)} or {\tt ttdmom(imom)}.
 \end{list}
 
 The total number of averages ($p$={\tt nbmomt}) is automatically determined by
@@ -397,8 +390,8 @@ the code from the values of {\tt idtmom}. The user must not specify it.
 {Index-number of the variables composing a time average of the type
 $<f_1*f_2...*f_n>$. For every time average {\tt imom} to calculate:\\
 \hspace*{1.3cm} - if {\tt idfmom(ii,imom)} is positive, it refers to the
-                  index-number of a solved variable (stored in the array
-                  {\tt rtp}), like for instance a velocity component
+                  index-number of a solved variable, like for instance
+                  a velocity component
                   ({\tt iu}, {\tt iv}, {\tt iw})
                   or the pressure ({\tt ipr})\\
 \hspace*{1.3cm} - if {\tt idfmom(ii,imom)} is negative, it refers to the
@@ -409,10 +402,8 @@ useful if and only if the user wants to calculate time averages}
 
 \motcleb{ntdmom}{ia}{integer}{-1}{O}{L1}
 {For every average {\tt imom} to calculate, absolute time step number at which
-the calculation should begin. The value -1 means ``never''. Every
-strictly negative value (in particular -1) will considered an error and
-cause the calculation to stop (because the user is supposed to want to
-calculate the averages he has defined)\\
+the calculation should begin. If its value is negative, {\tt ttdmom(imom)}
+is used instead.\\
 useful if and only if the user wants to calculate time averages}
 
 \motcleb{imoold}{ia}{-2, 1$\leqslant$ integer $\leqslant$ {\tt jbmomt}}{-2}{O}{L1}
@@ -431,9 +422,7 @@ gives the index-number of the corresponding average in the previous calculation
 to the average {\tt kk=imoold(imom)} in the previous calculation.\\
 useful if and only if the user wants to calculate averages.
 Allows to add or suppress some averages, to reset them, to change their
-order, ...\\
-{\em Warning: if the calculation is not a restart, {\tt imoold} must not be
-specified (its value must remain -2)}}
+order, ...\\}
 
 %==================================
 \subsubsection{Others}

@@ -2397,26 +2397,6 @@ array of reals.
 \end{list}
 \end{list}
 
-\minititre{Note: cumulated duration associated with the averages
-defined by the user}\label{sec:prg_moyennes}
-The cumulated duration associated with the calculation of a time averages
-defined by the user is often a spatially uniform value. In this case, it
-is stored in a simple real number: for the mean value \texttt{imom}, it is the
-real number \texttt{dtcmom(-idtmom(imom))}\index{\texttt{dtcmom}}%
-\index{\texttt{idtmom}} (\texttt{idtmom(imom)} is negative in this case).\\
-When this cumulated duration is not spatially uniform (for instance in the case
-of a spatially variable time step), it is stored in \texttt{propce}. It must be
-noted that the cumulated duration associated with the calculation of
-the average \texttt{imom} is variable in space if \texttt{idtmom(imom)} is strictly
-positive. The number of the associated property in \texttt{propce} is then
-\texttt{icdtmo(idtmom(imom))}\index{\texttt{icdtmo}}. For instance, for the
-average \texttt{imom}, the cumulated duration in the cell \texttt{iel} will be
-\texttt{propce(iel,ipproc(icdtmo(idtmom(imom))))}.\\
-The user may have a look to the examples given for
-\texttt{cs\_user\_extra\_operations} to know
-how to calculate a time averages in a particular cases (printing of extreme
-values, writing of results, ...).
-
 \bigskip
 
 Two other variables, \texttt{hbord} and \texttt{tbord}, should be noted here,

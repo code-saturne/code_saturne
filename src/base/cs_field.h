@@ -368,6 +368,23 @@ int
 cs_field_id_by_name(const char *name);
 
 /*----------------------------------------------------------------------------
+ * Return the id of a defined field and an associated component
+ * based on a component name.
+ *
+ * If no field with the given name exists, -1 is returned.
+ *
+ * parameters:
+ *   name <-- field or field+component name
+ *   f_id --> field id, or -1 if no match was found
+ *   c_id --> component id, or -1 for all components
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_component_id_by_name(const char  *name,
+                              int         *f_id,
+                              int         *c_id);
+
+/*----------------------------------------------------------------------------
  * Return an id associated with a given key name.
  *
  * The key must have been defined previously.
@@ -782,7 +799,8 @@ cs_field_log_all_key_vals(bool  log_defaults);
  *   "post_vis"     (integer)
  *   "post_probes"  (integer)
  *   "coupled"      (integer, restricted to CS_FIELD_VARIABLE)
- *   "moment_dt"    (integer, restricted to CS_FIELD_PROPERTY);
+ *   "moment_id"    (integer, restricted to
+ *                   CS_FIELD_ACCUMULATOR | CS_FIELD_POSTPROCESS);
  *
  * A recommened practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.

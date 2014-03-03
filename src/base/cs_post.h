@@ -937,16 +937,6 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
                     const cs_lnum_t  init_b_face_num[]);
 
 /*----------------------------------------------------------------------------
- * Initialize post-processing of moments
- *
- * Currently, an external cumulative time array is simply mapped to
- * the post-processing API.
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_init_moments(const cs_real_t  *cumulative_time);
-
-/*----------------------------------------------------------------------------
  * Initialize post-processing writers
  *----------------------------------------------------------------------------*/
 

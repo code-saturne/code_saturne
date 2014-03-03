@@ -992,11 +992,11 @@ nfpt1t = 0
 
 
 do imom = 1, nbmomx
-!       Pas de temps de depart (-1 : jamais)
+  ! Pas de temps de depart (-1 : jamais)
   ntdmom(imom) = -1
   ! start time
   ttdmom(imom) = 0.d0
-!       Ancien moment a relire ou -1 pour (re)initialisation
+  !Ancien moment a relire ou -1 pour (re)initialisation
   imoold(imom) = -2
 enddo
 
@@ -1011,16 +1011,10 @@ enddo
 
 !       Nombre de moments
 nbmomt = 0
-!       Nombre de tableaux ncel pourle temps cumule
-nbdtcm = 0
 
 do imom = 1, nbmomx
   ! Pointeur sur les moments
   icmome(imom) = 0
-  ! Pointeur sur le pas de temps cumule
-  idtmom(imom) = 0
-  ! Degre
-  idgmom(imom) = 0
 enddo
 
 ! --- Calcul de la distance a la paroi

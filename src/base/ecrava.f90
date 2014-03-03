@@ -115,23 +115,22 @@ character        rubriq*64,car2*2,car4*4,car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
 character        cphase*2 , cscal(nscamx)*4
-character        cflu  (nvarmx)*4 , cmom (nbmomx)*4
+character        cflu  (nvarmx)*4
 character        nomflu(nvarmx)*18, nomrtp(nvarmx)*20
 character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 logical          lprev
 integer          nphas
-integer          ivar  , iscal , imom, f_id
+integer          ivar  , iscal , f_id
 integer          idecal, iclapc, icha  , icla
-integer          ii    , ivers , idtm  , idtcm
+integer          ii    , ivers
 integer          iptsna, iptsta, iptsca
 integer          ierror, irtyp , itysup, nbval
-integer          nbctm , ipcefj, ipcla1, ipcla2, ipcla3
+integer          ipcefj, ipcla1, ipcla2, ipcla3
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          nbflu , ilecec, iecr
-integer          icdtvu(nbmom2)
 integer          ngbstr(2)
 integer          ifac, iel, istr
 integer          impava, impavx, nfld, iflmas, iflmab
@@ -209,14 +208,6 @@ do ivar = 1, min(nvar  ,nfmtfl)
 enddo
 do ivar = min(nvar  ,nfmtfl)+1,nvar
   cflu(ivar) = cindff
-enddo
-
-!     Codage en chaine de caracteres du numero du moment
-do imom = 1, min(nbmomt,nfmtmo)
-  write(cmom(imom),'(I4.4)') imom
-enddo
-do imom = min(nbmomt,nfmtmo)+1,nbmomt
-  cmom(imom) = cindfm
 enddo
 
 !     Verifications pour les formats et les numeros
@@ -1157,112 +1148,7 @@ if (iecaux.eq.1) then
 
 ! ---> Moyennes (cumuls)
 
-!  ---> Nombre de moyennes
-  rubriq = 'nombre_moyennes_temps'
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nbmomt)
-
-!     Cumuls des moyennes
-  do imom = 1, nbmomt
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    rubriq = 'cumul_ce_moment'//cmom(imom)
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipproc(icmome(imom))))
-  enddo
-
-!     Cumuls des durees
-
-!     On determine un numero unique de duree, local au fichier suite.
-!       les durees variable ou non sont considerees sans distinction
-!     Le tableau ICDTVU(2*NBMOMX) renvoie aux cumuls temporels variables
-!       en espace pour les indices 1->NBMOMX et aux cumuls temporels
-!       uniformes pour les indices NBMOMX+1->2*NBMOMX
-
-!     Initialisation des elements de travail
-  nbctm = 0
-  do ii = 1, nbmom2
-    icdtvu(ii) = 0
-  enddo
-
-
-  do imom = 1, nbmomt
-    idtm = idtmom(imom)
-!        Si cumul variable en espace
-    if (idtm.gt.0) then
-!          Si cumul pas encore vu
-      if (icdtvu(idtm).eq.0) then
-!            C'est un nouveau, le NBCTM ieme
-        nbctm = nbctm+1
-!            On le marque
-        icdtvu(idtm) = nbctm
-!            On ecrit ses valeurs
-        if (nbctm.le.nfmtmo) then
-          write(car4,'(I4.4)') nbctm
-        else
-          car4 = cindfm
-        endif
-        idtcm  = ipproc(icdtmo(idtm))
-        itysup = 1
-        nbval  = 1
-        irtyp  = 2
-        rubriq = 'cumul_temps_ce_'//car4
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,idtcm))
-      endif
-!          Cumul vu ou pas, on ecrit son numero, >0 pour dire qu'il est
-!            variable en espace
-      rubriq = 'numero_cumul_temps_moment'//cmom(imom)
-      itysup = 0
-      nbval  = 1
-      irtyp  = 1
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  icdtvu(idtm))
-
-!        Sinon, si cumul uniforme en espace
-    elseif (idtm.lt.0) then
-!          Si cumul pas encore vu
-      if (icdtvu(nbmomx-idtm).eq.0) then
-!            C'est un nouveau, le NBCTM ieme
-        nbctm = nbctm+1
-!            On le marque
-        icdtvu(nbmomx-idtm) = -nbctm
-!            On ecrit ses valeurs
-        if (nbctm.le.nfmtmo) then
-          write(car4,'(I4.4)') nbctm
-        else
-          car4 = cindfm
-        endif
-        idtcm  = -idtm
-        itysup = 0
-        nbval  = 1
-        irtyp  = 2
-        rubriq = 'cumul_temps_'//car4
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    dtcmom(idtcm))
-      endif
-!          Cumul vu ou pas, on ecrit son numero, <0 pour dire qu'il est
-!            uniforme en espace
-      rubriq = 'numero_cumul_temps_moment'//cmom(imom)
-      itysup = 0
-      nbval  = 1
-      irtyp  = 1
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  icdtvu(nbmomx-idtm))
-    endif
-  enddo
-
-  if (nbmomt.gt.0) then
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des moyennes temporelles          '
-#else
-    car54=' End writing the time averages                        '
-#endif
-    write(nfecra,1110)car54
-  endif
+  call time_moment_restart_write(impavx)
 
 ! ---> Distance a la paroi
 !      On pourra ecrire ici la distance a la paroi

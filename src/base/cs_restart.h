@@ -72,6 +72,7 @@ typedef enum {
 /* Datatype enumeration to transmit a data's type to a function */
 
 typedef enum {
+  CS_TYPE_char,
   CS_TYPE_cs_int_t,
   CS_TYPE_cs_gnum_t,
   CS_TYPE_cs_real_t,
@@ -683,6 +684,27 @@ void
 cs_restart_dump_index(const cs_restart_t  *restart);
 
 /*----------------------------------------------------------------------------
+ * Check the presence of a given section in a restart file.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location (interlaced)
+ *   val_type        <-- value type
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_check_section(cs_restart_t           *restart,
+                         const char             *sec_name,
+                         int                     location_id,
+                         int                     n_location_vals,
+                         cs_restart_val_type_t   val_type);
+
+/*----------------------------------------------------------------------------
  * Read a section from a restart file.
  *
  * parameters:
@@ -701,7 +723,7 @@ int
 cs_restart_read_section(cs_restart_t           *restart,
                         const char             *sec_name,
                         int                     location_id,
-                        cs_int_t                n_location_vals,
+                        int                     n_location_vals,
                         cs_restart_val_type_t   val_type,
                         void                   *val);
 
@@ -721,7 +743,7 @@ void
 cs_restart_write_section(cs_restart_t           *restart,
                          const char             *sec_name,
                          int                     location_id,
-                         cs_int_t                n_location_vals,
+                         int                     n_location_vals,
                          cs_restart_val_type_t   val_type,
                          const void             *val);
 
@@ -928,6 +950,19 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
 
 void
 cs_restart_print_stats(void);
+
+/*----------------------------------------------------------------------------
+ * Return pointer to restart file based on Fortran id
+ *
+ * parameters:
+ *   r_num  <-- associated fortran restart number
+ *
+ * returns:
+ *   pointer to restart file, or NULL
+ *----------------------------------------------------------------------------*/
+
+cs_restart_t *
+cs_restart_by_fortran_id(int  r_num);
 
 /*----------------------------------------------------------------------------*/
 

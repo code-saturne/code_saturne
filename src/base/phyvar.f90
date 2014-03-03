@@ -94,13 +94,11 @@ integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nn
 integer          mbrom , ipcvst
 integer          ipccp , ipcvis, ipcvma
-integer          ivarh
 integer          iclipc
 Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
-double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, xrtp
+double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
 double precision xttkmg, xttdrb
-double precision alpha, ym, yk
 double precision trrij,rottke
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: sval
@@ -882,7 +880,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========',                                               /,&
-'@    LA PROPRIETE PHYSIQUE', a16  ,' N A PAS ETE',             /,&
+'@    LA PROPRIETE PHYSIQUE ', a16  ,' N A PAS ETE',            /,&
 '@                                       CORRECTEMENT DEFINIE.',/,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
@@ -938,7 +936,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========',                                               /,&
-'@    LA DIFFUSIVITE DU SCALAIRE', a16                         ,/,&
+'@    LA DIFFUSIVITE DU SCALAIRE ', a16                        ,/,&
 '@       (SCALAIRE NUMERO', i10   ,') N A PAS ETE',             /,&
 '@                                       CORRECTEMENT DEFINIE.',/,&
 '@',                                                            /,&
@@ -1082,7 +1080,7 @@ endif
 '@',                                                            /,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
 '@    ========',                                                /,&
-'@    THE PHYSICAL PROPERTY', a16  ,' HAS NOT BEEN',            /,&
+'@    THE PHYSICAL PROPERTY ', a16  ,' HAS NOT BEEN',           /,&
 '@                                          CORRECTLY DEFINED.',/,&
 '@',                                                            /,&
 '@  The calculation will not be run.',                          /,&
@@ -1137,7 +1135,7 @@ endif
 '@',                                                            /,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
 '@    ========',                                                /,&
-'@    THE DIFFUSIVITY OF THE SCALAR', a16                      ,/,&
+'@    THE DIFFUSIVITY OF THE SCALAR ', a16                     ,/,&
 '@       (SCALAR NUMBER', i10   ,') HAS NOT BEEN',              /,&
 '@                                          CORRECTLY DEFINED.',/,&
 '@',                                                            /,&

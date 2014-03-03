@@ -783,9 +783,6 @@ module optcal
   !> number of moments
   integer, save ::          nbmomt
 
-  !> nombre de tableaux ncel pour le temps cumule
-  integer, save ::          nbdtcm
-
   !> index of the initial time step for computing the moment
   integer, save ::          ntdmom(nbmomx)
 
@@ -796,25 +793,8 @@ module optcal
   !>           s'utilise ainsi propce(iel,ipproc(icmome(imom)))
   integer, save ::          icmome(nbmomx)
 
-  !> numero du temps cumule associe aux moments
-  !> ce numero va de 1 a n pour les temps cumules non uniformes
-  !> et de -1 a -p pour les temps cumules uniformes
-  !> s'utilise ainsi
-  !>    - si idtmom(imom) > 0 propce(iel,ipropc(icdtmo(idtmom(imom))))
-  !>    - si idtmom(imom) < 0 dtcmom(-idtmom(imom))
-  integer, save ::          idtmom(nbmomx)
-
   !> numero des variables composant le moment idfmom(jj,imom)
   integer, save ::          idfmom(ndgmox,nbmomx)
-
-  !> moment degree
-  integer, save ::          idgmom(nbmomx)
-
-  !> numero de propriete du temps cumule (voir idtmom)
-  integer, save ::          icdtmo(nbmomx)
-
-  !> valeur du pas de temps cumule quand il est uniforme (see \ref idtmom).
-  double precision, save :: dtcmom(nbmomx)
 
   !> initial time for computing the moment
   double precision, save :: ttdmom(nbmomx)

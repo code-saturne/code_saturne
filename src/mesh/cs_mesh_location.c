@@ -120,6 +120,22 @@ struct _cs_mesh_location_t {
  * Static global variables
  *============================================================================*/
 
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/* Names associated with location types */
+
+const char  *cs_mesh_location_type_name[] = {N_("none"),
+                                             N_("cells"),
+                                             N_("interior faces"),
+                                             N_("boundary faces"),
+                                             N_("vertices"),
+                                             N_("particles"),
+                                             N_("other")};
+
+/* Location definitions */
+
 static int                  _n_mesh_locations_max = 0;
 static int                  _n_mesh_locations = 0;
 static cs_mesh_location_t  *_mesh_location = NULL;

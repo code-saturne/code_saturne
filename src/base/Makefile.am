@@ -118,6 +118,7 @@ cs_sort.h \
 cs_syr4_coupling.h \
 cs_syr_coupling.h \
 cs_system_info.h \
+cs_time_moment.h \
 cs_time_plot.h \
 cs_time_step.h \
 cs_timer.h \
@@ -170,7 +171,6 @@ alelav.f90 \
 alemav.f90 \
 altycl.f90 \
 calhyd.f90 \
-calmom.f90 \
 caltri.f90 \
 catsma.f90 \
 catsmv.f90 \
@@ -237,6 +237,7 @@ cs_selector_f2c.f90 \
 cs_sort.c \
 cs_syr4_coupling.c \
 cs_syr_coupling.c \
+cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \
 cs_tpar1d.c \

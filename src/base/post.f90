@@ -46,19 +46,6 @@ module post
 
     !---------------------------------------------------------------------------
 
-    !> \brief Initialize post-processing of moments
-
-    !> \param[in]   cumumative_time   pointer to cumulative time array
-
-    subroutine cs_post_init_moments(cumulative_time)     &
-      bind(C, name='cs_post_init_moments')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), dimension(*), intent(in) :: cumulative_time
-    end subroutine cs_post_init_moments
-
-    !---------------------------------------------------------------------------
-
     !> \brief Update "active" or "inactive" flag of writers based on the
     !>        time step.
 

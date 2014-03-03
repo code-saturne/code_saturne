@@ -71,6 +71,16 @@ cs_restart_read_bc_coeffs(cs_restart_t  *restart);
 void
 cs_restart_write_bc_coeffs(cs_restart_t  *restart);
 
+/*----------------------------------------------------------------------------
+ * Read restart time step info.
+ *
+ * parameters:
+ *   restart <-> associated restart file pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_time_step_info(cs_restart_t  *restart);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

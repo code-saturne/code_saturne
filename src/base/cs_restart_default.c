@@ -357,5 +357,58 @@ cs_restart_write_bc_coeffs(cs_restart_t  *restart)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read restart time step info.
+ *
+ * \param[in, out]  restart  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_time_step_info(cs_restart_t  *restart)
+{
+  int retval;
+  cs_int_t _n_ts = -1;
+  cs_real_t _ts = -1;
+
+  /* First syntax */
+
+  retval = cs_restart_read_section(restart,
+                                   "nbre_pas_de_temps",
+                                   0,
+                                   1,
+                                   CS_TYPE_cs_int_t,
+                                   &_n_ts);
+  if (retval == CS_RESTART_SUCCESS)
+    retval = cs_restart_read_section(restart,
+                                     "instant_precedent",
+                                     0,
+                                     1,
+                                     CS_TYPE_cs_real_t,
+                                     &_ts);
+
+  /* Second syntax */
+
+  else {
+    retval = cs_restart_read_section(restart,
+                                     "ntcabs",
+                                     0,
+                                     1,
+                                     CS_TYPE_cs_int_t,
+                                     &_n_ts);
+    if (retval == CS_RESTART_SUCCESS)
+      retval = cs_restart_read_section(restart,
+                                       "ttcabs",
+                                       0,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       &_ts);
+  }
+
+  if (retval == CS_RESTART_SUCCESS)
+    cs_time_step_define_prev(_n_ts, _ts);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
