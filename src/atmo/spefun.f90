@@ -50,6 +50,19 @@ contains
 
   !=============================================================================
 
+  ! Erf function
+
+  function ferf(x)
+
+    double precision, intent(in) :: x
+    double precision ferf
+
+    call cserf(x, ferf)
+
+  end function ferf
+
+  !=============================================================================
+
   ! Hypergeometric function
   ! (see http://mathworld.wolfram.com/hypergeometricfunction.html for definition)
 

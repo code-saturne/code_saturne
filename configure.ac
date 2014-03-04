@@ -726,7 +726,7 @@ AC_CHECK_FUNCS([strtok_r])
 
 saved_LIBS="$LIBS"
 LIBS="${LIBS} -lm"
-AC_CHECK_FUNCS([pow modf tgamma])
+AC_CHECK_FUNCS([pow modf tgamma erf])
 LIBS="$saved_LIBS"
 
 AC_FUNC_STRTOD

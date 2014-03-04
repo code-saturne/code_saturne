@@ -122,6 +122,24 @@ void CS_PROCF (csgamma, CSGAMMA)
  );
 
 /*----------------------------------------------------------------------------
+ * Compute the erf function of x.
+ *
+ * Fortran interface
+ *
+ * subroutine cserf (x, g)
+ * ******************
+ *
+ * double precision  x     : <-- : input value
+ * double precision  ferf  : --> : output value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cserf, CSERF)
+(
+ const cs_real_t  *x,
+ cs_real_t        *ferf
+ );
+
+/*----------------------------------------------------------------------------
  * Copy a Fortan string buffer to a C string buffer
  *
  * The aim of this function is to aviod issues with Fortran array bounds
