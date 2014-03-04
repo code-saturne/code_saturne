@@ -209,11 +209,10 @@ endif
 '@    =========                                               ',/,&
 '@    PHYSIQUE PARTICULIERE (COMPRESSIBLE) DEMANDEE           ',/,&
 '@                                                            ',/,&
-'@  Les bornes des variables rho, energie ou temperature      ',/,&
+'@  Les bornes des variables energie ou temperature           ',/,&
 '@    ont ete modifiees :                                     ',/,&
 '@                                                            ',/,&
 '@                      SCAMIN        SCAMAX                  ',/,&
-'@  rho         ',2E14.5                                       ,/,&
 '@  energie     ',2E14.5                                       ,/,&
 '@  temperature ',2E14.5                                       ,/,&
 '@                                                            ',/,&
@@ -221,8 +220,10 @@ endif
 '@  On peut modifier les bornes des variables rho et energie  ',/,&
 '@  dans uscfx1, mais ce n''est pas conseille.                ',/,&
 '@  Il est preferable de gerer les depassements éventuels     ',/,&
-'@  au moyen du sous programme cfther (arret du calcul en fin ',/,&
-'@  de pas de temps en cas de depassement).                   ',/,&
+'@  au moyen des fonctions contenues dans le fichier          ',/,&
+'@  cfther.f90: cf_check_internal_energy, cf_check_temperature',/,&
+'@  (arret du calcul en fin de pas de temps en cas de         ',/,&
+'@   depassement).                                            ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -292,11 +293,10 @@ endif
 '@    =========                                               ',/,&
 '@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
 '@                                                            ',/,&
-'@  The bounds of the variables density, energy or temperature',/,&
+'@  The bounds of the variables energy or temperature         ',/,&
 '@    have been modified :                                    ',/,&
 '@                                                            ',/,&
 '@                      SCAMIN        SCAMAX                  ',/,&
-'@  density     ',2E14.5                                       ,/,&
 '@  energy      ',2E14.5                                       ,/,&
 '@  temperature ',2E14.5                                       ,/,&
 '@                                                            ',/,&
@@ -304,8 +304,10 @@ endif
 '@  It is possible to modify the bounds of the variables      ',/,&
 '@  density or energy in uscfx2, but it is not recommended.   ',/,&
 '@  It is advised to manage the possible overshoot by the     ',/,&
-'@  use of the subroutine cfther (stop of the calculation     ',/,&
-'@  at the end of the time step in case of an overshoot).     ',/,&
+'@  use of the functions defined in the file cfther.f90:      ',/,&
+'@  cf_check_internal_energy, cf_check_temperature (stop of   ',/,&
+'@  the calculation at the end of the time step in case of an ',/,&
+'@  overshoot).                                               ',/,&
 '@                                                            ',/,&
 '@  The calculation could NOT run.                            ',/,&
 '@                                                            ',/,&

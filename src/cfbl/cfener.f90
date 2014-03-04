@@ -130,7 +130,6 @@ double precision sclnor, thetap, epsrsp, relaxp
 
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
 integer          ivar0  , ii , jj
-integer          iccfth , imodif
 integer          iel1  , iel2
 integer          iterns
 
@@ -454,14 +453,16 @@ if( idiff(ivar).ge. 1 ) then
 !                                                    2
 
 ! Complementary term at cell centers
-  iccfth = 7
-  imodif = 0
-  call cfther                                                                   &
-  !==========
- ( nvar   ,                                                                     &
-   iccfth , imodif ,                                                            &
-   rtp    ,                                                                     &
-   w9     , wb     , w8     , rvoid  , rvoid )
+
+  ! Compute e - CvT
+
+  ! At cell centers
+  call cf_thermo_eps_sup(w9, ncel)
+  !=====================
+
+  ! At boundary faces centers
+  call cf_thermo_eps_sup(wb, nfabor)
+  !=====================
 
 ! Divergence computation with reconstruction
 
@@ -665,15 +666,8 @@ call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 
 ! --- Traitement utilisateur pour gestion plus fine des bornes
 !       et actions correctives éventuelles.
-  iccfth = -4
-  imodif = 0
-  call cfther                                                     &
-  !==========
- ( nvar   ,                                                       &
-   iccfth , imodif ,                                              &
-   rtp    ,                                                       &
-   w6     , w7     , w8     , rvoid  , rvoid )
-
+call cf_check_internal_energy (rtp(1,isca(ienerg)), ncel,       &
+                               rtp(1,iu), rtp(1,iv), rtp(1,iw))
 
 ! Explicit balance (see codits : the increment is removed)
 
@@ -696,15 +690,9 @@ endif
 ! The state equation is used P   =P(RHO   ,H   )
 
 ! Computation of P and T at cell centers
-iccfth = 24
-imodif = 0
-call cfther                                                                     &
-!==========
-( nvar   ,                                                                      &
-  iccfth , imodif ,                                                             &
-  rtp    ,                                                                      &
-  rtp(1,ipr) , rtp(1,isca(itempk)) , w8     ,                                   &
-  rvoid  , rvoid )
+call cf_thermo_PT_from_DE(crom, rtp(1,isca(ienerg)), rtp(1,ipr),         &
+                          rtp(1,isca(itempk)),                           &
+                          rtp(1,iu), rtp(1,iv), rtp(1,iw), ncel)
 
 !===============================================================================
 ! 7. COMMUNICATION OF PRESSURE, ENERGY AND TEMPERATURE

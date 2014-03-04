@@ -639,8 +639,8 @@ module ppincl
   integer, save :: iviscv
 
   !> indicates the equation of state. Only perfect gas with a constant adiabatic
-  !>  coefficient, \ref ieos=1 is available, but the user can complete the subroutine
-  !> \ref cfther, which is not a user subroutine, to add new equations of state.
+  !>  coefficient, \ref ieos=1 is available, but the user can complete the file
+  !> \ref cfther.f90, which is not a user subroutine, to add new equations of state.
   integer, save :: ieos
 
   !> \}

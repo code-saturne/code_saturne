@@ -93,15 +93,10 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision rvoid(1)
-
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 
 ! Local variables
 
-integer          imodif, iccfth
-
-double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -115,10 +110,6 @@ save             ipass
 !===============================================================================
 
 ipass = ipass + 1
-
-
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet), w4(ncelet))
 
 !===============================================================================
 ! 2. INITIALISATION DES INCONNUES :
@@ -145,16 +136,8 @@ else
 ! ----- Initialisations par defaut
 
     !     On initialise Cv
-
-    iccfth = 0
-    imodif = 1
-
-    call cfther &
-    !==========
- ( nvar   ,                                                                    &
-   iccfth , imodif ,                                                           &
-   rtp    ,                                                                    &
-   w1     , w2     , w3     , rvoid  , rvoid )
+    call cf_thermo_default_init(ncel, ncelet, rtp)
+    !==========================
 
   endif
 

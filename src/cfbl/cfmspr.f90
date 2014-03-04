@@ -122,7 +122,6 @@ double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision epsrsp
 double precision sclnor
 
-integer          iccfth, imodif
 integer          imucpp, idftnp, iswdyp
 integer          imvis1
 
@@ -230,14 +229,9 @@ endif
 !     Varpos has been modified for that.
 
 allocate(c2(ncelet))
-iccfth = 126
-imodif = 0
-call cfther                                                       &
-!==========
- ( nvar   ,                                                       &
-   iccfth , imodif ,                                              &
-   rtp    ,                                                       &
-   c2     , w7     , w8     , rvoid  , rvoid )
+
+call cf_thermo_c_square( rtp(1,ipr), crom, c2, ncel)
+!======================
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) + istat(ivar)*(volume(iel)/(dt(iel)*c2(iel)))
@@ -362,16 +356,8 @@ call codits                                                                     
 ! --- User intervention for a finer management of the bounds and possible
 !       corrective treatement.
 
-iccfth = -2
-imodif = 0
-
-call cfther                                                                     &
-!==========
-( nvar   ,                                                                      &
-  iccfth , imodif  ,                                                            &
-  rtp    ,                                                                      &
-  w7     , w8     , w9     , rvoid  , rvoid )
-
+call cf_check_pressure(rtp(1,ipr), ncel)
+!=====================
 
 ! --- Explicit balance (see codits : the increment is withdrawn)
 

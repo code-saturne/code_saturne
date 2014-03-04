@@ -113,8 +113,8 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          ivar  , ifac  , iel
-integer          ii    , iii   , imodif, iccfth
+integer          ivar  , ifac  , iel, size
+integer          ii    , iii   , iccfth
 integer          icalep, icalgm
 integer          iflmab
 integer          ien   , itk
@@ -128,7 +128,7 @@ double precision hint  , gammag
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: wbfb
@@ -144,7 +144,7 @@ double precision, dimension(:), pointer :: crom, brom
 !===============================================================================
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w1(ncelet), w2(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
 allocate(w7(nfabor), wbfb(nfabor))
@@ -174,11 +174,11 @@ do ifac = 1, nfabor
 enddo
 
 !     Calcul de epsilon_sup = e - CvT
-!       On en a besoin si on a des parois a temperature imposee.
-!       Il est calculé aux cellules W5 et aux faces de bord COEFU.
-!       On n'en a besoin ici qu'aux cellules de bord : s'il est
-!         nécessaire de gagner de la mémoire, on pourra modifier
-!         cfther.
+!     On en a besoin si on a des parois a temperature imposee.
+!     Il est calculé aux cellules W5 et aux faces de bord COEFU.
+!     On n'en a besoin ici qu'aux cellules de bord : s'il est
+!     nécessaire de gagner de la mémoire, on pourra modifier
+!     cf_thermo_eps_sup
 
 icalep = 0
 do ifac = 1, nfabor
@@ -187,14 +187,13 @@ do ifac = 1, nfabor
   endif
 enddo
 if(icalep.ne.0) then
-  iccfth = 7
-  imodif = 0
-  call cfther                                                    &
-  !==========
-( nvar   ,                                                       &
-  iccfth , imodif ,                                              &
-  rtp    ,                                                       &
-  w5     , w7     , w3     , rvoid  , rvoid  )
+  ! At cell centers
+  call cf_thermo_eps_sup(w5, ncel)
+  !===================
+
+  ! At boundary faces centers
+  call cf_thermo_eps_sup(w7, nfabor)
+  !===================
 endif
 
 
@@ -209,23 +208,14 @@ do ifac = 1, nfabor
   endif
 enddo
 if(icalgm.ne.0) then
-  iccfth = 1
-  imodif = 0
-  call cfther                                                    &
-  !==========
-( nvar   ,                                                       &
-  iccfth , imodif ,                                              &
-  rtp    ,                                                       &
-  w1     , w2     , w6     , rvoid  , rvoid  )
-
   if(ieos.eq.1) then
-    gammag = w6(1)
+    call cf_thermo_gamma(gammag)
   else
-!     Gamma doit etre passe a cfrusb ; s'il est variable
-!       il est dans le tableau W6 et il faut ajouter
-!           GAMMAG = W6(IFABOR(IFAC)) selon IEOS
-!       dans la boucle sur les faces.
-!     En attendant que IEOS different de 1 soit code, on stoppe
+    ! TODO
+    ! Gamma is used in cfrusb. If non uniform (ieos different from 1),
+    ! the cell values have to be passed and used as gammag(ifabor(ifac))
+    ! in the Rusanov flux computation.
+    ! For now, we stop here and an error message is printed out.
     write(nfecra,7000)
     call csexit (1)
   endif
@@ -281,14 +271,8 @@ do ifac = 1, nfabor
 !         (Pbord = COEFB*Pi)
 !       Si on détend trop : Dirichlet homogene
 
-      iccfth = 91
-
-      call cfther                                                 &
-      !==========
- ( nvar   ,                                                       &
-   iccfth , ifac   ,                                              &
-   rtp    ,                                                       &
-   w1     , w2     , w3     , bval   , wbfb )
+      call cf_thermo_wall_bc(rtp, wbfb, ifac)
+      !===================
 
 !       En outre, il faut appliquer une pre-correction pour compenser
 !        le traitement fait dans condli... Si on pouvait remplir COEFA
@@ -407,17 +391,8 @@ do ifac = 1, nfabor
 
     bmasfl(ifac) = 0.d0
 
-!     Condition de Pression
-
-    iccfth = 90
-
-    call cfther                                                   &
-    !==========
- ( nvar   ,                                                       &
-   iccfth , ifac   ,                                              &
-   rtp    ,                                                       &
-   w1     , w2     , w3     , bval   ,rvoid )
-
+! Pressure condition:
+! homogeneous Neumann condition, nothing to be done.
 
 !     Pression :
 !       En général : proportionnelle a la valeur interne
@@ -495,7 +470,7 @@ do ifac = 1, nfabor
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
    rtp    ,                                                       &
-   w1     , w2     , w3     , bval   , rvoid )
+   w1     , w2     , bval )
 
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -537,19 +512,14 @@ do ifac = 1, nfabor
     rcodcl(ifac,iw ,1) = rtp(iel,iw)
     rcodcl(ifac,ien,1) = rtp(iel,ien)
 
-!     Valeurs de P et s déduites
-    iccfth = 924
-
     do ivar = 1, nvar
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                   &
-    !==========
- ( nvar   ,                                                       &
-   iccfth , ifac   ,                                              &
-   rtp    ,                                                       &
-   w1     , w2     , w3     , bval   , rvoid )
+    size = 1
+    call cf_thermo_pt_from_de(brom(ifac:ifac), bval(ifac,ien), bval(ifac,ipr),  &
+                              bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),&
+                              bval(ifac,iw), size)
 
 !               flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -591,18 +561,12 @@ do ifac = 1, nfabor
     enddo
 
 !     Valeurs de rho, u, E, s
-    iccfth = 93
-
     do ivar = 1, nvar
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                   &
-    !==========
- ( nvar   ,                                                       &
-   iccfth , ifac   ,                                              &
-   rtp    ,                                                       &
-   w1     , w2     , w3     , bval   , rvoid )
+    call cf_thermo_subsonic_outlet_bc(rtp, bval, ifac)
+    !==============================
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -642,19 +606,12 @@ do ifac = 1, nfabor
       endif
     enddo
 
-!     Valeurs de rho, U, E
-    iccfth = 95
-
     do ivar = 1, nvar
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                   &
-    !==========
- ( nvar   ,                                                       &
-   iccfth , ifac   ,                                              &
-   rtp    ,                                                       &
-   w1     , w2     , w3     , bval   , rvoid )
+    call cf_thermo_ph_inlet_bc(rtp, bval, ifac)
+    !=======================
 
 !     flux de masse et type de conditions aux limites :
 !     voir plus bas
@@ -953,7 +910,7 @@ do ifac = 1, nfabor
  enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(w1, w2)
 deallocate(w4, w5, w6)
 deallocate(w7)
 deallocate(bval)
@@ -1064,7 +1021,7 @@ deallocate(bval)
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier IEOS dans cfther.                                ',/,&
+'@  Verifier IEOS dans cfther.f90.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

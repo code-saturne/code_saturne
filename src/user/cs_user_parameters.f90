@@ -2744,8 +2744,8 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 
 ! Equation of state choice
 ! --> ieos = 1: Perfect gas with constant Gamma
-! --> ieos = 2: Perfect gas with variable Gamma (please fill-in the source code
-!               cfther in this case, otherwise it won't work!)
+! --> ieos = 2: Perfect gas with variable Gamma (please fill-in the source file
+!               cfther.f90 in this case, otherwise it won't work!)
   ieos = 1
 
 ! --> Molecular thermal conductivity

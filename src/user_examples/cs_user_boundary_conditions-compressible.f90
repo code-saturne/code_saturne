@@ -198,7 +198,7 @@ do ilelt = 1, nlelt
 
   !  ** Choose a couple of variables which values are to be imposed
   !     and delete the others (that will be computed with the help of
-  !     the thermodynamic laws in cfther).
+  !     the thermodynamic laws in cfther.f90).
 
   ! Pressure (in Pa)
   rcodcl(ifac,ipr,1) = 5.d5

@@ -797,8 +797,8 @@ end subroutine usphyv
 !>
 !> To set a variable isobaric specific heat, the integer \c icp must
 !> have been set to 1: the value for \c icp is set automatically in the
-!> subroutine \ref cfther, depending on the thermodynamics laws selected
-!> by the user.
+!> subroutine \ref cf_set_thermo_options, depending on the thermodynamics laws
+!> selected by the user.
 !>
 !> To set a variable diffusivity for a given user-defined scalar, the
 !> variable \c ivisls(scalar_number) must have been set to 1 in the user
@@ -872,13 +872,12 @@ double precision propce(ncelet,*)
 
 integer          ivart, iel
 integer          ipcvis, ipcvsv, ipccp
-integer          ipcvsl, ith, iscal, ii, iccfth, imodif
+integer          ipcvsl, ith, iscal, ii
 double precision varam, varbm, varcm, vardm
 double precision varal, varbl, varcl, vardl
 double precision varac, varbc
 double precision xrtp
 
-double precision rvoid(1)
 double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
@@ -1111,19 +1110,9 @@ if (.false.) then
     propce(iel,ipccp ) = varac*xrtp + varbc
   enddo
 
-  ! --- The isochoric specific heat is deduced from the isobaric specific
-  !     heat using the subroutine 'cfther'.
+  ! --- The isochoric specific heat is deduced from the isobaric specific heat
 
-  iccfth = 432
-  imodif = 0
-
-  call cfther                                                       &
-  !==========
-   ( nvar   ,                                                       &
-     iccfth , imodif ,                                              &
-     rtp    ,                                                       &
-     propce(1, ipproc(icv))  , w1     , w2     ,                    &
-     rvoid  , rvoid )
+  call cf_thermo_cv(propce(1, ipccp), propce(1, ipproc(icv)), ncel)
 
 endif ! --- Test on .false.
 

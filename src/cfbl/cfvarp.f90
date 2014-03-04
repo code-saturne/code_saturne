@@ -66,9 +66,6 @@ implicit none
 
 ! Local variables
 
-integer          ii, iccfth, imodif
-double precision dblpre(1)
-
 !===============================================================================
 
 !===============================================================================
@@ -138,16 +135,7 @@ endif
   icv = 0
   cv0 = 0.d0
 
-  iccfth = -1
-  imodif = 0
-  ii     = 1
-  dblpre(1) = 0.d0
-  call cfther                                                     &
-  !==========
- ( ii ,                                                           &
-   iccfth , imodif  ,                                             &
-   dblpre ,                                                       &
-   dblpre , dblpre , dblpre , dblpre , dblpre )
+  call cf_set_thermo_options
 
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTILISATEUR

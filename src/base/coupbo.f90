@@ -89,12 +89,9 @@ double precision hbord(nfabor),tbord(nfabor)
 
 integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
 integer          mode, flag
-integer          iccfth, imodif
 integer          iepsel, iepsfa, igamag, ixmasm, ifinwa
 integer          issurf
 double precision enthal, temper, energ, cvt
-
-double precision rvoid(1)
 
 integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
@@ -209,16 +206,13 @@ do inbcou = 1, nbccou
 
       ! Compute e - CvT
 
-      iccfth = 7
-      imodif = 0
+      ! At cell centers
+      call cf_thermo_eps_sup(wa(iepsel), ncel)
+      !=====================
 
-      call cfther                                                    &
-      !==========
-    ( nvar   ,                                                       &
-      iccfth , imodif ,                                              &
-      rtp    ,                                                       &
-      wa(iepsel) , wa(iepsfa) , wa(igamag) ,                         &
-      rvoid  , rvoid )
+      ! At boundary faces centers
+      call cf_thermo_eps_sup(wa(iepsfa), nfabor)
+      !=====================
 
       do iloc = 1, nbfcou
         ifac  = lfcou(iloc)

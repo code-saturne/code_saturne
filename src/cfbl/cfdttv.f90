@@ -108,9 +108,7 @@ double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 ! Local variables
 
 integer          ifac, iel, iterns
-integer          iccfth, imodif, iconvp, idiffp, isym
-
-double precision rvoid(1)
+integer          iconvp, idiffp, isym
 
 double precision, allocatable, dimension(:) :: viscf
 double precision, allocatable, dimension(:) :: coefbt, cofbft
@@ -189,15 +187,8 @@ call matrdt &
 
 allocate(c2(ncelet))
 
-iccfth = 126
-imodif = 0
-
-call cfther &
-!==========
- ( nvar   ,                                                       &
-   iccfth , imodif ,                                              &
-   rtp    ,                                                       &
-   c2     , rvoid  , rvoid  , rvoid  , rvoid )
+call cf_thermo_c_square( rtp(1,ipr), crom, c2, ncel)
+!======================
 
 ! Compute the coefficient CFL/dt
 
