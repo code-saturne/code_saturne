@@ -94,8 +94,8 @@ $(top_srcdir)/src/base/albase.f90: cplsat.lo optcal.lo
 $(top_srcdir)/src/base/alstru.f90: paramx.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
-$(top_srcdir)/src/base/cs_c_bindings.f90: cs_f_interfaces.lo paramx.lo field.lo field_operator.lo
-$(top_srcdir)/src/base/cs_f_interfaces.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo lagdim.lo
+$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo field.lo field_operator.lo
+$(top_srcdir)/src/base/cs_f_interfaces.f90: cs_c_bindings.lo paramx.lo dimens.lo mesh.lo optcal.lo field.lo lagdim.lo
 $(top_srcdir)/src/base/cs_field_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo
 $(top_srcdir)/src/base/entsor.f90: paramx.lo
 $(top_srcdir)/src/base/mltgrd.f90: paramx.lo
