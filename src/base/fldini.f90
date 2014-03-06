@@ -88,16 +88,14 @@ integer          kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3, idim6
 integer          ipcroa
 logical          ilved, iprev, inoprv, lprev
-integer          ifvar(nvppmx), iapro(npromx)
-integer          f_id, kscavr, mom_id
+integer          ifvar(nvppmx)
+integer          f_id, kscavr
 
 character*80     name
 character*80     f_name
 character*80     fname(nvppmx)
 
 type(var_cal_opt) vcopt
-
-integer(c_int), dimension(ndgmox) ::  mom_f_id, mom_c_id
 
 !===============================================================================
 
@@ -327,23 +325,6 @@ call field_set_key_int(ibrom, keylog, ikeyvl)
 
 ityloc = 1 ! cells
 
-! Flag moments
-
-do ii = 1, npromx
-  iapro(ii ) = 0
-enddo
-
-! For moments, this key defines the division by time mode
-!  = 0: no division
-!  > 0: property number for cumulative dt (property)
-!  < 0: position in dtcmom of cumulative dt (uniform)
-
-do imom = 1, nbmomt
-  ! property id matching moment
-  iprop = ipproc(icmome(imom))
-  iapro(iprop) = 1
-enddo
-
 ! Special case for fields with possible previous value
 
 call field_have_previous(iprpfl(ipproc(irom)), lprev)
@@ -356,49 +337,13 @@ endif
 ! The choice made in VARPOS specifies that we will only be interested in
 ! properties at cell centers (no mass flux, nor density at the boundary).
 
-imom = 0
 do iprop = 1, nproce
 
   if (iprop.eq.ipcroa) cycle
 
   name = nomprp(iprop)
-  if (iapro(iprop).eq.0) then
-    if (name(1:4) .eq. '    ') then
-      write(name, '(a, i3.3)') 'property_', iprop
-    endif
-
-  else
-    imom = imom + 1
-    if (name(1:4) .eq. '    ') then
-      write(name, '(a, i3.3)') 'moment_', imom
-    endif
-
-    idgmom = 0
-    do ii = 1, ndgmox
-      if (idfmom(ii,imom).ne.0) then
-        idgmom = idgmom + 1
-        mom_c_id(idgmom) = 0
-        if (idfmom(ii,imom).gt.0) then
-          mom_f_id(idgmom) = ivarfl(idfmom(ii,imom))
-          jj = idfmom(ii,imom)
-          if (jj.gt.1) then
-            do while (jj.gt.1 .and. ivarfl(jj-1).eq.ivarfl(idfmom(ii,imom)))
-              jj = jj-1
-              mom_c_id(idgmom) = mom_c_id(idgmom) + 1
-            enddo
-          endif
-        else if (idfmom(ii,imom).lt.0) then
-          mom_f_id(idgmom) = iprpfl(-idfmom(ii,imom))
-        endif
-      endif
-    enddo
-    call time_moment_define_by_field_ids(name, idgmom,                      &
-                                         mom_f_id, mom_c_id,                &
-                                         0, ntdmom(imom), ttdmom(imom),     &
-                                         imoold(imom), mom_id)
-    call time_moment_field_id(mom_id, f_id)
-    iprpfl(iprop) = f_id
-
+  if (name(1:4) .eq. '    ') then
+    write(name, '(a, i3.3)') 'property_', iprop
   endif
 
   if (iprpfl(iprop).le.0) then
@@ -513,36 +458,6 @@ if (iirayo .gt. 0) then
   endif
 
 endif
-
-!====================================================================
-
-! Radiative_model
-
-if (iirayo.gt.0) then
-
-  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-  ityloc = 3 ! boundary faces
-
-  call field_create('wall_temperature',  &
-                    itycat, ityloc, idim1, ilved, inoprv, itparo)
-  call field_create('incident_radiative_flux_density',  &
-                    itycat, ityloc, idim1, ilved, inoprv, iqinci)
-  call field_create('wall_thermal_conductivity',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ixlam)
-  call field_create('wall_thickness',  &
-                    itycat, ityloc, idim1, ilved, inoprv, iepa)
-  call field_create('wall_emissivity',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ieps)
-  call field_create('net_radiative_flux',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ifnet)
-  call field_create('radiation_convective_flux',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ifconv)
-  call field_create('radiation_exchange_coefficient',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ihconv)
-
-endif
-
-!=====================================================================
 
 ! Additional fields
 !------------------

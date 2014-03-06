@@ -402,8 +402,8 @@ nscaus = 0
 nscapp = 0
 nscasp = 0
 nvar   = 0
-
 nproce = 0
+nvpp   = 1
 
 !===============================================================================
 ! 5. POSITION DES VARIABLES DE numvar.f90

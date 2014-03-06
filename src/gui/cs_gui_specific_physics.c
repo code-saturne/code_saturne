@@ -1901,207 +1901,207 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   vars->nprop  += *nsalpp;
   vars->nsalpp  = *nsalpp;
 
-  BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
-  BFT_REALLOC(vars->propce,          vars->nprop, int);
-  BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+  BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
+  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
+  BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
 
   /* ITEMP1 */
   vars->properties_ipp[n] = ipppro[ipproc[ *itemp1 -1] -1];
-  vars->propce[n] = *itemp1 -1;
+  vars->properties_iprop[n] = *itemp1 -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Temp_GAZ") +1, char);
   strcpy(vars->properties_name[n++], "Temp_GAZ");
 
   /* IROM1 */
   vars->properties_ipp[n] = ipppro[ipproc[ *irom1 -1] -1];
-  vars->propce[n] = *irom1 -1;
+  vars->properties_iprop[n] = *irom1 -1;
   BFT_MALLOC(vars->properties_name[n], strlen("ROM_GAZ") +1, char);
   strcpy(vars->properties_name[n++], "ROM_GAZ");
 
   /*  YM_CHX1M */
   vars->properties_ipp[n] = ipppro[ipproc[ iym1[0] -1] -1];
-  vars->propce[n] = iym1[0] -1;
+  vars->properties_iprop[n] = iym1[0] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx1m") +1, char);
   strcpy(vars->properties_name[n++], "YM_CHx1m");
 
   /*  YM_CHX2M */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[1] -1] -1];
-  vars->propce[n] = iym1[1] -1;
+  vars->properties_iprop[n] = iym1[1] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx2m") +1, char);
   strcpy(vars->properties_name[n++], "YM_CHx2m");
 
   /*  YM_CO */
   vars->properties_ipp[n] = ipppro[ ipproc[iym1[2] -1] -1];
-  vars->propce[n] = iym1[2] -1;
+  vars->properties_iprop[n] = iym1[2] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO") +1, char);
   strcpy(vars->properties_name[n++], "YM_CO");
 
   /*  YM_H2S */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[3] -1] -1];
-  vars->propce[n] = iym1[3] -1;
+  vars->properties_iprop[n] = iym1[3] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2S") +1, char);
   strcpy(vars->properties_name[n++], "YM_H2S");
 
   /*  YM_H2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[4] -1] -1];
-  vars->propce[n] = iym1[4] -1;
+  vars->properties_iprop[n] = iym1[4] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2") +1, char);
   strcpy(vars->properties_name[n++], "YM_H2");
 
   /*  YM_HCN */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[5] -1] -1];
-  vars->propce[n] = iym1[5] -1;
+  vars->properties_iprop[n] = iym1[5] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_HCN") +1, char);
   strcpy(vars->properties_name[n++], "YM_HCN");
 
   /*  YM_NH3 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[6] -1] -1];
-  vars->propce[n] = iym1[6] -1;
+  vars->properties_iprop[n] = iym1[6] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_NH3") +1, char);
   strcpy(vars->properties_name[n++], "YM_NH3");
 
   /*  YM_O2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[7] -1] -1];
-  vars->propce[n] = iym1[7] -1;
+  vars->properties_iprop[n] = iym1[7] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_O2")+1, char);
   strcpy(vars->properties_name[n++], "YM_O2");
 
   /*  YM_CO2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[8] -1] -1];
-  vars->propce[n] = iym1[8] -1;
+  vars->properties_iprop[n] = iym1[8] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO2") +1, char);
   strcpy(vars->properties_name[n++], "YM_CO2");
 
   /*  YM_H2O */
   vars->properties_ipp[n] = ipppro[ ipproc[ iym1[9] -1 ] -1];
-  vars->propce[n] = iym1[9] -1;
+  vars->properties_iprop[n] = iym1[9] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2O") +1, char);
   strcpy(vars->properties_name[n++], "YM_H2O");
 
   /*  YM_SO2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[10] -1] -1];
-  vars->propce[n] = iym1[10] -1;
+  vars->properties_iprop[n] = iym1[10] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_SO2") +1, char);
   strcpy(vars->properties_name[n++], "YM_SO2");
 
   /*  YM_N2 */
   vars->properties_ipp[n] = ipppro[ ipproc[iym1[11] -1] -1];
-  vars->propce[n] = iym1[11] -1;
+  vars->properties_iprop[n] = iym1[11] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_N2") +1, char);
   strcpy(vars->properties_name[n++], "YM_N2");
 
   if (*ieqnox == 1) {
     /* IGHCN1 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ighcn1 -1] -1];
-    vars->propce[n] =  *ighcn1 -1;
+    vars->properties_iprop[n] =  *ighcn1 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP1") +1, char);
     strcpy(vars->properties_name[n++], "EXP1");
 
     /* IGHCN2 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ighcn2 -1] -1];
-    vars->propce[n] = *ighcn2 -1;
+    vars->properties_iprop[n] = *ighcn2 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP2") +1, char);
     strcpy(vars->properties_name[n++], "EXP2");
 
     /* ignoth */
     vars->properties_ipp[n] = ipppro[ipproc[ *ignoth -1 ] -1];
-    vars->propce[n] = *ignoth -1;
+    vars->properties_iprop[n] = *ignoth -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP3") +1, char);
     strcpy(vars->properties_name[n++], "EXP3");
 
     /* ignh31 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ignh31 -1 ] -1];
-    vars->propce[n] = *ignh31 -1;
+    vars->properties_iprop[n] = *ignh31 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP4") +1, char);
     strcpy(vars->properties_name[n++], "EXP4");
 
     /* ignh32 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ignh32 -1 ] -1];
-    vars->propce[n] = *ignh32 -1;
+    vars->properties_iprop[n] = *ignh32 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP5") +1, char);
     strcpy(vars->properties_name[n++], "EXP5");
 
     /* ifhcnd */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnd -1 ] -1];
-    vars->propce[n] = *ifhcnd -1;
+    vars->properties_iprop[n] = *ifhcnd -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_DEV") +1, char);
     strcpy(vars->properties_name[n++], "F_HCN_DEV");
 
     /* ifhcnc */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnc -1 ] -1];
-    vars->propce[n] = *ifhcnc -1;
+    vars->properties_iprop[n] = *ifhcnc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_HET") +1, char);
     strcpy(vars->properties_name[n++], "F_HCN_HET");
 
     /* ifnh3d */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnh3d -1 ] -1];
-    vars->propce[n] = *ifnh3d -1;
+    vars->properties_iprop[n] = *ifnh3d -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NH3_DEV") +1, char);
     strcpy(vars->properties_name[n++], "F_NH3_DEV");
 
     /* ifnh3c */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnh3c -1 ] -1];
-    vars->propce[n] = *ifnh3c -1;
+    vars->properties_iprop[n] = *ifnh3c -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NH3_HET") +1, char);
     strcpy(vars->properties_name[n++], "F_NH3_HET");
 
     /* ifnohc */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnohc -1 ] -1];
-    vars->propce[n] = *ifnohc -1;
+    vars->properties_iprop[n] = *ifnohc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_HCN") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_HCN");
 
     /* ifnonh */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnonh -1 ] -1];
-    vars->propce[n] = *ifnonh -1;
+    vars->properties_iprop[n] = *ifnonh -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_NH3") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_NH3");
 
     /* ifnoch */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnoch -1 ] -1];
-    vars->propce[n] = *ifnoch -1;
+    vars->properties_iprop[n] = *ifnoch -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_HET") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_HET");
 
     /* ifnoth */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnoth -1 ] -1];
-    vars->propce[n] = *ifnoth -1;
+    vars->properties_iprop[n] = *ifnoth -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_THE") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_THE");
 
     /* icnohc */
     vars->properties_ipp[n] = ipppro[ipproc[ *icnohc -1 ] -1];
-    vars->propce[n] = *icnohc -1;
+    vars->properties_iprop[n] = *icnohc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("C_NO_HCN") +1, char);
     strcpy(vars->properties_name[n++], "C_NO_HCN");
 
     /* icnonh */
     vars->properties_ipp[n] = ipppro[ipproc[ *icnonh -1 ] -1];
-    vars->propce[n] = *icnonh -1;
+    vars->properties_iprop[n] = *icnonh -1;
     BFT_MALLOC(vars->properties_name[n], strlen("C_NO_NH3") +1, char);
     strcpy(vars->properties_name[n++], "C_NO_NH3");
 
     /* ifhcnr */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnr -1 ] -1];
-    vars->propce[n] = *ifhcnr -1;
+    vars->properties_iprop[n] = *ifhcnr -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_RB") +1, char);
     strcpy(vars->properties_name[n++], "F_HCN_RB");
 
     /* icnorb */
     vars->properties_ipp[n] = ipppro[ipproc[ *icnorb -1 ] -1];
-    vars->propce[n] = *icnorb -1;
+    vars->properties_iprop[n] = *icnorb -1;
     BFT_MALLOC(vars->properties_name[n], strlen("C_NO_RB") +1, char);
     strcpy(vars->properties_name[n++], "C_NO_RB");
 
     /* igrb */
     vars->properties_ipp[n] = ipppro[ipproc[ *igrb -1 ] -1];
-    vars->propce[n] = *igrb -1;
+    vars->properties_iprop[n] = *igrb -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP_RB") +1, char);
     strcpy(vars->properties_name[n++], "EXP_RB");
   }
 
   /* IMEL */
   vars->properties_ipp[n] = ipppro[ipproc[ *immel -1] -1];
-  vars->propce[n] = *immel -1;
+  vars->properties_iprop[n] = *immel -1;
   BFT_MALLOC(vars->properties_name[n], strlen("XM") +1, char);
   strcpy(vars->properties_name[n++], "XM");
 
@@ -2114,7 +2114,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[itemp2[i] -1 ] -1];
-    vars->propce[n] = itemp2[i] -1;
+    vars->properties_iprop[n] = itemp2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2129,7 +2129,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[ix2[i] -1] -1];
-    vars->propce[n] = ix2[i] -1;
+    vars->properties_iprop[n] = ix2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2144,7 +2144,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[irom2[i] -1] -1];
-    vars->propce[n] = irom2[i] -1;
+    vars->properties_iprop[n] = irom2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2159,7 +2159,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[idiam2[i] -1] -1];
-    vars->propce[n] = idiam2[i] -1;
+    vars->properties_iprop[n] = idiam2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2174,7 +2174,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmdch[i] -1] -1];
-    vars->propce[n] = igmdch[i] -1;
+    vars->properties_iprop[n] = igmdch[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2189,7 +2189,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmdv1[i] -1] -1];
-    vars->propce[n] = igmdv1[i] -1;
+    vars->properties_iprop[n] = igmdv1[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2204,7 +2204,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmdv2[i] -1 ] -1];
-    vars->propce[n] = igmdv2[i] -1;
+    vars->properties_iprop[n] = igmdv2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2219,7 +2219,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmhet[i] -1] -1];
-    vars->propce[n] = igmhet[i] -1;
+    vars->properties_iprop[n] = igmhet[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2236,7 +2236,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcat(name, snumpp);
 
       vars->properties_ipp[n] = ipppro[ipproc[ighco2[i] -1] -1];
-      vars->propce[n] = ighco2[i] -1;
+      vars->properties_iprop[n] = ighco2[i] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
 
@@ -2254,7 +2254,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcat(name, snumpp);
 
       vars->properties_ipp[n] = ipppro[ipproc[ighh2o[i] -1] -1];
-      vars->propce[n] = ighh2o[i] -1;
+      vars->properties_iprop[n] = ighh2o[i] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
 
@@ -2272,7 +2272,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcat(name, snumpp);
 
       vars->properties_ipp[n] = ipppro[ipproc[igmsec[i] -1] -1];
-      vars->propce[n] = igmsec[i] -1;
+      vars->properties_iprop[n] = igmsec[i] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
 
@@ -2282,19 +2282,19 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
 
   /* Bilan_C */
   vars->properties_ipp[n] = ipppro[ipproc[ *ibcarbone -1] -1];
-  vars->propce[n] =  *ibcarbone -1;
+  vars->properties_iprop[n] =  *ibcarbone -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Bilan_C")+1, char);
   strcpy(vars->properties_name[n++], "Bilan_C");
 
   /* Bilan_O */
   vars->properties_ipp[n] = ipppro[ipproc[*iboxygen -1] -1];
-  vars->propce[n] = *iboxygen -1;
+  vars->properties_iprop[n] = *iboxygen -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Bilan_O")+1, char);
   strcpy(vars->properties_name[n++], "Bilan_O");
 
   /* Bilan_H */
   vars->properties_ipp[n] = ipppro[ipproc[ *ibhydrogen -1] -1];
-  vars->propce[n] = *ibhydrogen -1;
+  vars->properties_iprop[n] = *ibhydrogen -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Bilan_H")+1, char);
   strcpy(vars->properties_name[n++], "Bilan_H");
 
@@ -2310,10 +2310,10 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   bft_printf("==>UICPPR\n");
   bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+    bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
                "properties_name[%i]: %s\n",
                i, vars->properties_ipp[i],
-               i, vars->propce[i],
+               i, vars->properties_iprop[i],
                i, vars->properties_name[i]);
 #endif
 }
@@ -2355,47 +2355,47 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
   vars->nprop  += *nsalpp;
   vars->nsalpp  = *nsalpp;
 
-  BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
-  BFT_REALLOC(vars->propce,          vars->nprop, int);
-  BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+  BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
+  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
+  BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
   BFT_MALLOC(snumpp, 1 + 2, char);
   /* Source Term */
   if (ippmod[*icolwc -1] >= 0) {
     vars->properties_ipp[n] = ipppro[ipproc[ *itsc -1] -1];
-    vars->propce[n] = *itsc -1;
+    vars->properties_iprop[n] = *itsc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("T.SOURCE") +1, char);
     strcpy(vars->properties_name[n++], "T.SOURCE");
   }
 
   /* Temperature */
   vars->properties_ipp[n] = ipppro[ipproc[ *itemp -1] -1];
-  vars->propce[n] = *itemp -1;
+  vars->properties_iprop[n] = *itemp -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Temperature") +1, char);
   strcpy(vars->properties_name[n++], "Temperature");
 
   if (ippmod[*icolwc -1] >= 0) {
     /* Mass Molaire */
     vars->properties_ipp[n] = ipppro[ipproc[ *imam -1] -1];
-    vars->propce[n] = *imam -11;
+    vars->properties_iprop[n] = *imam -11;
     BFT_MALLOC(vars->properties_name[n], strlen("Mas_Mol") +1, char);
     strcpy(vars->properties_name[n++], "Mas_Mol");
   }
 
   /* Fuel mass fraction */
   vars->properties_ipp[n] = ipppro[ipproc[iym[0] -1] -1];
-  vars->propce[n] = iym[0] -1;
+  vars->properties_iprop[n] = iym[0] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_Fuel") +1, char);
   strcpy(vars->properties_name[n++], "YM_Fuel");
 
   /*  Oxydizer Mass fraction */
   vars->properties_ipp[n] = ipppro[ipproc[iym[1] -1] -1];
-  vars->propce[n] = iym[1] -1;
+  vars->properties_iprop[n] = iym[1] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_Oxyd") +1, char);
   strcpy(vars->properties_name[n++], "YM_Oxyd");
 
   /*  Product Mass fraction */
   vars->properties_ipp[n] = ipppro[ ipproc[iym[2] -1] -1];
-  vars->propce[n] = iym[2] -1;
+  vars->properties_iprop[n] = iym[2] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_Prod") +1, char);
   strcpy(vars->properties_name[n++], "YM_Prod");
   if (ippmod[*icolwc -1] > 0) {
@@ -2410,7 +2410,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
     strcpy(name, "RHOL");
     for (idirac = 0; idirac < ndirac; idirac++) {
       vars->properties_ipp[n] = ipppro[ipproc[irhol[idirac] -1] -1];
-      vars->propce[n] = irhol[idirac] -1;
+      vars->properties_iprop[n] = irhol[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2419,7 +2419,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
 
 
       vars->properties_ipp[n] = ipppro[ipproc[iteml[idirac] -1] -1];
-      vars->propce[n] = iteml[idirac] -1;
+      vars->properties_iprop[n] = iteml[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2427,7 +2427,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "FMEL");
 
       vars->properties_ipp[n] = ipppro[ipproc[ifmel[idirac] -1] -1];
-      vars->propce[n] = ifmel[idirac] -1;
+      vars->properties_iprop[n] = ifmel[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2435,7 +2435,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "FMAL");
 
       vars->properties_ipp[n] = ipppro[ipproc[ifmal[idirac] -1] -1];
-      vars->propce[n] = ifmal[idirac] -1;
+      vars->properties_iprop[n] = ifmal[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2443,7 +2443,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "AMPL");
 
       vars->properties_ipp[n] = ipppro[ipproc[iampl[idirac] -1] -1];
-      vars->propce[n] = iampl[idirac] -1;
+      vars->properties_iprop[n] = iampl[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2451,7 +2451,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "TSCL");
 
       vars->properties_ipp[n] = ipppro[ipproc[itscl[idirac] -1] -1];
-      vars->propce[n] = itscl[idirac] -1;
+      vars->properties_iprop[n] = itscl[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2459,7 +2459,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "MAML");
 
       vars->properties_ipp[n] = ipppro[ipproc[imaml[idirac] -1] -1];
-      vars->propce[n] = imaml[idirac] -1;
+      vars->properties_iprop[n] = imaml[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2470,19 +2470,19 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
   if (*iirayo > 0) {
     /* Absoption coefficient */
     vars->properties_ipp[n] = ipppro[ipproc[ *ickabs -1] -1];
-    vars->propce[n] = *ickabs -1;
+    vars->properties_iprop[n] = *ickabs -1;
     BFT_MALLOC(vars->properties_name[n], strlen("KABS") +1, char);
     strcpy(vars->properties_name[n++], "KABS");
 
     /* Term T^4 */
     vars->properties_ipp[n] = ipppro[ipproc[ *it4m -1] -1];
-    vars->propce[n] =*it4m -1;
+    vars->properties_iprop[n] =*it4m -1;
     BFT_MALLOC(vars->properties_name[n], strlen("TEMP4") +1, char);
     strcpy(vars->properties_name[n++], "TEMP4");
 
     /* Term T^3 */
     vars->properties_ipp[n] = ipppro[ipproc[ *it3m -1] -1];
-    vars->propce[n] = *it3m -1;
+    vars->properties_iprop[n] = *it3m -1;
     BFT_MALLOC(vars->properties_name[n], strlen("TEMP3")+1, char);
     strcpy(vars->properties_name[n++], "TEMP3");
   }
@@ -2499,10 +2499,10 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
   bft_printf("==>UICPPR\n");
   bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+    bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
                "properties_name[%i]: %s\n",
                i, vars->properties_ipp[i],
-               i, vars->propce[i],
+               i, vars->properties_iprop[i],
                i, vars->properties_name[i]);
 #endif
 }
@@ -2766,26 +2766,26 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   vars->nprop  += *nsalpp;
   vars->nsalpp  = *nsalpp;
 
-  BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
-  BFT_REALLOC(vars->propce,          vars->nprop, int);
-  BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+  BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
+  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
+  BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
   BFT_MALLOC(snumpp, 1 + 1, char);
 
   /* Temperature */
   vars->properties_ipp[n] = ipppro[ipproc[*itemp -1] -1];
-  vars->propce[n] = *itemp -1;
+  vars->properties_iprop[n] = *itemp -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Temperature") +1, char);
   strcpy(vars->properties_name[n++], "Temperature");
 
   /* Power */
   vars->properties_ipp[n] = ipppro[ipproc[*iefjou -1] -1];
-  vars->propce[n] = *iefjou -1;
+  vars->properties_iprop[n] = *iefjou -1;
   BFT_MALLOC(vars->properties_name[n], strlen("PuisJoul") +1, char);
   strcpy(vars->properties_name[n++], "PuisJoul");
 
   for (int idimve = 0; idimve < 3; idimve++) {
     vars->properties_ipp[n] = ipppro[ipproc[idjr[idimve] -1] -1];
-    vars->propce[n] = idjr[idimve] -1;
+    vars->properties_iprop[n] = idjr[idimve] -1;
     BFT_MALLOC(name, strlen("Cour_re") +1 + 1, char);
     strcpy(name, "Cour_re");
     sprintf(snumpp,"%1.1i", idimve+1);
@@ -2798,7 +2798,7 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   if (ippmod[*ieljou - 1] == 2 || ippmod[*ieljou - 1] == 4)
     for (int idimve = 0; idimve < 3; idimve++) {
       vars->properties_ipp[n] = ipppro[ipproc[idji[idimve] -1] -1];
-      vars->propce[n] = idji[idimve] -1;
+      vars->properties_iprop[n] = idji[idimve] -1;
       BFT_MALLOC(name, strlen("CouImag") +1 + 1, char);
       strcpy(name, "CouImag");
       sprintf(snumpp,"%1.1i", idimve+1);
@@ -2811,7 +2811,7 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   if (ippmod[*ielarc - 1] >= 1) {
     for (int idimve = 0; idimve < 3; idimve++) {
       vars->properties_ipp[n] = ipppro[ipproc[ilapla[idimve] -1] -1];
-      vars->propce[n] = ilapla[idimve] -1;
+      vars->properties_iprop[n] = ilapla[idimve] -1;
       BFT_MALLOC(name, strlen("For_Lap") +1 + 1, char);
       strcpy(name, "For_Lap");
       sprintf(snumpp,"%1.1i", idimve+1);
@@ -2823,12 +2823,12 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
 
     if (*ixkabe == 1) {
       vars->properties_ipp[n] = ipppro[ipproc[*idrad -1] -1];
-      vars->propce[n] = *idrad -1;
+      vars->properties_iprop[n] = *idrad -1;
       BFT_MALLOC(vars->properties_name[n], strlen("Coef_Abso") +1, char);
       strcpy(vars->properties_name[n++], "Coef_Abso");
     } else if (*ixkabe == 2) {
       vars->properties_ipp[n] = ipppro[ipproc[*idrad -1] -1];
-      vars->propce[n] = *idrad -1;
+      vars->properties_iprop[n] = *idrad -1;
       BFT_MALLOC(vars->properties_name[n], strlen("TS_radia") +1, char);
       strcpy(vars->properties_name[n++], "TS_radia");
     }
@@ -2845,10 +2845,10 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   bft_printf("==>UICPPR\n");
   bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+    bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
                "properties_name[%i]: %s\n",
                i, vars->properties_ipp[i],
-               i, vars->propce[i],
+               i, vars->properties_iprop[i],
                i, vars->properties_name[i]);
 #endif
 }
@@ -2960,20 +2960,20 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
   vars->nprop  += *nsalpp;
   vars->nsalpp  = *nsalpp;
 
-  BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
-  BFT_REALLOC(vars->propce,          vars->nprop, int);
-  BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+  BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
+  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
+  BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
 
   /* itempc */
   vars->properties_ipp[n] = ipppro[ipproc[ *itempc -1] -1];
-  vars->propce[n] = *itempc -1;
+  vars->properties_iprop[n] = *itempc -1;
   BFT_MALLOC(vars->properties_name[n], strlen("real_temperature") +1, char);
   strcpy(vars->properties_name[n++], "real_temperature");
 
   if (ippmod[*iatmos -1] == 2) {
     /* iliqwt */
     vars->properties_ipp[n] = ipppro[ipproc[ *iliqwt -1] -1];
-    vars->propce[n] = *iliqwt -1;
+    vars->properties_iprop[n] = *iliqwt -1;
     BFT_MALLOC(vars->properties_name[n], strlen("liquid_water") +1, char);
     strcpy(vars->properties_name[n++], "liquid_water");
   }
@@ -2983,10 +2983,10 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
     bft_printf("==>UIATPR\n");
     bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
     for (i=0 ; i<vars->nprop ; i++)
-      bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+      bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
                  "properties_name[%i]: %s\n",
                  i, vars->properties_ipp[i],
-                 i, vars->propce[i],
+                 i, vars->properties_iprop[i],
                  i, vars->properties_name[i]);
   }
 #endif

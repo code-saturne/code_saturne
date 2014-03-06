@@ -179,6 +179,8 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
   cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
 
+  cs_field_define_key_int("property_id", -1, 0); /* inverse of iprpfl(iprop) */
+
   cs_field_define_key_struct("var_cal_opt",
                              &_var_cal_opt,
                              _log_func_var_opt_cal,

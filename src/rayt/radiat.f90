@@ -145,19 +145,6 @@ module radiat
   integer   itpimp   , ipgrno   , iprefl   , ifgrno   , ifrefl
   parameter(itpimp=1 , ipgrno=21, iprefl=22, ifgrno=31, ifrefl=32)
 
-  !--> sortie postprocessing sur les facettes de bord
-
-  integer     nbrayf
-  parameter ( nbrayf = 8 )
-
-  character*80, save ::       nbrvaf(nbrayf)
-  integer, save ::            irayvf(nbrayf)
-
-  integer     itparp   , iqincp   , ixlamp   , iepap    , &
-              iepsp    , ifnetp   , ifconp   , ihconp
-  parameter ( itparp=1 , iqincp=2 , ixlamp=3 , iepap=4  , &
-              iepsp=5  , ifnetp=6 , ifconp=7 , ihconp=8 )
-
   !=============================================================================
 
 contains

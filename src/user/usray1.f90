@@ -107,8 +107,7 @@ use radiat
 
 implicit none
 
-integer          irphas, ipp
-character*2      num
+integer          ipp
 
 integer       ipass
 data          ipass /0/
@@ -213,137 +212,31 @@ endif
 
 if (ipass.eq.3) then
 
-!===============================================================================
-! 3.1 VARIABLE DU MILIEU SEMI-TRANSPARENT
-!===============================================================================
-
-
-  !    ichrvr( ) = sortie chono (oui 1/non 0)
-  !    ilisvr( ) = suivi listing (oui 1/non 0)
-  !    ihisvr( ) = sortie historique (nombre de sondes et numeros)
-  !    si ihisvr(    .,1)  = -1 sortie sur toutes les sondes
+  ! ihisvr( ) = sortie historique (nombre de sondes et numeros)
+  ! si ihisvr(    .,1)  = -1 sortie sur toutes les sondes
 
   !--> LUMINENCE
 
   ipp = ipppro(ipproc(ilumin))
-  nomprp(ipproc(ilumin))   = 'Lumin'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
   !--> VECTEUR DENSITE DE FLUX RADIATIF
 
   !       composante x
   ipp = ipppro(ipproc(iqx))
-  nomprp(ipproc(iqx))   = 'Qxrad'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
   !       composante y
   ipp = ipppro(ipproc(iqy))
-  nomprp(ipproc(iqy))   = 'Qyrad'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
   !       composante z
   ipp = ipppro(ipproc(iqz))
-  nomprp(ipproc(iqz))   = 'Qzrad'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-
-  do irphas = 1,nrphas
-
-    write(num,'(I1)') irphas
-
-    !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
-
-    ipp = ipppro(ipproc(itsre(irphas)))
-    nomprp(ipproc(itsre(irphas)))   = 'Srad'//num
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-
-    !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
-
-    ipp = ipppro(ipproc(iabs(irphas)))
-    nomprp(ipproc(iabs(irphas)))   = 'Absorp'//num
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-
-    !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
-
-    ipp = ipppro(ipproc(iemi(irphas)))
-    nomprp(ipproc(iemi(irphas)))   = 'Emiss'//num
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-
-    !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
-
-    ipp = ipppro(ipproc(icak(irphas)))
-    nomprp(ipproc(icak(irphas)))   = 'CoefAb_'//num
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-
-  enddo
-
-!===============================================================================
-! 3.2 VARIABLE SUR LES FRONTIERES DE TYPE PAROI DU DOMAINE DE CALCUL
-!===============================================================================
-
-!=======================================================================
-!    * IL FAUT METTRE LA VALEUR DE IRAYVF A 1 POUR LA VISUALISATION *
-!=======================================================================
-
-  !--> TEMPERATURE DES FACES FRONTIERES DE PAROI
-
-  nbrvaf(itparp) = 'Wall_temp'
-  irayvf(itparp) = 0
-
-  !--> FLUX INCIDENT RADIATIF RECU PAR LES FACES FRONTIERES DE PAROI
-
-  nbrvaf(iqincp) = 'Incident_flux'
-  irayvf(iqincp) = 0
-
-  !--> CONDUCTIVITE THERMIQUES DES FACES FRONTIERES DE PAROIS
-
-  nbrvaf(ixlamp) = 'Th_conductivity'
-  irayvf(ixlamp) = 0
-
-  !--> EPAISSEUR DES FACES FRONTIERES DE PAROIS
-
-  nbrvaf(iepap) = 'Thickness'
-  irayvf(iepap) = 0
-
-  !--> EMISSIVITE DES FACES FRONTIERES DE PAROIS
-
-  nbrvaf(iepsp) = 'Emissivity'
-  irayvf(iepsp) = 0
-
-  !--> FLUX NET RADIATIF AUX FACES FRONTIERES DE PAROIS
-
-  nbrvaf(ifnetp) = 'Net_flux'
-  irayvf(ifnetp) = 0
-
-  !--> FLUX CONVECTIF AUX FACES FRONTIERES DE PAROIS
-
-  nbrvaf(ifconp) = 'Convective_flux'
-  irayvf(ifconp) = 0
-
-  !--> COEFFICIENT D'ECHANGE CONVECTIF AUX FACES FRONTIERES DE PAROIS
-
-  nbrvaf(ihconp) = 'Convective_exch_coef'
-  irayvf(ihconp) = 0
-
-!===============================================================================
-
 endif
+
+!===============================================================================
 
 return
 

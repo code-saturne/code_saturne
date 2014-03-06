@@ -777,45 +777,6 @@ if (numtyp.eq.-2) then
 
   if (iirayo.gt.0) then
 
-    do ivarl = 1, nbrayf
-
-      if (irayvf(ivarl).eq.1) then
-
-        if (ivarl .eq. itparp)      then
-          ipp =  itparo
-        else if (ivarl .eq. iqincp) then
-          ipp = iqinci
-        else if (ivarl .eq. ixlamp)  then
-          ipp = ixlam
-        else if (ivarl .eq. iepap)   then
-          ipp = iepa
-        else if (ivarl .eq. iepsp)   then
-          ipp = ieps
-        else if (ivarl .eq. ifnetp)  then
-          ipp = ifnet
-        else if (ivarl .eq. ifconp) then
-          ipp = ifconv
-        else if (ivarl .eq. ihconp) then
-          ipp = ihconv
-        endif
-
-        call field_get_val_s(ipp, f_val)
-
-        do iloc = 1, nfbrps
-          ifac = lstfbr(iloc)
-          trafbr(iloc) = f_val(ifac)
-        enddo
-
-        idimt  = 1
-        ientla = .true.
-        ivarpr = .false.
-
-        call post_write_var(nummai, trim(nbrvaf(ivarl)), idimt,              &
-                            ientla, ivarpr, ntcabs, ttcabs, rbid, rbid, trafbr)
-
-      endif
-    enddo
-
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
       trafbr(iloc) = izfrad(ifac)

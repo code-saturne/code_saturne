@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file fldvar.f90
-!> \brief Variables location initialization, according to calculation type
+!> \brief Variables definition initialization, according to calculation type
 !> selected by the user.
 !>
 !------------------------------------------------------------------------------
@@ -159,7 +159,11 @@ nvar = 0
 
 call add_variable_field('pressure', 'Pressure', 1, ipr)
 
-istat (ipr) = 0
+if (ippmod(icompf).ge.0) then
+  istat(ipr) = 1
+else
+  istat (ipr) = 0
+endif
 iconv (ipr) = 0
 
 ! Velocity
@@ -490,7 +494,7 @@ return
 '@  The number of scalars necessary for the specific physics'  ,/,&
 '@    with the chosen model is              NSCAPP = ',I10     ,/,&
 '@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx.h         est  NSCAMX = ',I10     ,/,&
+'@    allowed    in   paramx.h         is   NSCAMX = ',I10     ,/,&
 '@                                                            ',/,&
 '@  The maximum value allowed for  NSCAUS                     ',/,&
 '@    with the chosen model is       NSCAMX-NSCAPP = ',I10     ,/,&
@@ -500,35 +504,6 @@ return
 '@  Verify   NSCAUS.                                          ',/,&
 '@                                                            ',/,&
 '@  NSCAMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8200 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE VERIFICATION OF DATA            ',/,&
-'@    =========                                               ',/,&
-'@      ON THE LIST OF TEMPORAL AVERAGES                      ',/,&
-'@                                                            ',/,&
-'@    The value of IDFMOM(1,',I10   ,' is  ',I10               ,/,&
-'@      this indicates that ',I10   ,' temporal averages have ',/,&
-'@      been defined to find out the   IMOM = ',I10            ,/,&
-'@      first locations of the array IDFMOM(.,IMOM).          ',/,&
-'@    The follwing locations should be zero.                  ',/,&
-'@                                                            ',/,&
-'@    This however, is not the case  :                        ',/,&
-'@                                                            ',/,&
-'@        IMOM    IDFMOM(1,IMOM)                              ',/,&
-'@  ----------------------------                              '  )
- 8201 format(                                                     &
-'@  ',I10   ,'        ',     I10                                 )
- 8202 format(                                                     &
-'@  ----------------------------                              ',/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@    Verify   parameters.                                    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -635,14 +610,17 @@ nvar = nvar + dim
 call fldvar_check_nvar
 
 ivarfl(ivar) = id
+ipprtp(ivar) = nvpp + 1
+nvpp = nvpp + dim
 
 call field_set_key_int(id, keyvar, ivar)
-call field_set_key_int(id, keyipp, ivar + 1)
+call field_set_key_int(id, keyipp, ipprtp(ivar))
 
 if (dim .gt. 1) then
   call field_set_key_int(id, keycpl, 1)
   do ii = 2, dim
     ivarfl(ivar + ii - 1) = id
+    ipprtp(ivar + ii - 1) = ipprtp(ivar) -1 + ii
   enddo
 endif
 
@@ -762,11 +740,13 @@ do iscal = 1, nscaus
   call fldvar_check_nvar
 
   isca(iscal) = nvar
-  ivarfl(isca(iscal)) = id
+  ivarfl(nvar) = id
+  ipprtp(nvar) = nvpp + 1
+  nvpp = nvpp + 1
 
   call field_set_key_int(id, keyvar, nvar)
   call field_set_key_int(id, keysca, iscal)
-  call field_set_key_int(id, keyipp, nvar + 1)
+  call field_set_key_int(id, keyipp, ipprtp(nvar))
 
 enddo
 
@@ -900,10 +880,12 @@ call fldvar_check_nscapp
 isca(iscal) = nvar
 iscapp(nscapp) = iscal
 ivarfl(isca(iscal)) = id
+ipprtp(nvar) = nvpp + 1
+nvpp = nvpp + 1
 
 call field_set_key_int(id, keyvar, nvar)
 call field_set_key_int(id, keysca, iscal)
-call field_set_key_int(id, keyipp, nvar + 1)
+call field_set_key_int(id, keyipp, ipprtp(nvar))
 
 return
 
@@ -993,7 +975,7 @@ return
 '@  Le type de calcul defini                                  ',/,&
 '@    correspond a un nombre de variables NVAR   >= ', i10     ,/,&
 '@  Le nombre de variables maximal prevu                      ',/,&
-'@                      dans paramx   est NVARMX >= ', i10     ,/,&
+'@                      dans paramx   est NVARMX  = ', i10     ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -1017,7 +999,7 @@ return
 '@  The type of calculation defined                           ',/,&
 '@    corresponds to a number of variables NVAR  >= ', i10     ,/,&
 '@  The maximum number of variables allowed                   ',/,&
-'@                      in   paramx   is  NVARMX >= ', i10     ,/,&
+'@                      in   paramx   is  NVARMX  = ', i10     ,/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
@@ -1031,8 +1013,6 @@ return
 #endif
 
 end subroutine fldvar_check_nvar
-
-!===============================================================================
 
 !===============================================================================
 

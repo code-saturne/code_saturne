@@ -60,6 +60,7 @@ raylec.f90 \
 rayopt.f90 \
 rayout.f90 \
 raypar.f90 \
+rayprp.f90 \
 raypun.f90 \
 raysca.f90 \
 raysol.f90 \

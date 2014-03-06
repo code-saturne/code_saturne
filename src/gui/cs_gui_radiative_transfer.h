@@ -59,30 +59,6 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(fcnmra, FCNMRA)
-(
- const char      *const fstr,    /* --> Fortran string */
- int             *const len,     /* --> String Length  */
- int             *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-);
-
-/*----------------------------------------------------------------------------
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cfnmra, CFNMRA)
-(
- char          *const fstr,    /* --> Fortran string */
- int           *const len,     /* --> String Length  */
- int           *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-);
-
-/*----------------------------------------------------------------------------
- *
- *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
                                 const    int *const iparoi,
@@ -117,9 +93,7 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
-                                int *const iirayo,
-                                int *const irayvf);
+void CS_PROCF (uiray4, UIRAY4) (int *const iirayo);
 
 /*-----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one

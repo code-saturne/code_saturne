@@ -90,7 +90,7 @@ integer          n_fields, nmodpp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
-integer          iappel, ivar
+integer          iappel
 double precision relaxp, extrap
 
 !===============================================================================
@@ -365,14 +365,9 @@ endif
 
 if (ialgce.ne.-999) call algcen(ialgce)
 
-! --- Varpos
-!     Positionnement de pointeurs
-!     Verifications
-!     Determination de IPR, IU ... ISCA, NVAR
-!     Determination de IPP...
+! Define main properties (pointers, checks, ipp)
 
-!      1er passage
-call varpos
+call fldprp
 !==========
 
 !===============================================================================
@@ -493,7 +488,7 @@ endif
 call comcoc(imrgra)
 
 ! --- Varpos
-!      2ieme passage
+!      1er passage
 call varpos
 !==========
 

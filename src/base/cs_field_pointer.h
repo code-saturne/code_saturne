@@ -146,6 +146,24 @@ typedef enum {
   CS_ENUMF_(potva),        /*!< Vector potential */
   CS_ENUMF_(ycoel),        /*!< Constituent mass fraction */
 
+  CS_ENUMF_(rad_lumin),    /*!< Radiative luminance */
+  CS_ENUMF_(rad_q),        /*!< Radiative flux */
+
+  CS_ENUMF_(rad_ets),      /*!< Radiative flux explicit source term */
+  CS_ENUMF_(rad_its),      /*!< Radiative flux implicit source term */
+  CS_ENUMF_(rad_abs),      /*!< Radiative absorption */
+  CS_ENUMF_(rad_emi),      /*!< Radiative emission */
+  CS_ENUMF_(rad_cak),      /*!< Radiative absorption coefficient */
+
+  CS_ENUMF_(tparo),        /*!< Wall temperature */
+  CS_ENUMF_(qinci),        /*!< Radiative incident radiative flux density */
+  CS_ENUMF_(xlam),         /*!< Wall thermal conductivity */
+  CS_ENUMF_(epa),          /*!< Wall thickness */
+  CS_ENUMF_(emissivity),   /*!< Wall emissivity */
+  CS_ENUMF_(fnet),         /*!< Boundary radiative flux */
+  CS_ENUMF_(fconv),        /*!< Boundary radiative convective flux */
+  CS_ENUMF_(hconv),        /*!< radiative exchange coefficient */
+
   /* End of attributes */
 
   CS_FIELD_N_POINTERS
@@ -272,6 +290,17 @@ cs_field_pointer_map_electric_arcs(int  n_gasses);
 
 void
 cs_field_pointer_map_gas_combustion(void);
+
+/*----------------------------------------------------------------------------
+ * Map base fields to enumerated pointers for radiation module
+ *
+ * parameters:
+ *   n_r_phases <-- number of radiating phases: 1 + possibly
+ *                  number of combustible classes (coal, fuel)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_radiation(int  n_r_phases);
 
 /*----------------------------------------------------------------------------*/
 

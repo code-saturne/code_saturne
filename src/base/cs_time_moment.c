@@ -1982,6 +1982,12 @@ cs_time_moment_define_by_func(const char                *name,
       prev_wa_id = ri->wa_id[prev_id];
   }
 
+  if (_nt_start < 0 && _t_start < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Time moment definition for \"%s\" is inconsistent:\n"
+                " either starting time step or physical time must be >= 0."),
+              name);
+
   /* Find or define matching weight accumulator info
      (if the weight value is constant,
      do not assign a mesh location to it as a single value is enough) */

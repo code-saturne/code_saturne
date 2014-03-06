@@ -372,9 +372,8 @@ iok = 0
 if (iirayo.gt.0) then
 
 ! Positionnement des pointeurs
-! 3eme passage (les autres sont dans iniusi)
 
-  call varpos
+  call rayprp
   !==========
 
 ! --> ISUIRD
@@ -449,139 +448,7 @@ call raydir
 !==========
 
 !===============================================================================
-! 5. POST-PROCESSING
-!===============================================================================
-
-!--> INITIALISATION DES DONNEES POST-PROCESSING
-!    NBRAYF : NOMBRE MAX DES SORTIES DE VARIABLES FACETTES DE BORD
-
-do ii = 1, nbrayf
-  write(car4,'(i4.4)') ii
-  nbrvaf(ii) = 'RAYTFB'//car4
-  irayvf(ii) = 0
-enddo
-
-!--> LUMINENCE
-
-ipp = ipppro(ipproc(ilumin))
-nomprp(ipproc(ilumin))   = 'Lumin'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = 0
-ilisvr(ipp)   = 0
-
-!--> VECTEUR DENSITE DE FLUX RADIATIF
-
-!     composante x
-ipp = ipppro(ipproc(iqx))
-nomprp(ipproc(iqx))   = 'Qxrad'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-ilisvr(ipp)   = 0
-
-!     composante y
-ipp = ipppro(ipproc(iqy))
-nomprp(ipproc(iqy))   = 'Qyrad'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-ilisvr(ipp)   = 0
-
-!      composante z
-ipp = ipppro(ipproc(iqz))
-nomprp(ipproc(iqz))   = 'Qzrad'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-ilisvr(ipp)   = 0
-
-!--> TERME SOURCE IMPLICITE
-
-ipp = ipppro(ipproc(itsri(1)))
-nomprp(ipproc(itsri(1)))   = 'ITSRI'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = 0
-ilisvr(ipp)   = 0
-
-!--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
-
-ipp = ipppro(ipproc(itsre(1)))
-nomprp(ipproc(itsre(1)))   = 'Srad'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-ilisvr(ipp)   = 0
-
-!--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
-
-ipp = ipppro(ipproc(iabs(1)))
-nomprp(ipproc(iabs(1)))   = 'Absorp'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-ilisvr(ipp)   = 0
-
-!--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
-
-ipp = ipppro(ipproc(iemi(1)))
-nomprp(ipproc(iemi(1)))   = 'Emiss'
-ichrvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-ilisvr(ipp)   = 0
-
-!--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
-
-ipp = ipppro(ipproc(icak(1)))
-nomprp(ipproc(icak(1)))   = 'CoefAb'
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-
-do irphas = 1, nrphas-1
-
-  WRITE(NUM,'(I2)') IRPHAS
-
-!--> TERME SOURCE IMPLICITE
-
-  ipp = ipppro(ipproc(itsri(irphas)))
-  nomprp(ipproc(itsri(irphas)))   = 'ITSRI_'//num
-  ichrvr(ipp)   = 0
-  ihisvr(ipp,1) = 0
-  ilisvr(ipp)   = 0
-
-
-!--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
-
-  ipp = ipppro(ipproc(itsre(irphas)))
-  nomprp(ipproc(itsre(irphas)))   = 'Srad_'//num
-  ichrvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-  ilisvr(ipp)   = 0
-
-!--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
-
-  ipp = ipppro(ipproc(iabs(irphas)))
-  nomprp(ipproc(iabs(irphas)))   = 'Absorp_'//num
-  ichrvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-  ilisvr(ipp)   = 0
-
-!--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
-
-  ipp = ipppro(ipproc(iemi(irphas)))
-  nomprp(ipproc(iemi(irphas)))   = 'Emiss_'//num
-  ichrvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-  ilisvr(ipp)   = 0
-
-!--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
-
-  ipp = ipppro(ipproc(icak(irphas)))
-  nomprp(ipproc(icak(irphas)))   = 'CoefAb_'//num
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-enddo
-
-!===============================================================================
-!  6. INITIALISATIONS UTILISATEURS
+!  5. INITIALISATIONS UTILISATEURS
 !                    ^^^^^^^^^^^^
 !===============================================================================
 
@@ -590,17 +457,8 @@ enddo
 
 if (iihmpr.eq.1) then
 
-  ! properties on boundaries
-  do ii = 1, nbrayf
-    call fcnmra(nbrvaf(ii), len(nbrvaf(ii)), ii)
-  enddo
-
-   call uiray4(nbrayf, iirayo, irayvf)
-   !==========
-
-  do ii = 1, nbrayf
-    call cfnmra(nbrvaf(ii), len(nbrvaf(ii)), ii)
-  enddo
+  call uiray4(iirayo)
+  !==========
 
   ! properties on cells
   do ii = 1, nproce
@@ -632,17 +490,6 @@ endif
 
 call usray1
 !==========
-
-! --> IRAYVF
-!     Choix entre -1 et 1
-if (iirayo.eq.1 .or. iirayo.eq.2) then
-  do ii = 1, nbrayf
-    if (irayvf(ii).ne.1 .and. irayvf(ii).ne.-1) then
-      write(nfecra,4070) nbrvaf(ii), irayvf(ii)
-      iok = iok + 1
-    endif
-  enddo
-endif
 
 !--> Stop si erreur.
 
@@ -771,25 +618,6 @@ endif
 '@                                                            ',/,&
 '@  Le niveau d''affichage doit etre 0, 1 ou 2  (IIMLUM)      ',/,&
 '@    Il vaut ici IIMLUM = ',I10                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 4070 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT : ERREUR A L''ENTREE DES DONNEES',/,&
-'@    =========                                               ',/,&
-'@    INDICATEUR DE SORTIE EN POSTPROCESSING                  ',/,&
-'@    POUR ',A40                                               ,/,&
-'@    NON ADMISSIBLE                                          ',/,&
-'@                                                            ',/,&
-'@  L''indicateur de postprocessing doit etre -1 ou 1         ',/,&
-'@    Il vaut ici IRAYVF = ',I10                               ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&

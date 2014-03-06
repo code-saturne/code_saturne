@@ -1080,11 +1080,6 @@ if (iirayo.gt.0) then
 
   write(nfecra,2650) isuird, nfreqr, i_quadrature,                &
                      idiver, imodak, iimpar, iimlum
-  write(nfecra,2660)
-
-  do ii = 1,nbrayf
-    if(irayvf(ii).eq.1) write(nfecra,2662)nbrvaf(ii)
-  enddo
 
   write(nfecra,9900)
 
@@ -1108,10 +1103,6 @@ endif
 '       IMODAK = ',4x,i10,    ' (1: modak coef absor; 0 sinon)',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 ou 2: impr Tempera paroi)',/,&
 '       IIMLUM = ',4x,i10,    ' (0 1 ou 2: impr infos solveur)',/)
- 2660 format(                                                     &
-' --- Sorties graphiques :                                    '  )
- 2662 format(                                                     &
-'       NBRVAF = ',4x,A40                                        )
 
 #else
 
@@ -1131,10 +1122,6 @@ endif
 '       IMODAK = ',4x,i10,    ' (1: modak absor coef; 0 else )',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 or 2: print wall temp.  )',/,&
 '       IIMLUM = ',4x,i10,    ' (0 1 or 2: print solver info )',/)
- 2660 format(                                                     &
-' --- Graphical output:'                                         )
- 2662 format(                                                     &
-'       NBRVAF = ',4x,A40                                        )
 
 #endif
 

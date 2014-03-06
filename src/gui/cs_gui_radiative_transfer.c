@@ -55,6 +55,8 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui.h"
 #include "cs_mesh.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -107,7 +109,6 @@ static cs_radiative_boundary_t *boundary = NULL;
  *----------------------------------------------------------------------------*/
 
 static int      _cs_gui_max_vars = 0;
-static int      _cs_gui_last_var = 0;
 static char  ** _cs_gui_var_rayt = NULL;
 
 
@@ -200,15 +201,15 @@ _radiative_transfer_char(const char *const param,
 /*-----------------------------------------------------------------------------
  * Return status and label of the property for post treatment of radiation
  *
- *   parameters:
- *    name     -->   name of property
- *    value    <--   value of status
+ * parameters:
+ *   name  --> name of property
+ *   value <-- value of status
  *----------------------------------------------------------------------------*/
 
 static char *
 _radiative_transfer_char_post(const char *const name,
-                                          int  *const list_value,
-                                          int  *const record_value)
+                              int        *const list_value,
+                              int        *const record_value)
 {
   char *path = NULL;
   char *path1 = NULL;
@@ -414,35 +415,6 @@ _radiative_boundary_output_zone_max(void)
   return zone_max;
 }
 
-/*-----------------------------------------------------------------------------
- * Copy a variable name to private variable names array
- *
- * parameters:
- *   varname        -->  name or label of the variable/scalar/property
- *   ipp            -->  index from the fortran array associated to varname
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_gui_copy_varname(const char *varname, int ipp)
-{
-  size_t  l;
-
-  if (ipp < 1 || ipp > _cs_gui_last_var)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Variable index %d out of bounds (1 to %d)"),
-              ipp, _cs_gui_last_var);
-
-  l = strlen(varname);
-
-  if (_cs_gui_var_rayt[ipp-1] == NULL)
-    BFT_MALLOC(_cs_gui_var_rayt[ipp-1], l + 1, char);
-
-  else if (strlen(_cs_gui_var_rayt[ipp-1]) != l)
-    BFT_REALLOC(_cs_gui_var_rayt[ipp-1], l + 1, char);
-
-  strcpy(_cs_gui_var_rayt[ipp-1], varname);
-}
-
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -502,49 +474,59 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
-                                int *const iirayo,
-                                int *const irayvf)
+void CS_PROCF (uiray4, UIRAY4) (int *const iirayo)
 {
-    int i;
-    int list_ind, record_ind = 0;
-    char *label = NULL;
+  const int n_rad_b_f = 8;
 
-    const char *const _cs_properties_name2[8] = {
-        "wall_temp",
-        "flux_incident",
-        "thickness",
-        "wall_thermal_conductivity",
-        "emissivity",
-        "flux_net",
-        "flux_convectif",
-        "coeff_ech_conv"};
+  const char *const b_rad_names[8] = {
+    "wall_temp",
+    "flux_incident",
+    "thickness",
+    "wall_thermal_conductivity",
+    "emissivity",
+    "flux_net",
+    "flux_convectif",
+    "coeff_ech_conv"};
 
-    if (*iirayo)
-    {
-        for (i=0 ; i < *nbrayf ; i++)
-        {
-            list_ind =  1;
-            record_ind =  1;
-            label = _radiative_transfer_char_post(_cs_properties_name2[i],  &list_ind, &record_ind);
-            irayvf[i] = record_ind;
-            if (label)
-                _cs_gui_copy_varname(label, i + 1);
-            BFT_FREE(label);
-        }
-    }
+  const cs_field_pointer_id_t b_rad_f_id[8] = {
+    CS_ENUMF_(tparo),
+    CS_ENUMF_(qinci),
+    CS_ENUMF_(epa),
+    CS_ENUMF_(xlam),
+    CS_ENUMF_(emissivity),
+    CS_ENUMF_(fnet),
+    CS_ENUMF_(fconv),
+    CS_ENUMF_(hconv)
+  };
+
 #if _XML_DEBUG_
-    bft_printf("==>UIRAY4\n");
-    if (*iirayo)
-    {
-        for (i=0 ; i < *nbrayf ; i++)
-        {
-            bft_printf(_("--output boundary faces: %s value %i \n"),
-                       _cs_gui_var_rayt[i],
-            irayvf[i]);
-        }
-    }
+  bft_printf("==> UIRAY4\n");
 #endif
+
+  if (*iirayo) {
+    int k_lbl = cs_field_key_id("label");
+    int k_vis = cs_field_key_id("post_vis");
+    int k_log = cs_field_key_id("log");
+    for (int i = 0; i < n_rad_b_f; i++) {
+      int f_post_vis =  1;
+      int f_log =  1;
+      char *label = _radiative_transfer_char_post(b_rad_names[i],
+                                                  &f_log,
+                                                  &f_post_vis);
+#if _XML_DEBUG_
+      bft_printf(_("--output boundary faces: %s log %d, postprocess %d\n"),
+                 b_rad_names[i], log, post_vis);
+#endif
+      cs_field_t *f = cs_field_by_id(b_rad_f_id[i]);
+      if (f != NULL) {
+        cs_field_set_key_int(f, k_vis, f_post_vis);
+        cs_field_set_key_int(f, k_log, f_log);
+        if (label)
+          cs_field_set_key_str(f, k_lbl, label);
+      }
+      BFT_FREE(label);
+    }
+  }
 }
 
 /*-----------------------------------------------------------------------------
@@ -577,37 +559,37 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     vars->nprop  += *nprayc;
     vars->nprayc  = *nprayc;
 
-    BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
-    BFT_REALLOC(vars->propce,          vars->nprop, int);
-    BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+    BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
+    BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
+    BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
 
     /* ILUMIN */
     vars->properties_ipp[n] = ipppro[ipproc[ *ilumin -1] -1];
-    vars->propce[n] = ipproc[ *ilumin -1] -1;
+    vars->properties_iprop[n] = ipproc[ *ilumin -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("intensity") +1, char);
     strcpy(vars->properties_name[n++], "intensity");
 
     /* IQX */
     vars->properties_ipp[n] = ipppro[ipproc[ *iqx -1] -1];
-    vars->propce[n] = ipproc[ *iqx -1] -1;
+    vars->properties_iprop[n] = ipproc[ *iqx -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("qrad_x") +1, char);
     strcpy(vars->properties_name[n++], "qrad_x");
 
     /* IQY */
     vars->properties_ipp[n] = ipppro[ipproc[ *iqy -1] -1];
-    vars->propce[n] = ipproc[ *iqy -1] -1;
+    vars->properties_iprop[n] = ipproc[ *iqy -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("qrad_y") +1, char);
     strcpy(vars->properties_name[n++], "qrad_y");
 
     /* IQZ */
     vars->properties_ipp[n] = ipppro[ipproc[ *iqz -1] -1];
-    vars->propce[n] = ipproc[ *iqz -1] -1;
+    vars->properties_iprop[n] = ipproc[ *iqz -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("qrad_z") +1, char);
     strcpy(vars->properties_name[n++], "qrad_z");
 
     /* ITSRE */
     vars->properties_ipp[n] = ipppro[ipproc[itsre[0] -1] -1];
-    vars->propce[n] = ipproc[itsre[0] -1] -1;
+    vars->properties_iprop[n] = ipproc[itsre[0] -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("radiative_source_term") +1, char);
     strcpy(vars->properties_name[n++], "radiative_source_term");
 
@@ -621,7 +603,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ipproc[itsre[i] -1] -1];
-        vars->propce[n] = ipproc[itsre[i] -1] -1;
+        vars->properties_iprop[n] = ipproc[itsre[i] -1] -1;
         BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
@@ -630,7 +612,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
 
     /* ITSRI */
     vars->properties_ipp[n] = ipppro[ipproc[itsri[0] -1] -1];
-    vars->propce[n] = ipproc[itsri[0] -1] -1;
+    vars->properties_iprop[n] = ipproc[itsri[0] -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("implicit_source_term") +1, char);
     strcpy(vars->properties_name[n++], "implicit_source_term");
 
@@ -643,7 +625,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ipproc[itsri[i] -1] -1];
-        vars->propce[n] = ipproc[itsri[i] -1] -1;
+        vars->properties_iprop[n] = ipproc[itsri[i] -1] -1;
         BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
@@ -652,7 +634,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
 
     /* IABS */
     vars->properties_ipp[n] = ipppro[ipproc[iabs[0] -1 ] -1];
-    vars->propce[n] = ipproc[iabs[0] -1] -1;
+    vars->properties_iprop[n] = ipproc[iabs[0] -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("absorption") +1, char);
     strcpy(vars->properties_name[n++], "absorption");
 
@@ -665,7 +647,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ipproc[iabs[i] -1] -1];
-        vars->propce[n] = ipproc[iabs[i] -1] -1;
+        vars->properties_iprop[n] = ipproc[iabs[i] -1] -1;
         BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
         strcpy(vars->properties_name[n++], name);
 
@@ -674,7 +656,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
 
     /* IEMI */
     vars->properties_ipp[n] = ipppro[ipproc[iemi[0] -1] -1];
-    vars->propce[n] = ipproc[iemi[0] -1] -1;
+    vars->properties_iprop[n] = ipproc[iemi[0] -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("emission") +1, char);
     strcpy(vars->properties_name[n++], "emission");
 
@@ -687,7 +669,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ipproc[iemi[i] -1] -1];
-        vars->propce[n] = ipproc[iemi[i] -1] -1;
+        vars->properties_iprop[n] = ipproc[iemi[i] -1] -1;
         BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
@@ -696,7 +678,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
 
     /* ICAK */
     vars->properties_ipp[n] = ipppro[ipproc[icak[0] -1] -1];
-    vars->propce[n] = ipproc[icak[0] -1] -1;
+    vars->properties_iprop[n] = ipproc[icak[0] -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("absorption_coefficient")+1, char);
     strcpy(vars->properties_name[n++], "absorption_coefficient");
 
@@ -709,7 +691,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
         strcat(name, snumpp);
 
         vars->properties_ipp[n] = ipppro[ipproc[icak[i] -1] -1];
-        vars->propce[n] = ipproc[icak[i] -1] -1;
+        vars->properties_iprop[n] = ipproc[icak[i] -1] -1;
         BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
         strcpy(vars->properties_name[n++], name);
 
@@ -728,123 +710,12 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     bft_printf("==>UIRAPR\n");
     bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
     for (i=0 ; i<vars->nprop ; i++)
-        bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+        bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
                    "properties_name[%i]: %s\n",
                    i, vars->properties_ipp[i],
-                   i, vars->propce[i],
+                   i, vars->properties_iprop[i],
                    i, vars->properties_name[i]);
 #endif
-}
-
-/*----------------------------------------------------------------------------
- * Copy variable name from Fortran to C
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(fcnmra, FCNMRA)
-(
- const char          *const fstr,    /* --> Fortran string */
- int                 *const len,     /* --> String Length  */
- int                 *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  int i, i1, i2, l;
-  char *cstr = NULL;
-
-  assert(*var_id > 0);
-
-  /* Resize array if necessary */
-
-  if (*var_id > _cs_gui_max_vars) {
-
-    if (_cs_gui_max_vars == 0)
-      _cs_gui_max_vars = 16;
-
-    while (_cs_gui_max_vars <= *var_id)
-      _cs_gui_max_vars *= 2;
-
-    BFT_REALLOC(_cs_gui_var_rayt, _cs_gui_max_vars, char *);
-    for (i = _cs_gui_last_var; i < _cs_gui_max_vars; i++)
-      _cs_gui_var_rayt[i] = NULL;
-  }
-
-  /* Compute string length (removing start or end blanks) */
-
-  for (i1 = 0;
-       i1 < *len && (fstr[i1] == ' ' || fstr[i1] == '\t');
-       i1++);
-
-  for (i2 = *len - 1;
-       i2 > i1 && (fstr[i2] == ' ' || fstr[i2] == '\t');
-       i2--);
-
-  l = i2 - i1 + 1;
-
-  /* Should be called once per variable only */
-  assert(_cs_gui_var_rayt[*var_id - 1] == NULL);
-
-  if (l > 0) {
-
-    /* Allocate and copy */
-    BFT_MALLOC(cstr, l + 1, char);
-
-  for (i = 0 ; i < l ; i++, i1++)
-    cstr[i] = fstr[i1];
-
-  cstr[l] = '\0';
-
-    _cs_gui_var_rayt[*var_id - 1] = cstr;
-
-  }
-
-  /* Update variable counter */
-  _cs_gui_last_var = *var_id;
-
-}
-
-/*----------------------------------------------------------------------------
- * Copy variable name from C to Fortran
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cfnmra, CFNMRA)
-(
- char          *const fstr,    /* --> Fortran string */
- int           *const len,     /* --> String Length  */
- int           *const var_id   /* --> Variable Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  int i;
-  int l = 0;
-  char *cstr = NULL;
-
-  /* Check that variable name was set */
-
-  if (*var_id < 1 || *var_id > _cs_gui_last_var)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Name of variable %i was never set.\n"), *var_id);
-
-  /* Copy string */
-
-  cstr = _cs_gui_var_rayt[*var_id - 1];
-
-  if (cstr != NULL) {
-
-  /* Compute string length (removing start or end blanks) */
-
-  l = strlen(cstr);
-  if (l > *len)
-    l = *len;
-
-    for (i = 0; i < l; i++)
-      fstr[i] = cstr[i];
-
-  }
-
-  /* Pad with blanks if necessary */
-
-  for (i = l; i < *len; i++)
-    fstr[i] = ' ';
 }
 
 /*----------------------------------------------------------------------------
@@ -961,17 +832,6 @@ void CS_PROCF (uiray2, UIRAY2)
   for (izone = 0; izone < zones; izone++) {
 
     /* list of faces building */
-
-    /*
-     description = cs_gui_boundary_zone_localization(boundary->label[izone]);
-
-     fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                           description,
-                           &faces,
-                           faces_list);
-
-     BFT_FREE(description);
-    */
 
     faces_list = cs_gui_get_faces_list(izone,
                                        boundaries->label[izone],

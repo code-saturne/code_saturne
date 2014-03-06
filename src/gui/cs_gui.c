@@ -322,7 +322,6 @@ _properties_choice(const char *const property_name)
 static int
 _thermal_table_needed(const char *const name)
 {
-  char *path   = NULL;
   int choice = 0;
 
   char *prop_choice = _properties_choice(name);
@@ -335,24 +334,26 @@ _thermal_table_needed(const char *const name)
 /*-----------------------------------------------------------------------------
  * use MEI for physical property
  *----------------------------------------------------------------------------*/
-void _physical_property(const char *const param,
-                        const char *const symbol,
-                        const cs_int_t  *ncel,
-                        const cs_int_t  *ncelet,
-                        const cs_int_t  *nscaus,
-                        const cs_int_t  *itherm,
-                        const cs_int_t  *iscalt,
-                        const cs_int_t  *icp,
-                        const cs_int_t   isca[],
-                        const cs_real_t *p0,
-                        const cs_real_t *t0,
-                        const cs_real_t *ro0,
-                        const cs_real_t *cp0,
-                        const cs_real_t *viscl0,
-                        const cs_real_t *visls0,
-                        const cs_real_t *viscv0,
-                        const cs_real_t  rtp[],
-                        double values[])
+
+static void
+_physical_property(const char *const param,
+                   const char *const symbol,
+                   const cs_int_t  *ncel,
+                   const cs_int_t  *ncelet,
+                   const cs_int_t  *nscaus,
+                   const cs_int_t  *itherm,
+                   const cs_int_t  *iscalt,
+                   const cs_int_t  *icp,
+                   const cs_int_t   isca[],
+                   const cs_real_t *p0,
+                   const cs_real_t *t0,
+                   const cs_real_t *ro0,
+                   const cs_real_t *cp0,
+                   const cs_real_t *viscl0,
+                   const cs_real_t *visls0,
+                   const cs_real_t *viscv0,
+                   const cs_real_t  rtp[],
+                   double values[])
 {
   cs_var_t  *vars = cs_glob_var;
 
@@ -535,21 +536,22 @@ void _physical_property(const char *const param,
  * use MEI for compressible physical property
  *----------------------------------------------------------------------------*/
 
-void _compressible_physical_property(const char *const param,
-                                     const char *const symbol,
-                                     const cs_int_t   idx,
-                                     const cs_int_t  *ncel,
-                                     const cs_int_t  *ncelet,
-                                     const cs_int_t  *nscaus,
-                                     const cs_int_t  *itempk,
-                                     const cs_int_t   isca[],
-                                     const cs_real_t *p0,
-                                     const cs_real_t *t0,
-                                     const cs_real_t *ro0,
-                                     const cs_real_t *visls0,
-                                     const cs_real_t *viscv0,
-                                     const cs_real_t  rtp[],
-                                           double     propce[])
+static void
+_compressible_physical_property(const char *const param,
+                                const char *const symbol,
+                                const cs_int_t   idx,
+                                const cs_int_t  *ncel,
+                                const cs_int_t  *ncelet,
+                                const cs_int_t  *nscaus,
+                                const cs_int_t  *itempk,
+                                const cs_int_t   isca[],
+                                const cs_real_t *p0,
+                                const cs_real_t *t0,
+                                const cs_real_t *ro0,
+                                const cs_real_t *visls0,
+                                const cs_real_t *viscv0,
+                                const cs_real_t  rtp[],
+                                cs_real_t        propce[])
 {
   int variable = 0;
   char *law = NULL;
@@ -1986,22 +1988,22 @@ void CS_PROCF (uiinit, UIINIT) (void)
 
   BFT_MALLOC(cs_glob_var, 1, cs_var_t);
 
-  cs_glob_var->model           = NULL;
-  cs_glob_var->model_value     = NULL;
-  cs_glob_var->head            = NULL;
-  cs_glob_var->type            = NULL;
-  cs_glob_var->name            = NULL;
-  cs_glob_var->scal_f_id       = NULL;
-  cs_glob_var->rtp             = NULL;
-  cs_glob_var->nvar            = 0;
-  cs_glob_var->nscaus          = 0;
-  cs_glob_var->nscapp          = 0;
-  cs_glob_var->nprop           = 0;
-  cs_glob_var->nsalpp          = 0;
-  cs_glob_var->ntimaver        = 0;
-  cs_glob_var->properties_name = NULL;
-  cs_glob_var->properties_ipp  = NULL;
-  cs_glob_var->propce          = NULL;
+  cs_glob_var->model            = NULL;
+  cs_glob_var->model_value      = NULL;
+  cs_glob_var->head             = NULL;
+  cs_glob_var->type             = NULL;
+  cs_glob_var->name             = NULL;
+  cs_glob_var->scal_f_id        = NULL;
+  cs_glob_var->rtp              = NULL;
+  cs_glob_var->nvar             = 0;
+  cs_glob_var->nscaus           = 0;
+  cs_glob_var->nscapp           = 0;
+  cs_glob_var->nprop            = 0;
+  cs_glob_var->nsalpp           = 0;
+  cs_glob_var->ntimaver         = 0;
+  cs_glob_var->properties_name  = NULL;
+  cs_glob_var->properties_ipp   = NULL;
+  cs_glob_var->properties_iprop = NULL;
 
   BFT_MALLOC(cs_glob_label, 1, cs_label_t);
 
@@ -3567,7 +3569,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
   char *name = NULL;
 
   /* Compute the new size of vars->properties_name,
-     vars->properties_ipp and vars->propce */
+     vars->properties_ipp and vars->properties_iprop */
 
   if (*ismago>0) nbp++;
 
@@ -3600,69 +3602,69 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     /* Fisrt step : before the third call of VARPOS in INIUSI */
 
     BFT_REALLOC(cs_glob_var->properties_ipp,  cs_glob_var->nprop, int);
-    BFT_REALLOC(cs_glob_var->propce,  cs_glob_var->nprop, int);
+    BFT_REALLOC(cs_glob_var->properties_iprop,  cs_glob_var->nprop, int);
     BFT_REALLOC(cs_glob_var->properties_name, cs_glob_var->nprop, char*);
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *irom-1 ]-1 ];
-    cs_glob_var->propce[n] = *irom -1;
+    cs_glob_var->properties_iprop[n] = *irom -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("density")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "density");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iviscl-1 ]-1 ];
-    cs_glob_var->propce[n] = *iviscl -1;
+    cs_glob_var->properties_iprop[n] = *iviscl -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("molecular_viscosity")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "molecular_viscosity");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ivisct-1 ]-1 ];
-    cs_glob_var->propce[n] = *ivisct -1;
+    cs_glob_var->properties_iprop[n] = *ivisct -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("turb_viscosity")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "turb_viscosity");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *icour-1 ]-1 ];
-    cs_glob_var->propce[n] = *icour -1;
+    cs_glob_var->properties_iprop[n] = *icour -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("courant_number")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "courant_number");
 
     cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ifour-1 ]-1 ];
-    cs_glob_var->propce[n] = *ifour -1;
+    cs_glob_var->properties_iprop[n] = *ifour -1;
     BFT_MALLOC(cs_glob_var->properties_name[n], strlen("fourier_number")+1, char);
     strcpy(cs_glob_var->properties_name[n++], "fourier_number");
 
     if (*ismago>0) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ismago-1 ]-1 ];
-      cs_glob_var->propce[n] = *ismago -1;
+      cs_glob_var->properties_iprop[n] = *ismago -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("smagorinsky_constant")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "smagorinsky_constant");
     }
 
     if (*icp > 0) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *icp-1 ]-1 ];
-      cs_glob_var->propce[n] = *icp -1;
+      cs_glob_var->properties_iprop[n] = *icp -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("specific_heat")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "specific_heat");
     }
 
     if (!cs_gui_strcmp(cs_glob_var->model, "compressible_model")) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iprtot-1 ]-1 ];
-      cs_glob_var->propce[n] = *iprtot -1;
+      cs_glob_var->properties_iprop[n] = *iprtot -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("total_pressure")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "total_pressure");
     }
 
     if (*iale) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[0]-1 ]-1 ];
-      cs_glob_var->propce[n] = ivisma[0] -1;
+      cs_glob_var->properties_iprop[n] = ivisma[0] -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_1")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_1");
 
       if (itype == 1) {
         cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[1]-1 ]-1 ];
-        cs_glob_var->propce[n] = ivisma[1] -1;
+        cs_glob_var->properties_iprop[n] = ivisma[1] -1;
         BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_2")+1, char);
         strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_2");
 
         cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisma[2]-1 ]-1 ];
-        cs_glob_var->propce[n] = ivisma[2] -1;
+        cs_glob_var->properties_iprop[n] = ivisma[2] -1;
         BFT_MALLOC(cs_glob_var->properties_name[n], strlen("mesh_viscosity_3")+1, char);
         strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_3");
       }
@@ -3679,7 +3681,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
         if (iscavr[i] <= 0 && ivisls[i] > 0) {
 
           cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ ivisls[i]-1 ]-1 ];
-          cs_glob_var->propce[n] = *ivisls -1;
+          cs_glob_var->properties_iprop[n] = *ivisls -1;
 
           if (*iscalt == i+1) {
             BFT_MALLOC(cs_glob_var->properties_name[n], strlen("thermal_conductivity")+1, char);
@@ -3705,36 +3707,36 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     cs_glob_var->nprop += cs_glob_var->ntimaver;
 
     BFT_REALLOC(cs_glob_var->properties_ipp,  cs_glob_var->nprop, int);
-    BFT_REALLOC(cs_glob_var->propce,  cs_glob_var->nprop, int);
+    BFT_REALLOC(cs_glob_var->properties_iprop,  cs_glob_var->nprop, int);
     BFT_REALLOC(cs_glob_var->properties_name, cs_glob_var->nprop, char*);
 
     if (*idtvar == 1 || *idtvar == 2) {
       cs_glob_var->properties_ipp[n] = *ippdt;
-      cs_glob_var->propce[n] = -1;
+      cs_glob_var->properties_iprop[n] = -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("local_time_step")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "local_time_step");
     }
 
     if (*ipucou == 1) {
       cs_glob_var->properties_ipp[n] = *ipptx;
-      cs_glob_var->propce[n] = -1;
+      cs_glob_var->properties_iprop[n] = -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_X")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "weight_matrix_X");
 
       cs_glob_var->properties_ipp[n] = *ippty;
-      cs_glob_var->propce[n] = -1;
+      cs_glob_var->properties_iprop[n] = -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Y")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Y");
 
       cs_glob_var->properties_ipp[n] = *ipptz;
-      cs_glob_var->propce[n] = -1;
+      cs_glob_var->properties_iprop[n] = -1;
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Z")+1, char);
       strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Z");
     }
 
     for (i=0; i < cs_glob_var->ntimaver; i++) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ icmome[i]-1 ]-1 ];
-      cs_glob_var->propce[n] = ipproc[icmome[i] -1] -1;
+      cs_glob_var->properties_iprop[n] = ipproc[icmome[i] -1] -1;
       name = _get_time_average_label(i+1);
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen(name)+1, char);
       strcpy(cs_glob_var->properties_name[n++], name);
@@ -3754,7 +3756,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
         "properties_name[%i]: %s\n",
         i, cs_glob_var->properties_ipp[i],
-        i, cs_glob_var->propce[i],
+        i, cs_glob_var->properties_iprop[i],
         i, cs_glob_var->properties_name[i]);
   }
 #endif
@@ -3805,7 +3807,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 
       for (j=0 ; j < cs_glob_var->nprop; j++) {
         if (cs_gui_strcmp(name, cs_glob_var->properties_name[j]))
-          idfmom[(imom-1)*(*ndgmox) + n] = -(cs_glob_var->propce[j] +1);
+          idfmom[(imom-1)*(*ndgmox) + n] = -(cs_glob_var->properties_iprop[j] +1);
       }
 
       BFT_FREE(name);
@@ -5422,7 +5424,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
       bool _th_f_use_cp[] = {true, false, false};
 
-      for (int i = 0; i < 3; i++)
+      for (i = 0; i < 3; i++)
         if (_th_f[i]) {
           if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
             th_f_use_cp = _th_f_use_cp[i];
@@ -5805,7 +5807,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
               for (j=0; j < vars->nprop; j++) {
                 if (cs_gui_strcmp(name, vars->properties_name[j]))
                   array[iii+4]
-                    = propce[ipproc[vars->propce[j]] * (*ncelet) + iel];
+                    = propce[ipproc[vars->properties_iprop[j]] * (*ncelet) + iel];
               }
 
               BFT_FREE(name);
@@ -6205,7 +6207,7 @@ cs_gui_clean_memory(void)
   BFT_FREE(cs_glob_var->model_value);
   BFT_FREE(cs_glob_var->rtp);
   BFT_FREE(cs_glob_var->properties_ipp);
-  BFT_FREE(cs_glob_var->propce);
+  BFT_FREE(cs_glob_var->properties_iprop);
   BFT_FREE(cs_glob_var);
 
   for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)

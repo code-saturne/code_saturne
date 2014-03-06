@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppprop &
+subroutine ppprop
 !================
-
- ( ipropp , ipppst )
 
 !===============================================================================
 !  FONCTION  :
@@ -37,18 +35,11 @@ subroutine ppprop &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce)             !
-! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
-!                  !    !     !  derniere grandeur definie aux                 !
-!                  !    !     !  cellules (rtp,propce...) pour le              !
-!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -73,16 +64,19 @@ use ppincl
 
 implicit none
 
-! Arguments
+! Local variables
 
 integer       ipropp, ipppst
 
 !===============================================================================
 
+ipropp = nproce
+ipppst = nvpp
+
 ! ---> Physique particuliere : Combustion Gaz
 
-if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
-                         .or. ippmod(icolwc).ge.0 ) then
+if (ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
+                        .or. ippmod(icolwc).ge.0) then
   call coprop(ipropp,ipppst)
   !==========
 endif
@@ -97,21 +91,21 @@ endif
 ! ---> Physique particuliere :  Combustion Charbon Pulverise
 !      Couplee Transport Lagrangien des particules de charbon
 
-if ( ippmod(icpl3c).ge.0 ) then
+if (ippmod(icpl3c).ge.0) then
   call cplpro (ipropp,ipppst)
   !==========
 endif
 
 ! ---> Physique particuliere : Combustion Fuel
 
-if ( ippmod(icfuel).ge.0 ) then
+if (ippmod(icfuel).ge.0) then
   call cs_fuel_prop(ipropp,ipppst)
   !================
 endif
 
 ! ---> Physique particuliere : Compressible
 
-if ( ippmod(icompf).ge.0 ) then
+if (ippmod(icompf).ge.0) then
   call cfprop(ipropp,ipppst)
   !==========
 endif
@@ -129,9 +123,12 @@ endif
 
 ! ---> Atmospheric modules:
 !      dry and humid atmosphere (ippmod(iatmos) = 1,2)
-if ( ippmod(iatmos).ge.1 ) then
+if (ippmod(iatmos).ge.1) then
   call atprop(ipropp,ipppst)
   !==========
 endif
 
-end subroutine
+nproce = ipropp
+nvpp   = ipppst
+
+end subroutine ppprop

@@ -485,5 +485,75 @@ cs_field_pointer_map_gas_combustion(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for radiation module
+ *
+ * \param[in]  n_r_phases  number of radiating phases: 1 + possibly
+ *                         number of combustible classes (coal, fuel)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_radiation(int  n_r_phases)
+{
+  char s[64], suffix[16];
+
+  cs_field_pointer_map(CS_ENUMF_(rad_lumin),
+                       cs_field_by_name_try("luminance"));
+  cs_field_pointer_map(CS_ENUMF_(rad_q),
+                       cs_field_by_name_try("radiative_flux"));
+
+  for (int i = 0; i < n_r_phases; i++) {
+
+    if (i > 0) {
+      snprintf(suffix, 15, "_%02d", i+1);
+      suffix[15] = '\0';
+    }
+    else
+      suffix[0] = '\0';
+
+    snprintf(s, 63, "rad_source_term%s", suffix); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(rad_ets), i, cs_field_by_name_try(s));
+
+    snprintf(s, 63, "rad_source_term_implicit%s", suffix); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(rad_its), i, cs_field_by_name_try(s));
+
+    snprintf(s, 63, "rad_absorption%s", suffix); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(rad_abs), i, cs_field_by_name_try(s));
+
+    snprintf(s, 63, "rad_emission%s", suffix); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(rad_emi), i, cs_field_by_name_try(s));
+
+    snprintf(s, 63, "rad_absorption_coeff%s", suffix); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), i, cs_field_by_name_try(s));
+
+  }
+
+  cs_field_pointer_map(CS_ENUMF_(tparo),
+                       cs_field_by_name_try("wall_temperature"));
+
+  cs_field_pointer_map(CS_ENUMF_(qinci),
+                       cs_field_by_name_try("incident_radiative_flux_density"));
+
+  cs_field_pointer_map(CS_ENUMF_(xlam),
+                       cs_field_by_name_try("wall_thermal_conductivity"));
+
+  cs_field_pointer_map(CS_ENUMF_(epa),
+                       cs_field_by_name_try("wall_thickness"));
+
+  cs_field_pointer_map(CS_ENUMF_(emissivity),
+                       cs_field_by_name_try("emissivity"));
+
+  cs_field_pointer_map(CS_ENUMF_(fnet),
+                       cs_field_by_name_try("net_radiative_flux"));
+
+  cs_field_pointer_map(CS_ENUMF_(fconv),
+                       cs_field_by_name_try("radiation_convective_flux"));
+
+  cs_field_pointer_map(CS_ENUMF_(hconv),
+                       cs_field_by_name_try("radiation_exchange_coefficient"));
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
