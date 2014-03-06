@@ -690,7 +690,7 @@ endif
 ! The state equation is used P   =P(RHO   ,H   )
 
 ! Computation of P and T at cell centers
-call cf_thermo_PT_from_DE(crom, rtp(1,isca(ienerg)), rtp(1,ipr),         &
+call cf_thermo_pt_from_de(crom, rtp(1,isca(ienerg)), rtp(1,ipr),         &
                           rtp(1,isca(itempk)),                           &
                           rtp(1,iu), rtp(1,iv), rtp(1,iw), ncel)
 
