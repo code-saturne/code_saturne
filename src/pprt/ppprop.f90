@@ -83,8 +83,8 @@ endif
 
 ! ---> Physique particuliere :  Combustion Charbon Pulverise
 
-if ( ippmod(iccoal).ge.0 ) then
-  call cs_coal_prop(ipropp,ipppst)
+if (ippmod(iccoal).ge.0) then
+  call cs_coal_prop
   !================
 endif
 

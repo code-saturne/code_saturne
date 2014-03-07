@@ -69,7 +69,7 @@ use field
 
 implicit none
 
-integer          ipp , icla , ii , jj , iok
+integer          ii , jj , iok
 integer          icha , isc
 
 double precision wmolme
@@ -123,15 +123,14 @@ do isc = 1, nscapp
 ! ------ Niveau de detail des impressions pour les variables et
 !          donc les scalaires (valeurs 0 ou 1)
 !          Si = -10000 non modifie par l'utilisateur -> niveau 1
-  if(iwarni(ii).eq.-10000) then
+  if (iwarni(ii).eq.-10000) then
     iwarni(ii) = 1
   endif
 
 !   - Interface Code_Saturne:
 !     ======================
 
-!   NOMVAR, ICHRVR,ILISVR, IHISVR are
-!   already filled in UINUM1 routine
+!   ihisvr is already filled in UINUM1 routine
 
   if (iihmpr.ne.1) then
 
@@ -163,287 +162,8 @@ do isc = 1, nscapp
 
 enddo
 
-!   - Interface Code_Saturne:
-!     ======================
-
-!   NOMVAR, ICHRVR,ILISVR, IHISVR are
-!   already filled in CSENSO routine
-
-if (iihmpr.ne.1) then
-
-!---> Variable courante : nom, sortie chrono, suivi listing, sortie histo
-
-!     Comme pour les autres variables,
-!       si l'on n'affecte pas les tableaux suivants,
-!       les valeurs par defaut seront utilisees
-
-!     NOMVAR( ) = nom de la variable
-!     ICHRVR( ) = sortie chono (oui 1/non 0)
-!     ILISVR( ) = suivi listing (oui 1/non 0)
-!     IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!     si IHISVR(.,1)  = -1 sortie sur toutes les sondes
-
-!     NB : Les 8 premiers caracteres du noms seront repris dans le
-!          listing 'developpeur'
-
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
-!===============================================================================
-
-! ---> Variables algebriques propres a la suspension gaz - particules
-  ipp = ipppro(ipproc(immel))
-  nomprp(ipproc(immel))   = 'XM'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-! ---> Variables algebriques propres a la phase dispersee
-  do icla = 1, nclacp
-    ipp = ipppro(ipproc(itemp2(icla)))
-    write(nomprp(ipproc(itemp2(icla))),'(a6,i2.2)')'Tem_CP' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(irom2(icla)))
-    write(nomprp(ipproc(irom2(icla))),'(a6,i2.2)')'Rho_CP' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(idiam2(icla)))
-    write(nomprp(ipproc(idiam2(icla))),'(a6,i2.2)')'Dia_CK' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(igmdch(icla)))
-    write(nomprp(ipproc(igmdch(icla))),'(a6,i2.2)')'Ga_DCH' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(igmdv1(icla)))
-    write(nomprp(ipproc(igmdv1(icla))),'(a6,i2.2)')'Ga_DV1' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(igmdv2(icla)))
-    write(nomprp(ipproc(igmdv2(icla))),'(a6,i2.2)')'Ga_DV2' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(igmhet(icla)))
-    write(nomprp(ipproc(igmhet(icla))),'(a9,i2.2)')'Ga_HET_O2' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    if ( ihtco2 .eq. 1 ) then
-      ipp = ipppro(ipproc(ighco2(icla)))
-      write(nomprp(ipproc(ighco2(icla))),'(a10,i2.2)')'Ga_HET_CO2' ,icla
-      ichrvr(ipp)   = 1
-      ilisvr(ipp)   = 1
-      ihisvr(ipp,1) = -1
-    endif
-    if ( ihth2o .eq. 1 ) then
-      ipp = ipppro(ipproc(ighh2o(icla)))
-      write(nomprp(ipproc(ighh2o(icla))),'(a10,i2.2)')'Ga_HET_H2O' ,icla
-      ichrvr(ipp)   = 1
-      ilisvr(ipp)   = 1
-      ihisvr(ipp,1) = -1
-    endif
-    if ( ippmod(iccoal) .eq. 1 ) then
-      ipp = ipppro(ipproc(igmsec(icla)))
-      write(nomprp(ipproc(igmsec(icla))),'(a6,i2.2)')'Ga_SEC' ,icla
-      ichrvr(ipp)   = 1
-      ilisvr(ipp)   = 1
-      ihisvr(ipp,1) = -1
-    endif
-    ipp = ipppro(ipproc(ix2(icla)))
-    write(nomprp(ipproc(ix2(icla))),'(a6,i2.2)')'Frm_CP' ,icla
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-  enddo
-! ---> Variables algebriques propres a la phase continue
-  ipp = ipppro(ipproc(itemp1))
-  nomprp(ipproc(itemp1))   = 'Temp_GAZ'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(irom1))
-  nomprp(ipproc(irom1))   = 'ROM_GAZ'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(1)))
-  nomprp(ipproc(iym1(1)))   = 'YM_CHx1m'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(2)))
-  nomprp(ipproc(iym1(2)))   = 'YM_CHx2m'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(3)))
-  nomprp(ipproc(iym1(3)))   = 'YM_CO'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(4)))
-  nomprp(ipproc(iym1(4)))   = 'YM_H2S'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(5)))
-  nomprp(ipproc(iym1(5)))   = 'YM_H2'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(6)))
-  nomprp(ipproc(iym1(6)))   = 'YM_HCN'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(7)))
-  nomprp(ipproc(iym1(7)))   = 'YM_NH3'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(8)))
-  nomprp(ipproc(iym1(8)))   = 'YM_O2'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(9)))
-  nomprp(ipproc(iym1(9)))   = 'YM_CO2'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(10)))
-  nomprp(ipproc(iym1(10)))   = 'YM_H2O'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(11)))
-  nomprp(ipproc(iym1(11)))   = 'YM_SO2'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym1(12)))
-  nomprp(ipproc(iym1(12)))   = 'YM_N2'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  if ( ieqnox .eq. 1 ) then
-    ipp = ipppro(ipproc(ighcn1))
-    nomprp(ipproc(ighcn1))   = 'EXP1'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ighcn2))
-    nomprp(ipproc(ighcn2))   = 'EXP2'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ignoth))
-    nomprp(ipproc(ignoth))   = 'EXP3'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ignh31))
-    nomprp(ipproc(ignh31))   = 'EXP4'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ignh32))
-    nomprp(ipproc(ignh32))   = 'EXP5'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifhcnd))
-    nomprp(ipproc(ifhcnd))   = 'F_HCN_DEV'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifhcnc))
-    nomprp(ipproc(ifhcnc))   = 'F_HCN_HET'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifnh3d))
-    nomprp(ipproc(ifnh3d))   = 'F_NH3_DEV'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifnh3c))
-    nomprp(ipproc(ifnh3c))   = 'F_NH3_HET'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifnohc))
-    nomprp(ipproc(ifnohc))   = 'F_NO_HCN'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifnonh))
-    nomprp(ipproc(ifnonh))   = 'F_NO_NH3'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifnoch))
-    nomprp(ipproc(ifnoch))   = 'F_NO_HET'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifnoth))
-    nomprp(ipproc(ifnoth))   = 'F_NO_THE'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(icnohc))
-    nomprp(ipproc(icnohc))   = 'C_NO_HCN'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(icnonh))
-    nomprp(ipproc(icnonh))   = 'C_NO_NH3'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(ifhcnr))
-    nomprp(ipproc(ifhcnr))   = 'F_HCN_RB'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(icnorb))
-    nomprp(ipproc(icnorb))   = 'C_NO_RB'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-    ipp = ipppro(ipproc(igrb))
-    nomprp(ipproc(igrb))   = 'EXP_RB'
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-  endif
-!
-  ipp = ipppro(ipproc(ibcarbone))
-  nomprp(ipproc(ibcarbone))   = 'Bilan_C'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iboxygen))
-  nomprp(ipproc(iboxygen))   = 'Bilan_O'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(ibhydrogen))
-  nomprp(ipproc(ibhydrogen))   = 'Bilan_H'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-!
-endif
-
-!===============================================================================
-! 3. INFORMATIONS COMPLEMENTAIRES
+! 2. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
 ! ---> Initialisation
 
@@ -484,13 +204,13 @@ irovar = 1
 ivivar = 0
 
 !===============================================================================
-! 4. ON REDONNE LA MAIN A L'UTLISATEUR
+! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call uicpi1(srrom, diftl0)
   !==========
@@ -503,14 +223,14 @@ call user_coal_ini1
 !==================
 
 !===============================================================================
-! 5. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
+! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
 !===============================================================================
 
 iok = 0
 call cs_coal_verify (iok)
 !=====================
 
-if(iok.gt.0) then
+if (iok.gt.0) then
   write(nfecra,9999)iok
   call csexit (1)
   !==========

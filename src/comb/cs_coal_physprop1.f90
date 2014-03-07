@@ -226,9 +226,9 @@ ipass = ipass + 1
 
 if (i_coal_drift.eq.1) then
   ! Mass weighted age of the gas phase
-  call field_get_val_s_by_name('X_Age_Gas',xagepg)
+  call field_get_val_s_by_name('x_age_gas',xagepg)
   ! Age of the gas phase
-  call field_get_val_s_by_name('Age_Gas',agepgc)
+  call field_get_val_s_by_name('age_gas',agepgc)
 endif
 
 !===============================================================================

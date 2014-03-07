@@ -20,35 +20,25 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_prop &
+subroutine cs_coal_prop
 !======================
- ( ipropp , ipppst )
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
-!         COMBUSTION CHARBON PULVERISE
-!   (DANS VECTEURS PROPCE)
+! Define state variables for cpulverized coal combustion.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce)             !
-! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
-!                  !    !     !  derniere grandeur definie aux                 !
-!                  !    !     !  cellules (rtp,propce...) pour le              !
-!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -76,21 +66,16 @@ use field
 
 implicit none
 
-! Arguments
-
-integer          ipropp, ipppst
-
 ! Local variables
 
-integer          iprop, ige , icla, iprop2
-integer          f_id, itycat, ityloc, idim1
+integer          icla
+integer          f_id, itycat, ityloc, idim1, nprini
 integer          keyccl
 integer          iopchr
 
 logical          ilved, iprev, inoprv
 
-character*80     f_name
-
+character(len=80) :: f_name, f_label
 
 !===============================================================================
 
@@ -107,101 +92,104 @@ call field_get_key_id("scalar_class", keyccl)
 
 ! ---> Definition des pointeurs relatifs aux variables d'etat
 
-iprop = ipropp
+nprini = nproce
 
-!    Phase continue (melange gazeux)
-iprop   = iprop + 1
-itemp1  = iprop
-iprop   = iprop + 1
-irom1  = iprop
-do ige = 1,ngazg
-! ---- Cf. definition de NGAZE dans cs_coal_readata
-  iprop     = iprop + 1
-  iym1(ige) = iprop
-enddo
-iprop = iprop + 1
-immel = iprop
+! Continuous phase (gaseous mix)
+call add_property_field('t_gas', 'T_Gas', itemp1)
+call add_property_field('rho_gas', 'Rho_Gas', irom1)
 
-if ( ieqnox .eq. 1 ) then
-  iprop  = iprop + 1
-  ighcn1 = iprop
+! Gas mixture fractions
+call add_property_field('ym_chx1m', 'Ym_CHx1m', iym1(1))
+call add_property_field('ym_chx2m', 'Ym_CHx2m', iym1(2))
+call add_property_field('ym_co',    'Ym_CO',    iym1(3))
+call add_property_field('ym_h2s',   'Ym_H2S',   iym1(4))
+call add_property_field('ym_h2',    'Ym_H2',    iym1(5))
+call add_property_field('ym_hcn',   'Ym_HCN',   iym1(6))
+call add_property_field('ym_nh3',   'Ym_NH3',   iym1(7))
+call add_property_field('ym_o2',    'Ym_O2',    iym1(8))
+call add_property_field('ym_co2',   'Ym_CO2',   iym1(9))
+call add_property_field('ym_h2o',   'Ym_H2O',   iym1(10))
+call add_property_field('ym_so2',   'Ym_SO2',   iym1(11))
+call add_property_field('ym_n2',    'Ym_N2',    iym1(12))
 
-  iprop  = iprop + 1
-  ighcn2 = iprop
+! Algebraic variables specific to gas - particles suspension
+call add_property_field('xm',    'Xm',    immel)
 
-  iprop  = iprop + 1
-  ignoth = iprop
-
-  iprop  = iprop + 1
-  ignh31 = iprop
-
-  iprop  = iprop + 1
-  ignh32 = iprop
-
-  iprop  = iprop + 1
-  ifhcnd = iprop
-
-  iprop  = iprop + 1
-  ifhcnc = iprop
-
-  iprop  = iprop + 1
-  ifnh3d = iprop
-
-  iprop  = iprop + 1
-  ifnh3c = iprop
-
-  iprop  = iprop + 1
-  ifnohc = iprop
-
-  iprop  = iprop + 1
-  ifnonh = iprop
-
-  iprop  = iprop + 1
-  ifnoch = iprop
-
-  iprop  = iprop + 1
-  ifnoth = iprop
-
-  iprop  = iprop + 1
-  icnohc = iprop
-
-  iprop  = iprop + 1
-  icnonh = iprop
-
-  iprop  = iprop + 1
-  ifhcnr = iprop
-
-  iprop  = iprop + 1
-  icnorb = iprop
-
-  iprop  = iprop + 1
-  igrb   = iprop
-
+! Algebraic variables specific to continuous phase
+if (ieqnox .eq. 1) then
+  call add_property_field('exp1',      'EXP1',      ighcn1)
+  call add_property_field('exp2',      'EXP1',      ighcn2)
+  call add_property_field('exp3',      'EXP3',      ignoth)
+  call add_property_field('exp4',      'EXP4',      ignh31)
+  call add_property_field('exp5',      'EXP5',      ignh32)
+  call add_property_field('f_hcn_dev', 'F_HCN_DEV', ifhcnd)
+  call add_property_field('f_hcn_het', 'F_HCN_HET', ifhcnc)
+  call add_property_field('f_nh3_dev', 'F_NH3_DEV', ifnh3d)
+  call add_property_field('f_nh3_het', 'F_NH3_HET', ifnh3c)
+  call add_property_field('f_no_hcn',  'F_NO_HCN',  ifnohc)
+  call add_property_field('f_no_nh3',  'F_NO_NH3',  ifnonh)
+  call add_property_field('f_no_het',  'F_NO_HET',  ifnoch)
+  call add_property_field('f_no_the',  'F_NO_THE',  ifnoth)
+  call add_property_field('c_no_hcn',  'C_NO_HCN',  icnohc)
+  call add_property_field('c_no_nh3',  'C_NO_NH3',  icnonh)
+  call add_property_field('f_hcn_rb',  'F_HCN_RB',  ifhcnr)
+  call add_property_field('c_no_rb',   'C_NO_RB',   icnorb)
+  call add_property_field('exp_rb',    'Exp_RB',    igrb)
 endif
 
-iprop2 = iprop
-
-!   Phase dispersee (classes de particules)
+! Dispersed phase (particle classes)
 do icla = 1, nclacp
-  iprop        = iprop2 + icla
-  itemp2(icla) = iprop
-  iprop        = iprop2 + 1*nclacp + icla
-  ix2(icla)    = iprop
-  iprop        = iprop2 + 2*nclacp + icla
-  irom2(icla)  = iprop
-  iprop        = iprop2 + 3*nclacp + icla
-  idiam2(icla) = iprop
-  iprop        = iprop2 + 4*nclacp + icla
-  igmdch(icla) = iprop
-  iprop        = iprop2 + 5*nclacp + icla
-  igmdv1(icla) = iprop
-  iprop        = iprop2 + 6*nclacp + icla
-  igmdv2(icla) = iprop
-  iprop        = iprop2 + 7*nclacp + icla
-  igmhet(icla) = iprop
+  write(f_name,  '(a,i2.2)') 't_coal', icla
+  write(f_label, '(a,i2.2)') 'T_Coal', icla
+  call add_property_field(f_name, f_label, itemp2(icla))
+enddo
 
-  if (i_coal_drift.eq.1) then
-    write(f_name,'(a6,i2.2)')'Age_CP' ,icla
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'w_solid_coal', icla
+  write(f_label, '(a,i2.2)') 'w_solid_coal', icla
+  call add_property_field(f_name, f_label, ix2(icla))
+enddo
+
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'rho_coal', icla
+  write(f_label, '(a,i2.2)') 'Rho_Coal', icla
+  call add_property_field(f_name, f_label, irom2(icla))
+enddo
+
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'diameter_coal', icla
+  write(f_label, '(a,i2.2)') 'Diam_Coal', icla
+  call add_property_field(f_name, f_label, idiam2(icla))
+enddo
+
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'dissapear_rate_coal', icla
+  write(f_label, '(a,i2.2)') 'D_Rate_Coal', icla
+  call add_property_field(f_name, f_label, igmdch(icla))
+enddo
+
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'm_transfer_v1_coal', icla
+  write(f_label, '(a,i2.2)') 'D_V1_Coal', icla
+  call add_property_field(f_name, f_label, igmdv1(icla))
+enddo
+
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'm_transfer_v2_coal', icla
+  write(f_label, '(a,i2.2)') 'D_V2_Coal', icla
+  call add_property_field(f_name, f_label, igmdv2(icla))
+enddo
+
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'het_ts_o2_coal', icla
+  write(f_label, '(a,i2.2)') 'Het_TS_O2_Coal', icla
+  call add_property_field(f_name, f_label, igmhet(icla))
+enddo
+
+if (i_coal_drift.eq.1) then
+  do icla = 1, nclacp
+    write(f_name,'(a,i2.2)') 'age_coal', icla
+    write(f_name,'(a,i2.2)') 'Age_Coal', icla
     call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
@@ -210,40 +198,32 @@ do icla = 1, nclacp
     call field_set_key_int(f_id, keyvis, iopchr)
     ! For log in the listing
     call field_set_key_int(f_id, keylog, 1)
-  endif
+  enddo
+endif
 
-  if (ihtco2 .eq. 1) then
-    iprop        = iprop2 + 8*nclacp + icla
-    ighco2(icla) = iprop
-    if ( ihth2o .eq. 1 ) then
-      iprop        = iprop2 + 9*nclacp + icla
-      ighh2o(icla) = iprop
-      if ( ippmod(iccoal) .ge. 1 ) then
-        iprop        = iprop2 + 10*nclacp + icla
-        igmsec(icla) = iprop
-      endif
-    else
-      if ( ippmod(iccoal) .ge. 1 ) then
-        iprop        = iprop2 + 9*nclacp + icla
-        igmsec(icla) = iprop
-      endif
-    endif
-  else
-    if ( ihth2o .eq. 1 ) then
-      iprop        = iprop2 + 8*nclacp + icla
-      ighh2o(icla) = iprop
-      if ( ippmod(iccoal) .ge. 1 ) then
-        iprop        = iprop2 + 9*nclacp + icla
-        igmsec(icla) = iprop
-      endif
-    else
-      if ( ippmod(iccoal) .ge. 1 ) then
-        iprop        = iprop2 + 8*nclacp + icla
-        igmsec(icla) = iprop
-      endif
-    endif
-  endif
-enddo
+if (ihtco2 .eq. 1) then
+  do icla = 1, nclacp
+    write(f_name,  '(a,i2.2)') 'het_ts_co2_coal', icla
+    write(f_label, '(a,i2.2)') 'Het_TS_CO2_Coal', icla
+    call add_property_field(f_name, f_label, ighco2(icla))
+  enddo
+endif
+
+if (ihth2o .eq. 1) then
+  do icla = 1, nclacp
+    write(f_name,  '(a,i2.2)') 'het_ts_h2o_coal',  icla
+    write(f_label, '(a,i2.2)') 'Het_TS_H2O_Coal', icla
+    call add_property_field(f_name, f_label, ighh2o(icla))
+  enddo
+endif
+
+if (ippmod(iccoal) .ge. 1) then
+  do icla = 1, nclacp
+    write(f_name,  '(a,i2.2)') 'dry_ts_coal',  icla
+    write(f_label, '(a,i2.2)') 'Dry_TS_Coal', icla
+    call add_property_field(f_name, f_label, igmsec(icla))
+  enddo
+endif
 
 if (i_coal_drift.eq.1) then
   icla = -1
@@ -259,267 +239,18 @@ if (i_coal_drift.eq.1) then
   call field_set_key_int(f_id, keylog, 1)
 endif
 
-!
-! Bilan : C , O , H
-!
-iprop     = iprop + 1
-ibcarbone = iprop
-iprop     = iprop + 1
-iboxygen  = iprop
-iprop     = iprop + 1
-ibhydrogen= iprop
+! Balance: C,  O,  H
 
-! ---- Nb de variables algebriques (ou d'etat)
-!         propre a la physique particuliere NSALPP
-!         total NSALTO
+call add_property_field('balance_c', 'Balance_C', ibcarbone)
+call add_property_field('balance_o', 'Balance_O', iboxygen)
+call add_property_field('balance_h', 'Balance_H', ibhydrogen)
 
-nsalpp = iprop - ipropp
-nsalto = iprop
+! Nb algebraic (or state) variables
+!   specific to specific physic: nsalpp
+!   total: nsalto
 
-! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
-!         etre numerotees ensuite
-
-ipropp = iprop
-
-! ---> Positionnement dans le tableau PROPCE
-!      et reperage du rang pour le post-traitement
-
-iprop         = nproce
-
-!    Phase continue (melange gazeux)
-iprop           = iprop + 1
-ipproc(itemp1)  = iprop
-ipppst          = ipppst + 1
-ipppro(iprop)   = ipppst
-
-iprop           = iprop + 1
-ipproc(irom1)   = iprop
-ipppst          = ipppst + 1
-ipppro(iprop)   = ipppst
-
-do ige = 1, (ngaze-2*ncharb)
-! ---- Cf. definition de NGAZE dans cs_coal_readata
-  iprop                 = iprop + 1
-  ipproc(iym1(ige))     = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-enddo
-
-iprop                 = iprop + 1
-ipproc(immel)         = iprop
-ipppst                = ipppst + 1
-ipppro(iprop)         = ipppst
-
-!
-if ( ieqnox .eq. 1 ) then
-  iprop                 = iprop + 1
-  ipproc(ighcn1)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ighcn2)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ignoth)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-! Positionnement des variables EXP4 et EXP5 dans le tableau de propriete
-  iprop                 = iprop + 1
-  ipproc(ignh31)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ignh32)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-! Affichage des termes source
-  iprop                 = iprop + 1
-  ipproc(ifhcnd)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifhcnc)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifnh3d)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifnh3c)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifnohc)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifnonh)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifnoch)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifnoth)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(icnohc)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(icnonh)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(ifhcnr)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(icnorb)        = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-!
-  iprop                 = iprop + 1
-  ipproc(igrb)          = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-endif
-
-iprop2 = iprop
-
-!   Phase dispersee (classes de particules)
-do icla = 1, nclacp
-
-  iprop                 = iprop2 + icla
-  ipproc(itemp2(icla))  = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  iprop                 = iprop2 + 1*nclacp + icla
-  ipproc(ix2(icla))     = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  iprop                 = iprop2 + 2*nclacp + icla
-  ipproc(irom2(icla))   = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  iprop                 = iprop2 + 3*nclacp + icla
-  ipproc(idiam2(icla))  = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  iprop                 = iprop2 + 4*nclacp + icla
-  ipproc(igmdch(icla))  = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  iprop                 = iprop2 + 5*nclacp + icla
-  ipproc(igmdv1(icla))  = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  iprop                 = iprop2 + 6*nclacp + icla
-  ipproc(igmdv2(icla))  = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  iprop                 = iprop2 + 7*nclacp + icla
-  ipproc(igmhet(icla))  = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  if ( ihtco2 .eq. 1 ) then
-    iprop                 = iprop2 + 8*nclacp + icla
-    ipproc(ighco2(icla))  = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    if ( ihth2o .eq. 1 ) then
-      iprop                 = iprop2 + 9*nclacp + icla
-      ipproc(ighh2o(icla))  = iprop
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-
-      if ( ippmod(iccoal) .eq. 1 ) then
-        iprop                 = iprop2 + 10*nclacp + icla
-        ipproc(igmsec(icla))  = iprop
-        ipppst                = ipppst + 1
-        ipppro(iprop)         = ipppst
-      endif
-
-    else
-      if ( ippmod(iccoal) .eq. 1 ) then
-        iprop                 = iprop2 + 9*nclacp + icla
-        ipproc(igmsec(icla))  = iprop
-        ipppst                = ipppst + 1
-        ipppro(iprop)         = ipppst
-      endif
-    endif
-
-  else
-    if ( ihth2o .eq. 1 ) then
-      iprop                 = iprop2 + 8*nclacp + icla
-      ipproc(ighh2o(icla))  = iprop
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-
-      if ( ippmod(iccoal) .eq. 1 ) then
-        iprop                 = iprop2 + 9*nclacp + icla
-        ipproc(igmsec(icla))  = iprop
-        ipppst                = ipppst + 1
-        ipppro(iprop)         = ipppst
-      endif
-
-    else
-      if ( ippmod(iccoal) .eq. 1 ) then
-        iprop                 = iprop2 + 8*nclacp + icla
-        ipproc(igmsec(icla))  = iprop
-        ipppst                = ipppst + 1
-        ipppro(iprop)         = ipppst
-      endif
-    endif
-  endif
-
-enddo
-!
-! Bilan C , O , H
-!
-iprop              = iprop  + 1
-ipproc(ibcarbone)  = iprop
-ipppst             = ipppst + 1
-ipppro(iprop)      = ipppst
-!
-iprop              = iprop  + 1
-ipproc(iboxygen)   = iprop
-ipppst             = ipppst + 1
-ipppro(iprop)      = ipppst
-!
-iprop              = iprop  + 1
-ipproc(ibhydrogen) = iprop
-ipppst             = ipppst + 1
-ipppro(iprop)      = ipppst
-!
-nproce = iprop
+nsalpp = nproce - nprini
+nsalto = nproce
 
 !   - Interface Code_Saturne
 !     ======================

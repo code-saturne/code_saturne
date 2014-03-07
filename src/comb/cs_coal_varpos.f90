@@ -131,8 +131,8 @@ iscdri = i_coal_drift
 
 do icla = 1, nclacp
 
-  write(f_name,'(a8,i2.2)') 'np_coal_', icla
-  write(f_label,'(a5,i2.2)') 'Np_CP', icla
+  write(f_name,'(a,i2.2)') 'np_coal', icla
+  write(f_label,'(a,i2.2)') 'Np_Coal', icla
   call add_model_scalar_field(f_name, f_label, inp(icla))
   f_id = ivarfl(isca(inp(icla)))
 
@@ -154,8 +154,8 @@ enddo
 
 do icla = 1, nclacp
 
-  write(f_name,'(a7,i2.2)') 'x_coal_', icla
-  write(f_label,'(a6,i2.2)') 'Xch_CP', icla
+  write(f_name,'(a,i2.2)') 'x_coal', icla
+  write(f_label,'(a,i2.2)') 'Xch_Coal', icla
   call add_model_scalar_field(f_name, f_label, ixch(icla))
   f_id = ivarfl(isca(ixch(icla)))
 
@@ -177,8 +177,8 @@ enddo
 
 do icla = 1, nclacp
 
-  write(f_name,'(a9,i2.2)') 'xck_coal_', icla
-  write(f_label,'(a6,i2.2)') 'xck_cp', icla
+  write(f_name,'(a,i2.2)') 'xck_coal', icla
+  write(f_label,'(a,i2.2)') 'Xck_Coal', icla
   call add_model_scalar_field(f_name, f_label, ixck(icla))
   f_id = ivarfl(isca(ixck(icla)))
 
@@ -202,8 +202,8 @@ if (ippmod(iccoal).eq.1) then
 
   do icla = 1, nclacp
 
-    write(f_name,'(a9,i2.2)') 'xwt_coal_', icla
-    write(f_label,'(a6,i2.2)') 'Xwt_CP', icla
+    write(f_name,'(a,i2.2)') 'xwt_coal', icla
+    write(f_label,'(a,i2.2)') 'Xwt_Coal', icla
     call add_model_scalar_field(f_name, f_label, ixwt(icla))
     f_id = ivarfl(isca(ixwt(icla)))
 
@@ -228,8 +228,8 @@ endif
 
 do icla = 1, nclacp
 
-  write(f_name,'(a8,i2.2)') 'h2_coal_', icla
-  write(f_label,'(a6,i2.2)') 'Ent_CP', icla
+  write(f_name,'(a,i2.2)') 'h2_coal', icla
+  write(f_label,'(a,i2.2)') 'Ent_Coal', icla
   call add_model_scalar_field(f_name, f_label, ih2(icla))
   f_id = ivarfl(isca(ih2(icla)))
 
@@ -247,14 +247,14 @@ do icla = 1, nclacp
 
 enddo
 
-! Field X_Age
+! Field x_age
 
 if (i_coal_drift.eq.1) then
 
   do icla = 1, nclacp
 
-    write(f_name,'(a11,i2.2)') 'x_age_coal_', icla
-    write(f_label,'(a9,i2.2)') 'X_Age_CP', icla
+    write(f_name,'(a,i2.2)') 'x_age_coal', icla
+    write(f_label,'(a,i2.2)') 'X_Age_Coal', icla
     call add_model_scalar_field(f_name, f_label, iagecp_temp(icla))
     f_id = ivarfl(isca(iagecp_temp(icla)))
 

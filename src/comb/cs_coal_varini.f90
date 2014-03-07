@@ -197,7 +197,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     icha = ichcor(icla)
 
     if (i_coal_drift.eq.1) then
-      write(name,'(a8,i2.2)')'X_Age_CP' ,icla
+      write(name,'(a,i2.2)')'x_age_coal' ,icla
       call field_get_val_s_by_name(name, xagecpi)
     endif
 
@@ -253,7 +253,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 !        (scalaires passifs et variances associees)
 
   if (i_coal_drift.eq.1) then
-    call field_get_val_s_by_name('X_Age_Gas', xagegas)
+    call field_get_val_s_by_name('x_age_gas', xagegas)
   endif
 
   do iel = 1, ncel

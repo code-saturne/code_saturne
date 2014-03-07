@@ -127,7 +127,7 @@ d2s3 = 2.d0/3.d0
 
 call field_get_key_id("variable_id", keyvar)
 
-call field_get_id_try('X_Age_Gas', f_id)
+call field_get_id_try('x_age_gas', f_id)
 
 if (f_id.ne.-1) then
   call field_get_key_int(f_id, keyvar, iaggas)
@@ -135,7 +135,7 @@ if (f_id.ne.-1) then
   allocate (iagecp(nclacp))
 
   do icla = 1, nclacp
-    write(name,'(a8,i2.2)')'X_Age_CP', icla
+    write(name,'(a8,i2.2)')'x_age_coal', icla
     call field_get_id(name, f_id)
     call field_get_key_int(f_id, keyvar, iagecp(icla))
   enddo

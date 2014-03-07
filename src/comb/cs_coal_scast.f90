@@ -152,16 +152,16 @@ double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ
 
-double precision  xw1,xw2,xw3,xw4
-double precision  xo2,wmel,wmhcn,wmno,wmo2,wmnh3
+double precision xw1,xw2,xw3,xw4
+double precision xo2,wmel,wmhcn,wmno,wmo2,wmnh3
 double precision gmdev1(ncharm),gmdev2(ncharm),gmhet(ncharm)
 double precision aux1 , aux2 , aux3
 double precision xch,xck,xash,xmx2
 double precision tfuelmin,tfuelmax
 double precision auxdev,auxht3,auxco2,auxh2o,auxwat
 
-double precision , dimension ( : )     , allocatable :: w1,w2,w3,w4,w5
-double precision , dimension ( : )     , allocatable :: tfuel
+double precision, dimension (:), allocatable :: w1,w2,w3,w4,w5
+double precision, dimension (:), allocatable :: tfuel
 double precision, dimension(:), pointer :: gamvlei, gamvloi, xchcpi, gaheto2i, xckcpi
 double precision, dimension(:), pointer :: gaseci, frmcpi, agei, gahetco2i
 double precision, dimension(:), pointer :: gaheth2oi, xwtcpi, xacpip
@@ -436,7 +436,7 @@ if (i_coal_drift.eq.1) then
   call field_get_name(ivarfl(ivar), fname)
 
   ! Particle age source term
-  if (fname(1:8).eq.'X_Age_CP') then
+  if (fname(1:10).eq.'x_age_coal') then
 
     ! index of the coal particle class
     call field_get_key_int(ivarfl(ivar), keyccl, icla)
@@ -445,56 +445,56 @@ if (i_coal_drift.eq.1) then
     call field_get_val_prev_s_by_name(fname, xacpip)
 
     ! Light volatile's source term
-    write(name,'(a6,i2.2)')'Ga_DV1' ,icla
+    write(name,'(a,i2.2)') 'm_transfer_v1_coal', icla
     call field_get_val_s_by_name(name, gamvlei)
 
     ! Heavy volatile's source term
-    write(name,'(a6,i2.2)')'Ga_DV2' ,icla
+    write(name,'(a,i2.2)') 'm_transfer_v2_coal', icla
     call field_get_val_s_by_name(name, gamvloi)
 
     ! Fraction massique du charbon de icla
-    write(name,'(a6,i2.2)')'Xch_CP' ,icla
+    write(name,'(a,i2.2)') 'x_coal', icla
     call field_get_val_s_by_name(name, xchcpi)
 
     ! Echelle temporelle de la combustion heter.
-    write(name,'(a9,i2.2)')'Ga_HET_O2' ,icla
+    write(name,'(a,i2.2)') 'het_ts_o2_coal', icla
     call field_get_val_s_by_name(name, gaheto2i)
 
     ! Fraction massique du char de icla
-    write(name,'(a6,i2.2)')'xck_cp' ,icla
+    write(name,'(a,i2.2)') 'xck_coal', icla
     call field_get_val_s_by_name(name, xckcpi)
 
     ! Indicateur du charbon de classe icla
     numcha = ichcor(icla)
 
-    ! Echelle temporelle de la sechage
+    ! Echelle temporelle de sechage
     if (ippmod(iccoal) .eq. 1) then
-      write(name,'(a6,i2.2)')'Ga_SEC' ,icla
+      write(name,'(a,i2.2)') 'dry_ts_coal', icla
       call field_get_val_s_by_name(name, gaseci)
     endif
 
     ! Fraction massique de la phase solide
-    write(name,'(a6,i2.2)')'Frm_CP' ,icla
+    write(name,'(a,i2.2)') 'w_solid_coal', icla
     call field_get_val_s_by_name(name, frmcpi)
 
     ! L'age des particules par cellule
-    write(name,'(a6,i2.2)')'Age_CP' ,icla
+    write(name,'(a,i2.2)') 'age_coal', icla
     call field_get_val_s_by_name(name, agei)
 
     ! Echelle temporelle de la gazefication par CO2
     if (ihtco2 .eq. 1) then
-      write(name,'(a10,i2.2)')'Ga_HET_CO2' ,icla
+      write(name,'(a,i2.2)') 'het_ts_co2_coal', icla
       call field_get_val_s_by_name(name, gahetco2i)
     endif
 
     ! Echelle temporelle de la gazefication par H2O
     if (ihth2o .eq. 1) then
-      write(name,'(a10,i2.2)')'Ga_HET_H2O' ,icla
+      write(name,'(a,i2.2)') 'het_ts_h2o_coal', icla
       call field_get_val_s_by_name(name, gaheth2oi)
     endif
 
     if (ippmod(iccoal).eq.1) then
-      write(name,'(a6,i2.2)')'Xwt_CP' ,icla
+      write(name,'(a,i2.2)') 'xwt_coal', icla
       call field_get_val_s_by_name(name, xwtcpi)
     endif
 
@@ -550,61 +550,61 @@ if (i_coal_drift.eq.1) then
   endif
 
   ! Gas age source term
-  if (fname(1:9).eq.'X_Age_Gas') then
+  if (fname(1:9).eq.'x_age_gas') then
 
     ! Loop over particle classes
     do icla = 1, nclacp
       ! Light volatile's source term
-      write(name,'(a6,i2.2)')'Ga_DV1' ,icla
+      write(name,'(a,i2.2)') 'm_transfer_v1_coal', icla
       call field_get_val_s_by_name(name, gamvlei)
 
       ! Heavy volatile's source term
-      write(name,'(a6,i2.2)')'Ga_DV2' ,icla
+      write(name,'(a,i2.2)') 'm_transfer_v2_coal', icla
       call field_get_val_s_by_name(name, gamvloi)
 
       ! Fraction massique du charbon de icla
-      write(name,'(a6,i2.2)')'Xch_CP' ,icla
+      write(name,'(a,i2.2)') 'x_coal', icla
       call field_get_val_s_by_name(name, xchcpi)
 
       ! Echelle temporelle de la combustion heter.
-      write(name,'(a9,i2.2)')'Ga_HET_O2' ,icla
+      write(name,'(a,i2.2)') 'het_ts_o2_coal', icla
       call field_get_val_s_by_name(name, gaheto2i)
 
       ! Fraction massique du char de icla
-      write(name,'(a6,i2.2)')'xck_cp' ,icla
+      write(name,'(a,i2.2)') 'xck_cp', icla
       call field_get_val_s_by_name(name, xckcpi)
 
       ! Indicateur du charbon de classe icla
       numcha = ichcor(icla)
 
-      ! Echelle temporelle de la sechage
+      ! Echelle temporelle de sechage
       if (ippmod(iccoal) .eq. 1) then
-        write(name,'(a6,i2.2)')'Ga_SEC' ,icla
+        write(name,'(a,i2.2)') 'dry_ts_coal', icla
         call field_get_val_s_by_name(name, gaseci)
       endif
 
       ! Fraction massique de la phase solide
-      write(name,'(a6,i2.2)')'Frm_CP' ,icla
+      write(name,'(a,i2.2)') 'w_solid_coal', icla
       call field_get_val_s_by_name(name, frmcpi)
 
       ! L'age des particules par cellule
-      write(name,'(a6,i2.2)')'Age_CP' ,icla
+      write(name,'(a,i2.2)') 'age_coal', icla
       call field_get_val_s_by_name(name, agei)
 
       ! Echelle temporelle de la gazefication par CO2
       if (ihtco2 .eq. 1) then
-        write(name,'(a10,i2.2)')'Ga_HET_CO2' ,icla
+        write(name,'(a,i2.2)') 'het_ts_co2_coal', icla
         call field_get_val_s_by_name(name, gahetco2i)
       endif
 
       ! Echelle temporelle de la gazefication par H2O
       if (ihth2o .eq. 1) then
-        write(name,'(a10,i2.2)')'Ga_HET_H2O' ,icla
+        write(name,'(a,i2.2)') 'het_ts_h2o_coal', icla
         call field_get_val_s_by_name(name, gaheth2oi)
       endif
 
       if (ippmod(iccoal).eq.1) then
-        write(name,'(a6,i2.2)')'Xwt_CP' ,icla
+        write(name,'(a6,i2.2)') 'xwt_coal', icla
         call field_get_val_s_by_name(name, xwtcpi)
       endif
 
