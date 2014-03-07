@@ -166,8 +166,8 @@ do ifac = 1, nfabor
 
     call set_dirichlet_vector &
          !====================
-       ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
-         clbale(1,1,ifac), cfbale(1,1,ifac),             &
+       ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
+         clbale(:,:,ifac), cfbale(:,:,ifac),             &
          pimpv           , hint            , rinfiv )
   endif
 enddo
