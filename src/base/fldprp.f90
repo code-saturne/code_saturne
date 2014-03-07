@@ -70,11 +70,11 @@ implicit none
 
 ! Local variables
 
-character*80  f_label, f_name, s_label, s_name
-integer       iscal , id
-integer       ii    , jj    , kk    , ll
-integer       iok   , ippok
-integer       iest  , ipropp
+character(len=80) :: f_label, f_name, s_label, s_name
+integer           :: iscal , id
+integer           :: ii    , jj    , kk    , ll
+integer           :: iok   , ippok
+integer           :: iest  , ipropp
 
 !===============================================================================
 ! 0. INITIALISATIONS
@@ -242,7 +242,7 @@ icrom = iprpfl(irom)
 call add_property_field('molecular_viscosity', 'Laminar Viscosity', iviscl)
 
 if (iturb.eq.0) then
-  call add_property_field_hidden('turbulent_viscosity', ivisct)
+  call add_property_field_hidden('turbulent_viscosity', 1, ivisct)
 else
   call add_property_field('turbulent_viscosity', 'Turb Viscosity', ivisct)
 endif
