@@ -461,7 +461,7 @@ if (i_coal_drift.eq.1) then
     call field_get_val_s_by_name(name, gaheto2i)
 
     ! Fraction massique du char de icla
-    write(name,'(a,i2.2)') 'xck_coal_', icla
+    write(name,'(a,i2.2)') 'w_ck_coal_', icla
     call field_get_val_s_by_name(name, xckcpi)
 
     ! Indicateur du charbon de classe icla

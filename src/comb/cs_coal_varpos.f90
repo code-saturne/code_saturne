@@ -177,8 +177,8 @@ enddo
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'xck_coal_', icla
-  write(f_label,'(a,i2.2)') 'Xck_Coal_', icla
+  write(f_name,'(a,i2.2)') 'w_ck_coal_', icla
+  write(f_label,'(a,i2.2)') 'w_ck_Coal_', icla
   call add_model_scalar_field(f_name, f_label, ixck(icla))
   f_id = ivarfl(isca(ixck(icla)))
 

@@ -130,8 +130,8 @@ if (ippmod(icolwc).ge.0) then
     write(f_label, '(a,i1)') 'Ym_Local_', idirac
     call add_property_field(f_name, f_label, ifmel(idirac))
 
-    write(f_name,  '(a,i1)') 'wm_local_', idirac
-    write(f_label, '(a,i1)') 'wm_Local_', idirac
+    write(f_name,  '(a,i1)') 'w_local_', idirac
+    write(f_label, '(a,i1)') 'w_Local_', idirac
     call add_property_field(f_name, f_label, ifmal(idirac))
 
     write(f_name,  '(a,i1)') 'amplitude_local_', idirac
