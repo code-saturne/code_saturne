@@ -453,18 +453,18 @@ _gui_copy_varname(const char *varname, int ipp)
  * parameters:
  *   property_name      <-- property name
  *   ipp                <-- property id
- *   ichrvr             --> chronogical output (1:yes/0:no)
- *   ilisvr             --> listing output (1:yes/0:no)
  *   ihisvr             --> histo output
+ *   ichrvr             --> chronogical output (1:yes/0:no)
+ *   ippfld             <-- ipp -> field mapping
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_thermophysical_post(const char *const variable,
-                                       const int         ipp,
-                                       int        *const ihisvr,
-                                       int        *const ilisvr,
-                                       int        *const ichrvr,
-                                       const int  *const nvppmx)
+static void
+_gui_thermophysical_post(const char *variable,
+                         int         ipp,
+                         int        *ihisvr,
+                         int        *ippfld,
+                         const int  *nvppmx)
 {
   int   nb_probes;
   int   iprob;
@@ -473,13 +473,23 @@ static void cs_gui_thermophysical_post(const char *const variable,
 
   if (ipp == 1) return;
 
-  cs_gui_variable_attribute(variable,
-                            "postprocessing_recording",
-                            &ichrvr[ipp-1]);
+  if (ippfld[ipp - 1] > -1) {
+    int   f_post = 0, f_log = 0;
+    const int k_post = cs_field_key_id("post_vis");
+    const int k_log = cs_field_key_id("log");
 
-  cs_gui_variable_attribute(variable,
-                            "listing_printing",
-                            &ilisvr[ipp-1]);
+    cs_gui_variable_attribute(variable,
+                              "postprocessing_recording",
+                              &f_post);
+
+    cs_gui_variable_attribute(variable,
+                              "listing_printing",
+                              &f_log);
+
+    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
+    cs_field_set_key_int(f, k_post, f_post);
+    cs_field_set_key_int(f, k_log, f_log);
+  }
 
   nb_probes = cs_gui_variable_number_probes(variable);
 
@@ -497,7 +507,6 @@ static void cs_gui_thermophysical_post(const char *const variable,
 
   BFT_FREE(varname);
 }
-
 
 /*----------------------------------------------------------------------------
  * Get the attribute value associated to a child markup from a scalar.
@@ -592,40 +601,45 @@ static int cs_gui_scalar_probe_name(const int scalar_num,
  * Post-processing options for scalars
  *
  * parameters:
- *   property_name      <-- property name
+ *   sca_id             <-- scalar id
  *   ipp                <-- property id
- *   ichrvr             --> chronogical output (1:yes/0:no)
- *   ilisvr             --> listing output (1:yes/0:no)
  *   ihisvr             --> histo output
+ *   ippfld             <-- ipp -> field mapping
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_scalar_post(const int         num_sca,
-                               int        *const ihisvr,
-                               int        *const ilisvr,
-                               int        *const ichrvr,
-                               const  int *const ipprtp,
-                               const  int *const isca,
-                               const  int *const nvppmx)
+static void
+_gui_scalar_post(int          num_sca,
+                 int          ipp,
+                 int         *ihisvr,
+                 const  int  *ippfld,
+                 const  int  *nvppmx)
 {
-  int ipp;
   int nb_probes;
   int iprob;
   int num_probe;
 
-  ipp = ipprtp[isca[num_sca] -1];
-
   if (ipp == 1) return;
 
-  /* EnSight outputs frequency */
-  cs_gui_scalar_attribute(_scalar_label(num_sca),
-                          "postprocessing_recording",
-                          &ichrvr[ipp - 1]);
+  if (ippfld[ipp - 1] > -1) {
+    int   f_post = 0, f_log = 0;
+    const int k_post = cs_field_key_id("post_vis");
+    const int k_log = cs_field_key_id("log");
 
-  /* Listing output frequency */
-  cs_gui_scalar_attribute(_scalar_label(num_sca),
-                          "listing_printing",
-                          &ilisvr[ipp - 1]);
+    /* EnSight outputs frequency */
+    cs_gui_scalar_attribute(_scalar_label(num_sca),
+                            "postprocessing_recording",
+                            &f_post);
+
+    /* Listing output frequency */
+    cs_gui_scalar_attribute(_scalar_label(num_sca),
+                            "listing_printing",
+                            &f_log);
+
+    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
+    cs_field_set_key_int(f, k_post, f_post);
+    cs_field_set_key_int(f, k_log, f_log);
+  }
 
   /* Activated probes */
   nb_probes = cs_gui_scalar_number_probes(num_sca+1);
@@ -750,39 +764,44 @@ static int cs_gui_model_scalar_probe_name (const char *const model,
  * parameters:
  *   property_name      <-- property name
  *   ipp                <-- property id
- *   ichrvr             --> chronogical output (1:yes/0:no)
- *   ilisvr             --> listing output (1:yes/0:no)
  *   ihisvr             --> histo output
+ *   ippfld             <-- ipp -> field mapping
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_model_scalar_post(const char  *const model,
-                                     const int          num_sca,
-                                     int         *const ihisvr,
-                                     int         *const ilisvr,
-                                     int         *const ichrvr,
-                                     const int   *const ipprtp,
-                                     const int   *const isca,
-                                     const int   *const nvppmx)
+static void
+_gui_model_scalar_post(const char  *model,
+                       int          num_sca,
+                       int          ipp,
+                       int         *ihisvr,
+                       const int   *ippfld,
+                       const int   *nvppmx)
 {
-  int ipp;
   int nb_probes;
   int iprob;
   int num_probe;
 
-  ipp = ipprtp[isca[num_sca] -1];
-
   if (ipp == 1) return;
 
-  /* EnSight outputs frequency */
-  cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
-                                    "postprocessing_recording",
-                                    &ichrvr[ipp - 1]);
+  if (ippfld[ipp - 1] > -1) {
+    int   f_post = 0, f_log = 0;
+    const int k_post = cs_field_key_id("post_vis");
+    const int k_log = cs_field_key_id("log");
 
-  /* Listing output frequency */
-  cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
-                                    "listing_printing",
-                                    &ilisvr[ipp - 1]);
+    /* EnSight outputs frequency */
+    cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
+                                      "postprocessing_recording",
+                                      &f_post);
+
+    /* Listing output frequency */
+    cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
+                                      "listing_printing",
+                                      &f_log);
+
+    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
+    cs_field_set_key_int(f, k_post, f_post);
+    cs_field_set_key_int(f, k_log, f_log);
+  }
 
   /* Activated probes */
   nb_probes = cs_gui_model_scalar_number_probes(model, _scalar_label(num_sca));
@@ -943,20 +962,18 @@ static char *cs_gui_get_model_property_label(const char *const model,
  *
  * parameters:
  *   property_name      <-- property name
- *   ipp                <-- property id
- *   ichrvr             --> chronogical output (1:yes/0:no)
- *   ilisvr             --> listing output (1:yes/0:no)
+ *   num_prop           <-- property id
  *   ihisvr             --> histo output
+ *   ippfld             <-- ipp -> field mapping
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_model_property_post (const char  *const model,
-                            const int          num_prop,
-                            int         *const ihisvr,
-                            int         *const ilisvr,
-                            int         *const ichrvr,
-                            const int   *const nvppmx)
+_gui_model_property_post(const char  *model,
+                         int          num_prop,
+                         int         *ihisvr,
+                         const int   *ippfld,
+                         const int   *nvppmx)
 {
   int ipp;
   int nb_probes;
@@ -970,18 +987,27 @@ cs_gui_model_property_post (const char  *const model,
 
   if (ipp == 1) return;
 
-  /* EnSight outputs frequency */
-  cs_gui_model_property_output_status(model,
-                                      vars->properties_name[num_prop],
-                                      "postprocessing_recording",
-                                      &ichrvr[ipp - 1]);
+  if (ippfld[ipp - 1] > -1) {
+    int   f_post = 0, f_log = 0;
+    const int k_post = cs_field_key_id("post_vis");
+    const int k_log = cs_field_key_id("log");
 
-  /* Listing output frequency */
-  cs_gui_model_property_output_status(model,
-                                      vars->properties_name[num_prop],
-                                      "listing_printing",
-                                      &ilisvr[ipp - 1]);
+    /* EnSight outputs frequency */
+    cs_gui_model_property_output_status(model,
+                                        vars->properties_name[num_prop],
+                                        "postprocessing_recording",
+                                        &f_post);
 
+    /* Listing output frequency */
+    cs_gui_model_property_output_status(model,
+                                        vars->properties_name[num_prop],
+                                        "listing_printing",
+                                        &f_log);
+
+    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
+    cs_field_set_key_int(f, k_post, f_post);
+    cs_field_set_key_int(f, k_log, f_log);
+  }
 
   /* Activated probes */
   nb_probes = cs_gui_model_property_number_probes(model,
@@ -1111,18 +1137,17 @@ static int cs_gui_time_average_probe_name(const char *const property_name,
  * parameters:
  *   property_name      <-- property name
  *   ipp                <-- property id
- *   ichrvr             --> chronogical output (1:yes/0:no)
- *   ilisvr             --> listing output (1:yes/0:no)
+ *   ippfld             <-- ipp -> field mapping
  *   ihisvr             --> histo output
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_time_average_post(const char *const property_name,
-                                     const int         ipp,
-                                     int        *const ichrvr,
-                                     int        *const ilisvr,
-                                     int        *const ihisvr,
-                                     const int  *const nvppmx)
+static void
+_gui_time_average_post(const char  *property_name,
+                       int          ipp,
+                       const int   *ippfld,
+                       int         *ihisvr,
+                       const int   *nvppmx)
 {
   int nb_probes;
   int iprob;
@@ -1130,13 +1155,23 @@ static void cs_gui_time_average_post(const char *const property_name,
 
   if (ipp == 1) return;
 
-  cs_gui_time_average_status(property_name,
-                             "postprocessing_recording",
-                             &ichrvr[ipp - 1]);
+  if (ippfld[ipp - 1] > -1) {
+    int   f_post = 0, f_log = 0;
+    const int k_post = cs_field_key_id("post_vis");
+    const int k_log = cs_field_key_id("log");
 
-  cs_gui_time_average_status(property_name,
-                             "listing_printing",
-                             &ilisvr[ipp - 1]);
+    cs_gui_time_average_status(property_name,
+                               "postprocessing_recording",
+                               &f_post);
+
+    cs_gui_time_average_status(property_name,
+                               "listing_printing",
+                               &f_log);
+
+    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
+    cs_field_set_key_int(f, k_post, f_post);
+    cs_field_set_key_int(f, k_log, f_log);
+  }
 
   nb_probes = cs_gui_time_average_number_probes(property_name);
 
@@ -1281,19 +1316,17 @@ static int cs_gui_properties_probe_name(const char *const property_name,
  * parameters:
  *   property_name      <-- property name
  *   ipp                <-- property id
- *   ichrvr             --> chronogical output (1:yes/0:no)
- *   ilisvr             --> listing output (1:yes/0:no)
+ *   ippfld             <-- ipp -> field mapping
  *   ihisvr             --> histo output
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_properties_post(const char  *property_name,
-                       const int    ipp,
-                       int         *ichrvr,
-                       int         *ilisvr,
-                       int         *ihisvr,
-                       const int   *nvppmx)
+_gui_properties_post(const char  *property_name,
+                     const int    ipp,
+                     const int   *ippfld,
+                     int         *ihisvr,
+                     const int   *nvppmx)
 {
   int nb_probes;
   int iprob;
@@ -1308,13 +1341,23 @@ cs_gui_properties_post(const char  *property_name,
   _gui_copy_varname(varname, ipp);
   BFT_FREE(varname);
 
-  cs_gui_properties_status(property_name,
-                           "postprocessing_recording",
-                           &ichrvr[ipp - 1]);
+  if (ippfld[ipp - 1] > -1) {
+    int   f_post = 0, f_log = 0;
+    const int k_post = cs_field_key_id("post_vis");
+    const int k_log = cs_field_key_id("log");
 
-  cs_gui_properties_status(property_name,
-                           "listing_printing",
-                           &ilisvr[ipp - 1]);
+    cs_gui_properties_status(property_name,
+                             "postprocessing_recording",
+                             &f_post);
+
+    cs_gui_properties_status(property_name,
+                             "listing_printing",
+                             &f_log);
+
+    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
+    cs_field_set_key_int(f, k_post, f_post);
+    cs_field_set_key_int(f, k_log, f_log);
+  }
 
   nb_probes = cs_gui_properties_number_probes(property_name);
 
@@ -1731,6 +1774,30 @@ _field_labels_from_gui(void)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Clean memory for fortran name of variables
+ *----------------------------------------------------------------------------*/
+
+static void
+_gui_free_labels(void)
+{
+  int i;
+#if _XML_DEBUG_
+  bft_printf("%s\n", __funct__);
+  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+    if (cs_glob_label->_cs_gui_var_name[i])
+      bft_printf("-->label[%i] = %s\n", i, cs_glob_label->_cs_gui_var_name[i]);
+#endif
+
+  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
+    BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
+
+  BFT_FREE(cs_glob_label->_cs_gui_var_name);
+
+  cs_glob_label->_cs_gui_max_vars = 0;
+  cs_glob_label->_cs_gui_last_var = 0;
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -1790,8 +1857,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                 cs_int_t        *ntlist,
                                 cs_int_t        *iecaux,
                                 cs_int_t        *ipstdv,
-                                cs_int_t        *ichrvr,
-                                cs_int_t        *ilisvr,
                                 cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
                                 const cs_int_t  *isca,
@@ -1801,8 +1866,30 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
 {
   int i, j;
   int ipp;
+  int *ippfld;
   cs_var_t  *vars = cs_glob_var;
   char fmtprb[16];
+
+  {
+    int n_fields = cs_field_n_fields();
+    int ipp_max = 1;
+    const int k_pp = cs_field_key_id("post_id");
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      int ipp1 = cs_field_get_key_int(f, k_pp);
+      int ipp2 = ipp1 + f->dim - 1;
+      ipp_max = CS_MAX(ipp_max, ipp2);
+    }
+    BFT_MALLOC(ippfld, ipp_max, int);
+    for (ipp = 0; ipp < ipp_max; ipp++)
+      ippfld[ipp] = -1;
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      ipp = cs_field_get_key_int(f, k_pp);
+      if (ipp > 1)
+        ippfld[ipp - 1] = f_id;
+    }
+  }
 
   _field_labels_to_gui();
 
@@ -1852,52 +1939,49 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   /* Velocity and turbulence output */
   for (i = 0; i < vars->nvar - vars->nscaus - vars->nscapp; i++) {
     ipp = ipprtp[vars->rtp[i]];
-    cs_gui_thermophysical_post(vars->name[i],
-                               ipp,
-                               ihisvr, ilisvr, ichrvr,
-                               nvppmx);
+    _gui_thermophysical_post(vars->name[i],
+                             ipp,
+                             ihisvr, ippfld,
+                             nvppmx);
   }
 
   /* User scalar */
   if (vars->nscaus > 0 ) {
     for (i = 0; i < vars->nscaus; i++) {
-      cs_gui_scalar_post(i, ihisvr, ilisvr, ichrvr,
-                         ipprtp, isca, nvppmx);
+      ipp = ipprtp[isca[i] -1];
+      _gui_scalar_post(i, ipp, ihisvr, ippfld, nvppmx);
     }
   }
   /* Specific physics scalars */
   if (vars->nscapp > 0) {
     for (i = 0; i < vars->nscapp; i++) {
       j = iscapp[i]-1 ;
-      cs_gui_model_scalar_post(vars->model, j,
-                               ihisvr, ilisvr, ichrvr,
-                               ipprtp, isca, nvppmx);
+      ipp = ipprtp[isca[j] -1];
+      _gui_model_scalar_post(vars->model, j, ipp, ihisvr, ippfld, nvppmx);
     }
   }
 
   /* Physical properties */
   if (vars->nsalpp > 0) {
     for (i = 0; i < vars->nsalpp; i++) {
-      cs_gui_model_property_post(vars->model, i,
-                                 ihisvr, ilisvr, ichrvr, nvppmx);
+      _gui_model_property_post(vars->model, i,
+                               ihisvr, ippfld, nvppmx);
     }
   }
   for (i = vars->nsalpp; i < vars->nprop; i++) {
     if (vars->ntimaver != 0 && i >= vars->nprop - vars->ntimaver) {
-      cs_gui_time_average_post(vars->properties_name[i],
-                               vars->properties_ipp[i],
-                               ichrvr,
-                               ilisvr,
-                               ihisvr,
-                               nvppmx);
-    }
-    else
-      cs_gui_properties_post(vars->properties_name[i],
+      _gui_time_average_post(vars->properties_name[i],
                              vars->properties_ipp[i],
-                             ichrvr,
-                             ilisvr,
+                             ippfld,
                              ihisvr,
                              nvppmx);
+    }
+    else
+      _gui_properties_post(vars->properties_name[i],
+                           vars->properties_ipp[i],
+                           ippfld,
+                           ihisvr,
+                           nvppmx);
   }
 
   _field_labels_from_gui();
@@ -1907,7 +1991,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   bft_printf("--iecaux = %i\n", *iecaux);
   bft_printf("--ntlist = %i\n", *ntlist);
   bft_printf("--nthist = %i\n", *nthist);
-  bft_printf("--frhist = %i\n", *frhist);
+  bft_printf("--frhist = %f\n", *frhist);
   bft_printf("--ncapt  = %i\n", *ncapt);
   bft_printf("--tplfmt = %i\n", *tplfmt);
   for (i=0; i < *ncapt; i++) {
@@ -1918,8 +2002,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   for (i = 0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
     ipp = ipprtp[vars->rtp[i]];
     bft_printf("-->variable ipprtp[%i] = %s\n", ipp, vars->name[i]);
-    bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
-    bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
     bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
@@ -1929,8 +2011,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   for (i = 0; i < vars->nscaus + vars->nscapp ; i++) {
     ipp = ipprtp[isca[i] -1];
     bft_printf("-->scalar ipprtp[%i]: %s\n", ipp, _scalar_label(i));
-    bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
-    bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
     bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
@@ -1940,8 +2020,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   for (i = 0; i<vars->nprop ; i++) {
     ipp = vars->properties_ipp[i];
     bft_printf("-->properties_name[%i]: %s\n", i, vars->properties_name[i]);
-    bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
-    bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
     bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j = 0; j<ihisvr[0 + (ipp-1)]; j++)
@@ -1949,6 +2027,10 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                    ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }
 #endif
+
+  BFT_FREE(ippfld);
+
+  _gui_free_labels();
 }
 
 /*============================================================================

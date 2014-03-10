@@ -131,8 +131,8 @@ iscdri = i_coal_drift
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'np_coal', icla
-  write(f_label,'(a,i2.2)') 'Np_Coal', icla
+  write(f_name,'(a,i2.2)') 'np_coal_', icla
+  write(f_label,'(a,i2.2)') 'Np_Coal_', icla
   call add_model_scalar_field(f_name, f_label, inp(icla))
   f_id = ivarfl(isca(inp(icla)))
 
@@ -154,8 +154,8 @@ enddo
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'x_coal', icla
-  write(f_label,'(a,i2.2)') 'Xch_Coal', icla
+  write(f_name,'(a,i2.2)') 'x_coal_', icla
+  write(f_label,'(a,i2.2)') 'Xch_Coal_', icla
   call add_model_scalar_field(f_name, f_label, ixch(icla))
   f_id = ivarfl(isca(ixch(icla)))
 
@@ -177,8 +177,8 @@ enddo
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'xck_coal', icla
-  write(f_label,'(a,i2.2)') 'Xck_Coal', icla
+  write(f_name,'(a,i2.2)') 'xck_coal_', icla
+  write(f_label,'(a,i2.2)') 'Xck_Coal_', icla
   call add_model_scalar_field(f_name, f_label, ixck(icla))
   f_id = ivarfl(isca(ixck(icla)))
 
@@ -202,8 +202,8 @@ if (ippmod(iccoal).eq.1) then
 
   do icla = 1, nclacp
 
-    write(f_name,'(a,i2.2)') 'xwt_coal', icla
-    write(f_label,'(a,i2.2)') 'Xwt_Coal', icla
+    write(f_name,'(a,i2.2)') 'xwt_coal_', icla
+    write(f_label,'(a,i2.2)') 'Xwt_Coal_', icla
     call add_model_scalar_field(f_name, f_label, ixwt(icla))
     f_id = ivarfl(isca(ixwt(icla)))
 
@@ -228,8 +228,8 @@ endif
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'h2_coal', icla
-  write(f_label,'(a,i2.2)') 'Ent_Coal', icla
+  write(f_name,'(a,i2.2)') 'h2_coal_', icla
+  write(f_label,'(a,i2.2)') 'Ent_Coal_', icla
   call add_model_scalar_field(f_name, f_label, ih2(icla))
   f_id = ivarfl(isca(ih2(icla)))
 
@@ -253,8 +253,8 @@ if (i_coal_drift.eq.1) then
 
   do icla = 1, nclacp
 
-    write(f_name,'(a,i2.2)') 'x_age_coal', icla
-    write(f_label,'(a,i2.2)') 'X_Age_Coal', icla
+    write(f_name,'(a,i2.2)') 'x_age_coal_', icla
+    write(f_label,'(a,i2.2)') 'X_Age_Coal_', icla
     call add_model_scalar_field(f_name, f_label, iagecp_temp(icla))
     f_id = ivarfl(isca(iagecp_temp(icla)))
 
@@ -290,7 +290,7 @@ icla = -1
 do icha = 1, ncharb
 
   write(f_name,'(a13,i2.2)') 'mv1_fraction_', icha
-  write(f_label,'(a6,i2.2)') 'Fr_mv1', icha
+  write(f_label,'(a6,i2.2)') 'Fr_mv1_', icha
   call add_model_scalar_field(f_name, f_label, if1m(icha))
   f_id = ivarfl(isca(if1m(icha)))
 
@@ -318,7 +318,7 @@ enddo
 do icha = 1, ncharb
 
   write(f_name,'(a13,i2.2)') 'mv2_fraction_', icha
-  write(f_label,'(a6,i2.2)') 'Fr_mv2', icha
+  write(f_label,'(a6,i2.2)') 'Fr_mv2_', icha
   call add_model_scalar_field(f_name, f_label, if2m(icha))
   f_id = ivarfl(isca(if2m(icha)))
 

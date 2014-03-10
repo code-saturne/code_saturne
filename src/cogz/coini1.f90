@@ -71,7 +71,7 @@ implicit none
 
 ! Local variables
 
-integer          ipp , ii , jj, iok, idirac
+integer          ii , jj, iok
 integer          isc
 double precision wmolme
 
@@ -163,164 +163,7 @@ do isc = 1, nscapp
 enddo
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
-!===============================================================================
-
-! --> Flamme de diffusion :
-
-if ( ippmod(icod3p).ge.0 ) then
-  ipp = ipppro(ipproc(itemp))
-  nomprp(ipproc(itemp))   = 'Temperature'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(1)))
-  nomprp(ipproc(iym(1)))   = 'YM_Fuel'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(2)))
-  nomprp(ipproc(iym(2)))   = 'YM_Oxyd'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(3)))
-  nomprp(ipproc(iym(3)))   = 'YM_Prod'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-endif
-
-! ---> Physique particuliere : Flamme de premelange (modele EBU)
-
-if ( ippmod(icoebu).ge.0 ) then
-  ipp = ipppro(ipproc(itemp))
-  nomprp(ipproc(itemp))   = 'Temperature'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(1)))
-  nomprp(ipproc(iym(1)))   = 'YM_Fuel'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(2)))
-  nomprp(ipproc(iym(2)))   = 'YM_Oxyd'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(3)))
-  nomprp(ipproc(iym(3)))   = 'YM_Prod'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-endif
-
-! ---> Physique particuliere : Flamme de premelange (modele LWC)
-
-if ( ippmod(icolwc).ge. 0 ) then
-  ipp = ipppro(ipproc(itsc))
-  nomprp(ipproc(itsc))   = 'Source Term'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(itemp))
-  nomprp(ipproc(itemp))   = 'Temperature'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(1)))
-  nomprp(ipproc(iym(1)))   = 'YM_Fuel'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(2)))
-  nomprp(ipproc(iym(2)))   = 'YM_Oxyd'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(iym(3)))
-  nomprp(ipproc(iym(3)))   = 'YM_Prod'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  do idirac = 1, ndirac
-    ipp = ipppro(ipproc(irhol(idirac)))
-    write(nomprp(ipproc(irhol(idirac))),'(A4,I1)') 'RHOL',idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(iteml(idirac)))
-    write(nomprp(ipproc(iteml(idirac))),'(A4,I1)') 'TEML',idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(ifmel(idirac)))
-    write(nomprp(ipproc(ifmel(idirac))),'(A4,I1)') 'FMEL',idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(ifmal(idirac)))
-    write(nomprp(ipproc(ifmal(idirac))),'(A4,I1)') 'FMAL',idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(iampl(idirac)))
-    write(nomprp(ipproc(iampl(idirac))),'(A4,I1)') 'AMPL',idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(itscl(idirac)))
-    write(nomprp(ipproc(itscl(idirac))),'(A4,I1)') 'TSCL',idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(imaml(idirac)))
-    write(nomprp(ipproc(imaml(idirac))),'(A4,I1)') 'MAML',idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-  enddo
-
-endif
-
-! ---> Physique particuliere : Flamme de diffusion (chimie 3 points)
-!                              Flamme de premelange (modele EBU 1 et 3)
-!                              Flamme de premelange (modele LWC 1, 3 et 5)
-!                              AVEC RAYONNEMENT
-
-if ( ( ippmod(icod3p).eq.1 .or.                                   &
-       ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.          &
-       ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.          &
-       ippmod(icolwc).eq.5 )                                      &
-      .and. (iirayo.ge.1) ) then
-  ipp = ipppro(ipproc(ickabs))
-  nomprp(ipproc(ickabs))   = 'KABS'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(it4m))
-  nomprp(ipproc(it4m))   = 'TEMP4'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-  ipp = ipppro(ipproc(it3m))
-  nomprp(ipproc(it3m))   = 'TEMP3'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-endif
-
-
-!===============================================================================
-! 3. INFORMATIONS COMPLEMENTAIRES
+! 2. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
 
 ! --> Calcul de RO0 a partir de T0 et P0
@@ -366,7 +209,7 @@ irovar = 1
 ivivar = 0
 
 !===============================================================================
-! 4. ON REDONNE LA MAIN A L'UTLISATEUR
+! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
 if ( ippmod(icoebu).ge.0 ) then
@@ -389,7 +232,7 @@ else if( ippmod(icolwc).ge.0 ) then
 endif
 
 !===============================================================================
-! 5. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
+! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
 !===============================================================================
 
 iok = 0

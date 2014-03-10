@@ -80,7 +80,6 @@ double precision, allocatable, dimension(:) :: nebdia, nn
 integer, save :: itotwt, intdrp
 
 ! 1.3 Pointers for the positions of the properties for the specific phys.
-!      (ipproc in propce)
 !------------------------------------------------------------------------
 
 !   Properties specific to the atmospheric physics:

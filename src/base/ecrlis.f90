@@ -84,8 +84,17 @@ double precision dt(ncelet), volume(ncelet)
 ! Local variables
 
 integer          ic, icel, ivar, ipp, f_id, f_id_prv, c_id, f_dim
+integer          kval
 logical          interleaved
 character*200    chain, chainc
+
+integer, save :: keypp = -1
+
+!===============================================================================
+
+if (keypp.lt.0) then
+  call field_get_key_id("post_id", keypp)
+endif
 
 !==================================================================
 ! 1. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)
@@ -93,8 +102,10 @@ character*200    chain, chainc
 
 do ivar = 1, nvar
   if (ivar.eq.ipr.and.ippmod(icompf).lt.0) cycle
-  ipp = ipprtp(ivar)
-  if (ilisvr(ipp).gt.0) then
+  f_id = ivarfl(ivar)
+  call field_get_key_int(f_id, keylog, kval)
+  if (kval.gt.0) then
+    call field_get_key_int(f_id, keypp, ipp)
     dervar(ipp) = 0
     do icel = 1, ncel
       dervar(ipp) = dervar(ipp)                                 &
@@ -138,7 +149,8 @@ do ivar = 1, nvar
     c_id = 1
   endif
 
-  if (ilisvr(ipp).gt.0) then
+  call field_get_key_int(ivarfl(ivar), keylog, kval)
+  if (kval.gt.0) then
     chainc = 'c'
     chain = ' '
     ic = 4

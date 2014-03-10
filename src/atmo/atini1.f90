@@ -163,22 +163,7 @@ if (ippmod(iatmos).eq.2) then
 endif
 
 !===============================================================================
-! 3. VARIABLES D'ETAT pour IPPMOD(IATMOS) = 1 or 2
-!===============================================================================
-
-! 3.1  Dry or humid atmosphere
-! =============================
-
-if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
-  nomprp(ipproc(itempc)) = 'RealTemp'
-endif
-
-if (ippmod(iatmos).eq.2) then
-  nomprp(ipproc(iliqwt)) = 'LiqWater'
-endif
-
-!===============================================================================
-! 4. One scale turbulent model for k-eps closure for IPPMOD(IATMOS) = 1 or 2
+! 5. One scale turbulent model for k-eps closure for IPPMOD(IATMOS) = 1 or 2
 !===============================================================================
 
 if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
@@ -190,7 +175,7 @@ if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
 endif
 
 !===============================================================================
-! 5. Turbulent Schmidt and Prandtl number for atmospheric flows
+! 6. Turbulent Schmidt and Prandtl number for atmospheric flows
 !===============================================================================
 
 if (nscal.gt.0) then

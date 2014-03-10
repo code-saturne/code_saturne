@@ -586,10 +586,10 @@ endif
 ! Writings
 iok1 = 0
 do ii = 1, nn
-  if (ii.eq.1) call field_get_name (icrom, chaine)
-  if (ii.eq.2) chaine = nomprp(ipproc(iviscl))
-  if (ii.eq.3) chaine = nomprp(ipproc(ivisct))
-  if (ii.eq.4) chaine = nomprp(ipproc(icp   ))
+  if (ii.eq.1) call field_get_name(icrom, chaine)
+  if (ii.eq.2) call field_get_name(iprpfl(iviscl), chaine)
+  if (ii.eq.3) call field_get_name(iprpfl(ivisct), chaine)
+  if (ii.eq.4) call field_get_name(iprpfl(icp), chaine)
   if (iwarni(iu).ge.1.or.ipass.eq.1.or.varmn(ii).lt.0.d0) then
     if (iok1.eq.0) then
       write(nfecra,3010)
@@ -605,7 +605,7 @@ if (iok1.eq.1) write(nfecra,3012)
 
 ! Masse volumique definie
 ii = 1
-call field_get_name (icrom, chaine)
+call field_get_name(icrom, chaine)
 if (varmn(ii).lt.0.d0) then
   write(nfecra,9011)chaine(1:16),varmn(ii)
   iok = iok + 1
@@ -613,7 +613,7 @@ endif
 
 ! Viscosite moleculaire definie
 ii = 2
-chaine = nomprp(ipproc(iviscl))
+call field_get_name(iprpfl(iviscl), chaine)
 if (varmn(ii).lt.0.d0) then
   write(nfecra,9011)chaine(1:16),varmn(ii)
   iok = iok + 1
@@ -623,7 +623,7 @@ endif
 ! on ne clippe pas mu_t en modele LES dynamique, car on a fait
 ! un clipping sur la viscosite totale
 ii = 3
-chaine = nomprp(ipproc(ivisct))
+call field_get_name(iprpfl(ivisct), chaine)
 if (varmn(ii).lt.0.d0.and.iturb.ne.41) then
   write(nfecra,9012)varmn(ii)
   iok = iok + 1
@@ -632,7 +632,7 @@ endif
 ! Chaleur specifique definie
 if (icp.gt.0) then
   ii = 4
-  chaine = nomprp(ipproc(icp   ))
+  call field_get_name(iprpfl(icp), chaine)
   if (varmn(ii).lt.0.d0) then
     iisct = 0
     if (itherm.ne.0) iisct = 1
@@ -738,7 +738,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
     endif
 
     ! Writings
-    chaine = nomprp(ipcvma)
+    call field_get_name(iprpfl(ipcvma), chaine)
     if (iwarni(iuma).ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
       if (iok1.eq.0) then
         write(nfecra,3210)
@@ -750,7 +750,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
     ! Verifications de valeur physique
 
     ! Viscosite de maillage definie
-    chaine = nomprp(ipcvma)
+    call field_get_name(iprpfl(ipcvma), chaine)
     if (varmn(1).le.0.d0) then
       write(nfecra,9211) varmn(1)
       iok = iok + 1

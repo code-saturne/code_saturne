@@ -472,24 +472,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 void CS_PROCF (cstini, CSTINI) (double *const uref,
                                 double *const almax);
 
-void CS_PROCF(fcnmva, FCNMVA)
-(
- const char      *const fstr,    /* Fortran string */
- int             *const len,     /* String Length  */
- int             *const ipp      /* Post Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-);
-
-void CS_PROCF(cfnmva, CFNMVA)
-(
- char          *const fstr,    /* Fortran string */
- int           *const len,     /* String Length  */
- int           *const ipp      /* Post Id (1 to n) */
- CS_ARGF_SUPP_CHAINE
-);
-
-void CS_PROCF(nvamem, NVAMEM) (void);
-
 /*----------------------------------------------------------------------------
  * User momentum source terms.
  *

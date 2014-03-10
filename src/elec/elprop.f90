@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine elprop &
+subroutine elprop
 !================
-
- ( ipropp , ipppst )
 
 !===============================================================================
 !  FONCTION  :
@@ -45,10 +43,9 @@ subroutine elprop &
 !                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -67,6 +64,7 @@ use ppthch
 use ppincl
 use elincl
 use ihmpre
+use field
 
 !===============================================================================
 
@@ -74,13 +72,13 @@ implicit none
 
 ! Arguments
 
-integer       ipropp , ipppst
+integer       ipropp
 
 ! Local variables
 
-integer       iprop, idimve
+character*80  f_name, f_label
+integer       idimve
 
-!===============================================================================
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
 !===============================================================================
@@ -88,35 +86,33 @@ integer       iprop, idimve
 !     Pointeurs dans propce (ca n'implique pas qu'on ne calcule pas
 !     les variables non definies ici)
 
-iprop = ipropp
-
 ! ---> Temperature en K
 
-iprop  = iprop + 1
-itemp  = iprop
+call add_property_field('temperature', 'Temper', itemp)
 
 ! ---> Puissance volumique dissipee par effet Joule W/m3
 
-iprop  = iprop + 1
-iefjou = iprop
+call add_property_field('joule_power', 'PuisJoul', iefjou)
 
 ! ---> Densite de courant electrique reelle A/m2
 
 do idimve = 1, ndimve
-  iprop        = iprop + 1
-  idjr(idimve) = iprop
+  write(f_name,  '(a11,i1)')  'current_re_', idimve
+  write(f_label, '(a7,i1.1)') 'Cour_re', idimve
+  call add_property_field(f_name, f_label, idjr(idimve))
 enddo
 
 ! Variables specifiques Effet Joule
 ! =================================
 
-if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
+if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
 
 ! ---> Densite de courant electrique imaginaire A/m2
 
   do idimve = 1, ndimve
-    iprop        = iprop + 1
-    idji(idimve) = iprop
+    write(f_name,  '(a11,i1)')  'current_im_', idimve
+    write(f_label, '(a7,i1.1)') 'CouImag', idimve
+    call add_property_field(f_name, f_label, idji(idimve))
   enddo
 
 endif
@@ -125,33 +121,35 @@ endif
 ! Variables specifiques Arc Electrique
 ! ====================================
 
-if ( ippmod(ielarc).ge.1 ) then
+if (ippmod(ielarc).ge.1) then
 
 ! ---> Forces electromagnetiques de Laplace en N/m3
 
   do idimve = 1, ndimve
-    iprop          = iprop + 1
-    ilapla(idimve) = iprop
+    write(f_name,  '(a14,i1)')  'laplace_force_', idimve
+    write(f_label, '(a7,i1.1)') 'For_Lap', idimve
+    call add_property_field(f_name, f_label, ilapla(idimve))
   enddo
 
 ! ---> Puissance volumique rayonnee W/m3
 !      ou coefficient d'absorption
 
-  if ( ixkabe .gt.0 ) then
-    iprop = iprop + 1
-    idrad = iprop
+  if (ixkabe .eq.1) then
+    call add_property_field('absorption_coeff', 'Coef_Abso', idrad)
+  else if (ixkabe .eq.2) then
+    call add_property_field('radiation_source', 'TS_radia', idrad)
   endif
+
 endif
 
 ! Variables specifiques Conduction Ionique
 ! ========================================
 
-if ( ippmod(ielion).ge.1 ) then
+if (ippmod(ielion).ge.1) then
 
 ! ---> Charge electrique volumique C/m3
 
-  iprop  = iprop + 1
-  iqelec = iprop
+  call add_property_field('elec_charge', 'Charge', iqelec)
 
 endif
 
@@ -159,90 +157,21 @@ endif
 !         propre a la physique particuliere NSALPP
 !         total NSALTO
 
-nsalpp = iprop - ipropp
-nsalto = iprop
+nsalpp = nproce - ipropp
+nsalto = nproce
 
 ! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
 !         etre numerotees ensuite
 
-ipropp = iprop
+ipropp = nproce
 
 !===============================================================================
-! 2. POSITIONNEMENT DES PROPRIETES : PROPCE
+! 2. Construction de l'indirection entre la numerotation du noyau et XML
 !===============================================================================
 
-! ---> Positionnement dans le tableau PROPCE
-
-iprop         = nproce
-
-iprop         = iprop + 1
-ipproc(itemp) = iprop
-ipppst        = ipppst + 1
-ipppro(iprop) = ipppst
-
-iprop          = iprop + 1
-ipproc(iefjou) = iprop
-ipppst         = ipppst + 1
-ipppro(iprop)  = ipppst
-
-do idimve = 1, ndimve
-  iprop                = iprop + 1
-  ipproc(idjr(idimve)) = iprop
-  ipppst               = ipppst + 1
-  ipppro(iprop)        = ipppst
-enddo
-
-if ( ippmod(ieljou).eq.4 ) then
-
-! ---> Densite de courant electrique imaginaire A/m2
-
-  do idimve = 1, ndimve
-    iprop                = iprop + 1
-    ipproc(idji(idimve)) = iprop
-    ipppst               = ipppst + 1
-    ipppro(iprop)        = ipppst
-  enddo
-
-endif
-
-if ( ippmod(ielarc).ge.1 ) then
-
-  do idimve = 1, ndimve
-    iprop                  = iprop + 1
-    ipproc(ilapla(idimve)) = iprop
-    ipppst                 = ipppst + 1
-    ipppro(iprop)          = ipppst
-  enddo
-
-  if ( ixkabe .gt. 0 ) then
-    iprop          = iprop + 1
-    ipproc(idrad)  = iprop
-    ipppst         = ipppst + 1
-    ipppro(iprop)  = ipppst
-  endif
-
-endif
-
-if ( ippmod(ielion).ge.1 ) then
-
-! ---> Charge electrique volumique C/m3
-
-  iprop          = iprop + 1
-  ipproc(iqelec) = iprop
-  ipppst         = ipppst + 1
-  ipppro(iprop)  = ipppst
-
-endif
-
-nproce = iprop
-
-!   - Interface Code_Saturne
-!     ======================
-!     Construction de l'indirection entre la numerotation du noyau et XML
 if (iihmpr.eq.1) then
   call uielpr (nsalpp, ippmod, ipppro, ipproc, ieljou, ielarc,      &
                itemp, iefjou, idjr, idji, ilapla, idrad, ixkabe)
-
 endif
 
 return

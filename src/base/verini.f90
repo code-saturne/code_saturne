@@ -81,7 +81,7 @@ integer          iok
 
 character        chaine*80, chain2*80
 logical          interleaved
-integer          ii    , iis   , jj    , iisct
+integer          ii    , iis   , jj    , iisct, kval
 integer          iscal , iest  , iiesca, ivar
 integer          nbsccp
 integer          c_id, f_id, f_dim, n_fields, ippf
@@ -177,11 +177,10 @@ do f_id = 0, n_fields-1
 enddo
 
 do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyipp, ipp)
-  if (ipp.le.1) cycle
-  if (ilisvr(ipp).ne.0.and.ilisvr(ipp).ne.1) then
+  call field_get_key_int(f_id, keylog, kval)
+  if (kval.ne.0 .and. kval.ne.1) then
     call field_get_label(f_id, chaine)
-    write(nfecra,1260)chaine(1:16),ipp,ilisvr(ipp)
+    write(nfecra,1260)chaine(1:16),kval
     iok = iok + 1
   endif
 enddo
@@ -1865,8 +1864,8 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    ILISVR(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
+'@    CHAMP', a16,                                              /,&
+'@      MOT CLE ''log'' DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute',                            /,&
@@ -4434,8 +4433,8 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    ILISVR(',i10,   ') MUST BE AN INTEGER EQUAL  0 OR  1',    /,&
+'@    FIELD', a16,                                              /,&
+'@      KEY WORD ''log'' MUST BE AN INTEGER EQUAL  0 OR  1',    /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@  The calculation could NOT run.',                            /,&

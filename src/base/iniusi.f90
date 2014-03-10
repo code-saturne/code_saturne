@@ -517,14 +517,11 @@ if (iihmpr.eq.1) then
            ipptx, ippty, ipptz, ippdt,                          &
            ivisma, idtvar, ipucou, iappel)
 
-  call csenso                                                     &
+  call csenso                                                   &
   !==========
-     ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
-       ipstdv, ichrvr, ilisvr, ihisvr, tplfmt, isca, iscapp,      &
+     ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,          &
+       ipstdv, ihisvr, tplfmt, isca, iscapp,                    &
        ipprtp, xyzcap )
-
-  call nvamem
-  !==========
 
 endif
 

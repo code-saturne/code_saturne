@@ -197,7 +197,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     icha = ichcor(icla)
 
     if (i_coal_drift.eq.1) then
-      write(name,'(a,i2.2)')'x_age_coal' ,icla
+      write(name,'(a,i2.2)')'x_age_coal_' ,icla
       call field_get_val_s_by_name(name, xagecpi)
     endif
 

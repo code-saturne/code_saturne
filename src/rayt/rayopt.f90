@@ -73,10 +73,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, iok , iiscal, iscaok, ipp, nmodpp
-integer          irphas
-character        car4*4
-character*3      num
+integer          iok , iiscal, iscaok, ipp, nmodpp
 
 !===============================================================================
 ! 0. REDEFINITION DU NOMBRE DE PHASES POUR LE CHARBON PULVERISE
@@ -460,27 +457,11 @@ if (iihmpr.eq.1) then
   call uiray4(iirayo)
   !==========
 
-  ! properties on cells
-  do ii = 1, nproce
-    ipp = ipppro(ii)
-    call fcnmva (nomprp(ii), len(nomprp(ii)), ipp)
-    !==========
-  enddo
-
   call csenso                                                     &
   !==========
      ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
-       ipstdv, ichrvr, ilisvr, ihisvr, tplfmt, isca, iscapp,      &
+       ipstdv, ihisvr, tplfmt, isca, iscapp,                      &
        ipprtp, xyzcap )
-
-  do ii = 1, nproce
-    ipp = ipppro(ii)
-    call cfnmva(nomprp(ii), len(nomprp(ii)), ipp)
-    !==========
-  enddo
-
-  call nvamem
-  !==========
 
   ! take into acount user modifications
   call usipes(nmodpp)

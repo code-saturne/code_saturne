@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cplpro &
+subroutine cplpro
 !================
-
- ( ipropp , ipppst )
 
 !===============================================================================
 !  FONCTION  :
@@ -45,18 +43,11 @@ subroutine cplpro &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! ->  ! numero de la derniere case utlisee             !
-!                  !    !     ! dans ipproc, ipprob, ipprof                    !
-! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
-!                  !    !     !  derniere grandeur definie aux                 !
-!                  !    !     !  cellules (rtp,propce...) pour le              !
-!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -80,64 +71,37 @@ use ppincl
 
 implicit none
 
-! Arguments
-
-integer       ipropp, ipppst
-
 ! Local variables
 
-integer       iprop, ige
+integer       iprop, ige, nprini
 
 !===============================================================================
 
+nprini = nproce
 
-! ---> Definition des pointeurs relatifs aux variables d'etat
+! Continuous phase (gas mixture)
+call add_property_field('t_gas', 'T_Gas', itemp1)
 
-iprop = ipropp
+! State variables
 
-!    Phase continue
-iprop   = iprop + 1
-itemp1  = iprop
-do ige = 1, (ngaze-2*ncharb)
-! ---- Cf. definition de NGAZE dans cplecd.F
-  iprop     = iprop + 1
-  iym1(ige) = iprop
-enddo
-iprop = iprop + 1
-immel = iprop
+! ---> Variables algebriques propres a la phase continue
 
-! ---- Nb de variables algebriques (ou d'etat)
-!         propre a la physique particuliere NSALPP
-!         total NSALTO
+call add_property_field('ym_chx1m', 'Ym_CHx1m', iym1(1))
+call add_property_field('ym_chx2m', 'Ym_CHx2m', iym1(2))
+call add_property_field('ym_co',    'Ym_CO',    iym1(3))
+call add_property_field('ym_o2',    'Ym_O2',    iym1(4))
+call add_property_field('ym_co2',   'Ym_CO2',   iym1(5))
+call add_property_field('ym_h2o',   'Ym_H2O',   iym1(6))
+call add_property_field('ym_n2',    'Ym_N2',    iym1(7))
+call add_property_field('xm',       'Xm',       immel)
+call hide_property(immel)
 
-nsalpp = iprop - ipropp
-nsalto = iprop
+! Nb de variables algebriques (ou d'etat)
+!     propre a la physique particuliere NSALPP
+!     total NSALTO
 
-
-! ---> Positionnement dans le tableau PROPCE
-
-iprop         = nproce
-
-!    Phase continue (melange gazeux)
-iprop           = iprop + 1
-ipproc(itemp1)  = iprop
-ipppst          = ipppst + 1
-ipppro(iprop)   = ipppst
-
-do ige = 1, (ngaze-2*ncharb)
-! ---- Cf. definition de NGAZE dans cplecd.F
-  iprop             = iprop + 1
-  ipproc(iym1(ige)) = iprop
-  ipppst            = ipppst + 1
-  ipppro(iprop)     = ipppst
-enddo
-
-iprop         = iprop + 1
-ipproc(immel) = iprop
- ipppst       = ipppst + 1
-ipppro(iprop) = ipppst
-
-nproce = iprop
+nsalpp = nproce - nprini
+nsalto = nproce
 
 return
-end subroutine
+end subroutine cplpro

@@ -512,10 +512,10 @@ cs_field_pointer_map_radiation(int  n_r_phases)
     else
       suffix[0] = '\0';
 
-    snprintf(s, 63, "rad_source_term%s", suffix); s[63] = '\0';
+    snprintf(s, 63, "rad_st%s", suffix); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(rad_ets), i, cs_field_by_name_try(s));
 
-    snprintf(s, 63, "rad_source_term_implicit%s", suffix); s[63] = '\0';
+    snprintf(s, 63, "rad_st_implicit%s", suffix); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(rad_its), i, cs_field_by_name_try(s));
 
     snprintf(s, 63, "rad_absorption%s", suffix); s[63] = '\0';
@@ -533,7 +533,7 @@ cs_field_pointer_map_radiation(int  n_r_phases)
                        cs_field_by_name_try("wall_temperature"));
 
   cs_field_pointer_map(CS_ENUMF_(qinci),
-                       cs_field_by_name_try("incident_radiative_flux_density"));
+                       cs_field_by_name_try("rad_incident_flux"));
 
   cs_field_pointer_map(CS_ENUMF_(xlam),
                        cs_field_by_name_try("wall_thermal_conductivity"));
@@ -545,13 +545,13 @@ cs_field_pointer_map_radiation(int  n_r_phases)
                        cs_field_by_name_try("emissivity"));
 
   cs_field_pointer_map(CS_ENUMF_(fnet),
-                       cs_field_by_name_try("net_radiative_flux"));
+                       cs_field_by_name_try("rad_net_flux"));
 
   cs_field_pointer_map(CS_ENUMF_(fconv),
-                       cs_field_by_name_try("radiation_convective_flux"));
+                       cs_field_by_name_try("rad_convective_flux"));
 
   cs_field_pointer_map(CS_ENUMF_(hconv),
-                       cs_field_by_name_try("radiation_exchange_coefficient"));
+                       cs_field_by_name_try("rad_exchange_coefficient"));
 }
 
 /*----------------------------------------------------------------------------*/

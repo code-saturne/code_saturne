@@ -166,7 +166,7 @@ if (nscapp.gt.0) then
         write(nfecra,7043) ii,ii,jj,iscal,-ll,jj,iscal,jj,ivisls(iscal)
       endif
       iok = iok + 1
-      !       Si on n'a pas une variance std mais que ivisls est incorrect : erreur
+      ! Si on n'a pas une variance std mais que ivisls est incorrect : erreur
     else if ( (iscal.le.0 .or.iscal.gt.nscal).and.                &
               (ivisls(ii).ne.0.and.ivisls(ii).ne.1) ) then
       write(nfecra,7051)ii,jj,jj,ivisls(ii)
@@ -238,6 +238,9 @@ endif
 
 call add_property_field('density', 'Density', irom)
 icrom = iprpfl(irom)
+if (irovar.eq.0) then
+  call hide_property(irom)
+endif
 
 call add_property_field('molecular_viscosity', 'Laminar Viscosity', iviscl)
 
@@ -952,7 +955,6 @@ do ii = 1, dim
   iprpfl(iprop + ii -1) = id
   ipproc(iprop + ii - 1) = iprop + ii - 1
 enddo
-nomprp(iprop) = label
 
 ! Postprocessing slots
 
@@ -1080,7 +1082,6 @@ do ii = 1, dim
   iprpfl(iprop + ii -1) = id
   ipproc(iprop + ii - 1) = iprop + ii - 1
 enddo
-nomprp(iprop) = ' '
 
 ! Postprocessing slots
 
@@ -1213,15 +1214,12 @@ integer  id, ipp
 !===============================================================================
 
 id = iprpfl(iprop)
-call field_set_key_int(id, keyipp, -1)
 call field_set_key_int(id, keyvis, 0)
 call field_set_key_int(id, keylog, 0)
 
 ipp = ipppro(ipproc(iprop))
 if (ipp .gt. 1) then
-  ichrvr(ipp)   = 0
   ihisvr(ipp,1) = 0
-  ilisvr(ipp)   = 0
 endif
 
 return

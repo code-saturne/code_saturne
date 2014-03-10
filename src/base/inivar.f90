@@ -84,7 +84,7 @@ integer          iel
 integer          iclip , iok   , ii
 integer          iiptot
 integer          imodif
-integer          kscmin, kscmax, keypp, keyvar, iflid, n_fields
+integer          kscmin, kscmax, keyvar, iflid, n_fields
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
@@ -107,7 +107,6 @@ double precision, allocatable, dimension(:) :: w1, w2
 call field_get_n_fields(n_fields)
 
 call field_get_key_id("variable_id", keyvar)
-call field_get_key_id("post_id", keypp)
 
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)

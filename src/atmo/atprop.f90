@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine atprop &
+subroutine atprop
 !================
-
- ( ipropp , ipppst )
 
 !===============================================================================
 !  FONCTION  :
@@ -37,18 +35,11 @@ subroutine atprop &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce)             !
-! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
-!                  !    !     !  derniere grandeur definie aux                 !
-!                  !    !     !  cellules (rtp,propce...) pour le              !
-!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -73,73 +64,39 @@ use atincl
 
 implicit none
 
-! Arguments
-
-integer       ipropp, ipppst
-
 ! Local variables
 
-integer       iprop
+integer       iprop, nprini
+
+!===============================================================================
+
+nprini = nproce
 
 !===============================================================================
 ! 1. POSITIONNEMENT DES PROPRIETES
 !    Atmospheric modules:  dry and humid atmosphere
 !===============================================================================
 
+! Temperature (IPPMOD(IATMOS) = 1 or 2)
+!--------------------------------------
 
-! ---> Temperature (IPPMOD(IATMOS) = 1 or 2)
-!-------------------------------------------------------------------------------
-
-! ---> Definition des pointeurs relatifs aux variables d'etat
-
-iprop = ipropp
-
-iprop  = iprop + 1
-itempc = iprop
-
-! ---> Liquid water content (IPPMOD(IATMOS) = 2)
-!-------------------------------------------------------------------------------
-
-if ( ippmod(iatmos).eq.2) then
-  iprop  = iprop + 1
-  iliqwt = iprop
+if (ippmod(iatmos).ge.1) then
+  call add_property_field('t_celcius', 'RealTemp', itempc)
 endif
 
-
-! ----  Nb de variables algebriques (ou d'etat)
-!         propre a la physique particuliere NSALPP
-!         total NSALTO
-
-nsalpp = iprop - ipropp
-nsalto = iprop
-
-! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
-!         etre numerotees ensuite
-
-ipropp = iprop
-
-
-! ---> Positionnement dans le tableau PROPCE
-!      et reperage du rang pour le post-traitement
-
-iprop = nproce
-
-iprop          = iprop + 1
-ipproc(itempc) = iprop
-ipppst         = ipppst + 1
-ipppro(iprop)  = ipppst
+! Liquid water content (IPPMOD(IATMOS) = 2)
+!------------------------------------------
 
 if (ippmod(iatmos).eq.2) then
-
-  iprop          = iprop + 1
-  ipproc(iliqwt) = iprop
-  ipppst         = ipppst + 1
-  ipppro(iprop)  = ipppst
-
+  call add_property_field('liquid_water_content', 'LiqWater', iliqwt)
 endif
 
-nproce = iprop
+! Nb algebraic (or state) variables
+!   specific to specific physic: nsalpp
+!   total: nsalto
 
+nsalpp = nproce - nprini
+nsalto = nproce
 
 !   - Interface Code_Saturne
 !     ======================

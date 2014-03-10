@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cfprop &
+subroutine cfprop
 !================
-
- ( ipropp , ipppst )
 
 !===============================================================================
 !  FONCTION  :
@@ -38,18 +36,11 @@ subroutine cfprop &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce)             !
-! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
-!                  !    !     !  derniere grandeur definie aux                 !
-!                  !    !     !  cellules (rtp,propce...) pour le              !
-!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -71,107 +62,41 @@ use ppincl
 
 implicit none
 
-! Arguments
-
-integer       ipropp, ipppst
-
 ! Local variables
 
-integer       iprop, ipp
+integer       nprini
 
-!===============================================================================
 !===============================================================================
 ! 1. POSITIONNEMENT DES PROPRIETES : PROPCE
 !    Physique particuliere : Compressible sans choc
 !===============================================================================
 
-if ( ippmod(icompf).ge.0 ) then
+nprini = nproce
 
-! ---> Definition des pointeurs relatifs aux variables d'etat
+if (ippmod(icompf).ge.0) then
 
-
-  iprop = ipropp
-
-!  Proprietes des phases : CV s'il est variable
-  if(icv.ne.0) then
-    iprop         = iprop + 1
-    icv    = iprop
+  if (icv.gt.0) then
+    call add_property_field('specific_heat_const_vol', &
+                            'Specific_Heat_Const_Vol', &
+                            icv)
+    call hide_property(icv)
+    ihisvr(nvpp,1) = 0
   endif
 
-!  Proprietes des phases : Viscosite en volume
-  if(iviscv.ne.0) then
-    iprop         = iprop + 1
-    iviscv = iprop
+  if (iviscv.ne.0) then
+    call add_property_field('volume_viscosity', &
+                            'Volume_Viscosity', &
+                            iviscv)
+    call hide_property(iviscv)
+    ihisvr(nvpp,1) = 0
   endif
 
-! ----  Nb de variables algebriques (ou d'etat)
-!         propre a la physique particuliere NSALPP
-!         total NSALTO
+! Nb algebraic (or state) variables
+!   specific to specific physic: nsalpp
+!   total: nsalto
 
-  nsalpp = iprop - ipropp
-  nsalto = iprop
-
-! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
-!         etre numerotees ensuite
-
-  ipropp = iprop
-
-
-! ---> Positionnement dans le tableau PROPCE
-!      et reperage du rang pour le post-traitement
-
-  iprop = nproce
-
-  if(icv.gt.0) then
-    iprop                 = iprop + 1
-    ipproc(icv   ) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-  endif
-
-  if(iviscv.gt.0) then
-    iprop                 = iprop + 1
-    ipproc(iviscv) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-  endif
-
-  nproce = iprop
-
-!===============================================================================
-! 2. ENTREES SORTIES (entsor.h)
-!===============================================================================
-
-!     Comme pour les autres variables,
-!       si l'on n'affecte pas les tableaux suivants,
-!       les valeurs par defaut seront utilisees
-
-!     nomprp( ) = nom de la propriete
-!     ichrvr( ) = sortie chono (oui 1/non 0)
-!     ilisvr( ) = suivi listing (oui 1/non 0)
-!     ihisvr( ) = sortie historique (nombre de sondes et numeros)
-!     si ihisvr(.,1)  = -1 sortie sur toutes les sondes
-
-!     NB : Seuls les 8 premiers caracteres du nom seront repris dans le
-!          listing le plus detaille
-
-  !-->  chaleur specifique a volume constant
-  if (icv   .gt.0) then
-    ipp = ipppro(ipproc(icv))
-    nomprp(ipproc(icv))   = 'Specific Heat Cst Vol'
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = 0
-  endif
-
-  !-->  viscosite laminaire
-  if (iviscv.gt.0) then
-    ipp = ipppro(ipproc(iviscv))
-    nomprp(ipproc(iviscv))   = 'Volume Viscosity'
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = 0
-  endif
+nsalpp = nproce - nprini
+nsalto = nproce
 
 endif
 

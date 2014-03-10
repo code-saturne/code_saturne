@@ -66,18 +66,13 @@ implicit none
 
 ! Local variables
 
-integer       ipropp, ipppst
-
 !===============================================================================
-
-ipropp = nproce
-ipppst = nvpp
 
 ! ---> Physique particuliere : Combustion Gaz
 
 if (ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
                         .or. ippmod(icolwc).ge.0) then
-  call coprop(ipropp,ipppst)
+  call coprop
   !==========
 endif
 
@@ -92,30 +87,30 @@ endif
 !      Couplee Transport Lagrangien des particules de charbon
 
 if (ippmod(icpl3c).ge.0) then
-  call cplpro (ipropp,ipppst)
+  call cplpro
   !==========
 endif
 
 ! ---> Physique particuliere : Combustion Fuel
 
 if (ippmod(icfuel).ge.0) then
-  call cs_fuel_prop(ipropp,ipppst)
+  call cs_fuel_prop
   !================
 endif
 
 ! ---> Physique particuliere : Compressible
 
 if (ippmod(icompf).ge.0) then
-  call cfprop(ipropp,ipppst)
+  call cfprop
   !==========
 endif
 
 ! ---> Physique particuliere : Versions electriques
 
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-  call elprop(ipropp,ipppst)
+if (ippmod(ieljou).ge.1 .or.                                     &
+    ippmod(ielarc).ge.1 .or.                                     &
+    ippmod(ielion).ge.1) then
+  call elprop
   !==========
 endif
 
@@ -124,11 +119,8 @@ endif
 ! ---> Atmospheric modules:
 !      dry and humid atmosphere (ippmod(iatmos) = 1,2)
 if (ippmod(iatmos).ge.1) then
-  call atprop(ipropp,ipppst)
+  call atprop
   !==========
 endif
-
-nproce = ipropp
-nvpp   = ipppst
 
 end subroutine ppprop

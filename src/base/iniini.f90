@@ -165,14 +165,6 @@ implal = 80
 ficlal = 'listla'
 ntlal  = 1
 
-!    Post traitement
-!       ICHRVR  : Variables a sortir
-!         (1 oui, 0 non, sinon : non initialise)
-
-do ii = 1, nvppmx
-  ichrvr(ii )   = -999
-enddo
-
 ! ---> Fichier thermochinie
 !        FPP : utilisateur
 !        JNF : Janaf
@@ -234,10 +226,6 @@ ncapt = 0
 nthist = 1
 frhist = -1.d0
 nthsav = -1
-
-do ii = 1, npromx
-  nomprp(ii) = ' '
-enddo
 
 do ii = 1, nvppmx
   do jj = 1, ncaptm+1
@@ -307,7 +295,6 @@ enddo
 !              1 pointe sur une case poubelle et constitue donc une
 !              bonne initialisation
 !     NOMVAR : Nom des variables
-!     ILISVR : on suit la variable (1) ou non (0) ou non initialise
 !     ITRSVR : numero de variable si IPP correspond a une variable resolue (p,u,k...)
 !              0 si IPP correspond a une variable annexe (cp, mut...)ou a rien
 !     NTLIST : periode d'ecriture
@@ -323,10 +310,6 @@ ippdt        = 1
 ipptx        = 1
 ippty        = 1
 ipptz        = 1
-
-do ii = 1, nvppmx
-  ilisvr(ii)    = -999
-enddo
 
 ntlist = 1
 

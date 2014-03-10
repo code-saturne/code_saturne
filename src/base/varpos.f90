@@ -70,8 +70,7 @@ implicit none
 
 ! Local variables
 
-character*80  f_label, f_name, s_label, s_name
-integer       iscal , iprop, id, f_dim
+integer       iscal , iprop, id, f_dim, ityloc, itycat
 integer       ii    , jj
 integer       iok   , ippok
 integer       ivisph
@@ -83,7 +82,8 @@ integer       idttur
 
 double precision gravn2
 
-integer(c_int), dimension(ndgmox) ::  mom_f_id, mom_c_id
+character(len=80) :: f_label, f_name, s_label, s_name
+integer(c_int), dimension(ndgmox) :: mom_f_id, mom_c_id
 
 !===============================================================================
 ! 0. INITIALISATIONS
@@ -565,7 +565,6 @@ do imom = 1, nbmomt
 
   iprpfl(iprop) = id
   ipproc(iprop) = iprop
-  nomprp(iprop) = f_label
 
   ! Postprocessing slots
 
@@ -589,16 +588,37 @@ enddo
 
 ! Le rang de la derniere propriete pour le post est IPPPST.
 
+! Local time step
+
+ityloc = 1 ! cells
+itycat = FIELD_INTENSIVE
+
+call field_create('dt', itycat, ityloc, 1, .true., .false., id)
+call field_set_key_str(id, keylbl, 'Local Time Step')
 if (idtvar.gt.0) then
+  if (idtvar.eq.2) then
+    call field_set_key_int(id, keylog, 1)
+    call field_set_key_int(id, keyvis, 1)
+  endif
   ippdt = nvpp + 1
   nvpp = nvpp + 1
+  call field_set_key_int(id, keyipp, ippdt)
 endif
 
-if (ipucou.eq.1) then
+itycat = FIELD_INTENSIVE
+
+! Transient velocity/pressure coupling, postprocessing field
+! (variant used for computation is a tensorial field, not this one)
+
+if (ipucou.ne.0 .or. ncpdct.gt.0) then
+  call field_create('dttens', itycat, ityloc, 6, .true., .false., idtten)
+  call field_set_key_int(idtten, keyvis, 1)
+  call field_set_key_int(idtten, keylog, 1)
   ipptx = nvpp + 1
   ippty = nvpp + 2
   ipptz = nvpp + 3
   nvpp  = nvpp + 3
+  call field_set_key_int(idtten, keyipp, ipptx)
 endif
 
 ! Verification de la limite sur NVPP

@@ -135,14 +135,14 @@ do icla = 1, nclacp
   romax  = -grand
 
   if (i_coal_drift.eq.1) then
-    write(name,'(a,i2.2)') 'x_age_coal', icla
+    write(name,'(a,i2.2)') 'x_age_coal_', icla
     call field_get_val_s_by_name(name,xagcpi)
 
-    write(name,'(a,i2.2)') 'age_coal', icla
+    write(name,'(a,i2.2)') 'age_coal_', icla
     call field_get_val_s_by_name(name,agecpi)
   endif
 
-  write(name,'(a,i2.2)') 'w_solid_coal', icla
+  write(name,'(a,i2.2)') 'w_solid_coal_', icla
   call field_get_val_s_by_name(name,frmcpi)
 
   do iel = 1, ncel

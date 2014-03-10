@@ -200,7 +200,7 @@ $\bullet\quad$For each quantity (problem unknown, preselected numerical
 variable or preselected physical parameter), the user specifies if a
 post-processing output is wanted. The output frequency can be set.\\
 
-\motcleb{ichrvr}{ia}{-999, 0 or 1}{-999}{O}{L1}
+\motcleb{keyvis}{ifk}{field key, 0, 1, 2, or 3}{0}{O}{L1}
 {for each quantity defined at the cell centres (physical or numerical
 variable), indicator of whether it should be post-processed or not \\
 \hspace*{1.3cm}= -999: not initialised. By default, the post-processed
@@ -208,8 +208,10 @@ quantities are the unknowns (pressure, velocity, $k$, $\varepsilon$,
 $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$, scalars), density,
 turbulent viscosity and the time step if is not uniform\\
 \hspace*{1.3cm}= 0: not post-processed\\
-\hspace*{1.3cm}= 1: post-processed\\
-useful if and only if the variable is defined at the cell centers:
+\hspace*{1.3cm}= 1: post-processed on main location\\
+\hspace*{1.3cm}= 2: non-reconstructed values postprocessed on boundary if main location is cells\\
+\hspace*{1.3cm}= 3: both 1 and 2\\
+useful if and only if the variable is defined at the cell centers or boundary faces:
 calculation variable, physical property (time step, density,
 viscosity, specific heat) or turbulent viscosity if {\tt iturb}
 $\geqslant$ 10}
@@ -443,13 +445,9 @@ from \texttt{usrf01.n\_0002} to \texttt{usrf10.n\_0002}. The opening,
 closing, format and location of these files must be managed by the user.\\
 useful if and only if the user needs files (therefore always useful, by security)}
 
-\motcleb{ilisvr}{ia}{-999, 1 or 0}{-999}{O}{L1}
+\motcleb{keylog}{ifk}{1 or 0}{-1}{O}{L1}
 {for every quantity (variable, physical or numerical property ...),
 indicator concerning the writing in the execution report file \\
-\hspace*{1.3cm}= -999: automatically converted into 1 if the concerned
-quantity is one of the main variables (pressure, velocity, turbulence,
-scalar), the density, the time step if {\tt idtvar} $\ne$ 0 or the turbulent
-viscosity. Otherwise converted into 0.\\
 \hspace*{1.3cm}= 1: writing in the execution listing.\\
 \hspace*{1.3cm}= 0: no writing.\\
 always useful}

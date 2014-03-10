@@ -27,7 +27,7 @@ subroutine cs_coal_prop
 ! Purpose:
 ! --------
 
-! Define state variables for cpulverized coal combustion.
+! Define state variables for pulverized coal combustion.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -114,6 +114,7 @@ call add_property_field('ym_n2',    'Ym_N2',    iym1(12))
 
 ! Algebraic variables specific to gas - particles suspension
 call add_property_field('xm',    'Xm',    immel)
+call hide_property(immel)
 
 ! Algebraic variables specific to continuous phase
 if (ieqnox .eq. 1) then

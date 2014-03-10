@@ -26,7 +26,7 @@
 
 /*!
   \page parameters Input of calculation parameters (Fortran modules)
- 
+
   \section intro Introduction
 
   User subroutines for input of calculation parameters (Fortran modules).
@@ -76,58 +76,11 @@
   As for other variables, if we do not assign the following array values,
   default values will be used:
 
-     - ichrvr( ) = chonological output (yes 1/no 0)
-     - ilisvr( ) = logging in listing (yes 1/no 0)
-     - ihisvr( ) = history output (number of probes and their numbers)
      - if ihisvr(.,1)  = -1, output for all probes
 
-  \note Only the fist 8 characters of a name will be used in the most detailed log.
+  \note Only the fist 16 characters of a name will be used in the most detailed log.
 
   \snippet cs_user_parameters-output.f90 init_05
-
-  User scalar variables.
-
-  We may modify here the arrays relative to user scalars, but scalars
-    reserved for specific physics are handled automatically. This explains
-    the tests on 'nscaus', which ensure that the targeted scalars are
-    truly user scalars.
-  By specific physics, we mean only those which are handled in specific
-    modules of the code, such as coal, combustion, electric arcs (see usppmo).
-
-  \snippet cs_user_parameters-output.f90 init_06
-
-  Other variables.
-
-  \snippet cs_user_parameters-output.f90 init_07
-
-  Specific physics variables.
-
-  \snippet cs_user_parameters-output.f90 init_08
-
-  Variables for coal particles.
-
-  \snippet cs_user_parameters-output.f90 init_09
-
-  Variables for droplets.
-
-  \snippet cs_user_parameters-output.f90 init_10
-
-  Variables for carrying gas.
-
-  \snippet cs_user_parameters-output.f90 init_11
-
-  Variables of State; User defined Variables.
-
-  \snippet cs_user_parameters-output.f90 init_12
-
-  State variables for coal particles or fuel droplets.
-
-  \snippet cs_user_parameters-output.f90 init_13
-
-  State variables for carrier gas phase.
-
-  \snippet cs_user_parameters-output.f90 init_14
-
 
   \section examples Examples
 
@@ -141,9 +94,8 @@
 
    field_get_id returns -1 if field does not exist
 
-  
   \snippet cs_user_parameters-output.f90 example_1
-  
+
   \subsection example_2 Example 2
 
   Enforce existence of 'tplus' and 'tstar' fields, so that
@@ -155,7 +107,6 @@
   forcing the definition of these fields to save the values computed
   for the boundary layer is necessary.
 
-  
   \snippet cs_user_parameters-output.f90 example_2
-  
+
 */

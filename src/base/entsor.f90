@@ -77,21 +77,6 @@ module entsor
   !>   - \>0: period
   integer, save :: ntsuit
 
-  !> in post post processing output nth variable if ichrvr(n)=1
-  !> for each quantity defined at the cell centres (physical or numerical
-  !> variable), indicator of whether it should be post-processed or not
-  !>   * -999: not initialised. By default, the post-processed
-  !> quantities are the unknowns (pressure, velocity, \f$k\f$, \f$\varepsilon\f$,
-  !> \f$R_{ij}\f$, \f$\omega\f$, \f$\varphi\f$, \f$\overline{f}\f$, scalars),
-  !> density,turbulent viscosity and the time step if is not uniform.
-  !>   * 0: not post-processed.
-  !>   * 1: post-processed.
-  !>
-  !> Useful if and only if the variable is defined at the cell centers:
-  !> calculation variable, physical property (time step, density,
-  !> viscosity, specific heat) or turbulent viscosity if \ref iturb >= 10
-  integer, save :: ichrvr(nvppmx)
-
   !> field key for output label
   integer, save :: keylbl = -1
 
@@ -345,15 +330,6 @@ module entsor
 
   character*80, save :: nomva0
 
-  !> name physical properties: used in the
-  !> execution listing, in the post-processing files, etc.
-  !> If not initialised,  the code chooses the manes by default.
-  !> It is recommended not to define property names of more than 16
-  !> characters, to get a clear execution listing (some advanced writing
-  !> levels take into account only the first 16 characters).
-  !> always useful}
-  character*80, save :: nomprp(npromx)
-
   !> locator pointer for variables output
   integer, save :: ipprtp(nvarmx)
   !> locator pointer for variables output
@@ -366,16 +342,6 @@ module entsor
   integer, save :: ippty
   !> locator pointer for variables output
   integer, save :: ipptz
-
-  !> for every quantity (variable, physical or numerical property ...),
-  !> indicator concerning the writing in the execution report file
-  !> default value (-999) is automatically converted into 1 if the concerned
-  !> quantity is one of the main variables (pressure, velocity, turbulence,
-  !> scalar), the density, the time step if \ref idtvar > 0 or the turbulent
-  !> viscosity. Otherwise converted into 0.
-  !> = 1: writing in the execution listing.
-  !> = 0: no writing.
-  integer, save :: ilisvr(nvppmx)
 
   !> writing period in the execution report file.
   !>   - -1: no writing

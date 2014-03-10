@@ -6886,17 +6886,9 @@ For gas combustion or if the GUI is not used for coal combustion, the 3 subrouti
 considered specific physics. These subroutines are called at the calculation start.
 They allow to:
 \begin{list}{$\bullet$}{}
-\item generate, for the variables which are specific to the activated
-             specific physics module, chronological outputs (indicators
-             \texttt{ichrvr\index{ichrvr}(ipp)}), follow-ups in the listings
-             (indicator \texttt{ilisvr\index{ilisvr}(ipp)}) and to activate
-             chronological records at the probes defined in
+\item activate, for the variables which are specific to the activated
+             specific physics module, chronological records at the probes defined in
              \texttt{cs\_user\_parameters.f90} (indicators \texttt{ihisvr(ipp)}).\\
-The way of doing it is the same as in \texttt{cs\_user\_parameters.f90} and the writing
-      frequencies of these ouputs are set by \texttt{cs\_user\_parameters.f90}. The values
-      of the indicators \texttt{ipp} are
-      \texttt{ipp=ipppro\index{ipppro}(ipproc\index{ipproc}(ivar))}, with \texttt{ivar}
-      the number of the specific physics variable.
 Concerning the main variables (velocity, pressure, etc ...) the user
       must still complete \texttt{cs\_user\_parameters.f90} if he wants to get
       chronological records, printings in the listing or chronological

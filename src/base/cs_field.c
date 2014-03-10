@@ -3278,11 +3278,23 @@ cs_field_log_key_vals(int   key_id,
   int mask_prev = 0;
   const char null_str[] = "(null)";
 
-
   if (key_id < 0 || key_id >= _n_keys)
     return;
 
   kd = _key_defs + key_id;
+
+  /* First loop to determine field width */
+
+  size_t name_width = 24;
+
+  for (i = 0; i < _n_fields; i++) {
+    const cs_field_t *f = _fields[i];
+    size_t l = strlen(f->name);
+    if (l > name_width)
+      name_width = l;
+  }
+  if (name_width > 63)
+    name_width = 63;
 
   /* Global indicators */
   /*-------------------*/
@@ -3298,6 +3310,8 @@ cs_field_log_key_vals(int   key_id,
 
   for (cat_id = mask_id_start; cat_id < mask_id_end + 1; cat_id++) {
 
+    /* Main loop on fields */
+
     for (i = 0; i < _n_fields; i++) {
 
       const cs_field_t *f = _fields[i];
@@ -3307,24 +3321,27 @@ cs_field_log_key_vals(int   key_id,
 
       if (cat_id == mask_id_end || f->type & _type_flag_mask[cat_id]) {
 
+        char name_s[64] =  "";
+        cs_log_strpad(name_s, f->name, name_width, 64);
+
         cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
 
         if (kd->type_flag == 0 || (kd->type_flag & f->type)) {
           if (kd->type_id == 'i') {
             if (kv->is_set == true)
-              cs_log_printf(CS_LOG_SETUP, "    %-24s %d\n",
-                            f->name, *((int *)kv->val));
+              cs_log_printf(CS_LOG_SETUP, "    %s %d\n",
+                            name_s, *((int *)kv->val));
             else if (log_defaults)
-              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10d (default)\n"),
-                            f->name, *((int *)kd->def_val));
+              cs_log_printf(CS_LOG_SETUP, _("    %s %-10d (default)\n"),
+                            name_s, *((int *)kd->def_val));
           }
           else if (kd->type_id == 'd') {
             if (kv->is_set == true)
-              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10.3g\n"),
-                          f->name, *((double *)kv->val));
+              cs_log_printf(CS_LOG_SETUP, _("    %s %-10.3g\n"),
+                          name_s, *((double *)kv->val));
             else if (log_defaults)
-              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10.3g (default)\n"),
-                            f->name, *((double *)kd->def_val));
+              cs_log_printf(CS_LOG_SETUP, _("    %s %-10.3g (default)\n"),
+                            name_s, *((double *)kd->def_val));
           }
           else if (kd->type_id == 's') {
             const char *s;
@@ -3332,29 +3349,27 @@ cs_field_log_key_vals(int   key_id,
               s = *((const char **)(kv->val));
               if (s == NULL)
                 s = null_str;
-              cs_log_printf(CS_LOG_SETUP, _("    %-24s %s\n"), f->name, s);
+              cs_log_printf(CS_LOG_SETUP, _("    %s %s\n"), name_s, s);
             }
             else if (log_defaults) {
               s = *(const char **)(kd->def_val);
               if (s == NULL)
                 s = null_str;
-              cs_log_printf(CS_LOG_SETUP, _("    %-24s %-10s (default)\n"),
-                            f->name, s);
+              cs_log_printf(CS_LOG_SETUP, _("    %s %-10s (default)\n"),
+                            name_s, s);
             }
           }
           else if (kd->type_id == 't') {
             const void *t;
             if (kv->is_set == true) {
               t = *(const void **)(kv->val);
-              cs_log_printf(CS_LOG_SETUP, _("    %-24s\n"),
-                            f->name);
+              cs_log_printf(CS_LOG_SETUP, _("    %s\n"), name_s);
               if (kd->log_func != NULL)
                 kd->log_func(t);
             }
             else if (log_defaults) {
               t = *(const void **)(kd->def_val);
-              cs_log_printf(CS_LOG_SETUP, _("    %-24s (default)\n"),
-                            f->name);
+              cs_log_printf(CS_LOG_SETUP, _("    %s (default)\n"), name_s);
               if (kd->log_func != NULL)
                 kd->log_func(t);
             }

@@ -74,7 +74,7 @@ integer       nmodpp
 ! Local variables
 
 integer       ipp
-integer       iok   , ippok
+integer       iok   , ippok,  keycpl
 
 !===============================================================================
 ! 0. INITIALISATIONS
@@ -82,6 +82,8 @@ integer       iok   , ippok
 
 ! Initialize variables to avoid compiler warnings
 ippok = 0
+
+call field_get_key_id('coupled', keycpl)
 
 !===============================================================================
 ! CALCUL DE NSCAPP
@@ -169,6 +171,7 @@ iconv (ipr) = 0
 ! Velocity
 
 call add_variable_field('velocity', 'Velocity', 3, iu)
+call field_set_key_int(ivarfl(iu), keycpl, 1)
 
 ! All components point to same field
 iv = iu + 1
@@ -223,6 +226,7 @@ endif
 if (iale.eq.1) then
 
   call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma)
+  call field_set_key_int(ivarfl(iuma), keycpl, 1)
 
   istat(iuma) = 0
   iconv(iuma) = 0

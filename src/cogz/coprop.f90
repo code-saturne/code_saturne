@@ -20,37 +20,26 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine coprop &
+subroutine coprop
 !================
 
- ( ipropp , ipppst )
-
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-!     INIT DES POSITIONS DES VARIABLES D'ETAT POUR
-!              POUR LA COMBUSTION
-!        FLAMME DE DIFFUSION ET DE PREMELANGE
-!         (DANS VECTEURS PROPCE, PROPFB)
+! Define state variables for gas combustion,
+! diffusion and premixed flame.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce ou prpb)     !
-! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
-!                  !    !     !  derniere grandeur definie aux                 !
-!                  !    !     !  cellules (rtp,propce...) pour le              !
-!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -76,345 +65,115 @@ use ihmpre
 
 implicit none
 
-! Arguments
-
-integer       ipropp, ipppst
-
 ! Local variables
 
-integer       iprop, icg, idirac
+integer       idirac, nprini
+
+character(len=80) :: f_name, f_label
 
 !===============================================================================
-!===============================================================================
-! 1. POSITIONNEMENT DES PROPRIETES : PROPCE
-!    Physique particuliere : Flamme de diffusion chimie 3 points
-!===============================================================================
 
-if ( ippmod(icod3p).ge.0 ) then
+! Initialization
 
-! ---> Definition des pointeurs relatifs aux variables d'etat
+nprini = nproce
 
+! Flamme de diffusion chimie 3 points
+!====================================
 
-  iprop = ipropp
+if (ippmod(icod3p).ge.0) then
 
-  iprop  = iprop + 1
-  itemp  = iprop
-  do icg = 1, ngazg
-    iprop    = iprop + 1
-    iym(icg) = iprop
-  enddo
-  if ( ippmod(icod3p).eq.1 .and. iirayo.gt.0 ) then
-    iprop = iprop + 1
-    ickabs= iprop
-    iprop = iprop + 1
-    it4m  = iprop
-    iprop = iprop + 1
-    it3m  = iprop
-  endif
+  call add_property_field('temperature', 'Temperature', itemp)
 
-
-! ----  Nb de variables algebriques (ou d'etat)
-!         propre a la physique particuliere NSALPP
-!         total NSALTO
-
-  nsalpp = iprop - ipropp
-  nsalto = iprop
-
-! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
-!         etre numerotees ensuite
-
-  ipropp = iprop
-
-
-! ---> Positionnement dans le tableau PROPCE
-!      et reperage du rang pour le post-traitement
-
-  iprop                 = nproce
-
-  iprop                 = iprop + 1
-  ipproc(itemp)         = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  do icg = 1, ngazg
-    iprop                 = iprop + 1
-    ipproc(iym(icg))      = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-  enddo
-
-  if ( ippmod(icod3p).eq.1 .and. iirayo.gt.0 ) then
-
-    iprop                 = iprop + 1
-    ipproc(ickabs)        = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(it4m)          = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(it3m)          = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-  endif
-
-  nproce = iprop
-
- endif
-
-
-!===============================================================================
-! 3. POSITIONNEMENT DES PROPRIETES : PROPCE
-!    Physique particuliere : Flamme de premelange - Modele EBU
-!===============================================================================
-
-if ( ippmod(icoebu).ge.0 ) then
-
-! ---> Definition des pointeurs relatifs aux variables d'etat
-
-  iprop = ipropp
-
-  iprop  = iprop + 1
-  itemp  = iprop
-  do icg = 1, ngazg
-    iprop    = iprop + 1
-    iym(icg) = iprop
-  enddo
-  if ( ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 )           &
-       .and. ( iirayo.gt.0 )  ) then
-    iprop = iprop + 1
-    ickabs= iprop
-    iprop = iprop + 1
-    it4m  = iprop
-    iprop = iprop + 1
-    it3m  = iprop
-  endif
-
-
-! ----  Nb de variables algebriques (ou d'etat)
-!         propre a la physique particuliere NSALPP
-!         total NSALTO
-
-  nsalpp = iprop - ipropp
-  nsalto = iprop
-
-! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
-!         etre numerotees ensuite
-
-  ipropp = iprop
-
-
-! ---> Positionnement dans le tableau PROPCE
-!      et reperage du rang pour le post-traitement
-
-  iprop         = nproce
-
-  iprop                 = iprop + 1
-  ipproc(itemp)         = iprop
-  ipppst                = ipppst + 1
-  ipppro(iprop)         = ipppst
-
-  do icg = 1, ngazg
-    iprop                 = iprop + 1
-    ipproc(iym(icg))      = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-  enddo
-
-  if ( ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 )           &
-       .and. ( iirayo.gt.0 )  ) then
-
-    iprop                 = iprop + 1
-    ipproc(ickabs)        = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(it4m)          = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(it3m)          = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-  endif
-
-  nproce = iprop
-
- endif
-
-
-!===============================================================================
-! 5. POSITIONNEMENT DES PROPRIETES : PROPCE
-!    Physique particuliere : Flamme de premelange - Modele LWC
-!===============================================================================
-
-if ( ippmod(icolwc).ge.0 ) then
-
-! ---> Definition des pointeurs relatifs aux variables d'etat
-
-  iprop = ipropp
-
-  iprop  = iprop + 1
-  itemp  = iprop
-
-  iprop  = iprop + 1
-  imam   = iprop
-
-  iprop  = iprop + 1
-  itsc   = iprop
-
-  do icg = 1, ngazg
-    iprop    = iprop + 1
-    iym(icg) = iprop
-  enddo
-
-  do idirac = 1, ndirac
-! masse volumique Locale
-    iprop         = iprop + 1
-    irhol(idirac) = iprop
-! Temperature L    .
-    iprop         = iprop + 1
-    iteml(idirac) = iprop
-! Fraction de Melange L.
-    iprop         = iprop + 1
-    ifmel(idirac) = iprop
-! Fraction Massique L.
-    iprop         = iprop + 1
-    ifmal(idirac) = iprop
-! Amplitude L.
-    iprop         = iprop + 1
-    iampl(idirac) = iprop
-! Terme Source Chimique L.
-    iprop         = iprop + 1
-    itscl(idirac) = iprop
-! MAsse Molaire L.
-    iprop         = iprop + 1
-    imaml(idirac) = iprop
-  enddo
-
-  if ( ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
-                             .or. ippmod(icolwc).eq.5 )           &
-       .and. ( iirayo.gt.0 )  ) then
-    iprop = iprop + 1
-    ickabs= iprop
-    iprop = iprop + 1
-    it4m  = iprop
-    iprop = iprop + 1
-    it3m  = iprop
-  endif
-
-! ----  Nb de variables algebriques (ou d'etat)
-!         propre a la physique particuliere NSALPP
-!         total NSALTO
-
-  nsalpp = iprop - ipropp
-  nsalto = iprop
-
-! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
-!         etre numerotees ensuite
-
-  ipropp = iprop
-
-
-! ---> Positionnement dans le tableau PROPCE
-
-  iprop         = nproce
-
-  iprop         = iprop + 1
-  ipproc(itemp) = iprop
-  ipppst        = ipppst + 1
-  ipppro(iprop) = ipppst
-
-  iprop         = iprop + 1
-  ipproc(imam)  = iprop
-  ipppst        = ipppst + 1
-  ipppro(iprop) = ipppst
-
-  iprop         = iprop + 1
-  ipproc(itsc)  = iprop
-  ipppst        = ipppst + 1
-  ipppro(iprop) = ipppst
-
-  do icg = 1, ngazg
-    iprop            = iprop + 1
-    ipproc(iym(icg)) = iprop
-    ipppst           = ipppst + 1
-    ipppro(iprop)    = ipppst
-  enddo
-
-  do idirac = 1, ndirac
-    iprop                 = iprop + 1
-    ipproc(irhol(idirac)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(iteml(idirac)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(ifmel(idirac)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(ifmal(idirac)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(iampl(idirac)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(itscl(idirac)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(imaml(idirac)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-  enddo
-
-  if ( ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
-                             .or. ippmod(icolwc).eq.5 )           &
-       .and. ( iirayo.gt.0 )  ) then
-
-    iprop                 = iprop + 1
-    ipproc(ickabs)        = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(it4m)          = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-    iprop                 = iprop + 1
-    ipproc(it3m)          = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
-
-  endif
-
-  nproce = iprop
+  call add_property_field('ym_fuel', 'Ym_Fuel', iym(1))
+  call add_property_field('ym_oxyd', 'Ym_Oxyd', iym(2))
+  call add_property_field('ym_prod', 'Ym_Prod', iym(3))
 
 endif
 
-!   - Interface Code_Saturne
-!     ======================
-!     Construction de l'indirection entre la numerotation du noyau et XML
+! Premixed flame - EBU model
+!===========================
+
+if (ippmod(icoebu).ge.0) then
+
+  call add_property_field('temperature', 'Temperature', itemp)
+
+  call add_property_field('ym_fuel', 'Ym_Fuel', iym(1))
+  call add_property_field('ym_oxyd', 'Ym_Oxyd', iym(2))
+  call add_property_field('ym_prod', 'Ym_Prod', iym(3))
+
+endif
+
+! Premixed flame - LWC model
+!===========================
+
+if (ippmod(icolwc).ge.0) then
+
+  call add_property_field('temperature', 'Temperature', itemp)
+  call add_property_field('molar_mass',  'Molar_Mass',  imam)
+  call add_property_field('source_term', 'Source_Term', itsc)
+
+  call add_property_field('ym_fuel', 'Ym_Fuel', iym(1))
+  call add_property_field('ym_oxyd', 'Ym_Oxyd', iym(2))
+  call add_property_field('ym_prod', 'Ym_Prod', iym(3))
+
+  do idirac = 1, ndirac
+
+    write(f_name,  '(a,i1)') 'rho_local_', idirac
+    write(f_label, '(a,i1)') 'Rho_Local_', idirac
+    call add_property_field(f_name, f_label, irhol(idirac))
+
+    write(f_name,  '(a,i1)') 'temperature_local_', idirac
+    write(f_label, '(a,i1)') 'Temperature_Local_', idirac
+    call add_property_field(f_name, f_label, iteml(idirac))
+
+    write(f_name,  '(a,i1)') 'ym_local_', idirac
+    write(f_label, '(a,i1)') 'Ym_Local_', idirac
+    call add_property_field(f_name, f_label, ifmel(idirac))
+
+    write(f_name,  '(a,i1)') 'wm_local_', idirac
+    write(f_label, '(a,i1)') 'wm_Local_', idirac
+    call add_property_field(f_name, f_label, ifmal(idirac))
+
+    write(f_name,  '(a,i1)') 'amplitude_local_', idirac
+    write(f_label, '(a,i1)') 'Amplitude_Local_', idirac
+    call add_property_field(f_name, f_label, iampl(idirac))
+
+    write(f_name,  '(a,i1)') 'chemical_st_local_', idirac
+    write(f_label, '(a,i1)') 'Chemical_ST_Local_', idirac
+    call add_property_field(f_name, f_label, itscl(idirac))
+
+    write(f_name,  '(a,i1)') 'molar_mass_local_', idirac
+    write(f_label, '(a,i1)') 'M_Local_', idirac
+    call add_property_field(f_name, f_label, imaml(idirac))
+
+  enddo
+
+endif
+
+! Additional fields for radiation
+!================================
+
+if (iirayo.ge.1) then
+  if (ippmod(icod3p).eq.1 .or.                                  &
+      ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.         &
+      ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.         &
+      ippmod(icolwc).eq.5) then
+    call add_property_field('kabs',          'KABS',  ickabs)
+    call add_property_field('temperature_4', 'Temp4', it4m)
+    call add_property_field('temperature_3', 'Temp3', it3m)
+  endif
+endif
+
+! Nb algebraic (or state) variables
+!   specific to specific physic: nsalpp
+!   total: nsalto
+
+nsalpp = nproce - nprini
+nsalto = nproce
+
+! Code_Saturne GUI
+! ================
+! Construction de l'indirection entre la numerotation du noyau et XML
 if (iihmpr.eq.1) then
   call uicopr (nsalpp, ippmod, ipppro, ipproc,                       &
                icolwc, iirayo, itemp, imam, iym, ickabs, it4m, it3m, &

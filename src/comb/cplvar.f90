@@ -105,8 +105,8 @@ call field_set_key_double(f_id, kscmax, grand)
 
 do icha = 1, ncharb
 
-  write(f_name,'(a7,i2.2)') 'mv1_fraction', icha
-  write(f_label,'(a6,i2.2)') 'Fr_mv1', icha
+  write(f_name,'(a7,i2.2)') 'mv1_fraction_', icha
+  write(f_label,'(a6,i2.2)') 'Fr_mv1_', icha
   call add_model_scalar_field(f_name, f_label, if1m(icha))
   f_id = ivarfl(isca(if1m(icha)))
 
@@ -117,8 +117,8 @@ enddo
 
 do icha = 1, ncharb
 
-  write(f_name,'(a7,i2.2)') 'mv2_fraction', icha
-  write(f_label,'(a6,i2.2)') 'Fr_mv2', icha
+  write(f_name,'(a7,i2.2)') 'mv2_fraction_', icha
+  write(f_label,'(a6,i2.2)') 'Fr_mv2_', icha
   call add_model_scalar_field(f_name, f_label, if2m(icha))
   f_id = ivarfl(isca(if2m(icha)))
 

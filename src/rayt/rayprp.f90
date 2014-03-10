@@ -138,7 +138,7 @@ if (iirayo.gt.0) then
 
   do irphas = 1, nrphas
 
-    if (irphas.eq.1) then
+    if (irphas.gt.1) then
       write(e_name,  '("_", i2.2)') irphas
       write(e_label,  '("_", i2.2)') irphas
     else
@@ -146,13 +146,13 @@ if (iirayo.gt.0) then
       e_label = ""
     endif
 
-    f_name = 'rad_source_term' // e_name
+    f_name = 'rad_st' // e_name
     f_label = 'Srad' // e_label
     call add_property_field(f_name, f_label, itsre(irphas))
     call hide_property(itsre(irphas))
     ihisvr(ipppro(itsre(irphas)),1) = -1
 
-    f_name = 'rad_source_term_implicit' // e_name
+    f_name = 'rad_st_implicit' // e_name
     f_label = 'ITSRI' // e_label
     call add_property_field(f_name, f_label, itsri(irphas))
     call hide_property(itsri(irphas))
@@ -192,7 +192,7 @@ if (iirayo.gt.0) then
                     itycat, ityloc, 1, ilved, inoprv, itparo)
   call field_set_key_str(itparo, keylbl, 'Wall_temp')
 
-  call field_create('incident_radiative_flux_density',  &
+  call field_create('rad_incident_flux',  &
                     itycat, ityloc, 1, ilved, inoprv, iqinci)
   call field_set_key_str(iqinci, keylbl, 'Incident_flux')
 
@@ -204,19 +204,19 @@ if (iirayo.gt.0) then
                     itycat, ityloc, 1, ilved, inoprv, iepa)
   call field_set_key_str(iepa, keylbl, 'Thickness')
 
-  call field_create('wall_emissivity',  &
+  call field_create('emissivity',  &
                     itycat, ityloc, 1, ilved, inoprv, ieps)
   call field_set_key_str(ieps, keylbl, 'Emissivity')
 
-  call field_create('net_radiative_flux',  &
+  call field_create('rad_net_flux',  &
                     itycat, ityloc, 1, ilved, inoprv, ifnet)
   call field_set_key_str(ifnet, keylbl, 'Net_flux')
 
-  call field_create('radiation_convective_flux',  &
+  call field_create('rad_convective_flux',  &
                     itycat, ityloc, 1, ilved, inoprv, ifconv)
   call field_set_key_str(ifconv, keylbl, 'Convective_flux')
 
-  call field_create('radiation_exchange_coefficient',  &
+  call field_create('rad_exchange_coefficient',  &
                     itycat, ityloc, 1, ilved, inoprv, ihconv)
   call field_set_key_str(ihconv, keylbl, 'Convective_exch_coef')
 

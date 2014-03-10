@@ -488,15 +488,15 @@ void CS_PROCF (uiray4, UIRAY4) (int *const iirayo)
     "flux_convectif",
     "coeff_ech_conv"};
 
-  const cs_field_pointer_id_t b_rad_f_id[8] = {
-    CS_ENUMF_(tparo),
-    CS_ENUMF_(qinci),
-    CS_ENUMF_(epa),
-    CS_ENUMF_(xlam),
-    CS_ENUMF_(emissivity),
-    CS_ENUMF_(fnet),
-    CS_ENUMF_(fconv),
-    CS_ENUMF_(hconv)
+  const cs_field_t * b_rad_f[8] = {
+    CS_F_(tparo),
+    CS_F_(qinci),
+    CS_F_(epa),
+    CS_F_(xlam),
+    CS_F_(emissivity),
+    CS_F_(fnet),
+    CS_F_(fconv),
+    CS_F_(hconv)
   };
 
 #if _XML_DEBUG_
@@ -517,7 +517,7 @@ void CS_PROCF (uiray4, UIRAY4) (int *const iirayo)
       bft_printf(_("--output boundary faces: %s log %d, postprocess %d\n"),
                  b_rad_names[i], log, post_vis);
 #endif
-      cs_field_t *f = cs_field_by_id(b_rad_f_id[i]);
+      cs_field_t *f = b_rad_f[i];
       if (f != NULL) {
         cs_field_set_key_int(f, k_vis, f_post_vis);
         cs_field_set_key_int(f, k_log, f_log);

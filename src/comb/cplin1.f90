@@ -153,72 +153,11 @@ do isc = 1, nscapp
 enddo
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
+! 2. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
 
-
-! ---> Variables algebriques propres a la suspension gaz - particules
-
-ipp = ipppro(ipproc(immel))
-nomprp(ipproc(immel))   = 'XM'
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-! ---> Variables algebriques propres a la phase continue
-
-ipp = ipppro(ipproc(itemp1))
-nomprp(ipproc(itemp1))   = 'Temp_GAZ'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(irom1))
-nomprp(ipproc(irom1))   = 'ROM_GAZ'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(iym1(1)))
-nomprp(ipproc(iym1(1)))   = 'YM_CHx1m'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(iym1(2)))
-nomprp(ipproc(iym1(2)))   = 'YM_CHx2m'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(iym1(3)))
-nomprp(ipproc(iym1(3)))   = 'YM_CO'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(iym1(4)))
-nomprp(ipproc(iym1(4)))   = 'YM_O2'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(iym1(5)))
-nomprp(ipproc(iym1(5)))   = 'YM_CO2'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(iym1(6)))
-nomprp(ipproc(iym1(6)))   = 'YM_H2O'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-ipp = ipppro(ipproc(iym1(7)))
-nomprp(ipproc(iym1(7)))   = 'YM_N2'
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!===============================================================================
-! 3. INFORMATIONS COMPLEMENTAIRES
-!===============================================================================
-
-! ---> Definition des pointeurs du tableau TBMCR utilise dans cpphy1.F
-!      et dans les sous-programmes appeles
+! Definition des pointeurs du tableau TBMCR utilise dans cpphy1.f90
+! et dans les sous-programmes appeles
 
 is = 0
 do icha = 1, ncharb
@@ -269,14 +208,14 @@ irovar = 1
 ivivar = 0
 
 !===============================================================================
-! 4. ON REDONNE LA MAIN A L'UTLISATEUR
+! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
 call uscpl1
 !==========
 
 !===============================================================================
-! 5. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
+! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
 !===============================================================================
 
 iok = 0

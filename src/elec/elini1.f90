@@ -68,8 +68,8 @@ implicit none
 
 ! Local variables
 
-integer          idimve , iesp
-integer          ipp , ii , iok
+integer          idimve
+integer          ipp , iok
 integer          isc , ivar
 
 !===============================================================================
@@ -171,90 +171,7 @@ do isc = 1, nscapp
 enddo
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
-!===============================================================================
-
-ipp = ipppro(ipproc(itemp))
-nomprp(ipproc(itemp))  = 'Temper'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-ipp = ipppro(ipproc(iefjou))
-nomprp(ipproc(iefjou))  = 'PuisJoul'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-do idimve = 1, ndimve
-  ipp = ipppro(ipproc(idjr(idimve)))
-  write(nomprp(ipproc(idjr(idimve))),'(A7,I1.1)')'Cour_re',idimve
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-enddo
-
-if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-  do idimve = 1, ndimve
-    ipp = ipppro(ipproc(idji(idimve)))
-    write(nomprp(ipproc(idji(idimve))),'(A7,I1.1)')'CouImag',idimve
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-endif
-
-if ( ippmod(ielarc).ge.1 ) then
-  do idimve = 1, ndimve
-    ipp = ipppro(ipproc(ilapla(idimve)))
-    write(nomprp(ipproc(ilapla(idimve))),'(A7,I1.1)')'For_Lap',idimve
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-
-  if ( ixkabe .eq.1 ) then
-    ipp = ipppro(ipproc(idrad))
-    nomprp(ipproc(idrad))  = 'Coef_Abso'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-
-  if ( ixkabe .eq.2 ) then
-    ipp = ipppro(ipproc(idrad))
-    nomprp(ipproc(idrad))  = 'TS_radia'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-
-endif
-
-if ( ippmod(ielion).ge.1 ) then
-  ipp = ipppro(ipproc(iqelec))
-  nomprp(ipproc(iqelec))  = 'Charge'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-! Conductivite Electrique
-
-ipp = ipppro(ipproc(ivisls(ipotr)))
-nomprp(ipproc(ivisls(ipotr)))  = 'Sigma'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!     Conductivite electrique imaginaire :
-!     La conductivite reelle et imaginaire sont dans le meme tableau.
-!     Il convient donc de ne pas renseigner NOMVAR ICHRVR ILISVR IHISVR
-!     pour IPP = IPPPRO(IPPROC(IVISLS(IPOTI)) )
-!     puisque IPPROC(IVISLS(IPOTI)) = IPPROC(IVISLS(IPOTR))
-
-!===============================================================================
-! 3. INFORMATIONS COMPLEMENTAIRES
+! 2. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
 
 ! --> Coefficient de relaxation de la masse volumique
@@ -288,12 +205,12 @@ ivivar = 1
 modrec = 1
 
 !===============================================================================
-! 4. ON REDONNE LA MAIN A L'UTLISATEUR
+! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
 if (iihmpr.eq.1) then
     call uicpi1 (srrom, diftl0)
-    ! gaz number and radiatif transfer are read in dp_ELE
+    ! gas number and radiatif transfer are read in dp_ELE
     call uieli1 (ippmod(ieljou), ippmod(ielarc), ielcor, couimp, puisim, &
                  modrec, idreca, crit_reca)
 
@@ -306,7 +223,7 @@ call useli1(iihmpr)
 !==========
 
 !===============================================================================
-! 5. VERIFICATION DES DONNEES ELECTRIQUES
+! 4. VERIFICATION DES DONNEES ELECTRIQUES
 !===============================================================================
 
 iok = 0

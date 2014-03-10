@@ -1830,7 +1830,7 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, ipp, imom, idirac, icla, icha
+integer ii, ipp, imom, idirac, icla, icha, f_id
 integer idimve, iesp
 
 !===============================================================================
@@ -1933,18 +1933,20 @@ endif
 if (.false.) then
 
   if (isca(1).gt.0.and.nscaus.ge.1) then
-    call field_set_key_str(ivarfl(isca(1)), keylbl, 'Scalar 1')
+    f_id = ivarfl(isca(1))
+    call field_set_key_str(f_id, keylbl, 'Scalar 1')
+    call field_set_key_int(f_id, keyvis, 1)
+    call field_set_key_int(f_id, keylog, 1)
     ipp = ipprtp(isca(1))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
 
   if (isca(2).gt.0.and.nscaus.ge.2) then
-    call field_set_key_str(ivarfl(isca(2)), keylbl, 'Scalar 1')
+    f_id = ivarfl(isca(2))
+    call field_set_key_str(f_id, keylbl, 'Scalar 2')
+    call field_set_key_int(f_id, keyvis, 1)
+    call field_set_key_int(f_id, keylog, 1)
     ipp = ipprtp(isca(2))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
 

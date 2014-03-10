@@ -84,7 +84,7 @@ integer          iok32
 integer          iok70
 integer          iokss , iokcaz
 integer          ii    , iiesca, iest
-integer          ipp   , iwar
+integer          ipp   , iwar  , kval
 integer          nbccou, nbsucp, nbvocp, issurf, isvol
 integer          kscmin, kscmax, keypp, keyvar
 integer          c_id, f_id, f_dim, n_fields
@@ -2403,11 +2403,10 @@ write(nfecra,7510) ntsuit
 
 write(nfecra,7520)
 do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keypp, ipp)
-  if (ipp.le.1) cycle
-  if (ichrvr(ipp).eq.1) then
+  call field_get_key_int(f_id, keylog, kval)
+  if (kval.eq.1) then
     call field_get_label(f_id, name)
-    write(nfecra,7521) ipp, name(1:16)
+    write(nfecra,7521) trim(name)
   endif
 enddo
 write(nfecra,7522)
@@ -2445,7 +2444,8 @@ do f_id = 0, n_fields-1
   else
     iwar = -999
   endif
-  if (ilisvr(ipp).eq.1) then
+  call field_get_key_int(f_id, keylog, kval)
+  if (kval.eq.1) then
     call field_get_label(f_id, name)
     write(nfecra,7531) ipp,name  (1:16),iwar
   endif
@@ -2476,7 +2476,7 @@ write(nfecra,9900)
 ' --- Variables post-traitees',                                 /,&
                                                                 /,&
 '       Numero Nom'                                              )
- 7521 format(i10,1X,          A16                                )
+ 7521 format(A                                                   )
  7522 format(                                                     &
 '         --           --',                                     /)
  7530 format(                                                     &
@@ -2517,7 +2517,7 @@ write(nfecra,9900)
 ' --- Post-processed variables',                                /,&
                                                                 /,&
 '       Number Name'                                             )
- 7521 format(i10,1X,          A16                                )
+ 7521 format(A                                                   )
  7522 format(                                                     &
 '         --           --',                                     /)
  7530 format(                                                     &

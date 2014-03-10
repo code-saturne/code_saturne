@@ -55,8 +55,8 @@ implicit none
 ! Local variables
 
 integer          n_fields
-integer          ii, jj, ivar, iok, iest, imom, ikw, iprop
-integer          icompt, ipp, nbccou, nn, keyvar
+integer          ii, jj, ivar, iok, imom, ikw
+integer          icompt, ipp, nbccou, keyvar
 integer          nscacp, iscal
 integer          imrgrp
 double precision relxsp
@@ -90,65 +90,14 @@ enddo
 !        est variable, les estimateurs s'ils sont actives, les moments
 !        s'il y en a et la viscosite de maillage en ALE.
 
-do ii = 0, n_fields-1
-  call field_get_key_int(ii, keyvar, ivar)
-  if (ivar.ge.1) then
-    call field_get_key_int(ii, keyipp, ipp)
-    if (ichrvr(ipp).eq.-999) then
-      ichrvr(ipp) = 1
-    endif
-  endif
-enddo
-ipp = ipppro(ipproc(irom))
-if (ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
-ipp = ipppro(ipproc(ivisct))
-if ((iturb.eq.10 .or. itytur.eq.2                 &
-     .or. itytur.eq.5 .or. iturb.eq.60            &
-     .or. iturb.eq.70)                            &
-     .and.ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
 if (idtvar.lt.0) then
-  ichrvr(ipppro(ipproc(icour))) = 0
-  ichrvr(ipppro(ipproc(ifour))) = 0
-endif
-do iest = 1, nestmx
-  if (iescal(iest).gt.0) then
-    ipp = ipppro(ipproc(iestim(iest)))
-    if (ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
-  endif
-enddo
-if (idtvar.eq.2.and.ichrvr(ippdt).eq.-999) ichrvr(ippdt) = 1
-if (ipucou.ne.1) then
-  ichrvr(ipptx) = 0
-  ichrvr(ippty) = 0
-  ichrvr(ipptz) = 0
+  call hide_property(icour)
+  call hide_property(ifour)
 endif
 
-if (nbmomt.gt.0) then
-  do imom = 1, nbmomt
-    ipp = ipppro(ipproc(icmome(imom)))
-    if (ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
-  enddo
-endif
 if (iale.eq.1) then
   call cs_post_set_deformable
-  nn = 1
-  if (iortvm.eq.1) nn = 3
-  do ii = 1, nn
-    ipp = ipppro(ipproc(ivisma(ii)))
-    if (ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
-  enddo
 endif
-
-do ii = 1, nvppmx
-  if (ichrvr(ii).eq.-999) then
-    ichrvr(ii) = 0
-  endif
-enddo
-
-icompt = 0
-do ii = 2, nvppmx
-  if (ichrvr(ii).eq.1) icompt = icompt+1
-enddo
 
 !---> sorties historiques ?
 !      Si une valeur non modifiee par l'utilisateur (=-999)
@@ -228,167 +177,16 @@ if (icorio.eq.1) then
   call field_set_key_str(ivarfl(iu), keylbl, 'Rel Velocity')
 endif
 
-if (nomprp(ipproc(irom)) .eq.' ') then
-  nomprp(ipproc(irom)) = 'Density'
-endif
-if (nomprp(ipproc(ivisct)) .eq.' ') then
-  nomprp(ipproc(ivisct)) = 'Turb Viscosity'
-endif
-if (nomprp(ipproc(iviscl)) .eq.' ') then
-  nomprp(ipproc(iviscl)) = 'Laminar Viscosity'
-endif
-if (ismago.gt.0) then
-  if (nomprp(ipproc(ismago)) .eq.' ') then
-    nomprp(ipproc(ismago)) = 'Csdyn2'
-  endif
-endif
-if (icp.gt.0) then
-  if (nomprp(ipproc(icp)) .eq.' ') then
-    nomprp(ipproc(icp)) = 'Specific Heat'
-  endif
-endif
-if (iescal(iespre).gt.0) then
-  iprop = ipproc(iestim(iespre))
-  if (nomprp(iprop) .eq.' ') then
-    write(nomprp(iprop),'(a5,i1)') 'EsPre',iescal(iespre)
-  endif
-endif
-if (iescal(iesder).gt.0) then
-  iprop = ipproc(iestim(iesder))
-  if (nomprp(iprop) .eq.' ') then
-    write(nomprp(iprop),'(a5,i1)') 'EsDer',iescal(iesder)
-  endif
-endif
-if (iescal(iescor).gt.0) then
-  iprop = ipproc(iestim(iescor))
-  if (nomprp(iprop) .eq.' ') then
-    write(nomprp(iprop),'(a5,i1)') 'EsCor',iescal(iescor)
-  endif
-endif
-if (iescal(iestot).gt.0) then
-  iprop = ipproc(iestim(iestot))
-  if (nomprp(iprop) .eq.' ') then
-    write(nomprp(iprop),'(a5,i1)') 'EsTot',iescal(iestot)
-  endif
+! Logging and postprocessing output
+
+if (itytur.eq.4) then
+  call hide_property(ivisct)
 endif
 
-if (nbmomt.gt.0) then
-  do imom = 1, nbmomt
-    iprop = ipproc(icmome(imom))
-    if (nomprp(iprop) .eq.' ') then
-      write(nomprp(iprop), '(a6,i2.2)') 'MoyTps', imom
-    endif
-  enddo
-endif
-
-! total pressure (not defined in compressible case)
-if (ippmod(icompf).lt.0) then
-  iprop = ipproc(iprtot)
-  if (nomprp(iprop) .eq.' ') then
-    nomprp(iprop)   = 'Total Pressure'
-  endif
-endif
-
-iprop = ipproc(icour)
-if (nomprp(iprop) .eq.' ') then
-  nomprp(iprop) = 'CFL'
-endif
-
-iprop = ipproc(ifour)
-if (nomprp(iprop) .eq.' ') then
-  nomprp(iprop) = 'Fourier Number'
-endif
-
-if (iale.eq.1) then
-  if (iortvm.eq.0) then
-    if (nomprp(ipproc(ivisma(1))) .eq.' ') then
-      nomprp(ipproc(ivisma(1))) = 'Mesh ViscX'
-    endif
-  else
-    if (nomprp(ipproc(ivisma(1))) .eq.' ') then
-      nomprp(ipproc(ivisma(1))) = 'Mesh ViscX'
-    endif
-    if (nomprp(ipproc(ivisma(2))) .eq.' ') then
-      nomprp(ipproc(ivisma(2))) = 'Mesh ViscY'
-    endif
-    if (nomprp(ipproc(ivisma(3))) .eq.' ') then
-      nomprp(ipproc(ivisma(3))) = 'Mesh ViscZ'
-    endif
-  endif
-endif
-
-! ---> Sorties listing
-
-ipp = ipppro(ipproc(irom))
-if (irovar.eq.1.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-ipp = ipppro(ipproc(ivisct))
-if ((iturb.eq.10 .or. itytur.eq.2                 &
-     .or. itytur.eq.5 .or. iturb.eq.60            &
-     .or. iturb.eq.70)                            &
-     .and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-if (inusa .gt. 0) then
-  ipp = ipppro(ipproc(inusa))
-  if (iturb.eq.70.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-endif
-ipp = ipppro(ipproc(icour))
 if (idtvar.lt.0) then
-  ilisvr(ipp) = 0
-else if (ilisvr(ipp).eq.-999) then
-  ilisvr(ipp) = 1
+  call hide_property(icour)
+  call hide_property(ifour)
 endif
-ipp = ipppro(ipproc(ifour))
-if (idtvar.lt.0) then
-  ilisvr(ipp) = 0
-else if (ilisvr(ipp).eq.-999) then
-  ilisvr(ipp) = 1
-endif
-if (iescal(iespre).gt.0) then
-  ipp = ipppro(ipproc(iestim(iespre)))
-  if (ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-endif
-if (iescal(iesder).gt.0) then
-  ipp = ipppro(ipproc(iestim(iesder)))
-  if (ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-endif
-if (iescal(iescor).gt.0) then
-  ipp = ipppro(ipproc(iestim(iescor)))
-  if (ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-endif
-if (iescal(iestot).gt.0) then
-  ipp = ipppro(ipproc(iestim(iestot)))
-  if (ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-endif
-
-if (nbmomt.gt.0) then
-  do imom = 1, nbmomt
-    ipp = ipppro(ipproc(icmome(imom)))
-    if (ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-  enddo
-endif
-
-if (ilisvr(ippdt).eq.-999) ilisvr(ippdt)  = 1
-if (ipucou.ne.1 .or. idtvar.lt.0) then
-  ilisvr(ipptx) = 0
-  ilisvr(ippty) = 0
-  ilisvr(ipptz) = 0
-endif
-
-do ii = 0, n_fields-1
-  call field_get_key_int(ii, keyvar, ivar)
-  if (ivar.ge.1) then
-    call field_get_key_int(ii, keyipp, ipp)
-    if (ilisvr(ipp).eq.-999) then
-      ilisvr(ipp) = 1
-    endif
-  endif
-enddo
-do ii = 1, nvppmx
-  if (ilisvr(ii).eq.-999) then
-    ilisvr(ii) = 0
-  endif
-enddo
-
-
 
 !===============================================================================
 ! 2. POSITION DES VARIABLES DE numvar
