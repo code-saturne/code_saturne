@@ -2160,7 +2160,7 @@ _gmres(const char             *var_name,
 static size_t
 _value_type(size_t      n_vals,
             cs_real_t   val[],
-            int         val_type[])
+            cs_real_t   val_type[])
 {
   size_t ii;
   size_t retval = 0;
@@ -3079,7 +3079,7 @@ cs_sles_post_error_output_var(const char  *var_name,
     size_t n_non_norm;
     const cs_int_t n_cells = mesh->n_cells;
 
-    int *val_type;
+    cs_real_t *val_type;
 
     assert(_diag_block_size[0] == _diag_block_size[1]); /* no padding */
 
@@ -3090,7 +3090,7 @@ cs_sles_post_error_output_var(const char  *var_name,
       _diag_block_size[3] = diag_block_size*diag_block_size;
     }
 
-    BFT_MALLOC(val_type, _diag_block_size[1]*n_cells, int);
+    BFT_MALLOC(val_type, _diag_block_size[1]*n_cells, cs_real_t);
 
     n_non_norm = _value_type(_diag_block_size[1]*n_cells, var, val_type);
 
@@ -3126,7 +3126,7 @@ cs_sles_post_error_output_var(const char  *var_name,
                         _diag_block_size[0],
                         true, /* interlace */
                         true, /* use parents */
-                        CS_POST_TYPE_int,
+                        CS_POST_TYPE_cs_real_t,
                         -1,
                         0.0,
                         val_type,

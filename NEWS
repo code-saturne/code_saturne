@@ -16,6 +16,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix linear solver error logging crash for 3D fields.
+
 - Fix control_file reading with non-empty last line in case of parallel
   calculation.
 
