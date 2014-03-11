@@ -4,6 +4,8 @@ Release 3.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix linear solver error logging crash for 3D fields.
+
 - In case of radiative boundary condition errors, reporting is now similar
   to that of standard BC's, with postprocessing, and not rank local.
 
