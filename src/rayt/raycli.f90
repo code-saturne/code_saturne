@@ -133,11 +133,13 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision hbord(ndimfb)
 
 ! Local variables
-integer          ifac, iel, ideb, ivart
-integer          mode, iok, ifvu, ii, izonem, izone
+integer          iok, ifac, iel, ideb, ivart
+integer          mode, ifvu, ii, izonem, izone
+integer          nrferr(14), icoerr(15)
 
 double precision tmin , tmax   , tx
 double precision xmtk
+double precision rvferr(25)
 
 integer, allocatable, dimension(:) :: isothm
 
@@ -193,6 +195,12 @@ enddo
 
 ! Index of the thermal variable
 ivart = isca(iscalt)
+
+! Error checking
+
+do ii = 1, 14
+  nrferr(ii) = 0
+enddo
 
 !===============================================================================
 ! 2. SI PAS DE FICHIER SUITE ALORS INITIALISATION AU PREMIER PASSAGE
@@ -324,22 +332,17 @@ call usray2 &
 
 !--> Arret si le numero de zone est non renseigne ou mal renseigne
 
-iok = 0
-
 do ifac = 1, nfabor
   if (izfrad(ifac).le.0.or.izfrad(ifac).gt.nozrdm) then
-    iok = iok + 1
-    write(nfecra,2000)ifac,nozrdm,izfrad(ifac)
+    nrferr(1) = nrferr(1) + 1
+    icoerr(1) = izfrad(ifac)
+    itypfb(ifac) = - iabs(itypfb(ifac))
   endif
 enddo
 
-if(iok.ne.0) then
-  call csexit (1)
-endif
-
 ! --> On construit une liste des numeros des zones frontieres.
 !           (liste locale au processeur, en parallele)
-!     Stop si depassement.
+!     Erreur si depassement.
 
 nzfrad = 0
 do ifac = 1, nfabor
@@ -354,9 +357,7 @@ do ifac = 1, nfabor
     if (nzfrad.le.nbzrdm) then
       ilzrad(nzfrad) = izfrad(ifac)
     else
-      write(nfecra,2001) nbzrdm
-      write(nfecra,2002)(ilzrad(ii),ii=1,nbzrdm)
-      call csexit (1)
+      nrferr(2) = nrferr(2) + 1
     endif
   endif
 enddo
@@ -378,15 +379,14 @@ nozarm = izonem
 !        IF(IWARNI(IVART).GE.-1.OR.IPACLI.LE.3) THEN
 if (1.eq.1) then
 
-  iok = 0
-
   !--> Si en paroi ISOTHM non renseignee : stop
   do ifac = 1, nfabor
     if ((itypfb(ifac).eq.iparoi  .or.                            &
          itypfb(ifac).eq.iparug) .and.                           &
          isothm(ifac).eq.-1) then
-      iok = iok + 1
-      write(nfecra,2110) ifac,izfrad(ifac)
+      nrferr(3) = nrferr(3) + 1
+      icoerr(3) = izfrad(ifac)
+      itypfb(ifac) = - iabs(itypfb(ifac))
     endif
   enddo
 
@@ -395,8 +395,9 @@ if (1.eq.1) then
     if (itypfb(ifac).ne.iparoi .and.                             &
         itypfb(ifac).ne.iparug .and.                             &
         isothm(ifac)  .ne.-1         ) then
-      iok = iok + 1
-      write(nfecra,2111) ifac, izfrad(ifac), isothm(ifac)
+      nrferr(4) = nrferr(4) + 1
+      icoerr(4) = izfrad(ifac)
+      itypfb(ifac) = - iabs(itypfb(ifac))
     endif
   enddo
 
@@ -409,6 +410,11 @@ if (1.eq.1) then
         iok = iok + 1
         write(nfecra,2120) ifac,izfrad(ifac),                    &
                            propfb(ifac,ipprob(ieps)), tint(ifac)
+        nrferr(5) = nrferr(5) + 1
+        icoerr(5) = izfrad(ifac)
+        rvferr(1) = propfb(ifac,ipprob(ieps))
+        rvferr(2) = tint(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).eq.ipgrno) then
       if (propfb(ifac,ipprob(ieps)) .lt.0.d0.or.                 &
@@ -417,40 +423,50 @@ if (1.eq.1) then
           propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
           text(ifac).le.0.d0.or.                                 &
           tint(ifac).le.0.d0                      ) then
-        iok = iok + 1
-        write(nfecra,2130) ifac,izfrad(ifac),                    &
-                           propfb(ifac,ipprob(ieps)) ,           &
-                           propfb(ifac,ipprob(ixlam)),           &
-                           propfb(ifac,ipprob(iepa)) ,           &
-                           text(ifac),tint(ifac)
+        nrferr(6) = nrferr(6) + 1
+        icoerr(6) = izfrad(ifac)
+        rvferr(3) = propfb(ifac,ipprob(ieps))
+        rvferr(4) = propfb(ifac,ipprob(ixlam))
+        rvferr(5) = propfb(ifac,ipprob(iepa))
+        rvferr(6) = text(ifac)
+        rvferr(7) = tint(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).eq.iprefl) then
       if (propfb(ifac,ipprob(ixlam)).le.0.d0.or.                 &
           propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
           text(ifac).le.0.d0.or.                                 &
           tint(ifac).le.0.d0                      ) then
-        iok = iok + 1
-        write(nfecra,2140) ifac,izfrad(ifac),                    &
-                           propfb(ifac,ipprob(ixlam)),           &
-                           propfb(ifac,ipprob(iepa)),            &
-                           text(ifac),tint(ifac)
+        nrferr(7) = nrferr(7) + 1
+        icoerr(7) = izfrad(ifac)
+        rvferr(8) = propfb(ifac,ipprob(ixlam))
+        rvferr(9) = propfb(ifac,ipprob(iepa))
+        rvferr(10) = text(ifac)
+        rvferr(11) = tint(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).eq.ifgrno) then
       if (propfb(ifac,ipprob(ieps)).lt.0.d0.or.                  &
           propfb(ifac,ipprob(ieps)).gt.1.d0.or.                  &
           tint(ifac).le.0.d0                      ) then
-        iok = iok + 1
-        write(nfecra,2150) ifac, izfrad(ifac),                   &
-             propfb(ifac,ipprob(ieps)), tint(ifac)
+        nrferr(8) = nrferr(8) + 1
+        icoerr(8) = izfrad(ifac)
+        rvferr(12) = propfb(ifac,ipprob(ieps))
+        rvferr(13) = tint(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).eq.ifrefl) then
       if (tint(ifac).le.0.d0) then
-        iok = iok + 1
-        write(nfecra,2160) ifac, izfrad(ifac), tint(ifac)
+        nrferr(9) = nrferr(9) + 1
+        icoerr(9) = izfrad(ifac)
+        rvferr(14) = tint(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).ne.-1) then
-        iok = iok + 1
-        write(nfecra,2170) ifac, izfrad(ifac), isothm(ifac)
+      nrferr(10) = nrferr(10) + 1
+      icoerr(10) = izfrad(ifac)
+      icoerr(11) = isothm(ifac)
+      itypfb(ifac) = - iabs(itypfb(ifac))
     endif
   enddo
 
@@ -460,42 +476,141 @@ if (1.eq.1) then
       if (propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                &
           propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                &
           text(ifac).gt.0.d0                      ) then
-        iok = iok + 1
-        write(nfecra,2220) ifac,izfrad(ifac),                   &
-                           propfb(ifac,ipprob(ixlam)),          &
-                           propfb(ifac,ipprob(iepa)), text(ifac)
+        nrferr(11) = nrferr(11) + 1
+        icoerr(12) = izfrad(ifac)
+        rvferr(15) = propfb(ifac,ipprob(ixlam))
+        rvferr(16) = propfb(ifac,ipprob(iepa))
+        rvferr(17) = text(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).eq.iprefl) then
       if (propfb(ifac,ipprob(ieps)).ge.0.d0) then
-        iok = iok + 1
-        write(nfecra,2240) ifac, izfrad(ifac), propfb(ifac,ipprob(ieps))
+        nrferr(12) = nrferr(12) + 1
+        icoerr(13) = izfrad(ifac)
+        rvferr(18) = propfb(ifac,ipprob(ieps))
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).eq.ifgrno) then
       if (propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                &
           propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                &
           text(ifac).gt.0.d0                      ) then
-        iok = iok + 1
-        write(nfecra,2250) ifac,izfrad(ifac),                   &
-                           propfb(1,ipprob(ixlam)),             &
-                           propfb(1,ipprob(iepa)), text(ifac)
+        nrferr(13) = nrferr(13) + 1
+        icoerr(14) = izfrad(ifac)
+        rvferr(19) = propfb(1,ipprob(ixlam))
+        rvferr(20) = propfb(1,ipprob(iepa))
+        rvferr(21) = text(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).eq.ifrefl) then
       if(propfb(ifac,ipprob(ieps)) .ge.0.d0.or.                 &
          propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                 &
          propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                 &
          text(ifac).gt.0.d0                      ) then
-        iok = iok + 1
-        write(nfecra,2260) ifac,izfrad(ifac),                   &
-                           propfb(ifac,ipprob(ieps)),           &
-                           propfb(ifac,ipprob(ixlam)),          &
-                           propfb(ifac,ipprob(iepa)), text(ifac)
+        nrferr(14) = nrferr(14) + 1
+        icoerr(15) = izfrad(ifac)
+        rvferr(22) = propfb(ifac,ipprob(ieps))
+        rvferr(23) = propfb(ifac,ipprob(ixlam))
+        rvferr(24) = propfb(ifac,ipprob(iepa))
+        rvferr(25) = text(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     endif
   enddo
 
-  if (iok.ne.0) then
+endif
+
+!===============================================================================
+! Error logging
+!===============================================================================
+
+iok = 0
+
+do ii = 1, 14
+  if (nrferr(ii).gt.0) iok = 1
+enddo
+
+if (irangp.ge.0) call parcmx(iok)
+
+if (iok.ne.0) then
+
+  call sync_bc_err(nrferr(1), 1, icoerr(1:1))
+  if (nrferr(1).gt.0) then
+    write(nfecra,2000) nozrdm, nrferr(1), icoerr(1)
+  endif
+
+  call sync_bc_err(nrferr(2), nbzrdm, ilzrad)
+  if (nrferr(2).gt.0) then
+    write(nfecra,2001) nbzrdm
+    write(nfecra,2002)(ilzrad(ii),ii=1,nbzrdm)
     call csexit (1)
   endif
+
+  call sync_bc_err(nrferr(3), 1, icoerr(3:3))
+  if (nrferr(3).gt.0) then
+    write(nfecra,2110) nrferr(3), icoerr(3)
+  endif
+
+  call sync_bc_err(nrferr(4), 1, icoerr(4:4))
+  if (nrferr(4).gt.0) then
+    write(nfecra,2111) nrferr(4), icoerr(4)
+  endif
+
+  call sync_rad_bc_err(nrferr(5), 2, icoerr(5), rvferr(1:2))
+  if (nrferr(5).gt.0) then
+    write(nfecra,2120) nrferr(5), icoerr(5), rvferr(1), rvferr(2)
+  endif
+
+  call sync_rad_bc_err(nrferr(6), 5, icoerr(6), rvferr(3:7))
+  if (nrferr(6).gt.0) then
+    write(nfecra,2130) nrferr(6), icoerr(6), rvferr(3), rvferr(4), &
+                       rvferr(5), rvferr(6), rvferr(7)
+  endif
+
+  call sync_rad_bc_err(nrferr(7), 4, icoerr(7), rvferr(8:11))
+  if (nrferr(7).gt.0) then
+    write(nfecra,2140) nrferr(7), icoerr(7), rvferr(8), rvferr(9), &
+                       rvferr(10), rvferr(11)
+  endif
+
+  call sync_rad_bc_err(nrferr(8), 2, icoerr(8), rvferr(12:13))
+  if (nrferr(8).gt.0) then
+    write(nfecra,2150) nrferr(8), icoerr(8), rvferr(12), rvferr(13)
+  endif
+
+  call sync_rad_bc_err(nrferr(9), 1, icoerr(9), rvferr(14:14))
+  if (nrferr(9).gt.0) then
+    write(nfecra,2160) nrferr(9), icoerr(9), rvferr(14)
+  endif
+
+  call sync_bc_err(nrferr(10), 2, icoerr(10:11))
+  if (nrferr(10).gt.0) then
+    write(nfecra,2170) nrferr(10), icoerr(10), icoerr(11)
+  endif
+
+  call sync_rad_bc_err(nrferr(11), 3, icoerr(12), rvferr(15:17))
+  if (nrferr(11).gt.0) then
+    write(nfecra,2220) nrferr(11), icoerr(12), rvferr(15), rvferr(16), &
+                       rvferr(17)
+  endif
+
+  call sync_rad_bc_err(nrferr(12), 1, icoerr(13), rvferr(18:18))
+  if (nrferr(12).gt.0) then
+    write(nfecra,2240) nrferr(12), icoerr(13), rvferr(18)
+  endif
+
+  call sync_rad_bc_err(nrferr(13), 3, icoerr(14), rvferr(19:21))
+  if (nrferr(13).gt.0) then
+    write(nfecra,2250) nrferr(13), icoerr(14), rvferr(19), rvferr(20), &
+                       rvferr(21)
+  endif
+
+  call sync_rad_bc_err(nrferr(14), 4, icoerr(15), rvferr(22:25))
+  if (nrferr(14).gt.0) then
+    write(nfecra,2260) nrferr(14), icoerr(15), rvferr(22), rvferr(23), &
+                       rvferr(24), rvferr(25)
+  endif
+
+  call bcderr(itypfb)
 
 endif
 
@@ -802,6 +917,8 @@ deallocate(text, tint)
 3X,' (TPAROI) avec le profil utilisateur (TINTP)'              ,/,&
 3X,' et du flux incident aux parois (QINCID).'                 ,/)
 
+#if defined(_CS_LANG_FR)
+
  2000 format( &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -810,10 +927,13 @@ deallocate(text, tint)
 '@    ========='                                               ,/,&
 '@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES' ,/,&
 '@'                                                            ,/,&
-'@  Le numero de zone associee a la face ',I10   ,' doit etre' ,/,&
+'@  Le numero de zone associee a une face doit etre'           ,/,&
 '@    un entier strictement positif et inferieur ou egal a'    ,/,&
-'@    NOZRDM = ',I10                                           ,/,&
-'@  Ce numero (IZFRDP(IFAC)) vaut ici ',I10                    ,/,&
+'@    nozrdm = ',i10                                           ,/,&
+'@  Ce numero (IZFRDP(IFAC)) est hors de ces bornes'           ,/,&
+'@    pour ',i10, ' faces'                                     ,/,&
+'@    derniere face :'                                         ,/,&
+'@      zone         ', i10                                    ,/,&
 '@'                                                            ,/,&
 '@  Le calcul ne peut etre execute.'                           ,/,&
 '@'                                                            ,/,&
@@ -824,44 +944,42 @@ deallocate(text, tint)
  2001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
-'@                                                            ',/,&
-'@  Le nombre maximal de zones frontieres qui peuvent etre    ',/,&
-'@    definies par l''utilisateur est NBZRDM = ',I10           ,/,&
-'@    Il a ete depasse.                                       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les conditions aux limites dans usray2.          ',/,&
-'@                                                            ',/,&
-'@  Les NBZRDM premieres zones frontieres                     ',/,&
-'@    portent ici les numeros suivants :                      ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : CONDITIONS AUX LIMITES DE RAYONNEMENT'       ,/,&
+'@    ========='                                               ,/,&
+'@'                                                            ,/,&
+'@  Le nombre maximal de zones frontieres qui peuvent etre'    ,/,&
+'@    definies par l''utilisateur est NBZRDM = ',i10           ,/,&
+'@    Il a ete depasse'                                        ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute'                            ,/,&
+'@'                                                            ,/,&
+'@  Verifier les conditions aux limites de rayonnement'        ,/,&
+'@'                                                            ,/,&
+'@  Les NBZRDM premieres zones frontieres'                     ,/,&
+'@    portent ici les numeros suivants :'                      ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2002 format(i10)
-
  2110 format(                                                     &
-'@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
 '@    =========                                               ',/,&
 '@    ISOTHP DOIT ETRE RENSEIGNE SUR TOUTES LES FACES DE PAROI',/,&
 '@                                                            ',/,&
-'@  Il ne l''a pas ete pour la face ',I10                      ,/,&
-'@                    zone         ',I10                       ,/,&
+'@  Il ne l''a pas ete pour ', i10, ' faces'                   ,/,&
+'@    derniere face :'                                         ,/,&
+'@      zone         ', i10                                    ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
+'@  Verifier les conditions aux limites de rayonnement.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2111 format(                                                     &
+2111 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -869,205 +987,505 @@ deallocate(text, tint)
 '@    =========                                               ',/,&
 '@    ISOTHP A ETE RENSEIGNE SUR UNE FACE NON PAROI           ',/,&
 '@                                                            ',/,&
-'@  Sur la face ',I10   ,', zone  ',I10   ,', ISOTHP a ete    ',/,&
-'@    renseigne dans usray2 (ISOTHP = ',I10   ,') alors que   ',/,&
-'@    la face n''a pas ete declaree de type IPAROI ou IPARUG  ',/,&
-'@    dans cs_user_boundary_conditions.                       ',/,&
+'@  Il l''a ete pour ', i10, ' faces'                         ,/,&
+'@    derniere face :'                                         ,/,&
+'@      zone         ', i10                                    ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usray2 et cs_user_boundary_conditions.           ',/,&
+'@  Verifier les conditions aux limites de rayonnement.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
  2120 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = ITPIMP,'                                   ,/,&
+'@      EPSP  doit etre un reel inclus dans [0.; 1.]'          ,/,&
+'@      TINTP doit etre un reel strictement positif'           ,/,&
+'@'                                                            ,/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    EPSP  DOIT ETRE UN REEL INCLUS DANS [0.; 1.]            ',/,&
-'@    TINTP DOIT ETRE UN REEL STRICTEMENT POSITIF             ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = ITPIMP       ',/,&
-'@  EPSP  = ',E14.5                                            ,/,&
-'@  TINTP = ',E14.5                                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@'                                                            ,/)
  2130 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = IPGRNO,'                                   ,/,&
+'@      EPSP  doit etre un reel inclus dans [0.; 1.]'          ,/,&
+'@      XLAMP, EPAP, TEXTP, et TINTP doivent etre des reels'   ,/,&
+'@                                   strictement positifs'     ,/,&
+'@'                                                            ,/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    EPSP DOIT ETRE UN REEL INCLUS DANS [0.; 1.]             ',/,&
-'@    XLAMP, EPAP, TINTP, TEXTP DOIVENT ETRE DES REELS        ',/,&
-'@                                      STRICTEMENT POSITIFS  ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IPGRNO       ',/,&
-'@  EPSP  = ',E14.5                                            ,/,&
-'@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
-'@  TEXTP = ',E14.5    ,' TINTP = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2140 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = IPREFL,'                                   ,/,&
+'@      XLAMP, EPAP, TEXTP, et TINTP doivent etre des reels'   ,/,&
+'@                                   strictement positifs'     ,/,&
+'@'                                                            ,/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    XLAMP, EPAP, TINTP, TEXTP DOIVENT ETRE DES REELS        ',/,&
-'@                                      STRICTEMENT POSITIFS  ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IPREFL       ',/,&
-'@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
-'@  TEXTP = ',E14.5    ,' TINTP = ',E14.5                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2150 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = IFGRNO,'                                   ,/,&
+'@      EPSP  doit etre un reel inclus dans [0.; 1.]'          ,/,&
+'@      TINTP doit etre un reel strictement positif'           ,/,&
+'@'                                                            ,/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    EPSP  DOIT ETRE UN REEL INCLUS DANS [0.; 1.]            ',/,&
-'@    TINTP DOIT ETRE UN REEL STRICTEMENT POSITIF             ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFGRNO       ',/,&
-'@  EPSP  = ',E14.5                                            ,/,&
-'@  TINTP = ',E14.5                                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2160 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = IFREFL,'                                   ,/,&
+'@      TINTP doit etre un reel strictement positif'           ,/,&
+'@'                                                            ,/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@  TINTP DOIT ETRE UN REEL STRICTEMENT POSITIF               ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFREFL       ',/,&
-'@  TINTP = ',E14.5                                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2170 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@  Valeur interdite de ISOTHM pour ', i10, ' faces'           ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      ISOTHM =     ', i10                                    ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@   VALEUR NON ADMISSIBLE DE ISOTHP                          ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = ',I10         ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2220 format(                                                     &
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = ITPIMP,'                                   ,/,&
+'@    XLAMP, EPAP et TEXTP ne doivent pas etre renseignes'     ,/,&
 '@                                                            ',/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    XLAMP, EPAP ET TEXTP NE DOIVENT PAS ETRE RENSEIGNES     ',/,&
-'@                                     AVEC ISOTHP = ITPIMP   ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = ITPIMP       ',/,&
-'@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
-'@  TEXTP = ',E14.5                                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2240 format(                                                     &
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = IPREFL,'                                   ,/,&
+'@    EPSP ne doit pas etre renseigne'                         ,/,&
 '@                                                            ',/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    EPSP NE DOIT PAS ETRE RENSEIGNE AVEC ISOTHP = IPREFL    ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IPREFL       ',/,&
-'@  EPSP  = ',E14.5                                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2250 format(                                                     &
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = IFGRNO,'                                   ,/,&
+'@    XLAMP, EPAP et TEXTP ne doivent pas etre renseignes'     ,/,&
 '@                                                            ',/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    XLAMP, EPAP, TEXTP NE DOIVENT PAS ETRE RENSEIGNES       ',/,&
-'@                                       AVEC ISOTHP = IFGRNO ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFGRNO       ',/,&
-'@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
-'@  TEXTP = ',E14.5                                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2260 format(                                                     &
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
+'@    Avec ISOTHP = IFREFL,'                                   ,/,&
+'@    EPSP, XLAMP, EPAP et TEXTP ne doivent pas etre renseignes',/,&
+'@                                                            ',/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#else
+
+ 2000 format( &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@'                                                            ,/,&
+'@  The zone number associated with a face must be'            ,/,&
+'@    a strictly positive integer equal to or less than'       ,/,&
+'@    nozrdm = ',i10                                           ,/,&
+'@  This number (IZFRDP(IFAC)) is out of these bounds'         ,/,&
+'@    for ',i10, ' faces'                                      ,/,&
+'@    last face:'                                              ,/,&
+'@      zone         ', i10                                    ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@'                                                            ,/,&
+'@  The maximum number of boundary zones which may be'         ,/,&
+'@    defined by the user ist NBZRDM = ',i10                   ,/,&
+'@    It has been exceeded.                                   ',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    XLAMP, EPAP, TEXTP NE DOIVENT PAS ETRE RENSEIGNES       ',/,&
-'@                                       AVEC ISOTHP = IFREFL ',/,&
-'@                                                            ',/,&
-'@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFREFL       ',/,&
-'@  EPSP  = ',E14.5                                            ,/,&
-'@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
-'@  TEXTP = ',E14.5                                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@  The nbzrdm first boundary zones'                           ,/,&
+'@    have the following numbers:'                             ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
+ 2002 format(i10)
+ 2110 format(                                                     &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    ISOTHP MUST BE DEFINED ON ALL WALL FACES'                ,/,&
+'@'                                                            ,/,&
+'@  It was not defined for ', i10, ' faces'                    ,/,&
+'@    last face:'                                              ,/,&
+'@      zone         ', i10                                    ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run.'                            ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2111 format(                                                     &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    ISOTHP HAS BEEN DEFINED ON NON-WALL FACES'               ,/,&
+'@'                                                            ,/,&
+'@  It was defined for ', i10, ' faces'                        ,/,&
+'@    last face:'                                              ,/,&
+'@      zone         ', i10                                    ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2120 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = ITPIMP,'                                   ,/,&
+'@      EPSP  must be a real in the range [0.; 1.]'            ,/,&
+'@      TINTP must be a strictly positive real'                ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2130 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = ITGRNO,'                                   ,/,&
+'@      EPSP  must be a real in the range [0.; 1.]'            ,/,&
+'@      XLAMP, EPAP, TINTP, TEXTP must be strictly'            ,/,&
+'@                                        positive reals'      ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2140 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = IPREFL,'                                   ,/,&
+'@      XLAMP, EPAP, TINTP, TEXTP must be strictly'            ,/,&
+'@                                        positive reals'      ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2150 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = IFGRNO,'                                   ,/,&
+'@      EPSP  must be a real in the range [0.; 1.]'            ,/,&
+'@      TINTP must be a strictly positive real'                ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2160 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = IFREFL,'                                   ,/,&
+'@      TINTP must be a strictly positive real'                ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2170 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@  Forbidden value of ISOTHM for ', i10, ' faces'             ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      ISOTHM =     ', i10                                    ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2220 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = ITPIMP,'                                   ,/,&
+'@    XLAMP, EPAP and TEXTP must not be defined'               ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2240 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = IPREFL,'                                   ,/,&
+'@    EPSP must not be defined'                                ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2250 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = IFGRNO,'                                   ,/,&
+'@    XLAMP, EPAP and TEXTP must not be defined'               ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2260 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = IFREFL,'                                   ,/,&
+'@    EPSP, XLAMP, EPAP and TEXTP must not be defined'         ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      XLAMP =      ', e12.4                                  ,/,&
+'@      EPAP  =      ', e12.4                                  ,/,&
+'@      TEXTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#endif
 
 !----
 ! End
@@ -1075,4 +1493,64 @@ deallocate(text, tint)
 
 return
 
-end subroutine
+end subroutine raycli
+
+!===============================================================================
+! Local functions
+!===============================================================================
+
+!> \brief synchronize radiative boundary condition error logging across
+!         MPI ranks.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in, out] nerloc       number of errors (local rank in, global out)
+!> \param[in]      nerrcd       number of codes saved at error faces
+!> \param[in, out] znferr       zone number for one error face (local in,
+!                               broadcast out)
+!> \param[in, out] rvferr       values saved at one error face (local in,
+!                               broadcast out)
+!_______________________________________________________________________________
+
+subroutine sync_rad_bc_err &
+ ( nerloc , nerrcd , znferr, rvferr )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use parall
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer nerloc, nerrcd
+integer znferr
+double precision rvferr(nerrcd)
+
+! Local variables
+
+integer irkerr, n
+
+!===============================================================================
+
+if (irangp.ge.0) then
+  irkerr = -1
+  if (nerloc.gt.0) irkerr = irangp
+  call parcpt(nerloc)
+  if (nerloc .ne. 0) then
+    n = 1
+    call parimx(1, irkerr)
+    call parbci(irkerr, n, znferr)
+    call parbcr(irkerr, nerrcd, rvferr)
+  endif
+endif
+
+return
+end subroutine sync_rad_bc_err

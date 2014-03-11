@@ -4,6 +4,9 @@ Release 3.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- In case of radiative boundary condition errors, reporting is now similar
+  to that of standard BC's, with postprocessing, and not rank local.
+
 - Fix control_file reading with non-empty last line in case of parallel
   calculation.
 
