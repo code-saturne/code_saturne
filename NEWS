@@ -16,6 +16,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix crash when using old cell center computation algorithm
+  (based on cell vertices, ialgce = 1 in cs_user_parameters.f90).
+
 - Fix linear solver error logging crash for 3D fields.
 
 - Fix control_file reading with non-empty last line in case of parallel

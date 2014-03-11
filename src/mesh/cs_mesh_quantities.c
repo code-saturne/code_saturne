@@ -917,7 +917,7 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
 
     for (j = cell_faces_idx[cell_id]; j < cell_faces_idx[cell_id + 1]; j++) {
 
-      face_num = cell_faces_lst[j - 1];
+      face_num = CS_ABS(cell_faces_lst[j - 1]);
 
       /* Internal or border face */
 
