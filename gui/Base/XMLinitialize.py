@@ -273,10 +273,6 @@ class XMLinit(Variables):
         compt = 0
         for node in self.case.xmlGetNodeList('profile'):
             if node:
-                n = node.xmlGetNode('formula')
-                f=n.xmlGetTextNode().replace("t", "s")
-                n.xmlSetTextNode(f)
-            if node:
                 n = node.xmlGetNode("output_type")
                 if n == None:
                     freq = node.xmlGetInt("output_frequency")
@@ -342,6 +338,35 @@ class XMLinit(Variables):
             nodeTmp = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity_W")
             if nodeTmp:
                 nodeTmp.xmlRemoveNode()
+        for node in self.case.xmlGetNodeList('profile'):
+            if node:
+                for n in node.xmlGetNodeList('var_prop'):
+                    name = n['name']
+                    if name in ["velocity_U", "velocity_V", "velocity_W"]:
+                        if name == 'velocity_U':
+                            component = '0'
+                        if name == 'velocity_V':
+                            component = '1'
+                        if name == 'velocity_W':
+                            component = '2'
+                        name = 'velocity'
+                        n['name'] = name
+                        n['component'] = component
+        for node in self.case.xmlGetNodeList('time_average'):
+            if node:
+                for n in node.xmlGetNodeList('var_prop'):
+                    name = n['name']
+                    if name in ["velocity_U", "velocity_V", "velocity_W"]:
+                        if name == 'velocity_U':
+                            component = '0'
+                        if name == 'velocity_V':
+                            component = '1'
+                        if name == 'velocity_W':
+                            component = '2'
+                        name = 'velocity'
+                        n['name'] = name
+                        n['component'] = component
+
 
 
 
