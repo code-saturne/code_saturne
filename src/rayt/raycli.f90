@@ -199,7 +199,6 @@ if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 
 do ii = 1, 14
   nrferr(ii) = 0
-  icoerr(ii) = -1
 enddo
 
 !===============================================================================
@@ -331,8 +330,8 @@ call usray2 &
 
 do ifac = 1, nfabor
   if (izfrad(ifac).le.0.or.izfrad(ifac).gt.nozrdm) then
-    icoerr(1) = izfrad(ifac)
     nrferr(1) = nrferr(1) + 1
+    icoerr(1) = izfrad(ifac)
     itypfb(ifac) = - iabs(itypfb(ifac))
   endif
 enddo
