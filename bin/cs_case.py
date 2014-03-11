@@ -194,7 +194,7 @@ class case:
 
         # Print process info
 
-        name = self.package.name
+        name = self.package.code_name
 
         if len(self.domains) == 1:
             if self.domains[0].n_procs > 1:
