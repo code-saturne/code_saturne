@@ -1712,7 +1712,7 @@ end subroutine vericl
 !______________________________________________________________________________!
 !> \param[in, out] nerloc       number of errors (local rank in, global out)
 !> \param[in]      nerrcd       number of codes saved at error faces
-!> \param[in, out] errcod       codes saved at one error faces (local in,
+!> \param[in, out] errcod       codes saved at one error face (local in,
 !                               broadcast out)
 !_______________________________________________________________________________
 
