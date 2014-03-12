@@ -46,7 +46,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel
+from Base.QtPage import ComboModel, Py2
 from Base.XMLengine import Case
 from Base.XMLinitialize import XMLinit
 from Pages.SolutionVerifForm import Ui_SolutionVerifForm
@@ -322,8 +322,11 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
 
     def __saveLog(self):
-        logFile = open(os.path.join(self.exec_dir, 'check_mesh.log'), 'w')
-        logFile.write(self.logText.toPlainText().encode("utf-8"))
+        if Py2:
+            logFile = open(os.path.join(self.exec_dir, 'check_mesh.log'), 'w')
+        else:
+            logFile = open(os.path.join(self.exec_dir, 'check_mesh.log'), 'w', encoding='utf-8')
+        logFile.write(str(self.logText.toPlainText().toAscii()))
         logFile.close()
 
 
