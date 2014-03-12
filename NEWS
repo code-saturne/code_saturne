@@ -4,6 +4,9 @@ Release 3.0.4 (unreleased)
 Changes:
 --------
 
+- Fix dynamic relaxation coefficient (iswdyn option) for vector and
+  scalar variables (except pressure).
+
 - Update some external package versions for automatic installer.
 
 - MedCoupling and ParaMEDMEM adapters may now build with Salome 7.3.

@@ -570,7 +570,8 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   ! Dynamic relaxation of the system
   if (iswdyp.ge.1) then
 
-    ! Computation of the variable ralaxation coefficient
+    ! Computation of the variable relaxation coefficient
+    incp = 0
 
     !$omp parallel do
     do iel = 1, ncelet
@@ -582,7 +583,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     !==========
    ( nvar   , nscal  ,                                              &
      idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+     ischcp , isstpp , incp   , imrgra , iccocg ,                   &
      ipp    , iwarnp , imucpp , idftnp ,                            &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      dpvar  , dpvar  , coefap , coefbp , cofafp , cofbfp ,          &

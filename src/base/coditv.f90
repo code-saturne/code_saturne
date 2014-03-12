@@ -556,7 +556,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
     !$omp parallel do private(isou)
     do iel = 1, ncel
-      do isou =1,3
+      do isou = 1, 3
         dpvarm1(isou,iel) = dpvar(isou,iel)
         dpvar(isou,iel) = 0.d0
       enddo
@@ -592,7 +592,8 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   ! Dynamic relaxation of the system
   if (iswdyp.ge.1) then
 
-    ! Computation of the variable ralaxation coefficient
+    ! Computation of the variable relaxation coefficient
+    incp = 0
 
     !$omp parallel do private(isou)
     do iel = 1, ncelet
