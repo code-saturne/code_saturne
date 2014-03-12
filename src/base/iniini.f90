@@ -437,7 +437,7 @@ call ppinii
 ! --- Proprietes physiques au sens large
 
 do iprop  = 1, npromx
-  ipproc(iprop) = 0
+  ipproc(iprop) = iprop
 enddo
 
 irom   = 0
