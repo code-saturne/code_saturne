@@ -4,6 +4,9 @@ Release 3.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix dynamic relaxation coefficient (iswdyn option) for vector and
+  scalar variables (except pressure).
+
 - Fix crash when using old cell center computation algorithm
   (based on cell vertices, ialgce = 1 in cs_user_parameters.f90).
 
