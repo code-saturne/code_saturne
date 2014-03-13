@@ -2773,6 +2773,9 @@ cs_time_moment_restart_read(cs_restart_t  *restart)
   if (_restart_info == NULL)
     _restart_info_read_auxiliary(restart);
 
+  if (_restart_info == NULL)
+    return;
+
   cs_time_moment_restart_info_t  *ri = _restart_info;
 
   /* Read information proper */
