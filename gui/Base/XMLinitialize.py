@@ -352,6 +352,9 @@ class XMLinit(Variables):
                         name = 'velocity'
                         n['name'] = name
                         n['component'] = component
+                    elif name != "velocity":
+                        n['component'] = "0"
+
         for node in self.case.xmlGetNodeList('time_average'):
             if node:
                 for n in node.xmlGetNodeList('var_prop'):
@@ -366,8 +369,8 @@ class XMLinit(Variables):
                         name = 'velocity'
                         n['name'] = name
                         n['component'] = component
-
-
+                    elif name != "velocity":
+                        n['component'] = "0"
 
 
 #-------------------------------------------------------------------------------
