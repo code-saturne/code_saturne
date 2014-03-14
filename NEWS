@@ -4,6 +4,9 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix misusage of boundary coefficients array of the pressure increment, 
+  a work array is used instead.
+
 - Fix dynamic relaxation coefficient (iswdyn option) for vector and
   scalar variables (except pressure).
 
