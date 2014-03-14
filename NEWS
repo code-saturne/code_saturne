@@ -4,6 +4,9 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix automatic initialization of blencv for the thermal scalar (centered)
+  (introduced by change in handling of thermal scalar in the GUI).
+
 - Fix misusage of boundary coefficients array of the pressure increment, 
   a work array is used instead.
 

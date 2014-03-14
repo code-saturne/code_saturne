@@ -826,8 +826,9 @@ enddo
 
 ! ---> BLENCV
 !        Si l'utilisateur n'a rien specifie pour le schema convectif
-!                  1 (ie centre) pour les vitesses et
-!                                      les scalaires utilisateurs
+!                  1 (ie centre) pour les vitesses
+!                                     les scalaires utilisateurs
+!                                     le scalaire thermique
 !                  0 (ie upwind pur) pour le reste
 !   (en particulier, en L.E.S. toutes les variables sont donc en centre)
 
@@ -841,6 +842,9 @@ do jj = 1, nscaus
   ii = isca(jj)
   if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
 enddo
+
+ii = isca(iscalt)
+if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
 
 do ii = 1, nvarmx
   if (abs(blencv(ii)+999.d0).lt.epzero) then
