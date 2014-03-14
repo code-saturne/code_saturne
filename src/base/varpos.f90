@@ -565,6 +565,7 @@ do imom = 1, nbmomt
 
   iprpfl(iprop) = id
   ipproc(iprop) = iprop
+  icmome(imom) = iprop
 
   ! Postprocessing slots
 
