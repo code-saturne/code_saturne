@@ -64,6 +64,10 @@ def process_cmd_line(argv, pkg):
 
     parser = OptionParser(usage=usage)
 
+    parser.add_option("-n", "--nprocs", dest="nprocs", type="int",
+                      metavar="<nprocs>",
+                      help="number of MPI processes for the computation")
+
     parser.add_option("-p", "--param", dest="param", type="string",
                       metavar="<param>",
                       help="path or name of the parameters file")
@@ -112,6 +116,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(param=None)
     parser.set_defaults(domain=None)
     parser.set_defaults(id=None)
+    parser.set_defaults(nprocs=None)
 
     # Note: we could use args to pass a calculation status file as an argument,
     # which would allow pursuing the later calculation stages.
@@ -172,8 +177,10 @@ def process_cmd_line(argv, pkg):
         run_solver = True
         save_results = True
 
+    n_procs = options.nprocs
+
     return  (casedir, options.id, param, options.id_prefix, options.id_suffix,
-             options.suggest_id, force_id,
+             options.suggest_id, force_id, n_procs,
              prepare_data, run_solver, save_results)
 
 #===============================================================================
@@ -186,6 +193,7 @@ def main(argv, pkg):
     """
 
     (casedir, run_id, param, id_prefix, id_suffix, suggest_id, force,
+     n_procs,
      prepare_data, run_solver, save_results) = process_cmd_line(argv, pkg)
 
     if not casedir:
@@ -228,7 +236,8 @@ def main(argv, pkg):
 
     # Now run case
 
-    retval = c.run(run_id=run_id,
+    retval = c.run(n_procs=n_procs,
+                   run_id=run_id,
                    force_id=force,
                    prepare_data=prepare_data,
                    run_solver=run_solver,

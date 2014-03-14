@@ -48,7 +48,7 @@ from Base.XMLvariables import Variables, Model
 
 class ScriptRunningModel(Model):
     """
-    This class modifies the script file (runcase)
+    This class modifies some running model options
     """
     def __init__(self, case):
         """
@@ -178,14 +178,8 @@ class ScriptRunningModelTestCase(unittest.TestCase):
         domain.addMesh('mail1.des', 'des')
         domain.addMesh('mail2.des', 'des')
         domain.addMesh('mail3.des', 'des')
-        domain.setOrientation('on')
 
         self.case['xmlfile'] = 'NEW.xml'
-
-        self.f = open('runcase_test','w')
-        self.f.write(runcase_test)
-        self.f.close()
-
 
 def suite():
     testSuite = unittest.makeSuite(ScriptRunningModelTestCase, "check")

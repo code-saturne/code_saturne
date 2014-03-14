@@ -522,8 +522,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.class_list = None
 
-        self.n_procs = None
-
         if self.case['batch_type'] != None:
 
             self.groupBoxArchi.setTitle("Job and script files")
@@ -538,10 +536,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         else:
 
-            try:
-                self.n_procs = int(self.mdl.getString('n_procs'))
-            except Exception:
-                self.n_procs = 1
+            if self.jmdl.dictValues['run_nprocs'] == None:
+                try:
+                    # For backwards compatibility
+                    # (this is a specific case, as we move information from
+                    # the XML model to the batch script)
+                    self.jmdl.dictValues['run_nprocs'] = self.mdl.getString('n_procs')
+                    self.mdl.setString('n_procs', None)
+                except Exception:
+                    pass
 
 
         # Connections
@@ -686,8 +689,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.n_procs = int(v)
-        self.mdl.setString('n_procs', str(v))
+        if v > 1:
+            self.jmdl.dictValues['run_nprocs'] = str(v)
+        else:
+            self.jmdl.dictValues['run_nprocs'] = None
+        self.jmdl.updateBatchFile('run_nprocs')
 
 
     @pyqtSignature("")
@@ -844,7 +850,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         run_new_f = file(runcase, mode='w')
         run_new_f.writelines(lines)
         run_new_f.close()
-
 
 
     def getCommandOutput(self, cmd):
@@ -1084,7 +1089,12 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.spinBoxNProcs.hide()
 
         if self.case['batch_type'] == None:
-            self.spinBoxNProcs.setValue(self.n_procs)
+            n_procs_s = self.jmdl.dictValues['run_nprocs']
+            if n_procs_s:
+                n_procs = int(n_procs_s)
+            else:
+                n_procs = 1
+            self.spinBoxNProcs.setValue(n_procs)
         else:
             pass
 

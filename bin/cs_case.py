@@ -1627,22 +1627,6 @@ echo "exit \$?" >> $localexec
         Main script.
         """
 
-        # Transfer parameters from case parameters or user scripts here
-
-        if len(self.domains) == 1 and len(self.syr_domains) == 0:
-
-            d = self.domains[0]
-
-            if d.user_locals:
-                m = 'define_case_parameters'
-                c = globals()['case']
-                if m in d.user_locals.keys():
-                    eval(m + '(case)', globals(), d.user_locals)
-                    del d.user_locals[m]
-                if hasattr(c, 'n_procs') and n_procs == None:
-                    n_procs = int(c.n_procs)
-                    del(c.n_procs)
-
         # Define scratch directory
         # priority: argument, environment variable, preference setting.
 

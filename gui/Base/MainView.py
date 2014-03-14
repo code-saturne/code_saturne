@@ -61,6 +61,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 import cs_info
+from cs_exec_environment import \
+    separate_args, update_command_single_value, assemble_args, enquote_arg
 
 try:
     from Base.MainForm import Ui_MainForm
@@ -1048,46 +1050,25 @@ class MainView(object):
         """
         Update the run command
         """
+
         cmd_name = self.case['package'].name
         parameters = os.path.basename(self.case['xmlfile'])
         batch_lines = self.batch_lines
 
-        # If filename has whitespace, protect it
-        if parameters.find(' ') > -1:
-            parameters = '"' + parameters + '"'
-
         for i in range(len(batch_lines)):
             if batch_lines[i][0:1] != '#':
-                line = batch_lines[i].strip()
-                index = string.find(line, cmd_name)
+                index = string.find(batch_lines[i], cmd_name)
                 if index < 0:
                     continue
+                line = batch_lines[i]
                 if line[index + len(cmd_name):].strip()[0:3] != 'run':
                     continue
-                index = string.find(line, '--param')
-                if index >= 0:
-                    # Find file name, possibly protected by quotes
-                    # (protection by escape character not handled)
-                    index += len('--param')
-                    end = len(line)
-                    while index < end and line[index] in (' ', '\t'):
-                        index += 1
-                    if index < end:
-                        sep = line[index]
-                        if sep == '"' or sep == "'":
-                            index += 1
-                        else:
-                            sep = ' '
-                        start = index
-                        while index < end and line[index] != sep:
-                            index += 1
-                        end = index
-                        batch_lines[i] = line[0:start].strip() \
-                            + ' ' + parameters + ' ' + line[end:].strip() + '\n'
-                    else:
-                        batch_lines[i] = line + ' --param ' + parameters + '\n'
-                else:
-                    batch_lines[i] = line + ' --param ' + parameters + '\n'
+
+                args = update_command_single_value(separate_args(line.rstrip()),
+                                                   ('--param', '--param=', '-p'),
+                                                   enquote_arg(parameters))
+                batch_lines[i] = assemble_args(args) + '\n'
+                break
 
         self.batch_lines = batch_lines
 

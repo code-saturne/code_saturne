@@ -33,6 +33,7 @@ import sys
 
 from cs_case_domain import *
 from cs_case import *
+import cs_exec_environment
 
 #-------------------------------------------------------------------------------
 # Extract a parameters file name from a shell run sript
@@ -57,19 +58,10 @@ def get_param(path):
         line = line.strip()
         if len(line) == 0:
             continue
-        i = line.find('--param')
-        if i >= 0:
-            i += len('--param')
-            line = line[i:].strip()
-            if not line:
-                continue
-            # Find file name, possibly protected by quotes
-            # (protection by escape character not handled)
-            sep = line[0]
-            if sep == '"' or sep == "'":
-                param = line.split(sep)[1]
-            else:
-                param = line.split()[0]
+        args = cs_exec_environment.separate_args(line)
+        if args.index('run') > 0: # "<package.name> run"
+            param = cs_exec_environment.get_command_single_value \
+                (args, ('--param=', '--param', '-p'))
 
     return param
 

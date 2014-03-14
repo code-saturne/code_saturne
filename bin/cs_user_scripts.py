@@ -230,28 +230,5 @@ def define_domain_parameters(domain):
     return
 
 #-------------------------------------------------------------------------------
-
-def define_case_parameters(case):
-    """
-    Define global case execution parameters.
-    """
-
-    # The parameters defined here apply for the whole calculation.
-    # In case of coupled calculations with multiple domains,
-    # this function is ignored, and the matching parameters
-    # should be set using the runcase_coupling script.
-
-    # Number of MPI processes (automatic if none).
-    #------------------------
-
-    # Warning: this value should be set to None when running under a batch
-    #          system/resource manager, unless a different number of
-    #          processes than the number allocated is required.
-
-    # case.n_procs = None
-
-    return
-
-#-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

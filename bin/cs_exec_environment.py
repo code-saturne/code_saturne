@@ -85,7 +85,7 @@ def separate_args(s):
                 a += s[i]
                 protected = False
             else:
-                if s[i] == '\\':
+                if s[i] == '\\' and s[i+1:i+1].isalnum():
                     protected = True
                 elif s[i] == '"' or s[i] == "'":
                     if in_quotes == s[i]:
@@ -136,6 +136,147 @@ def enquote_arg(s):
             return s
     else:
         return s
+
+#-------------------------------------------------------------------------------
+
+def assemble_args(cmd):
+    """
+    Assemble separate arguments.
+    """
+    l = ''
+    for s in cmd:
+        if (s.find(' ') > -1):
+            l += ' ' + enquote_arg(s)
+        else:
+            l += ' ' + s
+    return l.strip()
+
+#-------------------------------------------------------------------------------
+# Update command line arguments for a given value
+#-------------------------------------------------------------------------------
+
+def update_command_single_value(args, options, value):
+    """
+    Adds, updates, or removes parts of a command to pass a given value.
+    The command is provided as a list, and options defining a value may be
+    defined as a tuple (to allow for multiple variants).
+
+    In all cases, this function assumes the option is followed by a single
+    value argument.
+    Options and values may be defined as separate (successive) arguments,
+    or be separated by a '=' character when the matching option
+    ands with '='. To allow both syntaxes, a given option may be pased
+    both with and without that separator; for example:
+    options = ('--param=', '--param', '-p').
+
+    If no option was previously present and a value is added, the first
+    syntax of the options tuple will be used.
+    """
+
+    i = -1
+
+    # Update first occurence
+
+    if value:
+
+        val_s = str(value)
+
+        for opt in options:
+
+            if opt[-1:] == '=':
+                l = len(opt)
+                for arg in args:
+                    if arg[:l] == opt:
+                        i = args.index(arg)
+                        break
+                if i > -1:
+                    args[i] = prefix + val_s
+
+            else:
+                if args.count(opt) > 0:
+                    i = args.index(opt)
+                    if i+1 < len(args):
+                        args[i+1] = val_s
+                    else:
+                        args.append(val_s)
+                    i = i+1
+
+            if i > -1:
+                i = i + 1
+                break
+
+        # Append if none found
+
+        if i == -1:
+            opt = options[0]
+            if opt[-1:] == '=':
+                args.append(opt + val_s)
+            else:
+                args.append(opt)
+                args.append(val_s)
+            i = len(args)
+
+    # Remove excess occurences
+
+    for opt in options:
+
+        j = i
+
+        if opt[-1:] == '=':
+            l = len(opt)
+            while j < len(args):
+                if args[j][:l] == opt:
+                    args.pop(j)
+                else:
+                    j = j+1
+
+        else:
+            while j < len(args):
+                if args[j] == opt:
+                    args.pop(j)       # option
+                    if j < len(args):
+                        args.pop(j)   # matching value
+                else:
+                    j = j+1
+
+    # Return updated list
+
+    return args
+
+#-------------------------------------------------------------------------------
+# Get a single value from a command line
+#-------------------------------------------------------------------------------
+
+def get_command_single_value(args, options, default=None):
+    """
+    Obtain a value from a command line if availble, or using a default otherwise
+    The command is provided as a list, and options defining a value may be
+    defined as a tuple (to allow for multiple variants).
+
+    In all cases, this function assumes the option is followed by a single
+    value argument.
+    Options and values may be defined as separate (successive) arguments,
+    or be separated by a '=' character when the matching option
+    ands with '='. To allow both syntaxes, a given option may be pased
+    both with and without that separator; for example:
+    options = ('--param=', '--param', '-p').
+    """
+
+    for opt in options:
+
+        if opt[-1:] == '=':
+            l = len(opt)
+            for arg in args:
+                if arg[:l] == opt:
+                    return arg[l:]
+
+        else:
+            if args.count(opt) > 0:
+                i = args.index(opt)
+                if i+1 < len(args):
+                    return args[i+1]
+
+    return default
 
 #---------------------------------------------------------------------------
 

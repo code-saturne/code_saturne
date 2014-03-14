@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- For non-batch systems, handling of the number of MPI ranks is
+  based on a "code_saturne run" option, --nprocs, and is set in the
+  runcase file, not in the XML file anymore.
+
 - Rewrite of temporal moments handling. Moments handling is now more modular,
   and allows for variances in addition to means. Also, numerically stable recurrence
   relations are used to update moments, whose values are now directly usable at any

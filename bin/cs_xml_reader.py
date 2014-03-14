@@ -332,13 +332,6 @@ class Parser:
         if val:
             self.dict['valgrind'] = val
 
-        # Additional fields relative to the run environment
-
-        for key in ['n_procs']:
-            val = getDataFromNode(calc_node, key)
-            if val:
-                self.dict['case_' + key] = val
-
     #---------------------------------------------------------------------------
 
     def getParams(self):

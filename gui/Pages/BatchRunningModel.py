@@ -43,13 +43,15 @@ from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 from Base.XMLvariables import Variables, Model
 
+import cs_exec_environment
+
 #-------------------------------------------------------------------------------
 # Class BatchRunningModel
 #-------------------------------------------------------------------------------
 
 class BatchRunningModel(Model):
     """
-    This class modifies the batch file (runcase_batch)
+    This class modifies the batch file (runcase)
     """
     def __init__(self, parent, case):
         """
@@ -71,11 +73,15 @@ class BatchRunningModel(Model):
         self.dictValues['job_class'] = None
         self.dictValues['job_group'] = None
 
+        # Do we force a number of MPI ranks ?
+
+        self.dictValues['run_procs'] = None
+
         # Is a batch file present ?
 
-        self.batch1 = os.path.join(self.case['scripts_path'], self.case['batch'])
+        self.batch = os.path.join(self.case['scripts_path'], self.case['batch'])
 
-        if os.path.isfile(self.batch1):
+        if os.path.isfile(self.batch):
             if self.parent.batch_lines:
                 self.parseBatchFile()
             else:
@@ -93,6 +99,56 @@ class BatchRunningModel(Model):
         s = r.join(s.split())
 
         return s
+
+
+    def parseBatchRunOptions(self):
+        """
+        Update the run command
+        """
+        cmd_name = self.case['package'].name
+        batch_lines = self.parent.batch_lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:1] != '#':
+                index = string.find(batch_lines[i], cmd_name)
+                if index < 0:
+                    continue
+                line = batch_lines[i]
+                if line[index + len(cmd_name):].strip()[0:3] != 'run':
+                    continue
+
+                args = cs_exec_environment.separate_args(line.rstrip())
+                self.dictValues['run_nprocs'] \
+                    = cs_exec_environment.get_command_single_value(args,
+                                                                   ('--nprocs',
+                                                                    '--nprocs=',
+                                                                    '-n'))
+
+
+    def updateBatchRunOptions(self, keyword=None):
+        """
+        Update the run command
+        """
+        cmd_name = self.case['package'].name
+        batch_lines = self.parent.batch_lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:1] != '#':
+                index = string.find(batch_lines[i], cmd_name)
+                if index < 0:
+                    continue
+                line = batch_lines[i]
+                if line[index + len(cmd_name):].strip()[0:3] != 'run':
+                    continue
+
+                args = cs_exec_environment.separate_args(line.rstrip())
+
+                if keyword == 'run_nprocs' or not keyword:
+                    args = cs_exec_environment.update_command_single_value \
+                        (args, ('--nprocs', '--nprocs=', '-n'),
+                         self.dictValues['run_nprocs'])
+
+                batch_lines[i] = cs_exec_environment.assemble_args(args) + '\n'
 
 
     def parseBatchCCC(self):
@@ -545,14 +601,14 @@ class BatchRunningModel(Model):
         if not self.case['batch']:
             return
 
-        self.batch1 = os.path.join(self.case['scripts_path'], self.case['batch'])
-        if not os.path.isfile(self.batch1):
+        self.batch = os.path.join(self.case['scripts_path'], self.case['batch'])
+        if not os.path.isfile(self.batch):
             return
 
         # Read the batch file line by line.
         # All lines are stored in a list called "self.batch_lines".
 
-        f = open(self.batch1, 'r')
+        f = open(self.batch, 'r')
         batch_lines = f.readlines()
         f.close()
 
@@ -574,6 +630,8 @@ class BatchRunningModel(Model):
 
         # Parse lines depending on batch type
 
+        self.parseBatchRunOptions()
+
         if self.case['batch_type'] == None:
             return
 
@@ -590,6 +648,7 @@ class BatchRunningModel(Model):
         elif self.case['batch_type'][0:5] == 'SLURM':
             self.parseBatchSLURM()
 
+
     def updateBatchFile(self, keyword=None):
         """
         Update the batch file from reading dictionary self.dictValues.
@@ -602,6 +661,8 @@ class BatchRunningModel(Model):
             if self.dictValues[k] == 'None':
                 self.dictValues[k] = None
         self.isInList(keyword, l)
+
+        self.updateBatchRunOptions()
 
         batch_type = self.case['batch_type']
         if batch_type:
@@ -617,16 +678,6 @@ class BatchRunningModel(Model):
                 self.updateBatchSGE()
             elif batch_type[0:5] == 'SLURM':
                 self.updateBatchSLURM()
-
-
-    def _getRegex(self, word):
-        """
-        Get regular expression to extract line without comment
-        """
-        # handles both comments and "$word":
-        regex = re.compile(r"""(^(?#)^\s*(?<!$)""" + word + r""".*$)""")
-
-        return regex
 
 
 #-------------------------------------------------------------------------------
@@ -649,7 +700,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
         self.case['batch_type'] = None
         self.case['scripts_path'] = os.getcwd()
-        self.case['batch'] = 'runcase_batch'
+        self.case['batch'] = 'runcase'
 
         lance_PBS = '# test \n'\
         '#\n'\
@@ -709,7 +760,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         """ Check whether the BatchRunningModel class could update file"""
         mdl = BatchRunningModel(self.case)
         mdl.readBatchFile()
-        mdl.dictValues['N_PROCS']=48
+        mdl.dictValues['job_procs']=48
         dico_updated = mdl.dictValues
         mdl.updateBatchFile()
         mdl.readBatchFile()

@@ -148,11 +148,16 @@ class Case(object):
         #    with the __backwardCompatibility method.
 
         from Base.XMLengine import Case
+        from Pages.ScriptRunningModel import ScriptRunningModel
+        from cs_exec_environment import \
+            separate_args, get_command_single_value, update_command_single_value, assemble_args, enquote_arg
 
         if self.exe == "code_saturne":
             from Base.XMLinitialize import XMLinit
         elif self.exe == "neptune_cfd":
             from core.XMLinitialize import XMLinit
+
+        n_procs = {}
 
         for fn in os.listdir(os.path.join(self.__repo, self.label, "DATA")):
             fp = os.path.join(self.__repo, self.label, "DATA", fn)
@@ -173,6 +178,9 @@ class Case(object):
                     case['xmlfile'] = fp
                     case.xmlCleanAllBlank(case.xmlRootNode())
                     XMLinit(case).initialize()
+                    smdl = ScriptRunningModel(case)
+                    n_procs[str(fn)] = smdl.getString('n_procs')
+                    smdl.setString('n_procs', None)
                     case.xmlSaveDocument()
 
         # 2) Create RESU directory if needed
@@ -213,8 +221,23 @@ class Case(object):
         f.close()
 
         for i in range(len(lines)):
+            if lines[i].strip()[0:1] == '#':
+                continue
             if re.search(r'^export PATH=', lines[i]):
                  lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
+            j = lines[i].find(self.pkg.name)
+            if j > -1:
+                j = lines[i].find('run')
+                args = separate_args(lines[i].rstrip())
+                param = get_command_single_value(args, ('--param', '--param=', '-p'))
+                try:
+                    if n_procs[param]:
+                        args = update_command_single_value(args,
+                                                           ('--nprocs', '--nprocs=', '-n'),
+                                                           n_procs[param])
+                        lines[i] = assemble_args(args) + '\n'
+                except Exception:
+                    pass
 
         f = file(ref, mode = 'w')
         f.writelines(lines)
