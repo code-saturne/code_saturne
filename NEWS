@@ -9,6 +9,12 @@ Changes:
   based on a "code_saturne run" option, --nprocs, and is set in the
   runcase file, not in the XML file anymore.
 
+- For couplings, runcase_coupling is replaced by a standard runcase,
+  mechanism, using "code_saturne run --coupling coupling_parameters.py",
+  where coupling_parameters.py contains the domains dictionnary previously
+  in runcase_coupling. This allows unifying the handling of "code_saturne run"
+  options.
+
 - Rewrite of temporal moments handling. Moments handling is now more modular,
   and allows for variances in addition to means. Also, numerically stable recurrence
   relations are used to update moments, whose values are now directly usable at any

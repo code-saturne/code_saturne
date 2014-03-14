@@ -59,9 +59,10 @@ def get_param(path):
         if len(line) == 0:
             continue
         args = cs_exec_environment.separate_args(line)
-        if args.index('run') > 0: # "<package.name> run"
-            param = cs_exec_environment.get_command_single_value \
-                (args, ('--param=', '--param', '-p'))
+        if args.count('run') > 0:
+            if args.index('run') > 0: # "<package.name> run"
+                param = cs_exec_environment.get_command_single_value \
+                    (args, ('--param=', '--param', '-p'))
 
     return param
 
@@ -71,7 +72,8 @@ def get_param(path):
 
 def coupling(package,
              domains,
-             casedir):
+             casedir,
+             package_compute = None):
 
     use_saturne = False
     use_syrthes = False
@@ -82,11 +84,8 @@ def coupling(package,
     config = configparser.ConfigParser()
     config.read(package.get_global_configfile())
 
-    package_compute = None
-    if config.has_option('install', 'compute_versions'):
-        compute_versions = config.get('install', 'compute_versions').split(':')
-        if compute_versions[0]:
-            package_compute = package.get_alternate_version(compute_versions[0])
+    if package_compute == None:
+        package_compute = package
 
     # Initialize code domains
     sat_domains = []

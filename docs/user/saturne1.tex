@@ -300,10 +300,14 @@ For coupled calculations, whether with \CS itself or \syrthes, each coupled
 calculation domain is defined by its own directory (bearing the same name
 as the domain), but results are placed in a \texttt{RESU\_COUPLING}
 directory, with a subdirectory for each run, itself containing one
-subdirectory per coupled domain. Coupled cases are not run through
-the standard {\texttt{STUDY/CASE1/SCRIPTS/runcase} script or through
-the {\texttt{code\_saturne run} command, but through a
-{\texttt{STUDY/runcase\_coupling} script.
+subdirectory per coupled domain. Coupled cases are run through
+the standard the {\texttt{code\_saturne run} command, but require a coupling
+parameters file (\texttt{coupling\_parameters.py}) specified using the
+{\texttt{--coupling option}. The run command must be called from the toplevel
+({\texttt{STUDY}) directory, so an additional {\texttt{STUDY/runcase} launch
+script is used in this case. Note that case-local scripts (such as
+{\texttt{STUDY/CASE1/SCRIPTS/runcase}) are still used by the master script to
+determine which parameter file to use.
 
 So in the coupled case, calculation results would not be placed in
 \texttt{STUDY/CASE1/RESU/}\emph{\texttt{YYYYMMDD-hhmm}}, but in

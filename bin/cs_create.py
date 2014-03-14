@@ -317,20 +317,36 @@ class Study:
         if self.verbose > 0:
             sys.stdout.write("  o Creating coupling features ...\n")
 
-        dict_str = ""
         e_pkg = re.compile('PACKAGE')
         e_dom = re.compile('DOMAIN')
 
         solver_name = self.package.code_name
 
-        for c in self.cases:
+        header = \
+"""# -*- coding: utf-8 -*-
 
-            if dict_str != "": # Add separating comma after first domain
-                sep = \
+#===============================================================================
+# User variable settings to specify a coupling computation environnement.
+
+# A coupling case is defined by a dictionnary, containing the following:
+
+# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'Code_Aster')
+# Domain directory name
+# Run parameter setting file
+# Number of processors (or None for automatic setting)
+# Optional command line parameters. If not useful = None
+#===============================================================================
 """
-    ,"""
-            else:
-                sep = ""
+
+        dict_str = \
+"""
+# Define coupled domains
+
+domains = [
+"""
+        sep = ""
+
+        for c in self.cases:
 
             template = sep + \
 """
@@ -345,6 +361,12 @@ class Study:
             template = re.sub(e_dom, c, template)
 
             dict_str += template
+
+            if sep == "":
+                sep = \
+"""
+    ,"""
+
 
         for c in self.syr_case_names:
 
@@ -387,49 +409,35 @@ class Study:
 """
             dict_str += template
 
+        # Now finish building dictionnary string
+
+        dict_str += \
+"""
+    ]
+
+"""
         # Result directory for coupling execution
 
         resu = os.path.join(repbase, 'RESU_COUPLING')
         os.mkdir(resu)
 
-        datadir = self.package.get_dir("pkgdatadir")
-        try:
-            shutil.copy(os.path.join(datadir, 'runcase_coupling'), repbase)
-        except:
-            sys.stderr.write("Cannot copy runcase_coupling script: " + \
-                             os.path.join(datadir, 'runcase_coupling') + ".\n")
-            sys.exit(1)
+        coupling_base = 'coupling_parameters.py'
+        coupling = os.path.join(repbase, coupling_base)
 
-        runcase = os.path.join(repbase, 'runcase_coupling')
-        runcase_tmp = runcase + '.tmp'
+        fd = open(coupling, 'w')
+        fd.write(header)
 
-        e_dir = re.compile('CASEDIRNAME')
-        e_apps = re.compile('APP_DICTS')
+        if len(self.syr_case_names) > 0:
+            syrthes_insert = syrthes_path_line(self.package)
+            if syrthes_insert:
+                fd.write("\n# Ensure the correct SYRTHES install is used.\n")
+                fd.write(syrthes_insert)
 
-        syrthes_insert = syrthes_path_line(self.package)
-
-        fd  = open(runcase, 'r')
-        fdt = open(runcase_tmp,'w')
-
-        for line in fd:
-
-            line = re.sub(e_dir, repbase, line)
-            line = re.sub(e_apps, dict_str, line)
-            fdt.write(line)
-
-            if syrthes_insert and line[0:15] == 'sys.path.insert':
-                fdt.write(syrthes_insert)
-                syrthes_insert = None
-
-        fd.close()
-        fdt.close()
-
-        shutil.move(runcase_tmp, runcase)
-        make_executable(runcase)
+        fd.write(dict_str)
 
         self.build_batch_file(distrep = repbase,
                               casename = 'coupling',
-                              scriptname = 'runcase_coupling')
+                              coupling = coupling_base)
 
 
     def create_case(self, casename):
@@ -555,7 +563,7 @@ class Study:
                               casename = casename)
 
 
-    def build_batch_file(self, distrep, casename, scriptname=None):
+    def build_batch_file(self, distrep, casename, coupling=None):
         """
         Retrieve batch file for the current system
         Update batch file for the study
@@ -563,8 +571,6 @@ class Study:
 
 
         batch_file = os.path.join(distrep, 'runcase')
-        if scriptname == 'runcase_coupling':
-            batch_file += '_batch'
         if sys.platform.startswith('win'):
             batch_file = batch_file + '.bat'
 
@@ -601,19 +607,18 @@ class Study:
 
         # Add command to execute.
 
-        if scriptname:
-            cs_exec_environment.write_script_comment(fd, 'Launch script:\n')
-            fd.write('./' + scriptname + '\n\n')
-        else:
-            cs_exec_environment.write_script_comment(fd,
-                'Ensure the correct command is found:\n')
-            cs_exec_environment.write_prepend_path(fd, 'PATH',
-                                                   self.package.get_dir("bindir"))
-            fd.write('\n')
-            cs_exec_environment.write_script_comment(fd, 'Run command:\n')
-            # On Linux systems, add a backslash to prevent aliases
-            if sys.platform.startswith('linux'): fd.write('\\')
-            fd.write(self.package.name + ' run\n')
+        cs_exec_environment.write_script_comment(fd,
+                                                 'Ensure the correct command is found:\n')
+        cs_exec_environment.write_prepend_path(fd, 'PATH',
+                                               self.package.get_dir("bindir"))
+        fd.write('\n')
+        cs_exec_environment.write_script_comment(fd, 'Run command:\n')
+        # On Linux systems, add a backslash to prevent aliases
+        if sys.platform.startswith('linux'): fd.write('\\')
+        fd.write(self.package.name + ' run')
+        if coupling:
+            fd.write(' --coupling ' + coupling)
+        fd.write('\n')
 
         fd.close()
 

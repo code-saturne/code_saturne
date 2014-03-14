@@ -76,6 +76,10 @@ def process_cmd_line(argv, pkg):
                       metavar="<case>",
                       help="path to the case's directory")
 
+    parser.add_option("--coupling", dest="coupling", type="string",
+                      metavar="<coupling>",
+                      help="path or name of the coupling descriptor file")
+
     parser.add_option("--id", dest="id", type="string",
                       metavar="<id>",
                       help="use the given run id")
@@ -114,6 +118,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(execute=False)
     parser.set_defaults(finalize=False)
     parser.set_defaults(param=None)
+    parser.set_defaults(coupling=None)
     parser.set_defaults(domain=None)
     parser.set_defaults(id=None)
     parser.set_defaults(nprocs=None)
@@ -130,36 +135,69 @@ def process_cmd_line(argv, pkg):
     data = None
     src = None
 
-    if options.param:
-        param = os.path.basename(options.param)
-        if param != options.param:
-            datadir = os.path.split(os.path.realpath(options.param))[0]
-            (casedir, data) = os.path.split(datadir)
-            if data != 'DATA': # inconsistent paramaters location.
-                casedir = None
+    if options.coupling:
 
-    if options.case:
-        casedir = os.path.realpath(options.case)
-        data = os.path.join(casedir, 'DATA')
-        src = os.path.join(casedir, 'SRC')
+        # Multiple domain case
+
+        if options.param:
+            cmd_line = sys.argv[0]
+            for arg in sys.argv[1:]:
+                cmd_line += ' ' + arg
+            err_str = 'Error:\n' + cmd_line + '\n' \
+                      '--coupling and -p/--param options are incompatible.\n'
+            sys.stderr.write(err_str)
+            sys.exit(1)
+
+        coupling = os.path.realpath(options.coupling)
+        if not os.path.isfile(coupling):
+            cmd_line = sys.argv[0]
+            for arg in sys.argv[1:]:
+                cmd_line += ' ' + arg
+            err_str = 'Error:\n' + cmd_line + '\n' \
+                      'coupling parameters: ' + options.coupling + '\n' \
+                      'not found or not a file.\n'
+            sys.stderr.write(err_str)
+            sys.exit(1)
+
+        if options.case:
+            casedir = os.path.realpath(options.case)
+        else:
+            casedir = os.path.split(coupling)[0]
+
     else:
-        casedir = os.getcwd()
-        while os.path.basename(casedir):
+
+        # Single domain case
+
+        if options.param:
+            param = os.path.basename(options.param)
+            if param != options.param:
+                datadir = os.path.split(os.path.realpath(options.param))[0]
+                (casedir, data) = os.path.split(datadir)
+                if data != 'DATA': # inconsistent paramaters location.
+                    casedir = None
+
+        if options.case:
+            casedir = os.path.realpath(options.case)
             data = os.path.join(casedir, 'DATA')
             src = os.path.join(casedir, 'SRC')
-            if os.path.isdir(data) and os.path.isdir(src):
-                break
-            casedir = os.path.split(casedir)[0]
+        else:
+            casedir = os.getcwd()
+            while os.path.basename(casedir):
+                data = os.path.join(casedir, 'DATA')
+                src = os.path.join(casedir, 'SRC')
+                if os.path.isdir(data) and os.path.isdir(src):
+                    break
+                casedir = os.path.split(casedir)[0]
 
-    if not (os.path.isdir(data) and os.path.isdir(src)):
-        casedir = None
-        cmd_line = sys.argv[0]
-        for arg in sys.argv[1:]:
-            cmd_line += ' ' + arg
-        err_str = 'Error:\n' + cmd_line + '\n' \
-            'run from directory \"' + str(os.getcwd()) + '\",\n' \
-            'which does not seem to be inside a case directory.\n'
-        sys.stderr.write(err_str)
+        if not (os.path.isdir(data) and os.path.isdir(src)):
+            casedir = None
+            cmd_line = sys.argv[0]
+            for arg in sys.argv[1:]:
+                cmd_line += ' ' + arg
+            err_str = 'Error:\n' + cmd_line + '\n' \
+                      'run from directory \"' + str(os.getcwd()) + '\",\n' \
+                      'which does not seem to be inside a case directory.\n'
+            sys.stderr.write(err_str)
 
     # Stages to run (if no filter given, all are done).
 
@@ -179,9 +217,9 @@ def process_cmd_line(argv, pkg):
 
     n_procs = options.nprocs
 
-    return  (casedir, options.id, param, options.id_prefix, options.id_suffix,
-             options.suggest_id, force_id, n_procs,
-             prepare_data, run_solver, save_results)
+    return  (casedir, options.id, param, coupling,
+             options.id_prefix, options.id_suffix, options.suggest_id, force_id,
+             n_procs, prepare_data, run_solver, save_results)
 
 #===============================================================================
 # Run the calculation
@@ -192,8 +230,8 @@ def main(argv, pkg):
     Main function.
     """
 
-    (casedir, run_id, param, id_prefix, id_suffix, suggest_id, force,
-     n_procs,
+    (casedir, run_id, param, coupling,
+     id_prefix, id_suffix, suggest_id, force, n_procs,
      prepare_data, run_solver, save_results) = process_cmd_line(argv, pkg)
 
     if not casedir:
@@ -223,16 +261,31 @@ def main(argv, pkg):
         if compute_versions[0]:
             pkg_compute = pkg.get_alternate_version(compute_versions[0])
 
-    # Values in case and associated domain set from parameters
+    if coupling:
 
-    d = cs_case_domain.domain(pkg, package_compute=pkg_compute, param=param)
+        # Specific case for coupling
+        import cs_case_coupling
 
-    # Now handle case for the corresponding calculation domain(s).
+        if os.path.isfile(coupling):
+            try:
+                exec(compile(open(coupling).read(), user_scripts, 'exec'))
+            except Exception:
+                execfile(coupling)
 
-    c = cs_case.case(pkg,
-                     package_compute=pkg_compute,
-                     case_dir=casedir,
-                     domains=d)
+        c = cs_case_coupling.coupling(pkg,
+                                      domains,
+                                      casedir,
+                                      package_compute=pkg_compute)
+
+    else:
+        # Values in case and associated domain set from parameters
+        d = cs_case_domain.domain(pkg, package_compute=pkg_compute, param=param)
+
+        # Now handle case for the corresponding calculation domain(s).
+        c = cs_case.case(pkg,
+                         package_compute=pkg_compute,
+                         case_dir=casedir,
+                         domains=d)
 
     # Now run case
 
