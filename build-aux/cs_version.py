@@ -233,12 +233,12 @@ def svn_version(srcdir, defaults):
     try:
         from xml.dom import minidom
     except Exception:
-        return major, minor, release, extra
+        return major, minor, release, extra, revision
 
     # Get base info from 'svn info'
 
     url = None
-    revision = None
+    revision = ''
 
     cmd = ['svn', 'info', '--xml', srcdir]
     p = subprocess.Popen(cmd,
@@ -246,7 +246,7 @@ def svn_version(srcdir, defaults):
                          stderr=subprocess.PIPE)
     output = p.communicate()
     if p.returncode != 0:
-        return major, minor, release, extra
+        return major, minor, release, extra, revision
     else:
         try:
             svn_info = minidom.parseString(output[0]).documentElement
@@ -257,7 +257,7 @@ def svn_version(srcdir, defaults):
             pass
 
     if not url:
-        return major, minor, release, extra
+        return major, minor, release, extra, revision
 
     # If we are in trunk, use previous local info to determine next version
 
@@ -278,7 +278,7 @@ def svn_version(srcdir, defaults):
                              stderr=subprocess.PIPE)
         output = p.communicate()
         if p.returncode != 0:
-            return major, minor, release, extra
+            return major, minor, release, extra, revision
         else:
             try:
                 tag_ref = 'V' + str(major) + '_' + str(minor) + '_'
