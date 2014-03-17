@@ -142,11 +142,19 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/* Field key definition values */
+
+union _key_val_t {
+  int                         v_int;
+  double                      v_double;
+  void                       *v_p;
+};
+
 /* Field key definitions */
 
 typedef struct {
 
-  unsigned char               def_val[8];   /* Default value container (int,
+  union _key_val_t            def_val;      /* Default value container (int,
                                                double, or pointer to string
                                                or structure) */
   cs_field_log_key_struct_t  *log_func;     /* print function for structure */
@@ -166,7 +174,7 @@ typedef struct {
 
 typedef struct {
 
-  unsigned char      val[8];       /* Value container (int, double,
+  union _key_val_t   val;          /* Value container (int, double,
                                       or pointer) */
   bool               is_set;       /* Has this key been set for the
                                       present field ? */
@@ -453,7 +461,9 @@ _field_create(const char   *name,
   /* Mark key values as not set */
 
   for (key_id = 0; key_id < _n_keys_max; key_id++) {
-    memset((_key_vals + (f->id*_n_keys_max + key_id))->val, 0, 8);
+    memset(&((_key_vals + (f->id*_n_keys_max + key_id))->val),
+           0,
+           sizeof(union _key_val_t));
     (_key_vals + (f->id*_n_keys_max + key_id))->is_set = false;
   }
 
@@ -548,7 +558,9 @@ _find_or_add_key(const char  *name)
           = _key_vals[field_id*_n_keys_max_prev + _key_id];
     }
     for (field_id = 0; field_id < _n_fields; field_id++) {
-      memset((_key_vals + (field_id*_n_keys_max + key_id))->val, 0, 8);
+      memset((&(_key_vals + (field_id*_n_keys_max + key_id))->val),
+             0,
+             sizeof(union _key_val_t));
       (_key_vals + (field_id*_n_keys_max + key_id))->is_set = false;
     }
   }
@@ -599,8 +611,7 @@ _cs_field_free_str(void)
     if (kd->type_id == 's') {
       for (f_id = 0; f_id < _n_fields; f_id++) {
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
-        char **s = (char **)(kv->val);
-        BFT_FREE(*s);
+        BFT_FREE(kv->val.v_p);
       }
     }
 
@@ -623,8 +634,7 @@ _cs_field_free_struct(void)
     if (kd->type_id == 't') {
       for (f_id = 0; f_id < _n_fields; f_id++) {
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
-        unsigned char **p = (unsigned char **)(kv->val);
-        BFT_FREE(*p);
+        BFT_FREE(kv->val.v_p);
       }
     }
 
@@ -2059,9 +2069,8 @@ cs_field_define_key_int(const char  *name,
   int key_id = _find_or_add_key(name);
 
   cs_field_key_def_t *kd = _key_defs + key_id;
-  int *def_val = (int *)(kd->def_val);
 
-  *def_val = default_value;
+  kd->def_val.v_int = default_value;
   kd->log_func = NULL;
   kd->type_size = 0;
   kd->type_flag = type_flag;
@@ -2096,9 +2105,8 @@ cs_field_define_key_double(const char  *name,
   int key_id = _find_or_add_key(name);
 
   cs_field_key_def_t *kd = _key_defs + key_id;
-  double *def_val = (double *)(kd->def_val);
 
-  *def_val = default_value;
+  kd->def_val.v_double = default_value;
   kd->log_func = NULL;
   kd->type_size = 0;
   kd->type_flag = type_flag;
@@ -2136,18 +2144,16 @@ cs_field_define_key_str(const char  *name,
 
   cs_field_key_def_t *kd = _key_defs + key_id;
 
-  char **def_val = (char **)(kd->def_val);
-
   /* Free possible previous allocation */
   if (n_keys_init == _n_keys)
-    BFT_FREE(*def_val);
+    BFT_FREE(kd->def_val.v_p);
 
   if (default_value != NULL) {
-    BFT_MALLOC(*def_val, strlen(default_value) + 1, char);
-    strcpy(*def_val, default_value);
+    BFT_MALLOC(kd->def_val.v_p, strlen(default_value) + 1, char);
+    strcpy(kd->def_val.v_p, default_value);
   }
   else
-    *def_val = NULL;
+    kd->def_val.v_p = NULL;
   kd->log_func = NULL;
   kd->type_size = 0;
   kd->type_flag = type_flag;
@@ -2189,18 +2195,16 @@ cs_field_define_key_struct(const char                 *name,
 
   cs_field_key_def_t *kd = _key_defs + key_id;
 
-  unsigned char **def_val = (unsigned char **)(kd->def_val);
-
   /* Free possible previous allocation */
   if (n_keys_init == _n_keys)
-    BFT_FREE(*def_val);
+    BFT_FREE(kd->def_val.v_p);
 
   if (default_value != NULL) {
-    BFT_MALLOC(*def_val, size, unsigned char);
-    memcpy(*def_val, default_value, size);
+    BFT_MALLOC(kd->def_val.v_p, size, unsigned char);
+    memcpy(kd->def_val.v_p, default_value, size);
   }
   else
-    *def_val = NULL;
+    kd->def_val.v_p = NULL;
   kd->log_func = log_func;
   kd->type_size = size;
   kd->type_flag = type_flag;
@@ -2234,11 +2238,10 @@ cs_field_define_sub_key(const char  *name,
 
   cs_field_key_def_t *kd = _key_defs + key_id;
   cs_field_key_def_t *pkd = _key_defs + parent_id;
-  int *def_val = (int *)(kd->def_val);
 
   assert(parent_id > -1 && parent_id < _n_keys);
 
-  *def_val = parent_id;
+  kd->def_val.v_int = parent_id;
   kd->type_flag = pkd->type_flag;
   kd->type_id = pkd->type_id;
   kd->is_sub = true;
@@ -2259,8 +2262,7 @@ cs_field_destroy_all_keys(void)
   for (key_id = 0; key_id < _n_keys; key_id++) {
     cs_field_key_def_t *kd = _key_defs + key_id;
     if (kd->type_id == 't') {
-      unsigned char **def_val = (unsigned char **)(kd->def_val);
-      BFT_FREE(*def_val);
+      BFT_FREE(kd->def_val.v_p);
     }
   }
 
@@ -2387,8 +2389,7 @@ cs_field_set_key_int(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      int *_val = (int *)(kv->val);
-      *_val = value;
+      kv->val.v_int = value;
       kv->is_set = true;
     }
   }
@@ -2431,11 +2432,11 @@ cs_field_get_key_int(const cs_field_t  *f,
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       int retval = 0;
       if (kv->is_set)
-        retval = *((int *)(kv->val));
+        retval = kv->val.v_int;
       else if (kd->is_sub)
-        retval = cs_field_get_key_int(f, *((int *)(kd->def_val)));
+        retval = cs_field_get_key_int(f, kd->def_val.v_int);
       else
-        retval = *((int *)(kd->def_val));
+        retval = kd->def_val.v_int;
       return retval;
     }
   }
@@ -2497,8 +2498,7 @@ cs_field_set_key_double(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      double *_val = (double *)(kv->val);
-      *_val = value;
+      kv->val.v_double = value;
       kv->is_set = true;
     }
   }
@@ -2541,11 +2541,11 @@ cs_field_get_key_double(const cs_field_t  *f,
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       double retval = 0.;
       if (kv->is_set)
-        retval = *((double *)(kv->val));
+        retval = kv->val.v_double;
       else if (kd->is_sub)
-        retval = cs_field_get_key_double(f, *((int *)(kd->def_val)));
+        retval = cs_field_get_key_double(f, kd->def_val.v_int);
       else
-        retval = *((double *)(kd->def_val));
+        retval = kd->def_val.v_double;
       return retval;
     }
   }
@@ -2607,11 +2607,10 @@ cs_field_set_key_str(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      char **_val = (char **)(kv->val);
       if (kv->is_set == false)
-        *_val = NULL;
-      BFT_REALLOC(*_val, strlen(str) + 1, char);
-      strcpy(*_val, str);
+        kv->val.v_p = NULL;
+      BFT_REALLOC(kv->val.v_p, strlen(str) + 1, char);
+      strcpy(kv->val.v_p, str);
       kv->is_set = true;
     }
   }
@@ -2655,11 +2654,11 @@ cs_field_get_key_str(const cs_field_t  *f,
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       const char *str = NULL;
       if (kv->is_set)
-        str = *((const char **)(kv->val));
+        str = kv->val.v_p;
       else if (kd->is_sub)
-        str = cs_field_get_key_str(f, *((int *)(kd->def_val)));
+        str = cs_field_get_key_str(f, kd->def_val.v_int);
       else
-        str = *((const char **)(kd->def_val));
+        str = kd->def_val.v_p;
       return str;
     }
   }
@@ -2721,11 +2720,9 @@ cs_field_set_key_struct(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      unsigned char **_val = (unsigned char **)(kv->val);
-      if (kv->is_set == false) {
-                    BFT_MALLOC(*_val, kd->type_size, unsigned char);
-                        }
-      memcpy(*_val, s, kd->type_size);
+      if (kv->is_set == false)
+        BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
+      memcpy(kv->val.v_p, s, kd->type_size);
       kv->is_set = true;
     }
   }
@@ -2771,11 +2768,11 @@ cs_field_get_key_struct(const cs_field_t  *f,
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       const unsigned char *p = NULL;
       if (kv->is_set)
-        p = *((const unsigned char **)(kv->val));
+        p = kv->val.v_p;
       else if (kd->is_sub)
-        p = cs_field_get_key_struct(f, *((int *)(kd->def_val)), s);
+        p = cs_field_get_key_struct(f, kd->def_val.v_int, s);
       else
-        p = *((const unsigned char **)(kd->def_val));
+        p = kd->def_val.v_p;
       memcpy(s, p, kd->type_size);
       return s;
     }
@@ -3021,29 +3018,29 @@ cs_field_log_info(const cs_field_t  *f,
         if (kd->type_id == 'i') {
           if (kv->is_set == true)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10d\n"),
-                          key, *((int *)kv->val));
+                          key, kv->val.v_int);
           else if (log_keywords > 1)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10d (default)\n"),
-                          key, *((int *)kd->def_val));
+                          key, kd->def_val.v_int);
         }
         else if (kd->type_id == 'd') {
           if (kv->is_set == true)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10.3g\n"),
-                          key, *((double *)kv->val));
+                          key, kv->val.v_double);
           else if (log_keywords > 1)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10.3g (default)\n"),
-                          key, *((double *)kd->def_val));
+                          key, kd->def_val.v_double);
         }
         else if (kd->type_id == 's') {
           const char *s;
           if (kv->is_set == true) {
-            s = *((const char **)(kv->val));
+            s = kv->val.v_p;
             if (s == NULL)
               s = null_str;
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10s\n"), key, s);
           }
           else if (log_keywords > 1) {
-            s = *(const char **)(kd->def_val);
+            s = kd->def_val.v_p;
             if (s == NULL)
               s = null_str;
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10s (default)\n"),
@@ -3053,7 +3050,7 @@ cs_field_log_info(const cs_field_t  *f,
         else if (kd->type_id == 't') {
           const void *t;
           if (kv->is_set == true) {
-            t = (const void *)(kv->val);
+            t = kv->val.v_p;
             if (kd->log_func != NULL) {
               cs_log_printf(CS_LOG_SETUP, _("      %-24s:\n"), key);
               kd->log_func(t);
@@ -3063,7 +3060,7 @@ cs_field_log_info(const cs_field_t  *f,
             }
           }
           else if (log_keywords > 1) {
-            t = (const void *)(kd->def_val);
+            t = kd->def_val.v_p;
             if (kd->log_func != NULL) {
               cs_log_printf(CS_LOG_SETUP, _("      %-24s: (default)\n"), key);
               kd->log_func(t);
@@ -3199,17 +3196,17 @@ cs_field_log_key_defs(void)
     if (kd->type_id == 'i') {
       cs_log_printf(CS_LOG_SETUP,
                     _("  %-24s %-12d integer %-4d "),
-                    key, *((int *)kd->def_val), key_id);
+                    key, kd->def_val.v_int, key_id);
     }
     else if (kd->type_id == 'd') {
       cs_log_printf(CS_LOG_SETUP,
                     _("  %-24s %-12.3g real    %-4d "),
-                    key, *((double *)kd->def_val), key_id);
+                    key, kd->def_val.v_double, key_id);
     }
     else if (kd->type_id == 's') {
       cs_log_printf(CS_LOG_SETUP,
                     _("  %-24s %-12s string  %-4d "),
-                    key, (*((const char **)kd->def_val)), key_id);
+                    key, kd->def_val.v_p, key_id);
     }
     if (kd->type_id != 't') {
       if (kd->type_flag == 0)
@@ -3234,7 +3231,7 @@ cs_field_log_key_defs(void)
     const void *t;
 
     if (kd->type_id == 't') {
-      t = *(const void **)(kd->def_val);
+      t = kd->def_val.v_p;
 
       cs_log_printf(CS_LOG_SETUP,
                     _("  %-24s %-12s struct  %-4d "),
@@ -3330,29 +3327,29 @@ cs_field_log_key_vals(int   key_id,
           if (kd->type_id == 'i') {
             if (kv->is_set == true)
               cs_log_printf(CS_LOG_SETUP, "    %s %d\n",
-                            name_s, *((int *)kv->val));
+                            name_s, kv->val.v_int);
             else if (log_defaults)
               cs_log_printf(CS_LOG_SETUP, _("    %s %-10d (default)\n"),
-                            name_s, *((int *)kd->def_val));
+                            name_s, kd->def_val.v_int);
           }
           else if (kd->type_id == 'd') {
             if (kv->is_set == true)
               cs_log_printf(CS_LOG_SETUP, _("    %s %-10.3g\n"),
-                          name_s, *((double *)kv->val));
+                          name_s, kv->val.v_double);
             else if (log_defaults)
               cs_log_printf(CS_LOG_SETUP, _("    %s %-10.3g (default)\n"),
-                            name_s, *((double *)kd->def_val));
+                            name_s, kd->def_val.v_double);
           }
           else if (kd->type_id == 's') {
             const char *s;
             if (kv->is_set == true) {
-              s = *((const char **)(kv->val));
+              s = kv->val.v_p;
               if (s == NULL)
                 s = null_str;
               cs_log_printf(CS_LOG_SETUP, _("    %s %s\n"), name_s, s);
             }
             else if (log_defaults) {
-              s = *(const char **)(kd->def_val);
+              s = kd->def_val.v_p;
               if (s == NULL)
                 s = null_str;
               cs_log_printf(CS_LOG_SETUP, _("    %s %-10s (default)\n"),
@@ -3360,18 +3357,15 @@ cs_field_log_key_vals(int   key_id,
             }
           }
           else if (kd->type_id == 't') {
-            const void *t;
             if (kv->is_set == true) {
-              t = *(const void **)(kv->val);
               cs_log_printf(CS_LOG_SETUP, _("    %s\n"), name_s);
               if (kd->log_func != NULL)
-                kd->log_func(t);
+                kd->log_func(kv->val.v_p);
             }
             else if (log_defaults) {
-              t = *(const void **)(kd->def_val);
               cs_log_printf(CS_LOG_SETUP, _("    %s (default)\n"), name_s);
               if (kd->log_func != NULL)
-                kd->log_func(t);
+                kd->log_func(kd->def_val.v_p);
             }
           }
         }
