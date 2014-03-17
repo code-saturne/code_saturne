@@ -4,6 +4,11 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Additional fix to rev. 5920 for cases with no thermal scalar.
+
+- Fix thermal scalar indicator iscacp in case the enthalpy thermal model
+  has been chosen.
+
 - Fix automatic initialization of blencv for the thermal scalar (centered)
   (introduced by change in handling of thermal scalar in the GUI).
 

@@ -843,8 +843,10 @@ do jj = 1, nscaus
   if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
 enddo
 
-ii = isca(iscalt)
-if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
+if (iscalt.gt.0) then
+  ii = isca(iscalt)
+  if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
+endif
 
 do ii = 1, nvarmx
   if (abs(blencv(ii)+999.d0).lt.epzero) then
