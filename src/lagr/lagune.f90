@@ -710,7 +710,7 @@ if (nor.eq.1) then
   call getbdy                                                     &
   !==========
  ( nflagm , nfrlag , injcon , ilflag , iusncl ,                   &
-   iusclb , iusmoy , deblag , ifrlag )
+   iusclb , deblag , ifrlag )
 
 
   call prtget                                                     &
@@ -721,7 +721,7 @@ if (nor.eq.1) then
 
   call dplprt                                                     &
   !==========
- ( nbpart   , dnbpar   , nordre   , parbor   , iensi3   ,         &
+ ( nbpart   , nordre   , parbor   , iensi3   ,                    &
    inbr     , inbrbd   , iflm     , iflmbd   , iang     ,         &
    iangbd   , ivit     , ivitbd   , iencnb   , iencma   ,         &
    iencdi   , iencck   , iencnbbd , iencmabd , iencdibd ,         &

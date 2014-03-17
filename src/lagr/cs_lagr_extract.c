@@ -160,7 +160,8 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
     cs_datatype_t  datatype;
     int  count;
 
-    cs_lagr_get_attr_info(CS_LAGR_RANDOM_VALUE,
+    cs_lagr_get_attr_info(p_set,
+                          CS_LAGR_RANDOM_VALUE,
                           &extents, &size, &displ,
                           &datatype, &count);
 
@@ -215,7 +216,9 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
     /* Check for filter cell */
 
     if (cell_flag != NULL) {
-      cs_lnum_t  cell_id = CS_ABS(p_set->particles[i].cur_cell_num) - 1;
+      cs_lnum_t *cur_cell_num
+        = cs_lagr_particles_attr(p_set, CS_LAGR_CUR_CELL_NUM, i);
+      cs_lnum_t  cell_id = CS_ABS(*cur_cell_num) - 1;
       if (cell_flag[cell_id] == false)
         continue;
     }
@@ -275,7 +278,8 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
 
   assert(particles != NULL);
 
-  cs_lagr_get_attr_info(attr, &extents, &size, &displ, &_datatype, &_count);
+  cs_lagr_get_attr_info(particles, attr,
+                        &extents, &size, &displ, &_datatype, &_count);
 
   if (_count == 0)
     return 1;
@@ -411,7 +415,8 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
 
   assert(particles != NULL);
 
-  cs_lagr_get_attr_info(attr, &extents, &size, &displ, &_datatype, &_count);
+  cs_lagr_get_attr_info(particles, attr,
+                        &extents, &size, &displ, &_datatype, &_count);
 
   if (_count == 0)
     return 1;

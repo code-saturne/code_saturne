@@ -448,9 +448,9 @@ _writer_info(void)
     for (i = 0; i < _cs_post_n_writers; i++) {
 
       int fmt_id = 0, n_fmt_str = 0;
-      fvm_writer_time_dep_t   time_dep;
-      const char  *fmt_name, *fmt_opts;
-      const char  *case_name, *dir_name;
+      fvm_writer_time_dep_t   time_dep = FVM_WRITER_FIXED_MESH;
+      const char  *fmt_name, *fmt_opts = NULL;
+      const char  *case_name = NULL, *dir_name = NULL;
       const char empty[] = "";
       char frequency_s[80] = "";
 
@@ -4579,7 +4579,8 @@ cs_post_write_particle_values(int                    mesh_id,
 
   /* Get attribute values info, returning if not present */
 
-  cs_lagr_get_attr_info(attr, &extents, &size, &displ, &datatype, &stride);
+  cs_lagr_get_attr_info(p_set, attr,
+                        &extents, &size, &displ, &datatype, &stride);
 
   if (stride == 0)
     return;

@@ -35,8 +35,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
+#include <ctype.h>
 #include <float.h>
 #include <assert.h>
 
@@ -80,12 +83,20 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  37
 #define  N_VAR_PART_AUX      1
 
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
+
+/* Particle data value */
+/*---------------------*/
+
+union cs_lagr_value_t {
+  cs_lnum_t      l; /* v_lnum_t */
+  cs_gnum_t      g; /* v_gnum_t */
+  cs_real_t      f; /* v_real_t */
+};
 
 /* face_yplus auxiliary type */
 /* ------------------------- */
@@ -128,27 +139,6 @@ typedef struct {
 #endif
 
 } cs_lagr_halo_t;
-
-#if 0
-/* Structures useful to manage the dynamic flow of particles coming in/out */
-
-typedef struct _cs_lagr_list_t cs_lagr_list_t;
-struct _cs_lagr_list_t {
-
-  cs_lnum_t        val;  /* id of the free space in particle set */
-  cs_lagr_list_t  *next; /* pointer to the next item */
-
-};
-
-typedef struct {
-
-  cs_lagr_list_t   *free_spaces;  /* List of free spaces in particle set */
-  cs_lnum_t         size;         /* Current size of the list
-                                     Max size available in particle set */
-
-} cs_lagr_stack_t;
-
-#endif
 
 /* Structures useful to build and manage the Lagrangian computation:
    - exchanging of particles between communicating ranks
@@ -245,7 +235,7 @@ enum {
 enum {
   CS_LAGR_PART_IN_FLOW        = 0,
   CS_LAGR_PART_DEPOSITED      = 1,
-  CS_LAGR_PART_ROLLING   = 2,
+  CS_LAGR_PART_ROLLING        = 2,
   CS_LAGR_PART_NO_MOTION      = 10,
 };
 
@@ -312,6 +302,9 @@ static  cs_lagr_bdy_condition_t  *_lagr_bdy_conditions = NULL;
 
 static  cs_lagr_param_t  cs_glob_lagr_param; // Should move to cs_lagr.c
 
+static cs_lagr_attribute_map_t  *_p_attr_map = NULL;
+static cs_lagr_attribute_map_t  *_p_attr_map_prev = NULL;
+
 enum {X, Y, Z};  /* Used for _get_norm() and _get_dot_prod() */
 
 /* MPI datatype associated to each particle structures */
@@ -337,6 +330,246 @@ static int _jinch = - 1, _jreps = -1;
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*
+ * Map particle attributes for a given configuration.
+ *
+ * returns:
+ *   pointer to structure mapping particle attributes
+ *----------------------------------------------------------------------------*/
+
+static cs_lagr_attribute_map_t *
+_create_attr_map(void)
+{
+  cs_lagr_attribute_t attr;
+
+  cs_lagr_attribute_map_t  *am;
+
+  BFT_MALLOC(am, 1, cs_lagr_attribute_map_t);
+
+  am->n_attributes = CS_LAGR_N_ATTRIBUTES;
+  am->extents = sizeof(cs_lagr_particle_t);
+
+  BFT_MALLOC(am->size, am->n_attributes, size_t);
+  BFT_MALLOC(am->displ, am->n_attributes, ptrdiff_t);
+  BFT_MALLOC(am->datatype, am->n_attributes, cs_datatype_t);
+  BFT_MALLOC(am->count, am->n_attributes, int);
+  BFT_MALLOC(am->have_previous, am->n_attributes, bool);
+
+  for (attr = 0; attr < (cs_lagr_attribute_t)am->n_attributes; attr++) {
+    am->size[attr] = 0;
+    am->displ[attr] = -1;
+    am->datatype[attr] = CS_REAL_TYPE;
+    am->count[attr] = 1;
+    am->have_previous[attr] = true;
+  }
+
+  attr = CS_LAGR_CUR_CELL_NUM;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, cur_cell_num);
+  am->datatype[attr] = CS_LNUM_TYPE;
+
+  attr = CS_LAGR_LAST_FACE_NUM;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, last_face_num);
+  am->datatype[attr] = CS_LNUM_TYPE;
+
+  attr = CS_LAGR_SWITCH_ORDER_1;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, switch_order_1);
+  am->datatype[attr] = CS_INT_TYPE;
+
+  attr = CS_LAGR_STATE;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, state);
+  am->datatype[attr] = CS_LNUM_TYPE;
+
+  attr = CS_LAGR_PREV_ID;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, prev_id);
+  am->datatype[attr] = CS_LNUM_TYPE;
+
+  attr = CS_LAGR_NEXT_ID;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, next_id);
+  am->datatype[attr] = CS_LNUM_TYPE;
+
+  attr = CS_LAGR_RANDOM_VALUE;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, random_value);
+
+  attr = CS_LAGR_STAT_WEIGHT;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, stat_weight);
+
+  attr = CS_LAGR_RESIDENCE_TIME;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, residence_time);
+
+  attr = CS_LAGR_MASS;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, mass);
+
+  attr = CS_LAGR_DIAMETER;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, diameter);
+
+  attr = CS_LAGR_TAUP_AUX;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, taup_aux);
+
+  attr = CS_LAGR_COORDS;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, coord);
+  am->count[attr] = 3;
+
+  attr = CS_LAGR_VELOCITY;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, velocity);
+  am->count[attr] = 3;
+
+  attr = CS_LAGR_VELOCITY_SEEN;
+  am->displ[attr] = offsetof(cs_lagr_particle_t, velocity_seen);
+  am->count[attr] = 3;
+
+  /* Deposition submodel additional parameters */
+
+  attr = CS_LAGR_YPLUS;
+  if (_jryplu > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, yplus);
+
+  attr = CS_LAGR_INTERF;
+  if (_jrinpf > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, interf);
+
+  attr = CS_LAGR_NEIGHBOR_FACE_ID;
+  if (_jdfac > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, close_face_id);
+    am->datatype[attr] = CS_LNUM_TYPE;
+  }
+
+  attr = CS_LAGR_MARKO_VALUE;
+  if (_jimark > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, marko_val);
+    am->datatype[attr] = CS_LNUM_TYPE;
+  }
+
+  attr = CS_LAGR_DEPOSITION_FLAG;
+  if (_jdepo > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, depo);
+    am->datatype[attr] = CS_LNUM_TYPE;
+  }
+
+  attr = CS_LAGR_RANK_FLAG;
+  if (_jrank_flag > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, rank_flag);
+    am->datatype[attr] = CS_LNUM_TYPE;
+  }
+
+  /* Resuspension model additional parameters */
+
+  attr = CS_LAGR_N_LARGE_ASPERITIES;
+  if (_jnbasg > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, nb_large_asperities);
+    am->datatype[attr] = CS_LNUM_TYPE;
+  }
+
+  attr = CS_LAGR_N_SMALL_ASPERITIES;
+  if (_jnbasp > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, nb_small_asperities);
+    am->datatype[attr] = CS_LNUM_TYPE;
+  }
+
+  attr = CS_LAGR_ADHESION_FORCE;
+  if (_jfadh > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, adhesion_force);
+
+  attr = CS_LAGR_ADHESION_TORQUE;
+  if (_jmfadh > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, adhesion_torque);
+
+  attr = CS_LAGR_DISPLACEMENT_NORM;
+  if (_jndisp > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, displacement_norm);
+
+  /* Thermal model additional parameters */
+
+  attr = CS_LAGR_TEMPERATURE;
+  if (_jthp[0] > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, temp);
+    am->count[attr] = cs_glob_lagr_param.cs_lagr_nlayer_temp;
+  }
+
+  attr = CS_LAGR_FLUID_TEMPERATURE;
+  if (_jtf > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, fluid_temp);
+
+  attr = CS_LAGR_CP;
+  if (_jcp > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, cp);
+  }
+
+  /* Coal combustion additional parameters */
+
+  attr = CS_LAGR_WATER_MASS;
+  if (_jmwat > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, water_mass);
+
+  attr = CS_LAGR_COAL_MASS;
+  if (_jmch[0] > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, coal_mass);
+    am->count[attr] = CS_LAGR_N_LAYERS;
+  }
+
+  attr = CS_LAGR_COKE_MASS;
+  if (_jmck[0] > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, coke_mass);
+    am->count[attr] = CS_LAGR_N_LAYERS;
+  }
+
+  attr = CS_LAGR_SHRINKING_DIAMETER;
+  if (_jrdck > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, shrinking_diam);
+
+  attr = CS_LAGR_INITIAL_DIAMETER;
+  if (_jrd0p > -1)
+    am->displ[attr] = offsetof(cs_lagr_particle_t, initial_diam);
+
+  attr = CS_LAGR_COAL_NUM;
+  if (_jinch > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, coal_number);
+    am->datatype[attr] = CS_LNUM_TYPE;
+  }
+
+  attr = CS_LAGR_COAL_DENSITY;
+  if (_jrhock[0] > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, coal_density);
+    am->count[attr] = CS_LAGR_N_LAYERS;
+  }
+
+  attr = CS_LAGR_EMISSIVITY;
+  if (_jreps > -1) {
+    am->displ[attr] = offsetof(cs_lagr_particle_t, emissivity);
+  }
+
+  for (attr = 0; attr < (cs_lagr_attribute_t)am->n_attributes; attr++) {
+    if (am->displ[attr] < 0) {
+      am->datatype[attr] = CS_DATATYPE_NULL;
+      am->count[attr] = 0;
+      am->have_previous[attr] = false;
+    }
+    else
+      am->size[attr] = am->count[attr] * cs_datatype_size[am->datatype[attr]];
+  }
+
+  return am;
+}
+
+/*----------------------------------------------------------------------------*
+ * Free particle attributes for a given configuration.
+ *----------------------------------------------------------------------------*/
+
+static void
+_destroy_attr_map(cs_lagr_attribute_map_t  **am)
+{
+  if (*am != NULL) {
+    cs_lagr_attribute_map_t  *_am = *am;
+
+    BFT_FREE(_am->size);
+    BFT_FREE(_am->displ);
+    BFT_FREE(_am->datatype);
+    BFT_FREE(_am->count);
+    BFT_FREE(_am->have_previous);
+
+    BFT_FREE(*am);
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Compute the norm of a 3D vector of double (cs_real_t)
@@ -500,204 +733,91 @@ _remove_particle(cs_lagr_particle_set_t   *set,
 /*----------------------------------------------------------------------------
  * Create a MPI_Datatype which maps main particle characteristics.
  *
+ * parameters:
+ *   am <-- attributes map
+ *
  * returns:
- *   a MPI_Datatype
+ *   MPI_Datatype matching given attributes map
  *----------------------------------------------------------------------------*/
 
 static MPI_Datatype
-_define_particle_datatype(void)
+_define_particle_datatype(const cs_lagr_attribute_map_t  *am)
 {
-  int  i, j;
+  size_t i;
   MPI_Datatype  new_type;
-  cs_lagr_particle_t  part;
+  int           count;
+  cs_datatype_t *cs_type;
+  int           *blocklengths;
+  MPI_Datatype  *types;
+  MPI_Aint      *displacements;
 
-  int  count = 0;
-  int  blocklengths[N_VAR_PART_STRUCT]
-    = {1, 1, 1, 1, 1, 1, 1 , 1,
-       1, 1, 1, 1, 3, 3, 3 , 1, 1, 1, 1 ,
-       1, 1, 1, 1, 1, 1, 1,
-       CS_LAGR_N_LAYERS,
-       1, 1, 1,
-       CS_LAGR_N_LAYERS,
-       CS_LAGR_N_LAYERS,
-       1, 1, 1,
-       CS_LAGR_N_LAYERS,
-       1 };
+  /* Mark bytes with associated type */
 
-  MPI_Aint  displacements[N_VAR_PART_STRUCT]
-    = {0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
-       0, 0, 0, 0, 0, 0,
-       0,
-       0, 0, 0, 0,
-       0,
-       0,
-       0, 0, 0,
-       0,
-       0};
+  BFT_MALLOC(cs_type, am->extents, cs_datatype_t);
 
-  MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_LNUM,  /* cur_cell_num */
-                                            CS_MPI_LNUM,  /* last_face_num */
-                                            MPI_INT,      /* switch_order_1 */
-                                            MPI_INT,      /* state */
-                                            CS_MPI_LNUM,  /* prev_id */
-                                            CS_MPI_LNUM,  /* next_id */
-                                            CS_MPI_REAL,  /* random_value */
-                                            CS_MPI_REAL,  /* stat_weight */
-                                            CS_MPI_REAL,  /* residence_time */
-                                            CS_MPI_REAL,  /* mass */
-                                            CS_MPI_REAL,  /* diameter */
-                                            CS_MPI_REAL,  /* taup_aux */
-                                            CS_MPI_REAL,  /* coord[3] */
-                                            CS_MPI_REAL,  /* velocity[3] */
-                                            CS_MPI_REAL,  /* velocity_seen[3] */
-                                            CS_MPI_REAL,  /* yplus */
-                                            CS_MPI_REAL,  /* interf */
-                                            CS_MPI_LNUM,  /* close_face_id */
-                                            CS_MPI_LNUM,  /* marko_val */
-                                            CS_MPI_LNUM,  /* depo */
-                                            CS_MPI_LNUM,  /* rank_flag */
-                                            CS_MPI_LNUM,  /* nb_large_asperities */
-                                            CS_MPI_LNUM,  /* nb_small_asperities */
-                                            CS_MPI_REAL,  /* adhesion_force */
-                                            CS_MPI_REAL,  /* adhesion_torque */
-                                            CS_MPI_REAL,  /*  displacement_norm */
-                                            CS_MPI_REAL,  /* temp[nlayer] */
-                                            CS_MPI_REAL,  /* fluid_temp */
-                                            CS_MPI_REAL,  /* cp */
-                                            CS_MPI_REAL,  /* water_mass */
-                                            CS_MPI_REAL,  /* coal_mass[nlayer] */
-                                            CS_MPI_REAL,  /* coke_mass[nlayer] */
-                                            CS_MPI_REAL,  /* shrinking_diam */
-                                            CS_MPI_REAL,  /* initial_diam */
-                                            CS_MPI_LNUM,  /* coal_number */
-                                            CS_MPI_REAL,  /* coal_density[nlayer] */
-                                            CS_MPI_REAL   /* emissivity */
-  };
+  for (i = 0; i < am->extents; i++)
+    cs_type[i] = CS_CHAR;
 
-  /* Initialize a default particle */
-
-  part.cur_cell_num = 0;
-  part.last_face_num = 1;
-  part.switch_order_1 = CS_LAGR_SWITCH_OFF;
-  part.state = CS_LAGR_PART_TO_SYNC;
-  part.prev_id = 0;
-  part.next_id = 0;
-  part.random_value = -1.0;
-  part.stat_weight = 0.0;
-  part.residence_time = 0.0;
-  part.mass = 0.0;
-  part.diameter = 0.0;
-  part.taup_aux = 0.0;
-
-  for (j = 0; j < 3; j++) {
-    part.coord[j] = 0.0;
-    part.velocity[j] = 0.0;
-    part.velocity_seen[j] = 0.0;
+  for (size_t attr = 0; attr < am->n_attributes; attr++) {
+    if (am->count[attr] > 0) {
+      assert(am->displ[attr] > -1);
+      size_t b_size = am->count[attr] * cs_datatype_size[am->datatype[attr]];
+      for (i = 0; i < b_size; i++)
+        cs_type[am->displ[attr] + i] = am->datatype[attr];
+    }
   }
 
-  /* Deposition submodel */
+  /* Count type groups */
 
-  part.yplus = 0.0;
-  part.interf = 0.0;
-  part.close_face_id = 0;
-  part.marko_val = 0;
-  part.depo = 0;
-  part.rank_flag = 0;
+  count = 0;
 
-  /* Resuspension submodel */
-
-  part.nb_large_asperities = 0;
-  part.nb_small_asperities = 0;
-  part.adhesion_force = 0.;
-  part.adhesion_torque = 0.;
-  part.displacement_norm = 0.;
-
-  /* Thermal model */
-
-  for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
-    part.temp[j] = 0.0;
-  }
-  part.fluid_temp = 0.0;
-  part.cp = 0.0;
-
-  /* Coal combustion */
-
-  part.water_mass = 0.0;
-  for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
-    part.coal_mass[j] = 0.0;
-    part.coke_mass[j] = 0.0;
-  }
-  part.shrinking_diam = 0.0;
-  part.initial_diam = 0.0;
-  part.coal_number = 0;
-  for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
-    part.coal_density[j] = 0.0;
+  i = 0;
+  while (i < am->extents) {
+    size_t j;
+    for (j = i; j < am->extents; j++) {
+      if (cs_type[j] != cs_type[i])
+        break;
+    }
+    count += 1;
+    i = j;
   }
 
-  part.emissivity = 0.0;
+  /* Assign types */
 
-  /* Define array of displacements */
+  BFT_MALLOC(blocklengths, count, int);
+  BFT_MALLOC(types, count, MPI_Datatype);
+  BFT_MALLOC(displacements, count, MPI_Aint);
 
-  MPI_Get_address(&part, displacements + count++);
-  MPI_Get_address(&part.last_face_num, displacements + count++);
-  MPI_Get_address(&part.switch_order_1, displacements + count++);
-  MPI_Get_address(&part.state, displacements + count++);
-  MPI_Get_address(&part.next_id, displacements + count++);
-  MPI_Get_address(&part.prev_id, displacements + count++);
-  MPI_Get_address(&part.random_value, displacements + count++);
-  MPI_Get_address(&part.stat_weight, displacements + count++);
-  MPI_Get_address(&part.residence_time, displacements + count++);
-  MPI_Get_address(&part.mass, displacements + count++);
-  MPI_Get_address(&part.diameter, displacements + count++);
-  MPI_Get_address(&part.taup_aux, displacements + count++);
-  MPI_Get_address(&part.coord, displacements + count++);
-  MPI_Get_address(&part.velocity, displacements + count++);
-  MPI_Get_address(&part.velocity_seen, displacements + count++);
-  MPI_Get_address(&part.yplus, displacements + count++);
-  MPI_Get_address(&part.interf, displacements + count++);
-  MPI_Get_address(&part.close_face_id, displacements + count++);
-  MPI_Get_address(&part.marko_val, displacements + count++);
-  MPI_Get_address(&part.depo, displacements + count++);
-  MPI_Get_address(&part.rank_flag, displacements + count++);
+  count = 0;
 
-  MPI_Get_address(&part.nb_large_asperities, displacements + count++);
-  MPI_Get_address(&part.nb_small_asperities, displacements + count++);
-  MPI_Get_address(&part.adhesion_force, displacements + count++);
-  MPI_Get_address(&part.adhesion_torque, displacements + count++);
-  MPI_Get_address(&part.displacement_norm, displacements + count++);
-
-  MPI_Get_address(&part.temp, displacements + count++);
-  MPI_Get_address(&part.fluid_temp, displacements + count++);
-  MPI_Get_address(&part.cp, displacements + count++);
-
-  MPI_Get_address(&part.water_mass, displacements + count++);
-  MPI_Get_address(&part.coal_mass, displacements + count++);
-  MPI_Get_address(&part.coke_mass, displacements + count++);
-  MPI_Get_address(&part.shrinking_diam, displacements + count++);
-  MPI_Get_address(&part.initial_diam, displacements + count++);
-  MPI_Get_address(&part.coal_number, displacements + count++);
-  MPI_Get_address(&part.coal_density, displacements + count++);
-
-  MPI_Get_address(&part.emissivity, displacements + count++);
-
-  assert(count == N_VAR_PART_STRUCT);
-
-  for (i = N_VAR_PART_STRUCT - 1; i >= 0; i--)
-    displacements[i] -= displacements[0];
-
-  assert(fabs(displacements[0]) < 1e-15);
+  i = 0;
+  while (i < am->extents) {
+    size_t j;
+    types[count] = cs_datatype_to_mpi[cs_type[i]];
+    displacements[count] = i;
+    for (j = i; j < am->extents; j++) {
+      if (cs_type[j] != cs_type[i])
+        break;
+    }
+    blocklengths[count] = (j-i) / cs_datatype_size[cs_type[i]];
+    count += 1;
+    i = j;
+  }
 
   /* Create new datatype */
 
-  MPI_Type_create_struct(N_VAR_PART_STRUCT,
-                         blocklengths, displacements, types, &new_type);
+  MPI_Type_create_struct(count, blocklengths, displacements, types,
+                         &new_type);
 
   MPI_Type_commit(&new_type);
 
+  BFT_FREE(displacements);
+  BFT_FREE(types);
+  BFT_FREE(blocklengths);
+  BFT_FREE(cs_type);
+
   return new_type;
 }
-
 
 /*----------------------------------------------------------------------------
  * Create a MPI_Datatype which maps aux. particle characteristics.
@@ -763,6 +883,9 @@ _create_particle_set(const cs_lnum_t n_particles_max)
   new_set->first_used_id = -1;
   new_set->first_free_id = 0;
 
+  new_set->p_size = sizeof(cs_lagr_particle_t);
+  new_set->p_buffer = (unsigned char* )new_set->particles;
+
   assert(n_particles_max >= 1);
 
   for (i = 0; i < n_particles_max; i++) {
@@ -806,68 +929,66 @@ _destroy_particle_set(cs_lagr_particle_set_t *set)
 }
 
 /*----------------------------------------------------------------------------
- * Dump a cs_lagr_particle_t structure
+ * Dump a particle structure
  *
  * parameter
- *   part   <-- cs_lagr_particle_t structure to dump
+ *   particles   <-- cs_lagr_particle_t structure to dump
+ *   particle_id <-- id of particle to dump
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_particle(cs_lagr_particle_t  part)
+_dump_particle(const cs_lagr_particle_set_t  *particles,
+               cs_lnum_t                      particle_id)
 {
-  bft_printf("  particle:\n"
-             "\tcur_cell_num  : %ld\n"
-             "\tstate         : %ld\n"
-             "\tprev_id       : %ld\n"
-             "\tnext_id       : %ld\n"
-             "\trandom_value  : %e\n"
-             "\tcoord         : [%e, %e, %e]\n",
-             (long)part.cur_cell_num,
-             (long)part.state,
-             (long)part.prev_id,
-             (long)part.next_id,
-             (double)part.random_value,
-             (double)part.coord[0],
-             (double)part.coord[1],
-             (double)part.coord[2]);
-  bft_printf_flush();
-}
+  const unsigned char *p =   particles->p_buffer
+                           + particles->p_am->extents*particle_id;
+  const cs_lagr_attribute_map_t *am = particles->p_am;
 
-/*----------------------------------------------------------------------------
- * Dump a cs_lagr_particle_t structure
- *
- * parameter
- *   part   <-- cs_lagr_particle_t structure to dump
- *----------------------------------------------------------------------------*/
+  bft_printf("  particle: %lu\n", (unsigned long)particle_id);
 
-static void
-_dump_particle_set(cs_lagr_particle_set_t   *set)
-{
-  if (set != NULL) {
-
-    cs_lnum_t  i, j;
-
-    bft_printf("    n_particles      :  %9d\n", set->n_particles);
-    bft_printf("    n_particles_max  :  %9d\n", set->n_particles_max);
-    bft_printf("    first_used_id:  %9d\n", set->first_used_id);
-    bft_printf("    first_free_id:  %9d\n", set->first_free_id);
-    bft_printf_flush();
-
-    if (set->n_particles > 0) {
-
-      for (i = 0, j = set->first_used_id; i < set->n_particles; i++) {
-        bft_printf("dump_particle_set i j = %d %d \n",i,j);
-        _dump_particle(set->particles[j]);
-        j = set->particles[j].next_id;
+  for (cs_lagr_attribute_t attr = 0;
+       attr < (cs_lagr_attribute_t)am->n_attributes;
+       attr++) {
+    if (am->count[attr] > 0) {
+      char attr_name[64];
+      strncpy(attr_name, cs_lagr_attribute_name[attr] + 8, 63);
+      attr_name[63] = '\0';
+      for (int i = 0; attr_name[i] != '\0'; i++)
+        attr_name[i] = tolower(attr_name[i]);
+      switch (am->datatype[attr]) {
+      case CS_LNUM_TYPE:
+        {
+          const cs_lnum_t *v
+            = cs_lagr_particle_attr_const(p, attr, particles->p_am);
+          bft_printf("    %24s: %10ld\n", attr_name, (long)v[0]);
+          for (int i = 1; i < am->count[attr]; i++)
+            bft_printf("    %24s: %10ld\n", " ", (long)v[i]);
+        }
+        break;
+      case CS_GNUM_TYPE:
+        {
+          const cs_gnum_t *v
+            = cs_lagr_particle_attr_const(p, attr, particles->p_am);
+          bft_printf("    %24s: %10lu\n", attr_name, (unsigned long)v[0]);
+          for (int i = 1; i < am->count[attr]; i++)
+            bft_printf("    %24s: %10lu\n", " ", (unsigned long)v[i]);
+        }
+        break;
+      case CS_REAL_TYPE:
+        {
+          const cs_real_t *v
+            = cs_lagr_particle_attr_const(p, attr, particles->p_am);
+          bft_printf("    %24s: %10.3g\n", attr_name, v[0]);
+          for (int i = 1; i < am->count[attr]; i++)
+            bft_printf("    %24s: %10.3g\n", " ", v[i]);
+        }
+        break;
+      default:
+        break;
       }
-
-      assert(j == -1); /* The next_id is not defined for the last particle
-                          of the particle set */
-
     }
-
   }
-  bft_printf_flush();
+  bft_printf("\n");
 }
 
 /*----------------------------------------------------------------------------
@@ -875,12 +996,14 @@ _dump_particle_set(cs_lagr_particle_set_t   *set)
  *
  * parameters:
  *   p_particle_set    <->  pointer to a cs_lagr_particle_set_t structure
+ *   p_am              <--  particle attributes map
  *   n_particles_max   <--  local max. number of particles
  *----------------------------------------------------------------------------*/
 
 static void
-_resize_particle_set(cs_lagr_particle_set_t  **p_particle_set,
-                     const cs_lnum_t           n_particles_max)
+_resize_particle_set(cs_lagr_particle_set_t        **p_particle_set,
+                     const cs_lagr_attribute_map_t  *p_am,
+                     const cs_lnum_t                 n_particles_max)
 {
   cs_lagr_particle_set_t  *particle_set = *p_particle_set;
 
@@ -889,14 +1012,16 @@ _resize_particle_set(cs_lagr_particle_set_t  **p_particle_set,
   if (n_particles_max == 0)
     particle_set = _destroy_particle_set(particle_set);
 
-  else if (particle_set == NULL && n_particles_max > 0)
+  else if (particle_set == NULL && n_particles_max > 0) {
     particle_set = _create_particle_set(n_particles_max);
+  }
 
   else if (particle_set->n_particles_max < n_particles_max) {
 
     particle_set->n_particles_max = n_particles_max;
 
     BFT_REALLOC(particle_set->particles, n_particles_max, cs_lagr_particle_t);
+    particle_set->p_buffer = (unsigned char* )particle_set->particles;
 
     particle_set->aux_desc = NULL;
 
@@ -919,6 +1044,11 @@ _resize_particle_set(cs_lagr_particle_set_t  **p_particle_set,
   }
 
   /* Returns pointer */
+
+  if (particle_set != NULL) {
+    _particle_set->p_size = p_am->extents;
+    _particle_set->p_am = p_am;
+  }
 
   *p_particle_set = particle_set;
 }
@@ -967,6 +1097,9 @@ _create_lagr_halo(cs_lnum_t  n_particles_max)
 
   lagr_halo->send_buf = _create_particle_set(buf_size);
   lagr_halo->recv_buf = _create_particle_set(buf_size);
+
+  lagr_halo->send_buf->p_am = _p_attr_map;
+  lagr_halo->recv_buf->p_am = _p_attr_map;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
@@ -1914,42 +2047,43 @@ _test_wall_cell(cs_lagr_particle_t *particle,
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
-               cs_lagr_particle_t   *p_particle,
-               cs_lnum_t             face_num,
-               cs_real_t            *boundary_stat,
-               cs_lnum_t             boundary_zone,
-               cs_lnum_t             failsafe_mode,
-               cs_lnum_t            *p_move_particle,
-               cs_lnum_t            *p_n_failed_particles,
-               cs_real_t            *p_failed_particle_weight,
-               const cs_lnum_t      *iensi3,
-               const cs_lnum_t      *inbr,
-               const cs_lnum_t      *inbrbd,
-               const cs_lnum_t      *iflm,
-               const cs_lnum_t      *iflmbd,
-               const cs_lnum_t      *iang,
-               const cs_lnum_t      *iangbd,
-               const cs_lnum_t      *ivit,
-               const cs_lnum_t      *ivitbd,
-               const cs_lnum_t      *iencnb,
-               const cs_lnum_t      *iencma,
-               const cs_lnum_t      *iencdi,
-               const cs_lnum_t      *iencck,
-               const cs_lnum_t      *iencnbbd,
-               const cs_lnum_t      *iencmabd,
-               const cs_lnum_t      *iencdibd,
-               const cs_lnum_t      *iencckbd,
-               const cs_lnum_t      *inclg,
-               const cs_lnum_t      *iscovc,
-               const cs_lnum_t      *nusbor,
-               cs_lnum_t             iusb[],
-               cs_real_t             energt[],
-               const cs_real_t       tprenc[],
-               const cs_real_t       visref[],
-               const cs_real_t       enc1[],
-               const cs_real_t       enc2[],
-               const cs_real_t       *tkelvi)
+_bdy_treatment(cs_lagr_particle_t       *p_prev_particle,
+               cs_lagr_particle_t       *p_particle,
+               const cs_lagr_attribute_map_t  *attr_map,
+               cs_lnum_t                 face_num,
+               cs_real_t                *boundary_stat,
+               cs_lnum_t                 boundary_zone,
+               cs_lnum_t                 failsafe_mode,
+               cs_lnum_t                *p_move_particle,
+               cs_lnum_t                *p_n_failed_particles,
+               cs_real_t                *p_failed_particle_weight,
+               const cs_lnum_t          *iensi3,
+               const cs_lnum_t          *inbr,
+               const cs_lnum_t          *inbrbd,
+               const cs_lnum_t          *iflm,
+               const cs_lnum_t          *iflmbd,
+               const cs_lnum_t          *iang,
+               const cs_lnum_t          *iangbd,
+               const cs_lnum_t          *ivit,
+               const cs_lnum_t          *ivitbd,
+               const cs_lnum_t          *iencnb,
+               const cs_lnum_t          *iencma,
+               const cs_lnum_t          *iencdi,
+               const cs_lnum_t          *iencck,
+               const cs_lnum_t          *iencnbbd,
+               const cs_lnum_t          *iencmabd,
+               const cs_lnum_t          *iencdibd,
+               const cs_lnum_t          *iencckbd,
+               const cs_lnum_t          *inclg,
+               const cs_lnum_t          *iscovc,
+               const cs_lnum_t          *nusbor,
+               cs_lnum_t                 iusb[],
+               cs_real_t                 energt[],
+               const cs_real_t           tprenc[],
+               const cs_real_t           visref[],
+               const cs_real_t           enc1[],
+               const cs_real_t           enc2[],
+               const cs_real_t          *tkelvi)
 
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -1976,14 +2110,11 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
   cs_lnum_t  particle_state = -999;
   cs_lnum_t  depch = 1; /* Indicator of mass flux calculation */
 
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
 
   cs_int_t contact_number = 0;
   cs_real_t* surface_coverage;
 
-
-  assert(builder != NULL);
   assert(bdy_conditions != NULL);
 
   for (k = 0; k < 3; k++)
@@ -2080,9 +2211,13 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
     /* Specific treatment in case of particle resuspension modeling */
 
+    cs_lnum_t *cur_cell_num = cs_lagr_particle_attr(&particle,
+                                                    CS_LAGR_CUR_CELL_NUM,
+                                                    attr_map);
+
     if (cs_glob_lagr_param.resuspension == 0) {
 
-      particle.cur_cell_num = - particle.cur_cell_num; /* Store negative value */
+      *cur_cell_num = - *cur_cell_num;
 
       for (k = 0; k < 3; k++)
         particle.velocity_seen[k] = 0.0;
@@ -2092,7 +2227,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     } else {
 
       particle.depo = 1;
-      particle.cur_cell_num =  cs_glob_mesh->b_face_cells[face_id];
+      *cur_cell_num = cs_glob_mesh->b_face_cells[face_id];
 
       particle_state = CS_LAGR_PART_TREATED;
 
@@ -2112,7 +2247,6 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     cs_real_t  energ = 0.5 * particle.mass * (uxn + vyn + wzn) * (uxn + vyn + wzn);
     cs_real_t min_porosity ;
     cs_real_t limit;
-    cs_real_t val;
 
     if (cs_glob_lagr_param.clogging) {
 
@@ -2133,7 +2267,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     }
 
     if (cs_glob_lagr_param.rough > 0)
-      val = cs_lagr_roughness_barrier(particle,
+      (void)cs_lagr_roughness_barrier(particle,
                                       face_id,
                                       &energt[face_id]);
 
@@ -2695,47 +2829,48 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_local_propagation(cs_lagr_particle_t     *p_prev_particle,
-                   cs_lagr_particle_t     *p_particle,
-                   cs_lnum_t               scheme_order,
-                   cs_lnum_t               failsafe_mode,
-                   cs_real_t               boundary_stat[],
-                   cs_lnum_t              *p_n_failed_particles,
-                   cs_real_t              *p_failed_particle_weight,
-                   const cs_lnum_t        *iensi3,
-                   const cs_lnum_t        *inbr,
-                   const cs_lnum_t        *inbrbd,
-                   const cs_lnum_t        *iflm,
-                   const cs_lnum_t        *iflmbd,
-                   const cs_lnum_t        *iang,
-                   const cs_lnum_t        *iangbd,
-                   const cs_lnum_t        *ivit,
-                   const cs_lnum_t        *ivitbd,
-                   const cs_lnum_t        *iencnb,
-                   const cs_lnum_t        *iencma,
-                   const cs_lnum_t        *iencdi,
-                   const cs_lnum_t        *iencck,
-                   const cs_lnum_t        *iencnbbd,
-                   const cs_lnum_t        *iencmabd,
-                   const cs_lnum_t        *iencdibd,
-                   const cs_lnum_t        *iencckbd,
-                   const cs_lnum_t        *inclg,
-                   const cs_lnum_t        *iscovc,
-                   const cs_lnum_t        *nusbor,
-                   cs_lnum_t               iusb[],
-                   cs_real_t               visc_length[],
-                   cs_real_t               dlgeo[],
-                   cs_real_t               rtp[],
-                   const cs_lnum_t        *iu,
-                   const cs_lnum_t        *iv,
-                   const cs_lnum_t        *iw,
-                   cs_real_t               energt[],
-                   const cs_real_t         tprenc[],
-                   const cs_real_t         visref[],
-                   const cs_real_t         enc1[],
-                   const cs_real_t         enc2[],
-                   const cs_real_t         *tkelvi,
-                   cs_lnum_t               ipass)
+_local_propagation(cs_lagr_particle_t       *p_prev_particle,
+                   cs_lagr_particle_t       *p_particle,
+                   const cs_lagr_attribute_map_t  *attr_map,
+                   cs_lnum_t                 scheme_order,
+                   cs_lnum_t                 failsafe_mode,
+                   cs_real_t                 boundary_stat[],
+                   cs_lnum_t                *p_n_failed_particles,
+                   cs_real_t                *p_failed_particle_weight,
+                   const cs_lnum_t          *iensi3,
+                   const cs_lnum_t          *inbr,
+                   const cs_lnum_t          *inbrbd,
+                   const cs_lnum_t          *iflm,
+                   const cs_lnum_t          *iflmbd,
+                   const cs_lnum_t          *iang,
+                   const cs_lnum_t          *iangbd,
+                   const cs_lnum_t          *ivit,
+                   const cs_lnum_t          *ivitbd,
+                   const cs_lnum_t          *iencnb,
+                   const cs_lnum_t          *iencma,
+                   const cs_lnum_t          *iencdi,
+                   const cs_lnum_t          *iencck,
+                   const cs_lnum_t          *iencnbbd,
+                   const cs_lnum_t          *iencmabd,
+                   const cs_lnum_t          *iencdibd,
+                   const cs_lnum_t          *iencckbd,
+                   const cs_lnum_t          *inclg,
+                   const cs_lnum_t          *iscovc,
+                   const cs_lnum_t          *nusbor,
+                   cs_lnum_t                 iusb[],
+                   cs_real_t                 visc_length[],
+                   cs_real_t                 dlgeo[],
+                   cs_real_t                 rtp[],
+                   const cs_lnum_t          *iu,
+                   const cs_lnum_t          *iv,
+                   const cs_lnum_t          *iw,
+                   cs_real_t                 energt[],
+                   const cs_real_t           tprenc[],
+                   const cs_real_t           visref[],
+                   const cs_real_t           enc1[],
+                   const cs_real_t           enc2[],
+                   const cs_real_t          *tkelvi,
+                   cs_lnum_t                 ipass)
 {
   cs_lnum_t  i, j, k;
   cs_real_t  depl[3];
@@ -3194,6 +3329,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
           particle_state
             = _bdy_treatment(&prev_particle,
                              &particle,
+                             attr_map,
                              face_num,
                              boundary_stat,
                              bdy_conditions->b_face_zone_num[face_num-1]-1,
@@ -3830,8 +3966,8 @@ _lagr_halo_sync(void)
 
   /* Resize particle set only if needed */
 
-  _resize_particle_set(&(lag_halo->send_buf), n_send_particles);
-  _resize_particle_set(&(lag_halo->recv_buf), n_recv_particles);
+  _resize_particle_set(&(lag_halo->send_buf), _p_attr_map, n_send_particles);
+  _resize_particle_set(&(lag_halo->recv_buf), _p_attr_map, n_recv_particles);
 
   /* Get the updated particle set after synchronization */
 
@@ -4306,27 +4442,6 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
 
   }
 
-  /* Initialize builder */
-
-  _particle_track_builder = _init_track_builder(*n_particles_max);
-
-  /* Create all useful MPI_Datatype */
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    _CS_MPI_PARTICLE = _define_particle_datatype();
-    _CS_MPI_AUX_PARTICLE = _define_aux_particle_datatype();
-    }
-#endif
-
-  /* Saving of itycel and icocel */
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
-
-  for (i = 0; i <= mesh->n_cells; i++)
-    itycel[i] = builder->cell_face_idx[i];
-  for (i = 0; i < builder->cell_face_idx[mesh->n_cells] ; i++)
-    icocel[i] = builder->cell_face_lst[i];
-
   /* Allocate _jthp _jmch _jmck _jrhock */
   BFT_MALLOC(_jthp   , CS_LAGR_N_LAYERS, int);
   BFT_MALLOC(_jmch   , CS_LAGR_N_LAYERS, int);
@@ -4401,6 +4516,37 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   _jinch = *jinch - 1;
 
   _jreps = *jreps - 1;
+
+  /* Build mappings
+     (in the future, they should be created first, then marked,
+     then built) */
+
+  _p_attr_map = _create_attr_map();
+  _p_attr_map_prev = _create_attr_map();
+
+  _particle_set->p_am = _p_attr_map;
+  _prev_particle_set->p_am = _p_attr_map_prev;
+
+  /* Initialize builder */
+
+  _particle_track_builder = _init_track_builder(*n_particles_max);
+
+  /* Create all useful MPI_Datatypes */
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    _CS_MPI_PARTICLE = _define_particle_datatype(_p_attr_map);
+    _CS_MPI_AUX_PARTICLE = _define_aux_particle_datatype();
+    }
+#endif
+
+  /* Saving of itycel and icocel */
+  cs_lagr_track_builder_t  *builder = _particle_track_builder;
+
+  for (i = 0; i <= mesh->n_cells; i++)
+    itycel[i] = builder->cell_face_idx[i];
+  for (i = 0; i < builder->cell_face_idx[mesh->n_cells] ; i++)
+    icocel[i] = builder->cell_face_lst[i];
 }
 
 /*----------------------------------------------------------------------------
@@ -4769,7 +4915,6 @@ CS_PROCF (getbdy, GETBDY)(const cs_int_t    *nflagm,
                           const cs_int_t     ilflag[],
                           const cs_int_t     iusncl[],
                           const cs_int_t     iusclb[],
-                          const cs_int_t     iusmoy[],
                           const cs_real_t    deblag[],
                           const cs_int_t     ifrlag[])
 {
@@ -4835,7 +4980,6 @@ CS_PROCF (getbdy, GETBDY)(const cs_int_t    *nflagm,
 
 void
 CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
-                          cs_real_t        *p_parts_weight,
                           cs_lnum_t        *p_scheme_order,
                           cs_real_t         boundary_stat[],
                           const cs_lnum_t  *iensi3,
@@ -4886,7 +5030,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
   cs_lnum_t  scheme_order = *p_scheme_order;
   cs_lagr_particle_set_t  *set = _particle_set;
   cs_lagr_particle_set_t  *prev_set = _prev_particle_set;
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
 
   const cs_lagr_param_t *lagr_param = &cs_glob_lagr_param;
 
@@ -4894,7 +5037,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                                          detected */
   int nfabor  = mesh->n_b_faces;
 
-  assert(builder != NULL);
   assert(set != NULL && prev_set != NULL);
 
   /* Main loop on  particles : global propagation */
@@ -4922,6 +5064,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
       if (cur_part->state == CS_LAGR_PART_TO_SYNC)
         cur_part->state = _local_propagation(prev_part,
                                              cur_part,
+                                             set->p_am,
                                              scheme_order,
                                              failsafe_mode,
                                              boundary_stat,
@@ -5265,276 +5408,38 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
  * For attributes not currently present, the displacement and data
  * size should be -1 and 0 respectively.
  *
- * \param[in]   attr      particle attribute
- * \param[out]  extents   size (in bytes) of particle structure, or NULL
- * \param[out]  size      size (in bytes) of attribute in particle structure,
- *                        or NULL
- * \param[out]  displ     displacement (in bytes) in particle structure, or NULL
- *
- * \param[out]  datatype  datatype of associated attribute, or NULL
- * \param[out]  count     number of type values associated with attribute,
- *                        or NULL
+ * \param[in]   particles  associated particle set
+ * \param[in]   attr       particle attribute
+ * \param[out]  extents    size (in bytes) of particle structure, or NULL
+ * \param[out]  size       size (in bytes) of attribute in particle structure,
+ *                         or NULL
+ * \param[out]  displ      displacement (in bytes) in particle structure,
+ *                         or NULL
+ * \param[out]  datatype   datatype of associated attribute, or NULL
+ * \param[out]  count      number of type values associated with attribute,
+ *                         or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
-                      size_t                *extents,
-                      size_t                *size,
-                      ptrdiff_t             *displ,
-                      cs_datatype_t         *datatype,
-                      int                   *count)
+cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
+                      cs_lagr_attribute_t            attr,
+                      size_t                        *extents,
+                      size_t                        *size,
+                      ptrdiff_t                     *displ,
+                      cs_datatype_t                 *datatype,
+                      int                           *count)
 {
-  cs_lagr_particle_t  p;
-  ptrdiff_t  _d = -1;
-  size_t  _s = 0;
-  void * _p = NULL;
-  cs_datatype_t  _t = CS_REAL_TYPE; /* default */
-  int _c = 1; /* default */
-
-  switch(attr) {
-
-  case CS_LAGR_CUR_CELL_NUM:
-    _p = &(p.cur_cell_num);
-    _t = CS_LNUM_TYPE;
-    break;
-
-  case CS_LAGR_LAST_FACE_NUM:
-    _p = &(p.last_face_num);
-    _t = CS_LNUM_TYPE;
-    break;
-
-  case CS_LAGR_SWITCH_ORDER_1:
-    _p = &(p.switch_order_1);
-    _t = CS_INT_TYPE;
-    break;
-
-  case CS_LAGR_STATE:
-    _p = &(p.state);
-    _t = CS_LNUM_TYPE;
-    break;
-
-  case CS_LAGR_PREV_ID:
-    _p = &(p.prev_id);
-    _t = CS_LNUM_TYPE;
-    break;
-
-  case CS_LAGR_NEXT_ID:
-    _p = &(p.next_id);
-    _t = CS_LNUM_TYPE;
-    break;
-
-  case CS_LAGR_RANDOM_VALUE:
-    _p = &(p.random_value);
-    break;
-
-  case CS_LAGR_STAT_WEIGHT:
-    _p = &(p.stat_weight);
-    break;
-
-  case CS_LAGR_RESIDENCE_TIME:
-    _p = &(p.residence_time);
-    break;
-
-  case CS_LAGR_MASS:
-    _p = &(p.mass);
-    break;
-
-  case CS_LAGR_DIAMETER:
-    _p = &(p.diameter);
-    break;
-
-  case CS_LAGR_TAUP_AUX:
-    _p = &(p.taup_aux);
-    break;
-
-  case CS_LAGR_COORDS:
-    _p = &(p.coord);
-    _c = 3;
-    break;
-
-  case CS_LAGR_VELOCITY:
-    _p = &(p.velocity);
-    _c = 3;
-    break;
-
-  case CS_LAGR_VELOCITY_SEEN:
-    _p = &(p.velocity_seen);
-    _c = 3;
-    break;
-
-  /* Deposition submodel additional parameters */
-
-  case CS_LAGR_YPLUS:
-    if (_jryplu > -1)
-      _p = &(p.yplus);
-    break;
-
-  case CS_LAGR_INTERF:
-    if (_jrinpf > -1)
-      _p = &(p.interf);
-    break;
-
-  case CS_LAGR_NEIGHBOR_FACE_ID:
-    if (_jdfac > -1) {
-      _p = &(p.close_face_id);
-      _t = CS_LNUM_TYPE;
-    }
-    break;
-
-  case CS_LAGR_MARKO_VALUE:
-    if (_jimark > -1) {
-      _p = &(p.marko_val);
-      _t = CS_LNUM_TYPE;
-    }
-    break;
-
-  case CS_LAGR_DEPOSITION_FLAG:
-    if (_jdepo > -1) {
-      _p = &(p.depo);
-      _t = CS_LNUM_TYPE;
-    }
-    break;
-
-  case CS_LAGR_RANK_FLAG:
-    if (_jrank_flag > -1) {
-      _p = &(p.rank_flag);
-      _t = CS_LNUM_TYPE;
-    }
-    break;
-
-  /* Resuspension model additional parameters */
-
-  case CS_LAGR_N_LARGE_ASPERITIES:
-    if (_jnbasg > -1) {
-      _p = &(p.nb_large_asperities);
-      _t = CS_LNUM_TYPE;
-    }
-    break;
-
-  case CS_LAGR_N_SMALL_ASPERITIES:
-    if (_jnbasp > -1) {
-      _p = &(p.nb_small_asperities);
-      _t = CS_LNUM_TYPE;
-    }
-    break;
-
-  case CS_LAGR_ADHESION_FORCE:
-    if (_jfadh > -1)
-      _p = &(p.adhesion_force);
-    break;
-
-  case CS_LAGR_ADHESION_TORQUE:
-    if (_jmfadh > -1)
-      _p = &(p.adhesion_torque);
-    break;
-
-  case CS_LAGR_DISPLACEMENT_NORM:
-    if (_jndisp > -1)
-      _p = &(p.displacement_norm);
-    break;
-
-  /* Thermal model additional parameters */
-
-  case CS_LAGR_TEMPERATURE:
-    if (_jthp[0] > -1) {
-      _p = &(p.temp);
-      _c = cs_glob_lagr_param.cs_lagr_nlayer_temp;
-    }
-    break;
-
-  case CS_LAGR_FLUID_TEMPERATURE:
-    if (_jtf > -1)
-      _p = &(p.fluid_temp);
-    break;
-
-  case CS_LAGR_CP:
-    if (_jcp > -1) {
-      _p = &(p.cp);
-    }
-    break;
-
-  /* Coal combustion additional parameters */
-
-  case CS_LAGR_WATER_MASS:
-    if (_jmwat > -1)
-      _p = &(p.water_mass);
-    break;
-
-  case CS_LAGR_COAL_MASS:
-    if (_jmch[0] > -1) {
-      _p = &(p.coal_mass);
-      _c = CS_LAGR_N_LAYERS;
-    }
-    break;
-
-  case CS_LAGR_COKE_MASS:
-    if (_jmck[0] > -1) {
-      _p = &(p.coke_mass);
-      _c = CS_LAGR_N_LAYERS;
-    }
-    break;
-
-  case CS_LAGR_SHRINKING_DIAMETER:
-    if (_jrdck > -1)
-      _p = &(p.shrinking_diam);
-    break;
-
-  case CS_LAGR_INITIAL_DIAMETER:
-    if (_jrd0p > -1)
-      _p = &(p.initial_diam);
-    break;
-
-  case CS_LAGR_COAL_NUM:
-    if (_jinch > -1) {
-      _p = &(p.coal_number);
-      _t = CS_LNUM_TYPE;
-    }
-    break;
-
-  case CS_LAGR_COAL_DENSITY:
-    if (_jrhock[0] > -1) {
-      _p = &(p.coal_density);
-      _c = CS_LAGR_N_LAYERS;
-    }
-    break;
-
-  /* Radiative model additional parameters */
-
-  case CS_LAGR_EMISSIVITY:
-    if (_jreps > -1) {
-      _p = &(p.emissivity);
-    }
-    break;
-
-  default:
-    assert(0);
-  }
-
-  assert(_p != NULL);
-
-  /* Set return values */
-
-  if (_p != NULL) {
-    _d = (unsigned char *)_p - (unsigned char *)(&p);
-    _s = _c * cs_datatype_size[_t];
-  }
-  else {
-    _d = -1;
-    _t = CS_DATATYPE_NULL;
-    _c = 0;
-  }
-
   if (extents)
-    *extents = sizeof(p);
+    *extents = particles->p_am->extents;
   if (size)
-    *size = _s;
+    *size = particles->p_am->size[attr];
   if (displ)
-    *displ = _d;
+    *displ = particles->p_am->displ[attr];
   if (datatype)
-    *datatype = _t;
+    *datatype = particles->p_am->datatype[attr];
   if (count)
-    *count = _c;
+    *count = particles->p_am->count[attr];
 }
 
 /*----------------------------------------------------------------------------
@@ -5570,6 +5475,11 @@ cs_lagr_destroy(void)
   _prev_particle_set = _destroy_particle_set(_prev_particle_set);
   _particle_set = _destroy_particle_set(_particle_set);
 
+  /* Destroy mappings */
+
+  _destroy_attr_map(&_p_attr_map);
+  _destroy_attr_map(&_p_attr_map_prev);
+
   /* Destroy builder */
   _particle_track_builder = _destroy_track_builder(_particle_track_builder);
 
@@ -5592,6 +5502,46 @@ cs_lagr_destroy(void)
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)  _delete_particle_datatypes();
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump a cs_lagr_particle_t structure
+ *
+ * \param[in]  particles  cs_lagr_particle_t structure to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
+{
+  if (particles != NULL) {
+
+    cs_lnum_t  i, j;
+
+    bft_printf("Particle set\n");
+    bft_printf("------------\n");
+    bft_printf("  n_particles:      %10d\n", particles->n_particles);
+    bft_printf("  n_particles_max:  %10d\n", particles->n_particles_max);
+    bft_printf("  first_used_id:    %10d\n", particles->first_used_id);
+    bft_printf("  first_free_id:    %10d\n", particles->first_free_id);
+    bft_printf_flush();
+
+    if (particles->n_particles > 0) {
+      for (i = 0, j = particles->first_used_id;
+           i < particles->n_particles;
+           i++) {
+        bft_printf("  dump_particle_set i j = %d %d \n",i,j);
+        _dump_particle(particles, i);
+        j = particles->particles[j].next_id;
+        j = cs_lagr_particles_get_lnum(particles, CS_LAGR_NEXT_ID, j);
+      }
+      assert(j == -1); /* The next_id is not defined for the last particle
+                          of the particle set */
+    }
+
+  }
+  bft_printf_flush();
 }
 
 /*----------------------------------------------------------------------------*/
