@@ -334,7 +334,6 @@ void CS_PROCF (perinr, PERINR)
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   cs_gradient_type_by_imrgra(*imrgra,
                              &gradient_type,

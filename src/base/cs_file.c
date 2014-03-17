@@ -3749,6 +3749,8 @@ cs_file_remove(const char  *path)
     bft_error(__FILE__, __LINE__, 0,
               _("Error removing file \"%s\":\n\n"
                 "  %s"), path, strerror(errno));
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

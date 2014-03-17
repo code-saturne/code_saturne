@@ -413,7 +413,6 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
 {
   bool          bool_libere_coo_noe;
 
-  ecs_int_t     ind;
   ecs_int_t     isom;
   ecs_int_t     nbr_som;
 

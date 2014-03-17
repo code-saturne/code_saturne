@@ -106,9 +106,9 @@ double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
-integer          ifac , iel , ivf , itabvr, iencfou
+integer          ifac , iel , ivf
 integer          ivff , iflu , icla , ii , nb, nbrcel
-double precision aa , bb , gmax , gmin
+double precision aa , gmax , gmin
 character        chcond*16
 
 double precision, allocatable, dimension(:) :: tabvr,tabvrfou

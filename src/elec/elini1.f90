@@ -69,7 +69,7 @@ implicit none
 ! Local variables
 
 integer          idimve
-integer          ipp , iok
+integer          iok
 integer          isc , ivar
 
 !===============================================================================

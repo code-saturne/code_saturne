@@ -84,7 +84,6 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 integer          ifac, iel
-integer          ipcvis, ipcvst
 integer          idefau
 
 double precision srfbnf, rnx, rny, rnz

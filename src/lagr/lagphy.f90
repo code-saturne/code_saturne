@@ -171,7 +171,7 @@ if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     itepa  , ibord  ,                                             &
     propce ,                                                      &
-    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
+    ettp   , ettpa  , tepa   , tempct ,                           &
     tsvar  , auxl(1,1) , auxl(1,2)  )
 
 endif

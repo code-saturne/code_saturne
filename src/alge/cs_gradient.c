@@ -3338,7 +3338,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                             const cs_real_t              c_weight[],
                             cs_real_3_t        *restrict grad)
 {
-  const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
@@ -4505,8 +4504,6 @@ void CS_PROCF (cgdvec, CGDVEC)
 )
 {
   char var_name[32];
-
-  cs_gradient_info_t *gradient_info = NULL;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;

@@ -975,10 +975,7 @@ void CS_PROCF (tplnbr, TPLNBR)
  cs_int_t  *ntpl
 )
 {
-  size_t i;
-  cs_time_plot_format_t fmt;
-
-  size_t i_max = 0;
+  int fmt;
 
   *ntpl = 0;
 

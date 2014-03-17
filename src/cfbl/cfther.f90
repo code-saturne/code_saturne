@@ -1354,8 +1354,6 @@ double precision cp(*), cv(*)
 
 ! Local variables
 
-integer iel
-
 ! Constant quantity if perfect gas chosen,
 ! nothing to be done.
 

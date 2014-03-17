@@ -125,7 +125,6 @@ double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: f_val
 
 !===============================================================================
 

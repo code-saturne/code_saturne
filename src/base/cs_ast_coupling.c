@@ -318,7 +318,6 @@ void CS_PROCF(astcin, ASTCIN)
   cs_int_t  i;
   cs_int_t *parent_num      = NULL;
 
-  const cs_int_t n_vertices = cs_glob_mesh->n_vertices;
   const cs_int_t local_rank = (cs_glob_rank_id == -1) ? 0 : cs_glob_rank_id;
 
   cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;

@@ -894,7 +894,6 @@ _rescale_fluctuations(cs_int_t     n_points,
                       cs_real_t   *fluctuations)
 {
   cs_int_t   point_id;
-  cs_int_t   coo_id;
 
   for (point_id = 0; point_id < n_points; point_id++) {
 
@@ -1369,7 +1368,6 @@ void CS_PROCF(synthe, SYNTHE)
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
-  const cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
   if (cs_glob_inflow_n_inlets == 0)
     return;

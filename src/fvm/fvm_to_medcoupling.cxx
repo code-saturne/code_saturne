@@ -2115,13 +2115,12 @@ fvm_to_medcoupling_export_field(void                  *this_writer_p,
                                 double                 time_value,
                                 const void      *const field_values[])
 {
-  int  output_dim, mesh_id, field_id;
+  int  mesh_id, field_id;
 
   fvm_to_medcoupling_t *this_writer = (fvm_to_medcoupling_t *)this_writer_p;
 
   TypeOfTimeDiscretization  td = (time_step < 0) ? NO_TIME : ONE_TIME;
 
-  const int  rank = this_writer->rank;
   const int  n_ranks = this_writer->n_ranks;
 
   /* Initialization */

@@ -2472,7 +2472,6 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
   cs_real_t *aggr_crit = NULL;
 
   const int *db_size = fine_grid->diag_block_size;
-  const int *eb_size = fine_grid->extra_diag_block_size;
   const cs_lnum_t *f_face_cells = fine_grid->face_cell;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
@@ -2873,7 +2872,6 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   cs_real_t *w1 = NULL;
 
   const int *db_size = fine_grid->diag_block_size;
-  const int *eb_size = fine_grid->extra_diag_block_size;
 
   const cs_lnum_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_t *c_face_cell = coarse_grid->face_cell;

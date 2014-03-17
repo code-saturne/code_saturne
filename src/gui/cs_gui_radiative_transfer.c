@@ -488,7 +488,7 @@ void CS_PROCF (uiray4, UIRAY4) (int *const iirayo)
     "flux_convectif",
     "coeff_ech_conv"};
 
-  const cs_field_t * b_rad_f[8] = {
+  cs_field_t * b_rad_f[8] = {
     CS_F_(tparo),
     CS_F_(qinci),
     CS_F_(epa),

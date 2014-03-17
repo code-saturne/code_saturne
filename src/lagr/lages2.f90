@@ -25,8 +25,8 @@ subroutine lages2 &
 
  ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  , ibord  ,                                              &
-   rtpa   , rtp    , propce ,                            &
-   ettp   , ettpa  , tepa   , statis , taup   , tlag   , piil   , &
+   rtpa   , rtp    , propce ,                                     &
+   ettp   , ettpa  , tepa   , taup   , tlag   , piil   ,          &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , auxl   , gradpr ,                                     &
    romp   , brgaus , terbru , fextla )
@@ -124,7 +124,7 @@ integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 double precision rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep) , statis(ncelet,*)
+double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tsuf(nbpmax,3) , tsup(nbpmax,3)

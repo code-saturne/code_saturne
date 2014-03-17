@@ -481,17 +481,10 @@ end subroutine gaussian
 subroutine grad_thetal(dtlsd)
 double precision dtlsd(3,ncelet)
 
-double precision climgp
-double precision epsrgp
-double precision extrap
-
 integer    iccocg
 integer    iivar
-integer    imligp
 integer    inc
 integer    itpp
-integer    iwarnp
-integer    nswrgp
 
 ! Computation of the gradient of the potential temperature
 
@@ -517,17 +510,10 @@ end subroutine grad_thetal
 subroutine grad_qw(dqsd)
 double precision dqsd(3,ncelet)
 
-double precision climgp
-double precision epsrgp
-double precision extrap
-
 integer    iccocg
 integer    iivar
-integer    imligp
 integer    inc
 integer    iqw
-integer    iwarnp
-integer    nswrgp
 
 ! ----------------------------------------------------------------
 ! now gradient of total humidity

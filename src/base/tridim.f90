@@ -1032,7 +1032,7 @@ do while (iterns.le.nterup)
 
     call coupbo &
     !==========
-  ( nvar   , ncp    , ncv    , ientha ,                            &
+  ( ncp    , ncv    , ientha ,                                     &
     rtp    ,                                                       &
     cpcst  , propce(:,ippcp) , cvcst  , propce(:,ippcv),           &
     hbord  , theipb )

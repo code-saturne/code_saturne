@@ -72,7 +72,7 @@ use ppcpfu
 
 implicit none
 
-integer          ipp , ii , jj , iok
+integer          ii , jj , iok
 integer          icha , isc , is
 double precision wmolme
 

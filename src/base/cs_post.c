@@ -2663,7 +2663,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
   if (post_mesh->cat_id == -1 || post_mesh->cat_id == -2) {
 
     int f_id;
-    cs_real_t  *_val;
     const char *name;
 
     const int location_id = (post_mesh->cat_id == -1) ?

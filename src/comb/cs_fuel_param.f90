@@ -67,7 +67,7 @@ use field
 
 implicit none
 
-integer          ipp , ii , jj , iok , icla
+integer          ii , jj , iok , icla
 integer          isc
 integer          kscmin
 double precision wmolme

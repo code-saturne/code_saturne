@@ -497,8 +497,6 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
-
       b_visc[face_id] = b_face_surf[face_id];
 
     }
@@ -814,9 +812,9 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
   if (iwarnp >= 3) {
     bft_printf("Computing the face viscosity from the tensorial viscosity:\n"
-               "   Number of internal clippings: %d\n"
-               "   Number of boundary clippings: %d\n",
-               nclipf, nclipb);
+               "   Number of internal clippings: %lu\n"
+               "   Number of boundary clippings: %lu\n",
+               (unsigned long)nclipf, (unsigned long)nclipb);
   }
 
   BFT_FREE(w2);

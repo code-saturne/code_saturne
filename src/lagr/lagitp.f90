@@ -26,7 +26,7 @@ subroutine lagitp &
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    itepa  , ibord  ,                                              &
    propce ,                                                       &
-   ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
+   ettp   , ettpa  , tepa   , tempct ,                            &
    tsvar  , auxl1  , auxl2  )
 
 !===============================================================================
@@ -59,8 +59,6 @@ subroutine lagitp &
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpmax,2)      !    !     !                                                !
 ! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
@@ -105,7 +103,7 @@ integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
+double precision tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax) , auxl2(nbpmax)
 

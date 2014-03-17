@@ -66,7 +66,7 @@ implicit none
 
 ! Local variables
 
-integer       iprop, nprini
+integer       nprini
 
 !===============================================================================
 

@@ -260,7 +260,7 @@ else
      itepa  , ibord  ,                                            &
      rtpa   , rtp    , propce ,                                   &
      ettp   , ettpa  , tepa   ,                                   &
-     statis , taup   , tlag   , piil   ,                          &
+     taup   , tlag   , piil   ,                                   &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
      auxl2  , gradpr ,                                            &
      romp   , brgaus , terbru , fextla )

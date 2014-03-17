@@ -23,7 +23,7 @@
 subroutine coupbo &
 !================
 
- ( nvar   , ncp    , ncv    , ientha ,                            &
+ ( ncp    , ncv    , ientha ,                                     &
    rtp    ,                                                       &
    cpcst  , cp     , cvcst  , cv     ,                            &
    hbord  , tbord  )
@@ -39,7 +39,6 @@ subroutine coupbo &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! ncp              ! i  ! <-- ! dimension de cp (ncelet ou 1)                  !
 ! ncv              ! i  ! <-- ! dimension de cv (ncelet ou 1)                  !
 ! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
@@ -76,7 +75,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar
 integer          ncp    , ncv    , ientha
 
 double precision cpcst  , cvcst

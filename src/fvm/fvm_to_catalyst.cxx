@@ -571,8 +571,6 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
   double point[3];
 
-  double  *block_coords = NULL;
-
   const double  *vertex_coords = mesh->vertex_coords;
   const cs_lnum_t  n_vertices = mesh->n_vertices;
 

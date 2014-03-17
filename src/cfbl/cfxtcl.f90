@@ -126,8 +126,6 @@ integer          ivarcf(nvcfmx)
 
 double precision hint  , gammag
 
-double precision rvoid(1)
-
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7

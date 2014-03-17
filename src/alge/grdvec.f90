@@ -111,7 +111,7 @@ logical ilved
 
 ! Local variables
 
-integer          iel, isou, jsou
+integer          iel, isou
 
 double precision, dimension(:,:), allocatable :: pvari
 

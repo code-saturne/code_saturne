@@ -64,13 +64,9 @@ use ppincl
 
 implicit none
 
-! Arguments
-
-integer       ipropp, ipppst
-
 ! Local variables
 
-integer       iprop, ige , icla , iprop2, nprini
+integer       icla , nprini
 
 character(len=80) :: f_name, f_label
 
