@@ -1100,7 +1100,7 @@ endif
 if (nscal.gt.0) then
   do ii = 1, nscal
     if (iscacp(ii).eq.-10)then
-      if (ii.ne.iscalt) then
+      if (itherm.ne.1.or.ii.ne.iscalt) then
         iscacp(ii) = 0
       endif
     endif
