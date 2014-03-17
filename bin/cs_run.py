@@ -132,6 +132,7 @@ def process_cmd_line(argv, pkg):
 
     casedir = None
     param = None
+    coupling= None
     data = None
     src = None
 
