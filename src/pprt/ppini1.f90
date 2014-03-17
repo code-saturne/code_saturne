@@ -87,8 +87,6 @@ enddo
 
 if (itherm .eq. 1) then
   iscacp(iscalt) = 1
-else if (itherm .eq. 2) then
-  iscacp(iscalt) = 2
 endif
 
 !===============================================================================
