@@ -232,6 +232,12 @@ do iscal = 1, nscal
   ! Model for turbulent fluxes u'T' (SGDH, GGDH, AFM, DFM)
   ityturt(iscal) = iturt(iscal)/10
 
+  if (iscal.eq.iscalt) then
+    if (iturt(iscalt).gt.0.and.irovar.eq.1) then
+      call add_property_field('thermal_expansion', 'Beta', ibeta)
+    endif
+  endif
+
   ! Index of the turbulent flux
   if (ityturt(iscal).eq.3) then
     idttur = idttur + 1

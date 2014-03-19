@@ -358,12 +358,6 @@ if (nscal.ge.1) then
   enddo
 endif
 
-if (iscalt.gt.0) then
-  if (ityturt(iscalt).gt.0.and.irovar.eq.1) then
-    call add_property_field('thermal_expansion', 'Beta', ibeta)
-  endif
-endif
-
 !  Pour les fluctuations, le pointeur de la diffusivite
 !    envoie directement sur la diffusivite du scalaire associe.
 
