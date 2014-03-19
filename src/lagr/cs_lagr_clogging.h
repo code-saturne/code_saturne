@@ -103,21 +103,35 @@ void
 cs_lagr_clogging_finalize(void);
 
 /*----------------------------------------------------------------------------
- * Clogging barrier
+ * Clogging:
  *
  * - Compute the number of deposited particles in contact with the depositing
  *   particle
  * - Re-compute the energy barrier if this number is greater than zero
+ *
+ * parameters:
+ *   particle         <-- pointer to particle data
+ *   attr_map         <-- pointer to attribute map
+ *   face_id          <-- id of face neighboring particle
+ *   face_area        <-- area of face
+ *   energy_barrier   <-> energy barrier
+ *   surface_coverage <-> surface coverage
+ *   limit            <-> jamming limit
+ *   mporos           <-> minimum porosity
+ *
+ * returns:
+ *   number of deposited particles in contact with the depositing particle
  *----------------------------------------------------------------------------*/
 
 int
-cs_lagr_clogging_barrier(cs_lagr_particle_t    particle,
-                         cs_lnum_t             face_id,
-                         cs_real_t             face_area,
-                         cs_real_t            *energy_barrier,
-                         cs_real_t            *surface_coverage,
-                         cs_real_t            *limit,
-                         cs_real_t            *mporos);
+cs_lagr_clogging_barrier(const void                     *particle,
+                         const cs_lagr_attribute_map_t  *attr_map,
+                         cs_lnum_t                       face_id,
+                         cs_real_t                       face_area,
+                         cs_real_t                      *energy_barrier,
+                         cs_real_t                      *surface_coverage,
+                         cs_real_t                      *limit,
+                         cs_real_t                      *mporos);
 
 /*----------------------------------------------------------------------------*/
 

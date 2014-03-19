@@ -191,19 +191,32 @@ cs_lagr_clogging_finalize(void)
  * - Compute the number of deposited particles in contact with the depositing
  *   particle
  * - Re-compute the energy barrier if this number is greater than zero
+ *
+ * parameters:
+ *   particle         <-- pointer to particle data
+ *   attr_map         <-- pointer to attribute map
+ *   face_id          <-- id of face neighboring particle
+ *   face_area        <-- area of face
+ *   energy_barrier   <-> energy barrier
+ *   surface_coverage <-> surface coverage
+ *   limit            <-> jamming limit
+ *   mporos           <-> minimum porosity
+ *
+ * returns:
+ *   number of deposited particles in contact with the depositing particle
  *----------------------------------------------------------------------------*/
 
 int
-cs_lagr_clogging_barrier(cs_lagr_particle_t    particle,
-                         cs_lnum_t             face_id,
-                         cs_real_t             face_area,
-                         cs_real_t            *energy_barrier,
-                         cs_real_t            *surface_coverage,
-                         cs_real_t            *limit,
-                         cs_real_t            *mporos)
+cs_lagr_clogging_barrier(const void                     *particle,
+                         const cs_lagr_attribute_map_t  *attr_map,
+                         cs_lnum_t                       face_id,
+                         cs_real_t                       face_area,
+                         cs_real_t                      *energy_barrier,
+                         cs_real_t                      *surface_coverage,
+                         cs_real_t                      *limit,
+                         cs_real_t                      *mporos)
 {
   cs_real_t contact_area;
-  cs_real_t depositing_radius = particle.diameter * 0.5;
   cs_real_t deposited_radius;
 
   cs_real_t mean_nb_cont;
@@ -218,9 +231,15 @@ cs_lagr_clogging_barrier(cs_lagr_particle_t    particle,
 
   /* Assuming monodispersed calculation */
 
+  double p_stat_weight
+    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT);
+  double p_diameter
+    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT);
+  cs_real_t depositing_radius = p_diameter * 0.5;
+
   deposited_radius = depositing_radius;
 
-  contact_area = particle.stat_weight
+  contact_area = p_stat_weight
                  * _pi * pow(2. * pow(deposited_radius * depositing_radius, 0.5)
                              + deposited_radius,2);
 
@@ -235,12 +254,13 @@ cs_lagr_clogging_barrier(cs_lagr_particle_t    particle,
   if (mean_nb_cont > value) {
     param1 = mean_nb_cont / value;
     param2 = fmod(mean_nb_cont,value);
+    assert(param1 < 12000); /* TODO use dynamic allocation or set bound */
 
     CS_PROCF(fische, FISCHE)(&dim_aux, &param2, contact_count);
-    CS_PROCF(fische, FISCHE)(&param1, &value ,nbtemp);
+    CS_PROCF(fische, FISCHE)(&param1, &value, nbtemp);
 
     for (k = 0; k < param1; k++) {
-      contact_count[0] =  contact_count[0] + nbtemp[k];
+      contact_count[0] = contact_count[0] + nbtemp[k];
     }
   }
 
@@ -251,7 +271,7 @@ cs_lagr_clogging_barrier(cs_lagr_particle_t    particle,
    /* The surface coverage must be greater than zero */
   if (*surface_coverage > 1e-15)
 
-    if (((_pi * pow(depositing_radius,2) * particle.stat_weight)/face_area
+    if (((_pi * pow(depositing_radius,2) * p_stat_weight)/face_area
          + (*surface_coverage)) > cs_lagr_clogging_param.jamming_limit)
       contact_count[0] +=1;
 
@@ -301,7 +321,8 @@ cs_lagr_clogging_barrier(cs_lagr_particle_t    particle,
         *energy_barrier = 0;
 
     }
-    *energy_barrier =  *energy_barrier / (0.5 * particle.diameter);
+
+    *energy_barrier =  *energy_barrier / (0.5 * p_diameter);
   }
 
   *limit = cs_lagr_clogging_param.jamming_limit;

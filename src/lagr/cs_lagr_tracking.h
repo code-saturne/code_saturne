@@ -134,75 +134,10 @@ typedef struct {
 
 } cs_lagr_attribute_map_t;
 
-/* Base particle description */
-/* ------------------------- */
+/* Particle description */
+/* -------------------- */
 
-typedef struct {
-
-  cs_lnum_t   cur_cell_num;    /* current local cell number */
-  cs_lnum_t   last_face_num;
-
-  int         switch_order_1;
-  cs_lnum_t   state;         /* < 0 : - number of the boundary face where
-                                      the particle is kept
-                                0   : particle has to be destroyed
-                                1   : particle has to be synchronized
-                                2   : particle treated. End of displacement */
-
-  cs_lnum_t   prev_id;  /* id in particle set of the previous particle */
-  cs_lnum_t   next_id;  /* id in particle set of the next particle */
-
-  cs_real_t   random_value;   /* random value associated with the particle */
-
-  cs_real_t   stat_weight;
-  cs_real_t   residence_time;
-  cs_real_t   mass;
-  cs_real_t   diameter;
-  cs_real_t   taup_aux;
-  cs_real_t   coord[3];
-  cs_real_t   velocity[3];
-  cs_real_t   velocity_seen[3];
-
-  /* Deposition submodel additional parameters */
-
-  cs_real_t   yplus;
-  cs_real_t   interf;
-  cs_lnum_t   close_face_id;
-  cs_lnum_t   marko_val;
-  cs_lnum_t   depo;                  /* jdepo   */
-  cs_lnum_t   rank_flag;
-
-  /* Resuspension model additional parameters */
-
-  cs_lnum_t   nb_large_asperities;   /* jnbasg  */
-  cs_lnum_t   nb_small_asperities;   /* jnbasg  */
-  cs_real_t   adhesion_force;        /* jfadh   */
-  cs_real_t   adhesion_torque;       /* jmfadh  */
-  cs_real_t   displacement_norm;     /* jndisp  */
-
-  /* Thermal model additional parameters */
-
-  cs_real_t   temp[CS_LAGR_N_LAYERS]; /* jhp */
-  cs_real_t   fluid_temp;             /* jtf */
-  cs_real_t   cp;                     /* jcp */
-
-  /* Coal combustion additional parameters */
-
-  cs_real_t   water_mass;                  /* jmwat */
-  cs_real_t   coal_mass[CS_LAGR_N_LAYERS]; /* jmch  */
-  cs_real_t   coke_mass[CS_LAGR_N_LAYERS]; /* jmck  */
-
-  cs_real_t   shrinking_diam;  /* jrdck */
-  cs_real_t   initial_diam;    /* jrd0p */
-
-  cs_lnum_t   coal_number;                    /* jinch  */
-  cs_real_t   coal_density[CS_LAGR_N_LAYERS]; /* jrhock */
-
-  /* Radiative model additional parameters */
-
-  cs_real_t   emissivity;      /* jreps */
-
-} cs_lagr_particle_t;
+typedef struct _cs_lagr_particle_t  cs_lagr_particle_t;
 
 /* Particle description for user-defined variables */
 /* ----------------------------------------------- */
@@ -536,8 +471,8 @@ cs_lagr_destroy(void);
  *
  * parameters:
  *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
  *   particle_id   <-- particle id
+ *   attr          <-- requested attribute id
  *
  * return:
  *   pointer to requested attribute
@@ -545,8 +480,8 @@ cs_lagr_destroy(void);
 
 inline static void *
 cs_lagr_particles_attr(cs_lagr_particle_set_t  *particle_set,
-                       cs_lagr_attribute_t      attr,
-                       cs_lnum_t                particle_id)
+                       cs_lnum_t                particle_id,
+                       cs_lagr_attribute_t      attr)
 {
   return   particle_set->p_buffer
          + particle_set->p_am->extents*particle_id
@@ -558,8 +493,8 @@ cs_lagr_particles_attr(cs_lagr_particle_set_t  *particle_set,
  *
  * parameters:
  *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
  *   particle_id   <-- particle id
+ *   attr          <-- requested attribute id
  *
  * return:
  *   pointer to requested attribute
@@ -567,8 +502,8 @@ cs_lagr_particles_attr(cs_lagr_particle_set_t  *particle_set,
 
 inline static const void *
 cs_lagr_particles_attr_const(const cs_lagr_particle_set_t  *particle_set,
-                             cs_lagr_attribute_t            attr,
-                             cs_lnum_t                      particle_id)
+                             cs_lnum_t                      particle_id,
+                             cs_lagr_attribute_t            attr)
 {
   return   particle_set->p_buffer
          + particle_set->p_am->extents*particle_id
@@ -580,8 +515,8 @@ cs_lagr_particles_attr_const(const cs_lagr_particle_set_t  *particle_set,
  *
  * parameters:
  *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
  *   particle_id   <-- particle id
+ *   attr          <-- requested attribute id
  *
  * returns:
  *   value of type cs_lnum_t
@@ -589,8 +524,8 @@ cs_lagr_particles_attr_const(const cs_lagr_particle_set_t  *particle_set,
 
 inline static cs_lnum_t
 cs_lagr_particles_get_lnum(const cs_lagr_particle_set_t  *particle_set,
-                           cs_lagr_attribute_t            attr,
-                           cs_lnum_t                      particle_id)
+                           cs_lnum_t                      particle_id,
+                           cs_lagr_attribute_t            attr)
 {
   return *((cs_lnum_t *)(  particle_set->p_buffer
                          + particle_set->p_am->extents*particle_id
@@ -602,15 +537,15 @@ cs_lagr_particles_get_lnum(const cs_lagr_particle_set_t  *particle_set,
  *
  * parameters:
  *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
  *   particle_id   <-- particle id
+ *   attr          <-- requested attribute id
  *   value         <-- value to assign
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particles_set_lnum(cs_lagr_particle_set_t  *particle_set,
-                           cs_lagr_attribute_t      attr,
                            cs_lnum_t                particle_id,
+                           cs_lagr_attribute_t      attr,
                            cs_lnum_t                value)
 {
   *((cs_lnum_t *)(  particle_set->p_buffer
@@ -622,9 +557,9 @@ cs_lagr_particles_set_lnum(cs_lagr_particle_set_t  *particle_set,
  * Get attribute value of type cs_gnum_t of a given particle in a set
  *
  * parameters:
- *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
- *   particle_id   <-- particle id
+ *   particle_set <-- pointer to particle set
+ *   particle_id  <-- particle id
+ *   attr         <-- requested attribute id
  *
  * returns:
  *   value of type cs_gnum_t
@@ -632,8 +567,8 @@ cs_lagr_particles_set_lnum(cs_lagr_particle_set_t  *particle_set,
 
 inline static cs_gnum_t
 cs_lagr_particles_get_gnum(const cs_lagr_particle_set_t  *particle_set,
-                           cs_lagr_attribute_t            attr,
-                           cs_lnum_t                      particle_id)
+                           cs_lnum_t                      particle_id,
+                           cs_lagr_attribute_t            attr)
 {
   return *((cs_gnum_t *)(  particle_set->p_buffer
                          + particle_set->p_am->extents*particle_id
@@ -644,16 +579,16 @@ cs_lagr_particles_get_gnum(const cs_lagr_particle_set_t  *particle_set,
  * Set attribute value of type cs_gnum_t of a given particle in a set
  *
  * parameters:
- *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
- *   particle_id   <-- particle id
- *   value         <-- value to assign
+ *   particle_set <-- pointer to particle set
+ *   particle_id  <-- particle id
+ *   attr         <-- requested attribute id
+ *   value        <-- value to assign
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particles_set_gnum(cs_lagr_particle_set_t  *particle_set,
-                           cs_lagr_attribute_t      attr,
                            cs_lnum_t                particle_id,
+                           cs_lagr_attribute_t      attr,
                            cs_gnum_t                value)
 {
   *((cs_gnum_t *)(  particle_set->p_buffer
@@ -665,9 +600,9 @@ cs_lagr_particles_set_gnum(cs_lagr_particle_set_t  *particle_set,
  * Get attribute value of type cs_real_t of a given particle in a set
  *
  * parameters:
- *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
- *   particle_id   <-- particle id
+ *   particle_set <-- pointer to particle set
+ *   particle_id  <-- particle id
+ *   attr         <-- requested attribute id
  *
  * returns:
  *   value of type cs_real_t
@@ -675,8 +610,8 @@ cs_lagr_particles_set_gnum(cs_lagr_particle_set_t  *particle_set,
 
 inline static cs_real_t
 cs_lagr_particles_get_real(const cs_lagr_particle_set_t  *particle_set,
-                           cs_lagr_attribute_t            attr,
-                           cs_lnum_t                      particle_id)
+                           cs_lnum_t                      particle_id,
+                           cs_lagr_attribute_t            attr)
 {
   return *((cs_real_t *)(  particle_set->p_buffer
                          + particle_set->p_am->extents*particle_id
@@ -687,16 +622,16 @@ cs_lagr_particles_get_real(const cs_lagr_particle_set_t  *particle_set,
  * Set attribute value of type cs_real_t of a given particle in a set
  *
  * parameters:
- *   particle_set  <-- pointer to particle set
- *   attr          <-- requested attribute id
- *   particle_id   <-- particle id
- *   value         <-- value to assign
+ *   particle_set <-- pointer to particle set
+ *   particle_id  <-- particle id
+ *   attr         <-- requested attribute id
+ *   value        <-- value to assign
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particles_set_real(cs_lagr_particle_set_t  *particle_set,
-                           cs_lagr_attribute_t      attr,
                            cs_lnum_t                particle_id,
+                           cs_lagr_attribute_t      attr,
                            cs_real_t                value)
 {
   *((cs_real_t *)(  particle_set->p_buffer
@@ -709,8 +644,8 @@ cs_lagr_particles_set_real(cs_lagr_particle_set_t  *particle_set,
  *
  * parameters:
  *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
  *   attr_map  <-- pointer to attribute map
+ *   attr      <-- requested attribute id
  *
  * return:
  *   pointer to attribute
@@ -718,8 +653,8 @@ cs_lagr_particles_set_real(cs_lagr_particle_set_t  *particle_set,
 
 inline static void *
 cs_lagr_particle_attr(void                           *particle,
-                      cs_lagr_attribute_t             attr,
-                      const cs_lagr_attribute_map_t  *attr_map)
+                      const cs_lagr_attribute_map_t  *attr_map,
+                      cs_lagr_attribute_t             attr)
 {
   return   (void *)((unsigned char *)particle + attr_map->displ[attr]);
 }
@@ -728,9 +663,9 @@ cs_lagr_particle_attr(void                           *particle,
  * Get const pointer to an attribute of a given particle.
  *
  * parameters:
- *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
- *   attr_map  <-- pointer to attribute map
+ *   particle <-- pointer to particle data
+ *   attr_map <-- pointer to attribute map
+ *   attr     <-- requested attribute id
  *
  * return:
  *   const pointer to attribute
@@ -738,8 +673,8 @@ cs_lagr_particle_attr(void                           *particle,
 
 inline static const void *
 cs_lagr_particle_attr_const(const void                     *particle,
-                            cs_lagr_attribute_t             attr,
-                            const cs_lagr_attribute_map_t  *attr_map)
+                            const cs_lagr_attribute_map_t  *attr_map,
+                            cs_lagr_attribute_t             attr)
 {
   return   (const unsigned char *)particle + attr_map->displ[attr];
 }
@@ -748,9 +683,9 @@ cs_lagr_particle_attr_const(const void                     *particle,
  * Get attribute value of type cs_lnum_t of a given particle in a set
  *
  * parameters:
- *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
- *   attr_map  <-- pointer to attribute map
+ *   particle <-- pointer to particle data
+ *   attr_map <-- pointer to attribute map
+ *   attr     <-- requested attribute id
  *
  * returns:
  *   value of type cs_lnum_t
@@ -758,8 +693,8 @@ cs_lagr_particle_attr_const(const void                     *particle,
 
 inline static cs_lnum_t
 cs_lagr_particle_get_lnum(const void                     *particle,
-                          cs_lagr_attribute_t             attr,
-                          const cs_lagr_attribute_map_t  *attr_map)
+                          const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lagr_attribute_t             attr)
 {
   return  *((const cs_lnum_t *)(  (const unsigned char *)particle
                                 + attr_map->displ[attr]));
@@ -769,16 +704,16 @@ cs_lagr_particle_get_lnum(const void                     *particle,
  * Set attribute value of type cs_lnum_t of a given particle in a set
  *
  * parameters:
- *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
- *   attr_map  <-- pointer to attribute map
- *   value     <-- value to assign
+ *   particle <-- pointer to particle data
+ *   attr_map <-- pointer to attribute map
+ *   attr     <-- requested attribute id
+ *   value    <-- value to assign
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particle_set_lnum(void                           *particle,
-                          cs_lagr_attribute_t             attr,
                           const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lagr_attribute_t             attr,
                           cs_lnum_t                       value)
 {
   *((cs_lnum_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
@@ -788,9 +723,9 @@ cs_lagr_particle_set_lnum(void                           *particle,
  * Get attribute value of type cs_gnum_t of a given particle in a set
  *
  * parameters:
- *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
- *   attr_map  <-- pointer to attribute map
+ *   particle <-- pointer to particle data
+ *   attr_map <-- pointer to attribute map
+ *   attr     <-- requested attribute id
  *
  * returns:
  *   value of type cs_gnum_t
@@ -798,8 +733,8 @@ cs_lagr_particle_set_lnum(void                           *particle,
 
 inline static cs_gnum_t
 cs_lagr_particle_get_gnum(const void                     *particle,
-                          cs_lagr_attribute_t             attr,
-                          const cs_lagr_attribute_map_t  *attr_map)
+                          const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lagr_attribute_t             attr)
 {
   return  *((const cs_gnum_t *)(  (const unsigned char *)particle
                                 + attr_map->displ[attr]));
@@ -810,15 +745,15 @@ cs_lagr_particle_get_gnum(const void                     *particle,
  *
  * parameters:
  *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
  *   attr_map  <-- pointer to attribute map
+ *   attr      <-- requested attribute id
  *   value     <-- value to assign
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particle_set_gnum(void                           *particle,
-                          cs_lagr_attribute_t             attr,
                           const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lagr_attribute_t             attr,
                           cs_gnum_t                       value)
 {
   *((cs_gnum_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
@@ -828,9 +763,9 @@ cs_lagr_particle_set_gnum(void                           *particle,
  * Get attribute value of type cs_real_t of a given particle in a set
  *
  * parameters:
- *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
- *   attr_map  <-- pointer to attribute map
+ *   particle <-- pointer to particle data
+ *   attr_map <-- pointer to attribute map
+ *   attr     <-- requested attribute id
  *
  * returns:
  *   value of type cs_real_t
@@ -838,8 +773,8 @@ cs_lagr_particle_set_gnum(void                           *particle,
 
 inline static cs_real_t
 cs_lagr_particle_get_real(const void                     *particle,
-                          cs_lagr_attribute_t             attr,
-                          const cs_lagr_attribute_map_t  *attr_map)
+                          const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lagr_attribute_t             attr)
 {
   return  *((const cs_real_t *)(  (const unsigned char *)particle
                                 + attr_map->displ[attr]));
@@ -849,16 +784,16 @@ cs_lagr_particle_get_real(const void                     *particle,
  * Set attribute value of type cs_real_t of a given particle in a set
  *
  * parameters:
- *   particle  <-- pointer to particle data
- *   attr      <-- requested attribute id
- *   attr_map  <-- pointer to attribute map
- *   value     <-- value to assign
+ *   particle <-- pointer to particle data
+ *   attr_map <-- pointer to attribute map
+ *   attr     <-- requested attribute id
+ *   value    <-- value to assign
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particle_set_real(void                           *particle,
-                          cs_lagr_attribute_t             attr,
                           const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lagr_attribute_t             attr,
                           cs_real_t                       value)
 {
   *((cs_real_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
@@ -868,7 +803,7 @@ cs_lagr_particle_set_real(void                           *particle,
  * Dump a cs_lagr_particle_t structure
  *
  * parameter
- *   particles   <-- cs_lagr_particle_t structure to dump
+ *   particles <-- cs_lagr_particle_t structure to dump
  *----------------------------------------------------------------------------*/
 
 void

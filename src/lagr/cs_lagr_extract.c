@@ -154,15 +154,17 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 
   assert(p_set != NULL);
 
+  size_t extents = p_set->p_am->extents;
+
   if (density < 1) {
 
-    size_t  extents, size;
+    size_t  _extents, size;
     cs_datatype_t  datatype;
     int  count;
 
     cs_lagr_get_attr_info(p_set,
                           CS_LAGR_RANDOM_VALUE,
-                          &extents, &size, &displ,
+                          &_extents, &size, &displ,
                           &datatype, &count);
 
     assert(   (displ > 0 && count == 1 && datatype == CS_REAL_TYPE)
@@ -206,7 +208,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
         r = (double)rand() / RAND_MAX;
       else {
         const unsigned char
-          *p = (const unsigned char *)(p_set->particles + i) + displ;
+          *p = (const unsigned char *)(p_set->p_buffer + i*extents) + displ;
         r = *(const cs_real_t *)p;
       }
       if (r > density)
@@ -216,9 +218,9 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
     /* Check for filter cell */
 
     if (cell_flag != NULL) {
-      cs_lnum_t *cur_cell_num
-        = cs_lagr_particles_attr(p_set, CS_LAGR_CUR_CELL_NUM, i);
-      cs_lnum_t  cell_id = CS_ABS(*cur_cell_num) - 1;
+      cs_lnum_t cur_cell_num
+        = cs_lagr_particles_get_lnum(p_set, i, CS_LAGR_CUR_CELL_NUM);
+      cs_lnum_t  cell_id = CS_ABS(cur_cell_num) - 1;
       if (cell_flag[cell_id] == false)
         continue;
     }
@@ -342,7 +344,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
     for (i = 0; i < n_particles; i++) {
       unsigned char *dest = _values + i*_length;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + i)
+        *src = (const unsigned char *)(particles->p_buffer + i*extents)
                + displ
                + component_id * _length ;
       for (j = 0; j < _length; j++)
@@ -356,7 +358,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
       cs_lnum_t p_id = particle_list[i] - 1;
       unsigned char *dest = _values + i*_length;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + p_id)
+        *src = (const unsigned char *)(particles->p_buffer + p_id*extents)
                + displ
                + component_id * _length ;
       for (j = 0; j < _length; j++)
@@ -407,7 +409,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
   size_t j;
   cs_lnum_t i;
 
-  size_t  extents, size, _length;
+  size_t  extents, extents_p, size, _length;
   ptrdiff_t  displ;
   cs_datatype_t _datatype;
   int  _count;
@@ -426,6 +428,9 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
     else
       _length = size/_count;
   }
+
+  cs_lagr_get_attr_info(particles_prev, attr,
+                        &extents_p, NULL, NULL, NULL, NULL);
 
   /* Check consistency */
 
@@ -479,11 +484,11 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
     for (i = 0; i < n_particles; i++) {
       unsigned char *dest = _values + i*_length*2;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + i)
+        *src = (const unsigned char *)(particles->p_buffer + i*extents)
                + displ
                + component_id * _length ;
       const unsigned char
-        *srcp = (const unsigned char *)(particles_prev->particles + i)
+        *srcp = (const unsigned char *)(particles_prev->p_buffer + i*extents_p)
                 + displ
                 + component_id * _length ;
       for (j = 0; j < _length; j++) {
@@ -499,11 +504,12 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
       cs_lnum_t p_id = particle_list[i] - 1;
       unsigned char *dest = _values + i*_length*2;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + p_id)
+        *src = (const unsigned char *)(particles->p_buffer + p_id*extents)
                + displ
                + component_id * _length ;
       const unsigned char
-        *srcp = (const unsigned char *)(particles_prev->particles + p_id)
+        *srcp = (const unsigned char *)(  particles_prev->p_buffer
+                                        + p_id*extents_p)
                 + displ
                 + component_id * _length ;
       for (j = 0; j < _length; j++) {

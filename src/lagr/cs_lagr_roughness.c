@@ -188,12 +188,19 @@ cs_lagr_roughness_finalize()
 
 /*----------------------------------------------------------------------------
  * Compute the energy barrier for a rough wall.
+ *
+ * parameters:
+ *   particle       <-- pointer to particle data
+ *   attr_map       <-- pointer to attribute map
+ *   face_id        <-- id of face neighboring particle
+ *   energy_barrier <-> energy barrier
  *----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_lagr_roughness_barrier(cs_lagr_particle_t   particle,
-                          cs_int_t             face_id,
-                          cs_real_t           *energy_barrier)
+void
+cs_lagr_roughness_barrier(const void                     *particle,
+                          const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lnum_t                       face_id,
+                          cs_real_t                      *energy_barrier)
 {
   cs_int_t  dim_aux = 1;
   cs_real_t param2, value;
@@ -219,7 +226,8 @@ cs_lagr_roughness_barrier(cs_lagr_particle_t   particle,
 
   /* Number of large-scale asperities*/
 
-  cs_real_t rpart = 0.5 * particle.diameter;
+  cs_real_t rpart
+    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT) * 0.5;
 
   cs_real_t nmoyag = (2.0 * rpart + cs_lagr_roughness_param.rayasg)
                      / cs_lagr_roughness_param.rayasg * scovag;
@@ -426,9 +434,7 @@ cs_lagr_roughness_barrier(cs_lagr_particle_t   particle,
       *energy_barrier = 0;
    }
 
-  *energy_barrier = *energy_barrier / (0.5 * particle.diameter);
-
-  return  *energy_barrier;
+  *energy_barrier = *energy_barrier / rpart;
 }
 
 /*----------------------------------------------------------------------------*/

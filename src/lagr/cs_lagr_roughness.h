@@ -102,12 +102,19 @@ cs_lagr_roughness_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Compute the energy barrier for a rough wall.
+ *
+ * parameters:
+ *   particle       <-- pointer to particle data
+ *   attr_map       <-- pointer to attribute map
+ *   face_id        <-- id of face neighboring particle
+ *   energy_barrier <-> energy barrier
  *----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_lagr_roughness_barrier(cs_lagr_particle_t   particle,
-                          cs_lnum_t            face_id,
-                          cs_real_t*           energy_barrier);
+void
+cs_lagr_roughness_barrier(const void                     *particle,
+                          const cs_lagr_attribute_map_t  *attr_map,
+                          cs_lnum_t                       face_id,
+                          cs_real_t                      *energy_barrier);
 
 /*----------------------------------------------------------------------------*/
 
