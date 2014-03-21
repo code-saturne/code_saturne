@@ -200,6 +200,11 @@ do iel = 1, ncel
   crom(iel) = pther/pthera*crom(iel)
 enddo
 
+! Synchronize density array
+if (irangp.ge.0 .or. iperio.eq.1) then
+  call synsca(crom)
+endif
+
 ! Update the density at the boundary face
 do ifac = 1, nfabor
   iel = ifabor(ifac)
