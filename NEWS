@@ -59,6 +59,8 @@ Bug fixes:
    - fix in the pressure correction step (the density variation is taken into account
      since the first iteration, therefore the user should be carefull when initializing
      the density, and the density at the previous time-step)
+   - fix missing synchronization of the density after its update based on the thermodynamic
+     pressure.
 
 Release 3.0.3 (11 Dec 2013)
 ===========================
