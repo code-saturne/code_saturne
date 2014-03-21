@@ -103,13 +103,14 @@ double precision disty(ncelet)
 
 ! Local variables
 
-integer          idtva0, ivar  , iconvp, idiffp
+integer          idtva0, ivar  , f_id  , iconvp, idiffp
 integer          ndircp, ireslp
-integer          iescap, iflmb0, imaspe, itypfl
+integer          iescap, iflmb0, itypfl
 integer          ncymxp, nitmfp, ipp
 integer          ifac  , iel   , ipcvis, init
 integer          inc   , iccocg, isym  , isweep, infpar
 integer          imucpp, idftnp, iswdyp, icvflb
+integer          isou  , jsou
 
 integer          ivoid(1)
 
@@ -120,13 +121,14 @@ double precision dismax, dismin, usna
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: rtpdp, smbdp, rovsdp
-double precision, allocatable, dimension(:) :: qx, qy, qz
+double precision, allocatable, dimension(:,:) :: q
 double precision, allocatable, dimension(:) :: flumas, flumab
 double precision, allocatable, dimension(:) :: rom, romb
-double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
-double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
+double precision, allocatable, dimension(:) :: coefap, coefbp
+double precision, allocatable, dimension(:,:) :: coefav
+double precision, allocatable, dimension(:,:,:) :: coefbv
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: w2
+double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: crom
 
@@ -142,14 +144,16 @@ save             ipass
 
 ! Allocate temporary arrays for the distance resolution
 allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
-allocate(qx(ncelet), qy(ncelet), qz(ncelet))
+allocate(q(3,ncelet))
 allocate(flumas(nfac), flumab(nfabor))
 allocate(rom(nfac), romb(nfabor))
-allocate(coefax(nfabor), coefay(nfabor), coefaz(nfabor))
-allocate(coefbx(nfabor), coefby(nfabor), coefbz(nfabor))
+allocate(coefap(nfabor), coefbp(nfabor))
+allocate(coefav(3,nfabor))
+allocate(coefbv(3,3,nfabor))
 allocate(dpvar(ncelet))
 
 ! Allocate work arrays
+allocate(w1(ncelet))
 allocate(w2(ncelet))
 
 
@@ -195,15 +199,15 @@ do ifac = 1, nfabor
     ! Dirichlet Boundary Condition for gradients
     !-------------------------------------------
 
-    coefax(ifac) = 0.0d0
-    coefbx(ifac) = 0.0d0
+    coefap(ifac) = 0.0d0
+    coefbp(ifac) = 0.0d0
   else
 
     ! Neumann Boundary Condition for gradients
     !-----------------------------------------
 
-    coefax(ifac) = 0.0d0
-    coefbx(ifac) = 1.0d0
+    coefap(ifac) = 0.0d0
+    coefbp(ifac) = 1.0d0
 
   endif
 enddo
@@ -227,7 +231,7 @@ call grdcel                                                       &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
-   distpa , coefax , coefbx ,                                     &
+   distpa , coefap , coefbp ,                                     &
    grad   )
 
 
@@ -235,14 +239,14 @@ call grdcel                                                       &
 
 do iel = 1, ncel
   xnorme = max(sqrt(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2),epzero)
-  qx(iel) = grad(iel,1)/xnorme
-  qy(iel) = grad(iel,2)/xnorme
-  qz(iel) = grad(iel,3)/xnorme
+  do isou = 1, 3
+    q(isou,iel) = grad(iel,isou)/xnorme
+  enddo
 enddo
 
 ! Paralellism and periodicity
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(qx, qy, qz)
+  call synvin(q)
 endif
 
 ! Free memory
@@ -265,19 +269,23 @@ enddo
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
     xnorme = max(surfbn(ifac),epzero**2)
-    coefax(ifac) = -surfbo(1,ifac)/xnorme
-    coefbx(ifac) = 0.d0
-    coefay(ifac) = -surfbo(2,ifac)/xnorme
-    coefby(ifac) = 0.d0
-    coefaz(ifac) = -surfbo(3,ifac)/xnorme
-    coefbz(ifac) = 0.d0
+    do isou = 1, 3
+      coefav(isou,ifac) = -surfbo(isou,ifac)/xnorme
+      do jsou = 1, 3
+        coefbv(isou,jsou,ifac) = 0.d0
+      enddo
+    enddo
   else
-    coefax(ifac) = 0.d0
-    coefbx(ifac) = 1.d0
-    coefay(ifac) = 0.d0
-    coefby(ifac) = 1.d0
-    coefaz(ifac) = 0.d0
-    coefbz(ifac) = 1.d0
+    do isou = 1, 3
+      coefav(isou,ifac) = 0.d0
+      do jsou = 1, 3
+        if (isou == jsou) then
+          coefbv(isou,jsou,ifac) = 1.d0
+        else
+          coefbv(isou,jsou,ifac) = 0.d0
+        endif
+      enddo
+    enddo
   endif
 enddo
 
@@ -289,27 +297,21 @@ iflmb0 = 0
 init   = 1
 ! On prend en compte les Dirichlet
 inc    = 1
-! On recalcule les gradients complets
-iccocg = 1
-! Calcul de flux std (pas de divrij)
-imaspe = 1
 ! Il ne s'agit ni de U ni de R
-ivar = 0
+f_id   = -1
 
 itypfl = 1
 
-call inimas                                                       &
+call inimav                                                       &
 !==========
- ( ivar   , ivar   , ivar   , imaspe , itypfl ,                   &
-   iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
-   iwarny , nfecra ,                                              &
-   epsrgy , climgy , extray ,                                     &
+ ( f_id   , itypfl ,                                              &
+   iflmb0 , init   , inc    , imrgra , nswrgy , imligy ,          &
+   iwarny ,                                                       &
+   epsrgy , climgy ,                                              &
    rom    , romb   ,                                              &
-   qx     , qy     , qz     ,                                     &
-   coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
+   q      ,                                                       &
+   coefav , coefbv ,                                              &
    flumas , flumab )
-
-! A partir d'ici, QX, QY et QZ sont des tableaux de travail.
 
 !===============================================================================
 ! 5. Boundary conditions
@@ -320,11 +322,11 @@ call inimas                                                       &
 do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
-    coefax(ifac) = uetbor(ifac)*crom(iel)/propce(iel,ipcvis)
-    coefbx(ifac) = 0.0d0
+    coefap(ifac) = uetbor(ifac)*crom(iel)/propce(iel,ipcvis)
+    coefbp(ifac) = 0.0d0
   else
-    coefax(ifac) = 0.0d0
-    coefbx(ifac) = 1.0d0
+    coefap(ifac) = 0.0d0
+    coefbp(ifac) = 1.0d0
   endif
 enddo
 
@@ -345,7 +347,7 @@ isym   = 2
 call matrdt &
 !==========
  ( iconvp , idiffp , isym   ,                                     &
-   coefbx , coefbx , flumas , flumab , flumas , flumab , w2     )
+   coefbp , coefbp , flumas , flumab , flumas , flumab , w2     )
 
 ! Le Courant est COUMXY = DT w2 / VOLUME
 !     d'ou DTMINY = MIN(COUMXY * VOLUME/w2)
@@ -358,11 +360,11 @@ call matrdt &
 dtminy = grand
 dtmaxy = -grand
 do iel = 1, ncel
-  qz(iel) = -grand
+  w1(iel) = -grand
   if(w2(iel).gt.epzero) then
-    qz(iel) = coumxy*volume(iel)/w2(iel)
-    dtminy  = min(qz(iel),dtminy)
-    dtmaxy  = max(qz(iel),dtmaxy)
+    w1(iel) = coumxy*volume(iel)/w2(iel)
+    dtminy  = min(w1(iel),dtminy)
+    dtmaxy  = max(w1(iel),dtmaxy)
   endif
 enddo
 if(irangp.ge.0) then
@@ -372,8 +374,8 @@ endif
 dtminy = max(dtminy,epzero)
 
 do iel = 1, ncel
-  if(qz(iel).le.0.d0) then
-    qz(iel) = dtminy
+  if(w1(iel).le.0.d0) then
+    w1(iel) = dtminy
   endif
 enddo
 
@@ -386,7 +388,7 @@ endif
 !===============================================================================
 
 do iel = 1, ncel
-  rovsdp(iel) = volume(iel)*rom(iel)/qz(iel)
+  rovsdp(iel) = volume(iel)*rom(iel)/w1(iel)
 enddo
 
 !===============================================================================
@@ -423,8 +425,8 @@ xusnmn =  grand
 do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi .or.                            &
      itypfb(ifac).eq.iparug) then
-    xusnmx = max(xusnmx,coefax(ifac))
-    xusnmn = min(xusnmn,coefax(ifac))
+    xusnmx = max(xusnmx,coefap(ifac))
+    xusnmn = min(xusnmn,coefap(ifac))
   endif
 enddo
 if(irangp.ge.0) then
@@ -453,7 +455,7 @@ do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi .or.                            &
      itypfb(ifac).eq.iparug) then
     infpar = infpar+1
-    xnorm0 = xnorm0 + coefax(ifac)**2
+    xnorm0 = xnorm0 + coefap(ifac)**2
   endif
 enddo
 if(irangp.ge.0) then
@@ -491,7 +493,7 @@ do isweep = 1, ntcmxy
   !===========================================
 
   do iel = 1, ncel
-    qy(iel) = rtpdp(iel)
+    w1(iel) = rtpdp(iel)
   enddo
 
   ! Right hand side
@@ -543,7 +545,9 @@ do isweep = 1, ntcmxy
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
    rtpdp  , rtpdp  ,                                              &
-   coefax , coefbx , coefax , coefbx , flumas , flumab ,          &
+   coefap , coefbp ,                                              &
+   coefap , coefbp ,                                              &
+   flumas , flumab ,                                              &
    flumas , flumab , rvoid  , flumas , flumab , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
@@ -574,7 +578,7 @@ do isweep = 1, ntcmxy
   xnorme = -grand
   do iel = 1, ncel
     if(distpa(iel)*xusnmn.le.yplmxy) then
-      xnorme = max(xnorme,(rtpdp(iel)-qy(iel))**2)
+      xnorme = max(xnorme,(rtpdp(iel)-w1(iel))**2)
     endif
   enddo
   if (irangp.ge.0) then
@@ -622,12 +626,12 @@ endif
 
 ! Free memory
 deallocate(rtpdp, smbdp, rovsdp)
-deallocate(qx, qy, qz)
+deallocate(q)
 deallocate(flumas, flumab)
 deallocate(rom, romb)
-deallocate(coefax, coefay, coefaz)
-deallocate(coefbx, coefby, coefbz)
-deallocate(w2)
+deallocate(coefap, coefbp)
+deallocate(coefav, coefbv)
+deallocate(w1, w2)
 deallocate(dpvar)
 
 !--------
