@@ -873,7 +873,7 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
   cs_lnum_t  *_face_vtx_idx = NULL, *_face_vtx_lst = NULL;
   cs_lnum_t  *cell_faces_idx = NULL, *cell_faces_lst = NULL;
 
-  /* Return if there is not enough data (Solcom case except radiative module) */
+  /* Return if there is not enough data */
 
   if (mesh->i_face_vtx_lst == NULL && mesh->b_face_vtx_lst == NULL)
     return;
@@ -917,7 +917,7 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
 
     for (j = cell_faces_idx[cell_id]; j < cell_faces_idx[cell_id + 1]; j++) {
 
-      face_num = cell_faces_lst[j - 1];
+      face_num = CS_ABS(cell_faces_lst[j - 1]);
 
       /* Internal or border face */
 
