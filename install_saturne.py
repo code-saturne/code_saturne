@@ -619,7 +619,7 @@ class Setup:
                     url="http://sourceforge.net/projects/cgns/files/cgnslib_3.2/%s/download")
 
         p = self.packages['cgns']
-        p.config_opts = "-DENABLE_64BIT=ON -DENABLE_SCOPING=ON"
+        p.config_opts = "-CGNS_DENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
 
         # MED library
 
@@ -1058,12 +1058,12 @@ Check the setup file and some utilities presence.
         if hdf5.use == 'no':
             config_opts = config_opts + " --without-hdf5"
         else:
-            cgns.config_opts += " -D ENABLE_HDF5=ON"
+            cgns.config_opts += " -DCGNS_ENABLE_HDF5=ON"
             if hdf5.install_dir:
                 config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
                 med.config_opts += " --with-hdf5=" + hdf5.install_dir
-                cgns.config_opts += " -D HDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
-                    + " -D HDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
+                cgns.config_opts += " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
+                    + " -DHDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
 
         # CGNS
 
