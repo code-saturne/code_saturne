@@ -1291,7 +1291,7 @@ class mpi_environment:
         absname = ''
 
         if self.mpiexec != None:
-            absname = __get_mpiexec_absname__(self, p)
+            absname = self.__get_mpiexec_absname__(p)
             pm = self.__get_mpich2_3_default_pm__(absname)
 
         else:
@@ -1462,7 +1462,7 @@ class mpi_environment:
         # Determine base executable paths
 
         if self.mpiexec != None:
-            absname = __get_mpiexec_absname__(self, p)
+            absname = self.__get_mpiexec_absname__(p)
 
         else:
             launcher_names = ['mpiexec.openmpi', 'mpirun.openmpi',
