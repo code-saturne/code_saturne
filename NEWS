@@ -4,7 +4,8 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
-- Additional fix to rev. 5920 for cases with no thermal scalar.
+- Fix wrong call causing script crash when mpiexec was defined in
+  install or user code_saturne.cfg.
 
 - Fix thermal scalar indicator iscacp in case the enthalpy thermal model
   has been chosen.
