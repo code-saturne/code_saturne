@@ -77,21 +77,6 @@ disable_frontend  no
 python
 #
 #--------------------------------------------------------
-# BLAS For hardware-optimized Basic Linear Algebra
-# Subroutines. If no system BLAS is used, one reverts
-# to an internal BLAS emulation, which may be somewhat
-# slower.
-#
-# ATLAS (or another BLAS) should be available for most
-# platforms through the package manager. If using the
-# Intel or IBM compilers, IMKL or ESSL may be used in
-# place of ATLAS respectively.
-# For a fine-tuning of BLAS library support, it may
-# be necessary to install Code_Saturne Kernel manually.
-#--------------------------------------------------------
-blas
-#
-#--------------------------------------------------------
 # Metis is more rarely found in Linux distributions,
 # but may already be installed on massively parallel
 # machines and on clusters. For good parallel

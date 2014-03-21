@@ -287,9 +287,6 @@ class Setup:
         # Python interpreter path
         self.python = None
 
-        # BLAS library path
-        self.blas = None
-
         # Metis library path
         self.metis = None
 
@@ -341,12 +338,12 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="3.1.4",
-                    archive="cgnslib_3.1.4-2.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
+                    version="3.2.1",
+                    archive="cgnslib_3.2.1.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.2/%s/download")
 
         p = self.packages['cgns']
-        p.config_opts = "-DENABLE_64BIT=ON -DENABLE_SCOPING=ON"
+        p.config_opts = "-CGNS_DENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
 
         # MED library
 
@@ -359,7 +356,7 @@ class Setup:
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
-        p.config_opts = "--with-med_int=int"
+        p.config_opts = "--with-med_int=int --disable-fortran"
 
         # MPI library
 
@@ -427,7 +424,6 @@ class Setup:
                 elif key == 'disable_gui': self.disable_gui = list[1]
                 elif key == 'disable_frontend': self.disable_frontend = list[1]
                 elif key == 'python': self.python = list[1]
-                elif key == 'blas': self.blas = list[1]
                 elif key == 'metis': self.metis = list[1]
                 elif key == 'scotch': self.scotch = list[1]
                 else:
@@ -453,11 +449,6 @@ class Setup:
             self.python = os.path.expanduser(self.python)
             self.python = os.path.expandvars(self.python)
             self.python = os.path.abspath(self.python)
-
-        if self.blas is not None:
-            self.blas = os.path.expanduser(self.blas)
-            self.blas = os.path.expandvars(self.blas)
-            self.blas = os.path.abspath(self.blas)
 
         if self.metis is not None:
             self.metis = os.path.expanduser(self.metis)
@@ -606,15 +597,6 @@ Check the setup file and some utilities presence.
                                      % {'path':p.install_dir, 'lib':lib})
                     sys.exit(1)
 
-        # Looking for BLAS path probided by the user
-        if self.blas is not None and not os.path.isdir(self.blas):
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'%s\' BLAS directory is provided in the setup "
-                             "file but is not a directory.\n"
-                             "Please check your setup file.\n\n"
-                             % self.blas)
-            sys.exit(1)
-
         # Looking for Metis path probided by the user
         if self.metis is not None and not os.path.isdir(self.metis):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -696,12 +678,12 @@ Check the setup file and some utilities presence.
         if hdf5.use == 'no':
             config_opts = config_opts + " --without-hdf5"
         else:
-            cgns.config_opts += " -D ENABLE_HDF5=ON"
+            cgns.config_opts += " -DCGNS_ENABLE_HDF5=ON"
             if hdf5.install_dir is not None:
                 config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
                 med.config_opts += " --with-hdf5=" + hdf5.install_dir
-                cgns.config_opts += " -D HDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
-                    + " -D HDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
+                cgns.config_opts += " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
+                    + " -DHDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
 
         # CGNS
 
@@ -753,11 +735,6 @@ Check the setup file and some utilities presence.
 
         if self.python is not None:
             config_opts = config_opts + " PYTHON=" + self.python
-
-        # BLAS
-
-        if self.blas is not None:
-            config_opts = config_opts + " --with-blas=" + self.blas
 
         # Language
 
@@ -864,21 +841,6 @@ disable_frontend  %(disable_frontend)s
 python    %(python)s
 #
 #--------------------------------------------------------
-# BLAS For hardware-optimized Basic Linear Algebra
-# Subroutines. If no system BLAS is used, one reverts
-# to an internal BLAS emulation, which may be somewhat
-# slower.
-#
-# ATLAS (or another BLAS) should be available for most
-# platforms through the package manager. If using the
-# Intel or IBM compilers, IMKL or ESSL may be used in
-# place of ATLAS respectively.
-# For a fine-tuning of BLAS library support, it may
-# be necessary to install Code_Saturne Kernel manually.
-#--------------------------------------------------------
-blas      %(blas)s
-#
-#--------------------------------------------------------
 # Metis is more rarely found in Linux distributions,
 # but may already be installed on massively parallel
 # machines and on clusters. For good parallel
@@ -940,7 +902,6 @@ scotch    %(scotch)s
         if self.fc is None: self.fc = ''
         if self.mpicc is None: self.mpicc = ''
         if self.python is None: self.python = ''
-        if self.blas is None: self.blas = ''
         if self.metis is None: self.metis = ''
         if self.scotch is None: self.scotch = ''
 
@@ -951,7 +912,7 @@ scotch    %(scotch)s
                      'cc':self.cc, 'fc':self.fc, 'mpicc':self.mpicc,
                      'disable_gui':self.disable_gui,
                      'disable_frontend':self.disable_frontend,
-                     'python':self.python, 'blas':self.blas,
+                     'python':self.python,
                      'metis':self.metis, 'scotch': self.scotch})
 
         for lib in self.optlibs:

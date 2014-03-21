@@ -47,7 +47,6 @@ Otherwise some problems can occur.
 
   The following packages cannot be installed
   - Zlib
-  - BLAS
   - Metis
   - Scotch
   - PyQT
@@ -134,7 +133,6 @@ for the directory where you want to install Code_Saturne.
 
       # Run-time options
 
-      --with-blas=...       for BLAS
       --with-mpi=...        for MPI (parallel computing)
 
       CC=...   to specify the compiler if necessary (especially if mpicc
