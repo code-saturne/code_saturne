@@ -4,6 +4,9 @@ Release 3.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix missing synchronization of the density after its update based on the
+  thermodynamic pressure.
+
 - Fix wrong call causing script crash when mpiexec was defined in
   install or user code_saturne.cfg.
 
