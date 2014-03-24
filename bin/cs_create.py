@@ -423,16 +423,24 @@ class Study:
         runcase = os.path.join(repbase, 'runcase_coupling')
         runcase_tmp = runcase + '.tmp'
 
+        import cs_config
+        cfg = cs_config.config()
+
+        e_python = re.compile('@PYTHON@')
+        e_pkgpythondir = re.compile('@pkgpythondir@')
         e_dir = re.compile('CASEDIRNAME')
         e_apps = re.compile('APP_DICTS')
 
         syrthes_insert = syrthes_path_line(self.package)
+        pkgpythondir = self.package.get_dir('pkgpythondir')
 
         fd  = open(runcase, 'r')
         fdt = open(runcase_tmp,'w')
 
         for line in fd:
 
+            line = re.sub(e_python, cfg.python, line)
+            line = re.sub(e_pkgpythondir, pkgpythondir, line)
             line = re.sub(e_dir, repbase, line)
             line = re.sub(e_apps, dict_str, line)
             fdt.write(line)

@@ -31,7 +31,8 @@ Bug fixes:
 
 - Fix for inlet boundary conditions using Spalart-Allmaras turbulence model.
 
-- Fix in convection diffusion of vectors in stationary algorithm and no slope tests.
+- Fix in convection diffusion of vectors in steady algorithm and
+  no slope tests.
 
 - Fix paths in MPMD configfile for BlueGene/Q, necessary for code coupling.
 
@@ -51,16 +52,23 @@ Bug fixes:
 - Fix in improved hydrostatic pressure algorithm (iphydr=2)
   and Low-Mach algorithm (idilat=3):
    - fix in the velocity prediction step
-   - the equation of state must be given by the user in cs_user_physical_properties.f90
+   - the equation of state must be given by the user in
+     cs_user_physical_properties.f90
      ("rho = f(Pthermodynamic, scalars...)")
-   - add a maximum thermodynamic pressure (pthermax) for modelling venting effects
-     (instead of hard-coded clippings, this value is not taken into account if not given
-      by the user)
-   - fix in the pressure correction step (the density variation is taken into account
-     since the first iteration, therefore the user should be carefull when initializing
-     the density, and the density at the previous time-step)
+   - add a maximum thermodynamic pressure (pthermax) for modelling venting
+     effects (instead of hard-coded clippings, this value is not taken into
+     account if not given by the user)
+   - fix in the pressure correction step (the density variation is taken into
+     account since the first iteration, therefore the user should be careful
+     when initializing the density, and the density at the previous time-step)
    - fix missing synchronization of the density after its update based on the thermodynamic
      pressure.
+
+Architectural changes
+---------------------
+
+- Ensure runcase_coupling is platform-independent as it is installed in
+  datarootdir (either as defined by ${prefix}/share or as ${datarootdir}.
 
 Release 3.0.3 (11 Dec 2013)
 ===========================

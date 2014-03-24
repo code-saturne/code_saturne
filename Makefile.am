@@ -150,7 +150,6 @@ DISTCLEANFILES = \
 bin/code_saturne \
 bin/cs_package.py \
 bin/runcase_aster \
-bin/runcase_coupling \
 extras/salome/fsi_appli_config.xml \
 cs_config.h
 
@@ -250,7 +249,7 @@ edit_config = sed \
 	-e 's|@SALOMEPRE[@]|$(SALOMEPRE)|g' \
 	-e 's|@SALOMERUN[@]|$(SALOMERUN)|g'
 
-bin/code_saturne bin/runcase_coupling: Makefile
+bin/code_saturne: Makefile
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
@@ -269,10 +268,9 @@ bin/cs_package.py bin/runcase_aster: Makefile
 bin/code_saturne: $(srcdir)/bin/code_saturne.in
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 bin/runcase_aster: $(srcdir)/bin/runcase_aster.in
-bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_aster.in bin/runcase_coupling.in
+EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_aster.in
 
 # Install binary scripts
 
@@ -314,12 +312,12 @@ bin/autovnv/TexMaker.py
 # Install user scripts
 
 nodist_pkgdata_DATA = \
-bin/runcase_aster \
-bin/runcase_coupling
+bin/runcase_aster
 
 dist_pkgdata_DATA = \
+COPYING \
 bin/cs_user_scripts.py \
-COPYING
+bin/runcase_coupling
 
 dist_pkgdata_SCRIPTS = \
 bin/runcase_mpi_rank
