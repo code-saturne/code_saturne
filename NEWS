@@ -29,6 +29,13 @@ Bug fixes:
 
 - GUI: fix activating/deactivating Lagrangian particle tracking bug.
 
+Architectural changes
+---------------------
+
+- Ensure only platform-independent files are installed to datarootdir
+  (either as defined by ${prefix}/share or as ${datarootdir}. Files
+  which contain install-related paths (such as runcase_coupling)
+  are now installed in sysconfdir.
 
 Release 3.1.3 (17 Feb 2014)
 ===========================
