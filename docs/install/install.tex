@@ -850,6 +850,11 @@ which reflects this.
 In this example, HDF5, CGNS and MED were built without MPI-IO support,
 as \CS does not yet exploit MPI-IO for these libraries.
 
+To avoid copying platform-independent data (such as the documentation)
+from different builds multiple times, we may use the same
+\texttt{--datarootdir} option for each build so as to install that
+data to the same location for each build.
+
 \subsection{Cross-compiling}
 
 On machines with different front-end and compute node architectures,

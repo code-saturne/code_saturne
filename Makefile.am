@@ -146,7 +146,6 @@ nodist_pkginclude_HEADERS = cs_config.h
 DISTCLEANFILES = \
 bin/code_saturne \
 bin/cs_package.py \
-bin/runcase_coupling \
 extras/salome/fsi_appli_config.xml \
 cs_config.h
 
@@ -194,7 +193,7 @@ edit_package = sed \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
 	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
 
-bin/code_saturne bin/runcase_coupling: Makefile
+bin/code_saturne: Makefile
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
@@ -212,10 +211,9 @@ bin/cs_package.py: Makefile
 
 bin/code_saturne: $(srcdir)/bin/code_saturne.in
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
-bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_coupling.in
+EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in
 
 # Install binary scripts
 
@@ -256,12 +254,20 @@ bin/autovnv/TexMaker.py
 
 # Install user scripts
 
+salomesysconfdir = ${sysconfdir}/salome
+
+if HAVE_SALOME
+nodist_salomesysconf_DATA = \
+extras/salome/fsi_appli_config.xml
+endif
+
 nodist_pkgdata_DATA = \
 bin/runcase_coupling
 
 dist_pkgdata_DATA = \
+COPYING \
 bin/cs_user_scripts.py \
-COPYING
+bin/runcase_coupling
 
 dist_pkgdata_SCRIPTS = \
 bin/runcase_mpi_rank
@@ -315,9 +321,6 @@ salomedir = ${pkgdatadir}/salome
 dist_salome_DATA = \
 extras/salome/fsi_yacs_scheme.xml \
 extras/salome/fsi.export
-
-nodist_salome_DATA = \
-extras/salome/fsi_appli_config.xml
 
 # Update gettext dictionnaries
 

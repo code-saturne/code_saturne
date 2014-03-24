@@ -33,6 +33,14 @@ Bug fixes:
 - Fix control_file reading with non-empty last line in case of parallel
   calculation.
 
+Architectural changes
+---------------------
+
+- Ensure only platform-independent files are installed to datarootdir
+  (either as defined by ${prefix}/share or as ${datarootdir}. Files
+  which contain install-related paths (such as runcase_coupling)
+  are now installed in sysconfdir.
+
 Release 3.2.2 (27 Feb 2014)
 ===========================
 
