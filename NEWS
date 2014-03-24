@@ -8,13 +8,14 @@ Changes:
 
 - Update SLURM template for EDF ivanoe cluster.
 
+- Remove specific configurations for retired clusters.
+
 Bug fixes:
 ----------
 
 - Fix handling of batch queue list in GUI.
 
 
---------
 Release 2.0.7 (16 Apr 2013)
 ===========================
 

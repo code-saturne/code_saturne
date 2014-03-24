@@ -113,11 +113,6 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
 #
 # Temporarily set the architecture name (for EDF purposes)
   NOM_ARCH=`uname -s`
-  if [ "$NOM_ARCH" = "Linux" ] ; then
-    if [ "`hostname | cut -c1-6`" = "titane" ] ; then
-      NOM_ARCH=titane
-    fi
-  fi
 # Default values
   MPIBOOT=""
   MPIHALT=""
@@ -129,9 +124,6 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
   if [ ! -z "$SLURM_BG_NUM_NODES" ] ; then
     MPIRUN="srun --ntasks=${NUMBER_OF_PROCESSORS}"
 
-  elif [ "$NOM_ARCH" = "titane" ] ; then
-    MPIRUN="mpirun -n ${NUMBER_OF_PROCESSORS}"
-#
   elif [ "$NOM_ARCH" = "AIX" ] ; then
     MPIRUN="poe"
 #
