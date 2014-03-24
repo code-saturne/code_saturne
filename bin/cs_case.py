@@ -735,7 +735,7 @@ ${KERNEL_ROOT_DIR}/bin/salome/appli_gen.py --prefix=%(applidir)s --config=%(conf
                           'pythondir': self.package.get_dir('pythondir'),
                           'pkgpythondir': self.package.get_dir('pkgpythondir'),
                           'applidir': os.path.join(self.exec_dir, 'appli'),
-                          'configdir': os.path.join(self.package.get_dir('pkgdatadir'),
+                          'configdir': os.path.join(self.package.get_dir('sysconfdir'),
                                                     'salome',
                                                     'fsi_appli_config.xml')}
 

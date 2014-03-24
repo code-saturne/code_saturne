@@ -254,9 +254,9 @@ bin/autovnv/TexMaker.py
 
 # Install user scripts
 
-cssysconfdir = ${sysconfdir}/code_saturne
+salomesysconfdir = ${sysconfdir}/salome
 
-nodist_cssysconf_DATA = \
+nodist_salomesysconf_DATA = \
 extras/salome/fsi_appli_config.xml
 
 dist_pkgdata_DATA = \
