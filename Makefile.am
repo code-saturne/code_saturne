@@ -256,8 +256,10 @@ bin/autovnv/TexMaker.py
 
 salomesysconfdir = ${sysconfdir}/salome
 
+if HAVE_SALOME
 nodist_salomesysconf_DATA = \
 extras/salome/fsi_appli_config.xml
+endif
 
 dist_pkgdata_DATA = \
 bin/cs_user_scripts.py \
