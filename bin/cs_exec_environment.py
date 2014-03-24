@@ -1158,7 +1158,7 @@ class mpi_environment:
                 absname = self.mpiexec
             else:
                 for d in p:
-                    absname = os.path.join(d, name)
+                    absname = os.path.join(d, self.mpiexec)
                     if os.path.isfile(absname):
                         break
                     else:
