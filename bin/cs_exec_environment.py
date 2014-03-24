@@ -856,7 +856,7 @@ class mpi_environment:
                 absname = self.mpiexec
             else:
                 for d in p:
-                    absname = os.path.join(d, name)
+                    absname = os.path.join(d, self.mpiexec)
                     if os.path.isfile(absname):
                         break
                     else:
@@ -989,7 +989,7 @@ class mpi_environment:
         absname = ''
 
         if self.mpiexec != None:
-            absname = self.__get_mpiexec_absname__(self)
+            absname = self.__get_mpiexec_absname__(p)
 
         else:
             launcher_names = ['mpiexec.mpich', 'mpiexec.mpich2', 'mpiexec',
