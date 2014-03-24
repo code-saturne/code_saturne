@@ -39,6 +39,11 @@ Changes:
 Architectural changes
 ---------------------
 
+- Ensure only platform-independent files are installed to datarootdir
+  (either as defined by ${prefix}/share or as ${datarootdir}. Files
+  which contain install-related paths (such as runcase_coupling)
+  are now installed in sysconfdir.
+
 - Fields representing variables are now declared in fldvar, previously call 1 of varpos.
   Fields representing properties are now declared in fldprp, previously call 2 of varpos.
   Fields for the radiation model are now declared in rayprp, previously call 4 of varpos.

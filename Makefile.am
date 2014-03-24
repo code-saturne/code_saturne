@@ -254,7 +254,10 @@ bin/autovnv/TexMaker.py
 
 # Install user scripts
 
-nodist_pkgdata_DATA =
+cssysconfdir = ${sysconfdir}/code_saturne
+
+nodist_cssysconf_DATA = \
+extras/salome/fsi_appli_config.xml
 
 dist_pkgdata_DATA = \
 bin/cs_user_scripts.py \
@@ -312,9 +315,6 @@ salomedir = ${pkgdatadir}/salome
 dist_salome_DATA = \
 extras/salome/fsi_yacs_scheme.xml \
 extras/salome/fsi.export
-
-nodist_salome_DATA = \
-extras/salome/fsi_appli_config.xml
 
 # Update gettext dictionnaries
 
