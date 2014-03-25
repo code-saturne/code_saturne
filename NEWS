@@ -4,6 +4,10 @@ Release 2.0.8 (next release)
 Changes:
 --------
 
+- Change passing of arguments to remove pointer target attributes in turrij.f90
+  so as to allow compilation with Intel Fortran 14 compiler, which has stricter
+  controls than previous versions.
+
 - Update some external package versions for automatic installer.
 
 - Update SLURM template for EDF ivanoe cluster.
