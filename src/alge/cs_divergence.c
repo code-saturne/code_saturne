@@ -176,6 +176,27 @@ void CS_PROCF (divmas, DIVMAS)
 }
 
 /*----------------------------------------------------------------------------
+ * Wrapper to cs_tensor_divergence
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (divmat, DIVMAT)
+(
+ const cs_int_t    *const   init,
+ const cs_real_3_t          i_massflux[],
+ const cs_real_3_t          b_massflux[],
+ cs_real_3_t                diverg[]
+)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+
+  cs_tensor_divergence(m,
+                       *init,
+                       i_massflux,
+                       b_massflux,
+                       diverg);
+}
+
+/*----------------------------------------------------------------------------
  * Wrapper to cs_ext_force_flux
  *----------------------------------------------------------------------------*/
 
@@ -248,6 +269,56 @@ void CS_PROCF (projtv, PROJTV)
                                 b_massflux);
 }
 
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_tensor_flux
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (divrij, DIVRIJ)
+(
+ const cs_int_t   *const  f_id,
+ const cs_int_t   *const  itypfl,
+ const cs_int_t   *const  iflmb0,
+ const cs_int_t   *const  init,
+ const cs_int_t   *const  inc,
+ const cs_int_t   *const  imrgra,
+ const cs_int_t   *const  nswrgu,
+ const cs_int_t   *const  imligu,
+ const cs_int_t   *const  iwarnu,
+ const cs_real_t  *const  epsrgu,
+ const cs_real_t  *const  climgu,
+ const cs_real_t          rom[],
+ const cs_real_t          romb[],
+ const cs_real_6_t        tensorvel[],
+ const cs_real_6_t        coefat[],
+ const cs_real_66_t       coefbt[],
+ cs_real_3_t              i_massflux[],
+ cs_real_3_t              b_massflux[])
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_tensor_flux(m,
+                 fvq,
+                 *f_id,
+                 *itypfl,
+                 *iflmb0,
+                 *init,
+                 *inc,
+                 *imrgra,
+                 *nswrgu,
+                 *imligu,
+                 *iwarnu,
+                 *epsrgu,
+                 *climgu,
+                 rom,
+                 romb,
+                 tensorvel,
+                 coefat,
+                 coefbt,
+                 i_massflux,
+                 b_massflux);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -278,7 +349,7 @@ void CS_PROCF (projtv, PROJTV)
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
  * \param[in]     iflmb0        the mass flux is set to 0 on walls and
  *                               symmetries if = 1
- * \param[in]     init          the mass flux is initialize to 0 if > 0
+ * \param[in]     init          the mass flux is initialized to 0 if > 0
  * \param[in]     inc           indicator
  *                               - 0 solve an increment
  *                               - 1 otherwise
@@ -289,22 +360,22 @@ void CS_PROCF (projtv, PROJTV)
  *                               of the gradients
  * \param[in]     imligu        clipping gradient method
  *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
+ *                               - = 0 thanks to neighbooring gradients
+ *                               - = 1 thanks to the mean gradient
  * \param[in]     iwarnu        verbosity
  * \param[in]     epsrgu        relative precision for the gradient
  *                               reconstruction
- * \param[in]     climgu        clipping coeffecient for the computation of
+ * \param[in]     climgu        clipping coefficient for the computation of
  *                               the gradient
  * \param[in]     rom           cell density
- * \param[in]     romb          border face density
+ * \param[in]     romb          density at boundary faces
  * \param[in]     vel           vector variable
  * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part - vector array )
  * \param[in]     coefbv        boundary condition array for the variable
- *                               (impplicit part - 3x3 tensor array)
- * \param[in,out] i_massflux    interior mass flux \f$ \dot{m}_\fij \f$
- * \param[in,out] b_massflux    border mass flux \f$ \dot{m}_\fib \f$
+ *                               (implicit part - 3x3 tensor array)
+ * \param[in,out] i_massflux    mass flux at interior faces \f$ \dot{m}_\fij \f$
+ * \param[in,out] b_massflux    mass flux at boundary faces \f$ \dot{m}_\fib \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -942,6 +1013,115 @@ cs_divergence(const cs_mesh_t          *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add the integrated mass flux on the cells for a tensor variable.
+ *
+ * \f[
+ * \dot{m}_i = \dot{m}_i + \sum_{\fij \in \Facei{\celli}} \dot{m}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     init          indicator
+ *                               - 1 initialize the divergence to 0
+ *                               - 0 otherwise
+ * \param[in]     i_massflux    mass flux vector at interior faces
+ * \param[in]     b_massflux    mass flux vector at boundary faces
+ * \param[in,out] diverg        mass flux divergence vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_tensor_divergence(const cs_mesh_t            *m,
+                     int                         init,
+                     const cs_real_3_t           i_massflux[],
+                     const cs_real_3_t           b_massflux[],
+                     cs_real_3_t       *restrict diverg)
+{
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  /*==========================================================================
+    1. Initialization
+    ==========================================================================*/
+
+  if (init >= 1) {
+#   pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
+        diverg[cell_id][isou] = 0.;
+      }
+    }
+  } else if (init == 0 && n_cells_ext > n_cells) {
+#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
+        diverg[cell_id][isou] = 0.;
+      }
+    }
+  } else if (init != 0) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of init"));
+  }
+
+
+  /*==========================================================================
+    2. Integration on internal faces
+    ==========================================================================*/
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+        cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+
+        for (int isou = 0; isou < 3; isou++) {
+          diverg[ii][isou] += i_massflux[face_id][isou];
+          diverg[jj][isou] -= i_massflux[face_id][isou];
+        }
+
+      }
+    }
+  }
+
+
+  /*==========================================================================
+    3. Integration on border faces
+    ==========================================================================*/
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t ii = b_face_cells[face_id] - 1;
+        for (int isou = 0; isou < 3; isou++) {
+          diverg[ii][isou] += b_massflux[face_id][isou];
+        }
+
+      }
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Project the external source terms to the faces in coherence with
  * cs_face_diffusion_scalar for the improved hydrostatic pressure algorithm
  * (iphydr=1).
@@ -1379,6 +1559,225 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
     }
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add \f$ \rho \tens{r} \vect{s}_\ij\f$ to a flux.
+ *
+ * This is done by computing the flux associated to each line of the tensor.
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     f_id          field ids (or -1)
+ * \param[in]     itypfl        indicator (take rho into account or not)
+ *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
+ *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
+ * \param[in]     iflmb0        the mass flux is set to 0 on walls and
+ *                               symmetries if = 1
+ * \param[in]     init          the flux is initialized to 0 if > 0
+ * \param[in]     inc           indicator
+ *                               - 0 solve an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     nswrgu        number of sweeps for the reconstruction
+ *                               of the gradients
+ * \param[in]     imligu        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thanks to neighbooring gradients
+ *                               - = 1 thanks to the mean gradient
+ * \param[in]     iwarnu        verbosity
+ * \param[in]     epsrgu        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgu        clipping coefficient for the computation of
+ *                               the gradient
+ * \param[in]     rom           cell density
+ * \param[in]     romb          density at boundary faces
+ * \param[in]     symten        symmetric tensor variable
+ * \param[in]     cofast        boundary condition array for the variable
+ *                               (explicit part - symmetric tensor array)
+ * \param[in]     cofbst        boundary condition array for the variable
+ *                               (implicit part - 6x6 symmetric tensor array)
+ * \param[in,out] i_massflux    mass flux vector at interior faces
+                                 \f$ \dot{m}_\fij \f$
+ * \param[in,out] b_massflux    mass flux vector at boundary faces
+                                 \f$ \dot{m}_\fib \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_tensor_flux(const cs_mesh_t          *m,
+               cs_mesh_quantities_t     *fvq,
+               int                       f_id,
+               int                       itypfl,
+               int                       iflmb0,
+               int                       init,
+               int                       inc,
+               int                       imrgra,
+               int                       nswrgu,
+               int                       imligu,
+               int                       iwarnu,
+               double                    epsrgu,
+               double                    climgu,
+               const cs_real_t           rom[],
+               const cs_real_t           romb[],
+               const cs_real_6_t         symten[],
+               const cs_real_6_t         cofast[],
+               const cs_real_66_t        cofbst[],
+               cs_real_3_t     *restrict i_massflux,
+               cs_real_3_t     *restrict b_massflux)
+{
+  const int n_cells_ext = m->n_cells_with_ghosts;
+
+  /* Local variables */
+
+  cs_real_3_t **tens;
+  cs_real_3_t **coefat;
+  cs_real_33_t **coefbt;
+  cs_real_t **i_massflux_t;
+  cs_real_t **b_massflux_t;
+
+  /*==========================================================================
+    1. Initialisation
+    ==========================================================================*/
+
+  /* Allocate working arrays */
+
+  BFT_MALLOC(tens, 3, cs_real_3_t*);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_MALLOC(tens[isou], n_cells_ext, cs_real_3_t);
+  }
+
+  BFT_MALLOC(coefat, m->n_b_faces, cs_real_3_t*);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_MALLOC(coefat[isou], m->n_b_faces, cs_real_3_t);
+  }
+  BFT_MALLOC(coefbt, m->n_b_faces, cs_real_33_t*);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_MALLOC(coefbt[isou], m->n_b_faces, cs_real_33_t);
+  }
+
+  BFT_MALLOC(i_massflux_t, 3, cs_real_t*);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_MALLOC(i_massflux_t[isou], m->n_i_faces, cs_real_t);
+  }
+  BFT_MALLOC(b_massflux_t, 3, cs_real_t*);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_MALLOC(b_massflux_t[isou], m->n_b_faces, cs_real_t);
+  }
+
+  /* Get vectors from symmetric tensor variable rows */
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    tens[0][cell_id][0] = symten[cell_id][0];
+    tens[0][cell_id][1] = symten[cell_id][3];
+    tens[0][cell_id][2] = symten[cell_id][5];
+    tens[1][cell_id][0] = symten[cell_id][3];
+    tens[1][cell_id][1] = symten[cell_id][1];
+    tens[1][cell_id][2] = symten[cell_id][4];
+    tens[2][cell_id][0] = symten[cell_id][5];
+    tens[2][cell_id][1] = symten[cell_id][4];
+    tens[2][cell_id][2] = symten[cell_id][2];
+  }
+
+  /* Boundary conditions on the component Rij for the momentum equation */
+
+  for (int isou = 0; isou < 3; isou++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      for (int ksou = 0; ksou < 3; ksou++) {
+        for (int jsou = 0; jsou < 3; jsou++) {
+          coefbt[isou][face_id][ksou][jsou] = 0;
+        }
+      }
+    }
+  }
+
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    coefat[0][face_id][0] = cofast[face_id][0];
+    coefat[0][face_id][1] = cofast[face_id][3];
+    coefat[0][face_id][2] = cofast[face_id][5];
+    coefat[1][face_id][0] = cofast[face_id][3];
+    coefat[1][face_id][1] = cofast[face_id][1];
+    coefat[1][face_id][2] = cofast[face_id][4];
+    coefat[2][face_id][0] = cofast[face_id][5];
+    coefat[2][face_id][1] = cofast[face_id][4];
+    coefat[2][face_id][2] = cofast[face_id][2];
+
+    coefbt[0][face_id][0][0] = cofbst[face_id][0][0];
+    coefbt[0][face_id][1][1] = cofbst[face_id][3][3];
+    coefbt[0][face_id][2][2] = cofbst[face_id][5][5];
+    coefbt[1][face_id][0][0] = cofbst[face_id][3][3];
+    coefbt[1][face_id][1][1] = cofbst[face_id][1][1];
+    coefbt[1][face_id][2][2] = cofbst[face_id][4][4];
+    coefbt[2][face_id][0][0] = cofbst[face_id][5][5];
+    coefbt[2][face_id][1][1] = cofbst[face_id][4][4];
+    coefbt[2][face_id][2][2] = cofbst[face_id][2][2];
+  }
+
+  /*==========================================================================
+    2. Computation of the divergence
+    ==========================================================================*/
+
+  for (int isou = 0; isou < 3; isou++) {
+
+    cs_mass_flux(m,
+                 fvq,
+                 f_id,
+                 itypfl,
+                 iflmb0,
+                 init,
+                 inc,
+                 imrgra,
+                 nswrgu,
+                 imligu,
+                 iwarnu,
+                 epsrgu,
+                 climgu,
+                 rom,
+                 romb,
+                 (const cs_real_3_t*) tens[isou],
+                 (const cs_real_3_t*) coefat[isou],
+                 (const cs_real_33_t*) coefbt[isou],
+                 i_massflux_t[isou],
+                 b_massflux_t[isou]);
+
+  }
+
+  for (int isou = 0; isou < 3; isou++) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+      i_massflux[face_id][isou] = i_massflux_t[isou][face_id];
+    }
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      b_massflux[face_id][isou] = b_massflux_t[isou][face_id];
+    }
+  }
+
+
+  /* Dellocate working arrays */
+
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_FREE(tens[isou]);
+  }
+  BFT_FREE(tens);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_FREE(coefat[isou]);
+  }
+  BFT_FREE(coefat);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_FREE(coefbt[isou]);
+  }
+  BFT_FREE(coefbt);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_FREE(i_massflux_t[isou]);
+  }
+  BFT_FREE(i_massflux_t);
+  for (int isou = 0; isou < 3; isou++) {
+    BFT_FREE(b_massflux_t[isou]);
+  }
+  BFT_FREE(b_massflux_t);
 
 }
 

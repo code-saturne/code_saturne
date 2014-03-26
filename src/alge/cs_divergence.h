@@ -93,6 +93,18 @@ void CS_PROCF (divmas, DIVMAS)
 );
 
 /*----------------------------------------------------------------------------
+ * Wrapper to cs_divergence_tensor
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (divmat, DIVMAT)
+(
+ const cs_int_t    *const   init,
+ const cs_real_3_t          i_massflux[],
+ const cs_real_3_t          b_massflux[],
+ cs_real_3_t                diverg[]
+);
+
+/*----------------------------------------------------------------------------
  * Wrapper to cs_ext_force_flux
  *----------------------------------------------------------------------------*/
 
@@ -130,6 +142,32 @@ void CS_PROCF (projtv, PROJTV)
  cs_real_t                b_massflux[]
 );
 
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_tensor_flux
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (divrij, DIVRIJ)
+(
+ const cs_int_t   *const  f_id,
+ const cs_int_t   *const  itypfl,
+ const cs_int_t   *const  iflmb0,
+ const cs_int_t   *const  init,
+ const cs_int_t   *const  inc,
+ const cs_int_t   *const  imrgra,
+ const cs_int_t   *const  nswrgu,
+ const cs_int_t   *const  imligu,
+ const cs_int_t   *const  iwarnu,
+ const cs_real_t  *const  epsrgu,
+ const cs_real_t  *const  climgu,
+ const cs_real_t          rom[],
+ const cs_real_t          romb[],
+ const cs_real_6_t        tensorvel[],
+ const cs_real_6_t        coefav[],
+ const cs_real_66_t       coefbv[],
+ cs_real_3_t              i_massflux[],
+ cs_real_3_t              b_massflux[]
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -160,7 +198,7 @@ void CS_PROCF (projtv, PROJTV)
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
  * \param[in]     iflmb0        the mass flux is set to 0 on walls and
  *                               symmetries if = 1
- * \param[in]     init          the mass flux is initialize to 0 if > 0
+ * \param[in]     init          the mass flux is initialized to 0 if > 0
  * \param[in]     inc           indicator
  *                               - 0 solve an increment
  *                               - 1 otherwise
@@ -171,22 +209,22 @@ void CS_PROCF (projtv, PROJTV)
  *                               of the gradients
  * \param[in]     imligu        clipping gradient method
  *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
+ *                               - = 0 thanks to neighbooring gradients
+ *                               - = 1 thanks to the mean gradient
  * \param[in]     iwarnu        verbosity
  * \param[in]     epsrgu        relative precision for the gradient
  *                               reconstruction
- * \param[in]     climgu        clipping coeffecient for the computation of
+ * \param[in]     climgu        clipping coefficient for the computation of
  *                               the gradient
  * \param[in]     rom           cell density
- * \param[in]     romb          border face density
+ * \param[in]     romb          density at boundary faces
  * \param[in]     vel           vector variable
  * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part - vector array )
  * \param[in]     coefbv        boundary condition array for the variable
- *                               (impplicit part - 3x3 tensor array)
- * \param[in,out] i_massflux    interior mass flux \f$ \dot{m}_\fij \f$
- * \param[in,out] b_massflux    border mass flux \f$ \dot{m}_\fib \f$
+ *                               (implicit part - 3x3 tensor array)
+ * \param[in,out] i_massflux    mass flux at interior faces \f$ \dot{m}_\fij \f$
+ * \param[in,out] b_massflux    mass flux at boundary faces \f$ \dot{m}_\fib \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -236,6 +274,31 @@ cs_divergence(const cs_mesh_t          *m,
               const cs_real_t           i_massflux[],
               const cs_real_t           b_massflux[],
               cs_real_t       *restrict diverg);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the integrated mass flux on the cells for a tensor variable.
+ *
+ * \f[
+ * \dot{m}_i = \dot{m}_i + \sum_{\fij \in \Facei{\celli}} \dot{m}_\ij
+ * \f]
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     init          indicator
+ *                               - 1 initialize the divergence to 0
+ *                               - 0 otherwise
+ * \param[in]     i_massflux    mass flux vector at interior faces
+ * \param[in]     b_massflux    mass flux vector at boundary faces
+ * \param[in,out] diverg        mass flux divergence vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_tensor_divergence(const cs_mesh_t            *m,
+                     int                         init,
+                     const cs_real_3_t           i_massflux[],
+                     const cs_real_3_t           b_massflux[],
+                     cs_real_3_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -325,6 +388,74 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                               const cs_real_2_t         weighf[],
                               cs_real_t       *restrict i_massflux,
                               cs_real_t       *restrict b_massflux);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add \f$ \rho \tens{r} \vect{s}_\ij\f$ to a flux.
+ *
+ * This is done by computing the flux associated to each line of the tensor.
+ *
+ * \param[in]     m             pointer to mesh
+ * \param[in]     fvq           pointer to finite volume quantities
+ * \param[in]     f_id          field ids (or -1)
+ * \param[in]     itypfl        indicator (take rho into account or not)
+ *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
+ *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
+ * \param[in]     iflmb0        the mass flux is set to 0 on walls and
+ *                               symmetries if = 1
+ * \param[in]     init          the flux is initialized to 0 if > 0
+ * \param[in]     inc           indicator
+ *                               - 0 solve an increment
+ *                               - 1 otherwise
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least square gradient
+ * \param[in]     nswrgu        number of sweeps for the reconstruction
+ *                               of the gradients
+ * \param[in]     imligu        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 thanks to neighbooring gradients
+ *                               - = 1 thanks to the mean gradient
+ * \param[in]     iwarnu        verbosity
+ * \param[in]     epsrgu        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgu        clipping coefficient for the computation of
+ *                               the gradient
+ * \param[in]     rom           cell density
+ * \param[in]     romb          density at boundary faces
+ * \param[in]     symten        symmetric tensor variable
+ * \param[in]     cofast        boundary condition array for the variable
+ *                               (explicit part - symmetric tensor array)
+ * \param[in]     cofbst        boundary condition array for the variable
+ *                               (implicit part - 6x6 symmetric tensor array)
+ * \param[in,out] i_massflux    mass flux vector at interior faces
+                                 \f$ \dot{m}_\fij \f$
+ * \param[in,out] b_massflux    mass flux vector at boundary faces
+                                 \f$ \dot{m}_\fib \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_tensor_flux(const cs_mesh_t             *m,
+               cs_mesh_quantities_t        *fvq,
+               int                          f_id,
+               int                          itypfl,
+               int                          iflmb0,
+               int                          init,
+               int                          inc,
+               int                          imrgra,
+               int                          nswrgu,
+               int                          imligu,
+               int                          iwarnu,
+               double                       epsrgu,
+               double                       climgu,
+               const cs_real_t              rom[],
+               const cs_real_t              romb[],
+               const cs_real_6_t            tens[],
+               const cs_real_6_t            coefav[],
+               const cs_real_66_t           coefbv[],
+               cs_real_3_t        *restrict i_massflux,
+               cs_real_3_t        *restrict b_massflux);
 
 /*----------------------------------------------------------------------------*/
 

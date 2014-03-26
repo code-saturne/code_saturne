@@ -94,12 +94,10 @@ cs_multigrid.c \
 cs_sles.c \
 bilsca.f90 \
 bilscv.f90 \
-divrij.f90 \
 grdcel.f90 \
 grdpre.f90 \
 grdvec.f90 \
 grdpot.f90 \
-inimas.f90 \
 invers.f90 \
 prodsc.f90 \
 visort.f90

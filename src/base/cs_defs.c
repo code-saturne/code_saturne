@@ -94,6 +94,13 @@ BEGIN_C_DECLS
 
   \typedef cs_real_33_t
            \brief 3x3 matrix of floating-point values
+
+  \typedef cs_real_66_t
+           \brief 6x6 matrix of floating-point values
+
+  \typedef cs_real_332_t
+           \brief vector of 2 3x3 matrices of floating-point values
+
 */
 
 /*============================================================================

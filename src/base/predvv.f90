@@ -170,8 +170,8 @@ double precision vela  (3  ,ncelet)
 
 ! Local variables
 
-integer          iel   , ielpdc, ifac  , ivar  , isou  , itypfl
-integer          iccocg, inc   , iprev , init  , ii    , isqrt
+integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl
+integer          iccocg, inc   , iprev , init  , ii    , jj    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ipp
 integer          iswdyp, idftnp
 integer          ipcvis, ipcvst
@@ -213,6 +213,12 @@ double precision, dimension(:), pointer :: brom, crom, croma, pcrom
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: porosi
+double precision, dimension(:,:), allocatable :: rij
+double precision, dimension(:), pointer :: coef1, coef2, coef3, coef4, coef5, coef6
+double precision, dimension(:,:), allocatable :: coefat
+double precision, dimension(:,:,:), allocatable :: coefbt
+double precision, dimension(:,:), allocatable :: tflmas, tflmab
+double precision, dimension(:,:), allocatable :: divt
 
 !===============================================================================
 
@@ -438,7 +444,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
-   crom, brom   ,                                                 &
+   crom   , brom   ,                                              &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    viscf  , viscb  )
@@ -990,45 +996,133 @@ if(iappel.eq.1) then
 endif
 
 !-------------------------------------------------------------------------------
-! ---> - DIVERGENCE DE RIJ
+! ---> - Divergence of tensor Rij
 
 if(itytur.eq.3.and.iterns.eq.1) then
 
+  allocate(rij(6,ncelet))
+  do iel = 1, ncelet
+    rij(1,iel) = rtpa(iel,ir11)
+    rij(2,iel) = rtpa(iel,ir22)
+    rij(3,iel) = rtpa(iel,ir33)
+    rij(4,iel) = rtpa(iel,ir12)
+    rij(5,iel) = rtpa(iel,ir23)
+    rij(6,iel) = rtpa(iel,ir13)
+  enddo
+
+! --- Boundary conditions on the components of the tensor Rij
+
+  allocate(coefat(6,nfabor))
+  call field_get_coefad_s(ivarfl(ir11),coef1)
+  call field_get_coefad_s(ivarfl(ir22),coef2)
+  call field_get_coefad_s(ivarfl(ir33),coef3)
+  call field_get_coefad_s(ivarfl(ir12),coef4)
+  call field_get_coefad_s(ivarfl(ir23),coef5)
+  call field_get_coefad_s(ivarfl(ir13),coef6)
+  do ifac = 1, nfabor
+    coefat(1,ifac) = coef1(ifac)
+    coefat(2,ifac) = coef2(ifac)
+    coefat(3,ifac) = coef3(ifac)
+    coefat(4,ifac) = coef4(ifac)
+    coefat(5,ifac) = coef5(ifac)
+    coefat(6,ifac) = coef6(ifac)
+  enddo
+
+  allocate(coefbt(6,6,nfabor))
+  do ifac = 1, nfabor
+    do ii = 1, 6
+      do jj = 1, 6
+        coefbt(jj,ii,ifac) = 0.d0
+      enddo
+    enddo
+  enddo
+  call field_get_coefbd_s(ivarfl(ir11),coef1)
+  call field_get_coefbd_s(ivarfl(ir22),coef2)
+  call field_get_coefbd_s(ivarfl(ir33),coef3)
+  call field_get_coefbd_s(ivarfl(ir12),coef4)
+  call field_get_coefbd_s(ivarfl(ir23),coef5)
+  call field_get_coefbd_s(ivarfl(ir13),coef6)
+  do ifac = 1, nfabor
+    coefbt(1,1,ifac) = coef1(ifac)
+    coefbt(2,2,ifac) = coef2(ifac)
+    coefbt(3,3,ifac) = coef3(ifac)
+    coefbt(4,4,ifac) = coef4(ifac)
+    coefbt(5,5,ifac) = coef5(ifac)
+    coefbt(6,6,ifac) = coef6(ifac)
+  enddo
+
+  ! Flux computation options
+  f_id = -1
+  init = 1;
+  inc  = 1;
+  iflmb0 = 0;
+  nswrgp = nswrgr(ir11);
+  imligp = imligr(ir11);
+  iwarnp = iwarni(ir11);
+  epsrgp = epsrgr(ir11);
+  climgp = climgr(ir11);
+  itypfl = 1;
+
+  allocate(tflmas(3,nfac))
+  allocate(tflmab(3,nfabor))
+
+  call divrij                                                     &
+  !==========
+ ( f_id   , itypfl ,                                              &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iwarnp ,                                                       &
+   epsrgp , climgp ,                                              &
+   crom   , brom   ,                                              &
+   rij    ,                                                       &
+   coefat , coefbt ,                                              &
+   tflmas , tflmab )
+
+  deallocate(rij)
+  deallocate(coefat, coefbt)
+
+  !     Calcul des efforts aux bords (partie 5/5), si necessaire
+
+  if (ineedf.eq.1) then
+    do ifac = 1, nfabor
+      do isou = 1, 3
+        forbr(isou,ifac) = forbr(isou,ifac) + tflmab(isou,ifac)
+      enddo
+    enddo
+  endif
+
+  allocate(divt(3,ncelet))
+  init = 1
+  call divmat(init,tflmas,tflmab,divt)
+
+  deallocate(tflmas, tflmab)
+
   do isou = 1, 3
-
-    if(isou.eq.1) ivar = iu
-    if(isou.eq.2) ivar = iv
-    if(isou.eq.3) ivar = iw
-
-    call divrij(isou, ivar, rtpa, viscf, viscb)
-    !==========
-
-    init = 1
-    call divmas(init,viscf,viscb,w1)
 
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes de divergence
     if(isno2t.gt.0) then
       do iel = 1, ncel
         propce(iel,iptsna+isou-1 ) =                              &
-        propce(iel,iptsna+isou-1 ) - w1(iel)
+        propce(iel,iptsna+isou-1 ) - divt(isou,iel)
       enddo
 !     Si on n'extrapole pas les termes source en temps :
     else
 !       si on n'itere pas sur navsto : TRAV
       if(nterup.eq.1) then
         do iel = 1, ncel
-          trav(isou,iel) = trav(isou,iel) - w1(iel)
+          trav(isou,iel) = trav(isou,iel) - divt(isou,iel)
         enddo
 !       si on itere sur navsto       : TRAVA
       else
         do iel = 1, ncel
-          trava(isou,iel) = trava(isou,iel) - w1(iel)
+          trava(isou,iel) = trava(isou,iel) - divt(isou,iel)
         enddo
       endif
     endif
 
   enddo
+
+  deallocate(divt)
 
 endif
 
@@ -1733,7 +1827,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
-   crom, brom ,                                                   &
+   crom   , brom   ,                                              &
    vel    ,                                                       &
    coefav , coefbv ,                                              &
    viscf  , viscb  )
