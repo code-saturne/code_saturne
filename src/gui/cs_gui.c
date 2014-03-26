@@ -3013,7 +3013,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
   tmp = (double) nswrsm[j];
   cs_gui_variable_value(vars->name[0], "rhs_reconstruction", &tmp);
   nswrsm[j] = (int) tmp;
-
+  BFT_FREE(algo_choice);
 
   // Set Field calculation options in the field structure
   var_cal_opt.epsilo = epsilo[j];
@@ -3046,6 +3046,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       iresol[j] = -1;
     else //default value
       iresol[j] = -1;
+    BFT_FREE(algo_choice);
 
     tmp = (double) nitmax[j];
     cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
@@ -3091,6 +3092,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
         iresol[j] = -1;
       else //default value
         iresol[j] = -1;
+      BFT_FREE(algo_choice);
 
       cs_gui_scalar_value(_scalar_label(i), "time_step_factor", &cdtvar[j]);
       tmp = (double) nitmax[j];
@@ -3143,6 +3145,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
         iresol[j] = -1;
       else //default value
         iresol[jj] = -1;
+      BFT_FREE(algo_choice);
 
       tmp = (double) nitmax[jj];
       cs_gui_model_scalar_value(vars->model, _scalar_label(j), "max_iter_number", &tmp);
