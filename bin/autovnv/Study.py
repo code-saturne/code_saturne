@@ -140,7 +140,7 @@ class Case(object):
         return exe, pkg
 
 
-    def update(self):
+    def update(self, xmlonly=False):
         """
         Update path for the script in the Repository.
         """
@@ -184,9 +184,10 @@ class Case(object):
                     case.xmlSaveDocument()
 
         # 2) Create RESU directory if needed
-        r = os.path.join(self.__repo, self.label, "RESU")
-        if not os.path.isdir(r):
-            os.makedirs(r)
+        if not xmlonly:
+            r = os.path.join(self.__repo, self.label, "RESU")
+            if not os.path.isdir(r):
+                os.makedirs(r)
 
         # 3) Update the GUI script from the Repository
         ref = os.path.join(self.__repo, self.label, "DATA", self.pkg.guiname)
@@ -202,8 +203,15 @@ class Case(object):
 
         for i in range(len(lines)):
             if re.search(r'^prefix=', lines[i]):
-                 lines[i] = "prefix=" + self.pkg.get_dir('prefix') + "\n"
-
+                if xmlonly:
+                    lines[i] = "prefix=\n"
+                else:
+                    lines[i] = "prefix=" + self.pkg.get_dir('prefix') + "\n"
+            if re.search(r'^export PATH=', lines[i]):
+                if xmlonly:
+                    lines[i] = 'export PATH="":$PATH\n'
+                else:
+                    lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
         f = file(ref, mode = 'w')
         f.writelines(lines)
         f.close()
@@ -223,21 +231,25 @@ class Case(object):
         for i in range(len(lines)):
             if lines[i].strip()[0:1] == '#':
                 continue
-            if re.search(r'^export PATH=', lines[i]):
-                 lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-            j = lines[i].find(self.pkg.name)
-            if j > -1:
-                j = lines[i].find('run')
-                args = separate_args(lines[i].rstrip())
-                param = get_command_single_value(args, ('--param', '--param=', '-p'))
-                try:
-                    if n_procs[param]:
-                        args = update_command_single_value(args,
-                                                           ('--nprocs', '--nprocs=', '-n'),
-                                                           n_procs[param])
-                        lines[i] = assemble_args(args) + '\n'
-                except Exception:
-                    pass
+            if xmlonly:
+                if re.search(r'^export PATH=', lines[i]):
+                    lines[i] = 'export PATH="":$PATH\n'
+            else:
+                if re.search(r'^export PATH=', lines[i]):
+                    lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
+                j = lines[i].find(self.pkg.name)
+                if j > -1:
+                    j = lines[i].find('run')
+                    args = separate_args(lines[i].rstrip())
+                    param = get_command_single_value(args, ('--param', '--param=', '-p'))
+                    try:
+                        if n_procs[param]:
+                            args = update_command_single_value(args,
+                                                               ('--nprocs', '--nprocs=', '-n'),
+                                                               n_procs[param])
+                            lines[i] = assemble_args(args) + '\n'
+                    except Exception:
+                        pass
 
         f = file(ref, mode = 'w')
         f.writelines(lines)
@@ -661,7 +673,7 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, pkg, f, v, r, n, c, d, p, exe, dif, log):
+    def __init__(self, pkg, f, v, x, r, n, c, d, p, exe, dif, log):
         """
         Constructor.
           1. create if necessary the destination directory,
@@ -672,6 +684,8 @@ class Studies(object):
         @param f: xml file of parameters.
         @type v: C{True} or C{False}
         @param v: verbose mode.
+        @type x: C{True} or C{False}
+        @param x: update xml in repo only.
         @type r: C{True} or C{False}
         @param r: have to run the case.
         @type c: C{True} or C{False}
@@ -694,7 +708,11 @@ class Studies(object):
 
         # create if necessary the destination directory
 
-        self.dest = self.getDestination()
+        self.__xmlupdate = x
+        if not self.__xmlupdate:
+            self.dest = self.getDestination()
+        else:
+            self.dest = self.getRepository()
         if not os.path.isdir(self.dest):
             os.makedirs(self.dest)
 
@@ -751,6 +769,9 @@ class Studies(object):
         if not iok:
             self.__running = False
 
+        if self.__xmlupdate:
+            os.remove(file)
+            os.remove(doc)
 
     def reporting(self, msg, screen_only=False):
         """
@@ -798,7 +819,7 @@ class Studies(object):
         return self.__parser.getDestination()
 
 
-    def updateRepository(self):
+    def updateRepository(self, xml_only=False):
         """
         Create all studies and all cases.
         """
@@ -807,7 +828,7 @@ class Studies(object):
             self.reporting('  o Update repository: ' + l)
             for case in s.Cases:
                 self.reporting('    - update  %s' % case.label)
-                case.update()
+                case.update(xml_only)
                 if case.compile(os.path.join(self.repo, l)) == "OK":
                     self.reporting('    - compile %s --> OK' % case.label)
                 else:

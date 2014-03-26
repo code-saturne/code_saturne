@@ -83,6 +83,14 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="update", default=False,
                       help="update scripts in the repository")
 
+    parser.add_option("-x", "--update-xml",
+                      action="store_true", dest="updatexml", default=False,
+                      help="update only xml files in the repository")
+
+    parser.add_option("-t", "--test-compile",
+                      action="store_true", dest="compile", default=False,
+                      help="compile all cases")
+
     parser.add_option("-r", "--run",
                       action="store_true", dest="runcase", default=False,
                       help="run all cases")
@@ -111,7 +119,8 @@ def process_cmd_line(argv, pkg):
 
     (options, args) = parser.parse_args(argv)
 
-    return  options.filename, options.verbose, options.update, \
+    return  options.filename, options.verbose, \
+        options.update, options.updatexml, options.compile, \
         options.runcase, options.n_iterations, options.compare, \
         options.reference, options.post, options.log_file, options.addresses
 
@@ -195,7 +204,7 @@ def release():
 # Start point of Auto V & V script
 #-------------------------------------------------------------------------------
 
-def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to):
+def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to):
     """
     Main function
       1. parse the command line,
@@ -232,8 +241,11 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, op
 
     # Read the file of parameters
 
-    studies = Studies(pkg, opt_f, opt_v, opt_r, opt_n, opt_c, opt_d, opt_p, exe, dif, opt_l)
-    os.chdir(studies.getDestination())
+    studies = Studies(pkg, opt_f, opt_v, opt_x, opt_r, opt_n, opt_c, opt_d, opt_p, exe, dif, opt_l)
+    if opt_x == False:
+        os.chdir(studies.getDestination())
+    else:
+        os.chdir(studies.getRepository())
 
     # Print header
 
@@ -262,6 +274,12 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, op
         studies.updateRepository()
         sys.exit(0)
 
+    # Update only xml data if needed
+
+    if opt_x:
+        studies.updateRepository(True)
+        sys.exit(0)
+
     # Check if xml for result directories in the repository are OK
 
     if opt_c:
@@ -277,7 +295,8 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, op
 
     # Compile sources of all cases
 
-    studies.compilation()
+    if opt_t:
+        studies.compilation()
 
     # Preprocessing and run all cases
 
@@ -320,10 +339,10 @@ def main(argv, pkg):
 
     # Command line
 
-    opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, addresses = process_cmd_line(argv, pkg)
+    opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, addresses = process_cmd_line(argv, pkg)
     opt_to  = addresses.split()
 
-    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to)
+    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to)
 
     sys.exit(retcode)
 
