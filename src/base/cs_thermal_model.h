@@ -1,0 +1,85 @@
+#ifndef __CS_THERMAL_MODEL_H__
+#define __CS_THERMAL_MODEL_H__
+
+/*============================================================================
+ * Base thermal model data.
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2014 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/* thermal model descriptor */
+/*--------------------------*/
+
+typedef struct {
+
+  int           itherm;       /* thermal model
+                                 - 0: no thermal model
+                                 - 1: temperature
+                                 - 2: enthalpy
+                                 - 3: total energy (only for compressible
+                                      module)*/
+  int           itpscl;       /* temperature scale
+                                 - 0: none
+                                 - 1: Kelvin
+                                 - 2: Celsius*/
+  int           iscalt;       /* index of the thermal scalar (temperature,
+                                 energy or enthalpy), the index of the
+                                 corresponding variable is isca(iscalt)*/
+
+} cs_thermal_model_t;
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Pointer to main time step structure */
+
+extern const cs_thermal_model_t  *cs_glob_thermal_model;
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#endif /* __CS_THERMAL_MODEL_H__ */

@@ -118,6 +118,7 @@ cs_sort.h \
 cs_syr4_coupling.h \
 cs_syr_coupling.h \
 cs_system_info.h \
+cs_thermal_model.h \
 cs_time_moment.h \
 cs_time_plot.h \
 cs_time_step.h \
@@ -237,6 +238,7 @@ cs_selector_f2c.f90 \
 cs_sort.c \
 cs_syr4_coupling.c \
 cs_syr_coupling.c \
+cs_thermal_model.c \
 cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \

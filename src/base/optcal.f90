@@ -505,17 +505,17 @@ module optcal
   !>    - 1: temperature
   !>    - 2: enthalpy
   !>    - 3: total energy (only for compressible module)
-  integer, save :: itherm
+  integer(c_int), pointer, save :: itherm
 
   !> temperature scale
   !>    - 0: none
   !>    - 1: Kelvin
   !>    - 2: Celsius
-  integer, save :: itpscl
+  integer(c_int), pointer, save :: itpscl
 
   !> index of the thermal scalar (temperature, energy of enthalpy),
   !> the index of the corresponding variable is isca(iscalt)
-  integer, save :: iscalt
+  integer(c_int), pointer, save :: iscalt
 
   !> \}
 
@@ -1052,6 +1052,16 @@ module optcal
       type(c_ptr), intent(out) :: t_prev, t_cur, t_max
     end subroutine cs_f_time_step_get_pointers
 
+    ! Interface to C function retrieving pointers to members of the
+    ! global thermal model structure
+
+    subroutine cs_f_thermal_model_get_pointers(itherm, itpscl, iscalt) &
+      bind(C, name='cs_f_thermal_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: itherm, itpscl, iscalt
+    end subroutine cs_f_thermal_model_get_pointers
+
     !---------------------------------------------------------------------------
 
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
@@ -1091,6 +1101,26 @@ contains
     call c_f_pointer(c_ttmabs, ttmabs)
 
   end subroutine time_step_init
+
+  !> \brief Initialize Fortran thermal model API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine thermal_model_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_itherm, c_itpscl, c_iscalt
+
+    call cs_f_thermal_model_get_pointers(c_itherm, c_itpscl, c_iscalt)
+
+    call c_f_pointer(c_itherm, itherm)
+    call c_f_pointer(c_itpscl, itpscl)
+    call c_f_pointer(c_iscalt, iscalt)
+
+  end subroutine thermal_model_init
 
   !=============================================================================
 
