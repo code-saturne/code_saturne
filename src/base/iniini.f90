@@ -124,6 +124,10 @@ iporf = -1
 
 call time_step_init
 call thermal_model_init
+call turb_model_init
+call turb_rans_model_init
+call turb_les_model_init
+call wall_functions_init
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

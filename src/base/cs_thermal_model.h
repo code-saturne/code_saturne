@@ -70,7 +70,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-/* Pointer to main time step structure */
+/* Pointer to thermal model structure */
 
 extern const cs_thermal_model_t  *cs_glob_thermal_model;
 

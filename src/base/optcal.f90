@@ -543,103 +543,103 @@ module optcal
   !>    - 51: v2f \f$ BL-v^2-k \f$
   !>    - 60: \f$ k-\omega \f$ SST
   !>    - 70: Spalart-Allmaras model
-  integer, save :: iturb
+  integer(c_int), pointer, save :: iturb
 
   !> Class of turbulence model (integer value iturb/10)
-  integer, save :: itytur
+  integer(c_int), pointer, save :: itytur
 
   !> Activation of rotation/curvature correction for an eddy viscosity turbulence models
   !>    - 0: false
   !>    - 1: true
-  integer, save :: irccor
+  integer(c_int), pointer, save :: irccor
 
   !> Type of rotation/curvature correction for an eddy viscosity turbulence models
   !>    - 1 Cazalbou correction (default when irccor=1 and itytur=2 or 5)
   !>    - 2 Spalart-Shur correction (default when irccor=1 and iturb=60 or 70)
-  integer, save :: itycor
+  integer(c_int), pointer, save :: itycor
 
   !>  Wall functions
   !>    - 0: one scale of friction velocities
   !>    - 1: two scale of friction velocities
   !>    - 2: scalable wall functions
-  integer, save :: ideuch
+  integer(c_int), pointer, save :: ideuch
 
   !> exchange coefficient correlation
   !>    - 0: not use by default
   !>    - 1: exchange coefficient computed with a correlation
-  integer, save :: iwallt
+  integer(c_int), pointer, save :: iwallt
 
   !> wall function with
   !>    - 0 a power lay (deprecated)
   !>    - 1 a log lay
-  integer, save :: ilogpo
+  integer(c_int), pointer, save :: ilogpo
 
   !> clipping of k and epsilon
   !>    - 0 absolute value clipping
   !>    - 1 coupled clipping based on physical relationships
-  integer, save :: iclkep
+  integer(c_int), pointer, save :: iclkep
 
   !> take \f$ 2/3 \rho \grad k \f$ in the momentum equation
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: igrhok
+  integer(c_int), pointer, save :: igrhok
 
   !> buoyant term in \f$ k- \varepsilon \f$
   !>    - 1: true (default if \f$ \rho \f$ is variable)
   !>    - 0: false
-  integer, save :: igrake
+  integer(c_int), pointer, save :: igrake
 
   !> buoyant term in \f$ R_{ij}- \varepsilon \f$
   !>    - 1: true (default if \f$ \rho \f$ is variable)
   !>    - 0: false
-  integer, save :: igrari
+  integer(c_int), pointer, save :: igrari
 
   !> partially coupled version of \f$ k-\varepsilon \f$ (only for iturb=20)
   !>    - 1: true (default)
   !>    - 0: false
-  integer, save :: ikecou
+  integer(c_int), pointer, save :: ikecou
 
   !> pseudo eddy viscosity in the matrix of momentum equation to partially
   !> implicit \f$ \divv \left( \rho \tens{R} \right) \f$
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: irijnu
+  integer(c_int), pointer, save :: irijnu
 
   !> accurate treatment of \f$ \tens{R} \f$ at the boundary (see \ref condli)
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: irijrb
+  integer(c_int), pointer, save :: irijrb
 
   !> wall echo term of \f$ \tens{R} \f$
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: irijec
+  integer(c_int), pointer, save :: irijec
 
   !> whole treatment of the diagonal part of the dissusion tensor of
   !> \f$ \tens{R} \f$ and \f$ \varepsilon \f$
   !>    - 1: true (default)
   !>    - 0: simplified treatment
-  integer, save :: idifre
+  integer(c_int), pointer, save :: idifre
 
   !> partial implicitation of symmetry BCs of \f$ \tens{R} \f$
   !>    - 1: true (default)
   !>    - 0: false
-  integer, save :: iclsyr
+  integer(c_int), pointer, save :: iclsyr
 
   !> partial implicitation of wall BCs of \f$ \tens{R} \f$
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: iclptr
+  integer(c_int), pointer, save :: iclptr
 
   !> Van Driest smoothing at the wall (only for itytur=4)
   !>    - 1: true
   !>    - 0: false
-  integer, save :: idries
+  integer(c_int), pointer, save :: idries
 
   !> vortex method (in LES)
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: ivrtex
+  integer(c_int), pointer, save :: ivrtex
 
   !> turbulent flux model for \f$ \overline{\varia^\prime \vect{u}^\prime} \f$
   !> for any scalar \f$ \varia \f$, iturt(isca)
@@ -659,8 +659,8 @@ module optcal
   integer, save :: ifltur(nscamx)
 
   !> number of variable plus number of turbulent fluxes
-  !> (used by the Boundary Conditions)
-  integer, save :: nvarcl
+  !> (used by the boundary conditions)
+  integer(c_int), pointer, save :: nvarcl
 
   !> \}
 
@@ -728,7 +728,7 @@ module optcal
   !> accurate treatment of the wall temperature
   !>    - 1: true
   !>    - 0: false (default)
-  !> (see \ref condli, usefull in case of coupling with syrthes)
+  !> (see \ref condli, useful in case of coupling with syrthes)
   integer, save :: itbrrb
 
   !> indicates if the scalar isca is coupled with syrthes
@@ -1062,6 +1062,52 @@ module optcal
       type(c_ptr), intent(out) :: itherm, itpscl, iscalt
     end subroutine cs_f_thermal_model_get_pointers
 
+    ! Interface to C function retrieving pointers to members of the
+    ! global turbulence model structure
+
+    subroutine cs_f_turb_model_get_pointers(iturb, itytur, nvarcl) &
+      bind(C, name='cs_f_turb_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iturb, itytur, nvarcl
+    end subroutine cs_f_turb_model_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global wall functions structure
+
+    subroutine cs_f_wall_functions_get_pointers(ideuch, iwallt, ilogpo) &
+      bind(C, name='cs_f_wall_functions_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ideuch, iwallt, ilogpo
+    end subroutine cs_f_wall_functions_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! RANS turbulence model structure
+
+    subroutine cs_f_turb_rans_model_get_pointers(irccor, itycor, iclkep, &
+                                                 igrhok, igrake, igrari, &
+                                                 ikecou, irijnu, irijrb, &
+                                                 irijec, idifre, iclsyr, &
+                                                 iclptr)                 &
+      bind(C, name='cs_f_turb_rans_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: irccor, itycor, iclkep, igrhok, igrake
+      type(c_ptr), intent(out) :: igrari, ikecou, irijnu, irijrb, irijec
+      type(c_ptr), intent(out) :: idifre, iclsyr, iclptr
+    end subroutine cs_f_turb_rans_model_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! LES turbulence model structure
+
+    subroutine cs_f_turb_les_model_get_pointers(idries, ivrtex) &
+      bind(C, name='cs_f_turb_les_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: idries, ivrtex
+    end subroutine cs_f_turb_les_model_get_pointers
+
     !---------------------------------------------------------------------------
 
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
@@ -1121,6 +1167,101 @@ contains
     call c_f_pointer(c_iscalt, iscalt)
 
   end subroutine thermal_model_init
+
+  !> \brief Initialize Fortran turbulence model API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine turb_model_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_iturb, c_itytur, c_nvarcl
+
+    call cs_f_turb_model_get_pointers(c_iturb, c_itytur, c_nvarcl)
+
+    call c_f_pointer(c_iturb, iturb)
+    call c_f_pointer(c_itytur, itytur)
+    call c_f_pointer(c_nvarcl, nvarcl)
+
+  end subroutine turb_model_init
+
+  !> \brief Initialize Fortran wall functions API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine wall_functions_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ideuch, c_iwallt, c_ilogpo
+
+    call cs_f_wall_functions_get_pointers( c_ideuch, c_iwallt, c_ilogpo)
+
+    call c_f_pointer(c_ideuch, ideuch)
+    call c_f_pointer(c_iwallt, iwallt)
+    call c_f_pointer(c_ilogpo, ilogpo)
+
+  end subroutine wall_functions_init
+
+  !> \brief Initialize Fortran RANS turbulence model API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine turb_rans_model_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_irccor, c_itycor, c_iclkep, c_igrhok, c_igrake, c_igrari
+    type(c_ptr) :: c_ikecou, c_irijnu, c_irijrb, c_irijec, c_idifre, c_iclsyr
+    type(c_ptr) :: c_iclptr
+
+    call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_iclkep, &
+                                            c_igrhok, c_igrake, c_igrari, &
+                                            c_ikecou, c_irijnu, c_irijrb, &
+                                            c_irijec, c_idifre, c_iclsyr, &
+                                            c_iclptr)
+
+    call c_f_pointer(c_irccor, irccor)
+    call c_f_pointer(c_itycor, itycor)
+    call c_f_pointer(c_iclkep, iclkep)
+    call c_f_pointer(c_igrhok, igrhok)
+    call c_f_pointer(c_igrake, igrake)
+    call c_f_pointer(c_igrari, igrari)
+    call c_f_pointer(c_ikecou, ikecou)
+    call c_f_pointer(c_irijnu, irijnu)
+    call c_f_pointer(c_irijrb, irijrb)
+    call c_f_pointer(c_irijec, irijec)
+    call c_f_pointer(c_idifre, idifre)
+    call c_f_pointer(c_iclsyr, iclsyr)
+    call c_f_pointer(c_iclptr, iclptr)
+
+  end subroutine turb_rans_model_init
+
+  !> \brief Initialize Fortran LES turbulence model API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine turb_les_model_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_idries, c_ivrtex
+
+    call cs_f_turb_les_model_get_pointers( c_idries, c_ivrtex)
+
+    call c_f_pointer(c_idries, idries)
+    call c_f_pointer(c_ivrtex, ivrtex)
+
+  end subroutine turb_les_model_init
 
   !=============================================================================
 

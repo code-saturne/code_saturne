@@ -69,6 +69,64 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_wall_functions.c
+        Wall functions descriptor and computation.
+*/
+/*----------------------------------------------------------------------------*/
+
+/*! \struct cs_wall_functions_t
+
+  \brief wall functions descriptor.
+
+  Members of this wall functions descriptor are publicly accessible, to allow for concise
+  syntax, as it is expected to be used in many places.
+
+  \var  cs_wall_functions_t::ideuch
+        wall functions
+        - 0: one scale of friction velocities
+        - 1: two scale of friction velocities
+        - 2: scalable wall functions
+  \var  cs_wall_functions_t::iwallt
+        exchange coefficient correlation
+        - 0: not use by default
+        - 1: exchange coefficient computed with a correlation
+  \var  cs_wall_functions_t::ilogpo
+        wall functions with
+        - 0: a power lay (deprecated)
+        - 1: a log lay
+*/
+/*----------------------------------------------------------------------------*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* wall functions structure and associated pointer */
+
+static cs_wall_functions_t  _wall_functions =
+  {-999, 0, 1};
+
+const cs_wall_functions_t  *cs_glob_wall_functions = &_wall_functions;
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_wall_functions_get_pointers(int     **ideuch,
+                                  int     **iwallt,
+                                  int     **ilogpo);
+
+/*! \endcond (end ignore by Doxygen) */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -486,6 +544,124 @@ _no_wallfunction(cs_real_t   ypluli,
   }
 }
 
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the wall functions structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   ideuch --> pointer to cs_glob_wall_functions->ideuch
+ *   iwallt --> pointer to cs_glob_wall_functions->iwallt
+ *   ilogpo --> pointer to cs_glob_wall_functions->ilogpo
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_wall_functions_get_pointers(int     **ideuch,
+                                 int     **iwallt,
+                                 int     **ilogpo)
+{
+  *ideuch = &(_wall_functions.ideuch);
+  *iwallt = &(_wall_functions.iwallt);
+  *ilogpo = &(_wall_functions.ilogpo);
+}
+
+/*! \endcond (end ignore by Doxygen) */
+
+/*============================================================================
+ * Public function definitions for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_wall_functions_velocity
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (wallfunctions, WALLFUNCTIONS)
+(
+ const cs_int_t   *const iwallf,
+ const cs_lnum_t  *const ifac,
+ const cs_real_t  *const xkappa,
+ const cs_real_t  *const cstlog,
+ const cs_real_t  *const cmu025,
+ const cs_real_t  *const ypluli,
+ const cs_real_t  *const apow,
+ const cs_real_t  *const bpow,
+ const cs_real_t  *const dpow,
+ const cs_real_t  *const l_visc,
+ const cs_real_t  *const t_visc,
+ const cs_real_t  *const vel,
+ const cs_real_t  *const y,
+ const cs_real_t  *const kinetic_en,
+       cs_int_t         *iuntur,
+       cs_lnum_t        *nsubla,
+       cs_lnum_t        *nlogla,
+       cs_real_t        *ustar,
+       cs_real_t        *uk,
+       cs_real_t        *yplus,
+       cs_real_t        *ypup,
+       cs_real_t        *cofimp,
+       cs_real_t        *dplus
+)
+{
+  cs_wall_functions_velocity(*iwallf,
+                             *ifac,
+                             *xkappa,
+                             *cstlog,
+                             *cmu025,
+                             *ypluli,
+                             *apow,
+                             *bpow,
+                             *dpow,
+                             *l_visc,
+                             *t_visc,
+                             *vel,
+                             *y,
+                             *kinetic_en,
+                             iuntur,
+                             nsubla,
+                             nlogla,
+                             ustar,
+                             uk,
+                             yplus,
+                             ypup,
+                             cofimp,
+                             dplus);
+}
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_wall_functions_scalar
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (hturbp, HTURBP)
+(
+ const cs_real_t  *const prl,
+ const cs_real_t  *const prt,
+ const cs_real_t  *const ckarm,
+ const cs_real_t  *const yplus,
+ const cs_real_t  *const dplus,
+       cs_real_t        *htur,
+       cs_real_t        *yplim
+)
+{
+  cs_wall_functions_scalar(*prl,
+                           *prt,
+                           *ckarm,
+                           *yplus,
+                           *dplus,
+                           htur,
+                           yplim);
+}
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 
 /*! \brief  Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
@@ -771,87 +947,6 @@ cs_wall_functions_scalar(double  prl,
 
 }
 
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * Compute the friction velocity and y+/u+
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (wallfunctions, WALLFUNCTIONS)
-(
- const cs_int_t   *const iwallf,
- const cs_lnum_t  *const ifac,
- const cs_real_t  *const xkappa,
- const cs_real_t  *const cstlog,
- const cs_real_t  *const cmu025,
- const cs_real_t  *const ypluli,
- const cs_real_t  *const apow,
- const cs_real_t  *const bpow,
- const cs_real_t  *const dpow,
- const cs_real_t  *const l_visc,
- const cs_real_t  *const t_visc,
- const cs_real_t  *const vel,
- const cs_real_t  *const y,
- const cs_real_t  *const kinetic_en,
-       cs_int_t         *iuntur,
-       cs_lnum_t        *nsubla,
-       cs_lnum_t        *nlogla,
-       cs_real_t        *ustar,
-       cs_real_t        *uk,
-       cs_real_t        *yplus,
-       cs_real_t        *ypup,
-       cs_real_t        *cofimp,
-       cs_real_t        *dplus)
-{
-  cs_wall_functions_velocity(*iwallf,
-                             *ifac,
-                             *xkappa,
-                             *cstlog,
-                             *cmu025,
-                             *ypluli,
-                             *apow,
-                             *bpow,
-                             *dpow,
-                             *l_visc,
-                             *t_visc,
-                             *vel,
-                             *y,
-                             *kinetic_en,
-                             iuntur,
-                             nsubla,
-                             nlogla,
-                             ustar,
-                             uk,
-                             yplus,
-                             ypup,
-                             cofimp,
-                             dplus);
-
-}
-
-/*----------------------------------------------------------------------------
- * Compute the correction of the exchange coefficient between the fluid and
- * the wall for a turbulent flow.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (hturbp, HTURBP)
-(
- const cs_real_t  *const prl,
- const cs_real_t  *const prt,
- const cs_real_t  *const ckarm,
- const cs_real_t  *const yplus,
- const cs_real_t  *const dplus,
-       cs_real_t        *htur,
-       cs_real_t        *yplim)
-{
-  cs_wall_functions_scalar(*prl,
-                           *prt,
-                           *ckarm,
-                           *yplus,
-                           *dplus,
-                           htur,
-                           yplim);
-
-}
+END_C_DECLS

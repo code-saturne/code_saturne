@@ -45,9 +45,32 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+/* Wall functions descriptor */
+/*--------------------------------------------*/
+
+typedef struct {
+
+  int           ideuch;       /* wall functions
+                                 - 0: one scale of friction velocities
+                                 - 1: two scale of friction velocities
+                                 - 2: scalable wall functions */
+  int           iwallt;       /* exchange coefficient correlation
+                                 - 0: not use by default
+                                 - 1: exchange coefficient computed with a
+                                      correlation */
+  int           ilogpo;       /* wall function with
+                                 - 0: a power lay (deprecated)
+                                 - 1: a log lay */
+
+} cs_wall_functions_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+/* Pointer to wall functions descriptor structure */
+
+extern const cs_wall_functions_t *cs_glob_wall_functions;
 
 /*============================================================================
  * Public function definitions for Fortran API
@@ -81,7 +104,8 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
        cs_real_t        *yplus,
        cs_real_t        *ypup,
        cs_real_t        *cofimp,
-       cs_real_t        *dplus);
+       cs_real_t        *dplus
+);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_wall_functions_scalar.
@@ -95,7 +119,8 @@ void CS_PROCF (hturbp, HTURBP)
  const cs_real_t  *const yplus,
  const cs_real_t  *const dplus,
        cs_real_t        *htur,
-       cs_real_t        *yplim);
+       cs_real_t        *yplim
+);
 
 /*=============================================================================
  * Public function prototypes
