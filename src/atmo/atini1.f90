@@ -61,6 +61,7 @@ use ppincl
 use atincl
 use atsoil
 use atchem
+use atimbr
 use siream
 use field
 
@@ -183,10 +184,6 @@ if (nscal.gt.0) then
     sigmas(ii) = 0.7d0
   enddo
 endif
-
-!===============================================================================
-! 7. ON DONNE LA MAIN A L'UTLISATEUR
-!===============================================================================
 
 !--------
 ! FORMATS

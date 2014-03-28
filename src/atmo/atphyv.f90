@@ -397,7 +397,7 @@ do iel = 1, ncel
   a_coeff = a_const*rtp(iel, ik )**3/rtp(iel,iep)**2 ! 2 cmu/c2 * k**3 / eps**2
   var_tl= a_coeff*(dtlsd(1,iel)**2 + dtlsd(2,iel)**2 + dtlsd(3,iel)**2)
   var_q = a_coeff*( dqsd(1,iel)**2 + dqsd(2,iel)**2 + dqsd(3,iel)**2)
-  cov_tlq = a_coeff*(  dtlsd(1,iel)*dqsd(iel,1)   &
+  cov_tlq = a_coeff*(  dtlsd(1,iel)*dqsd(1,iel)   &
                      + dtlsd(2,iel)*dqsd(2,iel)   &
                      + dtlsd(3,iel)*dqsd(3,iel))
 

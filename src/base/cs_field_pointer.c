@@ -326,7 +326,7 @@ cs_field_pointer_map_atmospheric(int        n_chem_species,
   cs_field_pointer_map(CS_ENUMF_(totwt),
                        cs_field_by_name_try("total_water"));
   cs_field_pointer_map(CS_ENUMF_(ntdrp),
-                       cs_field_by_name_try("total_drop"));
+                       cs_field_by_name_try("number_of_droplets"));
 
   for (int i = 0; i < n_chem_species; i++)
     cs_field_pointer_map_indexed(CS_ENUMF_(chemistry),

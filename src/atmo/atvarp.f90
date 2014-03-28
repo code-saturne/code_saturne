@@ -131,7 +131,7 @@ call atini0
 ! 1.1  Dry atmosphere
 ! =====================
 
-if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
+if (ippmod(iatmos).eq.1) then
 
   ! Potential temperature, in Kelvin
   itherm = 1
@@ -160,7 +160,7 @@ if (ippmod(iatmos).eq.2) then
   call field_set_key_double(f_id, kscmin, 0.d0)
 
   ! total number of droplets
-  call add_model_scalar_field('total_droplets', 'TotDrop', intdrp)
+  call add_model_scalar_field('number_of_droplets', 'TotDrop', intdrp)
   f_id = ivarfl(isca(intdrp))
   call field_set_key_double(f_id, kscmin, 0.d0)
 

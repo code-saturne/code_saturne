@@ -79,6 +79,7 @@ use mesh
 use field
 use atincl
 use atchem
+use atimbr
 use siream
 
 !===============================================================================
@@ -105,6 +106,16 @@ double precision dhy, rhomoy, uref2, ustar2, viscla, xiturb
 double precision xcent
 double precision, dimension(:), pointer ::  brom
 
+! arrays for cressman interpolation
+double precision , dimension(:),allocatable :: u_bord
+double precision , dimension(:),allocatable :: v_bord
+double precision , dimension(:),allocatable :: tke_bord
+double precision , dimension(:),allocatable :: eps_bord
+double precision , dimension(:),allocatable :: theta_bord
+double precision , dimension(:),allocatable :: qw_bord
+double precision , dimension(:),allocatable :: nc_bord
+integer stat
+
 !===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -130,8 +141,109 @@ ipcvis = ipproc(iviscl)
 
 !       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
 !                     =========================
-!===============================================================================
+! ==============================================================================
+!
+if (imbrication_flag) then
 
+  call summon_cressman(ttcabs)
+
+  if (cressman_u) then
+    allocate(u_bord(nfabor))
+    call mscrss(id_u,2,u_bord)
+    if (imbrication_verbose) then
+      do ifac = 1, max(nfabor,100), 1
+        write(nfecra,*)"attycl::xbord,ybord,zbord,ubord=", cdgfbo(1,ifac), &
+             cdgfbo(2,ifac),                                               &
+             cdgfbo(3,ifac),                                               &
+             u_bord(ifac)
+      enddo
+    endif
+  endif
+
+  if (cressman_v) then
+    allocate(v_bord(nfabor))
+    call mscrss(id_v,2,v_bord)
+    if(imbrication_verbose)then
+      do ifac = 1, max(nfabor,100), 1
+        write(nfecra,*)"attycl::xbord,ybord,zbord,vbord=", cdgfbo(1,ifac), &
+             cdgfbo(2,ifac),                                               &
+             cdgfbo(3,ifac),                                               &
+             v_bord(ifac)
+      enddo
+    endif
+  endif
+
+  if (cressman_tke) then
+    allocate(tke_bord(nfabor))
+    call mscrss(id_tke,2,tke_bord)
+    if(imbrication_verbose)then
+      do ifac = 1, max(nfabor,100), 1
+        write(nfecra,*)"attycl::xbord,ybord,zbord,tkebord=",cdgfbo(1,ifac), &
+             cdgfbo(2,ifac),                                                &
+             cdgfbo(3,ifac),                                                &
+             tke_bord(ifac)
+      enddo
+    endif
+  endif
+
+  if (cressman_eps) then
+    allocate(eps_bord(nfabor))
+    call mscrss(id_eps,2,eps_bord)
+    if(imbrication_verbose)then
+      do ifac = 1, max(nfabor,100), 1
+        write(nfecra,*)"attycl::xbord,ybord,zbord,epsbord=",cdgfbo(1,ifac), &
+             cdgfbo(2,ifac),                                                &
+             cdgfbo(3,ifac),                                                &
+             eps_bord(ifac)
+      enddo
+    endif
+  endif
+
+  if (cressman_theta .and. ippmod(iatmos).ge.1) then
+    allocate(theta_bord(nfabor))
+    call mscrss(id_theta, 2, theta_bord)
+    if (imbrication_verbose) then
+      do ifac = 1, max(nfabor,100), 1
+        write(nfecra,*)"attycl::xbord,ybord,zbord,thetabord=",cdgfbo(1,ifac), &
+             cdgfbo(2,ifac),                                                  &
+             cdgfbo(3,ifac),                                                  &
+             theta_bord(ifac)
+      enddo
+    endif
+  endif
+
+  if (cressman_qw .and. ippmod(iatmos).ge.2) then
+    allocate(qw_bord(nfabor))
+    call mscrss(id_qw, 2, qw_bord)
+    if (imbrication_verbose) then
+      do ifac = 1, max(nfabor,100), 1
+        write(nfecra,*)"attycl::xbord,ybord,zbord,qwbord=",cdgfbo(1,ifac), &
+             cdgfbo(2,ifac),                                               &
+             cdgfbo(3,ifac),                                               &
+             qw_bord(ifac)
+      enddo
+    endif
+  endif
+
+  if (cressman_nc .and. ippmod(iatmos).ge.2) then
+    allocate(nc_bord(nfabor))
+    call mscrss(id_nc, 2, nc_bord)
+    if (imbrication_verbose) then
+      do ifac = 1, max(nfabor,100), 1
+        write(nfecra,*)"attycl::xbord,ybord,zbord,ncbord=",cdgfbo(1,ifac), &
+             cdgfbo(2,ifac),                                               &
+             cdgfbo(3,ifac),                                               &
+             nc_bord(ifac)
+      enddo
+    endif
+  endif
+
+endif ! imbrication_flag
+
+! ==============================================================================
+! the interpollated field u_bord,v_bord,  .. will replace the values from the
+! standard meteo profile
+! ==============================================================================
 
 do ifac = 1, nfabor
 
@@ -144,30 +256,51 @@ do ifac = 1, nfabor
 !       face de sortie (si le flux est rentrant).
     zent = cdgfbo(3,ifac)
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, umet , zent  , ttcabs, xuent )
+    if (imbrication_flag .and.cressman_u) then
+      xuent = u_bord(ifac)
+    else
+      call intprf                                                    &
+      !==========
+      (nbmetd, nbmetm,                                               &
+       zdmet, tmmet, umet , zent  , ttcabs, xuent )
+    endif
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+    if (imbrication_flag .and.cressman_v) then
+      xvent = v_bord(ifac)
+    else
+      call intprf                                                    &
+      !==========
+      (nbmetd, nbmetm,                                               &
+       zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+    endif
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+    if (imbrication_flag .and.cressman_tke) then
+      xkent = tke_bord(ifac)
+    else
+      call intprf                                                    &
+      !==========
+      (nbmetd, nbmetm,                                               &
+       zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+    endif
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+    if (imbrication_flag .and.cressman_eps) then
+      xeent = eps_bord(ifac)
+    else
+      call intprf                                                    &
+      !==========
+      (nbmetd, nbmetm,                                               &
+       zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+    endif
 
-    call intprf                                                   &
-    !==========
-   (nbmett, nbmetm,                                               &
-    ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+    if(imbrication_flag .and.cressman_theta                          &
+       .and. ippmod(iatmos).ge.1 ) then
+        tpent = theta_bord(ifac)
+    else
+      call intprf                                                    &
+      !==========
+      (nbmett, nbmetm,                                               &
+       ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+    endif
 
     vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
 
@@ -248,16 +381,24 @@ do ifac = 1, nfabor
           !  Humid Atmosphere
           if ( ippmod(iatmos).eq.2 ) then
             if (rcodcl(ifac,isca(itotwt),1).gt.rinfin*0.5d0)  then
-              call intprf &
-              !==========
-              (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
+              if (imbrication_flag .and. cressman_qw)then
+                qvent = qw_bord(ifac)
+              else
+                call intprf &
+                !==========
+                (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
+              endif
               rcodcl(ifac,isca(itotwt),1) = qvent
             endif
 
             if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then
-              call intprf &
-              !==========
-              (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
+              if (imbrication_flag .and. cressman_nc)then
+                ncent = nc_bord(ifac)
+              else
+                call intprf &
+                !==========
+                (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
+              endif
               rcodcl(ifac,isca(intdrp),1) = ncent
             endif
           endif
@@ -266,59 +407,6 @@ do ifac = 1, nfabor
 
     endif
 
-  else
-  ! when you don't read meteo DATA
-    if ( itypfb(ifac).eq.ientre ) then
-      if ( icalke(izone).ne.0 ) then
-
-        uref2 = rcodcl(ifac,iu,1)**2                         &
-              + rcodcl(ifac,iv,1)**2                         &
-              + rcodcl(ifac,iw,1)**2
-        uref2 = max(uref2,epzero)
-        rhomoy = brom(ifac)
-        iel    = ifabor(ifac)
-        viscla = propce(iel,ipcvis)
-        icke   = icalke(izone)
-        dhy    = dh(izone)
-        xiturb = xintur(izone)
-        ustar2 = 0.d0
-        xkent = epzero
-        xeent = epzero
-        if (icke.eq.1) then
-          call keendb                                               &
-          !==========
-          ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
-            ustar2, xkent, xeent )
-        else if (icke.eq.2) then
-          call keenin                                               &
-          !==========
-          ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
-        endif
-
-        if (itytur.eq.2) then
-          rcodcl(ifac,ik,1)  = xkent
-          rcodcl(ifac,iep,1) = xeent
-        elseif (itytur.eq.3) then
-          rcodcl(ifac,ir11,1) = d2s3*xkent
-          rcodcl(ifac,ir22,1) = d2s3*xkent
-          rcodcl(ifac,ir33,1) = d2s3*xkent
-          rcodcl(ifac,ir12,1) = 0.d0
-          rcodcl(ifac,ir13,1) = 0.d0
-          rcodcl(ifac,ir23,1) = 0.d0
-          rcodcl(ifac,iep,1)  = xeent
-        elseif (iturb.eq.50) then
-          rcodcl(ifac,ik,1)   = xkent
-          rcodcl(ifac,iep,1)  = xeent
-          rcodcl(ifac,iphi,1) = d2s3
-          rcodcl(ifac,ifb,1)  = 0.d0
-        elseif (iturb.eq.60) then
-          rcodcl(ifac,ik,1)   = xkent
-          rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-        elseif (iturb.eq.70) then
-          rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-        endif
-      endif
-    endif
   endif
 
 enddo
@@ -341,7 +429,7 @@ if (ifilechemistry.ge.1) then
     ! not been treated earier (eg, in usatcl)
     do ii = 1, nespgi
       if (rcodcl(ifac,isca(idespgi(ii)),1).gt.0.5d0*rinfin) then
-        call intprf                                                   &
+        call intprf                                                    &
         !==========
         (nbchmz, nbchim,                                               &
         zproc, tchem, espnum(1+(ii-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
@@ -409,6 +497,24 @@ endif
 ! FORMATS
 !----
 
+! ---------------------------------
+! clean up the 'imbrication'
+! ---------------------------------
+if (imbrication_flag)then
+  deallocate(u_bord)
+  deallocate(v_bord)
+  deallocate(tke_bord)
+  deallocate(eps_bord)
+  if(cressman_theta .and. ippmod(iatmos).ge.1 ) then
+    deallocate(theta_bord)
+  endif
+  if(cressman_qw .and. ippmod(iatmos).ge.2 ) then
+    deallocate(qw_bord)
+  endif
+  if(cressman_nc .and. ippmod(iatmos).ge.2 ) then
+    deallocate(nc_bord)
+  endif
+endif
 
 !----
 ! FIN

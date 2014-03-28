@@ -74,6 +74,7 @@ use mesh
 use field
 use post
 use atchem
+use atimbr
 use siream
 use ptrglo
 use turbomachinery
@@ -396,6 +397,10 @@ if (ippmod(iatmos).ge.0) then
 
   call init_meteo
   !==============
+
+  if (imbrication_flag) then
+    call activate_imbrication
+  endif
 
   if (ifilechemistry.ge.1) then
     call init_chemistry
@@ -1238,7 +1243,12 @@ call finalize_quadrature
 call finalize_aux_arrays
 
 if (ippmod(iatmos).ge.0) then
+
   call finalize_meteo
+
+  if(imbrication_flag)then
+    call finalize_imbrication
+  endif
 
   if (ifilechemistry.ge.1) then
     call finalize_chemistry

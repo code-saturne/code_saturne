@@ -60,6 +60,7 @@ use ppincl
 use atincl
 use atsoil
 use atchem
+use atimbr
 use siream
 use field
 
@@ -86,7 +87,7 @@ gammat = -6.5d-03
 rvap = rvsra*rair
 
 !===============================================================================
-! 1. Global variables for atmosĥeric flows
+! 1. Global variables for atmospheric flows
 !===============================================================================
 
 ! Space and time reference of the run:
@@ -132,8 +133,9 @@ tmer   = 20.d0   !Sea temperature
 !  modsub = 0 : the simplest parameterization (for numerical verifications)
 !  modsub = 1 : Bechtold et al. 1995 (Luc Musson-Genon)
 !  modsub = 2 : Bouzereau et al. 2004
-!  modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and Deardorff 1977
- modsub = 0
+!  modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria
+!               and Deardorff 1977
+modsub = 0
 
 !  --> Option for liquid water content distribution models
 !  moddis = 1 : all or nothing
@@ -153,6 +155,31 @@ modsedi = 0
 ! adimensional
 sigc = 0.53 ! other referenced values are 0.28, 0.15
 
+!  -----------------------------------------------------------------------------
+!  Atmospheric imbrication on large scale meteo (atimbr module)
+!  -----------------------------------------------------------------------------
+
+! activation flag
+imbrication_flag = .false.
+imbrication_verbose = .false.
+
+! ------------------------------------------------------------------------------
+! flags for activating the cressman interpolation for the boundary conditions
+! ------------------------------------------------------------------------------
+cressman_u = .false.
+cressman_v = .false.
+cressman_tke = .false.
+cressman_eps = .false.
+cressman_theta = .false.
+cressman_qw = .false.
+cressman_nc = .false.
+
+! --------------------------------------------------------------
+! numerical parameters for the cressman interpolation formulas
+! --------------------------------------------------------------
+horizontal_influence_radius = 8500.d0
+vertical_influence_radius = 100.d0
+
 !===============================================================================
 ! 2. ON DONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
@@ -162,7 +189,6 @@ sigc = 0.53 ! other referenced values are 0.28, 0.15
 ! NB : should eventually be set by interface
 
 initmeteo = 1
-
 
 call usati1
 !==========

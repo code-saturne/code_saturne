@@ -89,9 +89,9 @@ character*1      csaute
 !===============================================================================
 
 if (imode.eq.0) then
-  write(nfecra, *) 'reading of dimensions for meteo profiles'
+  write(nfecra, *) 'Reading dimensions for meteo profiles'
 else
-  write(nfecra, *) 'reading of meteo profiles data'
+  write(nfecra, *) 'Reading meteo profiles data'
 endif
 
 !===============================================================================
@@ -181,7 +181,7 @@ else
   tmmet(itp) = (jday - sjday)*86400.d0 + (hour - shour)*3600.d0     &
        + (minute - smin)*60.d0  + (second - ssec)
 
-  ! --> check the chronlogical order of profiles
+  ! --> check the chronological order of profiles
 
   if (itp.gt.1) then
     if (tmmet(itp).lt.tmmet(itp-1)) then
@@ -224,9 +224,9 @@ else
   read(impmet, *, err=999, end=999) pmer(itp)
 endif
 
-!=================================================================================
+!===============================================================================
 ! 5. Read the temperature and humidity profiles
-!=================================================================================
+!===============================================================================
 
 104 read(impmet, '(a80)', err=999, end=999) ccomnt
 
@@ -323,8 +323,8 @@ endif
 !===============================================================================
 ! 6. Compute hydro pressure profile  (Laplace integration)
 !===============================================================================
-! If ihpm = 0 (default): bottom to top Laplace integration based on pressure at sea
-! level (pmer(itp))
+! If ihpm = 0 (default): bottom to top Laplace integration based on pressure at
+! sea level (pmer(itp))
 ! If ihpm = 1 (usati1): top to bottom Laplace integration based on pressure at
 ! the top of the domain (ztmet(nbmaxt)) for the standard atmosphere
 
@@ -380,9 +380,9 @@ if (imode.eq.1) then
 
 endif
 
-!===============================================================================
+!==============================================================================
 ! 7. Compute the pot. temperature profile and the density profile
-!===============================================================================
+!==============================================================================
 
 if (imode.eq.1) then
   do k = 1, nbmaxt
@@ -402,9 +402,9 @@ if (imode.eq.1) then
 
 endif
 
-!================================================================================
+!==============================================================================
 ! 8. Read the velocity profile
-!================================================================================
+!==============================================================================
 
 105 read(impmet, '(a80)', err=999, end=999) ccomnt
 
@@ -439,9 +439,9 @@ else
 
 endif
 
-!================================================================================
+!===============================================================================
 ! 9. Printings
-!================================================================================
+!===============================================================================
 
 if (imode.eq.1) then
   if (itp.eq.1) then
@@ -449,20 +449,26 @@ if (imode.eq.1) then
     write(nfecra, *) '==================================================='
     write(nfecra, *) 'printing meteo profiles'
   endif
-  write(nfecra, *) 'year, quant-day, hour, minute, second'
+  write(nfecra, *) 'year, quant-day, hour, minute, second:'
   write(nfecra, 7995) year, quant, hour, minute, second
 7995 format(1x, i4, i5, 2i4, f10.2)
-  write(nfecra, *) 'tmmet(itp)'
+  write(nfecra, *) 'tmmet(itp):'
   write(nfecra, 7996) tmmet(itp)
 7996 format(1x, f10.2)
-  write(nfecra, *) 'zdmet, umet, vmet, ekmet, epmet'
+  write(nfecra, *) 'zdmet, umet, vmet, ekmet, epmet:'
   do ii = 1, nbmetd
     write(nfecra, 7997)                                            &
          zdmet(ii), umet(ii, itp), vmet(ii, itp), ekmet(ii, itp), epmet(ii, itp)
 7997 format(1x, 3f8.2, 2e10.3)
   enddo
+  if (ippmod(iatmos).eq.0) then
+    write(nfecra, *) '==================================================='
+    write(nfecra, *) 'WARNING : option  constant density                 '
+    write(nfecra, *) 'WARNING : thermal profile will be ignored          '
+    write(nfecra, *) '==================================================='
+  endif
   if (ippmod(iatmos).le.1) then
-    write(nfecra,*) 'ztmet,ttmet,tpmet,rmet,phmet,qvmet'
+    write(nfecra,*) 'ztmet,ttmet,tpmet,rmet,phmet,qvmet:'
     do ii = 1, nbmaxt
       write(nfecra,7998)                                            &
            ztmet(ii), ttmet(ii,itp), tpmet(ii,itp),              &
@@ -470,7 +476,7 @@ if (imode.eq.1) then
 7998  format(1x, 3f8.2,f8.4,f12.3,e10.3)
     enddo
   else
-    write(nfecra,*) 'ztmet,ttmet,tpmet,rmet,phmet,qvmet,qsat,nc'
+    write(nfecra,*) 'ztmet,ttmet,tpmet,rmet,phmet,qvmet,qsat,nc:'
     do ii = 1, nbmaxt
       write(nfecra,7999)                                            &
            ztmet(ii), ttmet(ii,itp), tpmet(ii,itp),              &
@@ -483,9 +489,9 @@ if (imode.eq.1) then
 
 endif
 
-!================================================================================
+!===============================================================================
 ! 10. End of the loop on time
-!================================================================================
+!===============================================================================
 
 goto 100
 

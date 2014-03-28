@@ -2290,6 +2290,7 @@ use ppppar
 use atincl
 use atsoil
 use atchem
+use atimbr
 use siream
 
 !===============================================================================
@@ -2337,6 +2338,35 @@ ssec = 0.d0
 xlon = 0.d0
 xlat = 45.d0
 
+!  -----------------------------------------------------------------------------
+!  Atmospheric imbrication on large scale meteo (atimbr module)
+!  -----------------------------------------------------------------------------
+!
+! --------------------------------------------------------------
+! activation flag
+! --------------------------------------------------------------
+imbrication_flag    = .false.
+imbrication_verbose = .false.
+
+! ------------------------------------------------------------------------------
+! flags for activating the cressman interpolation for the boundary conditions
+! ------------------------------------------------------------------------------
+cressman_u     = .true.
+cressman_v     = .true.
+cressman_tke   = .true.
+cressman_eps   = .true.
+cressman_theta = .true.
+cressman_qw    = .true.
+cressman_nc    = .true.
+
+! --------------------------------------------------------------
+! numerical parameters for the cressman interpolation formulas
+! --------------------------------------------------------------
+horizontal_influence_radius = 8500.d0
+vertical_influence_radius = 100.d0
+
+! --------------------------------------------------------------
+
 !!! Gaseous chemistry
 
 ! ichemistry: choice of chemistry resolution scheme
@@ -2345,7 +2375,7 @@ xlat = 45.d0
 !2 --> scheme with 20 species and 34 reactions
 !3 --> scheme CB05 with 52 species and 155 reactions
 !4 --> user defined schema
-ichemistry = 1
+ichemistry = 0
 
 ! ificchemistry: choice to read (=1,2,3,4, according to the scheme)
 ! or not (0) a concentration profile file
@@ -2363,6 +2393,7 @@ iphotolysis = 1
 dtchemmax = 10.0d0
 
 !!! Aerosol chemistry
+
 ! iaerosol: flag to activate aerosol chemistry
 ! if iaerosol = 1, ichemistry is automatically set to 3 (scheme 3)
 iaerosol = 1
