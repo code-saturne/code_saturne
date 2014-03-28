@@ -26,6 +26,8 @@
 #  -e<pattern>, --error=<pattern>     : error file name pattern
 #  -J<jobname>, --job-name=<jobname>  : job name
 #
-# Warning: coupling with SYRTHES or other Code_Saturne domains is not available
-#          on Blue Gene/Q with the current drivers.
+# Warning: when coupling with SYRTHES, 1 processor will be reserved for each
+#          instance of SYRTHES. The Kernel will be executed on the remaining
+#          processors, so make sure to reserve a sufficiently high number
+#          of processors.
 #

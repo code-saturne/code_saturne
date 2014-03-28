@@ -45,6 +45,14 @@ COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
 po/Rules-install \
+bin/batch.CCC \
+bin/batch.LOADL \
+bin/batch.LOADL_BG \
+bin/batch.LSF \
+bin/batch.PBS \
+bin/batch.SGE \
+bin/batch.SLURM \
+bin/batch.SLURM_BGQ \
 sbin/backup \
 sbin/bootstrap \
 sbin/clean \
