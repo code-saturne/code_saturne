@@ -337,13 +337,13 @@ enum {
 /* Enumerator names */
 
 const char *cs_lagr_attribute_name[] = {
-  "CS_LAGR_GLOBAL_NUM",
   "CS_LAGR_CUR_CELL_NUM",
   "CS_LAGR_LAST_FACE_NUM",
   "CS_LAGR_SWITCH_ORDER_1",
   "CS_LAGR_STATE",
   "CS_LAGR_PREV_ID",
   "CS_LAGR_NEXT_ID",
+  "CS_LAGR_RANDOM_VALUE",
   "CS_LAGR_STAT_WEIGHT",
   "CS_LAGR_RESIDENCE_TIME",
   "CS_LAGR_MASS",
