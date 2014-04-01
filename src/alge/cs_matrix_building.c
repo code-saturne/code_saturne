@@ -516,7 +516,7 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                          if(n_b_faces > THR_MIN)
+                          if(m->n_b_faces > THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -612,7 +612,7 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                 if(n_b_faces > THR_MIN)
+                 if(m->n_b_faces > THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
