@@ -857,7 +857,7 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   cs_int_t  ivoset;
   double  t_start, t_end;
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
 
   t_start = cs_timer_wtime();
 
@@ -954,10 +954,6 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
-
-  CS_PROCF (haltyp, HALTYP) (&ivoset);
-  if (ivoset)
-    halo_type = CS_HALO_EXTENDED;
 
   cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
   cs_mesh_update_auxiliary(cs_glob_mesh);
