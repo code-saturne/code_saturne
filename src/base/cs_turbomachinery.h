@@ -158,6 +158,15 @@ cs_turbomachinery_reinit_i_face_fields(void);
 void
 cs_turbomachinery_resize_cell_fields(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Rotation matrix
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_turbomachinery_rotate_matrix(const cs_real_t dt[],
+                                      cs_real_t matrix[3][4]);
+
 /*----------------------------------------------------------------------------
  * Rotation of vector and tensor fields.
  *----------------------------------------------------------------------------*/

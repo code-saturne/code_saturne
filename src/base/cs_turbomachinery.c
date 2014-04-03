@@ -1221,6 +1221,27 @@ cs_turbomachinery_resize_cell_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Rotation matrix
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_turbomachinery_rotate_matrix(const cs_real_t dt[],
+                                      cs_real_t matrix[3][4])
+{
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_real_t time_step = dt[0];
+
+  int n_fields = cs_field_n_fields();
+
+  _rotation_matrix(tbm->omega*time_step,
+                   tbm->rotation_axis,
+                   tbm->rotation_invariant,
+                   matrix);
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Rotation of vector and tensor fields.
  */
 /*----------------------------------------------------------------------------*/
