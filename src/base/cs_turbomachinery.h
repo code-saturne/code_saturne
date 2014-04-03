@@ -73,6 +73,7 @@ cs_turbomachinery_set_model(cs_turbomachinery_model_t  model);
 /*----------------------------------------------------------------------------
  * return rotor/stator model.
  *----------------------------------------------------------------------------*/
+
 cs_turbomachinery_model_t
 cs_turbomachinery_get_model(void);
 
@@ -83,8 +84,7 @@ cs_turbomachinery_get_model(void);
  *   cell_criteria     <-- cell selection criteria string
  *   rotation_velocity <-- rotation velocity, in radians/second
  *   rotation_axis     <-- rotation axis vector
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_turbomachinery_add_rotor(const char    *cell_criteria,
@@ -158,14 +158,19 @@ cs_turbomachinery_reinit_i_face_fields(void);
 void
 cs_turbomachinery_resize_cell_fields(void);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Rotation matrix
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute rotation matrix
+ *
+ * parameters:
+ *   rotor_num <-- rotor number (1 to n numbering)
+ *   theta     <-- rotation angle, in radians
+ *   matrix    --> resulting rotation matrix
+ *----------------------------------------------------------------------------*/
+
 void
-cs_turbomachinery_rotate_matrix(const cs_real_t dt[],
-                                      cs_real_t matrix[3][4]);
+cs_turbomachinery_rotation_matrix(int        rotor_num,
+                                  double     theta,
+                                  cs_real_t  matrix[3][4]);
 
 /*----------------------------------------------------------------------------
  * Rotation of vector and tensor fields.

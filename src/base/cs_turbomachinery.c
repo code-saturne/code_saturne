@@ -190,10 +190,6 @@ _turbomachinery_create(void)
 /*----------------------------------------------------------------------------
  * Compute rotation matrix
  *
- * For each direction defined, two transformations are defined: direct
- * and reverse. The id of the reverse transformation is equal to the
- * id of the direct transformation + 1.
- *
  * parameters:
  *   theta           <-- rotation angle, in radians
  *   axis            <-- components of rotation axis direction vector (3)
@@ -854,7 +850,6 @@ void
 cs_turbomachinery_update_mesh(double   t_cur_mob,
                               double  *t_elapsed)
 {
-  cs_int_t  ivoset;
   double  t_start, t_end;
 
   cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
@@ -1221,23 +1216,30 @@ cs_turbomachinery_resize_cell_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Rotation matrix
+ * \brief Compute rotation matrix
+ *
+ * \param[in]   rotor_num rotor number (1 to n numbering)
+ * \param[in]   theta  rotation angle, in radians
+ * \param[out]  matrix resulting rotation matrix
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_turbomachinery_rotate_matrix(const cs_real_t dt[],
-                                      cs_real_t matrix[3][4])
+cs_turbomachinery_rotation_matrix(int        rotor_num,
+                                  double     theta,
+                                  cs_real_t  matrix[3][4])
 {
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
-  cs_real_t time_step = dt[0];
 
-  int n_fields = cs_field_n_fields();
+  if (rotor_num != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: only one rotor may be used in the current version.",
+              __func__);
 
-  _rotation_matrix(tbm->omega*time_step,
+  _rotation_matrix(theta,
                    tbm->rotation_axis,
                    tbm->rotation_invariant,
                    matrix);
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
