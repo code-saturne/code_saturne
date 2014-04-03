@@ -1426,34 +1426,46 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
     }
     else if  (cs_gui_strcmp(vars->model, "gas_combustion"))
     {
-      if (cs_gui_strcmp(vars->model_value, "adiabatic"))
-        ippmod[*icod3p - 1] = 0;
-      else if (cs_gui_strcmp(vars->model_value, "extended"))
-        ippmod[*icod3p - 1] = 1;
-      else if (cs_gui_strcmp(vars->model_value, "spalding"))
-        ippmod[*icoebu - 1] = 0;
-      else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
-        ippmod[*icoebu - 1] = 1;
-      else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
-        ippmod[*icoebu - 1] = 2;
-      else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
-        ippmod[*icoebu - 1] = 3;
-      else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
-        ippmod[*icolwc - 1] = 0;
-      else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
-        ippmod[*icolwc - 1] = 1;
-      else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
-        ippmod[*icolwc - 1] = 2;
-      else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
-        ippmod[*icolwc - 1] = 3;
-      else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
-        ippmod[*icolwc - 1] = 4;
-      else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
-        ippmod[*icolwc - 1] = 5;
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid gas combustion flow model: %s.\n"),
-                  vars->model_value);
+      char *path = NULL;
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "thermophysical_models", "gas_combustion");
+      cs_xpath_add_attribute(&path, "model");
+
+      char *model = cs_gui_get_attribute_value(path);
+
+      BFT_FREE(path);
+
+      if (!cs_gui_strcmp(model, "off")) {
+
+        if (cs_gui_strcmp(vars->model_value, "adiabatic"))
+          ippmod[*icod3p - 1] = 0;
+        else if (cs_gui_strcmp(vars->model_value, "extended"))
+          ippmod[*icod3p - 1] = 1;
+        else if (cs_gui_strcmp(vars->model_value, "spalding"))
+          ippmod[*icoebu - 1] = 0;
+        else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
+          ippmod[*icoebu - 1] = 1;
+        else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
+          ippmod[*icoebu - 1] = 2;
+        else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
+          ippmod[*icoebu - 1] = 3;
+        else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
+          ippmod[*icolwc - 1] = 0;
+        else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
+          ippmod[*icolwc - 1] = 1;
+        else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
+          ippmod[*icolwc - 1] = 2;
+        else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
+          ippmod[*icolwc - 1] = 3;
+        else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
+          ippmod[*icolwc - 1] = 4;
+        else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
+          ippmod[*icolwc - 1] = 5;
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Invalid gas combustion flow model: %s.\n"),
+                    vars->model_value);
+      }
     }
     else if  (cs_gui_strcmp(vars->model, "atmospheric_flows"))
     {

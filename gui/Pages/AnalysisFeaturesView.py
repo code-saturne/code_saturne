@@ -307,6 +307,19 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxAtmospheric.setEnabled(True)
         self.comboBoxCompressible.setEnabled(True)
 
+        if self.turb.getTurbulenceModel() not in ('k-epsilon',
+                                                  'k-epsilon-PL',
+                                                  'Rij-epsilon',
+                                                  'Rij-SSG',
+                                                  'Rij-EBRSM',
+                                                  'v2f-BL-v2/k',
+                                                  'k-omega-SST',
+                                                  'Spalart-Allmaras'):
+
+            self.comboBoxGasCombustionModel.setEnabled(False)
+            self.comboBoxPulverizedCoal.setEnabled(False)
+            self.comboBoxCompressible.setEnabled(False)
+
 
     def __disableComboBox(self):
         """
