@@ -726,8 +726,7 @@ if (nor.eq.1) then
    iangbd   , ivit     , ivitbd   , iencnb   , iencma   ,         &
    iencdi   , iencck   , iencnbbd , iencmabd , iencdibd ,         &
    iencckbd , inclg    , iscovc   ,                               &
-   nusbor   , iusb     , vislen   , dlgeo,                        &
-   rtp      , iu       , iv       , iw       , energt   ,         &
+   nusbor   , iusb     , vislen   , dlgeo    , energt   ,         &
    tprenc   , visref   , enc1     , enc2     , tkelvi)
 
   call prtput                                                     &
