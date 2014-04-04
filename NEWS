@@ -16,6 +16,10 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix crash when using GUI MEI initialization formula for RSM turbulence.
+
+- Fix gas combustion model slection in GUI and specific physics selection box.
+
 - Fix dynamic relaxation coefficient (iswdyn option) for vector and
   scalar variables (except pressure).
 
@@ -61,8 +65,8 @@ Bug fixes:
    - fix in the pressure correction step (the density variation is taken into
      account since the first iteration, therefore the user should be careful
      when initializing the density, and the density at the previous time-step)
-   - fix missing synchronization of the density after its update based on the thermodynamic
-     pressure.
+   - fix missing synchronization of the density after its update based on the
+     thermodynamic pressure.
 
 Architectural changes
 ---------------------
