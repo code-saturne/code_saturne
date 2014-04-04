@@ -4,6 +4,8 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash when using GUI MEI initialization formula for RSM turbulence.
+
 - Fix (low Mach algorithm) missing synchronization of the density after its
   update based on the thermodynamic pressure.
 
