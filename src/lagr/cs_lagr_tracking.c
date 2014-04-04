@@ -4948,15 +4948,11 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
 
     ibord[i] = cs_lagr_particles_get_lnum(cur, j, CS_LAGR_SWITCH_ORDER_1);
 
-    /* Not useful for prev_part (TODO check double tepa assigns) */
-
     id = _jrpoi * (*nbpmax) + i;
     tepa[id] = cs_lagr_particles_get_real(cur, j, CS_LAGR_STAT_WEIGHT);
-    tepa[id] = cs_lagr_particles_get_real(prv, j, CS_LAGR_STAT_WEIGHT);
 
     id = _jrtsp * (*nbpmax) + i;
     tepa[id] = cs_lagr_particles_get_real(cur, j, CS_LAGR_RESIDENCE_TIME);
-    tepa[id] = cs_lagr_particles_get_real(prv, j, CS_LAGR_RESIDENCE_TIME);
 
     id = _jmp * (*nbpmax) + i;
     ettp[id] = cs_lagr_particles_get_real(cur, j, CS_LAGR_MASS);
