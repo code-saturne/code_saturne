@@ -4,6 +4,8 @@ Release 3.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash when using GUI MEI initialization formula for RSM turbulence.
+
 - Fix missing synchronization of the density after its update based on the
   thermodynamic pressure.
 

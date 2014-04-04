@@ -4067,7 +4067,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
             }
 
             else if (cs_gui_strcmp(model, "Rij-epsilon") || cs_gui_strcmp(model, "Rij-SSG")) {
-              const char *symbols[] = {"r11", "r22", "r133", "r12", "r13", "r23", "eps"};
+              const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23", "eps"};
               if (mei_tree_find_symbols(ev_formula_turb, 7, symbols))
                 bft_error(__FILE__, __LINE__, 0,
                           _("Error: can not find the required symbol: %s\n"),
@@ -4090,7 +4090,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
             }
 
             else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-              const char *symbols[] = {"r11", "r22", "r133", "r12", "r13", "r23", "eps", "alpha"};
+              const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23", "eps", "alpha"};
               if (mei_tree_find_symbols(ev_formula_turb, 8, symbols))
                 bft_error(__FILE__, __LINE__, 0,
                           _("Error: can not find the required symbol: %s\n"),
