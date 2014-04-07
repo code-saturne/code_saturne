@@ -74,7 +74,7 @@ typedef struct {
   int        *ientcp;      /* 1 if inlet for oxydant+coal (coal combustion)   */
   int        *icalke;      /* automatic boundaries for turbulent variables    */
   double     *qimp;        /* oxydant flow rate (coal combustion)             */
-  double     *inmoxy;      /* oxydant number (coal combustion)                */
+  int        *inmoxy;      /* oxydant number (coal combustion)                */
   double     *timpat;      /* inlet temperature of oxydant (coal combustion)  */
   double     *tkent;       /* inlet temperature (gas combustion)              */
   double    **qimpcp;      /* inlet coal flow rate (coal combustion)          */
@@ -141,11 +141,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
-                               const int  *isca,
-                               const int  *ipr,
-                               const int  *iscalt,
-                               const int  *itempk,
-                               const int  *ienerg,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -158,12 +153,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                int        *iprofm,
                                double     *coejou,
                                double     *dpot,
-                               cs_real_t   rtpa[],
                                int        *ielcor,
-                               int        *ipotr,
                                int        *ipoti,
-                               int         ipotva[],
-                               int        *ncelet,
                                int        *itypfb,
                                int        *izfppp,
                                int        *icodcl,
@@ -181,6 +172,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                double     *tkent,
                                double     *fment,
                                double     *distch,
+                               int        *nvarcl,
                                double     *rcodcl);
 
 /*----------------------------------------------------------------------------

@@ -48,21 +48,13 @@ BEGIN_C_DECLS
 typedef struct {
   char  *model;            /* predifined physics model                        */
   char  *model_value;      /* predifined physics model value                  */
-  char **head;             /* name of the head                                */
-  char **type;             /* type of markup: 'variable' or 'scalar'          */
-  char **name;             /* variables name and scalars label                */
-  int   *scal_f_id;        /* scalar field ids                                */
-  int   *rtp;              /* variables position in fortran array RTP         */
-  int    nvar;             /* total number of variables and scalars           */
   int    nscaus;           /* number of user scalars                          */
   int    nscapp;           /* number of specific physics scalars              */
   int    nprop;            /* number of properties                            */
   int    nsalpp;           /* number of predifined physics properties         */
-  int    nprayc;           /* number of cell's radiative properties           */
   int    ntimaver;         /* number of time averages                         */
   char **properties_name;  /* label of properties                             */
   int   *properties_ipp;   /* properties position for post-processing         */
-  int   *properties_iprop; /* properties position in fortran array PROPCE     */
 } cs_var_t;
 
 
