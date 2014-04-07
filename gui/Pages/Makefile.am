@@ -47,7 +47,6 @@ BoundaryConditionsView.py \
 Boundary.py \
 CoalCombustionModel.py \
 CoalCombustionView.py \
-CommonCombustion.py \
 CompressibleModel.py \
 ConjugateHeatTransferView.py \
 ConjugateHeatTransferModel.py \
