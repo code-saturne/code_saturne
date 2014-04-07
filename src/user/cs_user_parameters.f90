@@ -1726,11 +1726,11 @@ endif
 !     (at the most nbmomx moments, correlations of maximum order ndgmox)
 
 !     We calculate temporal means of the type <f1*f2*f3*...*fn>
-!     The fi's are cell-defined variables (arrays rtp and propce).
+!     The fi's are cell-defined variables.
 
-!        idfmom(i,imom) identifies the variable fi of moment imom
-!          if idfmom > 0 it is a resolved variable (rtp)
-!          if idfmom < 0 it is an auxiliary variable (propce)
+!        idfmom(1,i,imom) identifies the field id of moment imom
+!        idfmom(2,i,imom) identifies the matching field components
+!          (O to n-1 numbering, -1 for all)
 !        imoold(imom) defines in the case of a restart the number, in the
 !          previous calculation, of the moment to use to initialize moment
 !          imom of the new calculation (by default imoold(imom)=imom).
@@ -1749,16 +1749,18 @@ if (.false.) then
 
   ! First moment: <u>
   imom  = 1
-  idfmom(1,imom) =  iu
+  idfmom(1,1,imom) =  ivarfl(iu)
+  idfmom(2,1,imom) =  0
   ntdmom(imom)   =  1000
   ttdmom(imom)   =  0.d0
 
-  ! TODO: allow fields instead of properties for moments
   ! Second moment: <rho u v>
   ! imom  = 2
-  ! idfmom(1,imom) = -irom
-  ! idfmom(2,imom) =  iu
-  ! idfmom(3,imom) =  iv
+  ! idfmom(1,1,imom) = iprpfl(irom)
+  ! idfmom(1,2,imom) = ivarfl(iu)
+  ! idfmom(2,2,imom) = 0
+  ! idfmom(1,3,imom) = ivarfl(iu)
+  ! idfmom(2,3,imom) = 1
   ! ntdmom(imom)   =  10000
   ! ttdmom(imom)   =  10.d0
 

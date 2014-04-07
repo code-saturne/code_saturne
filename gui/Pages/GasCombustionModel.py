@@ -144,7 +144,7 @@ class GasCombustionModel(Variables, Model):
             self.node_gas['model'] = model
             self.node_gas['option'] = "off"
             ThermalRadiationModel(self.case).setRadiativeModel('off')
-            for tag in ('scalar',
+            for tag in ('variable',
                         'property',
                         'reference_mass_molar',
                         'reference_temperature'):
@@ -249,23 +249,23 @@ class GasCombustionModel(Variables, Model):
         ThermalScalarModel(self.case).setThermalModel('off')
 
         if model == 'd3p':
-            lst.append("Fra_MEL")
-            lst.append("Var_FMe")
+            lst.append("mixture_fraction")
+            lst.append("mixture_fraction_variance")
             if option == 'extended':
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
         elif model == 'ebu':
-            lst.append("Fra_GF")
+            lst.append("fresh_gas_fraction")
             if option == "mixture_st" or option =="enthalpy_misture_st":
-                lst.append("Fra_MEL")
+                lst.append("mixture_fraction")
             elif option == "enthalpy_st" or option =="enthalpy_mixture_st":
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
         elif model == 'lwp':
-            lst.append("Fra_MEL")
-            lst.append("Var_FMe")
-            lst.append("Fra_Mas")
-            lst.append("COYF_PP4")
+            lst.append("mixture_fraction")
+            lst.append("mixture_fraction_variance")
+            lst.append("mass_fraction")
+            lst.append("mass_fraction_covariance")
             if option in list_options:
-                lst.append("Var_FMa")
+                lst.append("mass_fraction_variance")
             if option in acceptable_options:
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
         return lst
@@ -302,7 +302,7 @@ class GasCombustionModel(Variables, Model):
         Create model scalar
         """
         previous_list = []
-        nodes = self.node_gas.xmlGetChildNodeList('scalar')
+        nodes = self.node_gas.xmlGetChildNodeList('variable')
         for node in nodes:
             previous_list.append(node['name'])
 
@@ -313,14 +313,14 @@ class GasCombustionModel(Variables, Model):
             new_list = self.__createModelScalarsList(model)
             for name in previous_list:
                 if name not in new_list:
-                    self.node_gas.xmlRemoveChild('scalar',  name = name)
+                    self.node_gas.xmlRemoveChild('variable',  name = name)
 
             for name in new_list:
                 if name not in previous_list:
-                    self.setNewScalar(self.node_gas, name, "model")
+                    self.setNewVariable(self.node_gas, name, tpe="model")
 
             NPE = NumericalParamEquatModel(self.case)
-            for node in self.node_gas.xmlGetChildNodeList('scalar'):
+            for node in self.node_gas.xmlGetChildNodeList('variable'):
                 NPE.setBlendingFactor(node['label'], 0.)
                 NPE.setScheme(node['label'], 'upwind')
                 NPE.setFluxReconstruction(node['label'], 'off')

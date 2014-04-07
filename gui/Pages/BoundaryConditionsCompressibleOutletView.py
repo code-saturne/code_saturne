@@ -52,7 +52,6 @@ from Pages.BoundaryConditionsCompressibleOutletForm import \
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 from Pages.CompressibleModel import CompressibleModel
-from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

@@ -384,18 +384,6 @@ call fldprp
 
 if (iihmpr.eq.1) then
 
-  call csvnum                                                     &
-  !==========
-            (nvar,                                                &
-             iu, iv, iw, ipr,                                     &
-             iturb, ik, iep,                                      &
-             ir11, ir22, ir33,                                    &
-             ir12, ir13, ir23,                                    &
-             iomg, iphi, ifb, ial,                                &
-             inusa,                                               &
-             iale, iuma, ivma, iwma,                              &
-             isca, iscapp, itherm)
-
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
 
   call csisui(ntsuit, ileaux, iccvfg)
@@ -411,7 +399,7 @@ if (iihmpr.eq.1) then
 
   call uinum1                                                     &
   !==========
-        (isca, iscapp, ivarfl, blencv, ischcv, isstpc, ircflu,    &
+        (blencv, ischcv, isstpc, ircflu,                          &
          cdtvar, nitmax, epsilo, iresol, imgr, nswrsm)
 
 !     Options numériques globales

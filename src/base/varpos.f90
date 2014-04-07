@@ -74,11 +74,12 @@ integer       iscal , iprop, id, f_dim, ityloc, itycat
 integer       ii    , jj
 integer       iok   , ippok
 integer       ivisph
-integer       imom  , idgmom, mom_id
-integer       idffin, idfmji
+integer       imom  , idgmom, mom_id, nfld, f_id, m_dim
+integer       idffin
 integer       inmfin
 integer       nprmax
 integer       idttur
+logical       ilved
 
 double precision gravn2
 
@@ -462,7 +463,7 @@ do imom = 1, nbmomx
   ! Si on n'est pas a la fin de la liste
   if (inmfin.eq.0) then
     ! Si il y en a, ca en fait en plus
-    if (idfmom(1,imom).ne.0) then
+    if (idfmom(1,1,imom).gt.-1) then
       nbmomt = nbmomt + 1
       ! Si il n'y en a pas, c'est la fin de la liste
     else
@@ -470,45 +471,44 @@ do imom = 1, nbmomx
     endif
     ! Si on est a la fin de la liste, il n'en faut plus
   else
-    if (idfmom(1,imom).ne.0) then
+    if (idfmom(1,1,imom).gt.-1) then
       iok = iok + 1
     endif
   endif
 enddo
 
 if (iok.ne.0) then
-  write(nfecra,8200)nbmomt+1,idfmom(1,nbmomt+1),nbmomt,nbmomt
+  write(nfecra,8200)nbmomt+1,idfmom(1,1,nbmomt+1),nbmomt,nbmomt
   do imom = 1, nbmomx
-    write(nfecra,8201)imom,idfmom(1,imom)
+    write(nfecra,8201)imom,idfmom(1,1,imom)
   enddo
   write(nfecra,8202)
 endif
 
 ! Verification de IDFMOM
 iok = 0
+call field_get_n_fields(nfld)
 do imom = 1, nbmomx
   idffin = 0
   do jj = 1, ndgmox
-    idfmji = idfmom(jj,imom)
+    f_id = idfmom(1,jj,imom)
     if (idffin.eq.0) then
-      if (idfmji.lt.-nprmax) then
+      if (f_id.ge.nfld) then
         iok = iok + 1
-        write(nfecra,8210)jj,imom,idfmji,nprmax
-      else if (idfmji.gt.nvar) then
-        iok = iok + 1
-        write(nfecra,8211)jj,imom,idfmji,nvar
-      else if (idfmji.lt.0) then
-        if (ipproc(-idfmji).le.0) then
-          iok = iok + 1
-          write(nfecra,8212)jj,imom,idfmji,-idfmji,ipproc(-idfmji)
-        endif
-      else if (idfmji.eq.0) then
+        write(nfecra,8210)jj,imom,f_id,nfld
+      else if (f_id.lt.0) then
         idffin = 1
+      else
+        call field_get_dim(f_id, f_dim, ilved)
+        if (idfmom(2,jj,imom).ge.f_dim) then
+          write(nfecra,8211) imom, jj, idfmom(2,jj,imom), f_id, f_dim
+          iok = iok + 1
+        endif
       endif
     else
-      if (idfmji.ne.0) then
+      if (f_id.ne.-1) then
         iok = iok + 1
-        write(nfecra,8213)imom,jj,idfmji
+        write(nfecra,8213)imom,jj,f_id
       endif
     endif
   enddo
@@ -534,21 +534,10 @@ do imom = 1, nbmomt
 
   idgmom = 0
   do ii = 1, ndgmox
-    if (idfmom(ii,imom).ne.0) then
+    if (idfmom(1,ii,imom).ge.0) then
       idgmom = idgmom + 1
-      mom_c_id(idgmom) = 0
-      if (idfmom(ii,imom).gt.0) then
-        mom_f_id(idgmom) = ivarfl(idfmom(ii,imom))
-        jj = idfmom(ii,imom)
-        if (jj.gt.1) then
-          do while (jj.gt.1 .and. ivarfl(jj-1).eq.ivarfl(idfmom(ii,imom)))
-            jj = jj-1
-            mom_c_id(idgmom) = mom_c_id(idgmom) + 1
-          enddo
-        endif
-      else if (idfmom(ii,imom).lt.0) then
-        mom_f_id(idgmom) = iprpfl(-idfmom(ii,imom))
-      endif
+      mom_f_id(idgmom) = idfmom(1,ii,imom)
+      mom_c_id(idgmom) = idfmom(2,ii,imom)
     endif
   enddo
 
@@ -564,8 +553,10 @@ do imom = 1, nbmomt
 
   ! Property number and mapping to field
 
+  call field_get_dim(id, m_dim, ilved)
+
   iprop = nproce + 1
-  nproce = nproce + 1
+  nproce = nproce + m_dim
 
   call fldprp_check_nproce
 
@@ -575,8 +566,10 @@ do imom = 1, nbmomt
 
   ! Postprocessing slots
 
-  ipppro(iprop) = nvpp + 1
-  nvpp = nvpp + 1
+  do ii = 1, m_dim
+    ipppro(iprop+ii-1) = nvpp + 1
+    nvpp = nvpp + 1
+  enddo
 
   call field_set_key_int(id, keyipp, ipppro(iprop))
 
@@ -895,9 +888,8 @@ return
 '@    =========                                               ',/,&
 '@      SUR LES VARIABLES COMPOSANT LES MOYENNES TEMPORELLES  ',/,&
 '@                                                            ',/,&
-'@    IDFMOM(',I10   ,',',I10   ,') = ',I10                    ,/,&
-'@      Les valeurs negatives renvoient a des proprietes      ',/,&
-'@      physiques, or il n y en a que NPRMAX = ', I10          ,/,&
+'@    IDFMOM(1, ',I10   ,',',I10   ,') = ',I10                 ,/,&
+'@      Or il n y en a que ', I10, ' champs deja definis.'     ,/,&
 '@    La valeur de IDFMOM est donc erronee.                   ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
@@ -914,29 +906,9 @@ return
 '@    =========                                               ',/,&
 '@      SUR LES VARIABLES COMPOSANT LES MOYENNES TEMPORELLES  ',/,&
 '@                                                            ',/,&
-'@    IDFMOM(',I10   ,',',I10   ,') = ',I10                    ,/,&
-'@      Les valeurs positives renvoient a des variables de    ',/,&
-'@      calcul, or il n y en a que NVAR   = ', I10             ,/,&
-'@    La valeur de IDFMOM est donc erronee.                   ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier les parametres.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8212 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA VERIFICATION DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@      SUR LES VARIABLES COMPOSANT LES MOYENNES TEMPORELLES  ',/,&
-'@                                                            ',/,&
 '@    La valeur                                               ',/,&
-'@      IDFMOM(',I10   ,',',I10   ,') = ',I10                  ,/,&
-'@      n''est pas une propriete associee aux cellules        ',/,&
-'@      (IPPROC(',I10   ,') = ',I10   ,')                     ',/,&
+'@      IDFMOM(2, ',I10   ,',',I10   ,') = ', I10              ,/,&
+'@        mais le champ ', I10, ' a ', I10, ' composantes.    ',/,&
 '@    La valeur de IDFMOM est donc erronee.                   ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
@@ -953,11 +925,11 @@ return
 '@    =========                                               ',/,&
 '@      SUR LES VARIABLES COMPOSANT LES MOYENNES TEMPORELLES  ',/,&
 '@                                                            ',/,&
-'@    Le tableau IDFMOM(JJ,IMOM) pour IMOM = ',I10             ,/,&
+'@    Le tableau IDFMOM(1,JJ,IMOM) pour IMOM = ',I10           ,/,&
 '@      doit etre renseigne continuement. Or ici,             ',/,&
-'@      IDFMOM(',I10,',IMOM) est non nul (=',I10   ,')        ',/,&
+'@      IDFMOM(1,',I10,',IMOM) est non nul (=',I10   ,')      ',/,&
 '@      alors qu il existe II < JJ pour lequel                ',/,&
-'@      IDFMOM(II,IMOM) est nul.                              ',/,&
+'@      IDFMOM(1,II,IMOM) est nul.                            ',/,&
 '@    La valeur de IDFMOM est donc erronee.                   ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
@@ -1241,10 +1213,9 @@ return
 '@    =========                                               ',/,&
 '@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
 '@                                                            ',/,&
-'@    IDFMOM(',I10   ,',',I10   ,') = ',I10                    ,/,&
-'@      The negative value reflect physical properties        ',/,&
-'@      but there is none in          NPRMAX = ', I10          ,/,&
-'@    The value of IDFMOM is wrongly set.                     ',/,&
+'@    IDFMOM(1, ',I10   ,',',I10   ,') = ',I10                 ,/,&
+'@      but there are only ', I10, ' fields already defined.'  ,/,&
+'@    The value of IDFMOM is wrongly.                         ',/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
@@ -1260,30 +1231,9 @@ return
 '@    =========                                               ',/,&
 '@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
 '@                                                            ',/,&
-'@    IDFMOM(',I10   ,',',I10   ,') = ',I10                    ,/,&
-'@      The positive values reflect variables of the          ',/,&
-'@      calculation, yet there none in NVAR   = ', I10         ,/,&
-'@    The value of IDFMOM is wrongly set.                     ',/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@    Verify   parameters.                                    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8212 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE VERIFICATION OF DATA            ',/,&
-'@    =========                                               ',/,&
-'@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
-'@                                                            ',/,&
-'@    The value                                               ',/,&
-'@      IDFMOM(',I10   ,',',I10   ,') = ',I10                  ,/,&
-'@      is not a property associated with the cells           ',/,&
-'@      (IPPROC(',I10   ,') = ',I10   ,')                     ',/,&
-'@    The value of IDFMOM is wrongly set.                     ',/,&
+'@    IDFMOM(2, ',I10   ,',',I10   ,') = ', I10                ,/,&
+'@      but field ', I10, ' has ', I10, ' components.         ',/,&
+'@    The value of IDFMOM is wrongly.                         ',/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
@@ -1299,11 +1249,11 @@ return
 '@    =========                                               ',/,&
 '@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
 '@                                                            ',/,&
-'@    The array  IDFMOM(JJ,IMOM) for  IMOM = ',I10             ,/,&
+'@    The array  IDFMOM(1,JJ,IMOM) for  IMOM = ',I10           ,/,&
 '@      must be assigned continuously.     Yet here,          ',/,&
-'@      IDFMOM(',I10,',IMOM) is not zero (=',I10   ,')        ',/,&
+'@      IDFMOM(1,',I10,',IMOM) is not zero (=',I10   ,')      ',/,&
 '@      while it exists    II < JJ for which                  ',/,&
-'@      IDFMOM(II,IMOM) is zero.                              ',/,&
+'@      IDFMOM(1,II,IMOM) is zero.                            ',/,&
 '@    The value of IDFMOM is wrongly set.                     ',/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&

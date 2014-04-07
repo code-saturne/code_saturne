@@ -241,7 +241,6 @@ if (iihmpr.eq.1) then
 ( iappel ,          &
   ncelet , ncepdc , &
   ivoid  ,          &
-  rvoid  ,          &
   rvoid  )
 endif
 
@@ -691,7 +690,7 @@ if(ncpdct.gt.0) then
   iappel = 2
 
   if (iihmpr.eq.1) then
-    call uikpdc(iappel, ncelet, ncepdc, icepdc, ckupdc, rtpa)
+    call uikpdc(iappel, ncelet, ncepdc, icepdc, ckupdc)
     !==========
   endif
 
@@ -904,7 +903,7 @@ if (itrale.gt.0) then
     !==========
   ( ncelet , ncel,                                                &
     ntmabs, ntcabs, ttcabs, ttmabs, ttpabs,                       &
-    xyzcen, rtp, propce, ipproc)
+    xyzcen)
   endif
 
   call cs_f_user_extra_operations &

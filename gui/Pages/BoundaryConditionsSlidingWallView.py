@@ -166,7 +166,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         """
         if self.sender().validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
-            self.__boundary.setVelocityComponent(value, 'velocity_U')
+            self.__boundary.setVelocityComponent(value, '0')
 
 
     @pyqtSignature("const QString&")
@@ -181,7 +181,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         """
         if self.sender().validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
-            self.__boundary.setVelocityComponent(value, 'velocity_V')
+            self.__boundary.setVelocityComponent(value, '1')
 
 
     @pyqtSignature("const QString&")
@@ -196,7 +196,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         """
         if self.sender().validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
-            self.__boundary.setVelocityComponent(value, 'velocity_W')
+            self.__boundary.setVelocityComponent(value, '2')
 
 
     def tr(self, text):

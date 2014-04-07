@@ -301,8 +301,8 @@ class TimeAveragesTestCase(ModelTest):
 
         doc = '''<time_averages>
                     <time_average id="1" label="moyenne">
-                            <var_prop name="velocity_U"/>
-                            <var_prop name="velocity_V"/>
+                            <var_prop name="velocity" component="0"/>
+                            <var_prop name="velocity" component="1"/>
                             <time_step_start>10</time_step_start>
                     </time_average>
                     <time_average id="2" label="deux">
@@ -325,18 +325,18 @@ class TimeAveragesTestCase(ModelTest):
         mdl.replaceTimeAverage(3, 'trois', 33, 1, ['Pressure', 'VelocitW'])
         doc = '''<time_averages>
                     <time_average id="1" label="moyenne">
-                            <var_prop name="velocity_U"/>
-                            <var_prop name="velocity_V"/>
+                            <var_prop name="velocity" component="0"/>
+                            <var_prop name="velocity" component="1"/>
                             <time_step_start>10</time_step_start>
                     </time_average>
                     <time_average id="2" label="SECOND">
-                            <var_prop name="velocity_W"/>
-                            <var_prop name="velocity_V"/>
+                            <var_prop name="velocity" component="2"/>
+                            <var_prop name="velocity" component="1"/>
                             <time_step_start>12</time_step_start>
                     </time_average>
                     <time_average id="3" label="trois">
                             <var_prop name="pressure"/>
-                            <var_prop name="velocity_W"/>
+                            <var_prop name="velocity" component="2"/>
                             <time_step_start>33</time_step_start>
                     </time_average>
                  </time_averages>'''
@@ -353,13 +353,13 @@ class TimeAveragesTestCase(ModelTest):
         mdl.deleteTimeAverage(2)
         doc = '''<time_averages>
                     <time_average id="1" label="moyenne">
-                            <var_prop name="velocity_U"/>
-                            <var_prop name="velocity_V"/>
+                            <var_prop name="velocity" component="0"/>
+                            <var_prop name="velocity" component="1"/>
                             <time_step_start>10</time_step_start>
                     </time_average>
                     <time_average id="2" label="trois">
-                            <var_prop name="velocity_W"/>
-                            <var_prop name="velocity_U"/>
+                            <var_prop name="velocity" component="2"/>
+                            <var_prop name="velocity" component="0"/>
                             <time_step_start>33</time_step_start>
                     </time_average>
                  </time_averages>'''

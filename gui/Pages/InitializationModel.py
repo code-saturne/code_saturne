@@ -50,6 +50,7 @@ from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import LocalizationModel
 from Pages.CompressibleModel import CompressibleModel
 from Pages.ElectricalModel import ElectricalModel
+from Pages.ThermalScalarModel import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -73,24 +74,11 @@ class InitializationModel(Model):
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.node_comp = self.models.xmlGetNode('compressible_model', 'model')
 
-        self.VelocityList  = ('velocity_U', 'velocity_V', 'velocity_W')
-        self.Turb_var_List = ('turb_k', 'turb_eps',
-                              'component_R11', 'component_R22', 'component_R33',
-                              'component_R12', 'component_R13', 'component_R23',
-                              'turb_phi', 'turb_al', 'turb_omega', 'turb_nusa',
-                              'turb_alpha')
-
         self.turb = TurbulenceModel(self.case)
+        self.therm = ThermalScalarModel(self.case)
         self.turbulenceModes = ('formula',
                                 'reference_value')
         self.node_scalartherm = self.models.xmlGetNode('thermal_scalar')
-
-        self.thermalModel = ('TempC',
-                             'TempK',
-                             'Enthalpy',
-                             'PotTemp',
-                             'LiqPotTemp',
-                             'TotEner')
 
 
     def __defaultValues(self):
@@ -115,12 +103,36 @@ class InitializationModel(Model):
 
 
     @Variables.noUndo
+    def getDefaultVelocityFormula(self):
+        formula = """velocity[0] = 0.;
+velocity[1] = 0.;
+velocity[2] = 0.;"""
+        return formula
+
+
+    @Variables.noUndo
+    def getDefaultThermalFormula(self):
+        name = ''
+        formula = ''
+        if self.therm.getThermalScalarModel() == 'enthalpy':
+            name = 'enthalpy'
+            formula = """cp = 1017.24""" + name + """ = 300. * cp;"""
+        if self.therm.getThermalScalarModel() == 'total_energy':
+            name = 'total_energy'
+            formula = name + """ = 0.;"""
+        elif self.therm.getThermalScalarModel() != 'off':
+            name = 'temperature'
+            formula = name + """ = 300.;"""
+        return formula
+
+
+    @Variables.noUndo
     def getDefaultTurbFormula(self, turb_model):
         self.isInList(turb_model,self.turb.turbulenceModels())
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
             formula = """cmu = 0.09;
 k = 1.5*(0.02*uref)^2;
-eps = k^1.5*cmu/almax;"""
+epsilon = k^1.5*cmu/almax;"""
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
@@ -131,7 +143,7 @@ r12 = 0.;
 r13 = 0.;
 r23 = 0.;
 k = 0.5*(r11+r22+r33);
-eps = k^1.5*cmu/almax;"""
+epsilon = k^1.5*cmu/almax;"""
         elif turb_model == 'Rij-EBRSM':
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
@@ -142,19 +154,19 @@ r12 = 0.;
 r13 = 0.;
 r23 = 0.;
 k = 0.5*(r11+r22+r33);
-eps = k^1.5*cmu/almax;
+epsilon = k^1.5*cmu/almax;
 alpha = 1.;"""
         elif turb_model == 'v2f-BL-v2/k':
             formula = """cmu = 0.22;
 k = 1.5*(0.02*uref)^2;
-eps = k^1.5*cmu/almax;
+epsilon = k^1.5*cmu/almax;
 phi = 2./3.;
-al = 0.;"""
+alpha = 0.;"""
         elif turb_model == 'k-omega-SST':
             formula = """k = 1.5*(0.02*uref)^2;
 omega = k^0.5/almax;"""
         elif turb_model == 'Spalart-Allmaras':
-            formula = """nusa = (cmu * k)/eps;"""
+            formula = """nu_tilda = (cmu * k)/eps;"""
         return formula
 
 
@@ -246,14 +258,13 @@ omega = k^0.5/almax;"""
 
 
     @Variables.undoLocal
-    def setThermalFormula(self, zone, scalar, formula):
+    def setThermalFormula(self, zone, formula):
         """
         Public method.
-        Set the formula for tharmal scalars.
+        Set the formula for thermal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, self.thermalModel)
-        node = self.node_scalartherm.xmlGetNode('scalar', label = str(scalar))
+        node = self.node_scalartherm.xmlGetNode('variable')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -262,14 +273,13 @@ omega = k^0.5/almax;"""
 
 
     @Variables.noUndo
-    def getThermalFormula(self, zone, scalar):
+    def getThermalFormula(self, zone):
         """
         Public method.
         Return the formula for thermal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, self.thermalModel)
-        node = self.node_scalartherm.xmlGetNode('scalar', label = str(scalar))
+        node = self.node_scalartherm.xmlGetNode('variable')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -308,7 +318,7 @@ omega = k^0.5/almax;"""
         """
         Return status of Temperature for the initialisation
         """
-        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
+        node = self.node_comp.xmlGetNode('variable', name = 'temperature')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         status = n['status']
         if not status:
@@ -323,7 +333,7 @@ omega = k^0.5/almax;"""
         Put status of Temperature for the initialisation
         """
         self.isOnOff(status)
-        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
+        node = self.node_comp.xmlGetNode('variable', name = 'temperature')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         n['status'] = status
 
@@ -333,7 +343,7 @@ omega = k^0.5/almax;"""
         """
         Return status of total energy for the initialisation
         """
-        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
+        node = self.node_scalartherm.xmlGetNode('variable', name = 'total_energy')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         status = n['status']
         if not status:
@@ -348,7 +358,7 @@ omega = k^0.5/almax;"""
         Put status of Energy for the initialisation
         """
         self.isOnOff(status)
-        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
+        node = self.node_scalartherm.xmlGetNode('variable', name = 'total_energy')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         n['status'] = status
 
@@ -449,8 +459,7 @@ omega = k^0.5/almax;"""
         Set the formula for temperature.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
-
+        node = self.node_comp.xmlGetNode('variable', name = 'temperature')
 
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -466,8 +475,7 @@ omega = k^0.5/almax;"""
         Return the formula for temperature.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('scalar', name = 'TempK')
-
+        node = self.node_comp.xmlGetNode('variable', name = 'temperature')
 
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -484,7 +492,7 @@ omega = k^0.5/almax;"""
         Set the formula for totale energy.
         """
         self.__verifyZone(zone)
-        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
+        node = self.node_scalartherm.xmlGetNode('variable', name = 'total_energy')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -499,7 +507,7 @@ omega = k^0.5/almax;"""
         Return the formula for energy.
         """
         self.__verifyZone(zone)
-        node = self.node_scalartherm.xmlGetNode('scalar', name = 'total_energy')
+        node = self.node_scalartherm.xmlGetNode('variable', name = 'total_energy')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -538,7 +546,7 @@ omega = k^0.5/almax;"""
         """
         self.__verifyZone(zone)
         self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
-        node = self.node_userscalar.xmlGetNode('scalar', label = str(species))
+        node = self.node_userscalar.xmlGetNode('variable', label = str(species))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -554,15 +562,12 @@ omega = k^0.5/almax;"""
         """
         self.__verifyZone(zone)
         self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
-        node = self.node_userscalar.xmlGetNode('scalar', label = str(species))
+        node = self.node_userscalar.xmlGetNode('variable', label = str(species))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
-        if not formula:
-            formula = str(species)+""" = 0;\n"""
-            self.setSpeciesFormula(zone, species, formula)
 
         return formula
 
@@ -576,7 +581,7 @@ omega = k^0.5/almax;"""
         self.__verifyZone(zone)
         self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsList())
         node_atmo = self.models.xmlGetNode('atmospheric_flows')
-        node = node_atmo.xmlGetNode('scalar', label = str(scalar))
+        node = node_atmo.xmlGetNode('variable', label = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -593,7 +598,7 @@ omega = k^0.5/almax;"""
         self.__verifyZone(zone)
         self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsList())
         node_atmo = self.models.xmlGetNode('atmospheric_flows')
-        node = node_atmo.xmlGetNode('scalar', label = str(scalar))
+        node = node_atmo.xmlGetNode('variable', label = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)

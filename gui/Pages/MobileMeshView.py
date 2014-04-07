@@ -213,15 +213,15 @@ if (xray2 < xr2) {
 
         if self.mdl.getViscosity() == 'isotrop':
             if not exp:
-                exp = "mesh_vi1 = 1;"
-            req = [('mesh_vi1', 'mesh viscosity')]
+                exp = "mesh_viscosity_1 = 1;"
+            req = [('mesh_viscosity_1', 'mesh viscosity')]
             exa = MobileMeshView.viscosity_iso
         else:
             if not exp:
-                exp = "mesh_vi1 = 1;\nmesh_vi2 = 1;\nmesh_vi3 = 1;"
-            req = [('mesh_vi1', 'mesh viscosity X'),
-                   ('mesh_vi2', 'mesh viscosity Y'),
-                   ('mesh_vi3', 'mesh viscosity Z')]
+                exp = "mesh_viscosity_1 = 1;\nmesh_viscosity_2 = 1;\nmesh_viscosity_3 = 1;"
+            req = [('mesh_viscosity_1', 'mesh viscosity X'),
+                   ('mesh_viscosity_2', 'mesh viscosity Y'),
+                   ('mesh_viscosity_3', 'mesh viscosity Z')]
             exa = MobileMeshView.viscosity_ortho
 
         symb = [('x', "X cell's gravity center"),

@@ -243,6 +243,40 @@ class XMLinit(Variables):
                 n.xmlSetTextNode(formula)
                 node.xmlRemoveChild('initial_value', zone_id="1")
 
+        # Replace scalar by variable in xml
+        for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows', 'compressible_model', 'thermal_scalar']:
+            nodeP = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
+            for node in nodeP.xmlGetNodeList('scalar'):
+                name = node['name']
+                label = node['label']
+                dim = node['dimension']
+                tpe = node['type']
+                newnode = nodeP.xmlInitNode('variable', name=name)
+                if label != None:
+                    newnode['label'] = label
+                if dim != None:
+                    newnode['dimension'] = dim
+                if tpe != None:
+                    newnode['type'] = tpe
+                newnode.xmlChildsCopy(node)
+                node.xmlRemoveNode()
+
+        self.scalar_node = self.case.xmlGetNode('additional_scalars')
+        for node in self.scalar_node.xmlGetNodeList('scalar'):
+            name = node['name']
+            label = node['label']
+            dim = node['dimension']
+            tpe = node['type']
+            newnode = self.scalar_node.xmlInitNode('variable', name=name)
+            if label != None:
+                newnode['label'] = label
+            if dim != None:
+                newnode['dimension'] = dim
+            if tpe != None:
+                newnode['type'] = tpe
+            newnode.xmlChildsCopy(node)
+            node.xmlRemoveNode()
+
         # solver
         XMLNumParameterNode = self.case.xmlInitNode('numerical_parameters')
         node = XMLNumParameterNode.xmlGetNode('multigrid')
@@ -319,12 +353,23 @@ class XMLinit(Variables):
         n = node.xmlGetNode('scalar', type='thermal')
         if n:
             nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
-            nthvar = nth.xmlInitNode('scalar', 'type')
+            nthvar = nth.xmlInitNode('variable', 'type')
             nthvar['type']  = "thermal"
             nthvar['name']  = n['name']
             nthvar['label'] = n['label']
             nthvar.xmlChildsCopy(n)
             n.xmlRemoveNode()
+
+        n = XMLThermoPhysicalNode.xmlGetNode('variable', type='thermal')
+        if n:
+            nf = n.xmlGetNode('formula')
+            if nf:
+                status = nf["status"]
+                if not(status) or status == "on":
+                    content = nf.xmlGetTextNode()
+                    content = content.replace(n['label'], n['name'])
+                    nf.xmlSetTextNode(content)
+
 
         # update velocity node
         nodeV = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity_U")
@@ -371,6 +416,130 @@ class XMLinit(Variables):
                         n['component'] = component
                     elif name != "velocity":
                         n['component'] = "0"
+
+        dicoName = [("NP_CP",                        "np_coal"),
+                    ("XCH_CP",                       "x_coal"),
+                    ("XCK_CP",                       "xck_coal"),
+                    ("ENT_CP",                       "h2_coal"),
+                    ("XWT_CP",                       "xwt_coal"),
+                    ("Fr_MV1",                       "mv1_fraction"),
+                    ("Fr_MV2",                       "mv2_fraction"),
+                    ("Fr_HET_O2",                    "het_o2_fraction"),
+                    ("Fr_HET_CO2",                   "het_co2_fraction"),
+                    ("Fr_HET_H2O",                   "het_h2o_fraction"),
+                    ("FR_HCN",                       "hcn_fraction"),
+                    ("FR_NO",                        "no_fraction"),
+                    ("Enth_Ox",                      "ox_enthalpy"),
+                    ("FR_NH3",                       "nh3_fraction"),
+                    ("FR_H20",                       "h2o_fraction"),
+                    ("FR_OXYD2",                     "oxyd2_fraction"),
+                    ("FR_OXYD3",                     "oxyd3_fraction"),
+                    ("FR_CO2",                       "co2_fraction"),
+                    ("Var_F1F2",                     "f1f2_variance"),
+                    ("scalar",                       "user_"),
+                    ("PotElecReal",                  "elec_pot_r"),
+                    ("POT_EL_I",                     "elec_pot_i"),
+                    ("YM_ESL",                       "esl_fraction"),
+                    ("POT_VEC",                      "vec_potential_"),
+                    ("Fra_MEL",                      "mixture_fraction"),
+                    ("Var_FMe",                      "mixture_fraction_variance"),
+                    ("Fra_GF",                       "fresh_gas_fraction"),
+                    ("Fra_Mas",                      "mass_fraction"),
+                    ("COYF_PP4",                     "mass_fraction_covariance"),
+                    ("Var_FMa",                      "mass_fraction_variance"),
+                    ("temperature_celsius",          "temperature"),
+                    ("temperature_kelvin",           "temperature"),
+                    ("TempK",                        "temperature"),
+                    ("potential_temperature",        "temperature"),
+                    ("liquid_potential_temperature", "temperature"),
+                    ("component_R11",                "r11"),
+                    ("component_R22",                "r22"),
+                    ("component_R33",                "r33"),
+                    ("component_R12",                "r12"),
+                    ("component_R13",                "r13"),
+                    ("component_R23",                "r23"),
+                    ("turb_k",                       "k"),
+                    ("turb_eps",                     "epsilon"),
+                    ("turb_phi",                     "phi"),
+                    ("turb_alpha",                   "alpha"),
+                    ("turb_omega",                   "omega"),
+                    ("nusa",                         "nu_tilda")]
+        dico = {}
+        for (u,v) in dicoName:
+            dico[u] = v
+        for node in self.case.xmlGetNodeList('variable'):
+            name = node["name"]
+            if name:
+                for key in dico.keys():
+                    if name.startswith(key):
+                        idx = name.find(key) + len(key)
+                        node["name"] = dico[key] + name[idx:]
+                        break
+
+        XMLBoundaryNode = self.case.xmlInitNode('boundary_conditions')
+        for node in XMLBoundaryNode.xmlGetNodeList('scalar'):
+            name = node["name"]
+            if name:
+                for key in dico.keys():
+                    if name.startswith(key):
+                        idx = name.find(key) + len(key)
+                        node["name"] = dico[key] + name[idx:]
+                        break
+
+        for node in self.case.xmlGetNodeList('var_prop'):
+            name = node["name"]
+            if name:
+                for key in dico.keys():
+                    if name.startswith(key):
+                        idx = name.find(key) + len(key)
+                        node["name"] = dico[key] + name[idx:]
+                        break
+
+        # update formula
+        for node in XMLThermoPhysicalNode.xmlGetNodeList('formula'):
+            status = node["status"]
+            if not(status) or status == "on":
+                content = node.xmlGetTextNode()
+                content = content.replace("u =", "velocity[0] =")
+                content = content.replace("v =", "velocity[1] =")
+                content = content.replace("w =", "velocity[2] =")
+                content = content.replace("P =", "pressure =")
+                content = content.replace("T =", "temperature =")
+                content = content.replace("temperature_celsius =", "temperature =")
+                content = content.replace("temperature_kelvin =", "temperature =")
+
+                nodeas = self.case.xmlGetNode('additional_scalars')
+                nth = nodeas.xmlGetNode('scalar', type='thermal')
+                if nth:
+                    lab = nth['label'] + " ="
+                    content = content.replace(lab, nth['name'] + " =")
+                node.xmlSetTextNode(content)
+
+        for node in XMLPhysicalPropNode.xmlGetNodeList('formula'):
+            nodeas = self.case.xmlGetNode('additional_scalars')
+            nth = nodeas.xmlGetNode('scalar', type='thermal')
+            if nth:
+                content = node.xmlGetTextNode()
+                content = content.replace(nth['label'], nth['name'])
+                node.xmlSetTextNode(content)
+
+        XMLAddScalar = self.case.xmlGetNode('additional_scalars')
+        for node in XMLAddScalar.xmlGetNodeList('variable'):
+            nfor = node.xmlGetNode('formula')
+            if nfor:
+                content = nfor.xmlGetTextNode()
+                content = content.replace(node['label'], node['name'])
+                nfor.xmlSetTextNode(content)
+
+        # TODO update formula BC for turbulence
+        #for node in XMLBoundaryNode.xmlGetNodeList('turbulence'):
+        #    if node["choice"] = "formula":
+        #        nf = node.xmlGetNode('formula')
+        #        for key in dico.keys():
+        #            if name.startswith(key):
+        #                idx = name.find(key) + len(key)
+        #                node["name"] = dico[key] + name[idx:]
+        #                break
 
 
 #-------------------------------------------------------------------------------
@@ -423,9 +592,7 @@ class XMLinitTestCase(unittest.TestCase):
         '<thermophysical_models>'\
                 '<velocity_pressure>'\
                         '<variable label="Pressure" name="pressure"/>'\
-                        '<variable label="VelocityX" name="velocity_U"/>'\
-                        '<variable label="VelocityY" name="velocity_V"/>'\
-                        '<variable label="VelocityZ" name="velocity_W"/>'\
+                        '<variable label="Velocity" name="velocity"/>'\
                         '<property label="total_pressure" name="total_pressure"/>'\
                 '</velocity_pressure>'\
                 '<turbulence model="k-epsilon">'\

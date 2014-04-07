@@ -209,7 +209,7 @@ class AtmosphericFlowsModel(Model):
         """
         Create xml scalar
         """
-        scalar = parentNode.xmlInitChildNode('scalar', label = labelStr)
+        scalar = parentNode.xmlInitChildNode('variable', label = labelStr)
         scalar['name']  = nameStr
         scalar['type']  = typeStr
 
@@ -226,7 +226,7 @@ class AtmosphericFlowsModel(Model):
         """
         Delete scalar
         """
-        parentNode.xmlRemoveChild('scalar', name = nameStr)
+        parentNode.xmlRemoveChild('variable', name = nameStr)
 
 
     def __removeProperty(self, parentNode, nameStr):
@@ -313,8 +313,8 @@ class AtmosphericFlowsTestCase(ModelTest):
 
         doc = """<atmospheric_flows model="humid">
                     <read_meteo_data status="on">
-                        <scalar label="total water" name="total_water" type="model"/>
-                        <scalar label="number of droplets" name="number_of_droplets" type="model"/>
+                        <variable label="total water" name="total_water" type="model"/>
+                        <variable label="number of droplets" name="number_of_droplets" type="model"/>
                         <property label="Real temp" name="real_temperature"/>
                         <property label="Liquid water" name="liquid_water"/>
                     </read_meteo_data>

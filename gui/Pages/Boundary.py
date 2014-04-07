@@ -96,11 +96,8 @@ class Boundary(object) :
         self._nature = nature
         self.case = case
         self._XMLBoundaryConditionsNode = self.case.xmlGetNode('boundary_conditions')
-        self._thermalLabelsList = ('temperature_celsius',
-                                   'temperature_kelvin',
+        self._thermalLabelsList = ('temperature',
                                    'enthalpy',
-                                   'potential_temperature',
-                                   'liquid_potential_temperature',
                                    'total_energy')
 
         self.sca_model = DefineUserScalarsModel(self.case)
@@ -167,7 +164,7 @@ class Boundary(object) :
                 if self.sca_model.getScalarType(label) == 'thermal':
                     Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
                 elif self.sca_model.getScalarType(label) == 'user':
-                    Model().isInList(self.sca_model.getScalarName(label)[:6], ('scalar'))
+                    Model().isInList(self.sca_model.getScalarName(label)[:5], ('user_'))
                 scalarNode['name'] = self.sca_model.getScalarName(label)
                 scalarNode['type'] = self.sca_model.getScalarType(label)
         elif self.sca_model.getElectricalScalarsList() != None:
@@ -178,14 +175,14 @@ class Boundary(object) :
                 if self.sca_model.getScalarType(label) == 'thermal':
                     Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
                 elif self.sca_model.getScalarType(label) == 'user':
-                    Model().isInList(self.sca_model.getScalarName(label)[:6], ('scalar'))
+                    Model().isInList(self.sca_model.getScalarName(label)[:5], ('user_'))
                 scalarNode['name'] = self.sca_model.getScalarName(label)
                 scalarNode['type'] = self.sca_model.getScalarType(label)
         else:
             if self.sca_model.getScalarType(label) == 'thermal':
                 Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
             elif self.sca_model.getScalarType(label) == 'user':
-                Model().isInList(self.sca_model.getScalarName(label)[:6], ('scalar'))
+                Model().isInList(self.sca_model.getScalarName(label)[:5], ('user_'))
             scalarNode['name'] = self.sca_model.getScalarName(label)
             scalarNode['type'] = self.sca_model.getScalarType(label)
 
@@ -1861,7 +1858,7 @@ class OutletBoundary(Boundary) :
 
 
     @Variables.undoLocal
-    def setScalarFormula(self,label, formula, choice):
+    def setScalarFormula(self,label, choice, formula):
         """
         Public method.
         Set the formula for a scalar variable.
@@ -1995,9 +1992,9 @@ class WallBoundary(Boundary) :
         """
         Delete nodes of velocity
         """
-        node.xmlRemoveChild('dirichlet', name='velocity_U')
-        node.xmlRemoveChild('dirichlet', name='velocity_V')
-        node.xmlRemoveChild('dirichlet', name='velocity_W')
+        node.xmlRemoveChild('dirichlet', name='velocity', component="0")
+        node.xmlRemoveChild('dirichlet', name='velocity', component="1")
+        node.xmlRemoveChild('dirichlet', name='velocity', component="2")
 
 
     def __getscalarList(self):
@@ -2092,19 +2089,19 @@ class WallBoundary(Boundary) :
         node = self.boundNode.xmlInitNode('velocity_pressure')
         Model().isInList(node['choice'],('on',))
 
-        n = node.xmlGetChildNode('dirichlet', name='velocity_U')
+        n = node.xmlGetChildNode('dirichlet', name='velocity', component="0")
         if n:
-            u = node.xmlGetChildDouble('dirichlet', name='velocity_U')
+            u = node.xmlGetChildDouble('dirichlet', name='velocity', component="0")
         else:
             u = self.__defaultValues()['velocityValue']
-        n = node.xmlGetChildNode('dirichlet', name='velocity_V')
+        n = node.xmlGetChildNode('dirichlet', name='velocity', component="1")
         if n:
-            v = node.xmlGetChildDouble('dirichlet', name='velocity_V')
+            v = node.xmlGetChildDouble('dirichlet', name='velocity', component="1")
         else:
             v = self.__defaultValues()['velocityValue']
-        n = node.xmlGetChildNode('dirichlet', name='velocity_W')
+        n = node.xmlGetChildNode('dirichlet', name='velocity', component="2")
         if n:
-            w = node.xmlGetChildDouble('dirichlet', name='velocity_W')
+            w = node.xmlGetChildDouble('dirichlet', name='velocity', component="2")
         else:
             w = self.__defaultValues()['velocityValue']
         self.setVelocities(u, v, w)
@@ -2124,9 +2121,9 @@ class WallBoundary(Boundary) :
         node = self.boundNode.xmlInitNode('velocity_pressure')
         Model().isInList(node['choice'],('on',))
 
-        node.xmlSetData('dirichlet', u, name='velocity_U')
-        node.xmlSetData('dirichlet', v, name='velocity_V')
-        node.xmlSetData('dirichlet', w, name='velocity_W')
+        node.xmlSetData('dirichlet', u, name='velocity', component="0")
+        node.xmlSetData('dirichlet', v, name='velocity', component="1")
+        node.xmlSetData('dirichlet', w, name='velocity', component="2")
 
 
     @Variables.undoLocal
@@ -2135,11 +2132,11 @@ class WallBoundary(Boundary) :
         Set the value of component of the velocity - Method for the view
         """
         Model().isFloat(val)
-        Model().isInList(component, ('velocity_U', 'velocity_V', 'velocity_W'))
+        Model().isInList(component, ('0', '1', '2'))
         node = self.boundNode.xmlInitNode('velocity_pressure')
         Model().isInList(node['choice'], ('on', 'off'))
 
-        node.xmlSetData('dirichlet', val, name=component)
+        node.xmlSetData('dirichlet', val, name="velocity", component=component)
 
 
     @Variables.noUndo
@@ -3295,10 +3292,10 @@ class InletBoundaryTestCase(ModelTest):
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
                         </turbulence>
-                        <scalar choice="dirichlet" label="sca1" name="scalar1" type="user">
+                        <scalar choice="dirichlet" label="sca1" name="user_1" type="user">
                             <dirichlet>11</dirichlet>
                         </scalar>
-                        <scalar choice="dirichlet" label="sca2" name="scalar2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
                             <dirichlet>22</dirichlet>
                         </scalar>
                     </inlet>
@@ -3609,7 +3606,7 @@ class WallBoundaryTestCase(ModelTest):
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
-                        <scalar choice="dirichlet" label="sca2" name="scalar2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
                             <dirichlet>0.0</dirichlet>
                         </scalar>
                     </wall>
@@ -3628,11 +3625,11 @@ class WallBoundaryTestCase(ModelTest):
         doc1 = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
-                        <scalar choice="exchange_coefficient" label="sca1" name="scalar1" type="user">
+                        <scalar choice="exchange_coefficient" label="sca1" name="user_1" type="user">
                             <dirichlet>0.0</dirichlet>
                             <exchange_coefficient>0.0</exchange_coefficient>
                         </scalar>
-                        <scalar choice="dirichlet" label="sca2" name="scalar2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
                             <dirichlet>0.0</dirichlet>
                         </scalar>
                     </wall>
@@ -3660,11 +3657,11 @@ class WallBoundaryTestCase(ModelTest):
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
-                        <scalar choice="exchange_coefficient" label="sca1" name="scalar1" type="user">
+                        <scalar choice="exchange_coefficient" label="sca1" name="user_1" type="user">
                             <dirichlet>130.0</dirichlet>
                             <exchange_coefficient>0.130</exchange_coefficient>
                         </scalar>
-                        <scalar choice="dirichlet" label="sca2" name="scalar2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
                             <dirichlet>55.</dirichlet>
                         </scalar>
                     </wall>
@@ -4026,10 +4023,10 @@ class OutletBoundaryTestCase(ModelTest):
 
         doc = '''<boundary_conditions>
                     <outlet label="sortie">
-                        <scalar choice="dirichlet" label="sca1" name="scalar1" type="user">
+                        <scalar choice="dirichlet" label="sca1" name="user_1" type="user">
                             <dirichlet>10.1</dirichlet>
                         </scalar>
-                        <scalar choice="neumann" label="sca2" name="scalar2" type="user">
+                        <scalar choice="neumann" label="sca2" name="user_2" type="user">
                             <neumann>0</neumann>
                         </scalar>
                     </outlet>

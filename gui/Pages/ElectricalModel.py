@@ -158,11 +158,11 @@ class ElectricalModel(Variables, Model):
         if model == 'off':
             self.__removeVariablesAndProperties([], [])
         else:
-            listV = ['PotElecReal']
+            listV = ['elec_pot_r']
             gasN = self.getGasNumber()
             if gasN > 1:
                 for gas in range(0, gasN - 1):
-                    name = '%s%2.2i' % ('YM_ESL', gas + 1)
+                    name = '%s%2.2i' % ('esl_fraction_', gas + 1)
                     listV.append(name)
 
             listP = ['Temperature', 'PuisJoul', 'Sigma']
@@ -171,9 +171,7 @@ class ElectricalModel(Variables, Model):
                 listP.append(name)
 
             if model == 'arc':
-                for dim in range(0, 3):
-                    name = '%s%2.2i' % ('POT_VEC', dim+1)
-                    listV.append(name)
+                listV.append('vec_potential')
                 listP.append('For_Lap')
                 if self.getRadiativeModel() == 'Coef_Abso':
                     listP.append('Coef_Abso')
@@ -183,12 +181,12 @@ class ElectricalModel(Variables, Model):
             else: # 'joule'
                 model = self.getJouleModel()
                 if model == 'PotComplexe' or model == 'PotComplexe+CDLTransfo':
-                    listV.append('POT_EL_I')
+                    listV.append('elec_pot_i')
                 if model == 'PotComplexe+CDLTransfo':
                     listP.append('CouImag')
 
             for v in listV:
-                self.setNewScalar(self.node_joule, v, "model")
+                self.setNewVariable(self.node_joule, v, tpe="model", label=v)
             for v in listP:
                 self.setNewProperty(self.node_joule, v)
             self.__removeVariablesAndProperties(listV, listP)
@@ -223,7 +221,7 @@ class ElectricalModel(Variables, Model):
         if gasN > 1:
             for gas in range(0, gasN - 1):
                 name = '%s%2.2i' % ('YM_ESL', gas + 1)
-                node = self.node_joule.xmlGetNode('scalar', name=name)
+                node = self.node_joule.xmlGetNode('variable', name=name)
                 lst.append(node['label'])
         return lst
 
@@ -488,7 +486,7 @@ class ElectricalModel(Variables, Model):
         Get label for thermal scalar
         """
         label = ""
-        node = self.node_joule.xmlGetNode('scalar', type='model', name=tag)
+        node = self.node_joule.xmlGetNode('variable', type='model', name=tag)
         if node:
             label = node['label']
 

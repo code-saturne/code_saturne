@@ -172,7 +172,7 @@ class OutputVolumicVariablesModel(Model):
         """
         node_models = self.case.xmlGetNode('thermophysical_models')
         node = node_models.xmlGetNode('thermal_scalar')
-        return node.xmlGetNodeList('scalar', type='thermal')
+        return node.xmlGetNodeList('variable', type='thermal')
 
 
     @Variables.noUndo
@@ -186,7 +186,7 @@ class OutputVolumicVariablesModel(Model):
         model = node['model']
         varList = []
         if model != 'off':
-            for var in ('scalar', 'property'):
+            for var in ('variable', 'property'):
                 nodList = node.xmlGetNodeList(var)
                 for nodvar in nodList:
                     varList.append(nodvar)
@@ -204,7 +204,7 @@ class OutputVolumicVariablesModel(Model):
         model = node['model']
         varList = []
         if model != 'off':
-            for var in ('scalar', 'property'):
+            for var in ('variable', 'property'):
                 nodList = node.xmlGetNodeList(var)
                 for nodvar in nodList:
                     varList.append(nodvar)
@@ -223,7 +223,7 @@ class OutputVolumicVariablesModel(Model):
         model = node['model']
         varList = []
         if model != 'off':
-            for var in ('scalar', 'property'):
+            for var in ('variable', 'property'):
                 nodList = node.xmlGetNodeList(var)
                 for nodvar in nodList:
                     varList.append(nodvar)
@@ -242,7 +242,7 @@ class OutputVolumicVariablesModel(Model):
         model = node['model']
         varList = []
         if model != 'off':
-            for var in ('scalar', 'property'):
+            for var in ('variable', 'property'):
                 nodList = node.xmlGetNodeList(var)
                 for nodvar in nodList:
                     varList.append(nodvar)
@@ -257,7 +257,7 @@ class OutputVolumicVariablesModel(Model):
         (idem ds NumericalParamEquationModel named getAdditionalScalarNodes)
         """
         node = self.case.xmlGetNode('additional_scalars')
-        return node.xmlGetNodeList('scalar', type='user')
+        return node.xmlGetNodeList('variable', type='user')
 
 
     @Variables.noUndo
@@ -440,12 +440,10 @@ class OutputVolumicVariablesModel(Model):
         """
         self.node_bc  = self.case.xmlInitNode('boundary_conditions')
         self.node_var = self.node_bc.xmlInitNodeList('variable')
-        self.node_sca = self.node_bc.xmlInitNodeList('scalar')
 
-        for node in [self.node_var, self.node_sca]:
-            for nodebc in node:
-                if nodebc['label'] == old_label:
-                    nodebc['label'] = new_label
+        for node in self.node_var:
+            if node['label'] == old_label:
+                node['label'] = new_label
 
 
     @Variables.undoLocal
@@ -470,7 +468,7 @@ class OutputVolumicVariablesModel(Model):
         """
         return label of name variable
         """
-        for variableType in ('variable', 'property', 'scalar') :
+        for variableType in ('variable', 'property') :
             node = self.case.xmlGetNode(variableType, name = name)
             if node != None:
                 break
@@ -575,12 +573,12 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         mdl.setPrintingStatus('TempC', 'off')
         node_out = mdl.case.xmlGetNode('additional_scalars')
         doc = '''<additional_scalars>
-                    <scalar label="TempC" name="temperature_celsius" type="thermal">
+                    <variable label="TempC" name="temperature_celsius" type="thermal">
                         <initial_value zone_id="1">20.0</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
                         <listing_printing status="off"/>
-                    </scalar>
+                    </variable>
                  </additional_scalars>'''
 
         assert node_out == self.xmlNodeFromString(doc),\
@@ -601,12 +599,12 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         mdl.setPostStatus('TempC', 'off')
         node_out = mdl.case.xmlGetNode('additional_scalars')
         doc = '''<additional_scalars>
-                    <scalar label="TempC" name="temperature_celsius" type="thermal">
+                    <variable label="TempC" name="temperature_celsius" type="thermal">
                         <initial_value zone_id="1">20.0</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
                         <postprocessing_recording status="off"/>
-                    </scalar>
+                    </variable>
                  </additional_scalars>'''
 
         assert node_out == self.xmlNodeFromString(doc),\

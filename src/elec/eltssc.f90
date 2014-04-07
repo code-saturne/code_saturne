@@ -184,7 +184,7 @@ if( ippmod(ielarc).ge. 2 ) then
 ! -->   Terme source pour les composantes potentiel vecteur
 !============================================================
 
-  if ( ivar .eq. isca(ipotva(1)) ) then
+  if ( ivar .eq. isca(ipotva) ) then
 
     if (iwarni(ivar).ge.1) then
       write(nfecra,1000) chaine(1:8)
@@ -192,31 +192,19 @@ if( ippmod(ielarc).ge. 2 ) then
 
     ipcdc1 = ipproc(idjr(1))
     do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) +                                   &
+      smbrs(3 * iel) = smbrs(3 * iel) +                           &
             permvi*propce(iel,ipcdc1)*volume(iel)
     enddo
 
-  else if ( ivar .eq. isca(ipotva(2)) ) then
-
-    if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) chaine(1:8)
-    endif
-
     ipcdc2 = ipproc(idjr(2))
     do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) +                                   &
+      smbrs(3 * iel + 1) = smbrs(3 * iel + 1) +                   &
             permvi*propce(iel,ipcdc2)*volume(iel)
     enddo
 
-  else if ( ivar .eq. isca(ipotva(3)) ) then
-
-    if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) chaine(1:8)
-    endif
-
     ipcdc3 = ipproc(idjr(3))
     do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) +                                   &
+      smbrs(3 * iel + 2) = smbrs(3 * iel + 2) +                   &
             permvi*propce(iel,ipcdc3)*volume(iel)
     enddo
   endif

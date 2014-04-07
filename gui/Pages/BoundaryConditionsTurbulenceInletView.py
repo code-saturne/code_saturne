@@ -234,9 +234,9 @@ else {
 cmu = 0.09;
 kappa = 0.42;
 k   = ustar2/sqrt(cmu);
-eps = ustar2^1.5/(kappa*dh*0.1);"""
+epsilon = ustar2^1.5/(kappa*dh*0.1);"""
             req = [('k', "turbulent energy"),
-            ('eps', "turbulent dissipation")]
+                   ('epsilon', "turbulent dissipation")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
@@ -284,22 +284,22 @@ else {
 cmu = 0.09;
 kappa = 0.42;
 k   = ustar2/sqrt(cmu);
-eps = ustar2^1.5/(kappa*dh*0.1);
+epsilon = ustar2^1.5/(kappa*dh*0.1);
 d2s3 = 2/3;
-R11 = d2s3*k;
-R22 = d2s3*k;
-R33 = d2s3*k;
-R12 = 0;
-R13 = 0;
-R23 = 0;
+r11 = d2s3*k;
+r22 = d2s3*k;
+r33 = d2s3*k;
+r12 = 0;
+r13 = 0;
+r23 = 0;
 """
-            req = [('R11', "Reynolds stress R11"),
-            ('R22', "Reynolds stress R22"),
-            ('R33', "Reynolds stress R33"),
-            ('R12', "Reynolds stress R12"),
-            ('R13', "Reynolds stress R13"),
-            ('R23', "Reynolds stress R23"),
-            ('eps', "turbulent dissipation")]
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r13', "Reynolds stress R13"),
+                   ('r23', "Reynolds stress R23"),
+                   ('epsilon', "turbulent dissipation")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
@@ -347,24 +347,24 @@ else {
 cmu = 0.09;
 kappa = 0.42;
 k   = ustar2/sqrt(cmu);
-eps = ustar2^1.5/(kappa*dh*0.1);
+epsilon = ustar2^1.5/(kappa*dh*0.1);
 d2s3 = 2/3;
-R11 = d2s3*k;
-R22 = d2s3*k;
-R33 = d2s3*k;
-R12 = 0;
-R13 = 0;
-R23 = 0;
+r11 = d2s3*k;
+r22 = d2s3*k;
+r33 = d2s3*k;
+r12 = 0;
+r13 = 0;
+r23 = 0;
 alpha =  1.;
 """
-            req = [('R11', "Reynolds stress R11"),
-            ('R22', "Reynolds stress R22"),
-            ('R33', "Reynolds stress R33"),
-            ('R12', "Reynolds stress R12"),
-            ('R13', "Reynolds stress R13"),
-            ('R23', "Reynolds stress R23"),
-            ('eps', "turbulent dissipation"),
-            ('alpha', "alpha")]
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r13', "Reynolds stress R13"),
+                   ('r23', "Reynolds stress R23"),
+                   ('epsilon', "turbulent dissipation"),
+                   ('alpha', "alpha")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
@@ -413,13 +413,13 @@ cmu = 0.09;
 kappa = 0.42;
 d2s3 = 2/3;
 k   = ustar2/sqrt(cmu);
-eps = ustar2^1.5/(kappa*dh*0.1);
+epsilon = ustar2^1.5/(kappa*dh*0.1);
 phi = d2s3;
 alpha = 0;"""
             req = [('k', "turbulent energy"),
-            ('eps', "turbulent dissipation"),
-            ('phi', "variable phi in v2f model"),
-            ('alpha', "variable alpha in v2f model")]
+                   ('epsilon', "turbulent dissipation"),
+                   ('phi', "variable phi in v2f model"),
+                   ('alpha', "variable alpha in v2f model")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
@@ -470,7 +470,7 @@ k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);
 omega = eps/(cmu * k);"""
             req = [('k', "turbulent energy"),
-            ('omega', "specific dissipation rate")]
+                   ('omega', "specific dissipation rate")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
@@ -519,8 +519,8 @@ cmu = 0.09;
 kappa = 0.42;
 k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);
-nusa = eps/(cmu * k);"""
-            req = [('nusa', "nusa")]
+nu_tilda = eps/(cmu * k);"""
+            req = [('nu_tilda', "nu_tilda")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),

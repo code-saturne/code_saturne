@@ -991,7 +991,8 @@ enddo
 !     Variables composant les moments
 do ii = 1, ndgmox
   do imom = 1, nbmomx
-    idfmom(ii,imom) = 0
+    idfmom(1,ii,imom) = -1
+    idfmom(2,ii,imom) = -1
   enddo
 enddo
 

@@ -703,7 +703,7 @@ logical  interleaved, has_previous
 character(len=80) :: f_name
 integer :: keyvar, keysca
 
-type_flag = FIELD_INTENSIVE + FIELD_VARIABLE
+type_flag = FIELD_INTENSIVE + FIELD_VARIABLE + FIELD_USER
 dim = 1
 location_id = 1 ! variables defined on cells
 interleaved = .true.
@@ -922,6 +922,147 @@ return
 #endif
 
 end subroutine add_model_scalar_field
+
+!===============================================================================
+!> \function add_model_scalar_field
+!
+!> \brief add field defining a non-user solved scalar variable,
+!>        with default options
+!
+!> It is recommended not to define variable names of more than 16
+!> characters, to get a clear execution listing (some advanced writing
+!> levels take into account only the first 16 characters).
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]  name           field name
+!> \param[in]  label          field default label, or empty
+!> \param[in]  dim            field dimension
+!> \param[out] iscal          variable number for defined field
+!_______________________________________________________________________________
+
+subroutine add_model_field &
+ ( name, label, dim, iscal )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character(len=*), intent(in) :: name, label
+integer, intent(in)          :: dim
+integer, intent(out)         :: iscal
+
+! Local variables
+
+integer  ivar, id, ii
+integer  type_flag, location_id
+logical  interleaved, has_previous
+
+integer, save :: keyvar = -1
+integer, save :: keysca = -1
+
+type_flag = FIELD_INTENSIVE + FIELD_VARIABLE
+location_id = 1 ! variables defined on cells
+interleaved = .true.
+has_previous = .true.
+
+! Test if the field has already been defined
+call field_get_id_try(trim(name), id)
+if (id .ge. 0) then
+  write(nfecra,1000) trim(name)
+  call csexit (1)
+endif
+
+! Create field
+
+if (keysca.lt.0) then
+  call field_get_key_id("scalar_id", keysca)
+  call field_get_key_id("variable_id", keyvar)
+endif
+
+call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
+                  id)
+
+call field_set_key_int(id, keyvis, 1)
+call field_set_key_int(id, keylog, 1)
+
+if (len(trim(label)).gt.0) then
+  call field_set_key_str(id, keylbl, trim(label))
+endif
+
+ivar = nvar + 1
+nvar = nvar + dim
+nscal = nscal + dim
+nscapp = nscapp + dim
+iscal = nscaus + nscapp - dim + 1
+
+! Check we have enough slots
+call fldvar_check_nvar
+call fldvar_check_nscapp
+
+isca(iscal) = nvar - dim + 1
+iscapp(nscapp - dim + 1) = iscal
+ivarfl(isca(iscal)) = id
+ipprtp(isca(iscal)) = nvpp + 1
+nvpp = nvpp + dim
+
+do ii = 2, dim
+  isca(iscal + ii - 1) = isca(iscal) + ii - 1
+  ivarfl(isca(iscal + ii - 1)) = id
+  ipprtp(isca(iscal + ii - 1)) = ipprtp(isca(iscal)) -1 + ii
+  iscapp(nscapp - dim + ii) = iscal
+enddo
+
+call field_set_key_int(id, keyvar, nvar)
+call field_set_key_int(id, keysca, iscal)
+call field_set_key_int(id, keyipp, ipprtp(isca(iscal)))
+
+return
+
+!---
+! Formats
+!---
+
+#if defined(_CS_LANG_FR)
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    ========                                                ',/,&
+'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#else
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
+'@    ======                                                  ',/,&
+'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#endif
+
+end subroutine add_model_field
 
 !===============================================================================
 

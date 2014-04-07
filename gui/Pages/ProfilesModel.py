@@ -310,9 +310,9 @@ class ProfilesTestCase(ModelTest):
         mdl.setProfile('prof1.dat', 'title', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
         doc = '''<profiles>
                     <profile label="prof1.dat" title="title">
-                            <var_prop name="velocity_U"/>
-                            <var_prop name="velocity_V"/>
-                            <var_prop name="velocity_W"/>
+                            <var_prop name="velocity" component="0"/>
+                            <var_prop name="velocity" component="1"/>
+                            <var_prop name="velocity" component="2"/>
                             <output_frequency>20</output_frequency>
                             <x1>0.1</x1>
                             <y1>0.2</y1>
@@ -334,7 +334,7 @@ class ProfilesTestCase(ModelTest):
         mdl.replaceProfile('prof1', 'premier', 'title_bis', ['VelocitU'], 30, 0.1, 0.2, 0.3, 2.0, 2.0, 2.0)
         doc = '''<profiles>
                     <profile label="premier" title="title_bis">
-                            <var_prop name="velocity_U"/>
+                            <var_prop name="velocity" component="0"/>
                             <output_frequency>30</output_frequency>
                             <x1>0.1</x1>
                             <y1>0.2</y1>
@@ -358,7 +358,7 @@ class ProfilesTestCase(ModelTest):
         mdl.deleteProfile('prof1')
         doc = '''<profiles>
                     <profile label="prof2.dat" title="title2">
-                            <var_prop name="velocity_U"/>
+                            <var_prop name="velocity" component="0"/>
                             <output_frequency>20</output_frequency>
                             <x1>0.9</x1>
                             <y1>0.8</y1>

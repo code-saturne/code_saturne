@@ -175,12 +175,24 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                 sym.append((s,l))
         del sym[0]
 
+        req = [('todelete','')]
+        base = []
+        for s,l in required:
+            if s.find("[") != -1:
+                idx = s.find("[")
+                if s[:idx] not in base:
+                    req.append((s[:idx], l))
+                    base.append(s[:idx])
+            else:
+                req.append((s,l))
+        del req[0]
+
         self.required = required
-        self.symbols  = sym
+        self.symbols  = symbols
 
         # Syntax highlighting
-        self.h1 = QMeiHighlighter(self.textEditExpression, required, sym)
-        self.h2 = QMeiHighlighter(self.textEditExamples, required, sym)
+        self.h1 = QMeiHighlighter(self.textEditExpression, req, sym)
+        self.h2 = QMeiHighlighter(self.textEditExamples, req, sym)
 
         # Required symbols of the mathematical expression
 

@@ -793,8 +793,8 @@ module optcal
   !>           s'utilise ainsi propce(iel,ipproc(icmome(imom)))
   integer, save ::          icmome(nbmomx)
 
-  !> numero des variables composant le moment idfmom(jj,imom)
-  integer, save ::          idfmom(ndgmox,nbmomx)
+  !> numero des champs composant le moment idfmom(ic,jj,imom)
+  integer, save ::          idfmom(2,ndgmox,nbmomx)
 
   !> initial time for computing the moment
   double precision, save :: ttdmom(nbmomx)

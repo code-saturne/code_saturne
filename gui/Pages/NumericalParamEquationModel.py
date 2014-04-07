@@ -49,6 +49,7 @@ from Base.XMLmodel import XMLmodel, ModelTest
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 from Pages.TurbulenceModel import TurbulenceModel
+from Pages.ThermalScalarModel import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # NumericalParamEquat model class
@@ -84,7 +85,7 @@ class NumericalParamEquatModel(Model):
 
         self.UVW = []
         for node in self.node_varVP:
-            if node['name'] in ('velocity_U', 'velocity_V', 'velocity_W'):
+            if node['name'] == 'velocity':
                 self.UVW.append(node['label'])
 
 
@@ -133,22 +134,23 @@ class NumericalParamEquatModel(Model):
         if label in self.thermo:
             for node in self._getThermalScalarNode():
                 if node['label'] == label:
-                    if node['name'] == 'temperature_celsius':
+                    mdl = ThermalScalarModel(self.case).getThermalScalarModel()
+                    if mdl == 'temperature_celsius':
                         self.default['min_value'] = -273.15
                         self.default['max_value'] = 1e+12
-                    elif node['name'] =='temperature_kelvin':
+                    elif mdl =='temperature_kelvin':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
-                    elif node['name'] =='enthalpy':
+                    elif mdl =='enthalpy':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
-                    elif node['name'] =='potential_temperature':
+                    elif mdl =='potential_temperature':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
-                    elif node['name'] =='liquid_potential_temperature':
+                    elif mdl =='liquid_potential_temperature':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
-                    elif node['name'] =='total_energy':
+                    elif mdl =='total_energy':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
         else:
@@ -162,7 +164,7 @@ class NumericalParamEquatModel(Model):
         """ Private method: return node of thermal scalar """
         node_models = self.case.xmlGetNode('thermophysical_models')
         node_scalar = node_models.xmlGetNode('thermal_scalar')
-        thermal_scalar_list = node_scalar.xmlGetNodeList('scalar', type='thermal')
+        thermal_scalar_list = node_scalar.xmlGetNodeList('variable', type='thermal')
         return thermal_scalar_list
 
 
@@ -172,7 +174,7 @@ class NumericalParamEquatModel(Model):
         node = self.node_models.xmlGetNode('solid_fuels', 'model')
         model = node['model']
         if model != 'off':
-            nodList = node.xmlGetNodeList('scalar')
+            nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -182,7 +184,7 @@ class NumericalParamEquatModel(Model):
         node = self.node_models.xmlGetNode('gas_combustion', 'model')
         model = node['model']
         if model != 'off':
-            nodList = node.xmlGetNodeList('scalar')
+            nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -193,7 +195,7 @@ class NumericalParamEquatModel(Model):
         if not node: return []
         model = node['model']
         if model != 'off':
-            nodList = node.xmlGetNodeList('scalar')
+            nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -204,7 +206,7 @@ class NumericalParamEquatModel(Model):
         if not node: return []
         model = node['model']
         if model != 'off':
-            nodList = node.xmlGetNodeList('scalar')
+            nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -215,14 +217,14 @@ class NumericalParamEquatModel(Model):
         if not node: return []
         model = node['model']
         if model != 'off':
-            nodList = node.xmlGetNodeList('scalar')
+            nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
     def _getAdditionalScalarNodes(self):
         """ Private method: return list of additional scalar's nodes """
         n = self.case.xmlGetNode('additional_scalars')
-        return n.xmlGetNodeList('scalar', type='user')
+        return n.xmlGetNodeList('variable', type='user')
 
 
     def _getAleVariablesNodes(self):
@@ -715,12 +717,10 @@ class NumericalParamEquatTestCase(ModelTest):
         Check whether the NumericalParamEquatModel class could set and get scheme
         """
         model = NumericalParamEquatModel(self.case)
-        model.setScheme('VelocitW', 'upwind')
+        model.setScheme('Velocity', 'upwind')
         doc = """<velocity_pressure>
                         <variable label="Pressure" name="pressure"/>
-                        <variable label="VelocitU" name="velocity_U"/>
-                        <variable label="VelocitV" name="velocity_V"/>
-                        <variable label="VelocitW" name="velocity_W">
+                        <variable label="Velocity" name="velocity"/>
                                 <order_scheme choice="upwind"/>
                         </variable>
                         <property label="total_pressure" name="total_pressure"/>
@@ -737,13 +737,11 @@ class NumericalParamEquatTestCase(ModelTest):
         Check whether the NumericalParamEquatModel class could set and get blending factor
         """
         model = NumericalParamEquatModel(self.case)
-        model.setScheme('VelocitW', 'centered')
-        model.setBlendingFactor('VelocitW', 0.5)
+        model.setScheme('Velocity', 'centered')
+        model.setBlendingFactor('Velocity', 0.5)
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
-                    <variable label="VelocitU" name="velocity_U"/>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W">
+                    <variable label="Velocity" name="velocity"/>
                             <blending_factor>0.5</blending_factor>
                     </variable>
                     <property label="total_pressure" name="total_pressure"/>
@@ -760,12 +758,10 @@ class NumericalParamEquatTestCase(ModelTest):
         Check whether the NumericalParamEquatModel class could set and get slope test
         """
         model = NumericalParamEquatModel(self.case)
-        model.setSlopeTest('VelocitW', 'off')
+        model.setSlopeTest('Velocity', 'off')
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
-                    <variable label="VelocitU" name="velocity_U"/>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W">
+                    <variable label="Velocity" name="velocity"/>
                             <slope_test status="off"/>
                     </variable>
                     <property label="total_pressure" name="total_pressure"/>
@@ -783,12 +779,10 @@ class NumericalParamEquatTestCase(ModelTest):
         Check whether the NumericalParamEquatModel class could set and get flux reconstruction
         """
         model = NumericalParamEquatModel(self.case)
-        model.setFluxReconstruction('VelocitW', 'on')
+        model.setFluxReconstruction('Velocity', 'on')
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
-                    <variable label="VelocitU" name="velocity_U"/>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W">
+                    <variable label="Velocity" name="velocity"/>
                     </variable>
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
@@ -799,12 +793,10 @@ class NumericalParamEquatTestCase(ModelTest):
         assert model.getFluxReconstruction('VelocitW') == 'on',\
                 'Could not get status of flux reconstruction in NumericalParamEquationModel'
 
-        model.setFluxReconstruction('VelocitW', 'off')
+        model.setFluxReconstruction('Velocity', 'off')
         doc2 = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
-                    <variable label="VelocitU" name="velocity_U"/>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W">
+                    <variable label="Velocity" name="velocity"/>
                         <flux_reconstruction status="off"/>
                     </variable>
                     <property label="total_pressure" name="total_pressure"/>
@@ -826,9 +818,7 @@ class NumericalParamEquatTestCase(ModelTest):
                     <variable label="Pressure" name="pressure">
                             <max_iter_number>22222</max_iter_number>
                     </variable>
-                    <variable label="VelocitU" name="velocity_U"/>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W"/>
+                    <variable label="Velocity" name="velocity"/>
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
@@ -849,16 +839,14 @@ class NumericalParamEquatTestCase(ModelTest):
         from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
         NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
         del NumericalParamGlobalModel
-        assert model.getSolverPrecision('VelocitU') == 1e-5
+        assert model.getSolverPrecision('Velocity') == 1e-5
 
         model.setSolverPrecision('VelocitU', 2e-6)
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
-                    <variable label="VelocitU" name="velocity_U">
+                    <variable label="Velocity" name="velocity">
                             <solver_precision>2e-06</solver_precision>
                     </variable>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W"/>
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
@@ -884,20 +872,18 @@ class NumericalParamEquatTestCase(ModelTest):
         node_sca = self.case.xmlGetNode('additional_scalars')
         vit = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
-                    <variable label="VelocitU" name="velocity_U"/>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W"/>
+                    <variable label="Velocity" name="velocity"/>
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
                  </velocity_pressure>"""
         sca = """<additional_scalars>
-                    <scalar label="TempC" name="temperature_celsius" type="thermal">
+                    <variable label="TempC" name="temperature_celsius" type="thermal">
                             <initial_value zone_id="1">20.0</initial_value>
                             <min_value>-1e+12 </min_value>
                             <max_value>1e+12</max_value>
                             <time_step_factor>52</time_step_factor>
-                    </scalar>
+                    </variable>
                  </additional_scalars>"""
         assert model.node_vitpre == self.xmlNodeFromString(vit),\
                 'Could not set time step factor in NumericalParamEquationModel'

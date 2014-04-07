@@ -118,7 +118,7 @@ if (ippmod(icod3p).ge.0) then
   call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
   iscavr(ifp2m) = ifm
 
-  f_id = ivarfl(isca(ifp2m))
+  f_id = ivarfl(isca(ifm))
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
 

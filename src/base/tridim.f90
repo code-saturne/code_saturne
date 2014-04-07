@@ -512,7 +512,7 @@ if (ncpdct.gt.0) then
     call uikpdc &
     !==========
   ( iappel, ncelet, ncepdc,             &
-    icepdc, ckupdc, rtpa )
+    icepdc, ckupdc)
   endif
 
   call uskpdc &
@@ -754,16 +754,14 @@ do while (iterns.le.nterup)
   ( ntcabs, nfabor,                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
-    isopcf, iparoi, iparug, isymet, isolib, isca  ,                &
-    ipr   , iscalt, itempk, ienerg,                                &
+    isopcf, iparoi, iparug, isymet, isolib,                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
-    coejou, dpot,   rtpa,   ielcor,                                &
-    ipotr,  ipoti,  ipotva, ncelet,                                &
+    coejou, dpot,   ielcor, ipoti,                                 &
     itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent ,  fment, distch, rcodcl)
+    timpat, timpcp, tkent ,  fment, distch, nvarcl, rcodcl)
 
     if (ippmod(iphpar).eq.0) then
 

@@ -546,7 +546,7 @@ module ppincl
   integer, save :: ipoti
 
   !> components of magnetic vector potential
-  integer, save :: ipotva(ndimve)
+  integer, save :: ipotva
 
   !> constituent massic fraction
   integer, save :: iycoel(ngazgm)

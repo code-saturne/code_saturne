@@ -83,27 +83,27 @@ class XMLmodel(Variables):
         nodeList = []
 
         if model in ('k-epsilon', 'k-epsilon-PL'):
-            nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_k'))
-            nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_eps'))
+            nodeList.append(nodeTurb.xmlGetNode('variable', name='k'))
+            nodeList.append(nodeTurb.xmlGetNode('variable', name='epsilon'))
 
         elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
-            for var in ('component_R11', 'component_R22', 'component_R33',
-                        'component_R12', 'component_R13', 'component_R23',
-                        'turb_eps'):
+            for var in ('r11', 'r22', 'r33',
+                        'r12', 'r13', 'r23',
+                        'epsilon'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name=var))
             if model in ('Rij-EBRSM'):
-                nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_alpha'))
+                nodeList.append(nodeTurb.xmlGetNode('variable', name='alpha'))
 
         elif model in ('v2f-BL-v2/k'):
-            for var in ('turb_k', 'turb_eps', 'turb_phi', 'turb_alpha'):
+            for var in ('k', 'epsilon', 'phi', 'alpha'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name=var))
 
         elif model in ('k-omega-SST'):
-            nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_k'))
-            nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_omega'))
+            nodeList.append(nodeTurb.xmlGetNode('variable', name='k'))
+            nodeList.append(nodeTurb.xmlGetNode('variable', name='omega'))
 
         elif model in ('Spalart-Allmaras'):
-            nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_nusa'))
+            nodeList.append(nodeTurb.xmlGetNode('variable', name='nu_tilda'))
 
         return nodeList
 

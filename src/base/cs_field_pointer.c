@@ -439,10 +439,7 @@ cs_field_pointer_map_electric_arcs(int  n_gasses)
   cs_field_pointer_map(CS_ENUMF_(potr), cs_field_by_name_try("elec_pot_r"));
   cs_field_pointer_map(CS_ENUMF_(poti), cs_field_by_name_try("elec_pot_i"));
 
-  for (int i = 0; i < 3; i++) {
-    snprintf(s, 63, "vec_potential_%02d", i+1); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(potva), i, cs_field_by_name_try(s));
-  }
+  cs_field_pointer_map(CS_ENUMF_(potva), cs_field_by_name_try("vec_potential"));
 
   for (int i = 0; i < n_gasses - 1; i++) {
     snprintf(s, 63, "esl_fraction_%02d", i+1); s[63] = '\0';

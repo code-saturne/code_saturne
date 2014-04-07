@@ -111,7 +111,7 @@ integer          ipp   , idimt , kk   , ll, iel
 integer          ivarl , ivar0
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
-integer          ipcsii, iflpst, itplus
+integer          ipcsii, iflpst, itplus, iprev
 
 double precision epsrgp, climgp, extrap
 double precision pcentr
@@ -125,6 +125,7 @@ double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
 double precision, dimension(:), pointer :: crom
+double precision, allocatable, dimension(:,:,:) :: gradv
 
 !===============================================================================
 
@@ -802,6 +803,7 @@ if (numtyp.eq.-1) then
       .or. ippmod(ielion).ge.1) then
 
     allocate(grad(ncelet,3))
+    allocate(gradv(3, 3 ,ncelet))
 
     if (.true.) then
 
@@ -928,104 +930,24 @@ if (numtyp.eq.-1) then
 
     if (.true. .and. ippmod(ielarc).ge.2) then
 
-      ! Ax Component
+      ! A Component
 
-      ivar = isca(ipotva(1))
+      ivar = isca(ipotva)
 
+      iprev = 0
       inc = 1
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
 
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad)
+      call field_gradient_vector(ivarfl(ivar), iprev, imrgra, inc,     &
+                                 gradv)
 
       ! B = rot A ( B = curl A)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) =  zero
-        tracel(2 + (iloc-1)*idimt) =  grad(iel,3)
-        tracel(3 + (iloc-1)*idimt) = -grad(iel,2)
-      enddo
-
-      ! Ay component
-
-      ivar = isca(ipotva(2))
-
-      inc = 1
-      iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad)
-
-      ! B = rot A (B = curl A)
-
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) - grad(iel,3)
-        tracel(3 + (iloc-1)*idimt) = tracel(3 + (iloc-1)*idimt) + grad(iel,1)
-      enddo
-
-      ! Az component
-
-      ivar = isca(ipotva(3))
-
-      inc = 1
-      iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad   )
-
-      ! B = rot A (B = curl A)
-
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) + grad(iel,2)
-        tracel(2 + (iloc-1)*idimt) = tracel(2 + (iloc-1)*idimt) - grad(iel,1)
+        tracel(1 + (iloc-1)*idimt) = gradv(3, 2, iel) - gradv(2, 3, iel)
+        tracel(2 + (iloc-1)*idimt) = gradv(1, 3, iel) - gradv(3, 1, iel)
+        tracel(3 + (iloc-1)*idimt) = gradv(2, 1, iel) - gradv(1, 2, iel)
       enddo
 
       idimt  = 3
@@ -1098,6 +1020,7 @@ if (numtyp.eq.-1) then
 
     ! Free memory
     deallocate(grad)
+    deallocate(gradv)
 
   endif
 

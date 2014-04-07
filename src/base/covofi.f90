@@ -306,10 +306,10 @@ if (iihmpr.eq.1) then
 
   if (iscal.ne.iscalt) then
     call uitssc &
-    ( iscal  , rtp(1,ivar), smbrs  , rovsdt )
+    ( iflid  , rtp(1,ivar), smbrs  , rovsdt )
   else
     call uitsth &
-    ( iscal  , rtp(1,ivar), smbrs  , rovsdt )
+    ( iflid  , rtp(1,ivar), smbrs  , rovsdt )
   endif
 endif
 

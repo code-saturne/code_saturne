@@ -170,9 +170,9 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create list of variables for a class
         """
-        modelVariables =  ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
+        modelVariables =  ["np_coal", "x_coal", "xck_coal", "h2_coal"]
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
-            modelVariables.append("XWT_CP")
+            modelVariables.append("xwt_coal")
 
         return modelVariables
 
@@ -207,7 +207,7 @@ class CoalCombustionModel(Variables, Model):
         lst = []
 
         # list of coal variables
-        baseNames = ["Fr_MV1", "Fr_MV2"]
+        baseNames = ["mv1_fraction_", "mv2_fraction_"]
         for baseName in baseNames:
             for coal in range(0, coalsNumber):
                 name = '%s%2.2i' % (baseName, coal+1)
@@ -220,33 +220,33 @@ class CoalCombustionModel(Variables, Model):
                 name = '%s%2.2i' % (baseName, classe+1)
                 lst.append(name)
 
-        lst.append("Fr_HET_O2")
+        lst.append("het_o2_fraction")
 
         if self.getCO2KineticsStatus() == "on":
-            lst.append("Fr_HET_CO2")
+            lst.append("het_co2_fraction")
 
         if self.getH2OKineticsStatus() == "on":
-            lst.append("Fr_HET_H2O")
+            lst.append("het_h2o_fraction")
 
         if self.getNOxFormationStatus() == "on":
-            lst.append("FR_HCN")
-            lst.append("FR_NO")
-            lst.append("Enth_Ox")
-            lst.append("FR_NH3")
+            lst.append("hcn_fraction")
+            lst.append("no_fraction")
+            lst.append("ox_enthalpy")
+            lst.append("nh3_fraction")
 
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
-            lst.append("FR_H20")
+            lst.append("h2o_fraction")
 
         if self.getOxidantNumber() >= 2:
-            lst.append("FR_OXYD2")
+            lst.append("oxyd2_fraction")
 
         if self.getOxidantNumber() == 3:
-            lst.append("FR_OXYD3")
+            lst.append("oxyd3_fraction")
 
         # ieqco2 fix to true
-        lst.append("FR_CO2")
+        lst.append("co2_fraction")
 
-        lst.append("Var_F1F2")
+        lst.append("f1f2_variance")
 
         return lst
 
@@ -262,14 +262,14 @@ class CoalCombustionModel(Variables, Model):
         lst = []
 
         # list of class variables
-        baseNames =  ["ENT_CP"]
+        baseNames =  ["h2_coal"]
         for baseName in baseNames:
             for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 lst.append(name)
 
         if self.getNOxFormationStatus() == "on":
-            lst.append("Enth_Ox")
+            lst.append("ox_enthalpy")
 
         return lst
 
@@ -280,18 +280,18 @@ class CoalCombustionModel(Variables, Model):
         Create and update model scalar
         """
         previous_list = []
-        nodes = self.node_fuel.xmlGetChildNodeList('scalar')
+        nodes = self.node_fuel.xmlGetChildNodeList('variable')
         for node in nodes:
             previous_list.append(node['name'])
 
         new_list = self.__createModelVariableList()
         for name in previous_list:
             if name not in new_list:
-                self.node_fuel.xmlRemoveChild('scalar',  name = name)
+                self.node_fuel.xmlRemoveChild('variable',  name = name)
 
         for name in new_list:
             if name not in previous_list:
-                self.setNewScalar(self.node_fuel, name, "model")
+                self.setNewVariable(self.node_fuel, name, tpe="model")
 
 
     def __createModelPropertiesList(self):
@@ -373,16 +373,16 @@ class CoalCombustionModel(Variables, Model):
     def __updateWetScalarsAndProperty(self, model):
         """
         Private method
-        Delete scalars XWT_CP and Fr_H20 and property Ga_SEC
+        Delete scalars xwt_coal and h2o_fraction and property Ga_SEC
         if model isn't 'homogeneous_fuel_moisture'
         """
         # TODO a supprimer doit etre appele si on change le modele uniquement
         if model != 'homogeneous_fuel_moisture' and self.getCoalCombustionModel() != 'homogeneous_fuel_moisture_lagr':
-            nod = self.node_fuel.xmlGetNode('scalar', type="model", name="FR_H20")
+            nod = self.node_fuel.xmlGetNode('variable', type="model", name="h2o_fraction")
             if nod:
                 nod.xmlRemoveNode()
-            for node in self.node_fuel.xmlGetNodeList('scalar', type="model"):
-                if node['name'][:6] == "XWT_CP":
+            for node in self.node_fuel.xmlGetNodeList('variable', type="model"):
+                if node['name'][:6] == "xwt_coal":
                     node.xmlRemoveNode()
             for node in self.node_fuel.xmlGetNodeList('property'):
                 if node['name'][:6] == "Ga_SEC":
@@ -415,12 +415,12 @@ class CoalCombustionModel(Variables, Model):
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
-                self.setNewScalar(self.node_fuel, name, "model")
+                self.setNewVariable(self.node_fuel, name, tpe="model")
 
-        baseNames = ["Fr_MV1", "Fr_MV2"]
+        baseNames = ["mv1_fraction_", "mv2_fraction_"]
         for baseName in baseNames:
             name = '%s%2.2i' % (baseName, coalsNumber)
-            self.setNewScalar(self.node_fuel, name, "model")
+            self.setNewVariable(self.node_fuel, name, tpe="model")
 
 
     def __createCoalModelProperties(self, coalsNumber, coalClassesNumber, classesNumber):
@@ -471,7 +471,7 @@ class CoalCombustionModel(Variables, Model):
         baseNames = self.__getVariableList()
 
         # Rename other classes
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
+        nodeList = self.node_fuel.xmlGetNodeList('variable')
         if nodeList != None:
             for node in nodeList:
                 oldName = node['name']
@@ -486,7 +486,7 @@ class CoalCombustionModel(Variables, Model):
         # create new scalars
         for i in range(len(baseNames)):
             name = '%s%2.2i' % (baseNames[i], classNum)
-            self.setNewScalar(self.node_fuel, name, "model")
+            self.setNewVariable(self.node_fuel, name, tpe="model")
 
 
     @Variables.undoGlobal
@@ -510,7 +510,7 @@ class CoalCombustionModel(Variables, Model):
         Update scalars and properties depending on model
         """
         if model == 'off':
-            for tag in ('scalar',
+            for tag in ('variable',
                         'property',
                         'reference_mass_molar',
                         'reference_temperature'):
@@ -601,8 +601,8 @@ class CoalCombustionModel(Variables, Model):
             self.deleteClass(coalNumber, classId)
 
         # Remove fuel scalars
-        baseNames = [ "Fr_MV1", "Fr_MV2"]
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
+        baseNames = [ "mv1_fraction_", "mv2_fraction_"]
+        nodeList = self.node_fuel.xmlGetNodeList('variable')
         if nodeList != None:
             for node in nodeList :
                 nameNode = node['name']
@@ -612,7 +612,7 @@ class CoalCombustionModel(Variables, Model):
                         node.xmlRemoveNode()
 
         # Rename other fuels
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
+        nodeList = self.node_fuel.xmlGetNodeList('variable')
         if nodeList != None:
             for node in nodeList:
                 oldName = node['name']
@@ -647,7 +647,7 @@ class CoalCombustionModel(Variables, Model):
         baseNames = self.__getVariableList()
 
         # Remove coal classes
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
+        nodeList = self.node_fuel.xmlGetNodeList('variable')
         if nodeList != None:
             for node in nodeList :
                 nodeName = node['name']
@@ -657,7 +657,7 @@ class CoalCombustionModel(Variables, Model):
                         node.xmlRemoveNode()
 
         # Rename other classes
-        nodeList = self.node_fuel.xmlGetNodeList('scalar')
+        nodeList = self.node_fuel.xmlGetNodeList('variable')
         if nodeList != None:
             for node in nodeList:
                 oldName = node['name']
@@ -1969,27 +1969,27 @@ class CoalCombustionModelTestCase(ModelTest):
         model.setCoalCombustionModel('coal_homo')
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="NP_CP01" name="NP_CP01" type="model">
+                    <variable label="NP_CP01" name="np_coal01" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCH_CP01" name="XCH_CP01" type="model">
+                    </variable>
+                    <variable label="XCH_CP01" name="x_coal01" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCK_CP01" name="XCK_CP01" type="model">
+                    </variable>
+                    <variable label="XCK_CP01" name="xck_coal01" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="ENT_CP01" name="ENT_CP01" type="model">
+                    </variable>
+                    <variable label="ENT_CP01" name="h2_coal01" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV101" name="Fr_MV101" type="model">
+                    </variable>
+                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV201" name="Fr_MV201" type="model">
+                    </variable>
+                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_HET" name="Fr_HET" type="model">
+                    </variable>
+                    <variable label="Fr_HET" name="het_fraction" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -2020,7 +2020,7 @@ class CoalCombustionModelTestCase(ModelTest):
     def checkCreateSolidFuelModelScalarsAndProperties(self):
         """
         Check whether the CoalCombustionModel class could be
-        created new scalars and properties for one new coal
+        created new variables and properties for one new coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
@@ -2028,13 +2028,13 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="ENT_CP01" name="ENT_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
+                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -2054,24 +2054,24 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV201" name="Ga_DV201"/>
                     <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <scalar label="NP_CP02" name="NP_CP02" type="model">
+                    <variable label="NP_CP02" name="np_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCH_CP02" name="XCH_CP02" type="model">
+                    </variable>
+                    <variable label="XCH_CP02" name="x_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCK_CP02" name="XCK_CP02" type="model">
+                    </variable>
+                    <variable label="XCK_CP02" name="xck_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="ENT_CP02" name="ENT_CP02" type="model">
+                    </variable>
+                    <variable label="ENT_CP02" name="h2_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV102" name="Fr_MV102" type="model">
+                    </variable>
+                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV202" name="Fr_MV202" type="model">
+                    </variable>
+                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_CP02" name="Temp_CP02"/>
                     <property label="Frm_CP02" name="Frm_CP02"/>
                     <property label="Rho_CP02" name="Rho_CP02"/>
@@ -2083,13 +2083,13 @@ class CoalCombustionModelTestCase(ModelTest):
             </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\
-            'Could not create newscalars and properties for new coal'
+            'Could not create newvariables and properties for new coal'
 
 
     def checkCreateClassModelScalarsAndProperties(self):
         """
         Check whether the CoalCombustionModel class could be
-        created a new class of scalars and properties for one coal
+        created a new class of variables and properties for one coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
@@ -2097,13 +2097,13 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="ENT_CP01" name="ENT_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
+                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -2123,24 +2123,24 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV201" name="Ga_DV201"/>
                     <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <scalar label="NP_CP03" name="NP_CP03" type="model">
+                    <variable label="NP_CP03" name="np_coal03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCH_CP03" name="XCH_CP03" type="model">
+                    </variable>
+                    <variable label="XCH_CP03" name="x_coal03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCK_CP03" name="XCK_CP03" type="model">
+                    </variable>
+                    <variable label="XCK_CP03" name="xck_coal03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="ENT_CP03" name="ENT_CP03" type="model">
+                    </variable>
+                    <variable label="ENT_CP03" name="h2_coal03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV102" name="Fr_MV102" type="model">
+                    </variable>
+                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV202" name="Fr_MV202" type="model">
+                    </variable>
+                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_CP02" name="Temp_CP02"/>
                     <property label="Frm_CP02" name="Frm_CP02"/>
                     <property label="Rho_CP02" name="Rho_CP02"/>
@@ -2149,24 +2149,24 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
                     <property label="Ga_HET_O202" name="Ga_HET_O202"/>
-                    <scalar label="NP_CP04" name="NP_CP04" type="model">
+                    <variable label="NP_CP04" name="np_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCH_CP04" name="XCH_CP04" type="model">
+                    </variable>
+                    <variable label="XCH_CP04" name="x_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCK_CP04" name="XCK_CP04" type="model">
+                    </variable>
+                    <variable label="XCK_CP04" name="xck_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="ENT_CP04" name="ENT_CP04" type="model">
+                    </variable>
+                    <variable label="ENT_CP04" name="h2_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV103" name="Fr_MV103" type="model">
+                    </variable>
+                    <variable label="Fr_MV103" name="mv1_fraction_03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV203" name="Fr_MV203" type="model">
+                    </variable>
+                    <variable label="Fr_MV203" name="mv2_fraction_03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_CP03" name="Temp_CP03"/>
                     <property label="Frm_CP03" name="Frm_CP03"/>
                     <property label="Rho_CP03" name="Rho_CP03"/>
@@ -2175,10 +2175,10 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV103" name="Ga_DV103"/>
                     <property label="Ga_DV203" name="Ga_DV203"/>
                     <property label="Ga_HET_O203" name="Ga_HET_O203"/>
-                    <scalar label="NP_CP02" name="NP_CP02" type="model"/>
-                    <scalar label="XCH_CP02" name="XCH_CP02" type="model"/>
-                    <scalar label="XCK_CP02" name="XCK_CP02" type="model"/>
-                    <scalar label="ENT_CP02" name="ENT_CP02" type="model"/>
+                    <variable label="NP_CP02" name="np_coal02" type="model"/>
+                    <variable label="XCH_CP02" name="x_coal02" type="model"/>
+                    <variable label="XCK_CP02" name="xck_coal02" type="model"/>
+                    <variable label="ENT_CP02" name="h2_coal02" type="model"/>
                     <property label="Temp_CP04" name="Temp_CP04"/>
                     <property label="Frm_CP04" name="Frm_CP04"/>
                     <property label="Rho_CP04" name="Rho_CP04"/>
@@ -2190,13 +2190,13 @@ class CoalCombustionModelTestCase(ModelTest):
                 </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\
-           'Could not create a new class of scalars and properties for one coal'
+           'Could not create a new class of variables and properties for one coal'
 
 
     def checkDeleteSolidFuelModelScalarsAndProperties(self):
         """
         Check whether the CoalCombustionModel class could be
-        deleted class of scalars and properties for one given coal
+        deleted class of variables and properties for one given coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
@@ -2205,13 +2205,13 @@ class CoalCombustionModelTestCase(ModelTest):
         model.deleteCoalModelScalarsAndProperties(coalThermoChModel, 1)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="ENT_CP01" name="ENT_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
+                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -2231,18 +2231,18 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV201" name="Ga_DV201"/>
                     <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <scalar label="NP_CP02" name="NP_CP02" type="model">
+                    <variable label="NP_CP02" name="np_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCH_CP02" name="XCH_CP02" type="model">
+                    </variable>
+                    <variable label="XCH_CP02" name="x_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCK_CP02" name="XCK_CP02" type="model">
+                    </variable>
+                    <variable label="XCK_CP02" name="xck_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="ENT_CP02" name="ENT_CP02" type="model">
+                    </variable>
+                    <variable label="ENT_CP02" name="h2_coal02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_CP02" name="Temp_CP02"/>
                     <property label="Frm_CP02" name="Frm_CP02"/>
                     <property label="Rho_CP02" name="Rho_CP02"/>
@@ -2251,24 +2251,24 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
                     <property label="Ga_HET_O202" name="Ga_HET_O202"/>
-                    <scalar label="NP_CP04" name="NP_CP04" type="model">
+                    <variable label="NP_CP04" name="np_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCH_CP04" name="XCH_CP04" type="model">
+                    </variable>
+                    <variable label="XCH_CP04" name="x_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCK_CP04" name="XCK_CP04" type="model">
+                    </variable>
+                    <variable label="XCK_CP04" name="xck_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="ENT_CP04" name="ENT_CP04" type="model">
+                    </variable>
+                    <variable label="ENT_CP04" name="h2_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV102" name="Fr_MV102" type="model">
+                    </variable>
+                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV202" name="Fr_MV202" type="model">
+                    </variable>
+                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_CP04" name="Temp_CP04"/>
                     <property label="Frm_CP04" name="Frm_CP04"/>
                     <property label="Rho_CP04" name="Rho_CP04"/>
@@ -2280,13 +2280,13 @@ class CoalCombustionModelTestCase(ModelTest):
                 </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\
-           "Could not delete one coal's scalars and properties"
+           "Could not delete one coal's variables and properties"
 
 
     def checkDeleteClassModelScalarsAndProperties(self):
         """
         Check whether the CoalCombustionModel class could be
-        deleted class of scalars and properties for one given coal
+        deleted class of variables and properties for one given coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
@@ -2295,13 +2295,13 @@ class CoalCombustionModelTestCase(ModelTest):
         model.deleteClassModelScalars(coalThermoChModel, 2, 1)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="ENT_CP01" name="ENT_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
+                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
@@ -2321,12 +2321,12 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV201" name="Ga_DV201"/>
                     <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <scalar label="Fr_MV102" name="Fr_MV102" type="model">
+                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV202" name="Fr_MV202" type="model">
+                    </variable>
+                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_CP03" name="Temp_CP03"/>
                     <property label="Frm_CP03" name="Frm_CP03"/>
                     <property label="Rho_CP03" name="Rho_CP03"/>
@@ -2335,24 +2335,24 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV103" name="Ga_DV103"/>
                     <property label="Ga_DV203" name="Ga_DV203"/>
                     <property label="Ga_HET_O203" name="Ga_HET_O203"/>
-                    <scalar label="NP_CP04" name="NP_CP04" type="model">
+                    <variable label="NP_CP04" name="np_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCH_CP04" name="XCH_CP04" type="model">
+                    </variable>
+                    <variable label="XCH_CP04" name="x_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="XCK_CP04" name="XCK_CP04" type="model">
+                    </variable>
+                    <variable label="XCK_CP04" name="xck_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="ENT_CP04" name="ENT_CP04" type="model">
+                    </variable>
+                    <variable label="ENT_CP04" name="h2_coal04" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV103" name="Fr_MV103" type="model">
+                    </variable>
+                    <variable label="Fr_MV103" name="mv1_fraction_03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
-                    <scalar label="Fr_MV203" name="Fr_MV203" type="model">
+                    </variable>
+                    <variable label="Fr_MV203" name="mv2_fraction_03" type="model">
                             <flux_reconstruction status="off"/>
-                    </scalar>
+                    </variable>
                     <property label="Temp_CP04" name="Temp_CP04"/>
                     <property label="Frm_CP04" name="Frm_CP04"/>
                     <property label="Rho_CP04" name="Rho_CP04"/>
@@ -2361,10 +2361,10 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV104" name="Ga_DV104"/>
                     <property label="Ga_DV204" name="Ga_DV204"/>
                     <property label="Ga_HET_O204" name="Ga_HET_O204"/>
-                    <scalar label="NP_CP02" name="NP_CP02" type="model"/>
-                    <scalar label="XCH_CP02" name="XCH_CP02" type="model"/>
-                    <scalar label="XCK_CP02" name="XCK_CP02" type="model"/>
-                    <scalar label="ENT_CP02" name="ENT_CP02" type="model"/>
+                    <variable label="NP_CP02" name="np_coal02" type="model"/>
+                    <variable label="XCH_CP02" name="x_coal02" type="model"/>
+                    <variable label="XCK_CP02" name="xck_coal02" type="model"/>
+                    <variable label="ENT_CP02" name="h2_coal02" type="model"/>
                     <property label="Temp_CP02" name="Temp_CP02"/>
                     <property label="Frm_CP02" name="Frm_CP02"/>
                     <property label="Rho_CP02" name="Rho_CP02"/>
@@ -2376,7 +2376,7 @@ class CoalCombustionModelTestCase(ModelTest):
             </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\
-           "Could not delete one class of scalars and properties for one given coal"
+           "Could not delete one class of variables and properties for one given coal"
 
 
 def suite():

@@ -90,7 +90,7 @@ class DefineUserScalarsModel(Variables, Model):
         Private method.
         Delete 'variance' or 'property' markup from scalar named I{label}
         """
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             if node['label'] == label:
                 node.xmlRemoveChild(tag)
 
@@ -102,7 +102,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         for nature in ('inlet', 'outlet', 'wall'):
             for node in self.node_bc.xmlGetChildNodeList(nature):
-                for n in node.xmlGetChildNodeList('scalar'):
+                for n in node.xmlGetChildNodeList('variable'):
                     if n['label'] == label:
                         n.xmlRemoveNode()
 
@@ -176,10 +176,10 @@ class DefineUserScalarsModel(Variables, Model):
         """
         lst = []
         n = 0
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             n = n + 1
             if node['type'] == 'user':
-                node['name'] = 'scalar' + str(n)
+                node['name'] = 'user_' + str(n)
             nprop = node.xmlGetChildNode('property')
             if nprop:
                 old_name = nprop['name']
@@ -203,7 +203,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isNotInList(scalar_label, self.getScalarsVarianceList())
         self.isInList(scalar_label, self.getUserScalarLabelsList())
 
-        n = self.scalar_node.xmlGetNode('scalar', type='user', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', type='user', label=scalar_label)
         n.xmlInitChildNode('property', label=coeff_label)
 
         if not self.getScalarDiffusivityChoice(scalar_label):
@@ -220,7 +220,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         Delete scalar I{label}.
         """
-        node = self.scalar_node.xmlGetNode('scalar', label=label)
+        node = self.scalar_node.xmlGetNode('variable', label=label)
         node.xmlRemoveNode()
         self.__deleteScalarBoundaryConditions(label)
         self.__updateScalarNameAndDiffusivityName()
@@ -231,7 +231,7 @@ class DefineUserScalarsModel(Variables, Model):
         """Public method.
         Return the User scalar label list (thermal scalar included)"""
         lst = []
-        for node in self.node_therm.xmlGetNodeList('scalar'):
+        for node in self.node_therm.xmlGetNodeList('variable'):
             lst.append(node['label'])
         return lst
 
@@ -241,7 +241,7 @@ class DefineUserScalarsModel(Variables, Model):
         """Public method.
         Return the User scalar label list (thermal scalar included)"""
         lst = []
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             lst.append(node['label'])
         return lst
 
@@ -256,7 +256,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         model = node['model']
         if model != 'off':
-            node_list = node.xmlGetNodeList('scalar')
+            node_list = node.xmlGetNodeList('variable')
             list_scalar=[]
             for node_scalar in node_list:
                 list_scalar.append(node_scalar['label'])
@@ -276,7 +276,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         model = node['model']
         if model != 'off':
-            node_list = node.xmlGetNodeList('scalar')
+            node_list = node.xmlGetNodeList('variable')
             list_scalar=[]
             for node_scalar in node_list:
                 list_scalar.append(node_scalar['label'])
@@ -293,7 +293,7 @@ class DefineUserScalarsModel(Variables, Model):
         Method also used by UserScalarPropertiesView
         """
         lst = []
-        for node in self.scalar_node.xmlGetNodeList('scalar', type='user'):
+        for node in self.scalar_node.xmlGetNodeList('variable', type='user'):
             lst.append(node['label'])
         return lst
 
@@ -324,7 +324,7 @@ class DefineUserScalarsModel(Variables, Model):
         l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
 
         if l not in self.getScalarLabelsList() and l not in self.getThermalScalarLabelsList():
-            self.scalar_node.xmlInitNode('scalar', 'name', type="user", label=l)
+            self.scalar_node.xmlInitNode('variable', 'name', type="user", label=l)
 
             self.__setScalarDiffusivity(l, c)
             self.setScalarBoundaries()
@@ -341,7 +341,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         l= self.__defaultVarianceName(label)
         if l not in self.getScalarsVarianceList():
-            self.scalar_node.xmlInitNode('scalar', 'name', type="user", label=l)
+            self.scalar_node.xmlInitNode('variable', 'name', type="user", label=l)
             if self.getScalarLabelsList() != None:
                 self.setScalarVariance(l, self.defaultScalarValues()['variance'])
         return l
@@ -356,7 +356,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         label = new_label[:LABEL_LENGTH_MAX]
         if label not in self.getScalarLabelsList():
-            for node in self.scalar_node.xmlGetNodeList('scalar'):
+            for node in self.scalar_node.xmlGetNodeList('variable'):
                 if node['label'] == old_label:
                     node['label'] = label
 
@@ -365,7 +365,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         for nature in ('inlet', 'outlet', 'wall'):
             for node in self.node_bc.xmlGetChildNodeList(nature):
-                for n in node.xmlGetChildNodeList('scalar'):
+                for n in node.xmlGetChildNodeList('variable'):
                     if n['label'] == old_label:
                         n['label'] = new_label
 
@@ -382,16 +382,17 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isInList(l, self.getScalarLabelsList())
 
-        return self.scalar_node.xmlGetNode('scalar', label=l).xmlGetString('variance')
+        return self.scalar_node.xmlGetNode('variable', label=l).xmlGetString('variance')
 
 
     @Variables.undoGlobal
     def setScalarVariance(self, scalar_label, variance_label):
         """Put variance of an additional_scalar with label scalar_label"""
         self.isInList(scalar_label, self.getUserScalarLabelsList())
-        self.isInList(variance_label, self.getScalarLabelsList())
+        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
+        self.isInList(variance_label, lst)
 
-        n = self.scalar_node.xmlGetNode('scalar', type='user', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', type='user', label=scalar_label)
         n.xmlSetData('variance', variance_label)
 
         self.__removeScalarChildNode(scalar_label, 'property')
@@ -403,7 +404,7 @@ class DefineUserScalarsModel(Variables, Model):
         Return list of scalars which have a variance
         """
         lst = []
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             sca = node.xmlGetString('variance')
             if sca and sca not in lst:
                 lst.append(sca)
@@ -416,7 +417,7 @@ class DefineUserScalarsModel(Variables, Model):
         Return list of scalars which are also a variance
         """
         lst = []
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             if node.xmlGetString('variance') and node['label'] not in lst:
                 lst.append(node['label'])
         return lst
@@ -430,7 +431,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(label, self.getScalarLabelsList())
 
         lab = ""
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             if node.xmlGetString('variance') == label:
                 lab = node['label']
         return lab
@@ -445,7 +446,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getScalarLabelsList())
 
         lab_diff = ""
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
         n_diff = n.xmlGetChildNode('property')
         if n_diff:
             lab_diff = n_diff['name']
@@ -460,7 +461,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isInList(scalar_label, self.getScalarLabelsList())
 
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
         n.xmlGetChildNode('property')['label'] = diff_label
 
 
@@ -473,7 +474,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getScalarLabelsList())
 
         lab_diff = ""
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
         n_diff = n.xmlGetChildNode('property')
         if n_diff:
             lab_diff = n_diff['label']
@@ -491,7 +492,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getUserScalarLabelsList())
         self.isFloat(initial_value)
 
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
         n_diff = n.xmlInitChildNode('property')
         n_diff.xmlSetData('initial_value', initial_value)
 
@@ -505,7 +506,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isNotInList(scalar_label, self.getScalarsVarianceList())
         self.isInList(scalar_label, self.getUserScalarLabelsList())
 
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
         n_diff = n.xmlInitChildNode('property')
         diffu = n_diff.xmlGetDouble('initial_value')
         if diffu == None:
@@ -523,9 +524,9 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isNotInList(scalar_label, self.getScalarsVarianceList())
         self.isInList(scalar_label, self.getUserScalarLabelsList())
-        self.isInList(choice, ('constant', 'user_law'))
+        self.isInList(choice, ('constant', 'variable'))
 
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
         n_diff = n.xmlInitChildNode('property')
         n_diff['choice'] = choice
 
@@ -539,7 +540,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isNotInList(scalar_label, self.getScalarsVarianceList())
         self.isInList(scalar_label, self.getUserScalarLabelsList())
 
-        n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
         choice = n.xmlInitChildNode('property')['choice']
         if not choice:
             choice = self.defaultScalarValues()['diffusion_choice']
@@ -556,7 +557,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isNotInList(scalar, self.getScalarsVarianceList())
         self.isInList(scalar, self.getUserScalarLabelsList())
-        n = self.scalar_node.xmlGetNode('scalar',label = scalar)
+        n = self.scalar_node.xmlGetNode('variable',label = scalar)
         node = n.xmlGetNode('property')
         formula = node.xmlGetString('formula')
         if not formula:
@@ -588,7 +589,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isNotInList(scalar, self.getScalarsVarianceList())
         self.isInList(scalar, self.getUserScalarLabelsList())
-        n = self.scalar_node.xmlGetNode('scalar',label = scalar)
+        n = self.scalar_node.xmlGetNode('variable',label = scalar)
         node = n.xmlGetNode('property')
         node.xmlSetData('formula', str)
 
@@ -627,7 +628,7 @@ class DefineUserScalarsModel(Variables, Model):
         lst.append(slabel)
 
         # Then add variance scalar related to the main scalar
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             if node.xmlGetString('variance') == slabel:
                 lst.append(node['label'])
 
@@ -653,12 +654,12 @@ class DefineUserScalarsModel(Variables, Model):
         lst.append(slabel)
 
         # Then add variance scalar related to the main scalar
-        for node in self.scalar_node.xmlGetNodeList('scalar'):
+        for node in self.scalar_node.xmlGetNodeList('variable'):
             if node.xmlGetString('variance') == slabel:
                 self.__deleteScalar(node['label'])
 
         # Delete scalars
-        node = self.node_therm.xmlGetNode('scalar', label=slabel)
+        node = self.node_therm.xmlGetNode('variable', label=slabel)
         node.xmlRemoveNode()
         self.__deleteScalarBoundaryConditions(slabel)
         self.__updateScalarNameAndDiffusivityName()
@@ -673,9 +674,9 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
         if scalar_label not in self.getScalarLabelsList():
-            node = self.node_therm.xmlGetNode('scalar', 'name', label=scalar_label)
+            node = self.node_therm.xmlGetNode('variable', 'name', label=scalar_label)
         else:
-            node = self.scalar_node.xmlGetNode('scalar', 'type', label=scalar_label)
+            node = self.scalar_node.xmlGetNode('variable', 'type', label=scalar_label)
         Model().isInList(node['type'], ('user', 'thermal'))
         return node['type']
 
@@ -687,9 +688,9 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
         if scalar_label not in self.getScalarLabelsList():
-            node = self.node_therm.xmlGetNode('scalar', 'name', label=scalar_label)
+            node = self.node_therm.xmlGetNode('variable', 'name', label=scalar_label)
         else:
-            node = self.scalar_node.xmlGetNode('scalar', 'name', label=scalar_label)
+            node = self.scalar_node.xmlGetNode('variable', 'name', label=scalar_label)
         return node['name']
 
 
@@ -701,7 +702,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getMeteoScalarsList())
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('atmospheric_flows', 'model')
-        n = node.xmlGetNode('scalar', 'type', label=scalar_label)
+        n = node.xmlGetNode('variable', 'type', label=scalar_label)
         Model().isInList(n['type'], ('user', 'thermal', 'model'))
         return n['type']
 
@@ -714,7 +715,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getMeteoScalarsList())
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('atmospheric_flows', 'model')
-        n = node.xmlGetNode('scalar', 'name', label=scalar_label)
+        n = node.xmlGetNode('variable', 'name', label=scalar_label)
         return n['name']
 
 
@@ -726,7 +727,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getElectricalScalarsList())
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('joule_effect', 'model')
-        n = node.xmlGetNode('scalar', 'type', label=scalar_label)
+        n = node.xmlGetNode('variable', 'type', label=scalar_label)
         Model().isInList(n['type'], ('user', 'thermal', 'model'))
         return n['type']
 
@@ -739,7 +740,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getElectricalScalarsList())
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('joule_effect', 'model')
-        n = node.xmlGetNode('scalar', 'name', label=scalar_label)
+        n = node.xmlGetNode('variable', 'name', label=scalar_label)
         return n['name']
 
 
@@ -767,14 +768,14 @@ class UserScalarTestCase(ModelTest):
         model.addUserScalar(zone, 'toto')
 
         doc = '''<additional_scalars>
-                    <scalar label="toto" name="scalar1" type="user">
+                    <variable label="toto" name="user_1" type="user">
                             <initial_value zone_id="1">0.0 </initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\
@@ -789,22 +790,22 @@ class UserScalarTestCase(ModelTest):
         model.renameScalarLabel('titi', 'MACHIN')
 
         doc = '''<additional_scalars>
-                    <scalar label="toto" name="scalar1" type="user">
+                    <variable label="toto" name="user_1" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="MACHIN" name="scalar2" type="user">
+                    </variable>
+                    <variable label="MACHIN" name="user_2" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\
@@ -820,19 +821,19 @@ class UserScalarTestCase(ModelTest):
         del ThermalScalarModel
 
         doc = '''<additional_scalars>
-                    <scalar label="usersca1" name="scalar1" type="user">
+                    <variable label="usersca1" name="user_1" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="TempC" name="temperature_celsius" type="thermal">
+                    </variable>
+                    <variable label="TempC" name="temperature_celsius" type="thermal">
                             <initial_value zone_id="1">20.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         model.renameScalarLabel("TempC", "Matemperature")
@@ -848,14 +849,14 @@ class UserScalarTestCase(ModelTest):
         model.setScalarInitialValue(zone, 'toto', 0.05)
 
         doc = '''<additional_scalars>
-                    <scalar label="toto" name="scalar1" type="user">
+                    <variable label="toto" name="user_1" type="user">
                             <initial_value zone_id="1">0.05</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\
@@ -874,22 +875,22 @@ class UserScalarTestCase(ModelTest):
         model.setScalarMaxValue('titi',100.)
 
         doc = '''<additional_scalars>
-                    <scalar label="toto" name="scalar1" type="user">
+                    <variable label="toto" name="user_1" type="user">
                             <initial_value zone_id="1">0.05</initial_value>
                             <min_value>0.01</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="titi" name="scalar2" type="user">
+                    </variable>
+                    <variable label="titi" name="user_2" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>100.</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\
@@ -908,20 +909,20 @@ class UserScalarTestCase(ModelTest):
         model.setScalarVariance('toto', 'titi')
 
         doc = '''<additional_scalars>
-                    <scalar label="toto" name="scalar1" type="user">
+                    <variable label="toto" name="user_1" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>0</min_value>
                             <max_value>1e+12</max_value>
                             <variance>titi</variance>
-                    </scalar>
-                    <scalar label="titi" name="scalar2" type="user">
+                    </variable>
+                    <variable label="titi" name="user_2" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\
@@ -954,22 +955,22 @@ class UserScalarTestCase(ModelTest):
         model.addUserScalar(zone, 'second')
 
         doc = '''<additional_scalars>
-                    <scalar label="premier" name="scalar1" type="user">
+                    <variable label="premier" name="user_1" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>0</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="second" name="scalar2" type="user">
+                    </variable>
+                    <variable label="second" name="user_2" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.getScalarDiffusivityLabel('second') == "Dscal2",\
@@ -987,22 +988,22 @@ class UserScalarTestCase(ModelTest):
         model.setScalarDiffusivityInitialValue('premier', 0.555)
 
         doc = '''<additional_scalars>
-                    <scalar label="premier" name="scalar1" type="user">
+                    <variable label="premier" name="user_1" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>0.555</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="second" name="scalar2" type="user">
+                    </variable>
+                    <variable label="second" name="user_2" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\
@@ -1018,22 +1019,22 @@ class UserScalarTestCase(ModelTest):
         model.addUserScalar(zone, 'second')
         model.setScalarDiffusivityChoice('premier', 'variable')
         doc = '''<additional_scalars>
-                    <scalar label="premier" name="scalar1" type="user">
+                    <variable label="premier" name="user_1" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="variable" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="second" name="scalar2" type="user">
+                    </variable>
+                    <variable label="second" name="user_2" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\
@@ -1064,35 +1065,35 @@ class UserScalarTestCase(ModelTest):
         model.deleteScalar('second')
 
         doc = '''<additional_scalars>
-                    <scalar label="premier" name="scalar1" type="user">
+                    <variable label="premier" name="user_1" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="TempC" name="temperature_celsius" type="thermal">
+                    </variable>
+                    <variable label="TempC" name="temperature_celsius" type="thermal">
                             <initial_value zone_id="1">20.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
-                    </scalar>
-                    <scalar label="troisieme" name="scalar3" type="user">
+                    </variable>
+                    <variable label="troisieme" name="user_3" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal4" name="diffusion_coefficient_3">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
-                    <scalar label="quatrieme" name="scalar4" type="user">
+                    </variable>
+                    <variable label="quatrieme" name="user_4" type="user">
                             <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal5" name="diffusion_coefficient_4">
                                     <initial_value>1.83e-05</initial_value>
                             </property>
-                    </scalar>
+                    </variable>
                 </additional_scalars>'''
 
         assert model.scalar_node == self.xmlNodeFromString(doc),\

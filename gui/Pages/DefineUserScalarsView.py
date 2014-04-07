@@ -201,6 +201,8 @@ class VarianceDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         l1 = index.model().mdl.getScalarLabelsList()
+        for label in index.model().mdl.getThermalScalarLabelsList():
+            l1.append(label)
         for s in index.model().mdl.getScalarsVarianceList():
             if s in l1: l1.remove(s)
 
@@ -414,7 +416,7 @@ class StandardItemModelVariance(QStandardItemModel):
         """
         Add an item in the table view
         """
-        if not self.mdl.getScalarLabelsList():
+        if not self.mdl.getScalarLabelsList() and not self.mdl.getThermalScalarLabelsList():
             title = self.tr("Warning")
             msg   = self.tr("There is no user scalar.\n"\
                             "Please define a user scalar.")

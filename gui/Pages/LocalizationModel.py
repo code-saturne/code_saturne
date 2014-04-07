@@ -222,7 +222,7 @@ class VolumicZone(Zone):
         del ThermalScalarModel
 
         node = self.case.xmlGetNode('additional_scalars')
-        number = len(node.xmlGetNodeList('scalar', type='user'))
+        number = len(node.xmlGetNodeList('variable', type='user'))
         if number > 0:
             self._natureList.append('scalar_source_term')
             self._natureDict['scalar_source_term']   = self.tr("Scalar source term")

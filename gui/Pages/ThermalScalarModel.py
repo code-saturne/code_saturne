@@ -101,10 +101,16 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         Put a new thermal scalar name on to the XML document and its dependances
         """
         self.isInList(thermal_scalar, self.thermalModel)
-        node = self.node_therm.xmlInitNode('scalar', name=thermal_scalar, type='thermal')
+        if thermal_scalar == 'enthalpy':
+            name = 'enthalpy'
+        elif thermal_scalar == 'total_energy':
+            name = 'total_energy'
+        else:
+            name = 'temperature'
+        node = self.node_therm.xmlInitNode('variable', name=name, type='thermal')
 
         if not node['label']:
-            lab_def = Tool.dicoLabel(node['name'])
+            lab_def = Tool.dicoLabel(thermal_scalar)
             node['label'] = lab_def
         else:
             lab_def = node['label']
@@ -162,14 +168,20 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.node_therm['model'] = thermal_scalar
 
         if thermal_scalar != 'off':
-            node = self.node_therm.xmlGetNode('scalar', type='thermal')
+            node = self.node_therm.xmlGetNode('variable', type='thermal')
             if node:
-                if node['name'] != thermal_scalar:
+                if thermal_scalar == 'enthalpy':
+                    name = 'enthalpy'
+                elif thermal_scalar == 'total_energy':
+                    name = 'total_energy'
+                else:
+                    name = 'temperature'
+                if node['name'] != name:
                     self.deleteThermalScalar(node['label'])
             self._setNewThermalScalar(thermal_scalar)
 
         else:
-            node = self.node_therm.xmlGetNode('scalar', type='thermal')
+            node = self.node_therm.xmlGetNode('variable', type='thermal')
             if node:
                 self.deleteThermalScalar(node['label'])
             self._removeThermalTimeStep()
@@ -215,7 +227,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         Get label for thermal scalar
         """
         label = ""
-        node = self.node_therm.xmlGetNode('scalar', type='thermal')
+        node = self.node_therm.xmlGetNode('variable', type='thermal')
         if node:
             label = node['label']
 
@@ -254,11 +266,11 @@ class ThermalScalarTestCase(ModelTest):
         mdl = ThermalScalarModel(self.case)
         mdl.setThermalModel('temperature_kelvin')
         doc = '''<thermal_scalar>
-                    <scalar label="TempK" name="temperature_kelvin" type="thermal">
+                    <variable label="TempK" name="temperature" type="thermal">
                         <initial_value zone_id="1">293.15</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
-                    </scalar>
+                    </variable>
                  </thermal_scalar>'''
 
         assert mdl.scalar_node == self.xmlNodeFromString(doc), \

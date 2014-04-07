@@ -169,10 +169,10 @@ endif
 
 if (iihmpr.eq.1) then
 
-  call uiiniv (ncelet, isuite, isca, iscold,       &
-               ithvar, ipr, iscalt, itempk, ienerg,&
+  call uiiniv (ncelet, isuite,                     &
+               ithvar,                             &
                ro0, cp0, viscl0, uref,             &
-               almax, xyzcen, rtp)
+               almax, xyzcen)
 
 endif
 

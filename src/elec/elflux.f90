@@ -95,6 +95,7 @@ double precision vrmin, vrmax, var
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:,:) :: gradv
 
 !===============================================================================
 
@@ -104,7 +105,8 @@ double precision, allocatable, dimension(:,:) :: grad
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(grad(3,ncelet))
+allocate(grad(3 ,ncelet))
+allocate(gradv(3, 3 ,ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -479,64 +481,23 @@ if (iappel.eq.2) then
 !===================================================
 
 
-!    Sur Ax
+!    Sur A
 
-    ivar = isca(ipotva(1))
-
-    iprev = 0
-    inc = 1
-    iccocg = 1
-
-    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                               iccocg,                               &
-                               grad)
-
-    ! B = rot A
-
-    do iel = 1, ncel
-      w1(iel)=  zero
-      w2(iel)=  grad(3,iel)
-      w3(iel)= -grad(2,iel)
-    enddo
-
-    ! Sur Ay
-
-    ivar = isca(ipotva(2))
+    ivar = isca(ipotva)
 
     iprev = 0
     inc = 1
     iccocg = 1
 
-    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                               iccocg,                               &
-                               grad)
+    call field_gradient_vector(ivarfl(ivar), iprev, imrgra, inc,     &
+                               gradv)
 
     ! B = rot A
 
     do iel = 1, ncel
-      w1(iel)= w1(iel) - grad(3,iel)
-      w2(iel)= w2(iel) + zero
-      w3(iel)= w3(iel) + grad(1,iel)
-    enddo
-
-    ! Sur Az
-
-    ivar = isca(ipotva(3))
-
-    iprev = 0
-    inc = 1
-    iccocg = 1
-
-    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,     &
-                               iccocg,                               &
-                               grad)
-
-    ! B = rot A
-
-    do iel = 1, ncel
-      w1(iel)= w1(iel) + grad(2,iel)
-      w2(iel)= w2(iel) - grad(1,iel)
-      w3(iel)= w3(iel) + zero
+      w1(iel)=  gradv(3, 2, iel) - gradv(2, 3, iel)
+      w2(iel)=  gradv(1, 3, iel) - gradv(3, 1, iel)
+      w3(iel)=  gradv(2, 1, iel) - gradv(1, 2, iel)
     enddo
 
 !   4.2 CAS D'ARC AXISYMETRIQUE : IELARC = 1
@@ -644,6 +605,7 @@ endif
 ! Free memory
 deallocate(w1, w2, w3)
 deallocate(grad)
+deallocate(gradv)
 
 !--------
 ! Formats

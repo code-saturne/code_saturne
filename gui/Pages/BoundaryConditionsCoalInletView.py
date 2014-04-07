@@ -307,19 +307,19 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         # Combo models
         self.modelTypeInlet = ComboModel(self.comboBoxTypeInlet, 2, 1)
-        self.modelTypeInlet.addItem(self.tr("Only oxydant"), 'oxydantFlow')
-        self.modelTypeInlet.addItem(self.tr("Oxydant and coal"), 'coalFlow')
+        self.modelTypeInlet.addItem(self.tr("only oxydant"), 'oxydantFlow')
+        self.modelTypeInlet.addItem(self.tr("oxydant and coal"), 'coalFlow')
 
         self.modelVelocity = ComboModel(self.comboBoxVelocity, 4, 1)
-        self.modelVelocity.addItem(self.tr("Norm"), 'norm')
-        self.modelVelocity.addItem(self.tr("Mass flow rate"), 'flow1')
-        self.modelVelocity.addItem(self.tr("Norm (user law)"), 'norm_formula')
-        self.modelVelocity.addItem(self.tr("Mass flow rate (user law)"), 'flow1_formula')
+        self.modelVelocity.addItem(self.tr("norm"), 'norm')
+        self.modelVelocity.addItem(self.tr("mass flow rate"), 'flow1')
+        self.modelVelocity.addItem(self.tr("norm (user law)"), 'norm_formula')
+        self.modelVelocity.addItem(self.tr("mass flow rate (user law)"), 'flow1_formula')
 
         self.modelDirection = ComboModel(self.comboBoxDirection, 3, 1)
-        self.modelDirection.addItem(self.tr("Normal to the inlet"), 'normal')
-        self.modelDirection.addItem(self.tr("Specified coordinates"), 'coordinates')
-        self.modelDirection.addItem(self.tr("User profile"), 'formula')
+        self.modelDirection.addItem(self.tr("normal to the inlet"), 'normal')
+        self.modelDirection.addItem(self.tr("specified coordinates"), 'coordinates')
+        self.modelDirection.addItem(self.tr("user profile"), 'formula')
 
         # Validators
         validatorVelocity = DoubleValidator(self.lineEditVelocity)
@@ -550,13 +550,15 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         exp = self.__boundary.getVelocity()
         c = self.__boundary.getVelocityChoice()
-        req = [('u_norm', 'Norm of the velocity')]
         if c == 'norm_formula':
             exa = "u_norm = 1.0;"
+            req = [('u_norm', 'Norm of the velocity')]
         elif c == 'flow1_formula':
             exa = "q_m = 1.0;"
+            req = [('q_m', 'mass flow rate')]
         elif c == 'flow2_formula':
             exa = "q_v = 1.0;"
+            req = [('q_v', 'volumic flow rate')]
 
         sym = [('x', "X face's gravity center"),
                ('y', "Y face's gravity center"),

@@ -89,18 +89,18 @@ class TurbulenceModel(Variables, Model):
                                'LES_dynamique',
                                'LES_WALE')
 
-        self.__allVariables = ['component_R11',
-                               'component_R22',
-                               'component_R33',
-                               'component_R12',
-                               'component_R13',
-                               'component_R23',
-                               'turb_k',
-                               'turb_eps',
-                               'turb_phi',
-                               'turb_alpha',
-                               'turb_omega',
-                               'turb_nusa']
+        self.__allVariables = ['r11',
+                               'r22',
+                               'r33',
+                               'r12',
+                               'r13',
+                               'r23',
+                               'k',
+                               'epsilon',
+                               'phi',
+                               'alpha',
+                               'omega',
+                               'nu_tilda']
 
 
     def turbulenceModels(self):
@@ -207,7 +207,7 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties([], 'smagorinsky_constant')
 
         elif model_turb in ('k-epsilon', 'k-epsilon-PL'):
-            lst = ('turb_k', 'turb_eps')
+            lst = ('k', 'epsilon')
             for v in lst:
                 self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
@@ -215,9 +215,9 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb in ('Rij-epsilon', 'Rij-SSG'):
-            lst = ('component_R11', 'component_R22', 'component_R33',
-                   'component_R12', 'component_R13', 'component_R23',
-                   'turb_eps')
+            lst = ('r11', 'r22', 'r33',
+                   'r12', 'r13', 'r23',
+                   'epsilon')
             for v in lst:
                 self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
@@ -225,9 +225,9 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb == 'Rij-EBRSM':
-            lst = ('component_R11', 'component_R22', 'component_R33',
-                   'component_R12', 'component_R13', 'component_R23',
-                   'turb_eps', 'turb_alpha')
+            lst = ('r11', 'r22', 'r33',
+                   'r12', 'r13', 'r23',
+                   'epsilon', 'alpha')
             for v in lst:
                 self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
@@ -249,7 +249,7 @@ class TurbulenceModel(Variables, Model):
             del NumericalParamEquatModel
 
         elif model_turb == 'v2f-BL-v2/k':
-            lst = ('turb_k', 'turb_eps', 'turb_phi', 'turb_alpha')
+            lst = ('k', 'epsilon', 'phi', 'alpha')
             for v in lst:
                 self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
@@ -257,7 +257,7 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb == 'k-omega-SST':
-            lst = ('turb_k', 'turb_omega')
+            lst = ('k', 'omega')
             for v in lst:
                 self.setNewVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
@@ -265,8 +265,8 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
 
         elif model_turb == 'Spalart-Allmaras':
-            lst = ('turb_nusa')
-            self.setNewVariable(self.node_turb, 'turb_nusa')
+            lst = ('nu_tilda')
+            self.setNewVariable(self.node_turb, 'nu_tilda')
             self.setNewProperty(self.node_turb, 'turb_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant')
@@ -380,24 +380,24 @@ class TurbulenceModel(Variables, Model):
         nodeList = []
 
         if model in ('k-epsilon','k-epsilon-PL'):
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_eps'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='k'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='epsilon'))
         elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
-            for var in ('component_R11', 'component_R22', 'component_R33',
-                        'component_R12', 'component_R13', 'component_R23', 'turb_eps'):
+            for var in ('r11', 'r22', 'r33',
+                        'r12', 'r13', 'r23', 'epsilon'):
                 nodeList.append(self.node_turb.xmlGetNode('variable', name=var))
             if model == 'Rij-EBRSM':
-                nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_alpha'))
+                nodeList.append(self.node_turb.xmlGetNode('variable', name='alpha'))
         elif model == 'v2f-BL-v2/k':
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_eps'))
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_phi'))
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_alpha'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='k'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='epsilon'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='phi'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='alpha'))
         elif model == 'k-omega-SST':
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_omega'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='k'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='omega'))
         elif model == 'Spalart-Allmaras':
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_nusa'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='nu_tilda'))
         return nodeList
 
 #-------------------------------------------------------------------------------
@@ -451,8 +451,8 @@ class TurbulenceModelTestCase(ModelTest):
         mdl = TurbulenceModel(self.case)
         mdl.setTurbulenceModel('k-epsilon')
         doc ='''<turbulence model="k-epsilon">
-                <variable label="TurbEner" name="turb_k"/>
-                <variable label="Dissip" name="turb_eps"/>
+                <variable label="TurbEner" name="k"/>
+                <variable label="Dissip" name="epsilon"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
@@ -467,8 +467,8 @@ class TurbulenceModelTestCase(ModelTest):
         mdl = TurbulenceModel(self.case)
         mdl.setTurbulenceModel('k-epsilon-PL')
         doc ='''<turbulence model="k-epsilon-PL">
-                <variable label="TurbEner" name="turb_k"/>
-                <variable label="Dissip" name="turb_eps"/>
+                <variable label="TurbEner" name="k"/>
+                <variable label="Dissip" name="epsilon"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
@@ -484,13 +484,13 @@ class TurbulenceModelTestCase(ModelTest):
         mdl.setTurbulenceModel('Rij-epsilon')
         doc ='''<turbulence model="Rij-epsilon">
                 <property label="TurbVisc" name="turb_viscosity"/>
-                <variable label="R11" name="component_R11"/>
-                <variable label="R22" name="component_R22"/>
-                <variable label="R33" name="component_R33"/>
-                <variable label="R12" name="component_R12"/>
-                <variable label="R13" name="component_R13"/>
-                <variable label="R23" name="component_R23"/>
-                <variable label="Dissip" name="turb_eps"/>
+                <variable label="R11" name="r11"/>
+                <variable label="R22" name="r22"/>
+                <variable label="R33" name="r33"/>
+                <variable label="R12" name="r12"/>
+                <variable label="R13" name="r13"/>
+                <variable label="R23" name="r23"/>
+                <variable label="Dissip" name="epsilon"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
                 </initialization>
@@ -509,13 +509,13 @@ class TurbulenceModelTestCase(ModelTest):
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
                 </initialization>
-                <variable label="R11" name="component_R11"/>
-                <variable label="R22" name="component_R22"/>
-                <variable label="R33" name="component_R33"/>
-                <variable label="R12" name="component_R12"/>
-                <variable label="R13" name="component_R13"/>
-                <variable label="R23" name="component_R23"/>
-                <variable label="Dissip" name="turb_eps"/>
+                <variable label="R11" name="r11"/>
+                <variable label="R22" name="r22"/>
+                <variable label="R33" name="r33"/>
+                <variable label="R12" name="r12"/>
+                <variable label="R13" name="r13"/>
+                <variable label="R23" name="r23"/>
+                <variable label="Dissip" name="epsilon"/>
               </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
            'Could not set the Rij-epsilon SSG turbulence model'
@@ -531,14 +531,14 @@ class TurbulenceModelTestCase(ModelTest):
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
                 </initialization>
-                <variable label="R11" name="component_R11"/>
-                <variable label="R22" name="component_R22"/>
-                <variable label="R33" name="component_R33"/>
-                <variable label="R12" name="component_R12"/>
-                <variable label="R13" name="component_R13"/>
-                <variable label="R23" name="component_R23"/>
-                <variable label="Dissip" name="turb_eps"/>
-                <variable label="alpha" name="turb_alpha"/>
+                <variable label="R11" name="r11"/>
+                <variable label="R22" name="r22"/>
+                <variable label="R33" name="r33"/>
+                <variable label="R12" name="r12"/>
+                <variable label="R13" name="r13"/>
+                <variable label="R23" name="r23"/>
+                <variable label="Dissip" name="epsilon"/>
+                <variable label="alpha" name="alpha"/>
               </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
            'Could not set the Rij-epsilon EBRSM turbulence model'
@@ -576,10 +576,10 @@ class TurbulenceModelTestCase(ModelTest):
         mdl = TurbulenceModel(self.case)
         mdl.setTurbulenceModel('v2f-BL-v2/k')
         doc = '''<turbulence model="v2f-BL-v2/k">
-                <variable label="TurbEner" name="turb_k"/>
-                <variable label="Dissip" name="turb_eps"/>
-                <variable label="phi" name="turb_phi"/>
-                <variable label="alpha" name="turb_alpha"/>
+                <variable label="TurbEner" name="k"/>
+                <variable label="Dissip" name="epsilon"/>
+                <variable label="phi" name="phi"/>
+                <variable label="alpha" name="alpha"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1.0</reference_velocity>
@@ -593,10 +593,10 @@ class TurbulenceModelTestCase(ModelTest):
         mdl = TurbulenceModel(self.case)
         mdl.setTurbulenceModel('k-omega-SST')
         doc = '''<turbulence model="k-omega-SST">
-                <variable label="TurbEner" name="turb_k"/>
-                <variable label="Dissip" name="turb_eps"/>
+                <variable label="TurbEner" name="k"/>
+                <variable label="Dissip" name="epsilon"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
-                <variable label="omega" name="turb_omega"/>
+                <variable label="omega" name="omega"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1.0</reference_velocity>
                 </initialization>
@@ -609,7 +609,7 @@ class TurbulenceModelTestCase(ModelTest):
         mdl = TurbulenceModel(self.case)
         mdl.setTurbulenceModel('Spalart-Allmaras')
         doc = '''<turbulence model="Spalart-Allmaras">
-                <variable label="NuTilda" name="turb_nusa"/>
+                <variable label="NuTilda" name="nu_tilda"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1.0</reference_velocity>
@@ -647,8 +647,8 @@ class TurbulenceModelTestCase(ModelTest):
         mdl.setScaleModel(2)
 
         doc = '''<turbulence model="k-epsilon">
-                <variable label="TurbEner" name="turb_k"/>
-                <variable label="Dissip" name="turb_eps"/>
+                <variable label="TurbEner" name="k"/>
+                <variable label="Dissip" name="epsilon"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                     <reference_velocity>1</reference_velocity>
@@ -666,8 +666,8 @@ class TurbulenceModelTestCase(ModelTest):
         mdl.setTurbulenceModel('k-epsilon')
         mdl.setGravity('off')
         doc = '''<turbulence model="k-epsilon">
-                <variable label="TurbEner" name="turb_k"/>
-                <variable label="Dissip" name="turb_eps"/>
+                <variable label="TurbEner" name="k"/>
+                <variable label="Dissip" name="epsilon"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                     <reference_velocity>1</reference_velocity>

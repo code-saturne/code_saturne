@@ -109,20 +109,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return the label of a scalar field, given by its scalar Id
- *
- * parameters:
- *   id <-- scalar field id
- *----------------------------------------------------------------------------*/
-
-static inline const char *
-_scalar_label(const int id)
-{
-  cs_field_t  *f = cs_field_by_id(cs_glob_var->scal_f_id[id]);
-  return cs_field_get_label(f);
-}
-
-/*----------------------------------------------------------------------------
  * Get output control value parameters.
  *
  * parameters:
@@ -378,7 +364,7 @@ static int cs_gui_variable_probe_name (const char *const variable,
  *   variable   <-- name of variable
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_variable_label (const char *const variable)
+static char *cs_gui_variable_label(const char *const variable)
 {
   char *path = NULL;
   char *label = NULL;
@@ -448,374 +434,61 @@ _gui_copy_varname(const char *varname, int ipp)
 }
 
 /*-----------------------------------------------------------------------------
- * Post-processing options for variables (velocity, pressure, ...)
+ * Post-processing options for all variables (velocity, pressure, ...)
  *
  * parameters:
- *   property_name      <-- property name
- *   ipp                <-- property id
+ *   f_id               <-- field id
  *   ihisvr             --> histo output
- *   ichrvr             --> chronogical output (1:yes/0:no)
- *   ippfld             <-- ipp -> field mapping
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void
-_gui_thermophysical_post(const char *variable,
-                         int         ipp,
-                         int        *ihisvr,
-                         int        *ippfld,
-                         const int  *nvppmx)
+_gui_variable_post(int         f_id,
+                   int        *ihisvr,
+                   const int  *nvppmx)
 {
   int   nb_probes;
   int   iprob;
   char *varname = NULL;
   int   num_probe;
 
+  const cs_field_t  *fi = cs_field_by_id(f_id);
+  const int var_key_id = cs_field_key_id("post_id");
+  int ipp = cs_field_get_key_int(fi, var_key_id);
+
   if (ipp == 1) return;
 
-  if (ippfld[ipp - 1] > -1) {
-    int   f_post = 0, f_log = 0;
-    const int k_post = cs_field_key_id("post_vis");
-    const int k_log = cs_field_key_id("log");
+  int f_post = 0, f_log = 0;
+  const int k_post = cs_field_key_id("post_vis");
+  const int k_log  = cs_field_key_id("log");
 
-    cs_gui_variable_attribute(variable,
-                              "postprocessing_recording",
-                              &f_post);
+  cs_gui_variable_attribute(fi->name,
+                            "postprocessing_recording",
+                            &f_post);
 
-    cs_gui_variable_attribute(variable,
-                              "listing_printing",
-                              &f_log);
+  cs_gui_variable_attribute(fi->name,
+                            "listing_printing",
+                            &f_log);
 
-    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
-    cs_field_set_key_int(f, k_post, f_post);
-    cs_field_set_key_int(f, k_log, f_log);
-  }
+  cs_field_t *f = cs_field_by_id(ipp);
+  cs_field_set_key_int(f, k_post, f_post);
+  cs_field_set_key_int(f, k_log, f_log);
 
-  nb_probes = cs_gui_variable_number_probes(variable);
+  nb_probes = cs_gui_variable_number_probes(fi->name);
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
     for (iprob = 0; iprob < nb_probes; iprob++) {
-      num_probe = cs_gui_variable_probe_name(variable, iprob+1);
+      num_probe = cs_gui_variable_probe_name(fi->name, iprob+1);
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
   }
 
-  varname = cs_gui_variable_label(variable);
+  varname = cs_gui_variable_label(fi->name);
   _gui_copy_varname(varname, ipp);
 
   BFT_FREE(varname);
-}
-
-/*----------------------------------------------------------------------------
- * Get the attribute value associated to a child markup from a scalar.
- *
- * parameters:
- *   label         <--  name of the scalar markup
- *   child         <--  child markup
- *   keyword       -->  value of attribute node contained in the child markup
- *----------------------------------------------------------------------------*/
-
-static void
-cs_gui_scalar_attribute(const char *const label,
-                        const char *const child,
-                        int        *const keyword)
-{
-  char *path = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "label", label);
-  cs_xpath_add_element(&path, child);
-
-  _attribute_value(path, child, keyword);
-}
-
-/*-----------------------------------------------------------------------------
- * Number of sub-headers <probe_recording> for the user scalars.
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_scalar_number_probes(const int scalar_num)
-{
-  char *path = NULL;
-  char *choice = NULL;
-  int   nb_probes;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "additional_scalars");
-  cs_xpath_add_element_num(&path, "scalar", scalar_num);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice) {
-    nb_probes = atoi(choice);
-    BFT_FREE(choice);
-  }
-  else
-    nb_probes = -1;
-
-  BFT_FREE(path);
-
-  return nb_probes;
-}
-
-
-/*-----------------------------------------------------------------------------
- * Return probe number for number of <probe_recording> tags
- *
- * parameters:
- *   scalar_num  <-- number of scalar
- *   num_probe   <-- number of <probe_recording> tags
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_scalar_probe_name(const int scalar_num,
-                                    const int num_probe)
-{
-  char *path = NULL;
-  char *strvalue = NULL;
-  int   value;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "additional_scalars");
-  cs_xpath_add_element_num(&path, "scalar", scalar_num);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
-  cs_xpath_add_attribute(&path, "name");
-
-  strvalue = cs_gui_get_attribute_value(path);
-
-  if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  value = atoi(strvalue);
-
-  BFT_FREE(path);
-  BFT_FREE(strvalue);
-
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Post-processing options for scalars
- *
- * parameters:
- *   sca_id             <-- scalar id
- *   ipp                <-- property id
- *   ihisvr             --> histo output
- *   ippfld             <-- ipp -> field mapping
- *   nvppmx             <-- number of printed variables
- *----------------------------------------------------------------------------*/
-
-static void
-_gui_scalar_post(int          num_sca,
-                 int          ipp,
-                 int         *ihisvr,
-                 const  int  *ippfld,
-                 const  int  *nvppmx)
-{
-  int nb_probes;
-  int iprob;
-  int num_probe;
-
-  if (ipp == 1) return;
-
-  if (ippfld[ipp - 1] > -1) {
-    int   f_post = 0, f_log = 0;
-    const int k_post = cs_field_key_id("post_vis");
-    const int k_log = cs_field_key_id("log");
-
-    /* EnSight outputs frequency */
-    cs_gui_scalar_attribute(_scalar_label(num_sca),
-                            "postprocessing_recording",
-                            &f_post);
-
-    /* Listing output frequency */
-    cs_gui_scalar_attribute(_scalar_label(num_sca),
-                            "listing_printing",
-                            &f_log);
-
-    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
-    cs_field_set_key_int(f, k_post, f_post);
-    cs_field_set_key_int(f, k_log, f_log);
-  }
-
-  /* Activated probes */
-  nb_probes = cs_gui_scalar_number_probes(num_sca+1);
-  ihisvr[0 + (ipp - 1)] = nb_probes;
-
-  if (nb_probes > 0) {
-    for (iprob=0; iprob < nb_probes; iprob++){
-      num_probe = cs_gui_scalar_probe_name(num_sca+1, iprob+1);
-      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
-    }
-  }
-
-  _gui_copy_varname(_scalar_label(num_sca), ipp);
-}
-
-/*----------------------------------------------------------------------------
- * Get the attribute value associated to a child markup from a scalar.
- *
- * parameters:
- *   model         <--  model markup
- *   name          <--  name of the scalar markup
- *   child         <--  child markup
- *   keyword       -->  value of attribute node contained in the child markup
- *----------------------------------------------------------------------------*/
-
-static void
-cs_gui_model_scalar_output_status(const char *const model,
-                                  const char *const name,
-                                  const char *const child,
-                                  int        *const keyword)
-{
-  char *path = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
-  cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, child);
-
-  _attribute_value(path, child, keyword);
-}
-
-/*-----------------------------------------------------------------------------
- * Return number of sub balises "probe_recording" for model scalars.
- *
- * parameters:
- *   model      <--  Type of model
- *   name       <--  scalar name
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_model_scalar_number_probes(const char  *const model,
-                                             const char  *const name)
-{
-  char *path = NULL;
-  char *choice = NULL;
-  int   nb_probes ;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
-  cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice) {
-    nb_probes = atoi(choice);
-    BFT_FREE(choice);
-  }
-  else
-    nb_probes = -1;
-
-  BFT_FREE(path);
-
-  return nb_probes;
-}
-
-/*-----------------------------------------------------------------------------
- * Return probe number for sub balise "probe_recording" for model scalar.
- *
- * parameters:
- *   model      <-- type of model
- *   name       <-- scalar name
- *   num_probe  <-- number of balise "probe_recording"
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_model_scalar_probe_name (const char *const model,
-                                           const char *const name,
-                                           const int         num_probe)
-{
-  char *path = NULL;
-  char *strvalue = NULL;
-  int   value;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
-  cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
-  cs_xpath_add_attribute(&path, "name");
-
-  strvalue = cs_gui_get_attribute_value(path);
-
-  if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  value = atoi(strvalue);
-
-  BFT_FREE(path);
-  BFT_FREE(strvalue);
-
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Post-processing options for thermal and modelling scalars
- *
- * parameters:
- *   property_name      <-- property name
- *   ipp                <-- property id
- *   ihisvr             --> histo output
- *   ippfld             <-- ipp -> field mapping
- *   nvppmx             <-- number of printed variables
- *----------------------------------------------------------------------------*/
-
-static void
-_gui_model_scalar_post(const char  *model,
-                       int          num_sca,
-                       int          ipp,
-                       int         *ihisvr,
-                       const int   *ippfld,
-                       const int   *nvppmx)
-{
-  int nb_probes;
-  int iprob;
-  int num_probe;
-
-  if (ipp == 1) return;
-
-  if (ippfld[ipp - 1] > -1) {
-    int   f_post = 0, f_log = 0;
-    const int k_post = cs_field_key_id("post_vis");
-    const int k_log = cs_field_key_id("log");
-
-    /* EnSight outputs frequency */
-    cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
-                                      "postprocessing_recording",
-                                      &f_post);
-
-    /* Listing output frequency */
-    cs_gui_model_scalar_output_status(model, _scalar_label(num_sca),
-                                      "listing_printing",
-                                      &f_log);
-
-    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
-    cs_field_set_key_int(f, k_post, f_post);
-    cs_field_set_key_int(f, k_log, f_log);
-  }
-
-  /* Activated probes */
-  nb_probes = cs_gui_model_scalar_number_probes(model, _scalar_label(num_sca));
-
-  ihisvr[0 + (ipp - 1)] = nb_probes;
-
-  if (nb_probes > 0) {
-    for (iprob =0; iprob < nb_probes; iprob++) {
-      num_probe = cs_gui_model_scalar_probe_name(model, _scalar_label(num_sca), iprob+1);
-      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
-    }
-  }
-
-  _gui_copy_varname(_scalar_label(num_sca), ipp);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1936,29 +1609,12 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
     xyzcap[2 + i*3] = cs_gui_probe_coordinate(i+1, "probe_z");
   }
 
-  /* Velocity and turbulence output */
-  for (i = 0; i < vars->nvar - vars->nscaus - vars->nscapp; i++) {
-    ipp = ipprtp[vars->rtp[i]];
-    _gui_thermophysical_post(vars->name[i],
-                             ipp,
-                             ihisvr, ippfld,
-                             nvppmx);
-  }
-
-  /* User scalar */
-  if (vars->nscaus > 0 ) {
-    for (i = 0; i < vars->nscaus; i++) {
-      ipp = ipprtp[isca[i] -1];
-      _gui_scalar_post(i, ipp, ihisvr, ippfld, nvppmx);
-    }
-  }
-  /* Specific physics scalars */
-  if (vars->nscapp > 0) {
-    for (i = 0; i < vars->nscapp; i++) {
-      j = iscapp[i]-1 ;
-      ipp = ipprtp[isca[j] -1];
-      _gui_model_scalar_post(vars->model, j, ipp, ihisvr, ippfld, nvppmx);
-    }
+  /* variable output */
+  int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    const cs_field_t  *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE)
+      _gui_variable_post(f->id, ihisvr, nvppmx);
   }
 
   /* Physical properties */
@@ -1968,6 +1624,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                ihisvr, ippfld, nvppmx);
     }
   }
+
   for (i = vars->nsalpp; i < vars->nprop; i++) {
     if (vars->ntimaver != 0 && i >= vars->nprop - vars->ntimaver) {
       _gui_time_average_post(vars->properties_name[i],
@@ -1999,30 +1656,14 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
     bft_printf("--xyzcap[%i][1] = %f\n", i, xyzcap[1 +i*3]);
     bft_printf("--xyzcap[%i][2] = %f\n", i, xyzcap[2 +i*3]);
   }
-  for (i = 0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
-    ipp = ipprtp[vars->rtp[i]];
-    bft_printf("-->variable ipprtp[%i] = %s\n", ipp, vars->name[i]);
+  const int k_post = cs_field_key_id("post_id");
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    const int ipp = cs_field_get_key_int(f, k_post);
+    bft_printf("-->variable ipprtp[%i] = %s\n", ipp, f->name);
     bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
-        bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
-                   ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
-  }
-  for (i = 0; i < vars->nscaus + vars->nscapp ; i++) {
-    ipp = ipprtp[isca[i] -1];
-    bft_printf("-->scalar ipprtp[%i]: %s\n", ipp, _scalar_label(i));
-    bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
-    if (ihisvr[0 + (ipp-1)]>0)
-      for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
-        bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
-                   ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
-  }
-  for (i = 0; i<vars->nprop ; i++) {
-    ipp = vars->properties_ipp[i];
-    bft_printf("-->properties_name[%i]: %s\n", i, vars->properties_name[i]);
-    bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
-    if (ihisvr[0 + (ipp-1)]>0)
-      for (j = 0; j<ihisvr[0 + (ipp-1)]; j++)
         bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
                    ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }

@@ -145,14 +145,6 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.connect(self.pushButtonTemperature,SIGNAL("clicked()"),                   self.slotTemperatureFormula)
         self.connect(self.pushButtonEnergy,     SIGNAL("clicked()"),                   self.slotEnergyFormula)
 
-        # Define thermal variable if needed
-        th_sca_label = ''
-        model = self.therm.getThermalScalarModel()
-        if model != 'off':
-            th_sca_label = self.therm.getThermalScalarLabel()
-
-        self.th_sca_label = th_sca_label
-
         choice = self.init.getInitialTurbulenceChoice(self.zone)
         self.modelTurbulence.setItem(str_model = choice)
 
@@ -245,14 +237,14 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exp = self.init.getVelocityFormula(self.zone)
         if not exp:
-            exp = """u = 0;\nv = 0;\nw = 0;\n"""
-        exa = """#example: """
-        req = [('u', "x velocity"),
-        ('v', "y velocity"),
-        ('w', "z velocity")]
+            exp = self.init.getDefaultVelocityFormula()
+        exa = """#example: \n""" + self.init.getDefaultVelocityFormula()
+        req = [('velocity[0]', "velocity"),
+               ('velocity[1]', "velocity"),
+               ('velocity[2]', "velocity")]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')] #quel symbol
+               ('z', 'cell center coordinate')]
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -272,215 +264,60 @@ class InitializationView(QWidget, Ui_InitializationForm):
         INPUT user formula
         """
         turb_model = self.turb.getTurbulenceModel()
+        exa = """#example \n""" + self.init.getDefaultTurbFormula(turb_model)
+        exp = self.init.getTurbFormula(self.zone, turb_model)
+        sym = [('rho0', 'density (reference value)'),
+               ('mu0', 'viscosity (reference value)'),
+               ('cp0', 'specific heat (reference value)'),
+               ('lambda0', 'thermal conductivity (reference value)'),
+               ('x','cell center coordinate'),
+               ('y','cell center coordinate'),
+               ('z','cell center coordinate'),
+               ('uref','reference velocity'),
+               ('almax','reference length')]
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
-            exp = self.init.getTurbFormula(self.zone, turb_model)
-            exa = """#example
-
-cmu = 0.09;
-k = 1.5*(0.02*uref)^2;
-eps = k^1.5*cmu/almax;
-
-"""
             req = [('k', "turbulent energy"),
-            ('eps', "turbulent dissipation")]
-            sym = [('rho0', 'density (reference value)'),
-                   ('mu0', 'viscosity (reference value)'),
-                   ('cp0', 'specific heat (reference value)'),
-                   ('lambda0', 'thermal conductivity (reference value)'),
-                   ('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('uref','reference velocity'),
-                   ('almax','reference length')]
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.init.setTurbFormula(self.zone, result)
-                setGreenColor(self.sender(), False)
-
+                   ('epsilon', "turbulent dissipation")]
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
-            exp = self.init.getTurbFormula(self.zone, turb_model)
-            exa = """#exemple :
-trii   = (0.02*uref)^2;
-
-cmu = 0.09;
-
-r11 = trii;
-r22 = trii;
-r33 = trii;
-r12 = 0.;
-r13 = 0.d;
-r23 = 0.;
-k = 0.5*(r11+r22+r33);
-eps = k^1.5*cmu/almax;"""
-            req = [('r11', "Reunolds stress R11"),
-            ('r22', "Reynolds stress R22"),
-            ('r33', "Reynolds stress R33"),
-            ('r12', "Reynolds stress R12"),
-            ('r23', "Reynolds stress R23"),
-            ('r13', "Reynolds stress R13"),
-            ('eps', "turbulent dissipation")]
-            sym = [('rho0', 'density (reference value)'),
-                   ('mu0', 'viscosity (reference value)'),
-                   ('cp0', 'specific heat (reference value)'),
-                   ('lambda0', 'thermal conductivity (reference value)'),
-                   ('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('uref','reference velocity'),
-                   ('almax','reference length')]
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.init.setTurbFormula(self.zone, result)
-                setGreenColor(self.sender(), False)
-
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r23', "Reynolds stress R23"),
+                   ('r13', "Reynolds stress R13"),
+                   ('epsilon', "turbulent dissipation")]
         elif turb_model == 'Rij-EBRSM':
-            exp = self.init.getTurbFormula(self.zone, turb_model)
-            exa = """#exemple :
-trii   = (0.02*uref)^2;
-
-cmu = 0.09;
-
-r11 = trii;
-r22 = trii;
-r33 = trii;
-r12 = 0.;
-r13 = 0.d;
-r23 = 0.;
-k = 0.5*(r11+r22+r33);
-eps = k^1.5*cmu/almax;
-alpha = 1.;"""
-            req = [('r11', "Reunolds stress R11"),
-            ('r22', "Reynolds stress R22"),
-            ('r33', "Reynolds stress R33"),
-            ('r12', "Reynolds stress R12"),
-            ('r23', "Reynolds stress R23"),
-            ('r13', "Reynolds stress R13"),
-            ('eps', "turbulent dissipation"),
-            ('alpha', "alpha")]
-            sym = [('rho0', 'density (reference value)'),
-                   ('mu0', 'viscosity (reference value)'),
-                   ('cp0', 'specific heat (reference value)'),
-                   ('lambda0', 'thermal conductivity (reference value)'),
-                   ('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('uref','reference velocity'),
-                   ('almax','reference length')]
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.init.setTurbFormula(self.zone, result)
-                setGreenColor(self.sender(), False)
-
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r23', "Reynolds stress R23"),
+                   ('r13', "Reynolds stress R13"),
+                   ('epsilon', "turbulent dissipation"),
+                   ('alpha', "alpha")]
         elif turb_model == 'v2f-BL-v2/k':
-            exp = self.init.getTurbFormula(self.zone, turb_model)
-            exa = """#example
-
-cmu = 0.22;
-k = 1.5*(0.02*uref)^2;
-eps = k^1.5*cmu/almax;
-
-phi = 2./3.;
-al = 0.;
-"""
             req = [('k', "turbulent energy"),
-            ('eps', "turbulent dissipation"),
-            ('phi', "variable phi in v2f model"),
-            ('alpha', "variable alpha in v2f model")]
-            sym = [('rho0', 'density (reference value)'),
-                   ('mu0', 'viscosity (reference value)'),
-                   ('cp0', 'specific heat (reference value)'),
-                   ('lambda0', 'thermal conductivity (reference value)'),
-                   ('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('uref','reference velocity'),
-                   ('almax','reference length')]
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.init.setTurbFormula(self.zone, result)
-                setGreenColor(self.sender(), False)
-
+                   ('epsilon', "turbulent dissipation"),
+                   ('phi', "variable phi in v2f model"),
+                   ('alpha', "variable alpha in v2f model")]
         elif turb_model == 'k-omega-SST':
-            exp = self.init.getTurbFormula(self.zone, turb_model)
-            exa = """#exemple :
-k = 1.5*(0.02*uref)^2;
-omega = k^0.5/almax;"""
             req = [('k', "turbulent energy"),
-            ('omega', "specific dissipation rate")]
-            sym = [('rho0', 'density (reference value)'),
-                   ('mu0', 'viscosity (reference value)'),
-                   ('cp0', 'specific heat (reference value)'),
-                   ('lambda0', 'thermal conductivity (reference value)'),
-                   ('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('uref','reference velocity'),
-                   ('almax','reference length')]
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.init.setTurbFormula(self.zone, result)
-                setGreenColor(self.sender(), False)
-
+                   ('omega', "specific dissipation rate")]
         elif turb_model == 'Spalart-Allmaras':
-            exp = self.init.getTurbFormula(self.zone, turb_model)
-            exa = """#exemple :
-nusa = (cmu * k)/eps;;"""
-            req = [('nusa', "nusa")]
-            sym = [('rho0', 'density (reference value)'),
-                   ('mu0', 'viscosity (reference value)'),
-                   ('cp0', 'specific heat (reference value)'),
-                   ('lambda0', 'thermal conductivity (reference value)'),
-                   ('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('uref','reference velocity'),
-                   ('almax','reference length')]
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.init.setTurbFormula(self.zone, result)
-                setGreenColor(self.sender(), False)
+            req = [('nu_tilda', "nusa")]
+
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaTurb -> %s" % str(result))
+            self.init.setTurbFormula(self.zone, result)
+            setGreenColor(self.sender(), False)
+
 
 
     @pyqtSignature("const QString&")
@@ -488,11 +325,16 @@ nusa = (cmu * k)/eps;;"""
         """
         Input the initial formula of thermal scalar
         """
-        exp = self.init.getThermalFormula(self.zone, self.th_sca_label)
+        exp = self.init.getThermalFormula(self.zone)
         if not exp:
-            exp = self.th_sca_label+""" = 0;\n"""
-        exa = """#example: """
-        req = [(self.th_sca_label, str(self.th_sca_label))]
+            exp = self.init.getDefaultThermalFormula()
+        exa = """#example \n""" + self.init.getDefaultThermalFormula()
+        if self.therm.getThermalScalarModel() == 'enthalpy':
+            req = [('enthalpy', 'enthalpy')]
+        if self.therm.getThermalScalarModel() == 'total_energy':
+            req = [('total_energy', 'total energy')]
+        else:
+            req = [('temperature', 'temperature')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -505,7 +347,7 @@ nusa = (cmu * k)/eps;;"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
-            self.init.setThermalFormula(self.zone, self.th_sca_label, result)
+            self.init.setThermalFormula(self.zone, result)
             setGreenColor(self.sender(), False)
 
 
@@ -515,10 +357,11 @@ nusa = (cmu * k)/eps;;"""
         Input the initial formula of species
         """
         exp = self.init.getSpeciesFormula(self.zone, self.scalar)
+        name = self.th_sca.getScalarName(self.scalar)
         if not exp:
-            exp = str(self.scalar)+""" = 0;\n"""
-        exa = """#example: """
-        req = [(str(self.scalar), str(self.scalar))]
+            exp = str(name)+""" = 0;\n"""
+        exa = """#example: \n""" + str(name)+""" = 0;\n"""
+        req = [(str(name), str(name))]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -540,10 +383,11 @@ nusa = (cmu * k)/eps;;"""
         """
         """
         exp = self.init.getMeteoFormula(self.zone, self.scalar_meteo)
+        name = self.th_sca.getMeteoScalarName(self.scalar_meteo)
         if not exp:
-            exp = str(self.scalar_meteo)+""" = 0;\n"""
-        exa = """#example: """
-        req = [(str(self.scalar_meteo), str(self.scalar_meteo))]
+            exp = str(name)+""" = 0;\n"""
+        exa = """#example: \n""" + str(name)+""" = 0;\n"""
+        req = [(str(name), str(name))]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -695,9 +539,12 @@ nusa = (cmu * k)/eps;;"""
         """
         exp = self.init.getPressureFormula(self.zone)
         if not exp:
-            exp = """P = 0;\n"""
+            exp = """p0 = 0.;
+g = 9.81;
+ro = 1.17862;
+pressure = p0 + g * ro * z;\n"""
         exa = """#example: """
-        req = [('P', 'pressure')]
+        req = [('pressure', 'pressure')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -722,9 +569,9 @@ nusa = (cmu * k)/eps;;"""
         """
         exp = self.init.getDensityFormula(self.zone)
         if not exp:
-            exp = """rho = 0;\n"""
+            exp = """density = 0;\n"""
         exa = """#example: """
-        req = [('rho', 'density')]
+        req = [('density', 'density')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -749,9 +596,9 @@ nusa = (cmu * k)/eps;;"""
         """
         exp = self.init.getTemperatureFormula(self.zone)
         if not exp:
-            exp = """T = 0;\n"""
+            exp = """temperature = 0;\n"""
         exa = """#example: """
-        req = [('T', 'temperature')]
+        req = [('temperature', 'temperature')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -776,9 +623,9 @@ nusa = (cmu * k)/eps;;"""
         """
         exp = self.init.getEnergyFormula(self.zone)
         if not exp:
-            exp = """E = 0;\n"""
+            exp = """total_energy = 0;\n"""
         exa = """#example: """
-        req = [('E', 'Energy')]
+        req = [('total_energy', 'Energy')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
@@ -834,7 +681,7 @@ nusa = (cmu * k)/eps;;"""
         #velocity
         velocity_formula = self.init.getVelocityFormula(zone)
         if not velocity_formula:
-            velocity_formula = """u = 0;\nv = 0;\nw = 0;\n"""
+            velocity_formula = self.init.getDefaultVelocityFormula()
         self.init.setVelocityFormula(zone, velocity_formula)
         setGreenColor(self.pushButtonVelocity, True)
 
@@ -847,10 +694,10 @@ nusa = (cmu * k)/eps;;"""
         if model != "off" and self.comp.getCompressibleModel() == 'off':
             for item in self.thermal_group:
                 item.show()
-            th_formula = self.init.getThermalFormula(zone, self.th_sca_label)
+            th_formula = self.init.getThermalFormula(zone)
             if not th_formula:
-                th_formula = self.th_sca_label+""" = 0;\n"""
-            self.init.setThermalFormula(zone, self.th_sca_label, th_formula)
+                th_formula = self.init.getDefaultThermalFormula()
+            self.init.setThermalFormula(zone, th_formula)
             setGreenColor(self.pushButtonThermal, True)
 
         # Initialisation of the termodynamics values for the compressible model

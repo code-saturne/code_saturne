@@ -230,12 +230,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
 
-        label = self.m_out.getVariableLabel("velocity") + "[0]"
-        sym.append( (label, 'X velocity component'))
-        label = self.m_out.getVariableLabel("velocity") + "[1]"
-        sym.append( (label, 'Y velocity component'))
-        label = self.m_out.getVariableLabel("velocity") + "[2]"
-        sym.append( (label, 'Z velocity component'))
+        sym.append( ("velocity[0]", 'X velocity component'))
+        sym.append( ("velocity[1]", 'Y velocity component'))
+        sym.append( ("velocity[2]", 'Z velocity component'))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -264,7 +261,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
 
-        sym.append( (self.scalar, 'current species'))
+        name = self.th_sca.getScalarName(self.scalar)
+        sym.append((name, 'current species'))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -316,7 +314,12 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        sym.append( (self.th_sca_label, 'thermal scalar'))
+        if self.therm.getThermalScalarModel() == 'enthalpy':
+            sym.append(('enthalpy', 'thermal scalar'))
+        if self.therm.getThermalScalarModel() == 'total_energy':
+            sym.append(('total_energy', 'thermal scalar'))
+        else:
+            sym.append(('temperature', 'thermal scalar'))
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,

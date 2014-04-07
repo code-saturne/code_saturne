@@ -48,8 +48,6 @@
 
 #include "fvm_selector.h"
 
-#include "mei_evaluate.h"
-
 #include "cs_base.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
@@ -94,7 +92,7 @@ _scalar_number(const char* model)
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "thermophysical_models");
   cs_xpath_add_element(&path, model);
-  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_element(&path, "variable");
 
   nb = cs_gui_get_nb_element(path);
 
@@ -116,7 +114,7 @@ _thermal_scalar(void)
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "thermophysical_models");
   cs_xpath_add_element(&path, "thermal_scalar");
-  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_element(&path, "variable");
 
   nb = cs_gui_get_nb_element(path);
 
@@ -149,14 +147,11 @@ _set_scalar_name_label(cs_field_t  *f,
 
   int scal_id = cs_field_get_key_int(f, keysca);
 
-  if (scal_id > 0 && scal_id <= (vars->nscaus + vars->nscapp))
-    vars->scal_f_id[scal_id - 1] = f->id;
-
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,
                         "thermophysical_models",
                          physics,
-                        "scalar");
+                        "variable");
 
   cs_xpath_add_test_attribute(&path, "name", kw);
   cs_xpath_add_attribute(&path, "label");
@@ -192,14 +187,11 @@ _set_thermal_scalar_name_label(cs_field_t  *f,
 
   int scal_id = cs_field_get_key_int(f, keysca);
 
-  if (scal_id > 0 && scal_id <= (vars->nscaus + vars->nscapp))
-    vars->scal_f_id[scal_id - 1] = f->id;
-
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,
                         "thermophysical_models",
                         "thermal_scalar",
-                        "scalar");
+                        "variable");
   cs_xpath_add_attribute(&path, kw);
 
   label = cs_gui_get_attribute_value(path);
@@ -1779,12 +1771,6 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
 
   vars->nscapp = nscapp;
 
-  /* Resize scal_f_id indirection array */
-
-  BFT_REALLOC(vars->scal_f_id, vars->nscapp + vars->nscaus, int);
-  for (int i = 0; i < vars->nscapp; i++)
-    vars->scal_f_id[i+vars->nscaus] = -1;
-
 #if _XML_DEBUG_
   bft_printf("==>UIPPMO\n");
   if (isactiv)
@@ -1914,206 +1900,172 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   vars->nsalpp  = *nsalpp;
 
   BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
-  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
   BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
 
   /* ITEMP1 */
   vars->properties_ipp[n] = ipppro[ipproc[ *itemp1 -1] -1];
-  vars->properties_iprop[n] = *itemp1 -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Temp_GAZ") +1, char);
   strcpy(vars->properties_name[n++], "Temp_GAZ");
 
   /* IROM1 */
   vars->properties_ipp[n] = ipppro[ipproc[ *irom1 -1] -1];
-  vars->properties_iprop[n] = *irom1 -1;
   BFT_MALLOC(vars->properties_name[n], strlen("ROM_GAZ") +1, char);
   strcpy(vars->properties_name[n++], "ROM_GAZ");
 
   /*  YM_CHX1M */
   vars->properties_ipp[n] = ipppro[ipproc[ iym1[0] -1] -1];
-  vars->properties_iprop[n] = iym1[0] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx1m") +1, char);
   strcpy(vars->properties_name[n++], "YM_CHx1m");
 
   /*  YM_CHX2M */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[1] -1] -1];
-  vars->properties_iprop[n] = iym1[1] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CHx2m") +1, char);
   strcpy(vars->properties_name[n++], "YM_CHx2m");
 
   /*  YM_CO */
   vars->properties_ipp[n] = ipppro[ ipproc[iym1[2] -1] -1];
-  vars->properties_iprop[n] = iym1[2] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO") +1, char);
   strcpy(vars->properties_name[n++], "YM_CO");
 
   /*  YM_H2S */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[3] -1] -1];
-  vars->properties_iprop[n] = iym1[3] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2S") +1, char);
   strcpy(vars->properties_name[n++], "YM_H2S");
 
   /*  YM_H2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[4] -1] -1];
-  vars->properties_iprop[n] = iym1[4] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2") +1, char);
   strcpy(vars->properties_name[n++], "YM_H2");
 
   /*  YM_HCN */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[5] -1] -1];
-  vars->properties_iprop[n] = iym1[5] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_HCN") +1, char);
   strcpy(vars->properties_name[n++], "YM_HCN");
 
   /*  YM_NH3 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[6] -1] -1];
-  vars->properties_iprop[n] = iym1[6] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_NH3") +1, char);
   strcpy(vars->properties_name[n++], "YM_NH3");
 
   /*  YM_O2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[7] -1] -1];
-  vars->properties_iprop[n] = iym1[7] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_O2")+1, char);
   strcpy(vars->properties_name[n++], "YM_O2");
 
   /*  YM_CO2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[8] -1] -1];
-  vars->properties_iprop[n] = iym1[8] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_CO2") +1, char);
   strcpy(vars->properties_name[n++], "YM_CO2");
 
   /*  YM_H2O */
   vars->properties_ipp[n] = ipppro[ ipproc[ iym1[9] -1 ] -1];
-  vars->properties_iprop[n] = iym1[9] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_H2O") +1, char);
   strcpy(vars->properties_name[n++], "YM_H2O");
 
   /*  YM_SO2 */
   vars->properties_ipp[n] = ipppro[ipproc[iym1[10] -1] -1];
-  vars->properties_iprop[n] = iym1[10] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_SO2") +1, char);
   strcpy(vars->properties_name[n++], "YM_SO2");
 
   /*  YM_N2 */
   vars->properties_ipp[n] = ipppro[ ipproc[iym1[11] -1] -1];
-  vars->properties_iprop[n] = iym1[11] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_N2") +1, char);
   strcpy(vars->properties_name[n++], "YM_N2");
 
   if (*ieqnox == 1) {
     /* IGHCN1 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ighcn1 -1] -1];
-    vars->properties_iprop[n] =  *ighcn1 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP1") +1, char);
     strcpy(vars->properties_name[n++], "EXP1");
 
     /* IGHCN2 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ighcn2 -1] -1];
-    vars->properties_iprop[n] = *ighcn2 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP2") +1, char);
     strcpy(vars->properties_name[n++], "EXP2");
 
     /* ignoth */
     vars->properties_ipp[n] = ipppro[ipproc[ *ignoth -1 ] -1];
-    vars->properties_iprop[n] = *ignoth -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP3") +1, char);
     strcpy(vars->properties_name[n++], "EXP3");
 
     /* ignh31 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ignh31 -1 ] -1];
-    vars->properties_iprop[n] = *ignh31 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP4") +1, char);
     strcpy(vars->properties_name[n++], "EXP4");
 
     /* ignh32 */
     vars->properties_ipp[n] = ipppro[ipproc[ *ignh32 -1 ] -1];
-    vars->properties_iprop[n] = *ignh32 -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP5") +1, char);
     strcpy(vars->properties_name[n++], "EXP5");
 
     /* ifhcnd */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnd -1 ] -1];
-    vars->properties_iprop[n] = *ifhcnd -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_DEV") +1, char);
     strcpy(vars->properties_name[n++], "F_HCN_DEV");
 
     /* ifhcnc */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnc -1 ] -1];
-    vars->properties_iprop[n] = *ifhcnc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_HET") +1, char);
     strcpy(vars->properties_name[n++], "F_HCN_HET");
 
     /* ifnh3d */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnh3d -1 ] -1];
-    vars->properties_iprop[n] = *ifnh3d -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NH3_DEV") +1, char);
     strcpy(vars->properties_name[n++], "F_NH3_DEV");
 
     /* ifnh3c */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnh3c -1 ] -1];
-    vars->properties_iprop[n] = *ifnh3c -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NH3_HET") +1, char);
     strcpy(vars->properties_name[n++], "F_NH3_HET");
 
     /* ifnohc */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnohc -1 ] -1];
-    vars->properties_iprop[n] = *ifnohc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_HCN") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_HCN");
 
     /* ifnonh */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnonh -1 ] -1];
-    vars->properties_iprop[n] = *ifnonh -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_NH3") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_NH3");
 
     /* ifnoch */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnoch -1 ] -1];
-    vars->properties_iprop[n] = *ifnoch -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_HET") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_HET");
 
     /* ifnoth */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifnoth -1 ] -1];
-    vars->properties_iprop[n] = *ifnoth -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_NO_THE") +1, char);
     strcpy(vars->properties_name[n++], "F_NO_THE");
 
     /* icnohc */
     vars->properties_ipp[n] = ipppro[ipproc[ *icnohc -1 ] -1];
-    vars->properties_iprop[n] = *icnohc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("C_NO_HCN") +1, char);
     strcpy(vars->properties_name[n++], "C_NO_HCN");
 
     /* icnonh */
     vars->properties_ipp[n] = ipppro[ipproc[ *icnonh -1 ] -1];
-    vars->properties_iprop[n] = *icnonh -1;
     BFT_MALLOC(vars->properties_name[n], strlen("C_NO_NH3") +1, char);
     strcpy(vars->properties_name[n++], "C_NO_NH3");
 
     /* ifhcnr */
     vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnr -1 ] -1];
-    vars->properties_iprop[n] = *ifhcnr -1;
     BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_RB") +1, char);
     strcpy(vars->properties_name[n++], "F_HCN_RB");
 
     /* icnorb */
     vars->properties_ipp[n] = ipppro[ipproc[ *icnorb -1 ] -1];
-    vars->properties_iprop[n] = *icnorb -1;
     BFT_MALLOC(vars->properties_name[n], strlen("C_NO_RB") +1, char);
     strcpy(vars->properties_name[n++], "C_NO_RB");
 
     /* igrb */
     vars->properties_ipp[n] = ipppro[ipproc[ *igrb -1 ] -1];
-    vars->properties_iprop[n] = *igrb -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP_RB") +1, char);
     strcpy(vars->properties_name[n++], "EXP_RB");
   }
 
   /* IMEL */
   vars->properties_ipp[n] = ipppro[ipproc[ *immel -1] -1];
-  vars->properties_iprop[n] = *immel -1;
   BFT_MALLOC(vars->properties_name[n], strlen("XM") +1, char);
   strcpy(vars->properties_name[n++], "XM");
 
@@ -2126,7 +2078,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[itemp2[i] -1 ] -1];
-    vars->properties_iprop[n] = itemp2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2141,7 +2092,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[ix2[i] -1] -1];
-    vars->properties_iprop[n] = ix2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2156,7 +2106,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[irom2[i] -1] -1];
-    vars->properties_iprop[n] = irom2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2171,7 +2120,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[idiam2[i] -1] -1];
-    vars->properties_iprop[n] = idiam2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2186,7 +2134,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmdch[i] -1] -1];
-    vars->properties_iprop[n] = igmdch[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name)+1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2201,7 +2148,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmdv1[i] -1] -1];
-    vars->properties_iprop[n] = igmdv1[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2216,7 +2162,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmdv2[i] -1 ] -1];
-    vars->properties_iprop[n] = igmdv2[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2231,7 +2176,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcat(name, snumpp);
 
     vars->properties_ipp[n] = ipppro[ipproc[igmhet[i] -1] -1];
-    vars->properties_iprop[n] = igmhet[i] -1;
     BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
     strcpy(vars->properties_name[n++], name);
 
@@ -2248,7 +2192,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcat(name, snumpp);
 
       vars->properties_ipp[n] = ipppro[ipproc[ighco2[i] -1] -1];
-      vars->properties_iprop[n] = ighco2[i] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
 
@@ -2266,7 +2209,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcat(name, snumpp);
 
       vars->properties_ipp[n] = ipppro[ipproc[ighh2o[i] -1] -1];
-      vars->properties_iprop[n] = ighh2o[i] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
 
@@ -2284,7 +2226,6 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
       strcat(name, snumpp);
 
       vars->properties_ipp[n] = ipppro[ipproc[igmsec[i] -1] -1];
-      vars->properties_iprop[n] = igmsec[i] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
       strcpy(vars->properties_name[n++], name);
 
@@ -2294,19 +2235,16 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
 
   /* Bilan_C */
   vars->properties_ipp[n] = ipppro[ipproc[ *ibcarbone -1] -1];
-  vars->properties_iprop[n] =  *ibcarbone -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Bilan_C")+1, char);
   strcpy(vars->properties_name[n++], "Bilan_C");
 
   /* Bilan_O */
   vars->properties_ipp[n] = ipppro[ipproc[*iboxygen -1] -1];
-  vars->properties_iprop[n] = *iboxygen -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Bilan_O")+1, char);
   strcpy(vars->properties_name[n++], "Bilan_O");
 
   /* Bilan_H */
   vars->properties_ipp[n] = ipppro[ipproc[ *ibhydrogen -1] -1];
-  vars->properties_iprop[n] = *ibhydrogen -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Bilan_H")+1, char);
   strcpy(vars->properties_name[n++], "Bilan_H");
 
@@ -2322,10 +2260,9 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   bft_printf("==>UICPPR\n");
   bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
+    bft_printf("-->properties_ipp[%i]: %i "
                "properties_name[%i]: %s\n",
                i, vars->properties_ipp[i],
-               i, vars->properties_iprop[i],
                i, vars->properties_name[i]);
 #endif
 }
@@ -2368,46 +2305,39 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
   vars->nsalpp  = *nsalpp;
 
   BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
-  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
   BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
   BFT_MALLOC(snumpp, 1 + 2, char);
   /* Source Term */
   if (ippmod[*icolwc -1] >= 0) {
     vars->properties_ipp[n] = ipppro[ipproc[ *itsc -1] -1];
-    vars->properties_iprop[n] = *itsc -1;
     BFT_MALLOC(vars->properties_name[n], strlen("T.SOURCE") +1, char);
     strcpy(vars->properties_name[n++], "T.SOURCE");
   }
 
   /* Temperature */
   vars->properties_ipp[n] = ipppro[ipproc[ *itemp -1] -1];
-  vars->properties_iprop[n] = *itemp -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Temperature") +1, char);
   strcpy(vars->properties_name[n++], "Temperature");
 
   if (ippmod[*icolwc -1] >= 0) {
     /* Mass Molaire */
     vars->properties_ipp[n] = ipppro[ipproc[ *imam -1] -1];
-    vars->properties_iprop[n] = *imam -11;
     BFT_MALLOC(vars->properties_name[n], strlen("Mas_Mol") +1, char);
     strcpy(vars->properties_name[n++], "Mas_Mol");
   }
 
   /* Fuel mass fraction */
   vars->properties_ipp[n] = ipppro[ipproc[iym[0] -1] -1];
-  vars->properties_iprop[n] = iym[0] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_Fuel") +1, char);
   strcpy(vars->properties_name[n++], "YM_Fuel");
 
   /*  Oxydizer Mass fraction */
   vars->properties_ipp[n] = ipppro[ipproc[iym[1] -1] -1];
-  vars->properties_iprop[n] = iym[1] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_Oxyd") +1, char);
   strcpy(vars->properties_name[n++], "YM_Oxyd");
 
   /*  Product Mass fraction */
   vars->properties_ipp[n] = ipppro[ ipproc[iym[2] -1] -1];
-  vars->properties_iprop[n] = iym[2] -1;
   BFT_MALLOC(vars->properties_name[n], strlen("YM_Prod") +1, char);
   strcpy(vars->properties_name[n++], "YM_Prod");
   if (ippmod[*icolwc -1] > 0) {
@@ -2422,7 +2352,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
     strcpy(name, "RHOL");
     for (idirac = 0; idirac < ndirac; idirac++) {
       vars->properties_ipp[n] = ipppro[ipproc[irhol[idirac] -1] -1];
-      vars->properties_iprop[n] = irhol[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2431,7 +2360,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
 
 
       vars->properties_ipp[n] = ipppro[ipproc[iteml[idirac] -1] -1];
-      vars->properties_iprop[n] = iteml[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2439,7 +2367,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "FMEL");
 
       vars->properties_ipp[n] = ipppro[ipproc[ifmel[idirac] -1] -1];
-      vars->properties_iprop[n] = ifmel[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2447,7 +2374,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "FMAL");
 
       vars->properties_ipp[n] = ipppro[ipproc[ifmal[idirac] -1] -1];
-      vars->properties_iprop[n] = ifmal[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2455,7 +2381,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "AMPL");
 
       vars->properties_ipp[n] = ipppro[ipproc[iampl[idirac] -1] -1];
-      vars->properties_iprop[n] = iampl[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name)+1+2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2463,7 +2388,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "TSCL");
 
       vars->properties_ipp[n] = ipppro[ipproc[itscl[idirac] -1] -1];
-      vars->properties_iprop[n] = itscl[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2471,7 +2395,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "MAML");
 
       vars->properties_ipp[n] = ipppro[ipproc[imaml[idirac] -1] -1];
-      vars->properties_iprop[n] = imaml[idirac] -1;
       BFT_MALLOC(vars->properties_name[n], strlen(name) +1 +2, char);
       sprintf(snumpp, "%2.2i", idirac+1);
       strcat(name, snumpp);
@@ -2482,19 +2405,16 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
   if (*iirayo > 0) {
     /* Absoption coefficient */
     vars->properties_ipp[n] = ipppro[ipproc[ *ickabs -1] -1];
-    vars->properties_iprop[n] = *ickabs -1;
     BFT_MALLOC(vars->properties_name[n], strlen("KABS") +1, char);
     strcpy(vars->properties_name[n++], "KABS");
 
     /* Term T^4 */
     vars->properties_ipp[n] = ipppro[ipproc[ *it4m -1] -1];
-    vars->properties_iprop[n] =*it4m -1;
     BFT_MALLOC(vars->properties_name[n], strlen("TEMP4") +1, char);
     strcpy(vars->properties_name[n++], "TEMP4");
 
     /* Term T^3 */
     vars->properties_ipp[n] = ipppro[ipproc[ *it3m -1] -1];
-    vars->properties_iprop[n] = *it3m -1;
     BFT_MALLOC(vars->properties_name[n], strlen("TEMP3")+1, char);
     strcpy(vars->properties_name[n++], "TEMP3");
   }
@@ -2511,10 +2431,9 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
   bft_printf("==>UICPPR\n");
   bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
+    bft_printf("-->properties_ipp[%i]: %i "
                "properties_name[%i]: %s\n",
                i, vars->properties_ipp[i],
-               i, vars->properties_iprop[i],
                i, vars->properties_name[i]);
 #endif
 }
@@ -2779,25 +2698,21 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   vars->nsalpp  = *nsalpp;
 
   BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
-  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
   BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
   BFT_MALLOC(snumpp, 1 + 1, char);
 
   /* Temperature */
   vars->properties_ipp[n] = ipppro[ipproc[*itemp -1] -1];
-  vars->properties_iprop[n] = *itemp -1;
   BFT_MALLOC(vars->properties_name[n], strlen("Temperature") +1, char);
   strcpy(vars->properties_name[n++], "Temperature");
 
   /* Power */
   vars->properties_ipp[n] = ipppro[ipproc[*iefjou -1] -1];
-  vars->properties_iprop[n] = *iefjou -1;
   BFT_MALLOC(vars->properties_name[n], strlen("PuisJoul") +1, char);
   strcpy(vars->properties_name[n++], "PuisJoul");
 
   for (int idimve = 0; idimve < 3; idimve++) {
     vars->properties_ipp[n] = ipppro[ipproc[idjr[idimve] -1] -1];
-    vars->properties_iprop[n] = idjr[idimve] -1;
     BFT_MALLOC(name, strlen("Cour_re") +1 + 1, char);
     strcpy(name, "Cour_re");
     sprintf(snumpp,"%1.1i", idimve+1);
@@ -2810,7 +2725,6 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   if (ippmod[*ieljou - 1] == 2 || ippmod[*ieljou - 1] == 4)
     for (int idimve = 0; idimve < 3; idimve++) {
       vars->properties_ipp[n] = ipppro[ipproc[idji[idimve] -1] -1];
-      vars->properties_iprop[n] = idji[idimve] -1;
       BFT_MALLOC(name, strlen("CouImag") +1 + 1, char);
       strcpy(name, "CouImag");
       sprintf(snumpp,"%1.1i", idimve+1);
@@ -2823,7 +2737,6 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   if (ippmod[*ielarc - 1] >= 1) {
     for (int idimve = 0; idimve < 3; idimve++) {
       vars->properties_ipp[n] = ipppro[ipproc[ilapla[idimve] -1] -1];
-      vars->properties_iprop[n] = ilapla[idimve] -1;
       BFT_MALLOC(name, strlen("For_Lap") +1 + 1, char);
       strcpy(name, "For_Lap");
       sprintf(snumpp,"%1.1i", idimve+1);
@@ -2835,12 +2748,10 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
 
     if (*ixkabe == 1) {
       vars->properties_ipp[n] = ipppro[ipproc[*idrad -1] -1];
-      vars->properties_iprop[n] = *idrad -1;
       BFT_MALLOC(vars->properties_name[n], strlen("Coef_Abso") +1, char);
       strcpy(vars->properties_name[n++], "Coef_Abso");
     } else if (*ixkabe == 2) {
       vars->properties_ipp[n] = ipppro[ipproc[*idrad -1] -1];
-      vars->properties_iprop[n] = *idrad -1;
       BFT_MALLOC(vars->properties_name[n], strlen("TS_radia") +1, char);
       strcpy(vars->properties_name[n++], "TS_radia");
     }
@@ -2857,10 +2768,9 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
   bft_printf("==>UICPPR\n");
   bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
   for (i=0 ; i<vars->nprop ; i++)
-    bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
+    bft_printf("-->properties_ipp[%i]: %i "
                "properties_name[%i]: %s\n",
                i, vars->properties_ipp[i],
-               i, vars->properties_iprop[i],
                i, vars->properties_name[i]);
 #endif
 }
@@ -2973,19 +2883,16 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
   vars->nsalpp  = *nsalpp;
 
   BFT_REALLOC(vars->properties_ipp,   vars->nprop, int);
-  BFT_REALLOC(vars->properties_iprop, vars->nprop, int);
   BFT_REALLOC(vars->properties_name,  vars->nprop, char*);
 
   /* itempc */
   vars->properties_ipp[n] = ipppro[ipproc[ *itempc -1] -1];
-  vars->properties_iprop[n] = *itempc -1;
   BFT_MALLOC(vars->properties_name[n], strlen("real_temperature") +1, char);
   strcpy(vars->properties_name[n++], "real_temperature");
 
   if (ippmod[*iatmos -1] == 2) {
     /* iliqwt */
     vars->properties_ipp[n] = ipppro[ipproc[ *iliqwt -1] -1];
-    vars->properties_iprop[n] = *iliqwt -1;
     BFT_MALLOC(vars->properties_name[n], strlen("liquid_water") +1, char);
     strcpy(vars->properties_name[n++], "liquid_water");
   }
@@ -2995,10 +2902,9 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
     bft_printf("==>UIATPR\n");
     bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
     for (i=0 ; i<vars->nprop ; i++)
-      bft_printf("-->properties_ipp[%i]: %i properties_iprop[%i]: %i "
+      bft_printf("-->properties_ipp[%i]: %i "
                  "properties_name[%i]: %s\n",
                  i, vars->properties_ipp[i],
-                 i, vars->properties_iprop[i],
                  i, vars->properties_name[i]);
   }
 #endif
@@ -3578,7 +3484,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(h2, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "ENT_CP", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "h2_coal", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -3586,7 +3492,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(np, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "NP_CP", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "np_coal", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -3594,7 +3500,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(xch, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "XCH_CP", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "x_coal", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -3602,7 +3508,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(xck, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "XCK_CP", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "xck_coal", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -3610,7 +3516,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(xwt, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "XWT_CP", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "xwt_coal", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -3618,7 +3524,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_coals; i++) {
     f = CS_FI_(f1m, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "Fr_MV1", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "mv1_fraction", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -3626,18 +3532,18 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_coals; i++) {
     f = CS_FI_(f2m, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "Fr_MV2", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "mv2_fraction", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
 
   f = CS_F_(f4m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "FR_OXYD2");
+    _set_scalar_name_label(f, "solid_fuels", "oxyd2_fraction");
 
   f = CS_F_(f5m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "FR_OXYD3");
+    _set_scalar_name_label(f, "solid_fuels", "oxyd3_fraction");
 
   f = CS_F_(f6m);
   if (f != NULL)
@@ -3645,39 +3551,39 @@ cs_gui_labels_coal_combustion(int  n_coals,
 
   f = CS_F_(f7m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "Fr_HET_O2");
+    _set_scalar_name_label(f, "solid_fuels", "het_o2_fraction");
 
   f = CS_F_(f8m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "Fr_HET_CO2");
+    _set_scalar_name_label(f, "solid_fuels", "het_co2_fraction");
 
   f = CS_F_(f9m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "Fr_HET_H2O");
+    _set_scalar_name_label(f, "solid_fuels", "het_h2o_fraction");
 
   f = CS_F_(fvp2m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "Var_F1F2");
+    _set_scalar_name_label(f, "solid_fuels", "f1f2_variance");
 
   f = CS_F_(yco2);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "FR_CO2");
+    _set_scalar_name_label(f, "solid_fuels", "co2_fraction");
 
   f = CS_F_(yhcn);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "FR_HCN");
+    _set_scalar_name_label(f, "solid_fuels", "hcn_fraction");
 
   f = CS_F_(yno);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "FR_NO");
+    _set_scalar_name_label(f, "solid_fuels", "no_fraction");
 
   f = CS_F_(ynh3);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "FR_NH3");
+    _set_scalar_name_label(f, "solid_fuels", "nh3_fraction");
 
   f = CS_F_(hox);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "Enth_Ox");
+    _set_scalar_name_label(f, "solid_fuels", "ox_enthalpy");
 }
 
 /*------------------------------------------------------------------------------
@@ -3695,7 +3601,7 @@ cs_gui_labels_compressible(void)
 
   f = CS_F_(t_kelvin);
   if (f != NULL)
-    _set_scalar_name_label(f, "compressible_model", "TempK");
+    _set_scalar_name_label(f, "compressible_model", "temperature");
 
 }
 
@@ -3719,24 +3625,20 @@ cs_gui_labels_electric_arcs(int  n_gasses)
 
   f = CS_F_(potr);
   if (f != NULL)
-    _set_scalar_name_label(f, "joule_effect", "PotElecReal");
+    _set_scalar_name_label(f, "joule_effect", "elec_pot_r");
 
   f = CS_F_(poti);
   if (f != NULL)
-    _set_scalar_name_label(f, "joule_effect", "POT_EL_I");
+    _set_scalar_name_label(f, "joule_effect", "elec_pot_i");
 
-  for (i = 0; i < 3; i++) {
-    f = CS_FI_(potva, i);
-    if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "POT_VEC", i+1); name[63] = '\0';
-      _set_scalar_name_label(f, "joule_effect", name);
-    }
-  }
+  f = CS_F_(potva);
+  if (f != NULL)
+    _set_scalar_name_label(f, "joule_effect", "vec_potential");
 
   for (i = 0; i < n_gasses - 1; i++) {
     f = CS_FI_(ycoel, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "YM_ESL", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "esl_fraction", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "joule_effect", name);
     }
   }
@@ -3757,29 +3659,29 @@ cs_gui_labels_gas_combustion(void)
 
   f = CS_F_(fm);
   if (f != NULL)
-    _set_scalar_name_label(f, "gas_combustion", "Fra_MEL");
+    _set_scalar_name_label(f, "gas_combustion", "mixture_fraction");
 
   f = CS_F_(fp2m);
   if (f != NULL)
-    _set_scalar_name_label(f, "gas_combustion", "Var_FMe");
+    _set_scalar_name_label(f, "gas_combustion", "mixture_fraction_variance");
 
   /* TODO: handle labels for "fsm" and "npm" key pointers */
 
   f = CS_F_(ygfm);
   if (f != NULL)
-    _set_scalar_name_label(f, "gas_combustion", "Fra_GF");
+    _set_scalar_name_label(f, "gas_combustion", "fresh_gas_fraction");
 
   f = CS_F_(yfm);
   if (f != NULL)
-    _set_scalar_name_label(f, "gas_combustion", "Fra_Mas");
+    _set_scalar_name_label(f, "gas_combustion", "mass_fraction");
 
   f = CS_F_(yfp2m);
   if (f != NULL)
-    _set_scalar_name_label(f, "gas_combustion", "Var_FMa");
+    _set_scalar_name_label(f, "gas_combustion", "mass_fraction_variance");
 
   f = CS_F_(coyfp);
   if (f != NULL)
-    _set_scalar_name_label(f, "gas_combustion", "COYF_PP4");
+    _set_scalar_name_label(f, "gas_combustion", "mass_fraction_covariance");
 }
 
 /*----------------------------------------------------------------------------*/

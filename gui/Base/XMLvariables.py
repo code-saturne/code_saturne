@@ -23,8 +23,8 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the Variables class which creates the <variable>,
-<scalar> and <property> markups.
+This module defines the Variables class which creates the
+<variable> and <property> markups.
 
 This module contains the following classes and function:
 - Variables
@@ -225,13 +225,13 @@ class Model:
 
 
 #-------------------------------------------------------------------------------
-# class Variables : creates <variable>, <scalar> and <property> markups.
+# class Variables : creates <variable> and <property> markups.
 #-------------------------------------------------------------------------------
 
 
 class Variables:
     """
-    This class creates <variable>, <scalar> and <property> markups.
+    This class creates <variable> and <property> markups.
     Each new markup has a 'name' and a 'label' attribute.
     Each new markup has <listing_printing status='on'>,
     <postprocessing_recording status='on'> and several
@@ -290,32 +290,26 @@ class Variables:
             vv['label'] = Toolbox.dicoLabel(vv['name'])
 
 
-    def setNewVariable(self, node, tag, dim=None):
+    def setNewVariable(self, node, tag, dim=None, tpe=None, label=None):
         """
         Input a new <variable name="my_variable" label="ma_variable">
         in the xmldoc.
         """
         if not node.xmlGetNode('variable', name=tag):
             if dim != None:
-                v1 = node.xmlInitNode('variable', name=tag, dimension=dim)
+                if tpe != None:
+                    v1 = node.xmlInitNode('variable', name=tag, dimension=dim, type=tpe)
+                else:
+                    v1 = node.xmlInitNode('variable', name=tag, dimension=dim)
             else:
-                v1 = node.xmlInitNode('variable', name=tag)
+                if tpe != None:
+                    v1 = node.xmlInitNode('variable', name=tag, type=tpe)
+                else:
+                    v1 = node.xmlInitNode('variable', name=tag)
+
+            if label != None:
+                v1['label'] = label
             self.updateLabel(v1)
-
-
-    def setNewScalar(self, node, tag, type_sca):
-        """
-        Input a new <scalar label="tag" type="type_sca">
-        in the xmldoc.
-        """
-
-        if not node.xmlGetNodeList('scalar', type=type_sca, name=tag, label=tag):
-            s1 = node.xmlInitNode('scalar', type=type_sca, name=tag, label=tag)
-            self.updateLabel(s1)
-        else:
-            s1 = node.xmlGetNode('scalar', type=type_sca, name=tag, label=tag )
-
-        return s1
 
 
     def setNewProperty(self, node, tag):
@@ -489,31 +483,31 @@ def runTest():
 ##
 ##    def checkSetNewThermalScalar(self):
 ##        """ Check whether a new
-##        <scalar name="my_variable" label="ma_variable" type="">
+##        <variable name="my_variable" label="ma_variable" type="">
 ##        in the xmldoc could bet set.  """
 ##        root = self.case.root()
 ##        Variables(self.case).setNewThermalScalar(root, 'temperature_celsius', "0")
-##        node = root.xmlGetChildNode('scalar')
+##        node = root.xmlGetChildNode('variable')
 ##        node['label'] = "toto"
-##        doc = '<scalar label="toto" name="temperature_celsius" type="thermal">'\
+##        doc = '<variable label="toto" name="temperature_celsius" type="thermal">'\
 ##                '<initial_value zone="0">20</initial_value>'\
 ##                '<min_value>-1e+12</min_value>'\
 ##                '<max_value>1e+12</max_value>'\
-##              '</scalar>'
+##              '</variable>'
 ##        assert node == self.xmlNodeFromString(doc),\
-##            'Could not set the thermal scalar markups'
+##            'Could not set the thermal variable markups'
 ##
 ##    def checkSetNewUserScalar(self):
 ##        """
-##        Check whether a new <scalar label="ma_variable" type="user">
+##        Check whether a new <variable label="ma_variable" type="user">
 ##        in the xmldoc could bet set.
 ##        """
 ##        root = self.case.root()
-##        Variables(self.case).setNewUserScalar(root, 'scalar1')
-##        node = root.xmlGetChildNode('scalar')
-##        doc = '<scalar label="scalar1" type="user"/>'
+##        Variables(self.case).setNewUserScalar(root, 'variable1')
+##        node = root.xmlGetChildNode('variable')
+##        doc = '<variable label="variable1" type="user"/>'
 ##        assert node == self.xmlNodeFromString(doc),\
-##           'Could not set the user scalar markups'
+##           'Could not set the user variable markups'
 ##
 ##    def checkSetNewProperty(self):
 ##        """

@@ -72,7 +72,7 @@ class CompressibleModel(Variables, Model):
         self.node_ref    = self.node_thermo.xmlInitNode('reference_values')
 
         self.comp_choice = ['off', 'constant_gamma', 'variable_gamma', 'van_der_waals']
-        self.var_list   = ['TempK']
+        self.var_list   = ['temperature']
         self.prop_list   = ['Rho']
 
 
@@ -111,7 +111,7 @@ class CompressibleModel(Variables, Model):
             else :
                 ThermalScalarModel(self.case).setThermalModel('total_energy')
                 for v in self.var_list:
-                    self.setNewScalar(self.node_comp, v, "model")
+                    self.setNewVariable(self.node_comp, v, tpe="model")
                 for p in self.prop_list:
                     self.setNewProperty(self.node_comp, p)
                 from Pages.TurbulenceModel import TurbulenceModel
@@ -137,7 +137,7 @@ class CompressibleModel(Variables, Model):
         Delete variables and property that are useless accordingly to the model.
         """
         for v in self.var_list:
-            self.node_comp.xmlRemoveChild('scalar', name=v)
+            self.node_comp.xmlRemoveChild('variable', name=v)
         for p in self.prop_list:
             self.node_comp.xmlRemoveChild('property', name=p)
 

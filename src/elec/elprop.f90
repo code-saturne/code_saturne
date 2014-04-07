@@ -70,15 +70,14 @@ use field
 
 implicit none
 
-! Arguments
-
-integer       ipropp
 
 ! Local variables
 
 character*80  f_name, f_label
 integer       idimve
+integer       ipropp
 
+ipropp = nproce
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
 !===============================================================================
@@ -159,11 +158,6 @@ endif
 
 nsalpp = nproce - ipropp
 nsalto = nproce
-
-! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
-!         etre numerotees ensuite
-
-ipropp = nproce
 
 !===============================================================================
 ! 2. Construction de l'indirection entre la numerotation du noyau et XML

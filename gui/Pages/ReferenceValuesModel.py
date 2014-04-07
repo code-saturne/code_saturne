@@ -320,9 +320,7 @@ class ReferenceValuesTestCase(ModelTest):
                     <variable label="Pressure" name="pressure">
                             <reference_pressure>1.3e+06</reference_pressure>
                     </variable>
-                    <variable label="VelocitU" name="velocity_U"/>
-                    <variable label="VelocitV" name="velocity_V"/>
-                    <variable label="VelocitW" name="velocity_W"/>
+                    <variable label="Velocity" name="velocity"/>
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
@@ -341,14 +339,14 @@ class ReferenceValuesTestCase(ModelTest):
         mdl.setTemperature(55.5)
 
         doc = """<solid_fuels model="homogeneous_fuel">
-                    <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCH_CP01" name="XCH_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="XCK_CP01" name="XCK_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="ENT_CP01" name="ENT_CP01" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV101" name="Fr_MV101" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_MV201" name="Fr_MV201" type="model"><flux_reconstruction status="off"/></scalar>
-                    <scalar label="Fr_HET" name="Fr_HET" type="model"><flux_reconstruction status="off"/></scalar>
+                    <variable label="Enthalpy" name="enthalpy" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
                     <property label="Temp_GAZ" name="Temp_GAZ"/>
                     <property label="ROM_GAZ" name="ROM_GAZ"/>
                     <property label="YM_CHx1m" name="YM_CHx1m"/>
