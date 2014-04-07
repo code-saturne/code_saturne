@@ -55,9 +55,6 @@ typedef enum {
                                  1   : particle has to be synchronized
                                  2   : particle treated. End of displacement */
 
-  CS_LAGR_PREV_ID,          /* id in particle set of the previous particle */
-  CS_LAGR_NEXT_ID,          /* id in particle set of the next particle */
-
   CS_LAGR_RANDOM_VALUE,     /* random value associated with the particle */
 
   CS_LAGR_STAT_WEIGHT,
@@ -149,6 +146,11 @@ typedef struct { /* User-defined variables. Max. 10 */
 
 } cs_lagr_aux_particle_t;
 
+/* Linked list */
+/* ----------- */
+
+typedef struct _cs_lagr_tracking_list_t cs_lagr_tracking_list_t;
+
 /* Particle set */
 /* ------------ */
 
@@ -179,6 +181,9 @@ typedef struct {
 
   cs_lagr_aux_particle_t         *aux_desc;   /* Additional description for study
                                                  with user-defined variables */
+
+  cs_lagr_tracking_list_t        *used_id;    /* active particles list */
+
 } cs_lagr_particle_set_t;
 
 /*=============================================================================
