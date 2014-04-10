@@ -222,16 +222,24 @@ _surfacic_variable_post(const char  *name,
 
   path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "property");
-
   cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, "postprocessing_recording");
-  cs_xpath_add_attribute(&path, "status");
-  if (cs_gui_get_status(path, &result)) {
-    if (result == 1)
-      active = true;
-    else
-      active = false;
+
+  if (cs_gui_get_nb_element(path) > 0) {
+
+    /* If base path present but not recording status, default to true */
+    active = true;
+
+    cs_xpath_add_element(&path, "postprocessing_recording");
+    cs_xpath_add_attribute(&path, "status");
+    if (cs_gui_get_status(path, &result)) {
+      if (result == 1)
+        active = true;
+      else
+        active = false;
+    }
+
   }
+
   BFT_FREE(path);
 
   return active;
