@@ -16,6 +16,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix GUI output control of surface variables not output by default,
+  such as tangential efforts.
+
 - Fix crash when using GUI MEI initialization formula for RSM turbulence.
 
 - Fix gas combustion model slection in GUI and specific physics selection box.
