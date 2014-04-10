@@ -176,7 +176,7 @@ _sliding_wall(const char  *label,
     cs_xpath_add_function_text(&path);
 
     if (cs_gui_get_double(path, &result)) {
-      boundaries->type_code[f->id][izone] = DIRICHLET;
+      boundaries->type_code[f->id][izone] = WALL_FUNCTION;
       boundaries->values[f->id][f->dim * izone + i].val1 = result;
     }
   }
@@ -430,13 +430,12 @@ _boundary_scalar(const char  *nature,
 
     if (choice != NULL) {
       if (cs_gui_strcmp(choice, "dirichlet")            ||
-          cs_gui_strcmp(choice, "exchange_coefficient") ||
-          cs_gui_strcmp(choice, "wall_function")) {
+          cs_gui_strcmp(choice, "exchange_coefficient")) {
 
         cs_xpath_add_element(&path, "dirichlet");
         cs_xpath_add_function_text(&path);
         if (cs_gui_get_double(path, &result)) {
-          if (cs_gui_strcmp(choice, "wall_function")) {
+          if (cs_gui_strcmp(nature, "wall")) {
             boundaries->type_code[f_id][izone] = WALL_FUNCTION;
           }
           else {
@@ -1677,7 +1676,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
   /* initialize number of variable field */
   int n_fields = cs_field_n_fields();
 
-  for (int izone=0; izone < zones; izone++) {
+  for (int izone = 0; izone < zones; izone++) {
     int ith_zone = izone + 1;
     zone_nbr = cs_gui_boundary_zone_number(ith_zone);
 
@@ -1696,39 +1695,42 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           case NEUMANN:
             for (int ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr] = 3;
-              for (i = 0; i < f->dim; i++)
+              for (i = 0; i < f->dim; i++) {
+                icodcl[(ivar + i) *(*nfabor) + ifbr] = 3;
                 rcodcl[2 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val3;
+              }
             }
             break;
 
           case DIRICHLET:
             for (int ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr] = 1;
               /* if wall_function <-- icodcl[ivar *(*nfabor) + ifbr] = 1; */
-              for (i = 0; i < f->dim; i++)
+              for (i = 0; i < f->dim; i++) {
+                icodcl[(ivar + i) * (*nfabor) + ifbr] = 1;
                 rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val1;
+              }
             }
             break;
 
           case WALL_FUNCTION:
             for (int ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr] = 5;
-              for (i = 0; i < f->dim; i++)
+              for (i = 0; i < f->dim; i++) {
+                icodcl[(ivar + i) * (*nfabor) + ifbr] = 5;
                 rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val1;
+              }
             }
             break;
 
           case EXCHANGE_COEFF:
             for (int ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr] = 5;
               for (i = 0; i < f->dim; i++) {
+                icodcl[(ivar + i) * (*nfabor) + ifbr] = 5;
                 rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val1;
                 rcodcl[1 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
@@ -1747,8 +1749,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
               mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
               mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
-              icodcl[ivar *(*nfabor) + ifbr] = 1;
               for (i = 0; i < f->dim; i++) {
+                icodcl[(ivar + i) *(*nfabor) + ifbr] = 1;
                 char *name = NULL;
                 BFT_MALLOC(name, strlen(f->name) + 4, char);
                 strcpy(name, f->name);
@@ -1769,8 +1771,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
             for (int ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr] = 3;
               for (i = 0; i < f->dim; i++) {
+                icodcl[(ivar + i) *(*nfabor) + ifbr] = 3;
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
                 mei_evaluate(ev_formula);
                 rcodcl[2 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
@@ -1785,8 +1787,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
             for (int ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
-              icodcl[ivar *(*nfabor) + ifbr] = 5;
               for (i = 0; i < f->dim; i++) {
+                icodcl[(ivar + i) *(*nfabor) + ifbr] = 5;
                 char *name = NULL;
                 BFT_MALLOC(name, strlen(f->name) + 4, char);
                 strcpy(name, f->name);
