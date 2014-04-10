@@ -4,6 +4,9 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix GUI output control of surface variables not output by default,
+  such as tangential efforts.
+
 - Fix crash when using GUI MEI initialization formula for RSM turbulence.
 
 - Fix (low Mach algorithm) missing synchronization of the density after its
