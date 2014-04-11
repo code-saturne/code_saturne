@@ -3933,9 +3933,20 @@ cs_post_free_mesh(int  mesh_id)
                 mesh_id, writer->id);
   }
 
-  /* Finally, remove mesh if allowed */
+  /* Remove mesh if allowed */
 
   _free_mesh(_mesh_id);
+
+  /* Finally, update free mesh ids */
+
+  int min_id = -3;
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    post_mesh = _cs_post_meshes + i;
+    if (post_mesh->id < min_id)
+      min_id = post_mesh->id;
+  }
+  _cs_post_min_mesh_id = min_id;
+
 }
 
 /*----------------------------------------------------------------------------*/
