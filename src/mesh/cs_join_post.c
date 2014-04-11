@@ -457,6 +457,9 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
   cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
   cs_post_write_meshes(1, 0);
 
+  cs_post_free_mesh(sel_mesh_id);
+  cs_post_free_mesh(adj_mesh_id);
+
   BFT_FREE(mesh_name);
 }
 
@@ -487,6 +490,7 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
   cs_lnum_t  *post_i_faces = NULL, *post_b_faces = NULL;
   fvm_nodal_t  *post_i_mesh = NULL;
   int  post_i_mesh_id = cs_post_get_free_mesh_id();
+  int  post_b_mesh_id = 0;
 
   const int  n_new_i_faces = mesh->n_i_faces - n_old_i_faces;
   const int  n_new_b_faces = mesh->n_b_faces - n_old_b_faces + n_select_faces;
@@ -529,8 +533,8 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
 
   if (join_param.visualization > 1 && n_g_new_b_faces > 0) {
 
-    cs_lnum_t  post_b_mesh_id = cs_post_get_free_mesh_id();
     fvm_nodal_t  *post_b_mesh = NULL;
+    post_b_mesh_id = cs_post_get_free_mesh_id();
 
     BFT_REALLOC(mesh_name, strlen("BoundaryJoinedFaces_j") + 2 + 1, char);
     sprintf(mesh_name,"%s%02d", "BoundaryJoinedFaces_j", join_param.num);
@@ -557,6 +561,10 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
 
   cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
   cs_post_write_meshes(1,0);
+
+  if (post_b_mesh_id != 0)
+    cs_post_free_mesh(post_b_mesh_id);
+  cs_post_free_mesh(post_i_mesh_id);
 
   BFT_FREE(post_i_faces);
   BFT_FREE(post_b_faces);
@@ -612,6 +620,8 @@ cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
 
   cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
   cs_post_write_meshes(1,0);
+
+  cs_post_free_mesh(post_mesh_id);
 
   BFT_FREE(name);
 }
