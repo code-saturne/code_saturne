@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-03-03 15:08+0100\n"
+"POT-Creation-Date: 2014-04-14 13:42+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4181,6 +4181,9 @@ msgstr "Le répertoire %s ne peut être créé"
 msgid "tgamma() function (C99) is not available"
 msgstr ""
 
+msgid "erf() function (C99) is not available"
+msgstr ""
+
 #, c-format
 msgid "Path passed to cslogname too short for: %s"
 msgstr ""
@@ -4814,32 +4817,32 @@ msgstr ""
 "  ----\n"
 
 #, c-format
-msgid "    %-24s %-10d (default)\n"
-msgstr "    %-24s %-10d (défaut)\n"
+msgid "    %s %-10d (default)\n"
+msgstr "    %s %-10d (défaut)\n"
 
 #, c-format
-msgid "    %-24s %-10.3g\n"
-msgstr "    %-24s %-10.3g\n"
+msgid "    %s %-10.3g\n"
+msgstr "    %s %-10.3g\n"
 
 #, c-format
-msgid "    %-24s %-10.3g (default)\n"
-msgstr "    %-24s %-10.3g (défaut)\n"
+msgid "    %s %-10.3g (default)\n"
+msgstr "    %s %-10.3g (défaut)\n"
 
 #, c-format
-msgid "    %-24s %s\n"
-msgstr "    %-24s %s\n"
+msgid "    %s %s\n"
+msgstr "    %s %s\n"
 
 #, c-format
-msgid "    %-24s %-10s (default)\n"
-msgstr "    %-24s %-10s (défaut)\n"
+msgid "    %s %-10s (default)\n"
+msgstr "    %s %-10s (défaut)\n"
 
 #, c-format
-msgid "    %-24s\n"
-msgstr "    %-24s\n"
+msgid "    %s\n"
+msgstr "    %s\n"
 
 #, c-format
-msgid "    %-24s (default)\n"
-msgstr "    %-24s (défaut)\n"
+msgid "    %s (default)\n"
+msgstr "    %s (défaut)\n"
 
 msgid ""
 "\n"
@@ -6710,6 +6713,12 @@ msgstr ""
 "La pondération de moments temporels pour des supports de type :\n"
 "%s n'est pas encore supportée."
 
+#, c-format
+msgid ""
+"Time moment definition for \"%s\" is inconsistent:\n"
+" either starting time step or physical time must be >= 0."
+msgstr ""
+
 msgid ""
 "\n"
 "Temporal moments\n"
@@ -8362,6 +8371,12 @@ msgstr ""
 #, c-format
 msgid ""
 "Invalid xpath: %s\n"
+" component not found"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid xpath: %s\n"
 " name not found"
 msgstr ""
 
@@ -8378,13 +8393,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Scalar: %i and its variance: %i are the same.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The kernel variables number %i and the calculated one by the GUI %i are not "
-"the same.\n"
+msgid "Scalar: %s and its variance: %s are the same.\n"
 msgstr ""
 
 msgid "mass molar value is zero or not found in the xml file.\n"
@@ -8474,7 +8483,7 @@ msgid "Xpath request failed %s \n"
 msgstr ""
 
 #, c-format
-msgid "--output boundary faces: %s value %i \n"
+msgid "--output boundary faces: %s log %d, postprocess %d\n"
 msgstr ""
 
 msgid ""
@@ -8642,9 +8651,19 @@ msgstr ""
 "L'attribut %s a %d composantes\n"
 "mais la composante %d est demandée."
 
-#, c-format
-msgid "%s\n"
-msgstr "%s\n"
+msgid ""
+" Error during boundary treatment.\n"
+" Part of trajectography inside the boundary faces."
+msgstr ""
+
+msgid "Max number of loops reached in particle displacement."
+msgstr ""
+
+msgid "Error during the particle displacement (Interior face)."
+msgstr ""
+
+msgid "Error during the particle displacement (Boundary face)."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -10716,3 +10735,6 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid "%s\n"
+#~ msgstr "%s\n"
