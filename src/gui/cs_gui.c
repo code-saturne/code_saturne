@@ -1697,12 +1697,33 @@ static char *_get_profile_label_name(const int id, const int nm)
 
   cs_var_t  *vars = cs_glob_var;
   name = _get_profile_name(id, nm);
+  int idim = _get_profile_component(id, nm);
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     const cs_field_t *f = cs_field_by_id(f_id);
     if (cs_gui_strcmp(name,  f->name)) {
       if (f->type & CS_FIELD_VARIABLE)
+      {
         label = cs_gui_variable_label(name);
+        if (f->dim > 1)
+        {
+          int len = strlen(label) + 4;
+          char *tmp = NULL;
+          char *snumpp = NULL;
+          BFT_MALLOC(snumpp, 2, char);
+          sprintf(snumpp, "%1.1i", idim);
+          BFT_MALLOC(tmp, len, char);
+          strcpy(tmp, label);
+          strcat(tmp, "[");
+          strcat(tmp, snumpp);
+          strcat(tmp, "]");
+          BFT_FREE(label);
+          BFT_MALLOC(label, len, char);
+          strcpy(label, tmp);
+          BFT_FREE(snumpp);
+          BFT_FREE(tmp);
+        }
+      }
     }
   }
 
