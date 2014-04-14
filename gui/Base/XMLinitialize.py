@@ -417,6 +417,20 @@ class XMLinit(Variables):
                     elif name != "velocity":
                         n['component'] = "0"
 
+        for node in self.case.xmlGetNodeList('dirichlet'):
+            if node:
+                name = node['name']
+                if name in ["velocity_U", "velocity_V", "velocity_W"]:
+                    if name == 'velocity_U':
+                        component = '0'
+                    if name == 'velocity_V':
+                        component = '1'
+                    if name == 'velocity_W':
+                        component = '2'
+                    name = 'velocity'
+                    node['name'] = name
+                    node['component'] = component
+
         dicoName = [("NP_CP",                        "np_coal"),
                     ("XCH_CP",                       "x_coal"),
                     ("XCK_CP",                       "xck_coal"),
