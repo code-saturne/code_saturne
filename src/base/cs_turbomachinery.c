@@ -1242,24 +1242,41 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
                    matrix);
 }
 
-/*----------------------------------------------------------------------------
- * Return cell rotation axis number
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return cell rotor number.
+ *
+ * Each cell may be associated with a given rotor, or rotation, with 0
+ * indicating that that cell does not rotate.
+ *
+ * \return  array defining rotor number associated with each cell
+ *          (0 for none, 1 to n otherwise)
+ */
+/*----------------------------------------------------------------------------*/
 
-int *
-cs_turbomachinery_get_rotation_axis_number(void)
+const int *
+cs_turbomachinery_get_cell_rotor_num(void)
 {
-    return cs_glob_turbomachinery->cell_rotor_num;
+  return cs_glob_turbomachinery->cell_rotor_num;
 }
 
-/*----------------------------------------------------------------------------
- * Return rotation velocity
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return rotation velocity
+ *
+ * \param[in]   rotor_num rotor number (1 to n numbering)
+ */
+/*----------------------------------------------------------------------------*/
 
 double
-cs_turbomachinery_get_rotation_velocity(void)
+cs_turbomachinery_get_rotation_velocity(int rotor_num)
 {
-    return cs_glob_turbomachinery->omega;
+  if (rotor_num != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: only one rotor may be used in the current version.",
+              __func__);
+
+  return cs_glob_turbomachinery->omega;
 }
 
 /*----------------------------------------------------------------------------*/

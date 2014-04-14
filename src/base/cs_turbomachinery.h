@@ -173,18 +173,28 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
                                   cs_real_t  matrix[3][4]);
 
 /*----------------------------------------------------------------------------
- * Return cell rotation axis number
+ * Return cell rotor number.
+ *
+ * Each cell may be associated with a given rotor, or rotation, with 0
+ * indicating that that cell does not rotate.
+ *
+ * returns:
+ *   array defining rotor number associated with each cell
+ *   (0 for none, 1 to n otherwise)
  *----------------------------------------------------------------------------*/
 
-int *
-cs_turbomachinery_get_rotation_axis_number(void);
+const int *
+cs_turbomachinery_get_cell_rotor_num(void);
 
 /*----------------------------------------------------------------------------
  * Return rotation velocity
+ *
+ * parameters:
+ *   rotor_num <-- rotor number (1 to n numbering)
  *----------------------------------------------------------------------------*/
 
 double
-cs_turbomachinery_get_rotation_velocity(void);
+cs_turbomachinery_get_rotation_velocity(int  rotor_num);
 
 /*----------------------------------------------------------------------------
  * Rotation of vector and tensor fields.
