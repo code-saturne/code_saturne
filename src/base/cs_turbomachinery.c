@@ -1242,6 +1242,26 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
                    matrix);
 }
 
+/*----------------------------------------------------------------------------
+ * Return cell rotation axis number
+ *----------------------------------------------------------------------------*/
+
+int *
+cs_turbomachinery_get_rotation_axis_number(void)
+{
+    return cs_glob_turbomachinery->cell_rotor_num;
+}
+
+/*----------------------------------------------------------------------------
+ * Return rotation velocity
+ *----------------------------------------------------------------------------*/
+
+double
+cs_turbomachinery_get_rotation_velocity(void)
+{
+    return cs_glob_turbomachinery->omega;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Rotation of vector and tensor fields.
