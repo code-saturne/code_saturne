@@ -537,7 +537,7 @@ class StandardItemModelMesh(QStandardItemModel):
             self.mdl.setMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
-            new_location = str(value)
+            new_location = str(from_qvariant(value, to_text_string))
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
 
