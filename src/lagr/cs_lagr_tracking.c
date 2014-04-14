@@ -2602,7 +2602,6 @@ _bdy_treatment(cs_lagr_particle_set_t         *prev_set,
           /* Test to prevent the covering of particles */
         }
 
-        cs_lnum_t  ii;
         cs_lnum_t  ncel = cs_glob_mesh->n_cells;
         cs_lnum_t  node;
         cs_real_t volp[ncel];
@@ -2621,16 +2620,16 @@ _bdy_treatment(cs_lagr_particle_set_t         *prev_set,
 
         cs_real_t dis2mn = _delta_norm_2_3d(particle_coord, xyz1);
 
-        for (ii = 1; ii <= ncel ; ii++) {
-          xyz1[0] = xyzcen[3 * (node - 1)];
-          xyz1[1] = xyzcen[3 * (node - 1) + 1];
-          xyz1[2] = xyzcen[3 * (node - 1) + 2];
+        for (cs_lnum_t ii = 0; ii < ncel ; ii++) {
+          xyz1[0] = xyzcen[3*ii];
+          xyz1[1] = xyzcen[3*ii + 1];
+          xyz1[2] = xyzcen[3*ii + 2];
 
           cs_real_t dis2 = _delta_norm_2_3d(particle_coord, xyz1);
 
           if (dis2 < dis2mn) {
-            node = ii ;
-            dis2mn = dis2 ;
+            node = ii + 1;
+            dis2mn = dis2;
           }
         }
 
