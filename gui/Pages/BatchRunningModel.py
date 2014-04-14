@@ -75,7 +75,7 @@ class BatchRunningModel(Model):
 
         # Do we force a number of MPI ranks ?
 
-        self.dictValues['run_procs'] = None
+        self.dictValues['run_nprocs'] = None
 
         # Is a batch file present ?
 
