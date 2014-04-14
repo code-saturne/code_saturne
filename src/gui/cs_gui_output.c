@@ -486,10 +486,17 @@ _gui_variable_post(int         f_id,
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
+  if (fi->dim > 1)
+    for (int idim = 1; idim < fi->dim; idim++)
+      ihisvr[0 + (ipp - 1) + idim] = nb_probes;
+
   if (nb_probes > 0) {
     for (iprob = 0; iprob < nb_probes; iprob++) {
       num_probe = cs_gui_variable_probe_name(fi->name, iprob+1);
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+      if (fi->dim > 1)
+        for (int idim = 1; idim < fi->dim; idim++)
+          ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
     }
   }
 
