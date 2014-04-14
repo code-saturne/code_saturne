@@ -5146,7 +5146,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
               if (f != NULL) {
                 if (f->type & CS_FIELD_VARIABLE) {
                   if (f->interleaved)
-                    array[iii+4] = f->val[iel + idim];
+                    array[iii+4] = f->val[3 * iel + idim];
                   else
                     array[iii+4] = f->val[iel + idim * (*ncelet)];
                 }
