@@ -76,8 +76,10 @@ use cstphy
 use optcal
 use lagran
 use pointe, only: ivoid1, rvoid1
+use ppincl
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -109,7 +111,9 @@ integer          ipp   , iwarnp, iclip
 integer          nswrgp, imligp
 integer          iivar
 integer          iitsla
+integer          iprev
 double precision epsrgp, climgp, extrap
+double precision rhothe
 
 logical          ilved
 
@@ -257,8 +261,36 @@ endif
 ! 3. Compute the density gradient for buoyant terms
 !===============================================================================
 
-if (igrari.eq.1) then
+! Note that the buoyant term is normally expressed in temr of
+! (u'T') or (u'rho') here modelled with a GGDH:
+!   (u'rho') = C * k/eps * R_ij Grad_j(rho)
 
+! Buoyant term for the Atmospheric module
+! (function of the potential temperature)
+if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
+  ! Allocate a temporary array for the gradient calculation
+  ! Warning, grad(theta) here
+  allocate(gradro(ncelet,3))
+
+  call field_get_val_s(icrom, cromo)
+
+  iprev = 1
+  inc = 1
+  iccocg = 1
+
+  call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, &
+                             iccocg,                               &
+                             gradro)
+
+  ! gradro stores: rho grad(theta)/theta
+  do iel = 1, ncel
+    rhothe = cromo(iel)/rtpa(iel, isca(iscalt))
+    gradro(1, iel) = rhothe*gradro(1, iel)
+    gradro(2, iel) = rhothe*gradro(2, iel)
+    gradro(3, iel) = rhothe*gradro(3, iel)
+  enddo
+
+else if (igrari.eq.1) then
   ! Allocate a temporary array for the gradient calculation
   allocate(gradro(ncelet,3))
 

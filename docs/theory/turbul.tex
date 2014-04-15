@@ -517,15 +517,18 @@ production- tensor associated with buoyancy effects:
 \displaystyle \tens{ \mathcal{P}} & = & \displaystyle-\rho \left[ \tens{R} \cdot \gradt \, \vect{u} 
 + \gradt \, \vect{u}  \cdot \tens{R}\right], \\
 \tens{ \mathcal{G}} & = &
-\displaystyle \frac{3}{2}\frac{C_{\mu }}{\sigma _{t}}
-\frac{k}{\varepsilon }
-\left[\vect{r} \otimes \vect{g} +\vect{g} \otimes \vect{r}  \right].
+\displaystyle \left[\vect{r} \otimes \vect{g} +\vect{g} \otimes \vect{r}  \right].
 \end{array}
 \end{equation}
-where $ \vect{r} \equiv \tens{R} \cdot \grad  \rho$ and 
+where $ \vect{r} \equiv \overline{\rho^\prime \vect{u}^\prime}$ is modelled through a Generalized Gradient Diffusion Hypothesis (GGDH):
+\mbox{$\vect{r} \simeq \frac{3}{2}\frac{C_{\mu }}{\sigma_{t}} \frac{k}{\varepsilon } \tens{R} \cdot \grad  \rho$} and 
 $G_{\varepsilon }= \Max \left(0, \, \frac{1}{2}\trace \tens{\mathcal{G}}\right)$.
-\nomenclature[rrt1]{$\vect{r}$}{vector of the Reynolds stress tensor times the density gradient}
+\nomenclature[rrt1]{$\vect{r}$}{velocity density correlation vector $\overline{\rho^\prime \vect{u}^\prime}$, generally modelled by a Generalized Gradient Diffusion Hypothesis (GGDH): $\frac{3}{2}\frac{C_{\mu }}{\sigma _{t}} \frac{k}{\varepsilon } \tens{R} \cdot \grad  \rho$ }
 \nomenclature[rbuoyancyepsilon]{$G_{\varepsilon }$}{turbulent buoyancy term for dissipation}
+
+\begin{remark}
+Under Boussinesq assumption ($\rho$ varies only in the buoyancy term in the momemtum equation, lineraly with respect to $\theta$, the velocity density correlation becomes $\rho \overline{\theta^\prime \vect{u}^\prime}$.
+\end{remark}
 
 With these definitions the following relations hold:
 \begin{equation}
