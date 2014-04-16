@@ -170,7 +170,7 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create list of variables for a class
         """
-        modelVariables =  ["np_coal", "x_coal", "xck_coal", "h2_coal"]
+        modelVariables =  ["np_coal", "x_coal", "w_ck_coal", "h2_coal"]
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
             modelVariables.append("xwt_coal")
 
@@ -1975,7 +1975,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="XCH_CP01" name="x_coal01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP01" name="xck_coal01" type="model">
+                    <variable label="XCK_CP01" name="w_ck_coal01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="ENT_CP01" name="h2_coal01" type="model">
@@ -2030,7 +2030,7 @@ class CoalCombustionModelTestCase(ModelTest):
         doc = '''<solid_fuels model="coal_homo">
                     <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
@@ -2060,7 +2060,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="XCH_CP02" name="x_coal02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP02" name="xck_coal02" type="model">
+                    <variable label="XCK_CP02" name="w_ck_coal02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="ENT_CP02" name="h2_coal02" type="model">
@@ -2099,7 +2099,7 @@ class CoalCombustionModelTestCase(ModelTest):
         doc = '''<solid_fuels model="coal_homo">
                     <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
@@ -2129,7 +2129,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="XCH_CP03" name="x_coal03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP03" name="xck_coal03" type="model">
+                    <variable label="XCK_CP03" name="w_ck_coal03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="ENT_CP03" name="h2_coal03" type="model">
@@ -2155,7 +2155,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="XCH_CP04" name="x_coal04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP04" name="xck_coal04" type="model">
+                    <variable label="XCK_CP04" name="w_ck_coal04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="ENT_CP04" name="h2_coal04" type="model">
@@ -2177,7 +2177,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_HET_O203" name="Ga_HET_O203"/>
                     <variable label="NP_CP02" name="np_coal02" type="model"/>
                     <variable label="XCH_CP02" name="x_coal02" type="model"/>
-                    <variable label="XCK_CP02" name="xck_coal02" type="model"/>
+                    <variable label="XCK_CP02" name="w_ck_coal02" type="model"/>
                     <variable label="ENT_CP02" name="h2_coal02" type="model"/>
                     <property label="Temp_CP04" name="Temp_CP04"/>
                     <property label="Frm_CP04" name="Frm_CP04"/>
@@ -2207,7 +2207,7 @@ class CoalCombustionModelTestCase(ModelTest):
         doc = '''<solid_fuels model="coal_homo">
                     <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
@@ -2237,7 +2237,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="XCH_CP02" name="x_coal02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP02" name="xck_coal02" type="model">
+                    <variable label="XCK_CP02" name="w_ck_coal02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="ENT_CP02" name="h2_coal02" type="model">
@@ -2257,7 +2257,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="XCH_CP04" name="x_coal04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP04" name="xck_coal04" type="model">
+                    <variable label="XCK_CP04" name="w_ck_coal04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="ENT_CP04" name="h2_coal04" type="model">
@@ -2297,7 +2297,7 @@ class CoalCombustionModelTestCase(ModelTest):
         doc = '''<solid_fuels model="coal_homo">
                     <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="xck_coal01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
@@ -2341,7 +2341,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="XCH_CP04" name="x_coal04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP04" name="xck_coal04" type="model">
+                    <variable label="XCK_CP04" name="w_ck_coal04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="ENT_CP04" name="h2_coal04" type="model">
@@ -2363,7 +2363,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_HET_O204" name="Ga_HET_O204"/>
                     <variable label="NP_CP02" name="np_coal02" type="model"/>
                     <variable label="XCH_CP02" name="x_coal02" type="model"/>
-                    <variable label="XCK_CP02" name="xck_coal02" type="model"/>
+                    <variable label="XCK_CP02" name="w_ck_coal02" type="model"/>
                     <variable label="ENT_CP02" name="h2_coal02" type="model"/>
                     <property label="Temp_CP02" name="Temp_CP02"/>
                     <property label="Frm_CP02" name="Frm_CP02"/>

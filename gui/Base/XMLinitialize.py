@@ -433,7 +433,7 @@ class XMLinit(Variables):
 
         dicoName = [("NP_CP",                        "np_coal"),
                     ("XCH_CP",                       "x_coal"),
-                    ("XCK_CP",                       "xck_coal"),
+                    ("XCK_CP",                       "w_ck_coal"),
                     ("ENT_CP",                       "h2_coal"),
                     ("XWT_CP",                       "xwt_coal"),
                     ("Fr_MV1",                       "mv1_fraction"),
