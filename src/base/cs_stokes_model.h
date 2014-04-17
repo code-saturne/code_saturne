@@ -1,0 +1,128 @@
+#ifndef __CS_STOKES_MODEL_H__
+#define __CS_STOKES_MODEL_H__
+
+/*============================================================================
+ * Stokes equation model data.
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2014 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/* Stokes equation model descriptor */
+/*---------------------------*/
+
+typedef struct {
+
+  int           ivisse;       /* take viscous term of transposed velocity
+                                 gradient into account in momentum equation */
+  int           irevmc;       /* reconstruction of the velocity field with the
+                                 updated pressure option
+                                 - 0: default */
+  int           iprco;        /* compute the pressure step thanks to the
+                                 continuity equation
+                                 - 1: true (default)
+                                 - 0: false */
+  int           irnpnw;       /* compute the normed residual for the pressure
+                                 step in the prediction step
+                                 - 1: true (default)
+                                 - 0: false */
+  double        rnormp;       /* normed residual for the pressure step */
+  double        arak;         /* Arakawa multiplicator for the Rhie and Chow
+                                 filter (1 by default) */
+  int           ipucou;       /* pseudo coupled pressure-velocity solver
+                                 - 1: true (default)
+                                 - 0: false */
+  int           iccvfg;       /* calculation with a fixed velocity field
+                                 - 1: true (default)
+                                 - 0: false */
+  int           idilat;       /* algorithm to take into account the density
+                                 variation in time
+                                 - 1: dilatable steady algorithm (default)
+                                 - 2: dilatable unsteady algorithm
+                                 - 3: low-Mach algorithm
+                                 - 4: algorithm for fire
+                                 - 0: boussinesq algorithm with constant
+                                 density */
+  double        epsdp;        /* parameter of diagonal pressure strengthening */
+  int           itbrrb;       /* accurate treatment of the wall temperature
+                                 - 1: true
+                                 - 0: false (default) */
+  int           iphydr;       /* improve hydrostatic pressure algorithm
+                                 - 1: impose the equilibrium of the hydrostaic
+                                   part of the pressure with any external force,
+                                   even head losses
+                                 - 2: compute an hydrostatic pressure due to
+                                   buoyancy forces before the prediction step
+                                 - 0: no treatment (default) */
+  int           iifren;       /* indicates the presence of a Bernoulli boundary
+                                 face (automatically computed)
+                                 - 0: no face
+                                 - 1: at least one face */
+  int           icalhy;       /* compute the hydrostatic pressure in order to
+                                 compute the Dirichlet conditions on the
+                                 pressure at outlets
+                                 - 1: true
+                                 - 0: false (default) */
+  int           icond;        /* handling condensation source terms
+                                 - 1: condensation source terms activated
+                                 - 2: condensation source terms with metal
+                                   structures activated
+                                 - 0: by default (without condensation source
+                                   terms) */
+
+} cs_stokes_model_t;
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Pointer to main Stokes model structure */
+
+extern const cs_stokes_model_t  *cs_glob_stokes_model;
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#endif /* __CS_STOKES_MODEL_H__ */

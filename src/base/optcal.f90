@@ -677,37 +677,37 @@ module optcal
   !> into account in the momentum equation
   !>    - 1: true (default)
   !>    - 0: false
-  integer, save :: ivisse
+  integer(c_int), pointer, save :: ivisse
 
   !> Reconstruction of the velocity field with the updated pressure option
   !>    - 0: default
-  integer, save ::          irevmc
+  integer(c_int), pointer, save ::          irevmc
 
   !> Compute the pressure step thanks to the continuity equation
   !>    - 1: true (default)
   !>    - 0: false
-  integer, save ::          iprco
+  integer(c_int), pointer, save ::          iprco
 
   !> Compute the normed residual for the pressure step in the prediction step
   !>    - 1: true (default)
   !>    - 0: false
-  integer, save ::          irnpnw
+  integer(c_int), pointer, save ::          irnpnw
 
   !> normed residual for the pressure step
-  double precision, save :: rnormp
+  real(c_double), pointer, save :: rnormp
 
   !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
-  double precision, save :: arak
+  real(c_double), pointer, save :: arak
 
   !> Pseudo coupled pressure-velocity solver
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: ipucou
+  integer(c_int), pointer, save :: ipucou
 
   !> calculation with a fixed velocity field
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: iccvfg
+  integer(c_int), pointer, save :: iccvfg
 
   !> Algorithm to take into account the density variation in time
   !>    - 1: dilatable steady algorithm (default)
@@ -715,10 +715,10 @@ module optcal
   !>    - 3: low-Mach algorithm
   !>    - 4: algorithm for fire
   !    - 0: boussinesq algorithm with constant density
-  integer, save :: idilat
+  integer(c_int), pointer, save :: idilat
 
   !> parameter of diagonal pressure strengthening
-  double precision, save :: epsdp
+  real(c_double), pointer, save :: epsdp
 
   !TODO doxygen
   ! Type des conditions limites et index min et max
@@ -729,7 +729,7 @@ module optcal
   !>    - 1: true
   !>    - 0: false (default)
   !> (see \ref condli, useful in case of coupling with syrthes)
-  integer, save :: itbrrb
+  integer(c_int), pointer, save :: itbrrb
 
   !> indicates if the scalar isca is coupled with syrthes
   !>    - 1: coupled with syrthes
@@ -743,26 +743,26 @@ module optcal
   !>    - 1: impose the equilibrium of the hydrostaic part of the pressure with any external force, even head losses
   !>    - 2: compute an hydrostatic pressure due to buoyancy forces before the prediction step
   !>    - 0: no treatment (default)
-  integer, save :: iphydr
+  integer(c_int), pointer, save :: iphydr
 
 
   !> indicates the presence of a Bernoulli boundary face (automatically computed)
   !>    - 0: no face
   !>    - 1: at least one face
-  integer, save :: iifren
+  integer(c_int), pointer, save :: iifren
 
   !> compute the hydrostatic pressure in order to compute the Dirichlet
   !> conditions on the pressure at outlets
   !>    - 1: true
   !>    - 0: false (default)
-  integer, save :: icalhy
+  integer(c_int), pointer, save :: icalhy
 
   !TODO doxygen
   ! icond: Handling condensation source terms
   !        1: condensation source terms activated
   !        2: condensation source terms with metal structures activated
   !        0: by default (without condensation source terms)
-  integer, save :: icond
+  integer(c_int), pointer, save :: icond
 
   !> compute error estimators
   !>    - 1: true
@@ -1108,6 +1108,23 @@ module optcal
       type(c_ptr), intent(out) :: idries, ivrtex
     end subroutine cs_f_turb_les_model_get_pointers
 
+
+
+    ! Interface to C function retrieving pointers to members of the
+    ! Stokes options structure
+
+    subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco, irnpnw, &
+                                                rnormp, arak  ,ipucou, iccvfg, &
+                                                idilat, epsdp ,itbrrb, iphydr, &
+                                                iifren, icalhy, icond )        &
+      bind(C, name='cs_f_stokes_options_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, irnpnw, rnormp, arak
+      type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
+      type(c_ptr), intent(out) :: iifren, icalhy, icond
+    end subroutine cs_f_stokes_options_get_pointers
+
     !---------------------------------------------------------------------------
 
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
@@ -1262,6 +1279,45 @@ contains
     call c_f_pointer(c_ivrtex, ivrtex)
 
   end subroutine turb_les_model_init
+
+
+
+  !> \brief Initialize Fortran time step API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine stokes_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_irnpnw, c_rnormp, c_arak
+    type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
+    type(c_ptr) :: c_iifren, c_icalhy, c_icond
+
+    call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
+                                          c_irnpnw, c_rnormp, c_arak  , c_ipucou, c_iccvfg, &
+                                          c_idilat, c_epsdp , c_itbrrb, c_iphydr, &
+                                          c_iifren, c_icalhy, c_icond)
+
+    call c_f_pointer(c_ivisse, ivisse)
+    call c_f_pointer(c_irevmc, irevmc)
+    call c_f_pointer(c_iprco , iprco )
+    call c_f_pointer(c_irnpnw, irnpnw)
+    call c_f_pointer(c_rnormp, rnormp)
+    call c_f_pointer(c_arak  , arak  )
+    call c_f_pointer(c_ipucou, ipucou)
+    call c_f_pointer(c_iccvfg, iccvfg)
+    call c_f_pointer(c_idilat, idilat)
+    call c_f_pointer(c_epsdp , epsdp )
+    call c_f_pointer(c_itbrrb, itbrrb)
+    call c_f_pointer(c_iphydr, iphydr)
+    call c_f_pointer(c_iifren, iifren)
+    call c_f_pointer(c_icalhy, icalhy)
+    call c_f_pointer(c_icond , icond )
+
+  end subroutine stokes_options_init
 
   !=============================================================================
 
