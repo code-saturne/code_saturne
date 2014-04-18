@@ -1447,15 +1447,18 @@ _renum_face_multipass_redistribute(int                         n_i_threads,
          current thread. */
 
       int f_t_id1 = t_id1 + g_id*n_i_threads;
+      cs_lnum_t fl_id_max = CS_MIN(t_face_last[t_id1], faces_list_size - 1);
 
       for (fl_id_end = t_face_last[t_id];
-            (   fl_id_end <= t_face_last[t_id1]
+            (   fl_id_end <= fl_id_max
              && l_face_cells[faces_list[fl_id_end]][0] <= t1_c_end
              && n_t_faces_move < 0);
            fl_id_end++) {
         if (f_t_id[faces_list[fl_id_end]] == f_t_id1)
           n_t_faces_move += 1;
       }
+
+      fl_id_end = CS_MIN(fl_id_end, faces_list_size - 1);
 
       while (   fl_id_end >= t_face_last[t_id]
              && fl_id_end > 0
