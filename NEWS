@@ -4,6 +4,8 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix pointer initialization bug for coal combustion with drying.
+
 - In case of mesh joining visualization, destroy temporary visualization
   meshes as soon as they are output, to avoid issues with updates when
   mesh renumbering is activated. This may also slightly reduce memory usage.
