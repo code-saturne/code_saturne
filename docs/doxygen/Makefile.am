@@ -27,6 +27,8 @@ mainpage.h images/icon.png examples/bft_error_example.c doxypy.py
 
 # Overload doxygen executable
 
+if HAVE_DOXYGEN
+
 DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_tex_path_end)"; \
   srcdir="$(top_srcdir)" builddir="$(top_builddir)" "$(DOXYGEN)"
 
@@ -52,14 +54,20 @@ clean-local:
           fi ;\
 	done
 
+endif
+
 distclean-local:
 	-rm -rf Makefile
 
 # Generate the documentation at dist stage so that the user do not need
 # to have Doxygen (and mandatory tools).
 
+if HAVE_DOXYGEN
+
 dist-hook: html
 	\cp -R src/html $(distdir)/src
+
+endif
 
 install-data-local:
 	if test -d $(srcdir)/src; then \

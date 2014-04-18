@@ -22,13 +22,9 @@
 
 #-------------------------------------------------------------------------------
 
-if HAVE_LATEX
 LATEX_SUBDIRS = refcard theory user install developer autovnv
-endif
 
-if HAVE_DOXYGEN
 DOXYGEN_SUBDIRS = doxygen
-endif
 
 SUBDIRS = $(LATEX_SUBDIRS) $(DOXYGEN_SUBDIRS)
 
