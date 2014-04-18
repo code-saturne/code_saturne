@@ -1608,6 +1608,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 !
         ipcsec = ipproc(igmsec(icla))
         ipcte2 = ipproc(itemp2(icla))
+        ipcx2c = ipproc(ix2(icla))
 
         do iel = 1, ncel
 
