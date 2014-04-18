@@ -4420,8 +4420,8 @@ _set_spmv_func(cs_matrix_type_t             m_type,
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _3_3_mat_vec_p_l_msr_mkl;
-        spmv[1] = _3_3_mat_vec_p_l_msr_mkl;
+        spmv[0] = _mat_vec_p_l_msr_mkl;
+        spmv[1] = _mat_vec_p_l_msr_mkl;
         break;
       default:
         break;
