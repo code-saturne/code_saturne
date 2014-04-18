@@ -2548,6 +2548,7 @@ void CS_PROCF (uinum1, UINUM1) (double *const blencv,
   double tmp;
   char* algo_choice = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  int var_key_id = cs_field_key_id("variable_id");
   cs_var_cal_opt_t var_cal_opt;
 
   cs_var_t  *vars = cs_glob_var;
@@ -2556,7 +2557,7 @@ void CS_PROCF (uinum1, UINUM1) (double *const blencv,
   /* 1-a) for pressure */
   cs_field_t *c_pres = cs_field_by_name("pressure");
   cs_field_get_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
-  j = c_pres->id;
+  j = cs_field_get_key_int(c_pres, var_key_id) -1;
 
   cs_gui_variable_value(c_pres->name, "solver_precision", &epsilo[j]);
   tmp = (double) nitmax[j];
@@ -2602,7 +2603,7 @@ void CS_PROCF (uinum1, UINUM1) (double *const blencv,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE && !cs_gui_strcmp(f->name, "pressure")) {
-      j = f->id;
+      j = cs_field_get_key_int(f, var_key_id) -1;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
       cs_gui_variable_value(f->name, "blending_factor", &blencv[j]);
@@ -2652,7 +2653,7 @@ void CS_PROCF (uinum1, UINUM1) (double *const blencv,
   for (f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      i = f->id;
+      j = cs_field_get_key_int(f, var_key_id) -1;
       bft_printf("-->variable[%i] = %s\n", i, f->name);
       bft_printf("--blencv = %f\n", blencv[i]);
       bft_printf("--epsilo = %g\n", epsilo[i]);
@@ -3265,7 +3266,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
     = cs_gui_get_tag_number("/analysis_control/time_averages/time_average", 1);
 
   /* for each average */
-  for (i=0; i < cs_glob_var->ntimaver; i++) {
+  for (i = 0; i < cs_glob_var->ntimaver; i++) {
 
     imom = i + 1;
 
@@ -3279,7 +3280,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
       if (imoold[i] == imom) imoold[i] = -2;
     }
 
-    for (n=0; n < _get_time_average_n_variables(imom); n++) {
+    for (n = 0; n < _get_time_average_n_variables(imom); n++) {
 
       name = _get_time_average_variable_name(imom, n + 1);
       idim = _get_time_average_component(imom, n + 1);
@@ -3292,7 +3293,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
   }
 #if _XML_DEBUG_
   bft_printf("==>UIMOYT\n");
-  for (i=0; i < cs_glob_var->ntimaver; i++) {
+  for (i = 0; i < cs_glob_var->ntimaver; i++) {
     bft_printf("-->ntdmom =  %i\n", ntdmom[i]);
   }
 #endif
