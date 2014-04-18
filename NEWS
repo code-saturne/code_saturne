@@ -4,6 +4,8 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix off-by-one bug leading to crash in renumbering for OpenMP in some cases.
+
 - Fix pointer initialization bug for coal combustion with drying.
 
 - In case of mesh joining visualization, destroy temporary visualization
