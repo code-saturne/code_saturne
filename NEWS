@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Enable use of sparse matrix-vector tuning mechanism in regular calculations.
+  Automatic tuning or variant selection may be done using the
+  cs_user_matrix_tuning() function, in cs_user_performance_tuning.c.
+
 - For non-batch systems, handling of the number of MPI ranks is
   based on a "code_saturne run" option, --nprocs, and is set in the
   runcase file, not in the XML file anymore.

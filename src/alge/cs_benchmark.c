@@ -268,7 +268,7 @@ _matrix_vector_test(double                 t_measure,
                                   halo,
                                   numbering);
 
-  m = cs_matrix_create_tuned(ms, m_variant);
+  m = cs_matrix_create_by_variant(ms, m_variant);
 
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
@@ -822,7 +822,9 @@ cs_benchmark(int  mpi_trace_mode)
                   "=====================================\n"));
 
   mv = cs_matrix_variant_tuned(t_measure,
+                               0,
                                n_fill_types_nsym,
+                               NULL,
                                fill_types_nsym,
                                fill_weights_nsym,
                                10,       /* min expected SpMV products */
@@ -848,7 +850,9 @@ cs_benchmark(int  mpi_trace_mode)
                   "=============================\n"));
 
   mv = cs_matrix_variant_tuned(t_measure,
+                               0,
                                n_fill_types_sym,
+                               NULL,
                                fill_types_sym,
                                fill_weights_sym,
                                10,  /* min expected SpMV products */

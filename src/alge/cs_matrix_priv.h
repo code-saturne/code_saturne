@@ -81,7 +81,6 @@ typedef void
                               const cs_real_t    *restrict x,
                               cs_real_t          *restrict y);
 
-
 /*----------------------------------------------------------------------------
  * Matrix types
  *----------------------------------------------------------------------------*/
@@ -325,7 +324,7 @@ struct _cs_matrix_t {
 
   /* Loop lenght parameter for some SpMv algorithms */
 
-  int                                loop_length;
+  int                                loop_length[CS_MATRIX_N_FILL_TYPES][2];
 
 };
 
@@ -338,14 +337,14 @@ struct _cs_matrix_variant_t {
 
   cs_matrix_type_t       type;         /* Matrix storage and definition type */
 
-  /* Loop lenght parameter for some SpMv algorithms */
+  /* Loop length parameter for some SpMv algorithms */
 
-  int                    loop_length;
+  int                    loop_length[CS_MATRIX_N_FILL_TYPES][2];
 
   /* Function pointer arrays, with variants:
      fill_type + exclude_diagonal_flag */
 
-  cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES*2];
+  cs_matrix_vector_product_t   *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
   /* Measured structure creation cost, or -1 otherwise */
 
@@ -358,7 +357,7 @@ struct _cs_matrix_variant_t {
   /* Measured operation costs for each available operation, or -1 otherwise
      fill_type*2 + exclude_diagonal_flag */
 
-  double  matrix_vector_cost[CS_MATRIX_N_FILL_TYPES*2];
+  double  matrix_vector_cost[CS_MATRIX_N_FILL_TYPES][2];
 
 };
 

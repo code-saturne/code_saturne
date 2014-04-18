@@ -63,7 +63,10 @@
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
+#include "cs_log.h"
 #include "cs_matrix.h"
+#include "cs_matrix_default.h"
+#include "cs_matrix_tuning.h"
 #include "cs_order.h"
 #include "cs_prototypes.h"
 #include "cs_sles.h"
@@ -225,6 +228,12 @@ static MPI_Comm  *_grid_comm = NULL;
 /* Select grid coarsening algorithm */
 
 static int        _grid_coarsening_type = 0;
+
+/* Select tuning options */
+
+static int _grid_tune_max_level = 0;
+static int *_grid_tune_max_fill_level = NULL;
+static cs_matrix_variant_t **_grid_tune_variant = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -3814,6 +3823,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
   cs_matrix_type_t coarse_matrix_type
     = cs_glob_n_threads > 1 ? CS_MATRIX_CSR : CS_MATRIX_NATIVE;
+  cs_matrix_variant_t *coarse_mv = NULL;
 
   cs_grid_t *c = NULL;
 
@@ -3899,6 +3909,67 @@ cs_grid_coarsen(const cs_grid_t   *f,
   }
 #endif
 
+  if (_grid_tune_max_level > 0) {
+
+    cs_matrix_fill_type_t mft
+      = cs_matrix_get_fill_type(f->symmetric,
+                                f->diag_block_size,
+                                f->extra_diag_block_size);
+
+    if (_grid_tune_max_level > f->level) {
+      int k = CS_MATRIX_N_FILL_TYPES*(f->level) + mft;
+      coarse_mv = _grid_tune_variant[k];
+
+      /* Create tuned variant upon first pass for this level and
+         fill type */
+
+      if  (   coarse_mv == NULL
+           && _grid_tune_max_fill_level[mft] > f->level) {
+
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("\n"
+                        "Tuning for coarse matrices of level %d and type: %s\n"
+                        "==========================\n"),
+                      f->level + 1, cs_matrix_fill_type_name[mft]);
+
+        int n_min_products;
+        double t_measure;
+        int n_fill_types = 1;
+        cs_matrix_fill_type_t fill_types[1] = {mft};
+        double fill_weights[1] = {1};
+
+        cs_matrix_get_tuning_runs(&n_min_products, &t_measure);
+
+        coarse_mv = cs_matrix_variant_tuned(t_measure,
+                                            0, /* n_matrix_types, */
+                                            n_fill_types,
+                                            NULL, /* matrix_types, */
+                                            fill_types,
+                                            fill_weights,
+                                            n_min_products,
+                                            c->n_cells,
+                                            c->n_cells_ext,
+                                            c->n_faces,
+                                            NULL,  /* global_cell_num */
+                                            c->face_cell,
+                                            c->halo,
+                                            NULL);  /* face_numbering */
+
+        _grid_tune_variant[k] = coarse_mv;
+
+        if  (_grid_tune_max_fill_level[mft] == f->level + 1) {
+          cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+          cs_log_separator(CS_LOG_PERFORMANCE);
+        }
+      }
+
+    }
+
+  }
+
+  if (coarse_mv != NULL)
+    coarse_matrix_type = cs_matrix_variant_type(coarse_mv);
+
   c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
                                                 true,
                                                 c->n_cells,
@@ -3909,7 +3980,11 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                                 c->halo,
                                                 NULL);
 
-  c->matrix = cs_matrix_create(c->matrix_struct);
+  if (coarse_mv != NULL)
+    c->matrix = cs_matrix_create_by_variant(c->matrix_struct, coarse_mv);
+  else
+    c->matrix = cs_matrix_create(c->matrix_struct);
+
   cs_matrix_set_coefficients(c->matrix,
                              c->symmetric,
                              c->diag_block_size,
@@ -4537,6 +4612,93 @@ cs_grid_get_merge_stride(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Set matrix tuning behavior for multigrid coarse meshes.
+ *
+ * The finest mesh (level 0) is handled by the default tuning options,
+ * so only coarser meshes are considered here.
+ *
+ * parameters:
+ *   fill_type <-- associated matrix fill type
+ *   max_level <-- maximum leval for which tuning is active
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
+                          int                    max_level)
+{
+  if (_grid_tune_max_level < max_level) {
+
+    if (_grid_tune_max_level == 0) {
+      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
+      for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
+        _grid_tune_max_fill_level[i] = 0;
+    }
+
+    BFT_REALLOC(_grid_tune_variant,
+                CS_MATRIX_N_FILL_TYPES*max_level, cs_matrix_variant_t *);
+
+    for (int i = _grid_tune_max_level; i < max_level; i++) {
+      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
+        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
+      }
+    }
+
+    _grid_tune_max_level = max_level;
+  }
+
+  _grid_tune_max_fill_level[fill_type] = max_level;
+}
+
+/*----------------------------------------------------------------------------
+ * Set matrix tuning behavior for multigrid coarse meshes.
+ *
+ * The finest mesh (level 0) is handled by the default tuning options,
+ * so only coarser meshes are considered here.
+ *
+ * parameters:
+ *   fill_type <-- associated matrix fill type
+ *   level     <-- level for which variant is assiged
+ *   mv        <-- matrix variant to assign (NULL to unassign)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
+                           int                         level,
+                           const cs_matrix_variant_t  *mv)
+{
+  if (_grid_tune_max_level < level) {
+
+    if (_grid_tune_max_level == 0) {
+      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
+      for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
+        _grid_tune_max_fill_level[i] = 0;
+    }
+
+    BFT_REALLOC(_grid_tune_variant,
+                CS_MATRIX_N_FILL_TYPES*level, cs_matrix_variant_t *);
+
+    for (int i = _grid_tune_max_level; i < level; i++) {
+      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
+        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
+      }
+    }
+
+    _grid_tune_max_level = level;
+  }
+
+  int k = CS_MATRIX_N_FILL_TYPES*(level-1) + fill_type;
+
+  if (_grid_tune_variant[k] != NULL)
+    cs_matrix_variant_destroy(&(_grid_tune_variant[k]));
+
+  if (mv != NULL) {
+    cs_matrix_type_t m_type = cs_matrix_variant_type(mv);
+    _grid_tune_variant[k] = cs_matrix_variant_create(m_type, NULL);
+    cs_matrix_variant_merge(_grid_tune_variant[k], mv, fill_type);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Print the default parameters for multigrid coarsening.
  *----------------------------------------------------------------------------*/
 
@@ -4575,6 +4737,22 @@ cs_grid_finalize(void)
 #if defined(HAVE_MPI)
   _finalize_reduced_communicators();
 #endif
+
+  if (_grid_tune_max_level > 0) {
+
+    for (int i = 0; i < _grid_tune_max_level; i++) {
+      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
+        int k = CS_MATRIX_N_FILL_TYPES*i + j;
+        if (_grid_tune_variant[k] != NULL)
+          cs_matrix_variant_destroy(&(_grid_tune_variant[k]));
+      }
+    }
+
+    BFT_FREE(_grid_tune_variant);
+    BFT_FREE(_grid_tune_max_fill_level);
+
+    _grid_tune_max_level = 0;
+  }
 }
 
 /*----------------------------------------------------------------------------

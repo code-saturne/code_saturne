@@ -130,13 +130,6 @@ cs_sles_initialize(void);
 void
 cs_sles_finalize(void);
 
-/*----------------------------------------------------------------------------
- * Update sparse linear equation solver API in case of mesh modification.
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_update_mesh(void);
-
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------

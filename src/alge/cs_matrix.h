@@ -101,52 +101,13 @@ extern const char  *cs_matrix_type_name[];
 
 extern const char  *cs_matrix_type_fullname[];
 
-extern cs_matrix_t            *cs_glob_matrix_default;
-extern cs_matrix_structure_t  *cs_glob_matrix_default_struct;
+/* Fill type names for matrices */
 
-/*=============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-void CS_PROCF(promav, PROMAV)
-(
- const cs_int_t   *isym,      /* <-- Symmetry indicator:
-                                     1: symmetric; 2: not symmetric */
- const cs_int_t   *ibsize,    /* <-- Block size of diagonal element */
- const cs_int_t   *iesize,    /* <-- Block size of element ij */
- const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
-                                     in rotational periodicty (2) or
-                                     to exchange them as scalars (1) */
- const cs_real_t  *dam,       /* <-- Matrix diagonal */
- const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
- cs_real_t        *vx,        /* <-- A*vx */
- cs_real_t        *vy         /* <-> vy = A*vx */
- );
+extern const char  *cs_matrix_fill_type_name[];
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Initialize sparse matrix API.
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_initialize(void);
-
-/*----------------------------------------------------------------------------
- * Finalize sparse matrix API.
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_finalize(void);
-
-/*----------------------------------------------------------------------------
- * Update sparse matrix API in case of mesh modification.
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_update_mesh(void);
 
 /*----------------------------------------------------------------------------
  * Create a matrix Structure.
@@ -189,9 +150,10 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
                            const cs_numbering_t  *numbering);
 
 /*----------------------------------------------------------------------------
- * Create a matrix container using a given structure and tuning info.
+ * Create a matrix container using a given variant.
  *
- * If the matrix variant is incompatible with the structure, it is ignored.
+ * If the matrix variant is incompatible with the structure, it is ignored,
+ * and defaults for that structure are used instead.
  *
  * parameters:
  *   ms <-- Associated matrix structure
@@ -202,8 +164,8 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t *
-cs_matrix_create_tuned(const cs_matrix_structure_t  *ms,
-                       const cs_matrix_variant_t    *mv);
+cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
+                            const cs_matrix_variant_t    *mv);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.
@@ -214,6 +176,16 @@ cs_matrix_create_tuned(const cs_matrix_structure_t  *ms,
 
 void
 cs_matrix_structure_destroy(cs_matrix_structure_t  **ms);
+
+/*----------------------------------------------------------------------------
+ * Get the type associated with a matrix structure.
+ *
+ * parameters:
+ *   ms <-- Associated matrix structure
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_type_t
+cs_matrix_structure_type(const cs_matrix_structure_t  *ms);
 
 /*----------------------------------------------------------------------------
  * Create a matrix container using a given structure.
@@ -277,6 +249,27 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
 
 const int *
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Get matrix fill type, depending on block sizes.
+ *
+ * Block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * parameters:
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *
+ * returns:
+ *   matrix fill type
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_fill_type_t
+cs_matrix_get_fill_type(bool        symmetric,
+                        const int  *diag_block_size,
+                        const int  *extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Set matrix coefficients, sharing arrays with the caller when possible.
@@ -460,50 +453,41 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
                                  cs_real_t           *restrict y);
 
 /*----------------------------------------------------------------------------
- * Tune local matrix.vector product operations.
- *
- * To avoid multiplying structures for multiple matrix fill-ins,
- * an array of tuning types may be provided, and weights may be
- * associated to each type based on the expected usage of each fill-in
- * type. If n_fill_types is set to 0, these arrays are ignored, and their
- * following default is used:
- *
- *   CS_MATRIX_SCALAR      0.5
- *   CS_MATRIX_SCALAR_SYM  0.25
- *   CS_MATRIX_33_BLOCK_D  0.25
+ * Build list of variants for tuning or testing.
  *
  * parameters:
- *   t_measure      <-- minimum time for each measure
- *   n_fill_types   <-- number of fill types tuned for, or 0
- *   fill_types     <-- array of fill types tuned for, or NULL
- *   fill_weights   <-- weight of fill types tuned for, or NULL
- *   n_min_spmv     <-- minimum number of SpMv products (to estimate
- *                      amortization of coefficients assignment)
- *   n_cells        <-- number of local cells
- *   n_cells_ext    <-- number of cells including ghost cells (array size)
- *   n_faces        <-- local number of internal faces
- *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
- *   face_cell      <-- face -> cells connectivity (1 to n)
- *   halo           <-- cell halo structure
- *   numbering      <-- vectorization or thread-related numbering info, or NULL
+ *   n_fill_types <-- number of fill types tuned for
+ *   fill_types   <-- array of fill types tuned for
+ *   type_filter  <-- true for matrix types tuned for, false for others
+ *   numbering    <-- vectorization or thread-related numbering info,
+ *                    or NULL
+ *   n_variants   --> number of variants
+ *   m_variant    --> array of matrix variants
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_build_list(int                      n_fill_types,
+                             cs_matrix_fill_type_t    fill_types[],
+                             bool                     type_filter[],
+                             const cs_numbering_t    *numbering,
+                             int                     *n_variants,
+                             cs_matrix_variant_t    **m_variant);
+
+/*----------------------------------------------------------------------------
+ * Build matrix variant
  *
- * returns:
- *   pointer to tuning results structure
+ * The variant will initially use default matrix-vector functions,
+ * which can be later modified using cs_matrix_variant_set_func().
+ *
+ * parameters:
+ *   type         <-- Type of matrix considered
+ *   numbering    <-- vectorization or thread-related numbering info,
+ *                    or NULL
  *----------------------------------------------------------------------------*/
 
 cs_matrix_variant_t *
-cs_matrix_variant_tuned(double                 t_measure,
-                        int                    n_fill_types,
-                        cs_matrix_fill_type_t  fill_types[],
-                        double                 fill_weights[],
-                        int                    n_min_products,
-                        cs_lnum_t              n_cells,
-                        cs_lnum_t              n_cells_ext,
-                        cs_lnum_t              n_faces,
-                        const cs_gnum_t       *cell_num,
-                        const cs_lnum_t       *face_cell,
-                        const cs_halo_t       *halo,
-                        const cs_numbering_t  *numbering);
+cs_matrix_variant_create(cs_matrix_type_t         type,
+                         const cs_numbering_t    *numbering);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix variant structure.
@@ -514,6 +498,69 @@ cs_matrix_variant_tuned(double                 t_measure,
 
 void
 cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
+
+/*----------------------------------------------------------------------------
+ * Select the sparse matrix-vector product function to be used by a
+ * matrix variant for a given fill type.
+ *
+ * Currently, possible variant functions are:
+ *
+ *   CS_MATRIX_NATIVE  (all fill types)
+ *     standard
+ *     3_3_diag        (for CS_MATRIX_33_BLOCK_D or CS_MATRIX_33_BLOCK_D_SYM)
+ *     bull            (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     omp             (for OpenMP with compatible numbering)
+ *     vector          (For vector machine with compatible numbering)
+ *
+ *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     standard
+ *     prefetch
+ *     mkl             (with MKL)
+ *
+ *   CS_MATRIX_CSR_SYM (for CS_MATRIX_SCALAR_SYM)
+ *     standard
+ *     mkl             (with MKL)
+ *
+ *   CS_MATRIX_MSR     (all fill types except CS_MATRIX_33_BLOCK)
+ *     standard
+ *     prefetch
+ *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *
+ * parameters:
+ *   mv        <-> Pointer to matrix variant
+ *   numbering <-- mesh numbering info, or NULL
+ *   fill type <-- matrix fill type to merge from
+ *   ed_flag   <-- 0: with diagonal only, 1 exclude only; 2; both
+ *   func_name <-- function type name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
+                           const cs_numbering_t    *numbering,
+                           cs_matrix_fill_type_t    fill_type,
+                           int                      ed_flag,
+                           const char              *func_name);
+
+/*----------------------------------------------------------------------------
+ * Merge a functions to a matrix variant from another variant sharing
+ * the same structure.
+ *
+ * Functions from the structure to merge for the selected fill type are
+ * assigned to the main variant.
+ *
+ * This can be useful when tuning has been done separately for different fill
+ * types, and the resulting selected structure is identical.
+ *
+ * parameters:
+ *   mv        <-> Pointer to matrix variant
+ *   mv_merge  <-- Pointer to matrix variant to merge
+ *   fill type <-- matrix fill type to merge from
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_merge(cs_matrix_variant_t        *mv,
+                        const cs_matrix_variant_t  *mv_merge,
+                        cs_matrix_fill_type_t       fill_type);
 
 /*----------------------------------------------------------------------------
  * Get the type associated with a matrix variant.
@@ -536,9 +583,6 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
  *   face_cell      <-- face -> cells connectivity (1 to n)
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
- *
- * returns:
- *   pointer to tuning results structure
  *----------------------------------------------------------------------------*/
 
 void

@@ -328,6 +328,8 @@ cs_run(void)
 
       /* Initialize sparse linear systems resolution */
 
+      cs_user_matrix_tuning();
+
       cs_matrix_initialize();
       cs_sles_initialize();
       cs_multigrid_initialize();

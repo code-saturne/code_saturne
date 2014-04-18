@@ -55,6 +55,7 @@
 #include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
+#include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
 #include "cs_post.h"
 #include "cs_timer.h"
@@ -142,26 +143,6 @@ static int cs_glob_sles_n_max_systems = 0;  /* Max. number of sytems for
                                                cs_glob_sles_systems. */
 
 static cs_sles_info_t **cs_glob_sles_systems = NULL; /* System info array */
-
-/*
-  Matrix structures re-used for various resolutions.
-
-  These structures are kept throughout the whole run, to avoid paying the
-  CPU overhead for their construction at each system resolution
-  (at the cost of extra memory use, depending on the chosen structure).
-
-  Two simultaneous matrixes may be needed for some solvers: one for the
-  linear system, one for the preconditionner.
-  We always have at least one structure of "native" matrix type, as
-  this type incurs negligible memory and assignment cpu overhead;
-  we use it for Jacobi (where the number of iterations done is often
-  small, and an assignment cost equivalent to a few matrix.vector
-  products may not be amortized).
-*/
-
-
-cs_matrix_structure_t *cs_glob_sles_native_matrix_struct = NULL;
-cs_matrix_t *cs_glob_sles_native_matrix = NULL;
 
 /* Sparse linear equation solver type names */
 
@@ -2882,7 +2863,7 @@ void CS_PROCF(reslin, RESLIN)
   bool interleaved = (*ilved == 1) ? true : false;
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
-  cs_matrix_t *a = cs_glob_matrix_default;
+  cs_matrix_t *a = NULL;
 
   assert(*ncelet >= *ncel);
   assert(*nfac > 0);
@@ -2906,6 +2887,10 @@ void CS_PROCF(reslin, RESLIN)
     extra_diag_block_size[2] = *iesize;
     extra_diag_block_size[3] = (*iesize)*(*iesize);
   }
+
+  a = cs_matrix_default(symmetric,
+                        diag_block_size,
+                        extra_diag_block_size);
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
@@ -3011,24 +2996,6 @@ void CS_PROCF(reslin, RESLIN)
 void
 cs_sles_initialize(void)
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  assert(mesh != NULL);
-
-  cs_glob_sles_native_matrix_struct
-    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
-                                 true,
-                                 mesh->n_cells,
-                                 mesh->n_cells_with_ghosts,
-                                 mesh->n_i_faces,
-                                 mesh->global_cell_num,
-                                 mesh->i_face_cells,
-                                 mesh->halo,
-                                 mesh->i_face_numbering);
-
-  cs_glob_sles_native_matrix
-    = cs_matrix_create(cs_glob_sles_native_matrix_struct);
-
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     _cs_sles_mpi_reduce_comm = cs_glob_mpi_comm;
@@ -3060,47 +3027,7 @@ cs_sles_finalize(void)
 
   cs_glob_sles_n_systems = 0;
   cs_glob_sles_n_max_systems = 0;
-
-  /* Free matrix structures */
-
-  cs_matrix_destroy(&cs_glob_sles_native_matrix);
-
-  cs_matrix_structure_destroy(&cs_glob_sles_native_matrix_struct);
  }
-
-/*----------------------------------------------------------------------------
- * Update sparse linear equation solver API in case of mesh modification.
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_update_mesh(void)
-{
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  assert(mesh != NULL);
-  if (cs_glob_sles_native_matrix_struct == NULL)
-    return;
-
-  /* Free then rebuid matrix structures */
-
-  cs_matrix_destroy(&cs_glob_sles_native_matrix);
-
-  cs_matrix_structure_destroy(&cs_glob_sles_native_matrix_struct);
-
-  cs_glob_sles_native_matrix_struct
-    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
-                                 true,
-                                 mesh->n_cells,
-                                 mesh->n_cells_with_ghosts,
-                                 mesh->n_i_faces,
-                                 mesh->global_cell_num,
-                                 mesh->i_face_cells,
-                                 mesh->halo,
-                                 mesh->i_face_numbering);
-
-  cs_glob_sles_native_matrix
-    = cs_matrix_create(cs_glob_sles_native_matrix_struct);
-}
 
 #if defined(HAVE_MPI)
 
@@ -3111,7 +3038,7 @@ cs_sles_update_mesh(void)
 void
 cs_sles_set_mpi_reduce_comm(MPI_Comm comm)
 {
-  static flag = -1;
+  static int flag = -1;
 
   if (flag < 0)
     flag = cs_halo_get_use_barrier();

@@ -54,6 +54,7 @@
 #include "cs_join.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
+#include "cs_matrix_default.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
@@ -65,7 +66,6 @@
 #include "cs_preprocess.h"
 #include "cs_prototypes.h"
 #include "cs_renumber.h"
-#include "cs_sles.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 
@@ -1020,7 +1020,6 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   /* Update linear algebra APIs relative to mesh */
 
   cs_gradient_perio_update_mesh();
-  cs_sles_update_mesh();
   cs_matrix_update_mesh();
 
   t_end = cs_timer_wtime();

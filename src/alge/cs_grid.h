@@ -463,6 +463,38 @@ int
 cs_grid_get_merge_stride(void);
 
 /*----------------------------------------------------------------------------
+ * Set matrix tuning behavior for multigrid coarse meshes.
+ *
+ * The finest mesh (level 0) is handled by the default tuning options,
+ * so only coarser meshes are considered here.
+ *
+ * parameters:
+ *   fill_type <-- associated matrix fill type
+ *   max_level <-- maximum leval for which tuning is active
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
+                          int                    max_level);
+
+/*----------------------------------------------------------------------------
+ * Set matrix tuning behavior for multigrid coarse meshes.
+ *
+ * The finest mesh (level 0) is handled by the default tuning options,
+ * so only coarser meshes are considered here.
+ *
+ * parameters:
+ *   fill_type <-- associated matrix fill type
+ *   level     <-- level for which variant is assiged
+ *   mv        <-- matrix variant to assign (NULL to unassign)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
+                           int                         level,
+                           const cs_matrix_variant_t  *mv);
+
+/*----------------------------------------------------------------------------
  * Print the default parameters for multigrid coarsening.
  *----------------------------------------------------------------------------*/
 

@@ -49,6 +49,9 @@
 
 #include "cs_base.h"
 #include "cs_file.h"
+#include "cs_grid.h"
+#include "cs_matrix.h"
+#include "cs_matrix_default.h"
 #include "cs_parall.h"
 #include "cs_partition.h"
 #include "cs_renumber.h"
@@ -74,8 +77,6 @@ BEGIN_C_DECLS
 void
 cs_user_numbering(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* Force the target number of threads for mesh renumbering
      (by default, OMP_NUM_THREADS if OpenMP is enabled, 1 otherwise) */
 
@@ -106,8 +107,6 @@ cs_user_numbering(void)
 void
 cs_user_partition(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* Example:
 
      Force PT-SCOTCH or SCOTCH for preprocessing partitioning,
@@ -175,8 +174,6 @@ cs_user_partition(void)
 void
 cs_user_parallel_io(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
 #if defined(HAVE_MPI_IO) && MPI_VERSION > 1
 
   /* Example fine-tune parallel IO settings.
@@ -242,6 +239,51 @@ cs_user_parallel_io(void)
   }
 
 #endif /* defined(HAVE_MPI_IO) && MPI_VERSION > 1 */
+}
+
+/*----------------------------------------------------------------------------
+ * Define sparse matrix tuning options.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_matrix_tuning(void)
+{
+  /* Activate tuning of matrix-vector operations */
+
+  if (false) {
+
+    /* Set tuning runs (defaults) */
+
+    cs_matrix_set_tuning_runs(10,   /* n_min_products */
+                              0.5); /* t_measure */
+
+    /* Activate tuning for selected matrix fill types. */
+
+    cs_matrix_set_tuning(CS_MATRIX_SCALAR, 1);
+
+    cs_matrix_set_tuning(CS_MATRIX_SCALAR_SYM, 1);
+
+    /* Force variant for selected types */
+
+    cs_matrix_variant_t *mv
+      = cs_matrix_variant_create(CS_MATRIX_MSR,
+                                 cs_glob_mesh->i_face_numbering);
+    cs_matrix_variant_set_func(mv,
+                               cs_glob_mesh->i_face_numbering,
+                               CS_MATRIX_33_BLOCK_D,
+                               2,
+                               "default");
+
+    cs_matrix_set_variant(CS_MATRIX_33_BLOCK_D, mv);
+
+    cs_matrix_variant_destroy(&mv);
+
+    /* Also allow tuning for multigrid for all expected levels
+     * (we rarely have more than 10 or 11 levels except for huge meshes). */
+
+    cs_grid_set_matrix_tuning(CS_MATRIX_SCALAR_SYM, 12);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
