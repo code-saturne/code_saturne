@@ -16,6 +16,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix off-by-one bug leading to crash in renumbering for OpenMP in some cases.
+
 - Fix pointer initialization bug for coal combustion with drying.
 
 - Fix boundary condition for atmospheric flow using the GUI.
