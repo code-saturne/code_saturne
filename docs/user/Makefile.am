@@ -26,7 +26,7 @@
 
 TEXMAIN = user.tex
 
-# Other LaTex document
+# Other LaTex documents
 
 TEXOTHERS = \
 biblio.tex \
@@ -34,11 +34,17 @@ saturne1.tex \
 saturne2.tex \
 summary.tex
 
-TEXINPUTFILES =
+TEXINPUTFILES = input
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) input
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+
+# Generated pdf document
+
+PDFMAIN = $(TEXMAIN:.tex=.pdf)
+
+if HAVE_LATEX
 
 # Subdirectories (order is important)
 
@@ -57,9 +63,8 @@ PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
 BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
 MAKEINDEX = export INDEXSTYLE="$(INDEXSTYLE)"; makeindex
 
-# Generated documents (pdf and index files)
+# Generated index files
 
-PDFMAIN = $(TEXMAIN:.tex=.pdf)
 IDXMAIN = $(TEXMAIN:.tex=.idx)
 
 # One redefines here the standard pdf targets of automake
@@ -88,6 +93,8 @@ distclean-local: clean-local
 
 dist-hook: pdf
 	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
+
+endif
 
 # Install the documentation if available
 

@@ -26,16 +26,21 @@
 
 TEXMAIN = developer.tex
 
-# Other LaTex document
+# Other LaTex documents
 
-TEXOTHERS = \
-coding_standards.tex common_constructs.tex
+TEXOTHERS = coding_standards.tex common_constructs.tex
 
 TEXINPUTFILES = input
 
 # Distributed files
 
 EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+
+# Generated pdf document
+
+PDFMAIN = $(TEXMAIN:.tex=.pdf)
+
+if HAVE_LATEX
 
 # Subdirectories (order is important)
 
@@ -51,10 +56,6 @@ BSTINPUTS = $(top_srcdir)/docs/style/:
 
 PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
 BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
-
-# Generated documents (pdf and index files)
-
-PDFMAIN = $(TEXMAIN:.tex=.pdf)
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
@@ -80,6 +81,8 @@ distclean-local: clean-local
 
 dist-hook: pdf
 	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
+
+endif
 
 # Install the documentation if available
 

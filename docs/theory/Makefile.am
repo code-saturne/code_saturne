@@ -26,7 +26,7 @@
 
 TEXMAIN = theory.tex
 
-# Other LaTex document
+# Other LaTex documents
 
 TEXOTHERS = \
 algebr.tex \
@@ -75,11 +75,18 @@ visort.tex \
 vissec.tex \
 vortex.tex
 
+
 TEXINPUTFILES = input
 
 # Distributed files
 
 EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+
+# Generated pdf document
+
+PDFMAIN = $(TEXMAIN:.tex=.pdf)
+
+if HAVE_LATEX
 
 # Subdirectories (order is important)
 
@@ -97,9 +104,8 @@ PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
 BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
 INDEX = makeindex
 
-# Generated documents (pdf and index files)
+# generated index files
 
-PDFMAIN = $(TEXMAIN:.tex=.pdf)
 BIBMAIN = $(TEXMAIN:.tex=.aux)
 GLOSSMAIN = $(TEXMAIN:.tex=.nlo)
 INDEXMAIN = $(TEXMAIN:.tex=.nls)
@@ -131,6 +137,8 @@ distclean-local: clean-local
 
 dist-hook: pdf
 	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
+
+endif
 
 # Install the documentation if available
 

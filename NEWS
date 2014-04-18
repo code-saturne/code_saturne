@@ -16,6 +16,9 @@ Changes:
 Bug fixes:
 ----------
 
+- PDF documentation is now correctly installed from ".tar.gz" distribution
+  release (built by "make dist") even when LaTeX is not present.
+
 - Fix off-by-one bug leading to crash in renumbering for OpenMP in some cases.
 
 - Fix pointer initialization bug for coal combustion with drying.
