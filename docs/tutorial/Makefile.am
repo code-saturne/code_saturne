@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2014 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -48,6 +48,12 @@ TEXINPUTFILES = input
 
 EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
 
+# Generated pdf document
+
+PDFMAIN = $(TEXMAIN:.tex=.pdf)
+
+if HAVE_LATEX
+
 # Subdirectories (order is important)
 
 SUBDIRS = graphics .
@@ -60,20 +66,16 @@ BSTINPUTS = $(top_srcdir)/docs/style/:
 
 # LaTeX commands
 
-PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
-BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
-
-# Generated documents (pdf and index files)
-
-PDFMAIN = $(TEXMAIN:.tex=.pdf)
+PDFLATEXCMD = export TEXINPUTS="$(TEXINPUTS)"; "$(PDFLATEX)"
+BIBTEXCMD = export BIBINPUTS="$(BIBINPUTS)"; "$(BIBTEX)"
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
 
 pdf-local:
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
@@ -91,6 +93,8 @@ distclean-local: clean-local
 
 dist-hook: pdf
 	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
+
+endif
 
 # Install the documentation if available
 

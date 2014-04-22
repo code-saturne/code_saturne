@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2014 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -54,16 +54,16 @@ BSTINPUTS = $(top_srcdir)/docs/style/:
 
 # LaTeX commands
 
-PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
-BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
+PDFLATEXCMD = export TEXINPUTS="$(TEXINPUTS)"; "$(PDFLATEX)"
+BIBTEXCMD = export BIBINPUTS="$(BIBINPUTS)"; "$(BIBTEX)"
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
 
 pdf-local:
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \

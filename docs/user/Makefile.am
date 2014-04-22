@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2014 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -59,9 +59,9 @@ INDEXSTYLE = $(top_srcdir)/docs/style/:
 
 # LaTeX commands
 
-PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
-BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
-MAKEINDEX = export INDEXSTYLE="$(INDEXSTYLE)"; makeindex
+PDFLATEXCMD = export TEXINPUTS="$(TEXINPUTS)"; "$(PDFLATEX)"
+BIBTEXCMD = export BIBINPUTS="$(BIBINPUTS)"; "$(BIBTEX)"
+MAKEINDEXCMD = export INDEXSTYLE="$(INDEXSTYLE)"; "$(MAKEINDEX)"
 
 # Generated index files
 
@@ -71,15 +71,15 @@ IDXMAIN = $(TEXMAIN:.tex=.idx)
 # so that they handle generation from LaTeX documents.
 
 pdf-local:
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(MAKEINDEX) $(IDXMAIN) -s csindex.sty
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(MAKEINDEXCMD) $(IDXMAIN) -s csindex.sty
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
-	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy 
+	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy
 
 install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"

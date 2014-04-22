@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2014 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -100,9 +100,9 @@ BSTINPUTS = $(top_srcdir)/docs/style/:
 
 # LaTeX commands
 
-PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
-BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
-INDEX = makeindex
+PDFLATEXCMD = export TEXINPUTS="$(TEXINPUTS)"; "$(PDFLATEX)"
+BIBTEXCMD = export BIBINPUTS="$(BIBINPUTS)"; "$(BIBTEX)"
+MAKEINDEXCMD = "$(MAKEINDEX)"
 
 # generated index files
 
@@ -114,11 +114,11 @@ INDEXMAIN = $(TEXMAIN:.tex=.nls)
 # so that they handle generation from LaTeX documents.
 
 pdf-local:
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(BIBTEX) $(BIBMAIN)
-	@$(INDEX) $(GLOSSMAIN) -s nomencl.ist -o $(INDEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(BIBTEXCMD) $(BIBMAIN)
+	@$(MAKEINDEXCMD) $(GLOSSMAIN) -s nomencl.ist -o $(INDEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
