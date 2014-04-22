@@ -105,6 +105,14 @@ typedef enum {
 
   CS_LAGR_EMISSIVITY,
 
+  /* Statistical class */
+
+  CS_LAGR_STAT_CLASS,
+
+  /* User variables */
+
+  CS_LAGR_USER,
+
   /* End of attributes */
 
   CS_LAGR_N_ATTRIBUTES
@@ -136,16 +144,6 @@ typedef struct {
 
 typedef struct _cs_lagr_particle_t  cs_lagr_particle_t;
 
-/* Particle description for user-defined variables */
-/* ----------------------------------------------- */
-
-typedef struct { /* User-defined variables. Max. 10 */
-
-  cs_lnum_t   stat_class;  /* Only if NBCLST > 0 */
-  cs_real_t   aux[10];
-
-} cs_lagr_aux_particle_t;
-
 /* Linked list */
 /* ----------- */
 
@@ -156,6 +154,8 @@ typedef struct _cs_lagr_tracking_list_t cs_lagr_tracking_list_t;
 
 typedef struct {
 
+  int        time_id;                         /* 0 for current time,
+                                                 -1 for previous */
   cs_lnum_t  n_particles;
   cs_lnum_t  n_part_out;
   cs_lnum_t  n_part_dep;
@@ -173,16 +173,11 @@ typedef struct {
   cs_lnum_t  first_used_id;
   cs_lnum_t  first_free_id;
 
-  size_t                          p_size;     /* size of a given particle */
   const cs_lagr_attribute_map_t  *p_am;       /* particle attributes map */
   unsigned char                  *p_buffer;   /* Particles data buffer */
 
-  cs_lagr_particle_t             *particles;  /* Main  particle description */
-
-  cs_lagr_aux_particle_t         *aux_desc;   /* Additional description for study
-                                                 with user-defined variables */
-
-  cs_lagr_tracking_list_t        *used_id;    /* active particles list */
+  cs_lagr_tracking_list_t        *used_id;    /* active particles list,
+                                                 or NULL for secondary sets */
 
 } cs_lagr_particle_set_t;
 
@@ -257,7 +252,9 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_lnum_t   *jnbasp,
                           const cs_lnum_t   *jfadh,
                           const cs_lnum_t   *jmfadh,
-                          const cs_lnum_t   *jndisp);
+                          const cs_lnum_t   *jndisp,
+                          const cs_lnum_t   *jclst,
+                          const cs_lnum_t   *jvls);
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in
@@ -484,6 +481,8 @@ cs_lagr_particles_attr(cs_lagr_particle_set_t  *particle_set,
                        cs_lnum_t                particle_id,
                        cs_lagr_attribute_t      attr)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   return   particle_set->p_buffer
          + particle_set->p_am->extents*particle_id
          + particle_set->p_am->displ[attr];
@@ -506,6 +505,8 @@ cs_lagr_particles_attr_const(const cs_lagr_particle_set_t  *particle_set,
                              cs_lnum_t                      particle_id,
                              cs_lagr_attribute_t            attr)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   return   particle_set->p_buffer
          + particle_set->p_am->extents*particle_id
          + particle_set->p_am->displ[attr];
@@ -528,6 +529,8 @@ cs_lagr_particles_get_lnum(const cs_lagr_particle_set_t  *particle_set,
                            cs_lnum_t                      particle_id,
                            cs_lagr_attribute_t            attr)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   return *((cs_lnum_t *)(  particle_set->p_buffer
                          + particle_set->p_am->extents*particle_id
                          + particle_set->p_am->displ[attr]));
@@ -549,6 +552,8 @@ cs_lagr_particles_set_lnum(cs_lagr_particle_set_t  *particle_set,
                            cs_lagr_attribute_t      attr,
                            cs_lnum_t                value)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   *((cs_lnum_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
                   + particle_set->p_am->displ[attr])) = value;
@@ -571,6 +576,8 @@ cs_lagr_particles_get_gnum(const cs_lagr_particle_set_t  *particle_set,
                            cs_lnum_t                      particle_id,
                            cs_lagr_attribute_t            attr)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   return *((cs_gnum_t *)(  particle_set->p_buffer
                          + particle_set->p_am->extents*particle_id
                          + particle_set->p_am->displ[attr]));
@@ -592,6 +599,8 @@ cs_lagr_particles_set_gnum(cs_lagr_particle_set_t  *particle_set,
                            cs_lagr_attribute_t      attr,
                            cs_gnum_t                value)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   *((cs_gnum_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
                   + particle_set->p_am->displ[attr])) = value;
@@ -614,6 +623,8 @@ cs_lagr_particles_get_real(const cs_lagr_particle_set_t  *particle_set,
                            cs_lnum_t                      particle_id,
                            cs_lagr_attribute_t            attr)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   return *((cs_real_t *)(  particle_set->p_buffer
                          + particle_set->p_am->extents*particle_id
                          + particle_set->p_am->displ[attr]));
@@ -635,6 +646,8 @@ cs_lagr_particles_set_real(cs_lagr_particle_set_t  *particle_set,
                            cs_lagr_attribute_t      attr,
                            cs_real_t                value)
 {
+  assert(particle_set->p_am->count[attr] > 0);
+
   *((cs_real_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
                   + particle_set->p_am->displ[attr])) = value;
@@ -657,6 +670,8 @@ cs_lagr_particle_attr(void                           *particle,
                       const cs_lagr_attribute_map_t  *attr_map,
                       cs_lagr_attribute_t             attr)
 {
+  assert(attr_map->count[attr] > 0);
+
   return   (void *)((unsigned char *)particle + attr_map->displ[attr]);
 }
 
@@ -677,6 +692,8 @@ cs_lagr_particle_attr_const(const void                     *particle,
                             const cs_lagr_attribute_map_t  *attr_map,
                             cs_lagr_attribute_t             attr)
 {
+  assert(attr_map->count[attr] > 0);
+
   return   (const unsigned char *)particle + attr_map->displ[attr];
 }
 
@@ -697,6 +714,8 @@ cs_lagr_particle_get_lnum(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
                           cs_lagr_attribute_t             attr)
 {
+  assert(attr_map->count[attr] > 0);
+
   return  *((const cs_lnum_t *)(  (const unsigned char *)particle
                                 + attr_map->displ[attr]));
 }
@@ -717,6 +736,8 @@ cs_lagr_particle_set_lnum(void                           *particle,
                           cs_lagr_attribute_t             attr,
                           cs_lnum_t                       value)
 {
+  assert(attr_map->count[attr] > 0);
+
   *((cs_lnum_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
 }
 
@@ -737,6 +758,8 @@ cs_lagr_particle_get_gnum(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
                           cs_lagr_attribute_t             attr)
 {
+  assert(attr_map->count[attr] > 0);
+
   return  *((const cs_gnum_t *)(  (const unsigned char *)particle
                                 + attr_map->displ[attr]));
 }
@@ -757,6 +780,8 @@ cs_lagr_particle_set_gnum(void                           *particle,
                           cs_lagr_attribute_t             attr,
                           cs_gnum_t                       value)
 {
+  assert(attr_map->count[attr] > 0);
+
   *((cs_gnum_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
 }
 
@@ -777,6 +802,8 @@ cs_lagr_particle_get_real(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
                           cs_lagr_attribute_t             attr)
 {
+  assert(attr_map->count[attr] > 0);
+
   return  *((const cs_real_t *)(  (const unsigned char *)particle
                                 + attr_map->displ[attr]));
 }
@@ -797,6 +824,8 @@ cs_lagr_particle_set_real(void                           *particle,
                           cs_lagr_attribute_t             attr,
                           cs_real_t                       value)
 {
+  assert(attr_map->count[attr] > 0);
+
   *((cs_real_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
 }
 

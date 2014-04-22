@@ -271,7 +271,7 @@ if (iplar.eq.1) then
    jtp    , jhp    , jtf    , jmwat  , jmch   , jmck   ,          &
    jcp    , jrdck  , jrd0p  , jinch  , jrhock ,                   &
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
-   jndisp)
+   jndisp , jclst  , jvls   )
 
 ! --> if the deposition model is activated
 
