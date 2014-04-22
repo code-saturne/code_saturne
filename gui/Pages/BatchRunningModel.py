@@ -344,8 +344,8 @@ class BatchRunningModel(Model):
 
         # TODO: specialize for PBS Professional and TORQUE (OpenPBS has not been
         # maintained since 2004, so we do not support it).
-        # We use the "-l nodes=N:ppn=P" syntax here, which is common to all PBS
-        # variants, but PBS Pro considers the syntax depecated, and prefers its
+        # The "-l nodes=N:ppn=P" syntax is common to all PBS variants,
+        # but PBS Pro considers the syntax depecated, and prefers its
         # own "-l select=N:ncpus=P:mpiprocs=P" syntax.
         # We do not have access to a PBS Professional system, but according to
         # its documentation, it has commands such as "pbs-report" or "pbs_probe"
@@ -365,7 +365,19 @@ class BatchRunningModel(Model):
                     elif arg[0:9] == '-l nodes=':
                         arg_tmp = arg[9:].split(':')
                         self.dictValues['job_nodes'] = arg_tmp[0]
-                        self.dictValues['job_ppn'] = arg_tmp[1].split('=')[1]
+                        for s in arg_tmp[1:]:
+                            j = s.find('ppn=')
+                            if j > -1:
+                                self.dictValues['job_ppn'] \
+                                    = s[j:].split('=')[1]
+                    elif arg[0:10] == '-l select=':
+                        arg_tmp = arg[10:].split(':')
+                        self.dictValues['job_nodes'] = arg_tmp[0]
+                        for s in arg_tmp[1:]:
+                            j = s.find('ncpus=')
+                            if j > -1:
+                                self.dictValues['job_ppn'] \
+                                    = s[j:].split('=')[1]
                     elif arg[0:12] == '-l walltime=':
                         wt = (arg.split('=')[1]).split(':')
                         if len(wt) == 3:
@@ -399,8 +411,33 @@ class BatchRunningModel(Model):
                     if arg[0:2] == '-N':
                         ch = ' -N ' + self.dictValues['job_name'] + ch
                     elif arg[0:9] == '-l nodes=':
-                        ch = ' -l nodes=' + self.dictValues['job_nodes'] \
-                            +  ':ppn=' + self.dictValues['job_ppn'] + ch
+                        arg_tmp = arg[9:].split(':')
+                        ch1 = ' -l nodes=' + self.dictValues['job_nodes']
+                        for s in arg_tmp[1:]:
+                            j = s.find('ppn=')
+                            if j > -1:
+                                ch1 += ':' + s[0:j] \
+                                       + 'ppn=' + self.dictValues['job_ppn']
+                            else:
+                                ch1 += ':' + s
+                        j = ch1.find('\n')
+                        if (j > -1):
+                            ch1 = ch1[0:j]
+                        ch = ch1 + ch
+                    elif arg[0:10] == '-l select=':
+                        arg_tmp = arg[10:].split(':')
+                        ch1 = ' -l select=' + self.dictValues['job_nodes']
+                        for s in arg_tmp[1:]:
+                            j = s.find('ncpus=')
+                            if j > -1:
+                                ch1 += ':' + s[0:j] \
+                                       + 'ncpus=' + self.dictValues['job_ppn']
+                            else:
+                                ch1 += ':' + s
+                        j = ch1.find('\n')
+                        if (j > -1):
+                            ch1 = ch1[0:j]
+                        ch = ch1 + ch
                     elif arg[0:12] == '-l walltime=':
                         wt = self.dictValues['job_walltime']
                         s_wt = '%d:%02d:%02d' % (wt/3600,
