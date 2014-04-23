@@ -155,7 +155,7 @@ void CS_PROCF(promav, PROMAV)
  cs_real_t        *vy         /* <-> vy = A*vx */
 )
 {
-  const cs_matrix_t *a;
+  cs_matrix_t *a;
 
   bool symmetric = (*isym == 1) ? true : false;
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;

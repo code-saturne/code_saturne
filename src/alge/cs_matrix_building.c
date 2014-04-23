@@ -421,11 +421,9 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
 
   /* 2. Computation of extradiagonal terms */
 
-# pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
+# pragma omp parallel for firstprivate(thetap, idiffp)
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-
     xa[face_id] = -thetap*idiffp*i_visc[face_id];
-
   }
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
@@ -450,7 +448,7 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
   /* 4. Contribution of border faces to the diagonal */
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+#   pragma omp parallel for firstprivate(thetap, idiffp) \
                         if(n_b_faces > THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
