@@ -96,8 +96,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: coefad, coefbd
 double precision, allocatable, dimension(:) :: cofafd, cofbfd
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: dam, xam
 double precision, allocatable, dimension(:) :: rtpdp, smbdp, rovsdp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
@@ -114,7 +113,7 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 allocate(viscf(nfac), viscb(nfabor))
 allocate(coefad(nfabor), coefbd(nfabor))
 allocate(cofafd(nfabor), cofbfd(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
+allocate(dam(ncelet), xam(nfac))
 allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 
 ! Allocate work arrays
@@ -203,7 +202,7 @@ imucpp = 0
 
 call matrix &
 !==========
- ( nfac   , iconvp , idiffp , ndircp , isym   ,                   &
+ ( iconvp , idiffp , ndircp , isym   ,                            &
    thetap , imucpp ,                                              &
    coefbd , cofbfd , rovsdp ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &

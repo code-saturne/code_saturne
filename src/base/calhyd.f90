@@ -89,7 +89,7 @@ double precision flumas(nfac), flumab(nfabor)
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
+double precision dam(ncelet), xam(nfac)
 double precision drtp(ncelet)
 double precision smbr(ncelet)
 
@@ -230,7 +230,7 @@ imucpp = 0
 
 call matrix &
 !==========
- ( nfac   , iconvp , idiffp , ndircp , isym ,                     &
+ ( iconvp , idiffp , ndircp , isym ,                              &
    thetap , imucpp ,                                              &
    coefbp , cofbfp , w1     ,                                     &
    flumas , flumab , viscf  , viscb  ,                            &

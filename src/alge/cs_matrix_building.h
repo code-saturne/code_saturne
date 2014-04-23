@@ -55,12 +55,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_scalar
+ * Wrapper to cs_matrix_scalar (or its counterpart for
+ * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrix, MATRIX)
 (
- const cs_int_t  *const   n_i_faces,
  const cs_int_t  *const   iconvp,
  const cs_int_t  *const   idiffp,
  const cs_int_t  *const   ndircp,
@@ -76,7 +76,8 @@ void CS_PROCF (matrix, MATRIX)
  const cs_real_t          b_visc[],
  const cs_real_t          xcpp[],
  cs_real_t                da[],
- cs_real_t                xa[][*n_i_faces]);
+ cs_real_t                xa[]
+);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_vector (or its counterpart for
@@ -98,7 +99,8 @@ void CS_PROCF (matrxv, MATRXV)
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
  cs_real_33_t             da[],
- cs_real_t                xa[]);
+ cs_real_t                xa[]
+);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_time_step
@@ -115,7 +117,8 @@ void CS_PROCF (matrdt, MATRDT)
  const cs_real_t          b_massflux[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- cs_real_t                da[]);
+ cs_real_t                da[]
+);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_anisotropic_diffusion (or its counterpart for
@@ -137,11 +140,58 @@ void CS_PROCF (matrvv, MATRVV)
  const cs_real_33_t       i_visc[],
  const cs_real_t          b_visc[],
  cs_real_33_t             da[],
- cs_real_332_t            xa[]);
+ cs_real_332_t            xa[]
+);
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the diffusion matrix for a scalar field.
+ * (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (number of cells)
+ * and an extra diagonal part (of dimension the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centred
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     cofbfp        boundary condition array for the variable flux
+ *                               (Implicit part)
+ * \param[in]     rovsdt        working array
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ S_\fib \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sym_matrix_scalar(const cs_mesh_t          *m,
+		     int                       idiffp,
+		     int                       ndircp,
+		     double                    thetap,
+		     const cs_real_t           cofbfp[],
+		     const cs_real_t           rovsdt[],
+		     const cs_real_t           i_visc[],
+		     const cs_real_t           b_visc[],
+		     cs_real_t       *restrict da,
+		     cs_real_t       *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -153,7 +203,6 @@ void CS_PROCF (matrvv, MATRVV)
  * faces).
  *
  * \param[in]     m             pointer to mesh structure
- * \param[in]     n_i_faces     number of interior faces
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -162,9 +211,6 @@ void CS_PROCF (matrvv, MATRVV)
  *                               - 0 otherwise
  * \param[in]     ndircp        indicator
  *                               - 0 if the diagonal stepped aside
- * \param[in]     isym          indicator
- *                               - 1 symmetric matrix
- *                               - 2 non symmmetric matrix
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -193,11 +239,9 @@ void CS_PROCF (matrvv, MATRVV)
 
 void
 cs_matrix_scalar(const cs_mesh_t          *m,
-                 const cs_lnum_t           n_i_faces,
                  int                       iconvp,
                  int                       idiffp,
                  int                       ndircp,
-                 int                       isym,
                  double                    thetap,
                  int                       imucpp,
                  const cs_real_t           coefbp[],
@@ -209,7 +253,7 @@ cs_matrix_scalar(const cs_mesh_t          *m,
                  const cs_real_t           b_visc[],
                  const cs_real_t           xcpp[],
                  cs_real_t       *restrict da,
-                 cs_real_t                 xa[][n_i_faces]);
+                 cs_real_2_t     *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -222,9 +266,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  * faces).
  *
  * \param[in]     m             pointer to mesh structure
- * \param[in]     iconvp        indicator
- *                               - 1 advection
- *                               - 0 otherwise
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
@@ -236,12 +277,8 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbu        boundary condition array for the variable
- *                               (Implicit part - 3x3 tensor array)
  * \param[in]     cofbfu        boundary condition array for the variable flux
  *                               (Implicit part - 3x3 tensor array)
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -253,15 +290,11 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_vector(const cs_mesh_t          *m,
-                     int                       iconvp,
                      int                       idiffp,
                      int                       ndircp,
                      double                    thetap,
-                     const cs_real_33_t        coefbu[],
                      const cs_real_33_t        cofbfu[],
                      const cs_real_33_t        fimp[],
-                     const cs_real_t           i_massflux[],
-                     const cs_real_t           b_massflux[],
                      const cs_real_t           i_visc[],
                      const cs_real_t           b_visc[],
                      cs_real_33_t    *restrict da,
@@ -432,9 +465,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
  * and an extra diagonal part (of dimension 3x3 the number of internal
  * faces).
  *
- * \param[in]     iconvp        indicator
- *                               - 1 advection
- *                               - 0 otherwise
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
@@ -446,13 +476,9 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbu        boundary condition array for the variable
- *                               (Implicit part - 3x3 tensor array)
  * \param[in]     cofbfu        boundary condition array for the variable flux
  *                               (Implicit part - 3x3 tensor array)
  * \param[in]     fimp
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -464,15 +490,11 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
-                                    int                       iconvp,
                                     int                       idiffp,
                                     int                       ndircp,
                                     double                    thetap,
-                                    const cs_real_33_t        coefbu[],
                                     const cs_real_33_t        cofbfu[],
                                     const cs_real_33_t        fimp[],
-                                    const cs_real_t           i_massflux[],
-                                    const cs_real_t           b_massflux[],
                                     const cs_real_33_t        i_visc[],
                                     const cs_real_t           b_visc[],
                                     cs_real_33_t    *restrict da,

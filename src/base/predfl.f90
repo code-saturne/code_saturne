@@ -123,8 +123,7 @@ double precision drom  , tcrite, relaxp, rnorm, hint, qimp
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: dam, xam
 double precision, allocatable, dimension(:) :: divu, pot, pota, dpot, rhs
 double precision, allocatable, dimension(:) :: clapot, clbpot
 double precision, allocatable, dimension(:) :: cfapot, cfbpot
@@ -139,7 +138,7 @@ double precision, dimension(:), pointer :: brom, crom, croma
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(dam(ncelet), xam(nfac,2))
+allocate(dam(ncelet), xam(nfac))
 allocate(divu(ncelet))
 allocate(clapot(nfabor), clbpot(nfabor))
 allocate(cfapot(nfabor), cfbpot(nfabor))
@@ -162,9 +161,6 @@ call field_get_val_s(iflmab, bmasfl)
 
 ! --- Solving options
 isym  = 1
-if (iconv(ipr).gt.0) then
-  isym  = 2
-endif
 
 ! Matrix block size
 ibsize = 1
@@ -276,7 +272,7 @@ imucpp = 0
 
 call matrix &
 !==========
- ( nfac   , iconvp , idiffp , ndircp , isym   ,                   &
+ ( iconvp , idiffp , ndircp , isym   ,                            &
    thetap , imucpp ,                                              &
    clbpot , cfbpot , pot    ,                                     &
    imasfl , bmasfl , viscf  , viscb  ,                            &

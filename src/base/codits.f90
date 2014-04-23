@@ -280,7 +280,7 @@ double precision, allocatable, dimension(:) :: rhs0
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(dam(ncelet), xam(nfac,2))
+allocate(dam(ncelet))
 allocate(smbini(ncelet))
 if (iswdyp.ge.1) then
   allocate(adxk(ncelet), adxkm1(ncelet), dpvarm1(ncelet))
@@ -298,6 +298,8 @@ cnom= chaine(1:16)
 ! Symmetric matrix, except if advection
 isym  = 1
 if (iconvp.gt.0) isym  = 2
+
+allocate(xam(isym,nfac))
 
 ! Matrix block size
 ibsize = 1
@@ -362,7 +364,7 @@ endif
 
 call matrix &
 !==========
- ( nfac   , iconvp , idiffp , ndircp , isym   ,                   &
+ ( iconvp , idiffp , ndircp , isym   ,                            &
    thetap , imucpp ,                                              &
    coefbp , cofbfp , rovsdt , flumas , flumab , viscfm , viscbm , &
    xcpp   , dam    , xam    )

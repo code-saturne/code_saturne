@@ -105,12 +105,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_scalar
+ * Wrapper to cs_matrix_scalar (or its counterpart for
+ * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrix, MATRIX)
 (
- const cs_int_t  *const   n_i_faces,
  const cs_int_t  *const   iconvp,
  const cs_int_t  *const   idiffp,
  const cs_int_t  *const   ndircp,
@@ -126,28 +126,49 @@ void CS_PROCF (matrix, MATRIX)
  const cs_real_t          b_visc[],
  const cs_real_t          xcpp[],
  cs_real_t                da[],
- cs_real_t                xa[][*n_i_faces])
+ cs_real_t                xa[]
+)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
-  cs_matrix_scalar(m,
-                   *n_i_faces,
-                   *iconvp,
-                   *idiffp,
-                   *ndircp,
-                   *isym,
-                   *thetap,
-                   *imucpp,
-                   coefbp,
-                   cofbfp,
-                   rovsdt,
-                   i_massflux,
-                   b_massflux,
-                   i_visc,
-                   b_visc,
-                   xcpp,
-                   da,
-                   xa);
+  if (*isym != 1 && *isym != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of isym"));
+  }
+
+  /* Symmetric matrix */
+  if (*isym == 1) {
+    cs_sym_matrix_scalar(m,
+                         *idiffp,
+                         *ndircp,
+                         *thetap,
+                         cofbfp,
+                         rovsdt,
+                         i_visc,
+                         b_visc,
+                         da,
+                         xa);
+
+  /* Non-symmetric matrix */
+  } else {
+    cs_matrix_scalar(m,
+                     *iconvp,
+                     *idiffp,
+                     *ndircp,
+                     *thetap,
+                     *imucpp,
+                     coefbp,
+                     cofbfp,
+                     rovsdt,
+                     i_massflux,
+                     b_massflux,
+                     i_visc,
+                     b_visc,
+                     xcpp,
+                     da,
+                     (cs_real_2_t*) xa);
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -170,7 +191,8 @@ void CS_PROCF (matrxv, MATRXV)
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
  cs_real_33_t             da[],
- cs_real_t                xa[])
+ cs_real_t                xa[]
+)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
@@ -182,15 +204,11 @@ void CS_PROCF (matrxv, MATRXV)
   /* Symmetric matrix */
   if (*isym == 1) {
     cs_sym_matrix_vector(m,
-                         *iconvp,
                          *idiffp,
                          *ndircp,
                          *thetap,
-                         coefbu,
                          cofbfu,
                          fimp,
-                         i_massflux,
-                         b_massflux,
                          i_visc,
                          b_visc,
                          da,
@@ -230,7 +248,8 @@ void CS_PROCF (matrdt, MATRDT)
  const cs_real_t          b_massflux[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- cs_real_t                da[])
+ cs_real_t                da[]
+)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
@@ -267,7 +286,8 @@ void CS_PROCF (matrvv, MATRVV)
  const cs_real_33_t       i_visc[],
  const cs_real_t          b_visc[],
  cs_real_33_t             da[],
- cs_real_332_t            xa[])
+ cs_real_332_t            xa[]
+)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
@@ -279,15 +299,11 @@ void CS_PROCF (matrvv, MATRVV)
   /* Symmetric matrix */
   if (*isym == 1) {
     cs_sym_matrix_anisotropic_diffusion(m,
-                                        *iconvp,
                                         *idiffp,
                                         *ndircp,
                                         *thetap,
-                                        coefbu,
                                         cofbfu,
                                         fimp,
-                                        i_massflux,
-                                        b_massflux,
                                         i_visc,
                                         b_visc,
                                         da,
@@ -319,7 +335,153 @@ void CS_PROCF (matrvv, MATRVV)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build the advection/diffusion matrix for a scalar field.
+ * \brief Build the diffusion matrix for a scalar field.
+ * (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (number of cells)
+ * and an extra diagonal part (of dimension the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centred
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     cofbfp        boundary condition array for the variable flux
+ *                               (Implicit part)
+ * \param[in]     rovsdt        working array
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ S_\fib \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sym_matrix_scalar(const cs_mesh_t          *m,
+         int                       idiffp,
+         int                       ndircp,
+         double                    thetap,
+         const cs_real_t           cofbfp[],
+         const cs_real_t           rovsdt[],
+         const cs_real_t           i_visc[],
+         const cs_real_t           b_visc[],
+         cs_real_t       *restrict da,
+         cs_real_t       *restrict xa)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const double epsi = 1.e-7;
+
+  /*===============================================================================*/
+
+  /*===============================================================================
+    1. Initialization
+    ===============================================================================*/
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    da[cell_id] = rovsdt[cell_id];
+  }
+  if (n_cells_ext > n_cells) {
+#   pragma omp parallel for if (n_cells_ext - n_cells > THR_MIN)
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+      da[cell_id] = 0.;
+    }
+  }
+
+# pragma omp parallel for
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    xa[face_id] = 0.;
+  }
+
+  /* 2. Computation of extradiagonal terms */
+
+# pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+
+    xa[face_id] = -thetap*idiffp*i_visc[face_id];
+
+  }
+
+  /* 3. Contribution of the extra-diagonal terms to the diagonal */
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+     face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+     face_id++) {
+
+  cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+  cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+
+  da[ii] -= xa[face_id];
+  da[jj] -= xa[face_id];
+
+      }
+    }
+  }
+
+  /* 4. Contribution of border faces to the diagonal */
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+                        if(n_b_faces > THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+     face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+     face_id++) {
+
+  cs_lnum_t ii = b_face_cells[face_id] - 1;
+
+  da[ii] += thetap*idiffp*b_visc[face_id]*cofbfp[face_id];
+
+      }
+    }
+  }
+
+  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (ndircp <= 0) {
+#   pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      da[cell_id] = (1.+epsi)*da[cell_id];
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the advection/diffusion matrix for a scalar field
+ * (non-symmetric matrix).
  *
  * The advection is upwind, the diffusion is not reconstructed.
  * The matrix is split into a diagonal block (number of cells)
@@ -335,9 +497,6 @@ void CS_PROCF (matrvv, MATRVV)
  *                               - 0 otherwise
  * \param[in]     ndircp        indicator
  *                               - 0 if the diagonal stepped aside
- * \param[in]     isym          indicator
- *                               - 1 symmetric matrix
- *                               - 2 non symmmetric matrix
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -366,11 +525,9 @@ void CS_PROCF (matrvv, MATRVV)
 
 void
 cs_matrix_scalar(const cs_mesh_t          *m,
-                 const cs_lnum_t           n_i_faces,
                  int                       iconvp,
                  int                       idiffp,
                  int                       ndircp,
-                 int                       isym,
                  double                    thetap,
                  int                       imucpp,
                  const cs_real_t           coefbp[],
@@ -382,10 +539,12 @@ cs_matrix_scalar(const cs_mesh_t          *m,
                  const cs_real_t           b_visc[],
                  const cs_real_t           xcpp[],
                  cs_real_t       *restrict da,
-                 cs_real_t                 xa[][n_i_faces])
+                 cs_real_2_t     *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -406,11 +565,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
     1. Initialization
     ===============================================================================*/
 
-  if (isym != 1 && isym != 2) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("invalid value of isym"));
-  }
-
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     da[cell_id] = rovsdt[cell_id];
@@ -422,21 +576,11 @@ cs_matrix_scalar(const cs_mesh_t          *m,
     }
   }
 
-  if (isym == 2) {
 
-#   pragma omp parallel for
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      xa[0][face_id] = 0.;
-      xa[1][face_id] = 0.;
-    }
-
-  } else {
-
-#   pragma omp parallel for
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      xa[0][face_id] = 0.;
-    }
-
+# pragma omp parallel for
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    xa[face_id][0] = 0.;
+    xa[face_id][1] = 0.;
   }
 
   /* When solving the temperature, the convective part is multiplied by Cp */
@@ -444,79 +588,41 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
     /* 2. Computation of extradiagonal terms */
 
-    if (isym == 2) {
+#   pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+      double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
+      double fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
 
-        double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
-        double fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
-
-        xa[0][face_id] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
-        xa[1][face_id] = thetap*(iconvp*fluj -idiffp*i_visc[face_id]);
-
-      }
-
-    } else {
-
-#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-
-        double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
-
-        xa[0][face_id] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
-
-      }
+      xa[face_id][0] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
+      xa[face_id][1] = thetap*(iconvp*fluj -idiffp*i_visc[face_id]);
 
     }
 
     /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-    if (isym == 2) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+  for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+       face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+       face_id++) {
 
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
-          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               face_id++) {
+    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
-            cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-            cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+    da[ii] -= xa[face_id][0];
+    da[jj] -= xa[face_id][1];
 
-            da[ii] -= xa[0][face_id];
-            da[jj] -= xa[1][face_id];
-
-          }
-        }
+  }
       }
-
-    } else {
-
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
-          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               face_id++) {
-
-            cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-            cs_lnum_t jj = i_face_cells[face_id][1] - 1;
-
-            da[ii] -= xa[0][face_id];
-            da[jj] -= xa[0][face_id];
-
-          }
-        }
-      }
-
     }
 
     /* 4. Contribution of border faces to the diagonal */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                          if(m->n_b_faces > THR_MIN)
+                          if(n_b_faces > THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -538,81 +644,43 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
     /* 2. Computation of extradiagonal terms */
 
-    if (isym == 2) {
+#   pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+      double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
+      double fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
 
-        double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
-        double fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
-
-        xa[0][face_id] = thetap*( iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui
-                                 -idiffp*i_visc[face_id]);
-        xa[1][face_id] = thetap*( iconvp*xcpp[i_face_cells[face_id][1] - 1]*fluj
-                                 -idiffp*i_visc[face_id]);
-
-      }
-
-    } else {
-
-#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-
-        double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
-
-        xa[0][face_id] = thetap*( iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui
-                                 -idiffp*i_visc[face_id]);
-
-      }
+      xa[face_id][0] = thetap*( iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui
+                               -idiffp*i_visc[face_id]);
+      xa[face_id][1] = thetap*( iconvp*xcpp[i_face_cells[face_id][1] - 1]*fluj
+                               -idiffp*i_visc[face_id]);
 
     }
 
     /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-    if (isym == 2) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+  for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+       face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+       face_id++) {
 
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
-          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               face_id++) {
+    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
+    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
 
-            cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-            cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+    da[ii] -= xa[face_id][0];
+    da[jj] -= xa[face_id][1];
 
-            da[ii] -= xa[0][face_id];
-            da[jj] -= xa[1][face_id];
-
-          }
-        }
+  }
       }
-
-    } else {
-
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
-          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               face_id++) {
-
-            cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-            cs_lnum_t jj = i_face_cells[face_id][1] - 1;
-
-            da[ii] -= xa[0][face_id];
-            da[jj] -= xa[0][face_id];
-          }
-        }
-      }
-
     }
 
     /* 4. Contribution of boundary faces to the diagonal */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                 if(m->n_b_faces > THR_MIN)
+                 if(n_b_faces > THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -652,9 +720,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  * faces).
  *
  * \param[in]     m             pointer to mesh structure
- * \param[in]     iconvp        indicator
- *                               - 1 advection
- *                               - 0 otherwise
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
@@ -666,12 +731,8 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbu        boundary condition array for the variable
- *                               (Implicit part - 3x3 tensor array)
  * \param[in]     cofbfu        boundary condition array for the variable flux
  *                               (Implicit part - 3x3 tensor array)
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -683,15 +744,11 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_vector(const cs_mesh_t          *m,
-                     int                       iconvp,
                      int                       idiffp,
                      int                       ndircp,
                      double                    thetap,
-                     const cs_real_33_t        coefbu[],
                      const cs_real_33_t        cofbfu[],
                      const cs_real_33_t        fimp[],
-                     const cs_real_t           i_massflux[],
-                     const cs_real_t           b_massflux[],
                      const cs_real_t           i_visc[],
                      const cs_real_t           b_visc[],
                      cs_real_33_t    *restrict da,
@@ -741,9 +798,7 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
   for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
 
-    double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
-
-    xa[face_id] = thetap*(iconvp*flui -idiffp*i_visc[face_id]);
+    xa[face_id] = -thetap*idiffp*i_visc[face_id];
 
   }
 
@@ -766,19 +821,15 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
   for (cs_lnum_t face_id = 0; face_id <n_b_faces; face_id++) {
 
     cs_lnum_t ii = b_face_cells[face_id] - 1;
-    double flui = 0.5*( b_massflux[face_id] -fabs(b_massflux[face_id]) );
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
         if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*( iconvp*flui
-                                         *(coefbu[face_id][jsou][isou]-1.)
-                                        +idiffp*b_visc[face_id]
-                                         *cofbfu[face_id][jsou][isou] );
+          da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
+                                      *cofbfu[face_id][jsou][isou];
         } else {
-          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
-                                        +idiffp*b_visc[face_id]
-                                         *cofbfu[face_id][jsou][isou] );
+          da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
+                                      *cofbfu[face_id][jsou][isou];
         }
       }
     }
@@ -1095,7 +1146,7 @@ cs_matrix_time_step(const cs_mesh_t          *m,
   /* 4. Contribution of border faces to the diagonal */
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for if(n_b_faces > THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -1294,9 +1345,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
  * and an extra diagonal part (of dimension 3x3 the number of internal
  * faces).
  *
- * \param[in]     iconvp        indicator
- *                               - 1 advection
- *                               - 0 otherwise
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
@@ -1326,15 +1374,11 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
-                                    int                       iconvp,
                                     int                       idiffp,
                                     int                       ndircp,
                                     double                    thetap,
-                                    const cs_real_33_t        coefbu[],
                                     const cs_real_33_t        cofbfu[],
                                     const cs_real_33_t        fimp[],
-                                    const cs_real_t           i_massflux[],
-                                    const cs_real_t           b_massflux[],
                                     const cs_real_33_t        i_visc[],
                                     const cs_real_t           b_visc[],
                                     cs_real_33_t    *restrict da,
@@ -1383,13 +1427,9 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 
   for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
 
-    double flui = 0.5*(i_massflux[ifac] -fabs(i_massflux[ifac]));
-
     for (int isou = 0; isou < 3; isou++) {
-      xa[ifac][isou][isou] = iconvp*flui;
       for (int jsou = 0; jsou < 3; jsou++) {
-        xa[ifac][jsou][isou] = thetap*( xa[ifac][jsou][isou]
-                                         - idiffp*i_visc[ifac][jsou][isou]);
+        xa[ifac][jsou][isou] = -thetap*idiffp*i_visc[ifac][jsou][isou];
       }
     }
 
@@ -1415,19 +1455,15 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
 
     cs_lnum_t ii = b_face_cells[ifac] - 1;
-    double flui = 0.5*( b_massflux[ifac] -fabs(b_massflux[ifac]) );
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
         if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*( iconvp*flui
-                                         *(coefbu[ifac][jsou][isou]-1.)
-                                        +idiffp*b_visc[ifac]
-                                         *cofbfu[ifac][jsou][isou] );
+          da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
+                                      *cofbfu[ifac][jsou][isou];
         } else {
-          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[ifac][jsou][isou]
-                                        +idiffp*b_visc[ifac]
-                                         *cofbfu[ifac][jsou][isou] );
+          da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
+                                      *cofbfu[ifac][jsou][isou];
         }
       }
     }

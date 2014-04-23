@@ -2827,8 +2827,6 @@ void CS_PROCF(reslin, RESLIN)
  const cs_int_t   *nfac,      /* <-- Number of faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
- const cs_int_t   *ilved,     /* <-- Interleaved indicator  */
-                              /*     1: interleaved; 2: not interleaved */
  const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
  const cs_int_t   *iesize,    /* <-- Block size of element ij */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
@@ -2860,7 +2858,7 @@ void CS_PROCF(reslin, RESLIN)
   int diag_block_size[4] = {1, 1, 1, 1};
   int extra_diag_block_size[4] = {1, 1, 1, 1};
   bool symmetric = (*isym == 1) ? true : false;
-  bool interleaved = (*ilved == 1) ? true : false;
+  bool interleaved = true;
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
   cs_matrix_t *a = NULL;

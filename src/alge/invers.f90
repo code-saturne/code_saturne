@@ -70,7 +70,7 @@ subroutine invers &
 ! rnorm            ! r  ! <-- ! residue normalization                          !
 ! residu           ! r  ! --> ! final non-normalized residue                   !
 ! dam(ncelet       ! tr ! <-- ! diagonal (fine mesh if multigrid)              !
-! xam(nfac,isym    ! tr ! <-- ! extradiagonal (fine mesh if multigrid)         !
+! xam(isym,nfac)   ! tr ! <-- ! extradiagonal (fine mesh if multigrid)         !
 ! smbrp(ncelet     ! tr ! <-- ! right hand side (fine mesh if multigrid)       !
 ! vx(ncelet)       ! tr ! <-- ! system solution                                !
 !__________________!____!_____!________________________________________________!
@@ -118,10 +118,6 @@ lnom = len(cnom)
 
 icycle = 0
 niterf = 0
-ilved = 2
-
-! xam and dam are interleaved if ibsize is greater than 1
-if (ibsize.gt.1) ilved = 1
 
 ! Resolution
 
@@ -146,7 +142,7 @@ elseif(imgrp.eq.0) then
   call reslin &
   !==========
  ( cnom   , lnom   , ncelet , ncel   , nfac   ,                            &
-   isym   , ilved  , ibsize , iesize , ireslp , ipol   , nitmap , iinvpe , &
+   isym   , ibsize , iesize , ireslp , ipol   , nitmap , iinvpe ,          &
    iwarnp , niterf , epsilp , rnorm  , residu ,                            &
    !        ------                     ------
    ifacel , dam    , xam    , smbrp  , vx     )

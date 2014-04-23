@@ -188,8 +188,7 @@ double precision cfl, kpdc, rho, pimp, bpmasf
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: dam, xam
 double precision, allocatable, dimension(:) :: res, divu, presa
 double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
@@ -219,7 +218,7 @@ double precision, dimension(:), pointer :: brom, crom, croma
 rnorm2 = 0.d0
 
 ! Allocate temporary arrays
-allocate(dam(ncelet), xam(nfac,2))
+allocate(dam(ncelet), xam(nfac))
 allocate(res(ncelet), presa(ncelet), divu(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet))
 allocate(iflux(nfac), bflux(ndimfb))
@@ -734,7 +733,7 @@ imucpp = 0
 
 call matrix &
 !==========
- ( nfac   , iconvp , idiffp , ndircp , isym   ,                   &
+ ( iconvp , idiffp , ndircp , isym   ,                            &
    thetap , imucpp ,                                              &
    coefb_dp , coefbf_dp     , rovsdt ,                            &
    imasfl , bmasfl , viscf  , viscb  ,                            &
