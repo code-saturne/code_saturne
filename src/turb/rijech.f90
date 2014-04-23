@@ -66,6 +66,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use pointe
@@ -81,7 +82,7 @@ implicit none
 
 integer          isou
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision produc(6,ncelet)
 double precision smbr(ncelet)
 

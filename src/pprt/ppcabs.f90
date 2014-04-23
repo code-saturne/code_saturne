@@ -63,6 +63,7 @@ subroutine ppcabs &
 use paramx
 use numvar
 use entsor
+use dimens, only: nvar
 use optcal
 use cstphy
 use cstnum
@@ -83,7 +84,7 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

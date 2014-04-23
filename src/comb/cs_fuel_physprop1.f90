@@ -108,6 +108,7 @@ subroutine cs_fuel_physprop1 &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -133,7 +134,7 @@ double precision f4m(ncelet), f5m(ncelet) , f6m(ncelet)
 double precision f7m(ncelet), f8m(ncelet) , f9m(ncelet)
 double precision fvp2m(ncelet)
 double precision enth(ncelet),enthox(ncelet)
-double precision rtp(ncelet,*), propce(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
 double precision rom1(ncelet)
 ! Local variables
 integer          iel , ii ,ice , icla

@@ -122,7 +122,7 @@ integer          ivar   , isou   , ipp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)

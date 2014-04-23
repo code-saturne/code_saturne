@@ -360,6 +360,9 @@ module paramx
   integer    nstrmx
   parameter (nstrmx=200)
 
+  !> number of variable of rtp moved in field structure (C transition)
+  integer    nflown
+  parameter (nflown=4)
   !=============================================================================
 
   !> \}

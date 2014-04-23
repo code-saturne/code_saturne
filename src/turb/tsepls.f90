@@ -54,10 +54,12 @@ subroutine tsepls &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use entsor
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -65,14 +67,14 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision w1(ncelet)
 
 ! Local variables
 
-integer          iel, ifac, inc, iccocg, iphydp
+integer          iel, ifac, inc, iprev
 integer          isou, ii, jj, nswrgp, imligp, iwarnp
-logical          ilved
+
 double precision climgp, extrap
 double precision w1f, w2f, w3f
 double precision pnd, flux, somsur, epsrgp
@@ -107,27 +109,10 @@ do iel = 1, ncel
 enddo
 
 inc = 1
-iccocg = 1
+iprev = 1
 
-nswrgp = nswrgr(iu)
-epsrgp = epsrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
-
-iphydp = 0
-
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved  ,                                                       &
-  rtpa(1,iu) ,  coefau , coefbu,                                 &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 ! Loop over u, v, w components
 do isou = 1, 3

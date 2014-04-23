@@ -83,7 +83,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -96,12 +96,17 @@ integer          ii     , irangv , irang1 , npoint
 integer          iun
 
 double precision xyz(3), xabs, xu, xv, xw, xk, xeps
+
+double precision, dimension(:,:), pointer :: vel
 !< [loc_var_dec]
 
 !===============================================================================
 
 !< [example_1]
 if (ntcabs.eq.ntmabs) then
+
+  ! Map field arrays
+  call field_get_val_v(ivarfl(iu), vel)
 
   ! Only process of rank 0 (parallel) or -1 (scalar) writes to this file.
   ! We use 'user' Fortran units.
@@ -132,9 +137,9 @@ if (ntcabs.eq.ntmabs) then
       ! the point and then send it to other processes.
       if (irangp.eq.irangv) then
         xabs = xyzcen(2,iel)
-        xu   = rtp(iel,iu)
-        xv   = rtp(iel,iv)
-        xw   = rtp(iel,iw)
+        xu   = vel(1,iel)
+        xv   = vel(2,iel)
+        xw   = vel(3,iel)
         xk   = 0.d0
         xeps = 0.d0
         if (     itytur.eq.2 .or. iturb.eq.50    &

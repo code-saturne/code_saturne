@@ -46,7 +46,7 @@ subroutine cfrusb &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! ifac             ! i  ! <-- ! face number                                    !
 ! gammag           ! r  ! <-- ! gamma du gaz                                   !
-! rtp(ncelet,*)    ! tr ! <-- ! variables de calcul au centre des cellules     !
+! rtp(ncelet,nvar) ! tr ! <-- ! variables de calcul au centre des cellules     !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -85,7 +85,7 @@ integer          ifac
 
 double precision gammag
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision bval(nfabor,nvar)
 
 ! Local variables
@@ -100,8 +100,12 @@ double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 0. INITIALISATION
@@ -127,9 +131,9 @@ iel   = ifabor(ifac)
 und   = (bval(ifac,iu)*surfbo(1,ifac)                          &
        + bval(ifac,iv)*surfbo(2,ifac)                          &
        + bval(ifac,iw)*surfbo(3,ifac))/surfbn(ifac)
-uni   = (rtp(iel,iu)*surfbo(1,ifac)                            &
-       + rtp(iel,iv)*surfbo(2,ifac)                            &
-       + rtp(iel,iw)*surfbo(3,ifac))/surfbn(ifac)
+uni   = (vel(1,iel)*surfbo(1,ifac)                            &
+       + vel(2,iel)*surfbo(2,ifac)                            &
+       + vel(3,iel)*surfbo(3,ifac))/surfbn(ifac)
 rund  = brom(ifac)*und
 runi  = crom(iel)     *uni
 cd    = sqrt(gammag*bval(ifac,ipr)/brom(ifac))
@@ -154,19 +158,19 @@ bmasfl(ifac) = runb*surfbn(ifac)
 ! Momentum flux (the centered pressure contribution is directly taken into account
 ! in the pressure BC)
 cofacv(1,ifac) = surfbn(ifac)*                                                  &
-                 0.5d0*( rund*bval(ifac,iu) + runi*rtp(iel,iu)                  &
+                 0.5d0*( rund*bval(ifac,iu) + runi*vel(1,iel)                   &
                          -rrus*(brom(ifac)*bval(ifac,iu)                        &
-                         -crom(iel)*rtp(iel,iu)) )
+                         -crom(iel)*vel(1,iel)) )
 
 cofacv(2,ifac) = surfbn(ifac)*                                                  &
-                 0.5d0*( rund*bval(ifac,iv) + runi*rtp(iel,iv)                  &
+                 0.5d0*( rund*bval(ifac,iv) + runi*vel(2,iel)                   &
                          -rrus*( brom(ifac)*bval(ifac,iv)                       &
-                         -crom(iel)*rtp(iel,iv)) )
+                         -crom(iel)*vel(2,iel)) )
 
 cofacv(3,ifac) = surfbn(ifac)*                                                  &
-                 0.5d0*( rund*bval(ifac,iw) + runi*rtp(iel,iw)                  &
+                 0.5d0*( rund*bval(ifac,iw) + runi*vel(3,iel)                   &
                          -rrus*(brom(ifac)*bval(ifac,iw)                        &
-                         -crom(iel)*rtp(iel,iw)) )
+                         -crom(iel)*vel(3,iel)) )
 
 ! BC for the pressure gradient in the momentum balance
 bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + rtp(iel,ipr))

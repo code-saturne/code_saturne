@@ -107,7 +107,7 @@ integer          icodcl(ndimfb,nvarcl)
 integer          itypfb(ndimfb) , itrifb(ndimfb)
 integer          isostd(ndimfb+1)
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision rcodcl(ndimfb,nvarcl,3)
 double precision frcxt(3,ncelet)

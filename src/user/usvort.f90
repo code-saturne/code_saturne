@@ -86,7 +86,7 @@ implicit none
 integer          nvar   , nscal
 integer          iappel
 
-double precision dt(ncelet), rtpa(ncelet,*)
+double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

@@ -66,11 +66,13 @@ subroutine viswal &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use entsor
 use parall
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -78,21 +80,19 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel, iccocg, inc
-integer          ipcvst, ipcvis
+integer          iel, inc
+integer          ipcvst, ipcvis, iprev
 integer          i, j, k
 
 double precision coef, deux, delta, tiers
 double precision sij, sijd, s, sd, sinv
 double precision xfil, xa  , xb  , radeux, con
 double precision dudx(ndim,ndim), kdelta(ndim,ndim)
-
-logical          ilved
 
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
@@ -132,20 +132,11 @@ tiers  = 1.d0/3.d0
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3,3,ncelet))
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu  , imrgra , inc    ,                               &
-  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  epsrgr(iu) , climgr(iu) ,                             &
-  ilved  ,                                              &
-  rtpa(1,iu) ,  coefau , coefbu,                        &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 ! Kronecker delta Dij
 

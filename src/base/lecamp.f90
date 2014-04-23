@@ -91,7 +91,7 @@ integer          ncelet , ncel
 integer          nvar   , nscal
 
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -111,12 +111,14 @@ integer          iturph, jturph, itytph, jtytph
 integer          nfmtsc, nfmtru
 integer          jturb, jtytur, jale, jturbt
 integer          impamo
-integer          ival
+integer          ival, isou
 integer          f_id
 double precision d2s3, d2s3xk
 double precision rval
+double precision, allocatable, dimension(:,:) :: l_velocity
 
 double precision, dimension(:,:), pointer :: xut
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 
@@ -488,6 +490,8 @@ itytph = itytur
 jtytph = jtytur
 
 !     Vitesse
+! TODO: must be improved for field structure
+allocate(l_velocity(ncelet, 3))
 
 itysup = 1
 nbval  = 1
@@ -495,20 +499,27 @@ irtyp  = 2
 
 rubriq = 'vitesse_u_ce_phase'//cphase
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-     rtp(1,iu),ierror)
+     l_velocity(:,1),ierror)
 nberro=nberro+ierror
 
 rubriq = 'vitesse_v_ce_phase'//cphase
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-     rtp(1,iv),ierror)
+     l_velocity(:,2),ierror)
 nberro=nberro+ierror
 
 rubriq = 'vitesse_w_ce_phase'//cphase
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-     rtp(1,iw),ierror)
+     l_velocity(:,3),ierror)
 nberro=nberro+ierror
 
+call field_get_val_v(ivarfl(iu), vel)
+do iel = 1, ncelet
+  do isou = 1, 3
+    vel(isou, iel) = l_velocity(iel,isou)
+  enddo
+enddo
 
+deallocate(l_velocity)
 
 !     Turbulence (ke -> ke, ke -> rij, rij -> ke, rij -> rij ...)
 !       Quand on ne sait pas deduire les grandeurs turbulence des infos

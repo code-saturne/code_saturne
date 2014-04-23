@@ -122,6 +122,7 @@ use optcal
 use cstphy
 use cstnum
 use pointe
+use dimens, only: nvar
 use entsor
 use albase
 use parall
@@ -145,7 +146,7 @@ integer          nscal, isvhb
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision visvdr(ncelet)

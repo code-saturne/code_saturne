@@ -85,7 +85,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 
@@ -94,6 +94,8 @@ integer          iel, iutile
 integer          ilelt, nlelt
 
 double precision d2s3
+
+double precision, dimension(:,:), pointer :: vel
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
@@ -108,6 +110,9 @@ integer, allocatable, dimension(:) :: lstelt
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
 d2s3 = 2.d0/3.d0
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! Variables initialization:
@@ -140,7 +145,7 @@ if (isuite.eq.0) then
 
     iel = lstelt(ilelt)
 
-    rtp(iel,iu) = -0.5d0
+    vel(1,iel) = -0.5d0
 
     rtp(iel,isca(itemp4)) = 20.d0
     rtp(iel,isca(ihumid)) = 0.012d0

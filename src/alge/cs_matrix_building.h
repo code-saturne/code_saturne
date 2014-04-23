@@ -183,15 +183,15 @@ void CS_PROCF (matrvv, MATRVV)
 
 void
 cs_sym_matrix_scalar(const cs_mesh_t          *m,
-		     int                       idiffp,
-		     int                       ndircp,
-		     double                    thetap,
-		     const cs_real_t           cofbfp[],
-		     const cs_real_t           rovsdt[],
-		     const cs_real_t           i_visc[],
-		     const cs_real_t           b_visc[],
-		     cs_real_t       *restrict da,
-		     cs_real_t       *restrict xa);
+                     int                       idiffp,
+                     int                       ndircp,
+                     double                    thetap,
+                     const cs_real_t           cofbfp[],
+                     const cs_real_t           rovsdt[],
+                     const cs_real_t           i_visc[],
+                     const cs_real_t           b_visc[],
+                     cs_real_t       *restrict da,
+                     cs_real_t       *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!

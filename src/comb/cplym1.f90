@@ -107,6 +107,7 @@ subroutine cplym1 &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -130,7 +131,7 @@ integer          nitbmc , nrtbmc
 integer          itbmc(ncelet,nitbmc)
 integer          indpdf(ncelet) , ipi7i8(ncelet)
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision f1m(ncelet)  , f2m(ncelet)
 double precision f3m(ncelet)  , f4m(ncelet)
 double precision dsi7(ncelet) , dsi8(ncelet) , sdeb(ncelet)

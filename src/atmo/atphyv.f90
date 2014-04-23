@@ -109,6 +109,7 @@ use paramx
 use numvar
 use optcal
 use cstphy
+use dimens, only: nvar
 use cstnum, only: pi
 use entsor
 use parall
@@ -128,7 +129,7 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

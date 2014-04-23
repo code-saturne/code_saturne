@@ -78,6 +78,7 @@ use lagran
 use ppincl
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -91,7 +92,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -111,7 +112,7 @@ integer          ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcvto, ipcvlo
-integer          iphydp
+integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
 
 integer          icvflb
@@ -128,8 +129,6 @@ double precision thetp1, thetak, thetae, thets, thetap
 double precision tuexpk, tuexpe
 double precision cmueta, sqrcmu, xs
 double precision hint
-
-logical          ilved
 
 double precision rvoid(1)
 
@@ -179,6 +178,7 @@ if (iturb.eq.51) then
   allocate(w10(ncelet),w11(ncelet))
 endif
 
+! Map field arrays
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
@@ -245,26 +245,11 @@ d1s3 = 1.d0/3.d0
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet))
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(ik)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
-
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved  ,                                                       &
-  rtpa(1,iu) ,  coefau , coefbu,                                 &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 ! strain = Stain rate of the deviatoric part of the strain tensor
 !        = 2 (Sij^D).(Sij^D)

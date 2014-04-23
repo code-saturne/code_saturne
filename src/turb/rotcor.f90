@@ -69,6 +69,7 @@ subroutine rotcor &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use entsor
 use cstphy
 use cstnum
@@ -77,6 +78,7 @@ use period
 use pointe, only: straio
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -84,7 +86,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtpa(ncelet,*)
+double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
 double precision rotfct(ncel), ce2rc(ncel)
 
 ! Local variables
@@ -92,9 +94,7 @@ double precision rotfct(ncel), ce2rc(ncel)
 integer          iel, ivar, ifac, isou
 integer          iccocg, inc, nswrgp, imligp, iwarnp
 integer          istrai(3,3), ivorab(3,3)
-integer          ii, jj, kk
-
-logical          ilved
+integer          ii, jj, kk, iprev
 
 double precision epsrgp, climgp, extrap
 double precision matrot(3,3), sigvor(3,3)
@@ -108,8 +108,7 @@ double precision, allocatable, dimension(:,:) :: grdsij
 double precision, allocatable, dimension(:) :: coeas, coebs
 double precision, allocatable, dimension(:) :: brtild, eta1, eta2
 
-double precision, dimension(:,:), pointer :: coefau
-double precision, dimension(:,:,:), pointer :: coefbu
+double precision, dimension(:,:), pointer :: vela
 
 integer          ipass
 data             ipass /0/
@@ -130,8 +129,8 @@ if(ipass.eq.1) then
   enddo
 endif
 
-call field_get_coefa_v(ivarfl(iu), coefau)
-call field_get_coefb_v(ivarfl(iu), coefbu)
+! Map field arrays
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 1. Preliminary calculations
@@ -146,26 +145,11 @@ allocate(strain(ncelet,6),vortab(ncelet,3))
 
 allocate(gradv(3, 3, ncelet))
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(iu)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
-
-
-ilved = .false.
-
-call grdvec &
-!==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved  ,                                                       &
-  rtpa(1,iu) ,  coefau , coefbu,                                 &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 ! Compute rotation matrix (dual antisymmetric matrix of the rotation vector)
 !   matrot(i,j) = e_imj.Omega_m
@@ -331,9 +315,9 @@ do ii = 1, 3
                  - straio(iel,istrai(ii,jj)))       &
                 /dt(iel))
       endif
-      dsijdt = dsijdt + rtpa(iel,iu)*grdsij(iel,1)        &
-           + rtpa(iel,iv)*grdsij(iel,2)                   &
-           + rtpa(iel,iw)*grdsij(iel,3)
+      dsijdt = dsijdt + vela(1,iel)*grdsij(iel,1)        &
+           + vela(2,iel)*grdsij(iel,2)                   &
+           + vela(3,iel)*grdsij(iel,3)
 
       ! (e_imn.S_jn+e_jmn.S_in)*Omega_m term
       trrota = 0.d0

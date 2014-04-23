@@ -59,6 +59,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstphy
 use parall
 use period
@@ -77,7 +78,7 @@ implicit none
 ! Arguments
 
 double precision propce(ncelet,*)
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 
 ! Local variables
 integer k, ii, jj

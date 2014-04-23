@@ -266,6 +266,10 @@ cs_f_field_get_dimension(int           id,
                          int           dim[2]);
 
 void
+cs_f_field_get_ownership(int           id,
+                         bool         *is_owner);
+
+void
 cs_f_field_get_type(int           id,
                     int          *type);
 
@@ -451,6 +455,7 @@ _field_create(const char   *name,
   f->location_id = location_id;
   f->n_time_vals = 1;
 
+  f->vals = NULL;
   f->val = NULL;
   f->val_pre = NULL;
 
@@ -759,6 +764,24 @@ cs_f_field_get_dimension(int  id,
 
   dim[0] = f->dim;
   dim[1] = (f->interleaved) ? 1 : 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the field ownership flag.
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id       <-- field id
+ *   is_owner <-- field ownership flag
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_ownership(int   id,
+                         bool *is_owner)
+{
+  const cs_field_t *f = cs_field_by_id(id);
+
+  *is_owner = f->is_owner;
 }
 
 /*----------------------------------------------------------------------------
@@ -1370,14 +1393,21 @@ cs_field_allocate_values(cs_field_t  *f)
   if (f->is_owner) {
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+    int ii;
 
-    f->val = _add_val(n_elts[2], f->dim, f->val);
+    BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t*);
 
-    /* Add previous time step values if necessary */
+   /* Initialization */
+    for (ii = 0; ii < f->n_time_vals; ii++)
+      f->vals[ii] = NULL;
+
+    for (ii = 0; ii < f->n_time_vals; ii++)
+      f->vals[ii] = _add_val(n_elts[2], f->dim, f->vals[ii]);
+
+    f->val = f->vals[0];
     if (f->n_time_vals > 1)
-      f->val_pre = _add_val(n_elts[2], f->dim, f->val_pre);
-
-  };
+      f->val_pre = f->vals[1];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1711,24 +1741,43 @@ cs_field_current_to_previous(cs_field_t  *f)
 {
   assert(f != NULL);
 
-  if (f->val_pre != NULL) {
+  if (f->n_time_vals > 1) {
 
     cs_lnum_t ii;
     const int dim = f->dim;
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
     const cs_lnum_t _n_elts = n_elts[2];
 
-    if (dim == 1) {
-#     pragma omp parallel for
-      for (ii = 0; ii < _n_elts; ii++)
-        f->val_pre[ii] = f->val[ii];
+    if (f->is_owner) {
+      if (dim == 1) {
+        int kk;
+#     pragma omp parallel for prinvate(kk)
+        for (kk = 1; kk < f->n_time_vals; kk++)
+          for (ii = 0; ii < _n_elts; ii++)
+            f->vals[kk][ii] = f->vals[kk-1][ii];
+      }
+      else {
+        int kk;
+        cs_lnum_t jj;
+#     pragma omp parallel for private(jj, kk)
+        for (kk = 1; kk < f->n_time_vals; kk++)
+          for (ii = 0; ii < _n_elts; ii++)
+            for (jj = 0; jj < dim; jj++)
+              f->vals[kk][ii*dim + jj] = f->vals[kk-1][ii*dim + jj];
+      }
     }
     else {
-      cs_lnum_t jj;
-#     pragma omp parallel for private(jj)
-      for (ii = 0; ii < _n_elts; ii++) {
-        for (jj = 0; jj < dim; jj++)
-          f->val_pre[ii*dim + jj] = f->val[ii*dim + jj];
+      if (dim == 1) {
+#     pragma omp parallel for prinvate(kk)
+          for (ii = 0; ii < _n_elts; ii++)
+            f->val_pre[ii] = f->val[ii];
+      }
+      else {
+        cs_lnum_t jj;
+#     pragma omp parallel for private(jj, kk)
+          for (ii = 0; ii < _n_elts; ii++)
+            for (jj = 0; jj < dim; jj++)
+              f->val_pre[ii*dim + jj] = f->val[ii*dim + jj];
       }
     }
 
@@ -1749,8 +1798,10 @@ cs_field_destroy_all(void)
   for (i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
     if (f->is_owner) {
-      BFT_FREE(f->val);
-      BFT_FREE(f->val_pre);
+      int ii;
+      for (ii = 0; ii < f->n_time_vals; ii++)
+        BFT_FREE(f->vals[ii]);
+      BFT_FREE(f->vals);
     }
     if (f->bc_coeffs != NULL) {
       BFT_FREE(f->bc_coeffs->a);

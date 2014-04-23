@@ -65,6 +65,7 @@ subroutine attssc &
 
 use paramx
 use numvar
+use dimens, only: nvar
 use entsor
 use optcal
 use cstphy
@@ -82,7 +83,7 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision crvexp(ncelet)
 
@@ -100,11 +101,12 @@ double precision, dimension(:), allocatable, save :: r3
 
 double precision, save :: qliqmax,r3max
 logical, save :: r3_is_defined = .FALSE.
-integer, save :: treated_scalars=0
+integer, save :: treated_scalars = 0
 
 double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), allocatable :: refrad
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -113,6 +115,9 @@ double precision, dimension(:), pointer ::  crom
 ! --- Numero du scalaire a traiter : ISCAL
 ! --- Numero de la variable associee au scalaire a traiter ISCAL
 ivar = isca(iscal)
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
 call field_get_name(ivarfl(ivar), chaine)
@@ -208,7 +213,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 
         call nuclea (                                                 &
              rtp(1,isca(iscapp(3))),                                  &
-             rtp(1,iw),                                               &
+             vel,                                                     &
              crom,                                                    &
              propce(1,ipproc(itempc)),                                &
              propce(1,ipproc(iliqwt)),                                &
@@ -220,7 +225,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 
       allocate(r3(ncelet))
       call define_r3()
-      r3_is_defined=.TRUE.
+      r3_is_defined = .TRUE.
 
       allocate(grad1(ncelet,3))
       call grad_sed_ql(grad1)
@@ -276,7 +281,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         enddo
       enddo
       deallocate(r3)
-      r3_is_defined=.FALSE.
+      r3_is_defined = .FALSE.
       deallocate(grad1)
       deallocate(grad2)
     endif

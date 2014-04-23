@@ -87,6 +87,7 @@ use atincl
 use mesh
 use atchem
 use siream
+use field
 
 !===============================================================================
 
@@ -94,7 +95,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 
@@ -105,7 +106,13 @@ double precision zent,xuent,xvent,xkent,xeent,tpent,qvent,ncent
 integer k,ii, isc
 double precision xcent
 
+double precision, dimension(:,:), pointer :: vel
+
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
@@ -256,9 +263,9 @@ if (isuite.eq.0) then
        (nbmetd, nbmetm,                                               &
         zdmet, tmmet, epmet, zent  , ttcabs, xeent )
 
-        rtp(iel,iu) = xuent
-        rtp(iel,iv) = xvent
-        rtp(iel,iw) = 0.d0
+        vel(1,iel) = xuent
+        vel(2,iel) = xvent
+        vel(3,iel) = 0.d0
 
     !     ITYTUR est un indicateur qui vaut ITURB/10
         if    (itytur.eq.2) then

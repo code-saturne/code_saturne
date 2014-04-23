@@ -70,10 +70,12 @@ use cstnum
 use pointe, only: s2kw, divukw, ifapat, dispar
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use entsor
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -81,21 +83,19 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel, iccocg, inc
+integer          iel, inc
 integer          ipcvis, ipcvst
 integer          nswrgp, imligp, iwarnp
-integer          ifacpt
+integer          ifacpt, iprev
 
 double precision d1s3, d2s3
 double precision epsrgp, climgp, extrap
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
-
-logical          ilved
 
 double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:,:,:), allocatable :: gradv
@@ -132,27 +132,11 @@ d2s3 = 2.d0/3.d0
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3,3,ncelet))
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(iu)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
-
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu  , imrgra , inc    ,                               &
-  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  epsrgr(iu) , climgr(iu) ,                             &
-  ilved  ,                                              &
-  rtpa(1,iu) ,  coefau , coefbu,                        &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 ! s2kw = Stain rate of the deviatoric part of the s2kw tensor
 !      = 2 (Sij^D).(Sij^D)

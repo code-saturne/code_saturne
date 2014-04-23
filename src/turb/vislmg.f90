@@ -61,10 +61,12 @@ subroutine vislmg &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use entsor
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -72,17 +74,15 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel, iccocg, inc
-integer          ipcvst
+integer          iel, inc
+integer          ipcvst, iprev
 
 double precision coef, deux
-
-logical          ilved
 
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
@@ -110,19 +110,11 @@ call field_get_val_s(icrom, crom)
 !       S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
 !===============================================================================
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-ilved = .false.
-
-call grdvec &
-!==========
-( iu  , imrgra , inc    ,                               &
-  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  epsrgr(iu) , climgr(iu) ,                             &
-  ilved  ,                                              &
-  rtpa(1,iu) ,  coefau , coefbu,                        &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 do iel = 1, ncel
   propce(iel,ipcvst) = &

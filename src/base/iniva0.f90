@@ -76,13 +76,13 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 
 integer          iis   , ivar  , iscal , imom
-integer          iel   , ifac
+integer          iel   , ifac  , isou
 integer          iclip , ii    , jj    , idim
 integer          iivisl, iivist, iivisa, iivism
 integer          iicp  , iicpa
@@ -90,14 +90,20 @@ integer          iiviss, iiptot
 integer          iptsna, iptsta, iptsca
 integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
+integer          f_id, f_id_prv, f_dim
+
+logical          interleaved
 
 double precision xxk, xcmu, trii
 
 double precision rvoid(1)
+
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
+double precision, dimension(:), pointer :: field_s_v
+double precision, dimension(:,:), pointer :: field_v_v
 
 !===============================================================================
 
@@ -277,16 +283,42 @@ endif
 !     On complete ensuite pour les variables turbulentes et les scalaires
 !===============================================================================
 
-!     Toutes les variables a 0
-do ivar = 1, nvar
-  do iel = 1, ncel
-    rtp(iel,ivar) = 0.d0
-  enddo
-enddo
-
 !     On met la pression P* a PRED0
+!$omp parallel do
 do iel = 1, ncel
   rtp(iel,ipr) = pred0
+enddo
+
+
+!     Toutes les variables a 0
+f_id = -1
+
+do ivar = 1, nvar
+  f_id_prv = f_id
+  f_id = ivarfl(ivar)
+  if (f_id.eq.f_id_prv) cycle
+
+  call field_get_dim(f_id, f_dim, interleaved)
+
+  if (f_dim.gt.1) then
+    call field_get_val_v(f_id, field_v_v)
+  else if (f_dim.eq.1) then
+    call field_get_val_s(f_id, field_s_v)
+  endif
+
+  if (f_dim.gt.1) then
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, f_dim
+        field_v_v(isou,iel) = 0.d0
+      enddo
+    enddo
+  else
+    !$omp parallel do
+    do iel = 1, ncel
+      field_s_v(iel) = 0.d0
+    enddo
+  endif
 enddo
 
 !===============================================================================

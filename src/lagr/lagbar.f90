@@ -49,6 +49,8 @@ subroutine lagbar &
 !===============================================================================
 
 use mesh
+use paramx
+use dimens, only:nvar
 use lagran
 use lagpar
 use ppthch
@@ -64,7 +66,7 @@ implicit none
 ! Arguments
 
 double precision  energt(nfabor)
-double precision  rtp (ncelet,*)
+double precision  rtp (ncelet,nflown:nvar)
 
 ! Local variables
 

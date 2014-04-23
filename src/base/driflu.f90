@@ -59,7 +59,7 @@ subroutine driflu &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
+use dimens, only: ndimfb, nvar
 use numvar
 use entsor
 use optcal
@@ -81,7 +81,7 @@ implicit none
 
 integer          iflid
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision imasfl(nfac), bmasfl(ndimfb)
 double precision rovsdt(ncelet), smbrs(ncelet)
@@ -118,7 +118,7 @@ double precision, dimension(:), allocatable :: coefap, coefbp
 double precision, dimension(:), allocatable :: cofafp, cofbfp
 double precision, dimension(:,:), allocatable :: coefa1
 double precision, dimension(:,:,:), allocatable :: coefb1
-double precision, dimension(:,:), allocatable :: drift, vel, dudt
+double precision, dimension(:,:), allocatable :: drift, dudt
 double precision, dimension(:), allocatable :: viscf, viscb
 double precision, dimension(:), allocatable :: flumas, flumab
 
@@ -128,6 +128,7 @@ double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl_mix, bmasfl_mix
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:,:), pointer :: vel, vela
 
 !===============================================================================
 
@@ -148,6 +149,10 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl_mix)
 call field_get_val_s(iflmab, bmasfl_mix)
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 1. Initialization
@@ -182,7 +187,6 @@ endif
 
 ! Vector containing all the additional convective terms
 allocate(drift(3, ncelet))
-allocate(vel(3, ncelet))
 allocate(dudt(3, ncelet))
 allocate(w1(ncelet), viscce(ncelet))
 allocate(coefap(ndimfb), coefbp(ndimfb))
@@ -335,15 +339,12 @@ endif
 if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
 
   do iel = 1, ncel
-    vel(1, iel) = rtp(iel, iu)
-    vel(2, iel) = rtp(iel, iv)
-    vel(3, iel) = rtp(iel, iw)
 
     rhovdt = crom(iel)*volume(iel)/dt(iel)
 
-    dudt(1,iel) = -rhovdt*(rtp(iel,iu)-rtpa(iel,iu))
-    dudt(2,iel) = -rhovdt*(rtp(iel,iv)-rtpa(iel,iv))
-    dudt(3,iel) = -rhovdt*(rtp(iel,iw)-rtpa(iel,iw))
+    dudt(1,iel) = -rhovdt*(vel(1,iel)-vela(1,iel))
+    dudt(2,iel) = -rhovdt*(vel(2,iel)-vela(2,iel))
+    dudt(3,iel) = -rhovdt*(vel(3,iel)-vela(3,iel))
   enddo
 
   iconvp = 1
@@ -479,7 +480,6 @@ enddo
 ! Free memory
 deallocate(viscce)
 deallocate(drift)
-deallocate(vel)
 deallocate(dudt)
 deallocate(w1)
 deallocate(viscf, viscb)

@@ -62,6 +62,7 @@ use paramx
 use optcal
 use cstphy
 use numvar
+use dimens, only: nvar
 use entsor
 use pointe
 use albase
@@ -86,7 +87,7 @@ implicit none
 ! Arguments
 
 integer          nproce, nscal
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -130,7 +131,6 @@ if (ipass .eq. 1) then
 endif
 
 ivar = iu
-call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 
 if (ipass.eq.1) then
   if (ippmod(icompf).ge.0) then

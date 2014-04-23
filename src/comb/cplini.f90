@@ -80,6 +80,7 @@ subroutine cplini &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -95,7 +96,7 @@ use mesh
 
 implicit none
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 

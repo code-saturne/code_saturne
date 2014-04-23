@@ -236,7 +236,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
   do f_id = 0, n_fields - 1
 
     call field_get_key_int(f_id, keypp, ippf)
-    if (ippf.le.1) cycle
+    if (ippf.lt.2) cycle
 
     call field_get_dim (f_id, f_dim, interleaved)
     call field_get_type(f_id, f_type)

@@ -68,6 +68,8 @@ use numvar
 use entsor
 use cstphy
 use mesh
+use dimens, only: nvar
+use field
 
 !===============================================================================
 
@@ -79,7 +81,7 @@ integer          ncp    , ncv    , ientha
 
 double precision cpcst  , cvcst
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision cp(ncp), cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
 
@@ -93,6 +95,12 @@ double precision enthal, temper, energ, cvt
 
 integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
+double precision, dimension(:,:), pointer :: vel
+
+!===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 
@@ -217,9 +225,9 @@ do inbcou = 1, nbccou
         iel   = ifabor(ifac)
         energ = tfluid(iloc)
         cvt   = energ                                               &
-                      -(0.5d0*( rtp(iel,iu)**2                      &
-                               +rtp(iel,iv)**2                      &
-                               +rtp(iel,iw)**2)                     &
+                      -(0.5d0*(  vel(1,iel)**2                      &
+                               + vel(2,iel)**2                      &
+                               + vel(3,iel)**2)                     &
                         + wa(iepsel+iel-1)           )
         if (ncv.eq.ncelet) then
           tfluid(iloc) = cvt/cv(iel)

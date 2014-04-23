@@ -195,7 +195,7 @@ integer          icepdc(*)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izctsm(ncel)
 
-double precision dt(ncelet), rtpa(ncelet,*)
+double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6)
 double precision smacel(ncesmp,nvar)

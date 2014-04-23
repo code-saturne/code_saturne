@@ -363,7 +363,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor), ialtyb(nfabor)
 integer          impale(nnod)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision depale(3,nnod), xyzno0(3,nnod)

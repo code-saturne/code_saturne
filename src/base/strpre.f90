@@ -69,6 +69,7 @@ use paramx
 use optcal
 use numvar
 use pointe
+use dimens, only: nvar
 use albase, only: nalimx
 use alstru
 use alaste
@@ -88,7 +89,7 @@ integer          itrale , italim , ineefl
 
 integer          impale(nnod)
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,11)
 double precision depale(3,nnod)

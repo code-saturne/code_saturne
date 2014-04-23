@@ -94,6 +94,7 @@ use paramx
 use pointe
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -119,7 +120,7 @@ double precision utau, yplus, uet
 double precision gredu, rib, lmo, q0, e0
 double precision cfnnu, cfnns, cfnnk,cfnne
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables

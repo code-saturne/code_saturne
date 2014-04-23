@@ -73,7 +73,7 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iwaphi
-double precision rtp(ncelet,nvar)
+double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 

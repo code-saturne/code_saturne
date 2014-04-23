@@ -161,7 +161,7 @@ integer          isvhb
 integer          icodcl(nfabor,nvarcl)
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(3,ncelet)
@@ -179,7 +179,6 @@ integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
-integer          nswrgp, imligp, iwarnp
 integer          itplus, itstar
 integer          f_id  ,  iut  , ivt   , iwt, iflmab
 
@@ -195,7 +194,6 @@ double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp
 
-logical          ilved
 character*80     fname
 
 double precision, allocatable, dimension(:) :: w1
@@ -212,6 +210,7 @@ double precision, dimension(:,:), pointer :: coefau, cofafu, cfaale, claale
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, cfbale, clbale
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cofadp, cofbdp
+double precision, dimension(:,:), pointer :: vel, vela
 
 !===============================================================================
 
@@ -257,6 +256,10 @@ if (itstar.ge.0) then
     tstarp(ifac) = 0.d0
   enddo
 endif
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 ! Pointers to the mass fluxes
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -520,37 +523,19 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
     ! Allocate a temporary array
     allocate(gradv(3,3,ncelet))
 
-    iccocg = 1
-    inc    = 1
-    nswrgp = nswrgr(iu)
-    imligp = imligr(iu)
-    iwarnp = iwarni(iu)
-    epsrgp = epsrgr(iu)
-    climgp = climgr(iu)
-    extrap = extrag(iu)
+    inc = 1
+    iprev = 1
 
-    ilved = .false.
-
-    call grdvec &
-    !==========
-  ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-    iwarnp , epsrgp , climgp ,                                     &
-    ilved ,                                                        &
-    rtpa(1,iu) ,  coefau , coefbu,                                 &
-    gradv  )
-
+    call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                               gradv)
 
     do isou = 1, 3
-      if(isou.eq.1) ivar = iu
-      if(isou.eq.2) ivar = iv
-      if(isou.eq.3) ivar = iw
-
       do ifac = 1, nfabor
         iel = ifabor(ifac)
         velipb(ifac,isou) = gradv(1,isou,iel)*diipb(1,ifac)    &
                           + gradv(2,isou,iel)*diipb(2,ifac)    &
                           + gradv(3,isou,iel)*diipb(3,ifac)    &
-                          + rtpa(iel,ivar)
+                          + vel(isou,iel)
       enddo
     enddo
 
@@ -561,13 +546,10 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
   else
 
     do isou = 1, 3
-      if(isou.eq.1) ivar = iu
-      if(isou.eq.2) ivar = iv
-      if(isou.eq.3) ivar = iw
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
-        velipb(ifac,isou) = rtpa(iel,ivar)
+        velipb(ifac,isou) = vela(isou,iel)
       enddo
 
     enddo

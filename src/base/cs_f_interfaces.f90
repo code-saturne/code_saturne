@@ -169,7 +169,7 @@ module cs_f_interfaces
       integer, dimension(ncesmp) :: icetsm
       integer, dimension(ncesmp,nvar), target :: itypsm
       double precision, dimension(ncelet) :: dt
-      double precision, dimension(ncelet, *) ::rtp, rtpa, propce
+      double precision, dimension(ncelet, *) :: rtp, rtpa, propce
       double precision, dimension(ncelet,ntersl), target :: tslagr
       double precision, dimension(ncepdp,6) :: ckupdc
       double precision, dimension(ncesmp,nvar), target ::  smacel

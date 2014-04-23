@@ -68,6 +68,7 @@ use paramx
 use cstnum
 use numvar
 use optcal
+use dimens, only: nvar
 use entsor
 use cstphy
 use pointe
@@ -88,7 +89,7 @@ implicit none
 integer          nbpmax
 integer          npar1 , npar2
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision vagaus(nbpmax,*)
 
@@ -105,8 +106,12 @@ double precision  dismin,dismax, ustar, visccf, romf
 double precision  unif1(1)
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -171,9 +176,9 @@ do npt = npar1,npar2
 
   tu = sqrt( d2s3*w1(iel) )
 
-  ettp(npt,juf) = rtp(iel,iu) + vagaus(npt,1)*tu
-  ettp(npt,jvf) = rtp(iel,iv) + vagaus(npt,2)*tu
-  ettp(npt,jwf) = rtp(iel,iw) + vagaus(npt,3)*tu
+  ettp(npt,juf) = vel(1,iel) + vagaus(npt,1)*tu
+  ettp(npt,jvf) = vel(2,iel) + vagaus(npt,2)*tu
+  ettp(npt,jwf) = vel(3,iel) + vagaus(npt,3)*tu
 
 enddo
 
@@ -257,9 +262,9 @@ if (idepst.eq.1) then
     endif
 
     if (tepa(npt,jryplu).le.tepa(npt,jrinpf)) then
-      ettp(npt,juf) = rtp(iel,iu)
-      ettp(npt,jvf) = rtp(iel,iv)
-      ettp(npt,jwf) = rtp(iel,iw)
+      ettp(npt,juf) = vel(1,iel)
+      ettp(npt,jvf) = vel(2,iel)
+      ettp(npt,jwf) = vel(3,iel)
     endif
 
     ! No deposited particles at the injection
@@ -324,4 +329,5 @@ deallocate(w1)
 ! FIN
 !----
 
-end subroutine
+return
+end subroutine lagipn

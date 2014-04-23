@@ -86,6 +86,7 @@ subroutine cs_gascomb &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -108,7 +109,7 @@ integer          ncelet , ncel
 integer          icb1   , icb2
 integer          indpdf(ncel)
 
-double precision rtp(ncelet,*), x2(ncel)
+double precision rtp(ncelet,nflown:nvar), x2(ncel)
 double precision f1m(ncel)  , f2m(ncel) , f3m(ncel)
 double precision f4m(ncel)  , f5m(ncel) , f6m(ncel)
 double precision f7m(ncel)  , f8m(ncel) , f9m(ncel)

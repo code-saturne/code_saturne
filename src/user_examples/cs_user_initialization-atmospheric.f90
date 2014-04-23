@@ -86,7 +86,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 
@@ -94,6 +94,8 @@ double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 integer          iel
 double precision d2s3
 double precision zent,xuent,xvent,xkent,xeent,tpent
+
+double precision, dimension(:,:), pointer :: vel
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
@@ -105,6 +107,9 @@ integer, allocatable, dimension(:) :: lstelt
 !---------------
 
 !< [init]
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
 d2s3 = 2.d0/3.d0
@@ -118,7 +123,7 @@ if (isuite.eq.0) then
 
   do iel = 1, ncel
 
-    zent=xyzcen(3,iel)
+    zent = xyzcen(3,iel)
 
     call intprf                                                   &
     !==========
@@ -140,9 +145,9 @@ if (isuite.eq.0) then
    (nbmetd, nbmetm,                                               &
     zdmet, tmmet, epmet, zent  , ttcabs, xeent )
 
-    rtp(iel,iu)=xuent
-    rtp(iel,iv)=xvent
-    rtp(iel,iw)=0.d0
+    vel(1,iel) = xuent
+    vel(2,iel) = xvent
+    vel(3,iel) = 0.d0
 
 !     ITYTUR est un indicateur qui vaut ITURB/10
     if    (itytur.eq.2) then

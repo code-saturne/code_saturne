@@ -107,7 +107,15 @@ typedef struct {
 
   int                     location_id;  /* Id of matching location */
 
-  int                     n_time_vals;  /* Number of time values (1 or 2) */
+  int                     n_time_vals;  /* Number of time values */
+
+  cs_real_t             **vals;         /* For each active location, pointer
+                                           to matching values arrays
+                                           vals[0][:] = val
+                                           vals[1][:] = val_pre
+                                           vals[p][:] = p ith previous field
+                                           p < n_time_vals */
+
 
   cs_real_t              *val;          /* For each active location, pointer
                                            to matching values array */

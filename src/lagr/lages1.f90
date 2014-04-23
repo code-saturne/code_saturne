@@ -87,6 +87,7 @@ use numvar
 use cstphy
 use cstnum
 use optcal
+use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -106,7 +107,7 @@ integer          nbpmax , nvp    , nvep  , nivep
 
 integer          itepa(nbpmax,nivep)
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -138,8 +139,12 @@ double precision ddbr, tix2, tiu2, tixiu
 double precision tbrix1, tbrix2, tbriu
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:,:), pointer :: vela
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 1. INITIALISATIONS
@@ -177,9 +182,9 @@ do id = 1,3
 
       rom = cromf(iel)
 
-      if (id.eq.1) vitf = rtpa(iel,iu)
-      if (id.eq.2) vitf = rtpa(iel,iv)
-      if (id.eq.3) vitf = rtpa(iel,iw)
+      if (id.eq.1) vitf = vela(1,iel)
+      if (id.eq.2) vitf = vela(2,iel)
+      if (id.eq.3) vitf = vela(3,iel)
 
 !---> (2.1) Calcul preliminaires :
 !     ----------------------------
@@ -413,4 +418,5 @@ enddo
 ! FIN
 !----
 
-end subroutine
+return
+end subroutine lages1

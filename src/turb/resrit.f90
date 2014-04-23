@@ -62,6 +62,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstnum
 use cstphy
 use parall
@@ -79,7 +80,7 @@ implicit none
 
 integer          nscal , iscal
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
 double precision gradv(3,3,ncelet)

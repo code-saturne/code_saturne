@@ -56,8 +56,10 @@
 !>     - entropy: 13
 !>
 !>   iccfth is as follows, depending on which quantity needs to be computed:
-!>     - variables at cell centers from variable i and variable j (i<j): iccfth = i*j*10000
-!>     - variables at boundary faces from variable i and variable j (i<j): iccfth = i*j*10000+900
+!>     - variables at cell centers from variable i and variable j (i<j):
+!>           iccfth = i*j*10000
+!>     - variables at boundary faces from variable i and variable j (i<j):
+!>           iccfth = i*j*10000+900
 !>
 !> Detailed values of iccfth and corresponding computations:
 !>
@@ -119,15 +121,21 @@ implicit none
 
 integer          nvar, iccfth, imodif
 
-double precision rtp(ncelet,*), output1(*), output2(*), bval(nfabor,nvar)
+double precision rtp(ncelet,nflown:nvar)
+
+double precision output1(*), output2(*), bval(nfabor,nvar)
 
 ! Local variables
 
 integer          ifac0, l_size, iel, ifac, itk, ien
 
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 0. Initialization.
@@ -150,8 +158,8 @@ if (iccfth.eq.60000) then
 
   call cf_check_density(crom, ncel)
 
-  call cf_thermo_te_from_dp(rtp(1,ipr), crom, output1, output2, rtp(1,iu), &
-                            rtp(1,iv), rtp(1,iw), ncel)
+  call cf_thermo_te_from_dp_i(rtp(1,ipr), crom, output1, output2, &
+                              vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -168,7 +176,7 @@ elseif (iccfth.eq.100000) then
   call cf_check_temperature(rtp(1,itk), ncel)
 
   call cf_thermo_de_from_pt(rtp(1,ipr), rtp(1,itk), output1, output2, &
-                            rtp(1,iu), rtp(1,iv), rtp(1,iw), ncel)
+                            vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -182,7 +190,7 @@ elseif (iccfth.eq.100000) then
 elseif (iccfth.eq.140000) then
 
   call cf_thermo_dt_from_pe(rtp(1,ipr), rtp(1,ien), output1, output2, &
-                            rtp(1,iu), rtp(1,iv), rtp(1,iw), ncel)
+                            vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -197,7 +205,7 @@ elseif (iccfth.eq.140000) then
 elseif (iccfth.eq.150000) then
 
   call cf_thermo_pe_from_dt(crom, rtp(1,itk), rtp(1,ipr), rtp(1,ien), &
-                            rtp(1,iu), rtp(1,iv), rtp(1,iw), ncel )
+                            vel, ncel )
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -211,7 +219,7 @@ elseif (iccfth.eq.150000) then
 elseif (iccfth.eq.210000) then
 
   call cf_thermo_pt_from_de(crom, rtp(1,ien), output1, output2,    &
-                            rtp(1,iu), rtp(1,iv), rtp(1,iw), ncel)
+                            vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -228,9 +236,9 @@ elseif (iccfth.eq.60900) then
   ifac = ifac0
   l_size = 1
 
-  call cf_thermo_te_from_dp(bval(ifac,ipr), brom(ifac:ifac), bval(ifac,itk), &
-                            bval(ifac,ien), bval(ifac,iu), bval(ifac,iv),    &
-                            bval(ifac,iw), l_size)
+  call cf_thermo_te_from_dp_ni(bval(ifac,ipr), brom(ifac:ifac), bval(ifac,itk), &
+                               bval(ifac,ien), bval(ifac,iu), bval(ifac,iv),    &
+                               bval(ifac,iw), l_size)
 
 
 ! Calculation of density and energy from pressure and temperature
@@ -239,9 +247,9 @@ elseif (iccfth.eq.100900) then
   ifac = ifac0
   l_size = 1
 
-  call cf_thermo_de_from_pt(bval(ifac,ipr), bval(ifac, itk), brom(ifac:ifac), &
-                            bval(ifac,ien), bval(ifac,iu), bval(ifac,iv),     &
-                            bval(ifac,iw), l_size)
+  call cf_thermo_de_from_pt_ni(bval(ifac,ipr), bval(ifac, itk), brom(ifac:ifac), &
+                               bval(ifac,ien), bval(ifac,iu), bval(ifac,iv),     &
+                               bval(ifac,iw), l_size)
 
 
 ! Calculation of density and temperature from pressure and total energy
@@ -250,9 +258,9 @@ elseif (iccfth.eq.140900) then
   ifac = ifac0
   l_size = 1
 
-  call cf_thermo_dt_from_pe(bval(ifac,ipr), bval(ifac,ien), brom(ifac:ifac), &
-                            bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),    &
-                            bval(ifac,iw), l_size)
+  call cf_thermo_dt_from_pe_ni(bval(ifac,ipr), bval(ifac,ien), brom(ifac:ifac), &
+                               bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),    &
+                               bval(ifac,iw), l_size)
 
 ! Calculation of pressure and energy from density and temperature
 elseif (iccfth.eq.150900) then
@@ -260,9 +268,9 @@ elseif (iccfth.eq.150900) then
   ifac = ifac0
   l_size = 1
 
-  call cf_thermo_pe_from_dt(brom(ifac:ifac), bval(ifac,itk), bval(ifac,ipr),  &
-                            bval(ifac,ien), bval(ifac,iu), bval(ifac,iv),     &
-                            bval(ifac,iw), l_size)
+  call cf_thermo_pe_from_dt_ni(brom(ifac:ifac), bval(ifac,itk), bval(ifac,ipr),  &
+                               bval(ifac,ien), bval(ifac,iu), bval(ifac,iv),     &
+                               bval(ifac,iw), l_size)
 
 ! Calculation of pressure and temperature from density and energy
 elseif (iccfth.eq.210900) then
@@ -270,9 +278,9 @@ elseif (iccfth.eq.210900) then
   ifac = ifac0
   l_size = 1
 
-  call cf_thermo_pt_from_de(brom(ifac:ifac), bval(ifac,ien), bval(ifac,ipr),  &
-                            bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
-                            bval(ifac,iw), l_size)
+  call cf_thermo_pt_from_de_ni(brom(ifac:ifac), bval(ifac,ien), bval(ifac,ipr),  &
+                               bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
+                               bval(ifac,iw), l_size)
 
 endif
 
@@ -460,6 +468,8 @@ subroutine cf_thermo_default_init(ncel, ncelet, rtp)
 ! Module files
 !===============================================================================
 
+use paramx
+use dimens, only: nvar
 use cstphy
 use numvar
 use optcal
@@ -475,7 +485,7 @@ implicit none
 
 integer ncel, ncelet
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -608,12 +618,10 @@ end subroutine cf_check_pressure
 
 !> \param[in]     ener    array of total energy values
 !> \param[in]     l_size  l_size of the array
-!> \param[in]     velx    array of velocity x-component values
-!> \param[in]     vely    array of velocity y-component values
-!> \param[in]     velz    array of velocity z-component values
+!> \param[in]     vel     array of velocity values
 !-------------------------------------------------------------------------------
 
-subroutine cf_check_internal_energy(ener, l_size, velx, vely, velz)
+subroutine cf_check_internal_energy(ener, l_size, vel)
 
 !===============================================================================
 
@@ -636,7 +644,7 @@ implicit none
 
 integer l_size
 
-double precision ener(*), velx(*), vely(*), velz(*)
+double precision ener(*), vel(3,*)
 
 ! Local variables
 
@@ -652,13 +660,13 @@ double precision enint
 
 ierr = 0
 do iel = 1, l_size
-  enint = ener(iel) - 0.5d0*(  velx(iel)**2  &
-                             + vely(iel)**2  &
-                             + velz(iel)**2)
+  enint = ener(iel) - 0.5d0*(  vel(1,iel)**2  &
+                             + vel(2,iel)**2  &
+                             + vel(3,iel)**2)
   if (enint.le.0.d0) then
-    ener(iel) = epzero + 0.5d0*(  velx(iel)**2  &
-                                + vely(iel)**2  &
-                                + velz(iel)**2)
+    ener(iel) = epzero + 0.5d0*(  vel(1,iel)**2  &
+                                + vel(2,iel)**2  &
+                                + vel(3,iel)**2)
     ierr = ierr + 1
   endif
 enddo
@@ -873,7 +881,7 @@ end subroutine cf_check_temperature
 !> \param[in]     l_size  l_size of the array
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_te_from_dp(pres, dens, temp, ener, velx, vely, velz, l_size)
+subroutine cf_thermo_te_from_dp_ni(pres, dens, temp, ener, velx, vely, velz, l_size)
 
 !===============================================================================
 
@@ -922,7 +930,69 @@ if (ieos.eq.1) then
 
 endif
 
-end subroutine cf_thermo_te_from_dp
+end subroutine cf_thermo_te_from_dp_ni
+
+!-------------------------------------------------------------------------------
+!> \brief Compute temperature and total energy from density and pressure.
+
+!> \param[in]     pres    array of pressure values
+!> \param[in]     dens    array of density values
+!> \param[out]    temp    array of temperature values
+!> \param[out]    ener    array of total energy values
+!> \param[in]     vel     array of velocity component values
+!> \param[in]     l_size  l_size of the array
+!-------------------------------------------------------------------------------
+
+subroutine cf_thermo_te_from_dp_i(pres, dens, temp, ener, vel, l_size)
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use numvar
+use dimens
+use parall
+use ppincl
+use ppthch
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer l_size
+
+double precision pres(*), dens(*), temp(*), ener(*)
+double precision vel(3,*)
+
+! local variables
+
+integer ii
+
+double precision xmasml
+
+!===============================================================================
+
+! calculation of temperature and energy from pressure and density
+
+call cf_get_molar_mass(xmasml)
+
+if (ieos.eq.1) then
+
+  do ii = 1, l_size
+    ! temperature
+    temp(ii) = xmasml * pres(ii) / (rr*dens(ii))
+    ! total energy
+    ener(ii) =  cv0*temp(ii)                                             &
+              + 0.5d0*( vel(1,ii)**2 + vel(2,ii)**2 + vel(3,ii)**2 )
+  enddo
+
+endif
+
+end subroutine cf_thermo_te_from_dp_i
 
 !===============================================================================
 
@@ -939,7 +1009,7 @@ end subroutine cf_thermo_te_from_dp
 !> \param[in]     l_size  l_size of the array
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_de_from_pt(pres, temp, dens, ener, velx, vely, velz, l_size)
+subroutine cf_thermo_de_from_pt_ni(pres, temp, dens, ener, velx, vely, velz, l_size)
 
 !===============================================================================
 
@@ -987,6 +1057,70 @@ if (ieos.eq.1) then
 
 endif
 
+end subroutine cf_thermo_de_from_pt_ni
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+!> \brief Compute density and total energy from pressure and temperature
+!>        (interleaved version).
+
+!> \param[in]     pres    array of pressure values
+!> \param[in]     temp    array of temperature values
+!> \param[out]    dens    array of density values
+!> \param[out]    ener    array of total energy values
+!> \param[in]     vel     array of velocity component values
+!> \param[in]     l_size  l_size of the array
+!-------------------------------------------------------------------------------
+
+subroutine cf_thermo_de_from_pt(pres, temp, dens, ener, vel, l_size)
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use numvar
+use parall
+use ppincl
+use ppthch
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer l_size
+
+double precision pres(*), temp(*), dens(*), ener(*)
+double precision vel(3,*)
+
+! Local variables
+
+integer iel
+
+double precision xmasml
+
+!===============================================================================
+
+! Calculation of density and energy from pressure and temperature
+
+call cf_get_molar_mass(xmasml)
+
+if (ieos.eq.1) then
+
+  do iel = 1, l_size
+    ! Temperature
+    dens(iel) = xmasml * pres(iel) / (rr*temp(iel))
+    ! Total energy
+    ener(iel) =  cv0*temp(iel)                                             &
+               + 0.5d0*( vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2 )
+  enddo
+
+endif
+
 end subroutine cf_thermo_de_from_pt
 
 !===============================================================================
@@ -1004,7 +1138,7 @@ end subroutine cf_thermo_de_from_pt
 !> \param[in]     l_size  l_size of the array
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_dt_from_pe(pres, ener, dens, temp, velx, vely, velz, l_size)
+subroutine cf_thermo_dt_from_pe_ni(pres, ener, dens, temp, velx, vely, velz, l_size)
 
 !===============================================================================
 
@@ -1059,6 +1193,77 @@ if (ieos.eq.1) then
 
 endif
 
+end subroutine cf_thermo_dt_from_pe_ni
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+!> \brief Compute density and temperature from pressure and total energy
+!>        (interleaved version).
+
+!> \param[in]     pres    array of pressure values
+!> \param[in]     ener    array of total energy values
+!> \param[out]    dens    array of density values
+!> \param[out]    temp    array of temperature values
+!> \param[in]     vel     array of velocity component values
+!> \param[in]     l_size  l_size of the array
+!-------------------------------------------------------------------------------
+
+subroutine cf_thermo_dt_from_pe(pres, ener, dens, temp, vel, l_size)
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use numvar
+use parall
+use ppincl
+use ppthch
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer l_size
+
+double precision pres(*), ener(*), dens(*), temp(*)
+double precision vel(3,*)
+
+! Local variables
+
+integer iel
+
+double precision enint, gamagp, xmasml
+
+!===============================================================================
+
+! Calculation of density and temperature from pressure and energy
+
+call cf_get_molar_mass(xmasml)
+
+if (ieos.eq.1) then
+
+  call cf_thermo_gamma(gamagp)
+
+  do iel = 1, l_size
+    ! Internal energy (to avoid the need to divide by the temperature
+    ! to compute density)
+    enint =  ener(iel)                                      &
+           - 0.5d0*( vel(1,iel)**2                           &
+           + vel(2,iel)**2                                   &
+           + vel(3,iel)**2 )
+    ! Density
+    dens(iel) = pres(iel) / ( (gamagp-1.d0) * enint )
+    ! Temperature
+    temp(iel) = xmasml * (gamagp-1.d0) * enint / rr
+  enddo
+
+endif
+
 end subroutine cf_thermo_dt_from_pe
 
 !===============================================================================
@@ -1076,7 +1281,7 @@ end subroutine cf_thermo_dt_from_pe
 !> \param[in]     l_size  l_size of the array
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_pe_from_dt(dens, temp, pres, ener, velx, vely, velz, l_size)
+subroutine cf_thermo_pe_from_dt_ni(dens, temp, pres, ener, velx, vely, velz, l_size)
 
 !===============================================================================
 
@@ -1124,6 +1329,70 @@ if (ieos.eq.1) then
 
 endif
 
+end subroutine cf_thermo_pe_from_dt_ni
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+!> \brief Compute pressure and total energy from density and temperature
+!>        (interleaved version).
+
+!> \param[in]     dens    array of density values
+!> \param[in]     temp    array of temperature values
+!> \param[out]    pres    array of pressure values
+!> \param[out]    ener    array of total energy values
+!> \param[in]     vel     array of velocity component values
+!> \param[in]     l_size  l_size of the array
+!-------------------------------------------------------------------------------
+
+subroutine cf_thermo_pe_from_dt(dens, temp, pres, ener, vel, l_size)
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use numvar
+use parall
+use ppincl
+use ppthch
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer l_size
+
+double precision dens(*), temp(*), pres(*), ener(*)
+double precision vel(3,*)
+
+! Local variables
+
+integer iel
+
+double precision xmasml
+
+!===============================================================================
+
+! Calculation of pressure and energy from density and temperature
+
+call cf_get_molar_mass(xmasml)
+
+if (ieos.eq.1) then
+
+  do iel = 1, l_size
+    ! Pressure
+    pres(iel) = dens(iel)*temp(iel)*rr/xmasml
+    ! Total energy
+    ener(iel) =  cv0*temp(iel)                                          &
+               + 0.5d0*( vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2 )
+  enddo
+
+endif
+
 end subroutine cf_thermo_pe_from_dt
 
 !===============================================================================
@@ -1141,7 +1410,7 @@ end subroutine cf_thermo_pe_from_dt
 !> \param[in]     l_size  l_size of the array
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_pt_from_de(dens, ener, pres, temp, velx, vely, velz, l_size)
+subroutine cf_thermo_pt_from_de_ni(dens, ener, pres, temp, velx, vely, velz, l_size)
 
 !===============================================================================
 
@@ -1188,6 +1457,77 @@ if (ieos.eq.1) then
            - 0.5d0*( velx(iel)**2                             &
            + vely(iel)**2                             &
            + velz(iel)**2 )
+
+    ! Pressure
+    pres(iel) = (gamagp-1.d0) * dens(iel) * enint
+    ! Temperature
+    temp(iel) = xmasml * (gamagp-1.d0) * enint / rr
+  enddo
+
+endif
+
+end subroutine cf_thermo_pt_from_de_ni
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+!> \brief Compute pressure and temperature from density and total energy.
+
+!> \param[in]     dens    array of density values
+!> \param[in]     temp    array of temperature values
+!> \param[out]    pres    array of pressure values
+!> \param[out]    ener    array of total energy values
+!> \param[in]     vel     array of velocity component values
+!> \param[in]     l_size  l_size of the array
+!-------------------------------------------------------------------------------
+
+subroutine cf_thermo_pt_from_de(dens, ener, pres, temp, vel, l_size)
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use numvar
+use parall
+use ppincl
+use ppthch
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer l_size
+
+double precision dens(*), ener(*), pres(*), temp(*)
+double precision vel(3,*)
+
+! Local variables
+
+integer iel
+
+double precision enint, gamagp, xmasml
+
+!===============================================================================
+
+! Calculation of pressure and temperature from density and energy
+
+call cf_get_molar_mass(xmasml)
+
+if (ieos.eq.1) then
+
+  call cf_thermo_gamma(gamagp)
+
+  do iel = 1, l_size
+    ! Internal energy (to avoid the need to divide by the temperature
+    ! to compute density)
+    enint =  ener(iel)                                        &
+           - 0.5d0*( vel(1,iel)**2                             &
+           + vel(2,iel)**2                             &
+           + vel(3,iel)**2 )
 
     ! Pressure
     pres(iel) = (gamagp-1.d0) * dens(iel) * enint
@@ -1437,6 +1777,8 @@ subroutine cf_thermo_wall_bc(rtp, wbfb, ifac)
 !===============================================================================
 
 use cstnum
+use paramx
+use dimens, only: nvar
 use mesh
 use numvar
 use parall
@@ -1453,7 +1795,7 @@ implicit none
 
 integer ifac
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision wbfb(nfabor)
 
 ! Local variables
@@ -1463,6 +1805,7 @@ integer iel
 double precision gamagp, xmach
 
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 
@@ -1472,14 +1815,16 @@ if (ieos.eq.1) then
 
   call cf_thermo_gamma(gamagp)
 
+  ! Map field arrays
+  call field_get_val_v(ivarfl(iu), vel)
   call field_get_val_s(icrom, crom)
   iel = ifabor(ifac)
 
   ! Calculation of the Mach number at the boundary face, using the
   ! cell center velocity projected on the vector normal to the boundary
-  xmach = ( rtp(iel,iu)*surfbo(1,ifac)                          &
-          + rtp(iel,iv)*surfbo(2,ifac)                          &
-          + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)         &
+  xmach = ( vel(1,iel)*surfbo(1,ifac)                          &
+          + vel(2,iel)*surfbo(2,ifac)                          &
+          + vel(3,iel)*surfbo(3,ifac) ) / surfbn(ifac)         &
          / sqrt( gamagp * rtp(iel,ipr) / crom(iel) )
 
   ! Pressure
@@ -1540,6 +1885,8 @@ subroutine cf_thermo_subsonic_outlet_bc(rtp, bval, ifac)
 !===============================================================================
 
 use mesh
+use paramx
+use dimens, only: nvar
 use numvar
 use parall
 use ppincl
@@ -1554,7 +1901,7 @@ implicit none
 
 integer ifac
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision bval(nfabor,*)
 
 ! Local variables
@@ -1566,6 +1913,12 @@ double precision roi, ro1, pri, ei, uni, un1, uns
 double precision ci, c1, mi, a, b, sigma1, pinf
 
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:,:), pointer :: vel
+
+!===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 
@@ -1586,9 +1939,9 @@ if (ieos.eq.1) then
   roi  = crom(iel)
 
   ci   = sqrt(gamagp * pri / roi)
-  uni  = ( rtp(iel,iu) * surfbo(1,ifac)                             &
-         + rtp(iel,iv) * surfbo(2,ifac)                             &
-         + rtp(iel,iw) * surfbo(3,ifac) ) / surfbn(ifac)
+  uni  = ( vel(1,iel) * surfbo(1,ifac)                             &
+         + vel(2,iel) * surfbo(2,ifac)                             &
+         + vel(3,iel) * surfbo(3,ifac) ) / surfbn(ifac)
   ei   = rtp(iel,isca(ienerg)) - 0.5d0 * uni**2
 
   ! Rarefaction case
@@ -1612,9 +1965,9 @@ if (ieos.eq.1) then
       ! Density
       brom(ifac) = ro1
       ! Velocity
-      bval(ifac,iu) = rtp(iel,iu) + a * surfbo(1,ifac) / surfbn(ifac)
-      bval(ifac,iv) = rtp(iel,iv) + a * surfbo(2,ifac) / surfbn(ifac)
-      bval(ifac,iw) = rtp(iel,iw) + a * surfbo(3,ifac) / surfbn(ifac)
+      bval(ifac,iu) = vel(1,iel) + a * surfbo(1,ifac) / surfbn(ifac)
+      bval(ifac,iv) = vel(2,iel) + a * surfbo(2,ifac) / surfbn(ifac)
+      bval(ifac,iw) = vel(3,iel) + a * surfbo(3,ifac) / surfbn(ifac)
       ! Total energy
       bval(ifac,ien) = pinf / ((gamagp - 1.d0) * ro1)                       &
                      + 0.5d0 * (bval(ifac,iu)**2                            &
@@ -1633,9 +1986,9 @@ if (ieos.eq.1) then
         ! Density
         brom(ifac) = ro1
         ! Velocity
-        bval(ifac,iu) = rtp(iel,iu) + a * surfbo(1,ifac) / surfbn(ifac)
-        bval(ifac,iv) = rtp(iel,iv) + a * surfbo(2,ifac) / surfbn(ifac)
-        bval(ifac,iw) = rtp(iel,iw) + a * surfbo(3,ifac) / surfbn(ifac)
+        bval(ifac,iu) = vel(1,iel) - a * surfbo(1,ifac) / surfbn(ifac)
+        bval(ifac,iv) = vel(2,iel) - a * surfbo(2,ifac) / surfbn(ifac)
+        bval(ifac,iw) = vel(3,iel) - a * surfbo(3,ifac) / surfbn(ifac)
         ! Total energy
         bval(ifac,ien) = pinf / ((gamagp - 1.d0) * ro1)                     &
                        + 0.5d0 * (bval(ifac,iu)**2                          &
@@ -1669,9 +2022,9 @@ if (ieos.eq.1) then
         ! pb = pri
         bval(ifac,ipr) = pri
         ! ub = uni
-        bval(ifac,iu) = rtp(iel,iu)
-        bval(ifac,iv) = rtp(iel,iv)
-        bval(ifac,iw) = rtp(iel,iw)
+        bval(ifac,iu) = vel(1,iel)
+        bval(ifac,iv) = vel(2,iel)
+        bval(ifac,iw) = vel(3,iel)
         ! rob = roi
         brom(ifac) = roi
         ! eb = ei
@@ -1701,9 +2054,9 @@ if (ieos.eq.1) then
       ! Density
       brom(ifac) = ro1
       ! Velocity
-      bval(ifac,iu) = rtp(iel,iu) - a * surfbo(1,ifac) / surfbn(ifac)
-      bval(ifac,iv) = rtp(iel,iv) - a * surfbo(2,ifac) / surfbn(ifac)
-      bval(ifac,iw) = rtp(iel,iw) - a * surfbo(3,ifac) / surfbn(ifac)
+      bval(ifac,iu) = vel(1,iel) - a * surfbo(1,ifac) / surfbn(ifac)
+      bval(ifac,iv) = vel(2,iel) - a * surfbo(2,ifac) / surfbn(ifac)
+      bval(ifac,iw) = vel(3,iel) - a * surfbo(3,ifac) / surfbn(ifac)
       ! Total energy
       bval(ifac,ien) = pinf / ((gamagp-1.d0) * brom(ifac))           &
                      + 0.5d0 * (bval(ifac,iu)**2                     &
@@ -1722,9 +2075,9 @@ if (ieos.eq.1) then
         ! Density
         brom(ifac) = ro1
         ! Velocity
-        bval(ifac,iu) = rtp(iel,iu) - a * surfbo(1,ifac) / surfbn(ifac)
-        bval(ifac,iv) = rtp(iel,iv) - a * surfbo(2,ifac) / surfbn(ifac)
-        bval(ifac,iw) = rtp(iel,iw) - a * surfbo(3,ifac) / surfbn(ifac)
+        bval(ifac,iu) = vel(1,iel) - a * surfbo(1,ifac) / surfbn(ifac)
+        bval(ifac,iv) = vel(2,iel) - a * surfbo(2,ifac) / surfbn(ifac)
+        bval(ifac,iw) = vel(3,iel) - a * surfbo(3,ifac) / surfbn(ifac)
         ! Total energy
         bval(ifac,ien) =  pinf / ((gamagp-1.d0) * brom(ifac))  &
                         + 0.5d0 * (bval(ifac,iu)**2            &
@@ -1737,9 +2090,9 @@ if (ieos.eq.1) then
         ! pb = pri
         bval(ifac,ipr) = pri
         ! unb = uni
-        bval(ifac,iu) = rtp(iel,iu)
-        bval(ifac,iv) = rtp(iel,iv)
-        bval(ifac,iw) = rtp(iel,iw)
+        bval(ifac,iu) = vel(1,iel)
+        bval(ifac,iv) = vel(2,iel)
+        bval(ifac,iw) = vel(3,iel)
         ! rob = roi
         brom(ifac) = roi
         ! eb = ei
@@ -1775,8 +2128,10 @@ subroutine cf_thermo_ph_inlet_bc(rtp, bval, ifac)
 ! Module files
 !===============================================================================
 
+use paramx
 use mesh
 use numvar
+use dimens, only: nvar
 use optcal
 use parall
 use ppincl
@@ -1793,7 +2148,7 @@ implicit none
 
 integer ifac
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision bval(nfabor,*)
 
 ! Local variables
@@ -1806,6 +2161,12 @@ double precision ci, c1, mi, a, sigma1, utxi, utyi, utzi
 double precision dir(3)
 
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:,:), pointer :: vel
+
+!===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 
@@ -1847,19 +2208,19 @@ if (ieos.eq.1) then
   ! Computation of the sound speed inside the domain
   ci = sqrt(gamagp * pri / roi)
 
-  uni = ( rtp(iel,iu) * surfbo(1,ifac)                             &
-        + rtp(iel,iv) * surfbo(2,ifac)                             &
-        + rtp(iel,iw) * surfbo(3,ifac) ) / surfbn(ifac)
+  uni = ( vel(1,iel) * surfbo(1,ifac)                             &
+        + vel(2,iel) * surfbo(2,ifac)                             &
+        + vel(3,iel) * surfbo(3,ifac) ) / surfbn(ifac)
 
   bMach = uni / ci
 
-  utxi = rtp(iel,iu) - uni * surfbo(1,ifac) * surfbn(ifac)
-  utyi = rtp(iel,iv) - uni * surfbo(2,ifac) * surfbn(ifac)
-  utzi = rtp(iel,iw) - uni * surfbo(3,ifac) * surfbn(ifac)
+  utxi = vel(1,iel) - uni * surfbo(1,ifac) * surfbn(ifac)
+  utyi = vel(2,iel) - uni * surfbo(2,ifac) * surfbn(ifac)
+  utzi = vel(3,iel) - uni * surfbo(3,ifac) * surfbn(ifac)
 
-  ei   = rtp(iel,isca(ienerg)) - 0.5d0 * ( rtp(iel,iu)**2           &
-                                         + rtp(iel,iv)**2           &
-                                         + rtp(iel,iw)**2 )
+  ei   = rtp(iel,isca(ienerg)) - 0.5d0 * ( vel(1,iel)**2           &
+                                         + vel(2,iel)**2           &
+                                         + vel(3,iel)**2 )
 
   ptot = bval(ifac,ipr)
   rhotot = gamagp / (gamagp - 1.d0) * ptot / bval(ifac,isca(ienerg))
@@ -1895,8 +2256,8 @@ if (ieos.eq.1) then
         ! rob = ro2
         brom(ifac) = (pstat / ptot)**(1.d0/gamagp) * rhotot
         ! eb = e2
-        bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * brom(ifac))                    &
-             + 0.5d0 * ( bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2 )
+        bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * brom(ifac))       &
+             + 0.5d0 * (bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2)
         ! Outlet
       else
         ! Computation of the shock velocity
@@ -1912,8 +2273,9 @@ if (ieos.eq.1) then
           ! rob = ro1
           brom(ifac) = ro1
           ! eb = e1
-          bval(ifac,isca(ienerg)) = ei - 0.5d0 * (pstat + pri) * (1.d0 / ro1 - 1.d0 / roi) &
-                                  + 0.5d0 * (un1**2 + utxi**2 + utyi**2 + utzi**2)
+          bval(ifac,isca(ienerg)) = ei                                         &
+                           - 0.5d0 * (pstat + pri) * (1.d0 / ro1 - 1.d0 / roi) &
+                           + 0.5d0 * (un1**2 + utxi**2 + utyi**2 + utzi**2)
 
         ! supersonic outlet
         else
@@ -1921,9 +2283,9 @@ if (ieos.eq.1) then
           ! pb = pri
           pstat = pri
           ! unb = uni
-          bval(ifac,iu) = rtp(iel,iu)
-          bval(ifac,iv) = rtp(iel,iv)
-          bval(ifac,iw) = rtp(iel,iw)
+          bval(ifac,iu) = vel(1,iel)
+          bval(ifac,iv) = vel(2,iel)
+          bval(ifac,iw) = vel(3,iel)
           ! rob = roi
           brom(ifac) = roi
           ! eb = ei
@@ -1984,9 +2346,9 @@ if (ieos.eq.1) then
           ! pb = pri
           pstat = pri
           ! ub = uni
-          bval(ifac,iu) = rtp(iel,iu)
-          bval(ifac,iv) = rtp(iel,iv)
-          bval(ifac,iw) = rtp(iel,iw)
+          bval(ifac,iu) = vel(1,iel)
+          bval(ifac,iv) = vel(2,iel)
+          bval(ifac,iw) = vel(3,iel)
           ! rob = roi
           brom(ifac) = roi
           ! eb = ei

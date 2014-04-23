@@ -108,7 +108,7 @@ integer          nvar   , nscal  , iappel
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 double precision ck(ncelet)
@@ -348,7 +348,7 @@ integer          mode
 
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 double precision tempk(ncelet)
@@ -504,7 +504,7 @@ integer          itypfb(nfabor)
 integer          icodcl(nfabor,nvar)
 integer          izfrdp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvar,3)
 

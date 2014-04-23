@@ -100,7 +100,7 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

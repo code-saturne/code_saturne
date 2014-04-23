@@ -81,7 +81,7 @@ implicit none
 integer          ncelet , ncel   , nfabor
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 

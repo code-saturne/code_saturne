@@ -53,8 +53,6 @@ subroutine lagphy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -105,6 +103,7 @@ use numvar
 use cstphy
 use cstnum
 use optcal
+use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -116,13 +115,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
-double precision dt(ncelet) , rtp(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -229,8 +227,7 @@ if (nvls.ge.1) then
 
   call uslaed                                                     &
   !==========
-    ( nvar   , nscal  ,                                           &
-      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
+    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
       itepa  , ibord  ,                                           &
       dt     , rtp    , propce ,                                  &

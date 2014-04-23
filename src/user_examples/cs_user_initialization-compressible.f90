@@ -87,7 +87,7 @@ implicit none
 
 integer          nvar, nscal
 
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 
@@ -99,7 +99,9 @@ integer  iel
 integer  iscal, imodif
 
 double precision, allocatable, dimension(:) :: w1, w2, w3, w4
+
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:,:), pointer :: vel
 !< [loc_var_dec]
 
 !===============================================================================
@@ -112,6 +114,9 @@ double precision, dimension(:), pointer ::  crom
 !< [alloc]
 allocate(lstelt(ncel)) ! temporary array for cells selection
 allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 call field_get_val_s(icrom, crom)
 imodif = 1
 !< [alloc]
@@ -127,9 +132,9 @@ if ( isuite.eq.0 ) then
 ! --- Velocity components
 
   do iel = 1, ncel
-    rtp(iel,iu) = 0.d0
-    rtp(iel,iv) = 0.d0
-    rtp(iel,iw) = 0.d0
+    vel(1,iel) = 0.d0
+    vel(2,iel) = 0.d0
+    vel(3,iel) = 0.d0
   enddo
 
 

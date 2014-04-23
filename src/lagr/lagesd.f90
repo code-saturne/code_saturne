@@ -93,6 +93,7 @@ use numvar
 use cstphy
 use cstnum
 use optcal
+use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -110,7 +111,7 @@ implicit none
 integer          ifac   , ip
 integer          nbpmax
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision taup(nbpmax)
 double precision piil(nbpmax,3)
@@ -152,8 +153,12 @@ double precision iner_tor,  cst_1,  cst_4, adh_tor(3),vpart0(3)
 double precision kk, kkk
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:,:), pointer :: vela
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 0.  Memory management and Initialization
@@ -185,7 +190,7 @@ endif
 romf = cromf(iel)
 visccf = propce(iel,ipproc(iviscl)) / romf
 
-norm=sqrt(rtpa(iel,iu)**2 + rtpa(iel,iv)**2 + rtpa(iel,iw)**2)
+norm=sqrt(vela(1,iel)**2 + vela(2,iel)**2 + vela(3,iel)**2)
 
 ! Velocity norm w.r.t y+
 if (tepa(ip,jryplu).le.5.d0) then
@@ -196,9 +201,9 @@ else if (tepa(ip,jryplu).gt.30.d0.and.tepa(ip,jryplu).lt.100.d0) then
    norm_vit = (2.5d0 * log(tepa(ip,jryplu)) + 5.5d0) * ustar
 endif
 
-vit(1) = norm_vit * rtpa(iel,iu) / norm
-vit(2) = norm_vit * rtpa(iel,iv) / norm
-vit(3) = norm_vit * rtpa(iel,iw) / norm
+vit(1) = norm_vit * vela(1,iel) / norm
+vit(2) = norm_vit * vela(2,iel) / norm
+vit(3) = norm_vit * vela(3,iel) / norm
 
 ! Turbulent kinetic energy and dissipation w.r.t y+
 if (tepa(ip,jryplu).le.5.d0) then
@@ -270,8 +275,8 @@ call  lagprj                                                        &
 call  lagprj                                                        &
 !===========
     ( isens                 ,                                       &
-      rtpa(iel,iu)   , rtpa(iel,iv)   , rtpa(iel,iw)   ,            &
-      vflui(1)       , vflui1(2)      , vflui1(3)       ,           &
+      vela(1,iel)    , vela(2,iel)    , vela(3,iel)    ,            &
+      vflui(1)       , vflui1(2)      , vflui1(3)      ,            &
       dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
       dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
       dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
@@ -691,11 +696,12 @@ call lagprj                                                       &
 ! 5. Computation of the new particle position
 !===============================================================================
 
-   ettp(ip,jxp)=ettp(ip,jxp)+depg(1)
-   ettp(ip,jyp)=ettp(ip,jyp)+depg(2)
-   ettp(ip,jzp)=ettp(ip,jzp)+depg(3)
+   ettp(ip,jxp) = ettp(ip,jxp) + depg(1)
+   ettp(ip,jyp) = ettp(ip,jyp) + depg(2)
+   ettp(ip,jzp) = ettp(ip,jzp) + depg(3)
 
 
 !===============================================================================
 
-end subroutine
+return
+end subroutine lagesd

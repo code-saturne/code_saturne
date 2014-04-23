@@ -90,6 +90,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use entsor
 use parall
 use period
@@ -111,7 +112,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
@@ -132,17 +133,22 @@ double precision gradi, pondj, flumab
 
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: grad
+
 double precision, dimension(:), pointer :: bmasfl
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 
-!===============================================================================
-! 1.  Translation of the coupling to boundary conditions
-!===============================================================================
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 ! Pointer to the boundary mass flux
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
+
+!===============================================================================
+! 1.  Translation of the coupling to boundary conditions
+!===============================================================================
 
 ! Allocate a temporary array for gradient computation
 allocate(grad(3,ncelet))
@@ -237,7 +243,7 @@ do ivar = 1, nvcp
 
         ! -- CENTERED
 
-        xip =   rtp(iel,ivar)                &
+        xip =   vel(isou,iel)                &
               + (  gradv(1,isou,iel)*xiip    &
                  + gradv(2,isou,iel)*yiip    &
                  + gradv(3,isou,iel)*ziip)
@@ -350,7 +356,7 @@ do ivar = 1, nvcp
 
         isou = ivar - iu + 1
 
-        xip =   rtp(iel,ivar)           &
+        xip =   vel(isou,iel)           &
               + gradv(1,isou,iel)*xiip  &
               + gradv(2,isou,iel)*yiip  &
               + gradv(3,isou,iel)*ziip
@@ -418,4 +424,4 @@ deallocate(grad)
 !----
 
 return
-end subroutine
+end subroutine csc2cl

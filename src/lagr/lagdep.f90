@@ -85,6 +85,7 @@ use numvar
 use cstphy
 use cstnum
 use optcal
+use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -103,7 +104,7 @@ implicit none
 
 integer          nbpmax
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
@@ -133,8 +134,12 @@ double precision ustar, visccf,depint
 double precision vislen(nfabor)
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:,:), pointer :: vela
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 1.  Initialization
@@ -218,9 +223,9 @@ endif
          do id = 1,3
 
             i0 = id - 1
-            if (id.eq.1) vitf = rtpa(iel,iu)
-            if (id.eq.2) vitf = rtpa(iel,iv)
-            if (id.eq.3) vitf = rtpa(iel,iw)
+            if (id.eq.1) vitf = vela(1,iel)
+            if (id.eq.2) vitf = vela(2,iel)
+            if (id.eq.3) vitf = vela(3,iel)
 
             tci = piil(ip,id) * tlag(ip,id) + vitf
 

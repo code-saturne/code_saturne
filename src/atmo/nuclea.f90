@@ -43,7 +43,8 @@ subroutine nuclea &
 !   nom     !type!mode!                  role                              !
 !___________!____!____!____________________________________________________!
 !  nc       ! tr ! m  ! scalaire 'nombre de gouttes'  en 1/cm**3           !
-!  w        ! tr ! d  ! scalaire w(composante verticale du vent) en m/s    !
+!  w        ! tr ! d  ! vitesse du vent en m/s (seulement la 3eme
+!           !    !    ! composante est utilisee)
 !  rom      ! tr ! d  ! masse volumique de l'air en kg/m**3                !
 !  tempc    ! tr ! d  ! scalaire temperature en degre celsius              !
 !  qldia    ! tr ! d  ! scalaire fraction massique d'eau liquide en kg/kg  !
@@ -79,7 +80,7 @@ implicit none
 
 ! Arguments
 
-double precision nc(ncelet),w(ncelet),qldia(ncelet)
+double precision nc(ncelet),w(3,ncelet),qldia(ncelet)
 double precision tempc(ncelet),rom(ncelet),pphy(ncelet)
 double precision refrad(ncelet)
 
@@ -145,7 +146,7 @@ do iel = 1, ncel
     ! si W > 0 or Refrad < 0.
     ! si ce nombre est superieur a nc, on ajoute la difference.
 
-    if (w(iel).gt.0.d0) then
+    if (w(3,iel).gt.0.d0) then
 
       tempk = tempc(iel) + tkelvi
       aa1   = 0.622*clatev*9.81/(rair*cp*tempk**2) - 9.81/(rair*tempk)
@@ -163,7 +164,7 @@ do iel = 1, ncel
 
       if (modnuc.eq.1) then
 
-        nuc = (constc)**(2./(constk+2.)) * ( 0.01 * (aa1*w(iel)                 &
+        nuc = (constc)**(2./(constk+2.)) * ( 0.01 * (aa1*w(3,iel)                 &
              + aa4*refrad(iel))**(3./2.)                                        &
              / (2.*pi*rhoeau*aa2*aa3**(3.d0/2.d0)*constk*fbeta))                &
              **(constk/(constk+2.d0))
@@ -181,7 +182,7 @@ do iel = 1, ncel
           tmpsur = sursat
           yy     = hypgeo(constmu,constk/2.d0,constk/2.d0 + 3.d0/2.d0,          &
                  - constbeta*sursat**2 )
-          sursat = ((0.01 * (aa1*w(iel) + aa4*refrad(iel))                      &
+          sursat = ((0.01 * (aa1*w(3,iel) + aa4*refrad(iel))                      &
                **(3.d0/2.d0) / (2.d0*constk*constc*pi*rhoeau                    &
                *aa2*fbeta*aa3**(3.d0/2.d0)) )/yy )                              &
                **(1.d0/(constk + 2.d0))

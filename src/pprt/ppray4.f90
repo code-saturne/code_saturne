@@ -82,6 +82,7 @@ subroutine ppray4 &
 use paramx
 use numvar
 use entsor
+use dimens, only: nvar
 use optcal
 use cstphy
 use cstnum
@@ -105,7 +106,7 @@ integer          mode
 
 integer          itypfb(nfabor)
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 double precision tempk(ncelet)

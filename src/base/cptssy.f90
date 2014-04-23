@@ -57,6 +57,7 @@ subroutine cptssy &
 
 use paramx
 use numvar
+use dimens, only: nvar
 use entsor
 use cstphy
 use cstnum
@@ -71,7 +72,7 @@ implicit none
 
 integer          iscal
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables

@@ -86,6 +86,7 @@ use numvar
 use cstphy
 use cstnum
 use optcal
+use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -104,7 +105,7 @@ integer          nbpmax , nvp , nvp1 , nvep , nivep
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)

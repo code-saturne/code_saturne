@@ -74,7 +74,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 
@@ -83,8 +83,11 @@ integer          ivar  , iscal
 integer          iel
 integer          iclip , iok   , ii
 integer          iiptot
-integer          imodif
-integer          kscmin, kscmax, keyvar, iflid, n_fields
+integer          ibormo(nbmomx), imodif
+integer          kscmin, kscmax, keyvar, n_fields
+integer          f_id, f_id_prv, c_id, f_dim
+
+logical          interleaved
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
@@ -97,6 +100,9 @@ double precision scmaxp, scminp
 
 double precision rvoid(1)
 double precision, allocatable, dimension(:) :: w1, w2
+
+double precision, dimension(:), pointer :: field_s_v
+double precision, dimension(:,:), pointer :: field_v_v
 
 !===============================================================================
 
@@ -510,9 +516,9 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
     if(iscavr(ii).le.0.or.iscavr(ii).gt.nscal) then
 
       ! Get the min clipping
-      iflid = ivarfl(isca(ii))
-      call field_get_key_double(iflid, kscmin, scminp)
-      call field_get_key_double(iflid, kscmax, scmaxp)
+      f_id = ivarfl(isca(ii))
+      call field_get_key_double(f_id, kscmin, scminp)
+      call field_get_key_double(f_id, kscmax, scmaxp)
 
       if (scminp.le.scmaxp) then
         ivar = isca(ii)
@@ -553,9 +559,9 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
     if(iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
 
       ! Get the min clipping
-      iflid = ivarfl(isca(ii))
-      call field_get_key_double(iflid, kscmin, scminp)
-      call field_get_key_double(iflid, kscmax, scmaxp)
+      f_id = ivarfl(isca(ii))
+      call field_get_key_double(f_id, kscmin, scminp)
+      call field_get_key_double(f_id, kscmax, scmaxp)
 
 
       if (scminp.le.scmaxp) then
@@ -627,22 +633,49 @@ endif
 write(nfecra,2000)
 
 !     Inconnues de calcul : on affiche les bornes
-do iflid = 0, n_fields-1
-  call field_get_key_int(iflid, keyvar, ivar)
-  if (ivar.lt.0) cycle
-  valmax = -grand
-  valmin =  grand
-  do iel = 1, ncel
-    valmax = max(valmax,rtp(iel,ivar))
-    valmin = min(valmin,rtp(iel,ivar))
-  enddo
+f_id = -1
+c_id = 1
+
+do ivar = 1, nvar
+  f_id_prv = f_id
+  f_id = ivarfl(ivar)
+  if (f_id.eq.f_id_prv) then
+    c_id = c_id + 1
+  else
+    c_id = 1
+  endif
+
+  call field_get_dim(f_id, f_dim, interleaved)
+
+  if (f_dim.gt.1) then
+    call field_get_val_v(f_id, field_v_v)
+  else if (f_dim.eq.1) then
+    call field_get_val_s(f_id, field_s_v)
+  endif
+
+  if (f_dim.gt.1) then
+    valmax = -grand
+    valmin =  grand
+    do iel = 1, ncel
+      valmax = max(valmax, field_v_v(c_id,iel))
+      valmin = min(valmin, field_v_v(c_id,iel))
+    enddo
+  else
+    valmax = -grand
+    valmin =  grand
+    do iel = 1, ncel
+      valmax = max(valmax, field_s_v(iel))
+      valmin = min(valmin, field_s_v(iel))
+    enddo
+  endif
+
   if (irangp.ge.0) then
     call parmax (valmax)
     !==========
     call parmin (valmin)
     !==========
   endif
-  call field_get_label(iflid, chaine)
+  call field_get_label(f_id, chaine)
   write(nfecra,2010)chaine(1:16),valmin,valmax
 enddo
 write(nfecra,2020)

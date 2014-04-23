@@ -55,7 +55,7 @@ subroutine divrit &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
+use dimens, only: ndimfb, nvar
 use numvar
 use entsor
 use optcal
@@ -74,7 +74,7 @@ implicit none
 
 integer          nscal
 integer          iscal
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision xcpp(ncelet)
 double precision smbrs(ncelet)

@@ -121,7 +121,7 @@ integer          ntersl , nvlsta , nvisbr
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 
-double precision dt(ncelet) , rtpa(ncelet,*)
+double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 

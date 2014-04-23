@@ -63,6 +63,7 @@ subroutine d3pint &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use entsor
 use cstnum
@@ -82,7 +83,7 @@ implicit none
 integer          indpdf(ncelet)
 double precision dirmin(ncelet), dirmax(ncelet)
 double precision fdeb(ncelet), ffin(ncelet), hrec(ncelet), tpdf(ncelet)
-double precision rtp(ncelet,*), propce(ncelet,*), w1(ncelet)
+double precision rtp(ncelet,nflown:nvar), propce(ncelet,*), w1(ncelet)
 
 
 ! Local variables

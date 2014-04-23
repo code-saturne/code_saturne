@@ -151,6 +151,7 @@ double precision, dimension(:), pointer :: brom, crom, crom_prev
 double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpav
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 ! Interfaces
@@ -190,6 +191,9 @@ interface
 end interface
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -305,7 +309,9 @@ endif
 
 if (irangp.ge.0 .or. iperio.eq.1) then
 
-  do ivar = 1, nvar
+  call synvin(vel)
+
+  do ivar = nflown, nvar
     call synsce (rtp(1,ivar))
     !==========
   enddo
@@ -318,7 +324,7 @@ if (iperio.eq.1) then
 
   !  -- Vitesse
 
-  call perrve (rtp(1,iu), rtp(1,iv), rtp(1,iw))
+  call pervec (vel)
   !==========
 
   !  -- Reynolds stress tensor
@@ -386,9 +392,7 @@ endif
 !       tableaux du pas de temps precedent
 
 do ivar = 1, nvar
-  do iel = 1, ncelet
-    rtpa (iel,ivar) = rtp (iel,ivar)
-  enddo
+  call field_current_to_previous(ivarfl(ivar))
 enddo
 
 ! If required, the density at time step n-1 is updated

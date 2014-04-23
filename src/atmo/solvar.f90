@@ -65,6 +65,7 @@ use paramx
 use dimens
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -76,6 +77,7 @@ use ppincl
 use atincl
 use atsoil
 use mesh
+use field
 
 
 implicit none
@@ -91,7 +93,7 @@ parameter ( idim2 = 26 )
 
 
 !double precision rcodcl(nfabor,nvar,3),velipb(nfabor,3)
-double precision rcodcl(nfabor,nvarcl,3),rtp(ncelet,*)
+double precision rcodcl(nfabor,nvarcl,3),rtp(ncelet,nflown:nvar)
 
 double precision temp(ncelet)
 double precision qv(ncelet)
@@ -121,8 +123,12 @@ double precision ray2,chas2,chal2,rapp2,secmem
 double precision w1min,w1max,w2min,w2max
 double precision r1,r2,tseuil,dum
 
-!
+double precision, dimension(:,:), pointer :: vel
+
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !     ==========================
 !     1) initialisations locales
@@ -192,9 +198,9 @@ do isol = 1, nfmodsol
 
   ! ---> VITESSE TANGENTIELLE RELATIVE
 
-  upx = rtp(ifabor(ifac),iu)
-  upy = rtp(ifabor(ifac),iv)
-  upz = rtp(ifabor(ifac),iw)
+  upx = vel(1,ifabor(ifac))
+  upy = vel(2,ifabor(ifac))
+  upz = vel(3,ifabor(ifac))
 
   usn = upx*rnx + upy*rny + upz*rnz
   tx  = upx - usn*rnx

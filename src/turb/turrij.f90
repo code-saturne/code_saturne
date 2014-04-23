@@ -95,7 +95,7 @@ integer          icetsm(ncesmp)
 
 integer, dimension(ncesmp,nvar), target :: itypsm
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6)
 
@@ -114,8 +114,6 @@ integer          iitsla
 integer          iprev
 double precision epsrgp, climgp, extrap
 double precision rhothe
-
-logical          ilved
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
@@ -167,26 +165,11 @@ endif
 ! 2.1 Compute the velocity gradient
 !===============================================================================
 
-iccocg = 1
-inc    = 1
+inc = 1
+iprev = 1
 
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(iu)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
-
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved  ,                                                       &
-  rtpa(1,iu) ,  coefau , coefbu,                                 &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 !===============================================================================
 ! 2.2 Compute the production term for Rij LRR (iturb =30)

@@ -125,6 +125,7 @@ subroutine cplph1 &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -150,7 +151,7 @@ double precision f3m(ncelet), f4m(ncelet)
 double precision f3p2m(ncelet), f4p2m(ncelet)
 double precision enth(ncelet), rom1(ncelet)
 
-double precision rtp(ncelet,*), propce(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 

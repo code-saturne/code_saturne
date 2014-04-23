@@ -53,6 +53,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use parall
@@ -73,7 +74,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 
 ! Local Variables
 

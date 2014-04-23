@@ -95,7 +95,7 @@ integer          ncelps , nfbrps
 
 integer          lstcel(ncelps), lstfbr(nfbrps)
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision tracel(ncelps*3)
 double precision trafbr(nfbrps*3)
@@ -125,6 +125,8 @@ double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:,:), pointer :: vel
+
 double precision, allocatable, dimension(:,:,:) :: gradv
 
 !===============================================================================
@@ -138,6 +140,9 @@ ipp = 0
 !===============================================================================
 
 if (numtyp .eq. -1) then
+
+  ! Map field arrays
+  call field_get_val_v(ivarfl(iu), vel)
 
   !  1.1.2 Automatic additional variables
   !  ------------------------------------
@@ -205,13 +210,13 @@ if (numtyp .eq. -1) then
 
       iel = lstcel(iloc)
 
-      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu) &
+      tracel(1 + (iloc-1)*idimt) = vel(1,iel) &
           + (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))
 
-      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv) &
+      tracel(2 + (iloc-1)*idimt) = vel(2,iel) &
           + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))
 
-      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw) &
+      tracel(3 + (iloc-1)*idimt) = vel(3,iel) &
           + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
 
     enddo
@@ -260,19 +265,19 @@ if (numtyp .eq. -1) then
 
       if (irotce(iel).ne.0) then
 
-        tracel(1 + (iloc-1)*idimt) = rtp(iel,iu) &
+        tracel(1 + (iloc-1)*idimt) = vel(1,iel) &
             - (rotax(2)*xyzcen(3,iel) - rotax(3)*xyzcen(2,iel))
 
-        tracel(2 + (iloc-1)*idimt) = rtp(iel,iv) &
+        tracel(2 + (iloc-1)*idimt) = vel(2,iel) &
             - (rotax(3)*xyzcen(1,iel) - rotax(1)*xyzcen(3,iel))
 
-        tracel(3 + (iloc-1)*idimt) = rtp(iel,iw) &
+        tracel(3 + (iloc-1)*idimt) = vel(3,iel) &
             - (rotax(1)*xyzcen(2,iel) - rotax(2)*xyzcen(1,iel))
 
       else
-        tracel(1 + (iloc-1)*idimt) = rtp(iel,iu)
-        tracel(2 + (iloc-1)*idimt) = rtp(iel,iv)
-        tracel(3 + (iloc-1)*idimt) = rtp(iel,iw)
+        tracel(1 + (iloc-1)*idimt) = vel(1,iel)
+        tracel(2 + (iloc-1)*idimt) = vel(2,iel)
+        tracel(3 + (iloc-1)*idimt) = vel(3,iel)
       endif
 
     enddo
@@ -936,7 +941,6 @@ if (numtyp.eq.-1) then
 
       iprev = 0
       inc = 1
-      iccocg = 1
 
       call field_gradient_vector(ivarfl(ivar), iprev, imrgra, inc,     &
                                  gradv)
@@ -945,9 +949,9 @@ if (numtyp.eq.-1) then
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = gradv(3, 2, iel) - gradv(2, 3, iel)
-        tracel(2 + (iloc-1)*idimt) = gradv(1, 3, iel) - gradv(3, 1, iel)
-        tracel(3 + (iloc-1)*idimt) = gradv(2, 1, iel) - gradv(1, 2, iel)
+        tracel(1 + (iloc-1)*idimt) = gradv(2,3,iel) - gradv(3,2,iel)
+        tracel(2 + (iloc-1)*idimt) = gradv(3,1,iel) - gradv(1,3,iel)
+        tracel(3 + (iloc-1)*idimt) = gradv(1,2,iel) - gradv(2,1,iel)
       enddo
 
       idimt  = 3

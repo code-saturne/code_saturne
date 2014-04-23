@@ -433,7 +433,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 

@@ -70,7 +70,7 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel
-double precision rtp(ncelet,nvar)
+double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 

@@ -80,6 +80,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use parall
@@ -98,7 +99,7 @@ integer          nscal
 integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables

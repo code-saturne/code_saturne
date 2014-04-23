@@ -106,6 +106,7 @@ subroutine ctphyv &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstnum
 use cstphy
 use entsor
@@ -120,7 +121,7 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

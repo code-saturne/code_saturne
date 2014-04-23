@@ -60,10 +60,12 @@ subroutine visv2f &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use entsor
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -71,20 +73,18 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel, iccocg, inc
-integer          ipcvis, ipcvst
+integer          iel, inc
+integer          ipcvis, ipcvst, iprev
 
 double precision s11, s22, s33
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision xk, xe, xrom, xnu
 double precision ttke, ttmin, ttlim, tt
-
-logical          ilved
 
 double precision, allocatable, dimension(:) :: s2
 double precision, dimension(:,:,:), allocatable :: gradv
@@ -117,20 +117,11 @@ call field_get_val_s(icrom, crom)
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3,3,ncelet))
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu  , imrgra , inc    ,                               &
-  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  epsrgr(iu) , climgr(iu) ,                             &
-  ilved  ,                                              &
-  rtpa(1,iu) ,  coefau , coefbu,                        &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 do iel = 1, ncel
 

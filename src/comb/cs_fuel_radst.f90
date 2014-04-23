@@ -66,6 +66,7 @@ subroutine cs_fuel_radst &
 use paramx
 use cstnum
 use cstphy
+use dimens, only: nvar
 use entsor
 use numvar
 use ppppar
@@ -84,7 +85,7 @@ integer          ivar , ncelet, ncel
 double precision volume(ncelet)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

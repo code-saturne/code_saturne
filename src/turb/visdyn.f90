@@ -91,6 +91,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -104,15 +105,15 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet)
 
 ! Local variables
 
-integer          ii, iel, iccocg, inc, isou, jsou
-integer          ipcvst
+integer          ii, iel, inc, isou, jsou
+integer          ipcvst, iprev
 integer          iclipc
 
 double precision coef, radeux, deux, delta, deltaf
@@ -125,23 +126,25 @@ double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
 double precision smagma, smagmn, smagmy
 
-logical          ilved
-
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
-double precision, allocatable, dimension(:) :: w10
+double precision, allocatable, dimension(:) :: w10, w0
 double precision, allocatable, dimension(:,:) :: xmij
 double precision, dimension(:,:,:), allocatable :: gradv, gradvf
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Map field arrays
+call field_get_val_prev_v(ivarfl(iu), vel)
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
@@ -150,7 +153,7 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-allocate(w10(ncelet))
+allocate(w10(ncelet), w0(ncelet))
 allocate(xmij(ncelet,6))
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
@@ -177,22 +180,11 @@ xsmgmx = smagmx
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet), gradvf(ncelet,3,3))
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-! Compute the velocity gradient
-
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu  , imrgra , inc    ,                               &
-  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  epsrgr(iu) , climgr(iu) ,                             &
-  ilved  ,                                              &
-  rtpa(1,iu) ,  coefau , coefbu,                        &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 ! Filter the velocity gradient on the extended neighborhood
 
@@ -301,66 +293,75 @@ enddo
 
 ! U**2
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iu)*rtp(iel,iu)
+  w0(iel) = vel(1,iel)*vel(1,iel)
 enddo
 call cfiltr  &
 !==========
- ( w9     , w1     , w7     , w8     )
+ ( w0     , w1     , w7     , w8     )
 
 ! V**2
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iv)*rtp(iel,iv)
+  w0(iel) = vel(2,iel)*vel(2,iel)
 enddo
 call cfiltr &
 !==========
- ( w9     , w2     , w7     , w8     )
+ ( w0     , w2     , w7     , w8     )
 
 ! W**2
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iw)*rtp(iel,iw)
+  w0(iel) = vel(3,iel)*vel(3,iel)
 enddo
 call cfiltr &
 !==========
- ( w9     , w3     , w7     , w8     )
+ ( w0     , w3     , w7     , w8     )
 
 ! UV
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iu)*rtp(iel,iv)
+  w0(iel) = vel(1,iel)*vel(2,iel)
 enddo
 call cfiltr &
 !==========
- ( w9     , w4     , w7     , w8     )
+ ( w0     , w4     , w7     , w8     )
 
 ! UW
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iu)*rtp(iel,iw)
+  w0(iel) = vel(1,iel)*vel(3,iel)
 enddo
 call cfiltr &
 !==========
- ( w9     , w5     , w7     , w8     )
+ ( w0     , w5     , w7     , w8     )
 
 ! VW
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iv)*rtp(iel,iw)
+  w0(iel) = vel(2,iel)*vel(3,iel)
 enddo
 call cfiltr &
 !==========
- ( w9     , w6     , w7     , w8     )
+ ( w0     , w6     , w7     , w8     )
 
 ! U
+do iel = 1,ncel
+  w0(iel) = vel(1,iel)
+enddo
 call cfiltr &
 !==========
- ( rtp(1,iu)    , w7     , w8     , w9     )
+ ( w0    , w7     , w8     , w9     )
 
 ! V
+do iel = 1,ncel
+  w0(iel) = vel(2,iel)
+enddo
 call cfiltr &
 !==========
- ( rtp(1,iv)    , w8     , w9     , smagor )
+ ( w0    , w8     , w9     , smagor )
 
 ! W
+do iel = 1,ncel
+  w0(iel) = vel(3,iel)
+enddo
 call cfiltr &
 !==========
- ( rtp(1,iw)    , w9     , smagor , w10    )
+ ( w0    , w9     , smagor , w10    )
 
 do iel = 1, ncel
 
@@ -481,7 +482,7 @@ endif
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
-deallocate(w10)
+deallocate(w10, w0)
 deallocate(xmij)
 
 !----

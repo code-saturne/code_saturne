@@ -98,6 +98,7 @@ use cstnum
 use cstphy
 use numvar
 use optcal
+use dimens, only: nvar
 use entsor
 use parall
 use period
@@ -120,7 +121,7 @@ integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          itepa(nbpmax,nivep)
 
-double precision rtpa(ncelet,*) , propce(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar) , propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)

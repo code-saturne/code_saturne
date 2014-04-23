@@ -98,7 +98,7 @@ integer          nvar   , nscal  , ncp
 integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ientha
 
-double precision dt(ncelet), rtpa(ncelet,*)
+double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
 double precision hbord(nfabor),tbord(nfabor)
 double precision cpcst, cp(ncp)
 double precision tppt1d(nfpt1d)

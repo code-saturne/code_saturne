@@ -119,6 +119,7 @@ use cpincl
 use radiat
 use ihmpre
 use mesh
+use field
 
 !===============================================================================
 
@@ -135,14 +136,13 @@ integer          itypfb(nfabor) , itrifb(nfabor)
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 
-double precision dt(ncelet) , rtpa(ncelet,*)
+double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
-
 
 integer          iel , ifac , ip , nb , nc, ii, ilayer, ifvu
 integer          iok , n1 , nd
@@ -165,12 +165,17 @@ integer, allocatable, dimension(:) :: ninjrg
 integer, allocatable, dimension(:,:,:) :: iusloc
 integer, allocatable, dimension(:) :: ilftot
 
+double precision, dimension(:,:), pointer :: vela
+
 double precision unif(1), offset, rapsurf
 integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
 integer          ipass
 data             ipass /0/
 save             ipass
+
 !===============================================================================
+
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
@@ -992,9 +997,9 @@ do ii = 1,nfrtot
 
 !             si vitesse du fluide vu :
         else if (iuslag(nc,nb,ijuvw).eq.-1) then
-          ettp(ip,jup) = rtpa(iel,iu)
-          ettp(ip,jvp) = rtpa(iel,iv)
-          ettp(ip,jwp) = rtpa(iel,iw)
+          ettp(ip,jup) = vela(1,iel)
+          ettp(ip,jvp) = vela(2,iel)
+          ettp(ip,jwp) = vela(3,iel)
 
 !             si profil de vitesse impose :
         else if (iuslag(nc,nb,ijuvw).eq.2) then
@@ -1024,9 +1029,9 @@ do ii = 1,nfrtot
 
 !-->Vitesse du fluide vu
 
-        ettp(ip,juf) = rtpa(iel,iu)
-        ettp(ip,jvf) = rtpa(iel,iv)
-        ettp(ip,jwf) = rtpa(iel,iw)
+        ettp(ip,juf) = vela(1,iel)
+        ettp(ip,jvf) = vela(2,iel)
+        ettp(ip,jwf) = vela(3,iel)
 
 !--> TEMPS DE SEJOUR
 
@@ -2528,5 +2533,4 @@ endif
 !----
 
 return
-
-end subroutine
+end subroutine lagent

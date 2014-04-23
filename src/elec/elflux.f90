@@ -487,7 +487,6 @@ if (iappel.eq.2) then
 
     iprev = 0
     inc = 1
-    iccocg = 1
 
     call field_gradient_vector(ivarfl(ivar), iprev, imrgra, inc,     &
                                gradv)
@@ -495,9 +494,9 @@ if (iappel.eq.2) then
     ! B = rot A
 
     do iel = 1, ncel
-      w1(iel)=  gradv(3, 2, iel) - gradv(2, 3, iel)
-      w2(iel)=  gradv(1, 3, iel) - gradv(3, 1, iel)
-      w3(iel)=  gradv(2, 1, iel) - gradv(1, 2, iel)
+      w1(iel)=  gradv(2,3,iel) - gradv(3,2,iel)
+      w2(iel)=  gradv(3,1,iel) - gradv(1,3,iel)
+      w3(iel)=  gradv(1,2,iel) - gradv(2,1,iel)
     enddo
 
 !   4.2 CAS D'ARC AXISYMETRIQUE : IELARC = 1

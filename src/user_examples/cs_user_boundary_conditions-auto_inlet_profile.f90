@@ -121,7 +121,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
@@ -136,7 +136,9 @@ double precision uent, vent, went, xustar2, xdh, d2s3, rhomoy
 double precision acc(2), fmprsc, fmul, uref2, vnrm
 
 integer, allocatable, dimension(:) :: lstelt, mrkcel
+
 double precision, dimension(:), pointer :: brom
+double precision, dimension(:,:), pointer :: vel
 !< [loc_var_dec]
 
 !===============================================================================
@@ -146,6 +148,8 @@ double precision, dimension(:), pointer :: brom
 !< [init]
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 call field_get_val_s(ibrom, brom)
 
 d2s3 = 2.d0/3.d0
@@ -318,7 +322,7 @@ else
     ifac = lstelt(ilelt)
     iel = ifabor(ifac)
 
-    vnrm = sqrt(rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2)
+    vnrm = sqrt(vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2)
     acc(1) = acc(1) + vnrm*surfbn(ifac)
     acc(2) = acc(2) + surfbn(ifac)
 
@@ -339,7 +343,7 @@ else
 
     itypfb(ifac) = ientre
 
-    vnrm = sqrt(rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2)
+    vnrm = sqrt(vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2)
 
     rcodcl(ifac,iu,1) = - fmul * vnrm * surfbo(1,ifac) / surfbn(ifac)
     rcodcl(ifac,iv,1) = - fmul * vnrm * surfbo(2,ifac) / surfbn(ifac)

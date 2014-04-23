@@ -107,7 +107,7 @@ integer          nvar
 integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
@@ -135,8 +135,13 @@ double precision, allocatable, dimension(:,:) :: bval
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: coefbp
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
@@ -333,7 +338,7 @@ do ifac = 1, nfabor
              *rcodcl(ifac,itk,1)
       endif
       rcodcl(ifac,ien,1) = rcodcl(ifac,ien,1)             &
-           + 0.5d0*(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)          &
+           + 0.5d0*(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)          &
            + w5(iel)
 !                   ^epsilon sup (cf USCFTH)
 
@@ -505,9 +510,9 @@ do ifac = 1, nfabor
 
 !     Valeurs de rho u E
     brom(ifac) = crom(iel)
-    rcodcl(ifac,iu ,1) = rtp(iel,iu)
-    rcodcl(ifac,iv ,1) = rtp(iel,iv)
-    rcodcl(ifac,iw ,1) = rtp(iel,iw)
+    rcodcl(ifac,iu ,1) = vel(1,iel)
+    rcodcl(ifac,iv ,1) = vel(2,iel)
+    rcodcl(ifac,iw ,1) = vel(3,iel)
     rcodcl(ifac,ien,1) = rtp(iel,ien)
 
     do ivar = 1, nvar
@@ -516,7 +521,7 @@ do ifac = 1, nfabor
 
     size = 1
     call cf_thermo_pt_from_de(brom(ifac:ifac), bval(ifac,ien), bval(ifac,ipr),  &
-                              bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),&
+                              bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
                               bval(ifac,iw), size)
 
 !               flux de masse et type de conditions aux limites :

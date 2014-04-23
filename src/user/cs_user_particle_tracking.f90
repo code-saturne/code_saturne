@@ -25,8 +25,7 @@
 subroutine uslaed &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
    dt     , rtp    , propce ,                                     &
@@ -76,8 +75,6 @@ subroutine uslaed &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
 ! nvp              ! i  ! <-- ! number of particle variables                   !
 ! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
@@ -128,6 +125,7 @@ use numvar
 use cstphy
 use cstnum
 use optcal
+use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -139,13 +137,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)  , ibord(nbpmax)
 
-double precision dt(ncelet) , rtp(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -387,7 +384,7 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -578,7 +575,7 @@ integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          injfac(nbpmax)
 
-double precision dt(ncelet) , rtpa(ncelet,*)
+double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
@@ -855,7 +852,7 @@ double precision xxpart , yypart , zzpart
 double precision tvpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 
-double precision dt(ncelet) , rtpa(ncelet,*)
+double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
@@ -1064,7 +1061,7 @@ integer          ntersl , nvlsta , nvisbr
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet), rtpa(ncelet,*)
+double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*) , croule(ncelet)
@@ -1251,7 +1248,7 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 
@@ -1690,7 +1687,7 @@ integer          itepa(nbpmax,nivep)
 double precision rep    , uvwr   , romf   , romp   , xnul
 double precision xcp    , xrkl   , tauc
 
-double precision dt(ncelet) , rtp(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -1892,7 +1889,7 @@ integer          itepa(nbpmax,nivep)
 
 double precision rep    , uvwr   , romf   , romp   , xnul  , taup
 
-double precision dt(ncelet) , rtp(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)

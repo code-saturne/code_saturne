@@ -59,6 +59,7 @@ subroutine alemav &
 use paramx
 use numvar
 use optcal
+use dimens
 use entsor
 use cstphy
 use cstnum
@@ -79,7 +80,7 @@ integer          itrale
 
 integer          impale(nnod), ialtyb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision depale(3,nnod), xyzno0(3,nnod)
 
 ! Local variables

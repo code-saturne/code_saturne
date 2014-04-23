@@ -78,15 +78,18 @@ use field
 implicit none
 
 integer          nvar, ncelet, ncel
-double precision rtpa(ncelet,nvar), rtp(ncelet,nvar)
+double precision rtpa(ncelet,nflown:nvar), rtp(ncelet,nflown:nvar)
 double precision dt(ncelet), volume(ncelet)
 
 ! Local variables
 
 integer          ic, icel, ivar, ipp, f_id, f_id_prv, c_id, f_dim
-integer          kval
+integer          ippf, kval
 logical          interleaved
 character*200    chain, chainc
+
+double precision, dimension(:), pointer :: field_s_v, field_s_vp
+double precision, dimension(:,:), pointer :: field_v_v, field_v_vp
 
 integer, save :: keypp = -1
 
@@ -96,24 +99,57 @@ if (keypp.lt.0) then
   call field_get_key_id("post_id", keypp)
 endif
 
-!==================================================================
-! 1. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)
-!==================================================================
+f_id = -1
+c_id = 1
 
 do ivar = 1, nvar
   if (ivar.eq.ipr.and.ippmod(icompf).lt.0) cycle
+
+  f_id_prv = f_id
   f_id = ivarfl(ivar)
-  call field_get_key_int(f_id, keylog, kval)
-  if (kval.gt.0) then
-    call field_get_key_int(f_id, keypp, ipp)
-    dervar(ipp) = 0
-    do icel = 1, ncel
-      dervar(ipp) = dervar(ipp)                                 &
-              + (rtp(icel,ivar)-rtpa(icel,ivar))**2             &
-              *  volume(icel)/dt(icel)
-    enddo
-    if (irangp.ge.0) call parsom (dervar(ipp))
-    dervar(ipp) = dervar(ipp) / voltot
+  if (f_id.eq.f_id_prv) then
+    c_id = c_id + 1
+  else
+    c_id = 1
+  endif
+  call field_get_key_int(f_id, keypp, ippf)
+  if (ippf.le.1) cycle
+
+  call field_get_dim(f_id, f_dim, interleaved)
+  if (f_dim.gt.1) then
+    call field_get_val_v(f_id, field_v_v)
+    call field_get_val_prev_v(f_id, field_v_vp)
+  else if (f_dim.eq.1) then
+    call field_get_val_s(f_id, field_s_v)
+    call field_get_val_prev_s(f_id, field_s_vp)
+  endif
+
+  if (f_dim.gt.1) then
+    call field_get_key_int(f_id, keylog, kval)
+    if (kval.gt.0) then
+      call field_get_key_int(f_id, keypp, ipp)
+      dervar(ipp) = 0.d0
+      do icel = 1, ncel
+        dervar(ipp) = dervar(ipp)                                            &
+                + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2          &
+                *  volume(icel)/dt(icel)
+      enddo
+      if (irangp.ge.0) call parsom (dervar(ipp))
+      dervar(ipp) = dervar(ipp) / voltot
+    endif
+  else if (f_dim.eq.1) then
+    call field_get_key_int(f_id, keylog, kval)
+    if (kval.gt.0) then
+      call field_get_key_int(f_id, keypp, ipp)
+      dervar(ipp) = 0.d0
+      do icel = 1, ncel
+        dervar(ipp) = dervar(ipp)                                            &
+                + (field_s_v(icel) - field_s_vp(icel))**2                    &
+                *  volume(icel)/dt(icel)
+      enddo
+      if (irangp.ge.0) call parsom (dervar(ipp))
+      dervar(ipp) = dervar(ipp) / voltot
+    endif
   endif
 enddo
 

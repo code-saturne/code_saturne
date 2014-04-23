@@ -79,6 +79,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstphy
 use parall
 use period
@@ -95,7 +96,7 @@ integer          iscal  , inbcou
 
 integer          lcecpl(ncecpl)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision hvol(ncecpl)
 
@@ -108,6 +109,8 @@ double precision cp, mu, lambda, rho, uloc, L, sexcvo
 double precision nu, re, pr
 double precision hcorr, hvol_cst, lambda_over_cp
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:,:), pointer :: vel
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -122,6 +125,9 @@ if(1.eq.1) return
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 ! --- Index number of the cell properties the propce array
 call field_get_val_s(icrom, crom)
@@ -231,7 +237,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
 
    ! Compute a local Reynolds number
 
-   uloc = sqrt(rtp(iel, iu)**2 + rtp(iel, iv)**2 + rtp(iel, iw)**2)
+   uloc = sqrt(vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2)
    re = max(uloc*rho*L/mu, 1.d0) ! To avoid division by zero
 
    ! Compute Nusselt number thanks to Colburn correlation

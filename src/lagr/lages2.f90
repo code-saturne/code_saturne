@@ -103,6 +103,7 @@ use numvar
 use cstphy
 use cstnum
 use optcal
+use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -121,7 +122,7 @@ implicit none
 integer          nbpmax , nvp    , nvep  , nivep
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
-double precision rtp(ncelet,*) , rtpa(ncelet,*)
+double precision rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -151,8 +152,13 @@ double precision grav(3) , rom , vitf
 double precision tbriu
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:,:), pointer :: vel, vela
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 1. INITIALISATIONS
@@ -200,13 +206,13 @@ do id = 1,3
          +grav(id)+fextla(ip,id)       ) * taup(ip)
 
       if (nor.eq.1) then
-        if (id.eq.1) vitf = rtpa(iel,iu)
-        if (id.eq.2) vitf = rtpa(iel,iv)
-        if (id.eq.3) vitf = rtpa(iel,iw)
+        if (id.eq.1) vitf = vela(1,iel)
+        if (id.eq.2) vitf = vela(2,iel)
+        if (id.eq.3) vitf = vela(3,iel)
       else
-        if (id.eq.1) vitf = rtp(iel,iu)
-        if (id.eq.2) vitf = rtp(iel,iv)
-        if (id.eq.3) vitf = rtp(iel,iw)
+        if (id.eq.1) vitf = vel(1,iel)
+        if (id.eq.2) vitf = vel(2,iel)
+        if (id.eq.3) vitf = vel(3,iel)
       endif
       auxl(ip,id+3) = piil(ip,id) * tlag(ip,id) + vitf
 
@@ -449,4 +455,5 @@ endif
 ! FIN
 !----
 
-end subroutine
+return
+end subroutine lages2

@@ -68,6 +68,7 @@ subroutine cs_coal_thfieldconv1 &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -86,7 +87,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision eh(ncelet)   , x2(ncelet)   , rtp(ncelet,*)
+double precision eh(ncelet)   , x2(ncelet)   , rtp(ncelet,nflown:nvar)
 double precision fuel1(ncelet), fuel2(ncelet), fuel3(ncelet)
 double precision fuel4(ncelet), fuel5(ncelet), fuel6(ncelet) , fuel7(ncelet)
 double precision oxyd(ncelet), xiner(ncelet)

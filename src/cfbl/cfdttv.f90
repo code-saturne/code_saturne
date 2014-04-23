@@ -99,7 +99,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
@@ -113,11 +113,14 @@ integer          iconvp, idiffp, isym
 double precision, allocatable, dimension(:) :: viscf
 double precision, allocatable, dimension(:) :: coefbt, cofbft
 double precision, allocatable, dimension(:) :: w1, c2
-double precision, dimension(:,:), allocatable :: vela
 
+double precision, dimension(:,:), pointer :: vela
 double precision, dimension(:), pointer :: crom
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 !===============================================================================
 ! 0.  INITIALIZATION
@@ -129,7 +132,6 @@ allocate(coefbt(nfabor),cofbft(nfabor))
 
 ! Allocate work arrays
 allocate(w1(ncelet))
-allocate(vela(3,ncelet))
 
 call field_get_val_s(icrom, crom)
 
@@ -144,13 +146,6 @@ do ifac = 1, nfac
 enddo
 do ifac = 1, nfabor
   wflmab(ifac) = 0.d0
-enddo
-
-! Interleave velocity values in vela
-do iel = 1, ncelet
-  vela(1,iel) = rtpa(iel,iu)
-  vela(2,iel) = rtpa(iel,iv)
-  vela(3,iel) = rtpa(iel,iw)
 enddo
 
 iterns = 1
@@ -202,7 +197,6 @@ deallocate(viscf)
 deallocate(w1)
 deallocate(c2)
 deallocate(coefbt,cofbft)
-deallocate(vela)
 
 !--------
 ! FORMATS

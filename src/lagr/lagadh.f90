@@ -77,6 +77,7 @@ subroutine lagadh &
 !===============================================================================
 
 use paramx
+use dimens, only: nvar
 use cstphy
 use cstnum
 use lagpar
@@ -98,7 +99,7 @@ integer          nbpmax , nvp    , nvep  , nivep
 integer          itepa(nbpmax,nivep)
 
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
-double precision rtp (ncelet,*)
+double precision rtp (ncelet,nflown:nvar)
 double precision adhesion_energ
 
 ! Local variables

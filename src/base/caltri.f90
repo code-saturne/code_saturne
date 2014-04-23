@@ -368,7 +368,8 @@ if (nfpt1t.eq.0) deallocate(izft1d)
 
 ! Allocate main arrays
 
-allocate(dt(ncelet), rtp(ncelet,nvar), rtpa(ncelet,nvar))
+allocate(dt(ncelet))
+allocate(rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar))
 allocate(propce(ncelet,nproce))
 
 ! Allocate arrays on boundary faces

@@ -79,6 +79,7 @@ subroutine lagres &
 !===============================================================================
 
 use paramx
+use dimens, only: nvar
 use cstphy
 use cstnum
 use lagpar
@@ -98,7 +99,7 @@ integer          itepa(nbpmax,nivep)
 
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision rtp (ncelet,*)
+double precision rtp (ncelet,nflown:nvar)
 double precision parbor(nfabor,nvisbr)
 
 ! Local variables

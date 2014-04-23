@@ -101,7 +101,7 @@ integer          nvar   , nscal
 
 double precision xyzcen(ndim,ncelet)
 double precision cdgfbo(ndim,nfabor)
-double precision dt(ncelet), rtp(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -132,15 +132,17 @@ integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          nbflu , ilecec, iecr
 integer          ngbstr(2)
-integer          ifac, iel, istr
+integer          ifac, iel, istr, isou
 integer          impava, impavx, nfld, iflmas, iflmab
 double precision tmpstr(27)
 
 integer, allocatable, dimension(:) :: mflnum
 double precision, allocatable, dimension(:) :: w1
+double precision, allocatable, dimension(:,:) :: l_velocity
 
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:), pointer :: sval
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 !     A noter :
@@ -405,7 +407,27 @@ endif
 !       mais ca tombe bien, car on ne la verra qu'une seule fois
 !       dans la liste des variables
 
-do ivar = 1, nvar
+! TODO: improve ecrsui for field structure
+call field_get_val_v(ivarfl(iu), vel)
+allocate(l_velocity(ncelet, 3))
+do iel = 1, ncelet
+  do isou = 1, 3
+    l_velocity(iel,isou) = vel(isou,iel)
+  enddo
+enddo
+
+do ivar = 1, 3
+
+  itysup = 1
+  nbval  = 1
+  irtyp  = 2
+  rubriq = nomrtp(ivar)
+  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,l_velocity(1,ivar))
+
+enddo
+deallocate(l_velocity)
+
+do ivar = nflown, nvar
 
   itysup = 1
   nbval  = 1
@@ -414,6 +436,7 @@ do ivar = 1, nvar
   call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,rtp(1,ivar))
 
 enddo
+
 
 do iscal = 1, nscal
   if (ityturt(iscal).eq.2 .or. ityturt(iscal).eq.3) then

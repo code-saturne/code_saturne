@@ -179,8 +179,6 @@ else if (idften(iu).eq.6) then
 endif
 
 allocate(trav(3,ncelet))
-allocate(vela(3,ncelet))
-allocate(vel(3,ncelet))
 
 ! Allocate other arrays, depending on user options
 
@@ -217,6 +215,10 @@ if (ivisse.eq.1) then
   allocate(secvif(nfac),secvib(ndimfb))
 endif
 
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+call field_get_val_prev_v(ivarfl(iu), vela)
+
 ! Map some specific field arrays
 if (idtten.ge.0) then
   call field_get_val_v(idtten, dttens)
@@ -228,17 +230,6 @@ endif
 allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 if (irnpnw.eq.1) allocate(w10(ncelet))
-
-! Interleaved value of vel and vela
-!$omp parallel do
-do iel = 1, ncelet
-  vel (1,iel) = rtp (iel,iu)
-  vel (2,iel) = rtp (iel,iv)
-  vel (3,iel) = rtp (iel,iw)
-  vela(1,iel) = rtpa(iel,iu)
-  vela(2,iel) = rtpa(iel,iv)
-  vela(3,iel) = rtpa(iel,iw)
-enddo
 
 if (iwarni(iu).ge.1) then
   write(nfecra,1000)
@@ -538,22 +529,8 @@ if (iprco.le.0) then
     enddo
   endif
 
-  ! Interleaved values of vel and vela
-
-  !$omp parallel do
-  do iel = 1, ncelet
-    rtp (iel,iu) = vel (1,iel)
-    rtp (iel,iv) = vel (2,iel)
-    rtp (iel,iw) = vel (3,iel)
-    rtpa(iel,iu) = vela(1,iel)
-    rtpa(iel,iv) = vela(2,iel)
-    rtpa(iel,iw) = vela(3,iel)
-  enddo
-
   ! Free memory
   !--------------
-  deallocate(vel)
-  deallocate(vela)
   deallocate(coefa_dp, coefb_dp)
 
   return
@@ -1433,22 +1410,8 @@ if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 if (allocated(secvif)) deallocate(secvif, secvib)
 if (iphydr.eq.2) deallocate(grdphd)
 
-! Interleaved values of vel and vela
-
-!$omp parallel do
-do iel = 1, ncelet
-  rtp (iel,iu) = vel (1,iel)
-  rtp (iel,iv) = vel (2,iel)
-  rtp (iel,iw) = vel (3,iel)
-  rtpa(iel,iu) = vela(1,iel)
-  rtpa(iel,iv) = vela(2,iel)
-  rtpa(iel,iw) = vela(3,iel)
-enddo
-
 ! Free memory
 !--------------
-deallocate(vel)
-deallocate(vela)
 deallocate(coefa_dp, coefb_dp)
 
 !--------

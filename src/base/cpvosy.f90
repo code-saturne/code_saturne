@@ -57,6 +57,7 @@ subroutine cpvosy &
 use paramx
 use numvar
 use entsor
+use dimens, only: nvar
 use cstphy
 use mesh
 use optcal
@@ -69,7 +70,7 @@ implicit none
 
 integer          isvtf
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

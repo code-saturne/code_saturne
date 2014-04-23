@@ -288,6 +288,7 @@ contains
     use optcal, only: itytur
     use parall, only: irangp
     use period, only: iperio
+    use field
 
     implicit none
 
@@ -298,7 +299,9 @@ contains
 
     ! Local variables
 
-    integer iel, iprop, ivar
+    integer iel, iprop, ivar, f_id
+
+    logical f_is_owner
 
     double precision, pointer, dimension(:)   :: val_s
     double precision, allocatable, dimension(:) :: dt0
@@ -306,14 +309,21 @@ contains
 
     ! Buffering array
 
-    allocate(dt0(ncelet), rtp0(ncelet,nvar), rtpa0(ncelet,nvar))
+    allocate(dt0(ncelet), rtp0(ncelet,nflown:nvar), rtpa0(ncelet,nflown:nvar))
     allocate(proce0(ncelet,nproce))
 
     do iel = 1, ncel
       dt0(iel) = dt(iel)
     enddo
 
-    do ivar = 1, nvar
+    do ivar = nflown, nvar
+      ! We only resize non-owner fields
+      ! owner fields must be resize in dedicated C subroutine
+      ! (e.g. cs_turbomachinery_resize_cell_fields for iturbo.eq.2).
+      ! This function will disapear when rtp(a) -> fields
+      f_id = ivarfl(ivar)
+      call field_get_ownership(f_id, f_is_owner)
+      if (f_is_owner) cycle
       do iel = 1, ncel
         rtp0(iel,ivar) = rtp(iel,ivar)
         rtpa0(iel,ivar) = rtpa(iel,ivar)
@@ -330,7 +340,7 @@ contains
 
     deallocate(dt, rtp, rtpa, propce)
 
-    allocate(dt(ncelet), rtp(ncelet,nvar), rtpa(ncelet,nvar))
+    allocate(dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar))
     allocate(propce(ncelet,nproce))
 
     ! Update new main real array  : "real" cells
@@ -339,7 +349,10 @@ contains
       dt(iel) = dt0(iel)
     enddo
 
-    do ivar = 1, nvar
+    do ivar = nflown, nvar
+      f_id = ivarfl(ivar)
+      call field_get_ownership(f_id, f_is_owner)
+      if (f_is_owner) cycle
       do iel = 1, ncel
         rtp(iel,ivar) = rtp0(iel,ivar)
         rtpa(iel,ivar) = rtpa0(iel,ivar)
@@ -364,8 +377,7 @@ contains
           call synsca (rtp (1,ipr))
           call synsca (rtpa(1,ipr))
         elseif (ivar.eq.iu) then
-          call synvec (rtp (1,iu), rtp (1,iv), rtp (1,iw))
-          call synvec (rtpa(1,iu), rtpa(1,iv), rtpa(1,iw))
+          ! Velocity is a owner field
           ivar = ivar + 2
           goto 100
         elseif (itytur.eq.3.and.ivar.eq.ir11) then

@@ -106,7 +106,7 @@ integer          iscal
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
@@ -145,14 +145,19 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
+
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: coefa_p, coefb_p
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 1. INITIALIZATION
@@ -266,7 +271,7 @@ if (idiff(iu).ge. 1) then
   call cfdivs                                                     &
   !==========
  ( rtpa   , propce ,                                              &
-   smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw) )
+   smbrs  , vel )
 endif
 
 !                              __   P        n+1
@@ -393,10 +398,10 @@ call divmas(init, viscf, viscb, smbrs)
 ! ======================
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + w9(iel)*volume(iel)                                 &
-                           *( gx*rtp(iel,iu)                                    &
-                            + gy*rtp(iel,iv)                                    &
-                            + gz*rtp(iel,iw) )
+  smbrs(iel) = smbrs(iel) + w9(iel)*volume(iel)                                &
+                           *( gx*vel(1,iel)                                    &
+                            + gy*vel(2,iel)                                    &
+                            + gz*vel(3,iel) )
 enddo
 
 !                                  Kij*Sij           LAMBDA   Cp   MUT
@@ -470,9 +475,9 @@ if( idiff(ivar).ge. 1 ) then
 ! Computation of the gradient of (0.5*u*u+EPSILONsup)
 
   do iel = 1, ncel
-    w7(iel) =0.5d0*( rtp(iel,iu)**2                                             &
-                    +rtp(iel,iv)**2                                             &
-                    +rtp(iel,iw)**2 ) + w9(iel)
+    w7(iel) = 0.5d0*( vel(1,iel)**2                                             &
+                     +vel(2,iel)**2                                             &
+                     +vel(3,iel)**2 ) + w9(iel)
   enddo
 
 ! Note : by default, since the parameters are unknowns, the velocity parameters
@@ -559,20 +564,20 @@ if( idiff(ivar).ge. 1 ) then
 
       flux = viscb(ifac)*(w1(iel)/distb(ifac))*                  &
             ( w9(iel) - wb(ifac)                                 &
-            + 0.5d0*( rtp(iel,iu)**2 -                           &
-              ( coefau(1, ifac) + coefbu(1, 1, ifac)*rtp(iel,iu) &
-                                + coefbu(1, 2, ifac)*rtp(iel,iv) &
-                                + coefbu(1, 3, ifac)*rtp(iel,iw) &
+            + 0.5d0*( vel(1,iel)**2 -                            &
+              ( coefau(1, ifac) + coefbu(1, 1, ifac)*vel(1,iel)  &
+                                + coefbu(1, 2, ifac)*vel(2,iel)  &
+                                + coefbu(1, 3, ifac)*vel(3,iel)  &
               )**2                                               &
-                   + rtp(iel,iv)**2 -                            &
-              ( coefau(2, ifac) + coefbu(2, 1, ifac)*rtp(iel,iu) &
-                                + coefbu(2, 2, ifac)*rtp(iel,iv) &
-                                + coefbu(2, 3, ifac)*rtp(iel,iw) &
+                   + vel(2,iel)**2 -                             &
+              ( coefau(2, ifac) + coefbu(2, 1, ifac)*vel(1,iel)  &
+                                + coefbu(2, 2, ifac)*vel(2,iel)  &
+                                + coefbu(2, 3, ifac)*vel(3,iel)  &
               )**2                                               &
-                   + rtp(iel,iw)**2 -                            &
-              ( coefau(3, ifac) + coefbu(3, 1, ifac)*rtp(iel,iu) &
-                                + coefbu(3, 2, ifac)*rtp(iel,iv) &
-                                + coefbu(3, 3, ifac)*rtp(iel,iw) &
+                   + vel(3,iel)**2 -                             &
+              ( coefau(3, ifac) + coefbu(3, 1, ifac)*vel(1,iel)  &
+                                + coefbu(3, 2, ifac)*vel(2,iel)  &
+                                + coefbu(3, 3, ifac)*vel(3,iel)  &
               )**2                                               &
             ))
 
@@ -659,15 +664,15 @@ call codits                                                      &
 !===============================================================================
 
 ! dummy value
-iii = 1
+iii = nflown
 
 call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 !==========
 
 ! --- Traitement utilisateur pour gestion plus fine des bornes
 !       et actions correctives éventuelles.
-call cf_check_internal_energy (rtp(1,isca(ienerg)), ncel,       &
-                               rtp(1,iu), rtp(1,iv), rtp(1,iw))
+call cf_check_internal_energy(rtp(1,isca(ienerg)), ncel,       &
+                              vel)
 
 ! Explicit balance (see codits : the increment is removed)
 
@@ -692,7 +697,7 @@ endif
 ! Computation of P and T at cell centers
 call cf_thermo_pt_from_de(crom, rtp(1,isca(ienerg)), rtp(1,ipr),         &
                           rtp(1,isca(itempk)),                           &
-                          rtp(1,iu), rtp(1,iv), rtp(1,iw), ncel)
+                          vel, ncel)
 
 !===============================================================================
 ! 7. COMMUNICATION OF PRESSURE, ENERGY AND TEMPERATURE
@@ -729,4 +734,4 @@ deallocate(w7, w8, w9)
 
 return
 
-end subroutine
+end subroutine cfener

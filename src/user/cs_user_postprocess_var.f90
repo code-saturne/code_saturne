@@ -110,7 +110,7 @@ integer          ncelps, nfacps, nfbrps
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
-double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
+double precision dt(ncelet), rtpa(ncelet,nflown:nvar), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -126,6 +126,8 @@ double precision rvoid(1)
 double precision, dimension(:), allocatable :: scel, sfac, sfbr
 double precision, dimension(:,:), allocatable :: vcel, vfac, vfbr
 double precision, dimension(:), pointer :: brom
+
+double precision, dimension(:,:), pointer :: vel
 
 integer          intpst
 data             intpst /0/
@@ -324,6 +326,8 @@ else if (ipart .eq. -2) then
 !===============================================================================
 
 else if (ipart.eq.1 .or. ipart.eq.2) then
+  ! Map field arrays
+  call field_get_val_v(ivarfl(iu), vel)
 
   ! Output of the velocity
   ! ----------------------
@@ -334,7 +338,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
+    call synvin(vel)
     !==========
   endif
 
@@ -347,9 +351,9 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    vfac(1,iloc) = pnd  * rtp(ii,iu) + (1.d0 - pnd) * rtp(jj,iu)
-    vfac(2,iloc) = pnd  * rtp(ii,iv) + (1.d0 - pnd) * rtp(jj,iv)
-    vfac(3,iloc) = pnd  * rtp(ii,iw) + (1.d0 - pnd) * rtp(jj,iw)
+    vfac(1,iloc) = pnd  * vel(1,ii) + (1.d0 - pnd) * vel(1,jj)
+    vfac(2,iloc) = pnd  * vel(2,ii) + (1.d0 - pnd) * vel(2,jj)
+    vfac(3,iloc) = pnd  * vel(3,ii) + (1.d0 - pnd) * vel(3,jj)
 
   enddo
 
@@ -361,9 +365,9 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    vfbr(1,iloc) = rtp(ii, iu)
-    vfbr(2,iloc) = rtp(ii, iv)
-    vfbr(3,iloc) = rtp(ii, iw)
+    vfbr(1,iloc) = vel(1,ii)
+    vfbr(2,iloc) = vel(2,ii)
+    vfbr(3,iloc) = vel(3,ii)
 
   enddo
 
@@ -555,6 +559,9 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
 
 else if (ipart.ge.3 .and. ipart.le.4) then
 
+  ! Map field arrays
+  call field_get_val_v(ivarfl(iu), vel)
+
   ! Output of the velocity
   ! ----------------------
 
@@ -564,7 +571,7 @@ else if (ipart.ge.3 .and. ipart.le.4) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
+    call synvin(vel)
     !==========
   endif
 
@@ -577,12 +584,12 @@ else if (ipart.ge.3 .and. ipart.le.4) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    vfac(1,iloc) =            pnd  * rtp(ii, iu)   &
-                    + (1.d0 - pnd) * rtp(jj, iu)
-    vfac(2,iloc) =            pnd  * rtp(ii, iv)   &
-                    + (1.d0 - pnd) * rtp(jj, iv)
-    vfac(3,iloc) =            pnd  * rtp(ii, iw)   &
-                    + (1.d0 - pnd) * rtp(jj, iw)
+    vfac(1,iloc) =            pnd  * vel(1,ii)   &
+                    + (1.d0 - pnd) * vel(1,jj)
+    vfac(2,iloc) =            pnd  * vel(2,ii)   &
+                    + (1.d0 - pnd) * vel(2,jj)
+    vfac(3,iloc) =            pnd  * vel(3,ii)   &
+                    + (1.d0 - pnd) * vel(3,jj)
 
   enddo
 
@@ -594,9 +601,9 @@ else if (ipart.ge.3 .and. ipart.le.4) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    vfbr(1,iloc) = rtp(ii, iu)
-    vfbr(2,iloc) = rtp(ii, iv)
-    vfbr(3,iloc) = rtp(ii, iw)
+    vfbr(1,iloc) = vel(1,ii)
+    vfbr(2,iloc) = vel(2,ii)
+    vfbr(3,iloc) = vel(3,ii)
 
   enddo
 

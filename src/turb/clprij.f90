@@ -76,8 +76,8 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iclip
-double precision rtpa(ncelet,nvar)
-double precision rtp(ncelet,nvar)
+double precision rtpa(ncelet,nflown:nvar)
+double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 

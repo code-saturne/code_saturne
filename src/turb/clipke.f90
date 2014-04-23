@@ -79,7 +79,7 @@ implicit none
 integer          nvar, ncelet, ncel
 integer          iclip, iwarnk
 double precision propce(ncelet,*)
-double precision rtp(ncelet,nvar)
+double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 

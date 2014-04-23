@@ -132,7 +132,7 @@ integer          nvar   , nscal
 
 integer          mbrom
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -865,7 +865,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -1539,7 +1539,7 @@ integer          nvar   , nscal
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -1951,18 +1951,16 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
-integer          iel, iccocg, inc
+integer          iel, inc, iprev
 integer          ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
 
-double precision, dimension(:,:), pointer :: coefav
-double precision, dimension(:,:,:), pointer :: coefbv
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, dimension(:), pointer ::  crom
 !===============================================================================
@@ -1999,21 +1997,11 @@ call field_get_val_s(icrom, crom)
 ! 1.3 Compute velocity gradient
 !===============================================================================
 
-iccocg = 1
 inc = 1
+iprev = 1
 
-! Boundary condition pointers for gradients and advection
-call field_get_coefa_v(ivarfl(iu), coefav)
-call field_get_coefb_v(ivarfl(iu), coefbv)
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
- ( iu  , imrgra , inc    , iccocg ,                      &
-   nswrgr(iu) , imligr(iu) ,                             &
-   iwarni(iu) , epsrgr(iu) , climgr(iu) ,                &
-   rtpa(1,iu) , coefav , coefbv ,                        &
-   gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,     &
+                           gradv)
 
 !===============================================================================
 ! 1.4 Computation of the dynamic viscosity
@@ -2026,8 +2014,8 @@ do iel = 1, ncel
   rom   = crom(iel)
   ! --- Various computations
   dudx = gradv(1,1,iel)
-  dudy = gradv(2,1,iel)
-  dudz = gradv(3,1,iel)
+  dudy = gradv(1,2,iel)
+  dudz = gradv(1,3,iel)
   sqdu = sqrt(dudx**2+dudy**2+dudz**2)
 
   ! --- Computation of the new dynamic viscosity
@@ -2143,7 +2131,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
@@ -2285,7 +2273,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
 

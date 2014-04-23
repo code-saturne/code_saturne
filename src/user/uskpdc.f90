@@ -146,7 +146,7 @@ integer          iappel
 integer          icepdc(ncepdp)
 integer          izcpdc(ncel)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6)
 
@@ -157,6 +157,8 @@ integer          ilelt, nlelt
 integer          izone
 
 double precision alpha, cosalp, sinalp, vit, ck1, ck2
+
+double precision, dimension(:,:), pointer :: vela
 
 integer, allocatable, dimension(:) :: lstelt
 
@@ -172,6 +174,9 @@ if (1.eq.1) return
 
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_prev_v(ivarfl(iu), vela)
 
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
@@ -289,7 +294,7 @@ else if (iappel.eq.3) then
 
   do ielpdc = 1, ncepdp
     iel=icepdc(ielpdc)
-    vit = sqrt(rtpa(iel,iu)**2 + rtpa(iel,iv)**2 + rtpa(iel,iw)**2)
+    vit = sqrt(vela(1,iel)**2 + vela(2,iel)**2 + vela(3,iel)**2)
     ckupdc(ielpdc,1) = 10.d0*vit
     ckupdc(ielpdc,2) =  0.d0*vit
     ckupdc(ielpdc,3) =  0.d0*vit
@@ -318,8 +323,8 @@ else if (iappel.eq.3) then
   ck2 =  0.d0
 
   do ielpdc = 1, ncepdp
-    iel=icepdc(ielpdc)
-    vit = sqrt(rtpa(iel,iu)**2 + rtpa(iel,iv)**2 + rtpa(iel,iw)**2)
+    iel = icepdc(ielpdc)
+    vit = sqrt(vela(1,iel)**2 + vela(2,iel)**2 + vela(3,iel)**2)
     ckupdc(ielpdc,1) = (cosalp**2*ck1 + sinalp**2*ck2)*vit
     ckupdc(ielpdc,2) = (sinalp**2*ck1 + cosalp**2*ck2)*vit
     ckupdc(ielpdc,3) =  0.d0

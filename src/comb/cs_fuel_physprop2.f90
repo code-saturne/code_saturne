@@ -64,6 +64,7 @@ subroutine cs_fuel_physprop2 &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use entsor
 use cstnum
@@ -83,7 +84,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision rtp(ncelet,*) , propce(ncelet,*)
+double precision rtp(ncelet,nflown:nvar) , propce(ncelet,*)
 
 ! Local variables
 

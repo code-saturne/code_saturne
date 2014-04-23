@@ -210,6 +210,18 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning a given field's ownership info
+
+    subroutine cs_f_field_get_ownership(f_id, f_is_owner)  &
+      bind(C, name='cs_f_field_get_ownership')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      logical(c_bool), intent(out) :: f_is_owner
+    end subroutine cs_f_field_get_ownership
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function returning a given field's type info
 
     subroutine cs_f_field_get_type(f_id, f_type)  &
@@ -688,6 +700,38 @@ contains
     return
 
   end subroutine field_get_dim
+
+  !=============================================================================
+
+  !> \brief Return the field ownership flag.
+
+  !> \param[in]   f_id         field id
+  !> \param[out]  f_is_owner  true if field is owner, false otherwise
+
+  subroutine field_get_ownership(f_id, f_is_owner)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    logical, intent(out) :: f_is_owner
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id
+    logical(c_bool) :: c_is_owner
+
+    c_f_id = f_id
+
+    call cs_f_field_get_ownership(c_f_id, c_is_owner)
+
+    f_is_owner = c_is_owner
+
+    return
+
+  end subroutine field_get_ownership
 
   !=============================================================================
 

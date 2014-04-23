@@ -98,7 +98,7 @@ integer          itypfb(nfabor)
 integer          icvflb
 integer          ivoid(1)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
@@ -217,7 +217,6 @@ cst3 = 0.9d0
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet))
 
-iccocg = 1
 inc = 1
 iprev = 1
 

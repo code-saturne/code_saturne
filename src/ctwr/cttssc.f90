@@ -58,6 +58,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use period
@@ -76,7 +77,7 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables

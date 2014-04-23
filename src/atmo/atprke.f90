@@ -60,6 +60,7 @@ subroutine atprke &
 !===============================================================================
 
 use paramx
+use dimens, only: nvar
 use numvar
 use entsor
 use cstnum
@@ -82,7 +83,7 @@ implicit none
 ! Arguments
 integer          nscal
 
-double precision rtpa (ncelet,*)
+double precision rtpa (ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrk(ncelet), smbre(ncelet)
 double precision tinstk(ncelet)

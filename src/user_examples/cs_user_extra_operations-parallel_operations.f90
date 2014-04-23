@@ -84,7 +84,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -96,6 +96,9 @@ integer          itab(3)
 
 double precision rrr
 double precision xyz(3)
+
+double precision, dimension(:,:), pointer :: vel
+
 !< [loc_var_dec]
 
 !===============================================================================
@@ -103,6 +106,9 @@ double precision xyz(3)
 !===============================================================================
 ! 1.  Initialization
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! Example use of parallel utility functions for several operations
@@ -325,9 +331,9 @@ xyz(1) = 0.d0
 xyz(2) = 0.d0
 xyz(3) = 0.d0
 do iel = 1, ncel
-  xyz(1) = xyz(1)+rtp(iel,iu)
-  xyz(2) = xyz(2)+rtp(iel,iv)
-  xyz(3) = xyz(3)+rtp(iel,iw)
+  xyz(1) = xyz(1) + vel(1,iel)
+  xyz(2) = xyz(2) + vel(2,iel)
+  xyz(3) = xyz(3) + vel(3,iel)
 enddo
 ! global sum
 if (irangp.ge.0) then
@@ -346,13 +352,13 @@ write(nfecra,5110) xyz(1), xyz(2), xyz(3)
 ! local values
 !< [example_12]
 nbr = 3
-xyz(1) = rtp(1,iu)
-xyz(2) = rtp(1,iv)
-xyz(3) = rtp(1,iw)
+xyz(1) = vel(1,1)
+xyz(2) = vel(2,1)
+xyz(3) = vel(3,1)
 do iel = 1, ncel
-  xyz(1) = max(xyz(1),rtp(iel,iu))
-  xyz(2) = max(xyz(2),rtp(iel,iv))
-  xyz(3) = max(xyz(3),rtp(iel,iw))
+  xyz(1) = max(xyz(1),vel(1,iel))
+  xyz(2) = max(xyz(2),vel(2,iel))
+  xyz(3) = max(xyz(3),vel(3,iel))
 enddo
 ! global maximum
 if (irangp.ge.0) then
@@ -371,13 +377,13 @@ write(nfecra,5120) xyz(1), xyz(2), xyz(3)
 !< [example_13]
 ! local values
 nbr = 3
-xyz(1) = rtp(1,iu)
-xyz(2) = rtp(1,iv)
-xyz(3) = rtp(1,iw)
+xyz(1) = vel(1,1)
+xyz(2) = vel(2,1)
+xyz(3) = vel(3,1)
 do iel = 1, ncel
-  xyz(1) = min(xyz(1),rtp(iel,iu))
-  xyz(2) = min(xyz(2),rtp(iel,iv))
-  xyz(3) = min(xyz(3),rtp(iel,iw))
+  xyz(1) = min(xyz(1),vel(1,iel))
+  xyz(2) = min(xyz(2),vel(2,iel))
+  xyz(3) = min(xyz(3),vel(3,iel))
 enddo
 ! global minimum
 if (irangp.ge.0) then
@@ -420,9 +426,9 @@ write(nfecra,5140) irangv, itab(1), itab(2), itab(3)
 ! local values
 irangv = 0
 nbr = 3
-xyz(1) = rtp(1,iu)
-xyz(2) = rtp(1,iv)
-xyz(3) = rtp(1,iw)
+xyz(1) = vel(1,1)
+xyz(2) = vel(2,1)
+xyz(3) = vel(3,1)
 ! broadcast from rank irangv to all others
 if (irangp.ge.0) then
   call parbcr(irangv, nbr, xyz)

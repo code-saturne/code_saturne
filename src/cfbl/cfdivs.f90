@@ -24,7 +24,7 @@ subroutine cfdivs &
 !================
 
  ( rtpa   , propce ,                                              &
-   diverg , ux     , uy     , uz     )
+   diverg , vel)
 
 !===============================================================================
 ! FONCTION :
@@ -47,8 +47,8 @@ subroutine cfdivs &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! diverg(ncelet    ! tr ! --> ! div(sigma.u)                                   !
-! ux,y,z(ncelet    ! tr ! <-- ! composantes du vecteur u                       !
+! diverg (ncelet)  ! tr ! --> ! div(sigma.u)                                   !
+! vel (ncelet)     ! tr ! <-- ! velocity                                       !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -66,6 +66,7 @@ use paramx
 use cstphy
 use entsor
 use numvar
+use dimens, only: nvar
 use optcal
 use parall
 use period
@@ -74,6 +75,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -81,18 +83,17 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision diverg(ncelet)
-double precision ux(ncelet), uy(ncelet), uz(ncelet)
+double precision vel(3,ncelet)
 
 ! Local variables
 
 integer          inc, iel, ifac, ii, jj
 integer          nswrgp, imligp, iwarnp
 integer          ipcvis, ipcvst, ipcvsv
-
-logical          ilved
+integer          iprev
 
 double precision epsrgp, climgp, extrap
 double precision vecfac, kappa, mu, trgdru
@@ -151,25 +152,11 @@ endif
 ! 2. Compute the divegence of (sigma.u)
 !===============================================================================
 
-! --- Velocity gradient
-inc    = 1
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-iwarnp = iwarni(iu)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
+inc = 1
+iprev = 1
 
-ilved = .false.
-
-! WARNING: gradv(xyz, uvw, iel)
-call grdvec &
-!==========
-( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved  ,                                                       &
-  rtpa(1,iu) ,  coefau , coefbu ,                                &
-  gradv  )
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
+                           gradv)
 
 ! --- Compute the vector \tens{\sigma}.\vect{v}
 !     i.e. sigma_ij v_j e_i
@@ -199,15 +186,15 @@ if (ipcvsv.gt.0) then
     sigma(1, 3) = mu * (gradv(1, 3, iel) + gradv(3, 1, iel))
     sigma(3, 1) = sigma(1, 3)
 
-    tempv(1, iel) = sigma(1, 1)*ux(iel) &
-                  + sigma(1, 2)*uy(iel) &
-                  + sigma(1, 3)*uz(iel)
-    tempv(2, iel) = sigma(2, 1)*ux(iel) &
-                  + sigma(2, 2)*uy(iel) &
-                  + sigma(2, 3)*uz(iel)
-    tempv(3, iel) = sigma(3, 1)*ux(iel) &
-                  + sigma(3, 2)*uy(iel) &
-                  + sigma(3, 3)*uz(iel)
+    tempv(1, iel) = sigma(1, 1)*vel(1,iel) &
+                  + sigma(1, 2)*vel(2,iel) &
+                  + sigma(1, 3)*vel(3,iel)
+    tempv(2, iel) = sigma(2, 1)*vel(1,iel) &
+                  + sigma(2, 2)*vel(2,iel) &
+                  + sigma(2, 3)*vel(3,iel)
+    tempv(3, iel) = sigma(3, 1)*vel(1,iel) &
+                  + sigma(3, 2)*vel(2,iel) &
+                  + sigma(3, 3)*vel(3,iel)
   enddo
 
 else
@@ -235,15 +222,15 @@ else
     sigma(1, 3) = mu * (gradv(1, 3, iel) + gradv(3, 1, iel))
     sigma(3, 1) = sigma(1, 3)
 
-    tempv(1, iel) = sigma(1, 1)*ux(iel) &
-                  + sigma(1, 2)*uy(iel) &
-                  + sigma(1, 3)*uz(iel)
-    tempv(2, iel) = sigma(2, 1)*ux(iel) &
-                  + sigma(2, 2)*uy(iel) &
-                  + sigma(2, 3)*uz(iel)
-    tempv(3, iel) = sigma(3, 1)*ux(iel) &
-                  + sigma(3, 2)*uy(iel) &
-                  + sigma(3, 3)*uz(iel)
+    tempv(1, iel) = sigma(1, 1)*vel(1,iel) &
+                  + sigma(1, 2)*vel(2,iel) &
+                  + sigma(1, 3)*vel(3,iel)
+    tempv(2, iel) = sigma(2, 1)*vel(1,iel) &
+                  + sigma(2, 2)*vel(2,iel) &
+                  + sigma(2, 3)*vel(3,iel)
+    tempv(3, iel) = sigma(3, 1)*vel(1,iel) &
+                  + sigma(3, 2)*vel(2,iel) &
+                  + sigma(3, 3)*vel(3,iel)
   enddo
 
 endif

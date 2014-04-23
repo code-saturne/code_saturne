@@ -99,6 +99,7 @@ use paramx
 use cstnum
 use numvar
 use optcal
+use dimens, only: nvar
 use entsor
 use cstphy
 use pointe
@@ -123,7 +124,7 @@ integer          nbpmax
 integer          ntersl
 integer          indep(nbpmax), ibord(nbpmax)
 
-double precision propce(ncelet,*) , rtp(ncelet,*)
+double precision propce(ncelet,*) , rtp(ncelet,nflown:nvar)
 double precision taup(nbpmax) , tempct(nbpmax,2)
 double precision tsfext(nbpmax)
 double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)
@@ -138,8 +139,12 @@ double precision tvmax , tauv , taum , aux1
 double precision uuf , vvf , wwf , mf
 
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -258,9 +263,9 @@ if (ltsdyn.eq.1) then
     do iel = 1,ncel
 
       tslag(iel,itske) = tslag(iel,itske)                       &
-                       - rtp(iel,iu) * tslag(iel,itsvx)         &
-                       - rtp(iel,iv) * tslag(iel,itsvy)         &
-                       - rtp(iel,iw) * tslag(iel,itsvz)
+                       - vel(1,iel) * tslag(iel,itsvx)         &
+                       - vel(2,iel) * tslag(iel,itsvy)         &
+                       - vel(3,iel) * tslag(iel,itsvz)
 
     enddo
 
@@ -300,25 +305,25 @@ if (ltsdyn.eq.1) then
     do iel = 1,ncel
 
       tslag(iel,itsr11) = tslag(iel,itsr11)                       &
-                 - 2.d0 * rtp(iel,iu) * tslag(iel,itsvx)
+                 - 2.d0 * vel(1,iel) * tslag(iel,itsvx)
 
       tslag(iel,itsr12) = tslag(iel,itsr12)                       &
-                        - rtp(iel,iu) * tslag(iel,itsvy)   &
-                        - rtp(iel,iv) * tslag(iel,itsvx)
+                        - vel(1,iel) * tslag(iel,itsvy)   &
+                        - vel(2,iel) * tslag(iel,itsvx)
 
       tslag(iel,itsr13) = tslag(iel,itsr13)                       &
-                        - rtp(iel,iu) * tslag(iel,itsvz)   &
-                        - rtp(iel,iw) * tslag(iel,itsvx)
+                        - vel(1,iel) * tslag(iel,itsvz)   &
+                        - vel(3,iel) * tslag(iel,itsvx)
 
       tslag(iel,itsr22) = tslag(iel,itsr22)                       &
-                 - 2.d0 * rtp(iel,iv) * tslag(iel,itsvy)
+                 - 2.d0 * vel(2,iel) * tslag(iel,itsvy)
 
       tslag(iel,itsr23) = tslag(iel,itsr23)                       &
-                        - rtp(iel,iv) * tslag(iel,itsvz)   &
-                        - rtp(iel,iw) * tslag(iel,itsvy)
+                        - vel(2,iel) * tslag(iel,itsvz)   &
+                        - vel(3,iel) * tslag(iel,itsvy)
 
       tslag(iel,itsr33) = tslag(iel,itsr33)                       &
-                 - 2.d0 * rtp(iel,iw) * tslag(iel,itsvz)
+                 - 2.d0 * vel(3,iel) * tslag(iel,itsvz)
 
     enddo
 
@@ -481,4 +486,4 @@ endif
 ! FIN
 !----
 
-end subroutine
+end subroutine lagcou

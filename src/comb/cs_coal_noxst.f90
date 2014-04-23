@@ -62,6 +62,7 @@ subroutine cs_coal_noxst &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -90,7 +91,7 @@ double precision doxyd(ncel) , hrec(ncel)
 double precision fs3no(ncel) , fs4no(ncel) , yfs4no(ncel,ngazg)
 double precision enthox(ncel)
 
-double precision rtp(ncelet,*), propce(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
 !
 ! VARIABLES LOCALES
 !

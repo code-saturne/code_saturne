@@ -53,6 +53,7 @@ subroutine cs_fuel_masstransfer &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -73,7 +74,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision rtpa(ncelet,*), propce(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 

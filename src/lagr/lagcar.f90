@@ -118,7 +118,7 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          nvlsta
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtp(ncelet,*)
+double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -144,8 +144,12 @@ double precision r11 , r22 , r33
 double precision xnul , rom , prt , fnus , xrkl , xcp
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
@@ -357,9 +361,9 @@ if (idistu.eq.1) then
           upart = statis(iel,ilvx) / statis(iel,ilpd)
           vpart = statis(iel,ilvy) / statis(iel,ilpd)
           wpart = statis(iel,ilvz) / statis(iel,ilpd)
-          uflui = rtp(iel,iu)
-          vflui = rtp(iel,iv)
-          wflui = rtp(iel,iw)
+          uflui = vel(1,iel)
+          vflui = vel(2,iel)
+          wflui = vel(3,iel)
         endif
       endif
 
@@ -510,9 +514,9 @@ do id = 1,3
           vpmy = statis(iel,ilvy) / statis(iel,ilpd)
           vpmz = statis(iel,ilvz) / statis(iel,ilpd)
 
-          uflui = rtp(iel,iu)
-          vflui = rtp(iel,iv)
-          wflui = rtp(iel,iw)
+          uflui = vel(1,iel)
+          vflui = vel(2,iel)
+          wflui = vel(3,iel)
 
           piil(ip,id) = gradpr(id,iel)                            &
                        +gradvf(1,id,iel) * (vpmx-uflui)           &
@@ -606,4 +610,5 @@ enddo
 ! FIN
 !----
 
-end subroutine
+return
+end subroutine lagcar

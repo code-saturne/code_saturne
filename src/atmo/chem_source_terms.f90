@@ -57,6 +57,7 @@ use paramx
 use pointe
 use numvar
 use entsor
+use dimens, only: nvar
 use optcal
 use cstphy
 use parall
@@ -73,7 +74,7 @@ implicit none
 ! Arguments
 
 integer          iscal
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables

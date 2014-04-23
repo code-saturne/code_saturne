@@ -55,6 +55,7 @@ subroutine cs_fuel_thfieldconv2 &
 use paramx
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -70,7 +71,7 @@ implicit none
 ! Arguments
 
 integer          ncelet, ncel
-double precision rtp(ncelet,*), propce(ncelet,*)
+double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 

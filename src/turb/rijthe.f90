@@ -63,6 +63,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens, only: nvar
 use cstphy
 use mesh
 
@@ -75,7 +76,7 @@ implicit none
 integer          nscal
 integer          ivar
 
-double precision rtpa(ncelet,*)
+double precision rtpa(ncelet,nflown:nvar)
 double precision gradro(ncelet,3)
 double precision smbr(ncelet)
 

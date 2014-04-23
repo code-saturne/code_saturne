@@ -61,6 +61,7 @@ use paramx
 use pointe
 use numvar
 use optcal
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -82,7 +83,7 @@ integer          nptdis , numcpl , nvcpto
 
 integer          locpts(nptdis)
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
 double precision rvdis(nptdis,nvcpto)
@@ -106,9 +107,14 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: trav1, trav2, trav3, trav4
 double precision, allocatable, dimension(:) :: trav5, trav6, trav7, trav8
+
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 !=========================================================================
 ! 1.  INITIALISATIONS
@@ -279,8 +285,6 @@ do isou = 1, 3
 
   ipos = ipos + 1
 
-  ivar = iu + isou - 1
-
   ! For a specific face to face coupling, geometric assumptions are made
 
   if (ifaccp.eq.1) then
@@ -301,7 +305,7 @@ do isou = 1, 3
       !        yjjp = djppts(2,ipt)
       !        zjjp = djppts(3,ipt)
 
-      !        rvdis(ipt,ipos) = rtp(iel,ivar)
+      !        rvdis(ipt,ipos) = vel(isou,iel)
 
       ! -- SOLU
 
@@ -309,7 +313,7 @@ do isou = 1, 3
       !        yjf = coopts(2,ipt) - xyzcen(2,iel)
       !        zjf = coopts(3,ipt) - xyzcen(3,iel)
 
-      !        rvdis(ipt,ipos) = rtp(iel,ivar) &
+      !        rvdis(ipt,ipos) = vel(isou,iel) &
       !          + xjf*gradv(1,isou,iel) + yjf*gradv(2,isou,iel) &
       !          + zjf*gradv(3,isou,iel)
 
@@ -319,7 +323,7 @@ do isou = 1, 3
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      rvdis(ipt,ipos) =   rtp(iel,ivar)            &
+      rvdis(ipt,ipos) =   vel(isou,iel)            &
                         + xjjp*gradv(1,isou,iel)   &
                         + yjjp*gradv(2,isou,iel)   &
                         + zjjp*gradv(3,isou,iel)
@@ -356,7 +360,7 @@ do isou = 1, 3
       yjjp = dofpts(2,ipt) + djppts(2,ipt)
       zjjp = dofpts(3,ipt) + djppts(3,ipt)
 
-      rvdis(ipt,ipos) =   rtp(iel,ivar)            &
+      rvdis(ipt,ipos) =   vel(isou,iel)            &
                         + xjjp*gradv(1,isou,iel)   &
                         + yjjp*gradv(2,isou,iel)   &
                         + zjjp*gradv(3,isou,iel)

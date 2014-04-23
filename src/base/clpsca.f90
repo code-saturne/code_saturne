@@ -60,6 +60,7 @@ use paramx
 use numvar
 use entsor
 use optcal
+use dimens
 use cstphy
 use cstnum
 use parall
@@ -75,7 +76,7 @@ implicit none
 integer          ncelet , ncel
 integer          iscal
 
-double precision rtp(ncelet,*)
+double precision rtp(ncelet,nflown:nvar)
 double precision scandd(ncelet)
 
 ! Local variables

@@ -157,6 +157,15 @@ endif
 
 nvar = 0
 
+! Velocity
+
+call add_variable_field('velocity', 'Velocity', 3, iu)
+call field_set_key_int(ivarfl(iu), keycpl, 1)
+
+! All components point to same field
+iv = iu + 1
+iw = iv + 1
+
 ! Pressure
 
 call add_variable_field('pressure', 'Pressure', 1, ipr)
@@ -167,15 +176,6 @@ else
   istat (ipr) = 0
 endif
 iconv (ipr) = 0
-
-! Velocity
-
-call add_variable_field('velocity', 'Velocity', 3, iu)
-call field_set_key_int(ivarfl(iu), keycpl, 1)
-
-! All components point to same field
-iv = iu + 1
-iw = iv + 1
 
 ! --- Turbulence
 
@@ -580,7 +580,7 @@ integer, save :: keyvar = -1
 
 type_flag = FIELD_INTENSIVE + FIELD_VARIABLE
 location_id = 1         ! variables defined on cells
-interleaved = .false.   ! not interleaved so as to map to rtp
+interleaved = .true.
 has_previous = .true.
 
 ! Test if the field has already been defined

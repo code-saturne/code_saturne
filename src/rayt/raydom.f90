@@ -96,7 +96,7 @@ integer          nvar   , nscal
 integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

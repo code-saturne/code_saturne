@@ -53,6 +53,20 @@ BEGIN_C_DECLS
  *
  * Fortran API:
  *
+ * subroutine pervec
+ * *****************
+ *
+ * double precision var(3,ncelet) : <-> : interleaved vector
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (pervec, PERVEC) (cs_real_t  var[]);
+
+/*----------------------------------------------------------------------------
+ * Rotate vector values for periodic cells on extended halos.
+ *
+ * Fortran API:
+ *
  * subroutine perrve
  * *****************
  *
