@@ -136,7 +136,7 @@ if (ippmod(iatmos).eq.1) then
   ! Potential temperature, in Kelvin
   itherm = 1
   itpscl = 1
-  call add_model_scalar_field('pot_temperature', 'PotTemp', iscalt)
+  call add_model_scalar_field('temperature', 'PotTemp', iscalt)
   f_id = ivarfl(isca(iscalt))
   call field_set_key_double(f_id, kscmin, 0.d0)
 
@@ -150,7 +150,7 @@ if (ippmod(iatmos).eq.2) then
   ! Potential temperature, in Kelvin
   itherm = 1
   itpscl = 1
-  call add_model_scalar_field('pot_temperature', 'LqPotTmp', iscalt)
+  call add_model_scalar_field('temperature', 'LqPotTmp', iscalt)
   f_id = ivarfl(isca(iscalt))
   call field_set_key_double(f_id, kscmin, 200.d0)
 

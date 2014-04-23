@@ -321,7 +321,7 @@ cs_field_pointer_map_atmospheric(int        n_chem_species,
                                  const int  species_f_id[])
 {
   cs_field_pointer_map(CS_ENUMF_(pot_t),
-                       cs_field_by_name_try("pot_temperature"));
+                       cs_field_by_name_try("temperature"));
 
   cs_field_pointer_map(CS_ENUMF_(totwt),
                        cs_field_by_name_try("total_water"));

@@ -1040,6 +1040,10 @@ class MeteoBoundary(Boundary) :
         """
         Model().isOnOff(status)
         self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_data')['status'] = status
+        if status == 'on':
+            for n in self.boundNode.xmlGetNodeList('scalar'):
+                if n:
+                    n.xmlRemoveNode()
 
 
     @Variables.noUndo

@@ -124,9 +124,13 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
                 self.checkBoxAutoNature.setEnabled(True)
                 self.velocityWidget.hideWidget()
                 self.turbulenceWidget.hideWidget()
+                self.scalarsWidget.groupBoxMeteo.hide()
+                self.scalarsWidget.groupBoxThermal.hide()
             else:
                 self.checkBoxReadData.setChecked(False)
                 self.checkBoxAutoNature.setEnabled(False)
+                self.scalarsWidget.groupBoxMeteo.show()
+                self.scalarsWidget.groupBoxThermal.show()
                 if nature == "meteo_inlet":
                     self.velocityWidget.showWidget(b)
                     self.turbulenceWidget.showWidget(b)
@@ -160,12 +164,14 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
             self.velocityWidget.hideWidget()
             self.turbulenceWidget.hideWidget()
             self.scalarsWidget.groupBoxMeteo.hide()
+            self.scalarsWidget.groupBoxThermal.hide()
         else:
             self.__boundary.setMeteoDataStatus('off')
             self.checkBoxAutoNature.setChecked(False)
             self.__boundary.setAutomaticNatureStatus('off')
             self.checkBoxAutoNature.setEnabled(False)
-            self.scalarsWidget.showWidget(self.__b)
+            self.scalarsWidget.groupBoxMeteo.show()
+            self.scalarsWidget.groupBoxThermal.show()
             if self.__boundary.getNature() == "meteo_inlet":
                 self.velocityWidget.showWidget(self.__b)
                 self.turbulenceWidget.showWidget(self.__b)
