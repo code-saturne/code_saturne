@@ -249,10 +249,7 @@ cs_user_extra_operations(void)
   /*
     --> Balance on all faces (interior and boundary), for div(rho u)
         ------------------------------------------------------------
-
-    Caution: values of Dt in cells adjacent to interior faces are
-             used, which implies having synchronized these values for
-             parallelism and periodicity. */
+   */
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 

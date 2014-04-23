@@ -93,9 +93,8 @@ integer          iel    , ifac   , ivar
 integer          iel1   , iel2   , ieltsm
 integer          iortho
 integer          inc    , iccocg
-integer          ipcvst , iflmas , iflmab , ipccp, ipcvsl
+integer          ipcvst , iflmas , iflmab , ipccp
 integer          iscal
-integer          ncesmp
 integer          ilelt  , nlelt
 
 double precision xrtpa  , xrtp
@@ -103,14 +102,15 @@ double precision xbilan , xbilvl , xbilpa , xbilpt
 double precision xbilsy , xbilen , xbilso , xbildv
 double precision xbilmi , xbilma
 double precision xfluxf , xgamma
-double precision flumab , xcp , ctb1, ctb2
+double precision flumab , ctb1, ctb2
 
 integer, allocatable, dimension(:) :: lstelt
 
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
+double precision, allocatable, dimension(:) :: xcp 
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer ::  crom
 !< [loc_var_dec]
 
@@ -121,6 +121,7 @@ double precision, dimension(:), pointer ::  crom
 !< [init]
 ! Allocate a temporary array for cells or interior/boundary faces selection
 allocate(lstelt(max(ncel,nfac,nfabor)))
+allocate(xcp(ncel))
 !< [init]
 
 !===============================================================================
@@ -170,21 +171,24 @@ if (inpdt0.eq.0) then
   call field_get_val_s(iflmas, imasfl)
   call field_get_val_s(iflmab, bmasfl)
 
-  ! We save in ipccp a flag allowing to determine if the specific heat is
-  ! constant (= cp0) or variable. It will be used to compute balances
-  ! (xbilvl is in Joules).
-  if (icp.gt.0) then
-    ipccp  = ipproc(icp   )
-  else
-    ipccp  = 0
-  endif
+  ! The balance is in Joule, so store the specific heat when dealing
+  ! with the Temperature.
 
-  ! We save in ipcvsl a flag allowing to determine if the diffusivity is
-  ! constant (= visls0) or variable. It will be used for diffusive terms.
-  if (ivisls(iscal).gt.0) then
-    ipcvsl = ipproc(ivisls(iscal))
+  ! If it is a temperature
+  if (itherm.eq.1) then
+    if (icp.gt.0) then
+      do iel = 1, ncel
+        xcp(iel) = propce(iel,ipproc(icp)) 
+      enddo
+    else
+      do iel = 1, ncel
+        xcp(iel) = cp0 
+      enddo
+    endif
   else
-    ipcvsl = 0
+    do iel = 1, ncel
+      xcp(iel) = 1.d0 
+    enddo
   endif
 
   ! Boundary condition pointers for gradients and advection
@@ -197,41 +201,6 @@ if (inpdt0.eq.0) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-  ! --> Synchronization of Cp and Dt
-  !     ----------------------------
-
-  ! To compute fluxes at interior faces, it is necessary to have access
-  ! to variables at neighboring cells. Notably, it is necessary to know
-  ! the specific heat and the time step value. For this,
-
-  ! - in parallel calculations, it is necessary on faces at sub-domain
-  !   boundaries to know the value of these variables in cells from the
-  !   neighboring subdomain.
-  ! - in periodic calculations, it is necessary at periodic faces to know
-  !   the value of these variables in matching periodic cells.
-
-  ! To ensure that these values are up to date, it is necessary to use
-  ! the synchronization routines to update parallel and periodic ghost
-  ! values for Cp and Dt before computing the gradient.
-
-  ! If the calculation is neither parallel nor periodic, the calls may be
-  ! kept, as tests on iperio and irangp ensure generality).
-
-  ! Parallel and periodic update
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-
-    ! update Dt
-    call synsca(dt)
-    !==========
-
-    ! update Cp if variable (otherwise cp0 is used)
-    if (ipccp.gt.0) then
-      call synsca(propce(1,ipccp))
-      !==========
-    endif
-
-  endif
 
   ! --> Compute value reconstructed at I' for boundary faces
 
@@ -301,103 +270,54 @@ if (inpdt0.eq.0) then
   ! If it is variable, the density 'rom' has been computed at the beginning
   ! of the time step using the temperature from the previous time step.
 
-  if (ipccp.gt.0) then
-    do iel = 1, ncel
-      xrtpa = rtpa(iel,ivar)
-      xrtp  = rtp (iel,ivar)
-      xbilvl =   xbilvl                                                &
-               + volume(iel) * propce(iel,ipccp) * crom(iel)  &
-                                                 * (xrtpa - xrtp)
-    enddo
-  else
-    do iel = 1, ncel
-      xrtpa = rtpa(iel,ivar)
-      xrtp  = rtp (iel,ivar)
-      xbilvl =   xbilvl  &
-               + volume(iel) * cp0 * crom(iel) * (xrtpa - xrtp)
-    enddo
-  endif
+  do iel = 1, ncel
+    xrtpa = rtpa(iel,ivar)
+    xrtp  = rtp (iel,ivar)
+    xbilvl =   xbilvl                              &
+             + volume(iel) * xcp(iel) * crom(iel)  &
+                           * (xrtpa - xrtp)
+  enddo
 
   ! --> Balance on all faces (interior and boundary), for div(rho u)
   !     ------------------------------------------------------------
 
-  ! Caution: values of Cp and Dt in cells adjacent to interior faces are
-  !          used, which implies having synchronized these values for
-  !          parallelism and periodicity.
+  do ifac = 1, nfac
 
-  if (ipccp.gt.0) then
-    do ifac = 1, nfac
+    iel1 = ifacel(1,ifac)
+    if (iel1.le.ncel) then
+      ctb1 = imasfl(ifac)*xcp(iel1)*rtp(iel1,ivar)*dt(iel1)
+    else
+      ctb1 = 0d0
+    endif
 
-      iel1 = ifacel(1,ifac)
-      if (iel1.le.ncel) then
-        ctb1 = imasfl(ifac)*propce(iel1,ipccp)*rtp(iel1,ivar)
-      else
-        ctb1 = 0d0
-      endif
+    iel2 = ifacel(2,ifac)
+    if (iel2.le.ncel) then
+      ctb2 = imasfl(ifac)*xcp(iel2)*rtp(iel2,ivar)*dt(iel2)
+    else
+      ctb2 = 0d0
+    endif
 
-      iel2 = ifacel(2,ifac)
-      if (iel2.le.ncel) then
-        ctb2 = imasfl(ifac)*propce(iel2,ipccp)*rtp(iel2,ivar)
-      else
-        ctb2 = 0d0
-      endif
+    xbildv =  xbildv + (ctb1 - ctb2)
+  enddo
 
-      xbildv =  xbildv + (dt(iel1)*ctb1 - dt(iel2)*ctb2)
-    enddo
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    xbildv = xbildv + dt(iel) * xcp(iel)             &
+                              * bmasfl(ifac)         &
+                              * rtp(iel,ivar)
+  enddo
 
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      xbildv = xbildv + dt(iel) * propce(iel,ipccp)    &
-                                * bmasfl(ifac)         &
-                                * rtp(iel,ivar)
-    enddo
-
-  ! --- if Cp is constant
-
-  else
-    do ifac = 1, nfac
-
-      iel1 = ifacel(1,ifac)
-      if (iel1.le.ncel) then
-        ctb1 = imasfl(ifac)*cp0*rtp(iel1,ivar)
-      else
-        ctb1 = 0d0
-      endif
-
-      iel2 = ifacel(2,ifac)
-      if (iel2.le.ncel) then
-        ctb2 = imasfl(ifac)*cp0*rtp(iel2,ivar)
-      else
-        ctb2 = 0d0
-      endif
-
-      xbildv = xbildv + (dt(iel1) + dt(iel2))*0.5d0*(ctb1 - ctb2)
-    enddo
-
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      xbildv = xbildv + dt(iel) * cp0                  &
-                                * bmasfl(ifac)         &
-                                * rtp(iel,ivar)
-    enddo
-  endif
 
   ! In case of a mass source term, add contribution from Gamma*Tn+1
 
-  ncesmp = ncetsm
-  if (ncesmp.gt.0) then
-    do ieltsm = 1, ncesmp
+  if (ncetsm.gt.0) then
+    do ieltsm = 1, ncetsm
       iel = icetsm(ieltsm)
       xrtp  = rtp (iel,ivar)
       xgamma = smacel(ieltsm,ipr)
-      if (ipccp.gt.0) then
-        xbildv =   xbildv                                     &
-                 - volume(iel) * propce(iel,ipccp) * dt(iel)  &
-                               * xgamma * xrtp
-      else
-        xbildv =   xbildv  &
-                 - volume(iel) * cp0 * dt(iel) * xgamma * xrtp
-      endif
+      xbildv =   xbildv                            &
+               - volume(iel) * xcp(iel) * dt(iel)  &
+                             * xgamma * xrtp
     enddo
   endif
 
@@ -422,18 +342,12 @@ if (inpdt0.eq.0) then
 
     flumab = bmasfl(ifac)
 
-    if (ipccp.gt.0) then
-      xcp = propce(iel,ipccp)
-    else
-      xcp    = cp0
-    endif
-
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
+    xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
-           - flumab * dt(iel) * xcp                         &
+           - flumab * dt(iel) * xcp(iel)                    &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
 
     xbilpa = xbilpa + xfluxf
@@ -455,18 +369,12 @@ if (inpdt0.eq.0) then
 
     flumab = bmasfl(ifac)
 
-    if (ipccp.gt.0) then
-      xcp = propce(iel,ipccp)
-    else
-      xcp    = cp0
-    endif
-
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
+    xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
-           - flumab * dt(iel) * xcp                         &
+           - flumab * dt(iel) * xcp(iel)                    &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
 
     xbilpt = xbilpt + xfluxf
@@ -487,18 +395,12 @@ if (inpdt0.eq.0) then
 
     flumab = bmasfl(ifac)
 
-    if (ipccp.gt.0) then
-      xcp = propce(iel,ipccp)
-    else
-      xcp    = cp0
-    endif
-
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
+    xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
-           - flumab * dt(iel) * xcp                         &
+           - flumab * dt(iel) * xcp(iel)                    &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
 
     xbilsy = xbilsy + xfluxf
@@ -519,18 +421,12 @@ if (inpdt0.eq.0) then
 
     flumab = bmasfl(ifac)
 
-    if (ipccp.gt.0) then
-      xcp = propce(iel,ipccp)
-    else
-      xcp    = cp0
-    endif
-
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
+    xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
-           - flumab * dt(iel) * xcp                         &
+           - flumab * dt(iel) * xcp(iel)                    &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
 
     xbilen = xbilen + xfluxf
@@ -551,18 +447,12 @@ if (inpdt0.eq.0) then
 
     flumab = bmasfl(ifac)
 
-    if (ipccp.gt.0) then
-      xcp = propce(iel,ipccp)
-    else
-      xcp    = cp0
-    endif
-
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf = - surfbn(ifac) * dt(iel) * xcp                 &
+    xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
-           - flumab * dt(iel) * xcp                         &
+           - flumab * dt(iel) * xcp(iel)                    &
              * (coefap(ifac) + coefbp(ifac)*treco(ifac))
 
     xbilso = xbilso + xfluxf
@@ -578,9 +468,8 @@ if (inpdt0.eq.0) then
 
   ! We separate mass injections from suctions for better generality
 
-  ncesmp = ncetsm
-  if (ncesmp.gt.0) then
-    do ieltsm = 1, ncesmp
+  if (ncetsm.gt.0) then
+    do ieltsm = 1, ncetsm
       ! depending on the type of injection we use the 'smacell' value
       ! or the ambient temperature
       iel = icetsm(ieltsm)
@@ -658,6 +547,7 @@ endif ! End of test on inpdt0
 !< [finalize]
 ! Deallocate the temporary array
 deallocate(lstelt)
+deallocate(xcp)
 !< [finalize]
 
 return
