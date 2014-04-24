@@ -158,8 +158,8 @@ if (iccfth.eq.60000) then
 
   call cf_check_density(crom, ncel)
 
-  call cf_thermo_te_from_dp_i(rtp(1,ipr), crom, output1, output2, &
-                              vel, ncel)
+  call cf_thermo_te_from_dp(rtp(1,ipr), crom, output1, output2, &
+                            vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -943,7 +943,7 @@ end subroutine cf_thermo_te_from_dp_ni
 !> \param[in]     l_size  l_size of the array
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_te_from_dp_i(pres, dens, temp, ener, vel, l_size)
+subroutine cf_thermo_te_from_dp(pres, dens, temp, ener, vel, l_size)
 
 !===============================================================================
 
@@ -992,7 +992,7 @@ if (ieos.eq.1) then
 
 endif
 
-end subroutine cf_thermo_te_from_dp_i
+end subroutine cf_thermo_te_from_dp
 
 !===============================================================================
 

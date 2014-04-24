@@ -113,7 +113,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          ivar  , ifac  , iel, size
+integer          ivar  , ifac  , iel, l_size
 integer          ii    , iii   , iccfth
 integer          icalep, icalgm
 integer          iflmab
@@ -519,10 +519,10 @@ do ifac = 1, nfabor
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    size = 1
-    call cf_thermo_pt_from_de(brom(ifac:ifac), bval(ifac,ien), bval(ifac,ipr),  &
-                              bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
-                              bval(ifac,iw), size)
+    l_size = 1
+    call cf_thermo_pt_from_de_ni(brom(ifac:ifac), bval(ifac,ien), bval(ifac,ipr),  &
+                                 bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
+                                 bval(ifac,iw), l_size)
 
 !               flux de masse et type de conditions aux limites :
 !       voir plus bas
