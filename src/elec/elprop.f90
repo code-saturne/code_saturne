@@ -159,14 +159,5 @@ endif
 nsalpp = nproce - ipropp
 nsalto = nproce
 
-!===============================================================================
-! 2. Construction de l'indirection entre la numerotation du noyau et XML
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  call uielpr (nsalpp, ippmod, ipppro, ipproc, ieljou, ielarc,      &
-               itemp, iefjou, idjr, idji, ilapla, idrad, ixkabe)
-endif
-
 return
 end subroutine

@@ -98,13 +98,5 @@ endif
 nsalpp = nproce - nprini
 nsalto = nproce
 
-!   - Interface Code_Saturne
-!     ======================
-
-if (iihmpr.eq.1) then
-  call uiatpr(nsalpp, ippmod, iatmos, ipppro, ipproc, itempc, iliqwt)
-  !==========
-endif
-
 return
 end subroutine atprop

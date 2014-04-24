@@ -225,18 +225,6 @@ if (iirayo.gt.0) then
 n_r_phases = nrphas
 call cs_field_pointer_map_radiation(n_r_phases)
 
-! Map labels for GUI
-
-if (iihmpr.eq.1) then
-  ! call cs_gui_labels_radiation(n_r_phases)
-  call uirapr &
-  !==========
-    ( nprayc, nrphas, ipppro, ipproc,                   &
-      ilumin, iqx, iqy, iqz,                            &
-      itsre, itsri, iabs, iemi, icak)
-
-endif
-
 endif
 
 !===============================================================================

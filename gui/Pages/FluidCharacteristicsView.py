@@ -135,7 +135,7 @@ Cp1 = 520.3;
 Cp2 = 1040.0;
 cp = Y1 * Cp1 + Y2 *Cp2;
 """
-    volumic_viscosity="""# volumic_viscosity
+    volume_viscosity="""# volume_viscosity
 """
     thermal_conductivity="""# oxygen
 lambda = 6.2e-5 * TempK + 8.1e-3;
@@ -176,7 +176,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
                         ('molecular_viscosity', 'Mu'),
                         ('specific_heat', 'Cp'),
                         ('thermal_conductivity', 'Al'),
-                        ('volumic_viscosity', 'Viscv0'),
+                        ('volume_viscosity', 'Viscv0'),
                         ('dynamic_diffusion', 'Diftl0')]
         elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
             self.lst = [('density', 'Rho'),
@@ -478,7 +478,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
                     self.mdl.setPropertyMode(tag, 'constant')
                     self.groupBoxCp.setTitle('Isobaric specific heat')
 
-                if tag == 'volumic_viscosity':
+                if tag == 'volume_viscosity':
                     __combo.setEnabled(True)
                     c = self.mdl.getPropertyMode(tag)
                     if c == 'variable':
@@ -616,7 +616,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         """
         Method to call 'getState' with correct arguements for 'Viscv0'
         """
-        self.__changeChoice(str(text), 'Viscv0', 'volumic_viscosity')
+        self.__changeChoice(str(text), 'Viscv0', 'volume_viscosity')
 
 
     @pyqtSignature("const QString &")
@@ -879,9 +879,9 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         """
         User formula for volumic viscosity
         """
-        exp = self.mdl.getFormula('volumic_viscosity')
+        exp = self.mdl.getFormula('volume_viscosity')
         req = [('viscv', 'Volumic viscosity')]
-        exa = FluidCharacteristicsView.volumic_viscosity
+        exa = FluidCharacteristicsView.volume_viscosity
         symbols_viscv0 = []
         for s in self.list_scalars:
            symbols_viscv0.append(s)
@@ -901,7 +901,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
-            self.mdl.setFormula('volumic_viscosity', result)
+            self.mdl.setFormula('volume_viscosity', result)
             setGreenColor(self.sender(), False)
 
 

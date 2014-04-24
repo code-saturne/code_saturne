@@ -253,23 +253,6 @@ call add_property_field('balance_h', 'Balance_H', ibhydrogen)
 nsalpp = nproce - nprini
 nsalto = nproce
 
-!   - Interface Code_Saturne
-!     ======================
-!     Construction de l'indirection entre la numerotation du noyau et XML
-if (iihmpr.eq.1) then
-  call uicppr &
-  !==========
- ( nclacp, nsalpp, ippmod, iccoal, ipppro,            &
-   ipproc, ieqnox, ihtco2, ihth2o, itemp1,            &
-   irom1, iym1, ighcn1, ighcn2, ignoth,               &
-   ignh31, ignh32, ifhcnd, ifhcnc, ifnh3d, ifnh3c,    &
-   ifnohc, ifnonh, ifnoch, ifnoth, icnohc, icnonh,    &
-   ifhcnr, icnorb, igrb,   immel,                     &
-   itemp2, ix2, irom2, idiam2, igmdch, igmdv1,        &
-   igmdv2, igmhet, ighco2, ighh2o, igmsec,            &
-   ibcarbone, iboxygen, ibhydrogen)
-endif
-
 !--------
 ! Formats
 !--------

@@ -388,29 +388,11 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
  * Array of properties used in the calculation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprop, UIPROP) (const int *const irom,
-                                const int *const iviscl,
-                                const int *const ivisct,
-                                const int *const ivisls,
-                                const int *const icour,
-                                const int *const ifour,
+void CS_PROCF (uiprop, UIPROP) (const int *const ivisls,
                                 const int *const ismago,
                                 const int *const iale,
                                 const int *const icp,
-                                const int *const iscalt,
-                                const int *const iscavr,
-                                const int *const iprtot,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const icmome,
-                                const int *const ipptx,
-                                const int *const ippty,
-                                const int *const ipptz,
-                                const int *const ippdt,
-                                const int *const ivisma,
-                                const int *const idtvar,
-                                const int *const ipucou,
-                                const int *const iappel);
+                                const int *const iscavr);
 
 /*----------------------------------------------------------------------------
  * Temporal averaging treatment

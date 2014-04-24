@@ -122,100 +122,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel);
 
 /*----------------------------------------------------------------------------
- * Defintion des pointeurs des proprietes pour la combustion gaz
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
-                                const int *const nsalpp,
-                                const int *const ippmod,
-                                const int *const iccoal,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const ieqnox,
-                                const int *const ihtco2,
-                                const int *const ihth2o,
-                                const int *const itemp1,
-                                const int *const irom1,
-                                const int *const ym1,
-                                const int *const ighcn1,
-                                const int *const ighcn2,
-                                const int *const ignoth,
-                                const int *const ignh31,
-                                const int *const ignh32,
-                                const int *const ifhcnd,
-                                const int *const ifhcnc,
-                                const int *const ifnh3d,
-                                const int *const ifnh3c,
-                                const int *const ifnohc,
-                                const int *const ifnonh,
-                                const int *const ifnoch,
-                                const int *const ifnoth,
-                                const int *const icnohc,
-                                const int *const icnonh,
-                                const int *const ifhcnr,
-                                const int *const icnorb,
-                                const int *const igrb,
-                                const int *const immel,
-                                const int *const itemp2,
-                                const int *const ix2,
-                                const int *const irom2,
-                                const int *const idiam2,
-                                const int *const igmdch,
-                                const int *const igmdv1,
-                                const int *const igmdv2,
-                                const int *const igmhet,
-                                const int *const ighco2,
-                                const int *const ighh2o,
-                                const int *const igmsec,
-                                const int *const ibcarbone,
-                                const int *const iboxygen,
-                                const int *const ibhydrogen);
-
-/*-----------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for physical properties of the activated specific physics (electrical model)
- *----------------------------------------------------------------------------*/
-void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
-                                const int *const ippmod,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const ieljou,
-                                const int *const ielarc,
-                                const int *const itemp,
-                                const int *const iefjou,
-                                const int *const idjr,
-                                const int *const idji,
-                                const int *const ilapla,
-                                const int *const idrad,
-                                const int *const ixkabe);
-
-/*-----------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for physical properties of the activated specific physics (gas combustion)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
-                                const int *const ippmod,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const icolwc,
-                                const int *const iirayo,
-                                const int *const itemp,
-                                const int *const imam,
-                                const int *const iym,
-                                const int *const ickabs,
-                                const int *const it4m,
-                                const int *const it3m,
-                                const int *const itsc,
-                                const int *const irhol,
-                                const int *const iteml,
-                                const int *const ifmel,
-                                const int *const ifmal,
-                                const int *const iampl,
-                                const int *const itscl,
-                                const int *const imaml);
-
-/*----------------------------------------------------------------------------
  * Electrical model : read parameters
  *
  * Fortran Interface:
@@ -273,30 +179,6 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
                                 int           *len
                                 CS_ARGF_SUPP_CHAINE);
 
-/*----------------------------------------------------------------------------
- * Atmospheric flows: indirection between the solver numbering and the XML one
- * for physical properties
- *
- * Fortran Interface:
- *
- * subroutine uiatpr
- * *****************
- * integer         nsalpp   -->
- * integer         ippmod   -->   specific physics indicator array
- * integer         iatmos   -->   index for atmospheric flow
- * integer         ipppro   -->
- * integer         ipproc   -->
- * integer         itempc   -->   index for real temperature
- * integer         iliqwt   -->   index for liquid water
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
-                                const int *const ippmod,
-                                const int *const iatmos,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const itempc,
-                                const int *const iliqwt);
 
 /*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one

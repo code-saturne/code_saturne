@@ -123,10 +123,10 @@ class XMLmodel(Variables):
                      'Rij-SSG',
                      'Rij-EBRSM',
                      'Spalart-Allmaras'):
-            nodeList.append(nodeTurb.xmlGetNode('property', name='turb_viscosity'))
+            nodeList.append(nodeTurb.xmlGetNode('property', name='turbulent_viscosity'))
 
         elif model in ('LES_Smagorinsky', 'LES_dynamique'):
-            nodeList.append(nodeTurb.xmlGetNode('property', name='smagorinsky_constant'))
+            nodeList.append(nodeTurb.xmlGetNode('property', name='smagorinsky_constant^2'))
 
         return nodeList
 

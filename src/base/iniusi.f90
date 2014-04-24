@@ -437,13 +437,8 @@ if (iihmpr.eq.1) then
 
   iappel = 0
 
-  call uiprop                                                     &
+  call uiprop (ivisls, ismago, iale, icp, iscavr)
   !==========
-            (irom, iviscl, ivisct, ivisls, icour, ifour,          &
-             ismago, iale, icp, iscalt, iscavr,                   &
-             iprtot, ipppro, ipproc, icmome,                      &
-             ipptx, ippty, ipptz, ippdt,                          &
-             ivisma, idtvar, ipucou, iappel)
 
   call uimoyt (ndgmox, ntdmom, imoold, idfmom)
   !==========
@@ -497,13 +492,8 @@ if (iihmpr.eq.1) then
 
   iappel = 1
 
-  call uiprop                                                   &
+  call uiprop (ivisls, ismago, iale, icp, iscavr)
   !==========
-          (irom, iviscl, ivisct, ivisls, icour, ifour,          &
-           ismago, iale, icp, iscalt, iscavr,                   &
-           iprtot, ipppro, ipproc, icmome,                      &
-           ipptx, ippty, ipptz, ippdt,                          &
-           ivisma, idtvar, ipucou, iappel)
 
   call csenso                                                   &
   !==========

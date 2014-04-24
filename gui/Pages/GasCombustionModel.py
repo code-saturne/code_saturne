@@ -277,22 +277,22 @@ class GasCombustionModel(Variables, Model):
         Create model properties
         """
         lst = []
-        lst.append("Temperature")
-        lst.append("YM_Fuel")
-        lst.append("YM_Oxyd")
-        lst.append("YM_Prod")
+        lst.append("temperature")
+        lst.append("ym_fuel")
+        lst.append("ym_oxyd")
+        lst.append("ym_prod")
         if model == 'lwp':
-            lst.append("T.SOURCE")
-            lst.append("Mas_Mol")
+            lst.append("source_term")
+            lst.append("molar_mass")
             ndirac = self.getNdirac()
             for idirac in range(ndirac):
-                lst.append("RHOL0" + str(idirac + 1))
-                lst.append("TEML0" + str(idirac + 1))
-                lst.append("FMEL0" + str(idirac + 1))
-                lst.append("FMAL0" + str(idirac + 1))
-                lst.append("AMPL0" + str(idirac + 1))
-                lst.append("TSCL0" + str(idirac + 1))
-                lst.append("MAML0" + str(idirac + 1))
+                lst.append("rho_local_" + str(idirac + 1))
+                lst.append("temperature_local_" + str(idirac + 1))
+                lst.append("ym_local_" + str(idirac + 1))
+                lst.append("w_local_" + str(idirac + 1))
+                lst.append("amplitude_local_" + str(idirac + 1))
+                lst.append("chemical_st_local_" + str(idirac + 1))
+                lst.append("molar_mass_local_" + str(idirac + 1))
         return lst
 
 
@@ -317,7 +317,7 @@ class GasCombustionModel(Variables, Model):
 
             for name in new_list:
                 if name not in previous_list:
-                    self.setNewVariable(self.node_gas, name, tpe="model")
+                    self.setNewVariable(self.node_gas, name, tpe="model", label=name)
 
             NPE = NumericalParamEquatModel(self.case)
             for node in self.node_gas.xmlGetChildNodeList('variable'):

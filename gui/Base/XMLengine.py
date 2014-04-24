@@ -1594,12 +1594,12 @@ class XMLengineTestCase(unittest.TestCase):
         assert n5 == n6, 'This two node are not identical'
 
         d1 = '<turbulence model="Rij-epsilon">'\
-                '<property label="turb. vi" name="turb_viscosity"/>'\
+                '<property label="turb. vi" name="turbulent_viscosity"/>'\
                 '<variable label="R11" name="component_R11"/>'\
             '</turbulence>'
         d2 = '<turbulence model="Rij-epsilon">'\
                 '<variable label="R11" name="component_R11"/>'\
-                '<property label="turb. vi" name="turb_viscosity"/>'\
+                '<property label="turb. vi" name="turbulent_viscosity"/>'\
             '</turbulence>'
         n5 = self.xmlNodeFromString(d1)
         n6 = XMLDocument().parseString(d2).root()

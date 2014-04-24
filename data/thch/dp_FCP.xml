@@ -60,73 +60,73 @@
                                         <reburning_model>unused</reburning_model>
 				</nox_formation>
 			</solid_fuel>
-			<scalar label="Fr_HET_O2" name="Fr_HET_O2" type="model">
+			<variable label="Fr_HET_O2" name="Fr_HET_O2" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<scalar label="Enthalpy" name="Enthalpy" type="model">
+			</variable>
+			<variable label="Enthalpy" name="Enthalpy" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<scalar label="NP_CP01" name="NP_CP01" type="model">
+			</variable>
+			<variable label="NP_CP01" name="n_p_01" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<scalar label="XCH_CP01" name="XCH_CP01" type="model">
+			</variable>
+			<variable label="XCH_CP01" name="x_p_coal_01" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<scalar label="XCK_CP01" name="XCK_CP01" type="model">
+			</variable>
+			<variable label="XCK_CP01" name="x_p_char_01" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<scalar label="ENT_CP01" name="ENT_CP01" type="model">
+			</variable>
+			<variable label="ENT_CP01" name="x_p_h_01" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<scalar label="Fr_MV101" name="Fr_MV101" type="model">
+			</variable>
+			<variable label="Fr_MV101" name="fr_mv1_01" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<scalar label="Fr_MV201" name="Fr_MV201" type="model">
+			</variable>
+			<variable label="Fr_MV201" name="fr_mv2_01" type="model">
 				<flux_reconstruction status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 				<min_value>0</min_value>
 				<max_value>1</max_value>
-			</scalar>
-			<property label="Temp_GAZ" name="Temp_GAZ"/>
-			<property label="ROM_GAZ" name="ROM_GAZ"/>
-			<property label="YM_CHx1m" name="YM_CHx1m"/>
-			<property label="YM_CHx2m" name="YM_CHx2m"/>
-			<property label="YM_CO" name="YM_CO"/>
-			<property label="YM_O2" name="YM_O2"/>
-			<property label="YM_CO2" name="YM_CO2"/>
-			<property label="YM_H2O" name="YM_H2O"/>
-			<property label="YM_N2" name="YM_N2"/>
-			<property label="XM" name="XM"/>
-			<property label="Temp_CP01" name="Temp_CP01"/>
-			<property label="Frm_CP01" name="Frm_CP01"/>
-			<property label="Rho_CP01" name="Rho_CP01"/>
-			<property label="Dia_CK01" name="Dia_CK01"/>
-			<property label="Ga_DCH01" name="Ga_DCH01"/>
-			<property label="Ga_DV101" name="Ga_DV101"/>
-			<property label="Ga_DV201" name="Ga_DV201"/>
-			<property label="Ga_HET_O201" name="Ga_HET_O201"/>
-			<property label="IntLuminance_4PI" name="IntLuminance_4PI"/>
+			</variable>
+			<property label="Temp_GAZ" name="t_gas"/>
+			<property label="ROM_GAZ" name="rho_gas"/>
+			<property label="YM_CHx1m" name="ym_chx1m"/>
+			<property label="YM_CHx2m" name="ym_chx2m"/>
+			<property label="YM_CO" name="ym_co"/>
+			<property label="YM_O2" name="ym_o2"/>
+			<property label="YM_CO2" name="ym_co2"/>
+			<property label="YM_H2O" name="ym_h2o"/>
+			<property label="YM_N2" name="ym_n2"/>
+			<property label="XM" name="xm"/>
+			<property label="Temp_CP01" name="t_coal01"/>
+			<property label="Frm_CP01" name="w_solid_coal01"/>
+			<property label="Rho_CP01" name="rho_coal01"/>
+			<property label="Dia_CK01" name="diameter_coal01"/>
+			<property label="Ga_DCH01" name="dissapear_rate_coal01"/>
+			<property label="Ga_DV101" name="m_transfer_v1_coal01"/>
+			<property label="Ga_DV201" name="m_transfer_v2_coal01"/>
+			<property label="Ga_HET_O201" name="het_ts_o2_coal01"/>
+			<property label="IntLuminance_4PI" name="intensity"/>
 		        <oxidants>
 			        <oxidant ox_id="1">
 				        <O2_composition>1</O2_composition>

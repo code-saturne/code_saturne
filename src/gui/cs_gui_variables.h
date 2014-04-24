@@ -48,13 +48,6 @@ BEGIN_C_DECLS
 typedef struct {
   char  *model;            /* predifined physics model                        */
   char  *model_value;      /* predifined physics model value                  */
-  int    nscaus;           /* number of user scalars                          */
-  int    nscapp;           /* number of specific physics scalars              */
-  int    nprop;            /* number of properties                            */
-  int    nsalpp;           /* number of predifined physics properties         */
-  int    ntimaver;         /* number of time averages                         */
-  char **properties_name;  /* label of properties                             */
-  int   *properties_ipp;   /* properties position for post-processing         */
 } cs_var_t;
 
 

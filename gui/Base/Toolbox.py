@@ -300,7 +300,7 @@ def dicoLabel(name):
                             ('specific_heat',                 "ChSpec",     "SpecHeat"),
                             ('thermal_conductivity',          "CondTherm",  "ThermalCond"),
                             ('dynamic_diffusion',             "DynDiff",    "DiffDyn"),
-                            ('volumic_viscosity',             "VolVisc",    "VolVisc"),
+                            ('volume_viscosity',              "VolVisc",    "VolVisc"),
                             ('local_time_step',               "pdtlocal",   "LocalTime"),
                             ('courant_number',                "NbCourant",  "CourantNb"),
                             ('fourier_number',                "NbFourier",  "FourierNb"),

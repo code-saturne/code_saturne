@@ -297,7 +297,7 @@ class XMLinit(Variables):
         # properties
         nodeF = XMLPhysicalPropNode.xmlInitNode('fluid_properties')
         for prop in ['density', 'molecular_viscosity', 'specific_heat',
-                     'thermal_conductivity', 'volumic_viscosity']:
+                     'thermal_conductivity', 'volume_viscosity']:
             node = nodeF.xmlGetNode('property', name=prop)
             if node:
                 if node['choice'] == 'user_law':
@@ -431,24 +431,24 @@ class XMLinit(Variables):
                     node['name'] = name
                     node['component'] = component
 
-        dicoName = [("NP_CP",                        "np_coal"),
-                    ("XCH_CP",                       "x_coal"),
-                    ("XCK_CP",                       "w_ck_coal"),
-                    ("ENT_CP",                       "h2_coal"),
-                    ("XWT_CP",                       "xwt_coal"),
-                    ("Fr_MV1",                       "mv1_fraction"),
-                    ("Fr_MV2",                       "mv2_fraction"),
-                    ("Fr_HET_O2",                    "het_o2_fraction"),
-                    ("Fr_HET_CO2",                   "het_co2_fraction"),
-                    ("Fr_HET_H2O",                   "het_h2o_fraction"),
-                    ("FR_HCN",                       "hcn_fraction"),
-                    ("FR_NO",                        "no_fraction"),
-                    ("Enth_Ox",                      "ox_enthalpy"),
-                    ("FR_NH3",                       "nh3_fraction"),
-                    ("FR_H20",                       "h2o_fraction"),
-                    ("FR_OXYD2",                     "oxyd2_fraction"),
-                    ("FR_OXYD3",                     "oxyd3_fraction"),
-                    ("FR_CO2",                       "co2_fraction"),
+        dicoName = [("NP_CP",                        "n_p_"),
+                    ("XCH_CP",                       "x_p_coal_"),
+                    ("XCK_CP",                       "x_p_char_"),
+                    ("ENT_CP",                       "x_p_h_"),
+                    ("XWT_CP",                       "x_p_wt_"),
+                    ("Fr_MV1",                       "fr_mv1_"),
+                    ("Fr_MV2",                       "fr_mv2_"),
+                    ("Fr_HET_O2",                    "fr_het_o2"),
+                    ("Fr_HET_CO2",                   "fr_het_co2"),
+                    ("Fr_HET_H2O",                   "fr_het_h2o"),
+                    ("FR_HCN",                       "x_c_hcn"),
+                    ("FR_NO",                        "x_c_no"),
+                    ("FR_NH3",                       "x_c_nh3"),
+                    ("FR_CO2",                       "x_c_co2"),
+                    ("Enth_Ox",                      "x_c_h_ox"),
+                    ("FR_H20",                       "fr_h2o"),
+                    ("FR_OXYD2",                     "fr_oxyd2"),
+                    ("FR_OXYD3",                     "fr_oxyd3"),
                     ("Var_F1F2",                     "f1f2_variance"),
                     ("scalar",                       "user_"),
                     ("PotElecReal",                  "elec_pot_r"),
@@ -477,7 +477,8 @@ class XMLinit(Variables):
                     ("turb_phi",                     "phi"),
                     ("turb_alpha",                   "alpha"),
                     ("turb_omega",                   "omega"),
-                    ("nusa",                         "nu_tilda")]
+                    ("nusa",                         "nu_tilda"),
+                    ("volumic_viscosity",            "volume_viscosity")]
         dico = {}
         for (u,v) in dicoName:
             dico[u] = v
@@ -508,6 +509,7 @@ class XMLinit(Variables):
                         idx = name.find(key) + len(key)
                         node["name"] = dico[key] + name[idx:]
                         break
+
 
         # update formula
         for node in XMLThermoPhysicalNode.xmlGetNodeList('formula'):
@@ -555,6 +557,117 @@ class XMLinit(Variables):
         #                node["name"] = dico[key] + name[idx:]
         #                break
 
+        dicoProp = [("Rho",                          "density"),
+                    ("turb_viscosity",               "turbulent_viscosity"),
+                    ("smagorinsky_constant",         "smagorinsky_constant^2"),
+                    ("Temperature",                  "temperature"),
+                    ("YM_Fuel",                      "ym_fuel"),
+                    ("YM_Oxyd",                      "ym_oxyd"),
+                    ("YM_Prod",                      "ym_prod"),
+                    ("Mas_Mol",                      "molar_mass"),
+                    ("T.SOURCE",                     "source_term"),
+                    ("RHOL0",                        "rho_local_"),
+                    ("TEML0",                        "temperature_local_"),
+                    ("FMEL0",                        "ym_local_"),
+                    ("FMAL0",                        "w_local_"),
+                    ("AMPL0",                        "amplitude_local_"),
+                    ("TSCL0",                        "chemical_st_local_"),
+                    ("MAML0",                        "molar_mass_local_"),
+                    ("Temp_GAZ",                     "t_gas"),
+                    ("ROM_GAZ",                      "rho_gas"),
+                    ("YM_CHx1m",                     "ym_chx1m"),
+                    ("YM_CHx2m",                     "ym_chx2m"),
+                    ("YM_CO",                        "ym_co"),
+                    ("YM_H2S",                       "ym_h2s"),
+                    ("YM_H2",                        "ym_h2"),
+                    ("YM_HCN",                       "ym_hcn"),
+                    ("YM_NH3",                       "ym_nh3"),
+                    ("YM_O2",                        "ym_o2"),
+                    ("YM_CO2",                       "ym_co2"),
+                    ("YM_H2O",                       "ym_h2o"),
+                    ("YM_SO2",                       "ym_so2"),
+                    ("YM_N2",                        "ym_n2"),
+                    ("XM",                           "xm"),
+                    ("EXP1",                         "exp1"),
+                    ("EXP2",                         "exp2"),
+                    ("EXP3",                         "exp3"),
+                    ("EXP4",                         "exp4"),
+                    ("EXP5",                         "exp5"),
+                    ("F_HCN_DEV",                    "f_hcn_dev"),
+                    ("F_HCN_HET",                    "f_hcn_het"),
+                    ("F_NH3_DEV",                    "f_nh3_dev"),
+                    ("F_NH3_HET",                    "f_nh3_het"),
+                    ("F_NO_HCN",                     "f_no_hcn"),
+                    ("F_NO_NH3",                     "f_no_nh3"),
+                    ("F_NO_HET",                     "f_no_het"),
+                    ("F_NO_THE",                     "f_no_the"),
+                    ("C_NO_HCN",                     "c_no_hcn"),
+                    ("C_NO_NH3",                     "c_no_nh3"),
+                    ("F_HCN_RB",                     "f_hcn_rb"),
+                    ("C_NO_RB",                      "c_no_rb"),
+                    ("EXP_RB",                       "exp_rb"),
+                    ("Temp_CP",                      "t_coal"),
+                    ("Frm_CP",                       "w_solid_coal"),
+                    ("Rho_CP",                       "rho_coal"),
+                    ("Dia_CK",                       "diameter_coal"),
+                    ("Ga_DCH",                       "dissapear_rate_coal"),
+                    ("Ga_DV1",                       "m_transfer_v1_coal"),
+                    ("Ga_DV2",                       "m_transfer_v2_coal"),
+                    ("Ga_HET_O2",                    "het_ts_o2_coal"),
+                    ("Ga_HET_CO2",                   "het_ts_co2_coal"),
+                    ("Ga_HET_H2O",                   "het_ts_h2o_coal"),
+                    ("Ga_HET",                       "het_ts_coal"),
+                    ("Ga_SEC",                       "dry_ts_coal"),
+                    ("Bilan_C",                      "balance_c"),
+                    ("Bilan_O",                      "balance_o"),
+                    ("Bilan_H",                      "balance_h"),
+                    ("PuisJoul",                     "joule_power"),
+                    ("Cour_re",                      "current_re_"),
+                    ("CouImag",                      "current_im_"),
+                    ("For_Lap",                      "laplace_force_"),
+                    ("Coef_Abso",                    "absorption_coeff"),
+                    ("c_NO_HCN",                     "radiation_source"),
+                    ("Sigma",                        "elec_sigma"),
+                    ("IntLuminance_4PI",             "intensity")]
+
+        dicoP = {}
+        for (u,v) in dicoProp:
+            dicoP[u] = v
+        for node in self.case.xmlGetNodeList('property'):
+            name = node["name"]
+            if name:
+                for key in dicoP.keys():
+                    if name.startswith(key):
+                        idx = name.find(key) + len(key)
+                        node["name"] = dicoP[key] + name[idx:]
+                        break
+
+        for node in self.case.xmlGetNodeList('var_prop'):
+            name = node["name"]
+            if name:
+                for key in dicoP.keys():
+                    if name.startswith(key):
+                        idx = name.find(key) + len(key)
+                        node["name"] = dicoP[key] + name[idx:]
+                        break
+
+        nodeCompress = XMLThermoPhysicalNode.xmlGetNode('compressible_model')
+        if nodeCompress['model'] and nodeCompress['model'] != "off":
+            n = nodeCompress.xmlGetNode("property", name = "density")
+            if n:
+                ndens = XMLPhysicalPropNode.xmlGetNode('property', name='density')
+                ndens.xmlChildsCopy(n)
+                n.xmlRemoveNode()
+        for node in XMLPhysicalPropNode.xmlGetNodeList('property'):
+            n = node.xmlGetNode('formula')
+            if n:
+                f = n.xmlGetTextNode()
+                if f != None:
+                    f = f.replace("rho =", "density =")
+                    f = f.replace("mu =", "molecular_viscosity =")
+                    f = f.replace("lambda =", "thermal_conductivity =")
+                    f = f.replace("viscv =", "volume_viscosity =")
+                    n.xmlSetTextNode(f)
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

@@ -121,7 +121,6 @@ _output_value(const char  *const param,
               int         *const keyword)
 {
   char *path = NULL;
-  char *choice = NULL;
   int   result;
 
   path = cs_xpath_init_path();
@@ -140,7 +139,6 @@ _output_value(const char  *const param,
 
   }
 
-  BFT_FREE(choice);
   BFT_FREE(path);
 }
 
@@ -306,7 +304,7 @@ cs_gui_variable_attribute(const char *const name,
  * Return number of <probe recording> tags in the <variable> tag.
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_variable_number_probes (const char *const variable)
+static int cs_gui_variable_number_probes(const char *const variable)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -338,8 +336,8 @@ static int cs_gui_variable_number_probes (const char *const variable)
  *   num_probe  <--  number of <probe_recording> tags
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_variable_probe_name (const char *const variable,
-                                       int               num_probe)
+static int cs_gui_variable_probe_name(const char *const variable,
+                                      int               num_probe)
 {
   char *path = NULL;
   char *strvalue = NULL;
@@ -464,7 +462,7 @@ _gui_variable_post(int         f_id,
   const int var_key_id = cs_field_key_id("post_id");
   int ipp = cs_field_get_key_int(fi, var_key_id);
 
-  if (ipp == 1) return;
+  if (ipp == -1) return;
 
   int f_post = 0, f_log = 0;
   const int k_post = cs_field_key_id("post_vis");
@@ -478,9 +476,8 @@ _gui_variable_post(int         f_id,
                             "listing_printing",
                             &f_log);
 
-  cs_field_t *f = cs_field_by_id(ipp);
-  cs_field_set_key_int(f, k_post, f_post);
-  cs_field_set_key_int(f, k_log, f_log);
+  cs_field_set_key_int(fi, k_post, f_post);
+  cs_field_set_key_int(fi, k_log, f_log);
 
   nb_probes = cs_gui_variable_number_probes(fi->name);
 
@@ -510,59 +507,43 @@ _gui_variable_post(int         f_id,
  * Return status of the property for physical model
  *
  * parameters:
- *   model          <-- type of model
- *   num_pro        <-- property name
- *   value_type     <-- type of value (listing_printing, postprocessing ..)
- *   keyword        --> value for the Fortran array
+ *   name          <--  name of the variable markup
+ *   child         <--  child markup
+ *   value_type    <-- type of value (listing_printing, postprocessing ..)
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_model_property_output_status (const char *const model,
-                                                 const char *const name,
-                                                 const char *const value_type,
-                                                 int        *const keyword)
+static void
+cs_gui_property_output_status(const char *const name,
+                              const char *const child,
+                              int        *const keyword)
 {
   char *path = NULL;
-  int   result;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
+  path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "property");
   cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, value_type);
-  cs_xpath_add_attribute(&path, "status");
-
-  if (cs_gui_get_status(path, &result))
-    *keyword = result;
-  else
-    *keyword = 1;
-
-  BFT_FREE(path);
+  cs_xpath_add_element(&path, child);
+  _attribute_value(path, child, keyword);
 }
 
 /*-----------------------------------------------------------------------------
- * Return probe number for sub balise "probe_recording" for physical model's
- * property.
+ * Return probe number for sub balise "probe_recording" for property.
  *
  * parameters:
- *   model      <-- type of model
- *   num_prop   <-- number of property
+ *   property   <--  name of property
  *   num_probe  <-- number of <probe_recording> tags
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_model_property_probe_name(const char *const model,
-                                            const char *const name,
-                                            const int   num_probe)
+static int cs_gui_property_probe_name(const char *const property,
+                                      const int   num_probe)
 {
   char *path = NULL;
   char *strvalue = NULL;
   int   value;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
+  path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_test_attribute(&path, "name", property);
   cs_xpath_add_element(&path, "probes");
   cs_xpath_add_element_num(&path, "probe_recording", num_probe);
   cs_xpath_add_attribute(&path, "name");
@@ -581,25 +562,18 @@ static int cs_gui_model_property_probe_name(const char *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Return number of sub balises <probe_recording> for property of model scalar.
- *
- * parameters:
- *   model    <--  type of model
- *   num_sca  <--  scalar number
+ * Return number of sub balises <probe_recording> for property.
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_model_property_number_probes(const char *const model,
-                                               const char *const name)
+static int cs_gui_property_number_probes(const char *const property)
 {
   char *path = NULL;
   char *choice = NULL;
   int   nb_probes;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
+  path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_test_attribute(&path, "name", property);
   cs_xpath_add_element(&path, "probes");
   cs_xpath_add_attribute(&path, "choice");
   choice = cs_gui_get_attribute_value(path);
@@ -620,21 +594,17 @@ static int cs_gui_model_property_number_probes(const char *const model,
  * Return the label model's property.
  *
  * parameters:
- *   model             <--  modele
- *   num_prop          -->  property's number
+ *   property   <--  name of property
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_model_property_label(const char *const model,
-                                             const char *const name)
+static char *cs_gui_get_property_label(const char *const property)
 {
   char *path = NULL;
   char *label_name = NULL;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
+  path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_test_attribute(&path, "name", property);
   cs_xpath_add_attribute(&path, "label");
 
   label_name = cs_gui_get_attribute_value(path);
@@ -649,418 +619,64 @@ static char *cs_gui_get_model_property_label(const char *const model,
  * Post-processing options for properties
  *
  * parameters:
- *   property_name      <-- property name
- *   num_prop           <-- property id
+ *   f_id               <-- field id
  *   ihisvr             --> histo output
- *   ippfld             <-- ipp -> field mapping
  *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void
-_gui_model_property_post(const char  *model,
-                         int          num_prop,
-                         int         *ihisvr,
-                         const int   *ippfld,
-                         const int   *nvppmx)
+_gui_property_post(int         f_id,
+                   int        *ihisvr,
+                   const int  *nvppmx)
 {
-  int ipp;
   int nb_probes;
   int iprob;
-  int num_probe;
   char *varname = NULL;
+  int num_probe;
 
-  cs_var_t  *vars = cs_glob_var;
+  const cs_field_t  *fi = cs_field_by_id(f_id);
+  const int var_key_id = cs_field_key_id("post_id");
+  int ipp = cs_field_get_key_int(fi, var_key_id);
 
-  ipp = vars->properties_ipp[num_prop];
+  if (ipp == -1) return;
 
-  if (ipp == 1) return;
+  int f_post = 0, f_log = 0;
+  const int k_post = cs_field_key_id("post_vis");
+  const int k_log  = cs_field_key_id("log");
 
-  if (ippfld[ipp - 1] > -1) {
-    int   f_post = 0, f_log = 0;
-    const int k_post = cs_field_key_id("post_vis");
-    const int k_log = cs_field_key_id("log");
+  /* EnSight outputs frequency */
+  cs_gui_property_output_status(fi->name,
+                                "postprocessing_recording",
+                                &f_post);
 
-    /* EnSight outputs frequency */
-    cs_gui_model_property_output_status(model,
-                                        vars->properties_name[num_prop],
-                                        "postprocessing_recording",
-                                        &f_post);
+  /* Listing output frequency */
+  cs_gui_property_output_status(fi->name,
+                                "listing_printing",
+                                &f_log);
 
-    /* Listing output frequency */
-    cs_gui_model_property_output_status(model,
-                                        vars->properties_name[num_prop],
-                                        "listing_printing",
-                                        &f_log);
-
-    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
-    cs_field_set_key_int(f, k_post, f_post);
-    cs_field_set_key_int(f, k_log, f_log);
-  }
+  cs_field_set_key_int(fi, k_post, f_post);
+  cs_field_set_key_int(fi, k_log, f_log);
 
   /* Activated probes */
-  nb_probes = cs_gui_model_property_number_probes(model,
-                                                  vars->properties_name[num_prop]);
+  nb_probes = cs_gui_property_number_probes(fi->name);
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
     for (iprob=0; iprob<nb_probes; iprob++){
-      num_probe = cs_gui_model_property_probe_name(model,
-                                                   vars->properties_name[num_prop],
-                                                   iprob+1);
+      num_probe = cs_gui_property_probe_name(fi->name, iprob+1);
       ihisvr[(iprob + 1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
   }
 
   /* Take into account labels */
 
-  varname = cs_gui_get_model_property_label(model, vars->properties_name[num_prop]);
+  varname = cs_gui_get_property_label(fi->name);
   _gui_copy_varname(varname, ipp);
 
   BFT_FREE(varname);
 }
 
-/*-----------------------------------------------------------------------------
- * Return status of time average markup.
- *
- * parameters:
- *   property_name  <-- label of property
- *   value_type     <-- type of balise (listing_printing, postprocessing, ...)
- *   keyword        --> number of balise "probe_recording"
- *----------------------------------------------------------------------------*/
-
-static void cs_gui_time_average_status(const char *const property_name,
-                                       const char *const value_type,
-                                       int        *const keyword)
-{
-  char *path = NULL;
-  int   result;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "time_average");
-  cs_xpath_add_test_attribute(&path, "label", property_name);
-  cs_xpath_add_element(&path, value_type);
-  cs_xpath_add_attribute(&path, "status");
-
-  if (cs_gui_get_status(path, &result))
-    *keyword = result;
-  else
-    *keyword = 1;
-
-  BFT_FREE(path);
-}
-
-
-/*-----------------------------------------------------------------------------
- * Return number of probes for time average of property.
- *
- * parameters:
- *   property_name    <--  label of property
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_time_average_number_probes(const char *const property_name)
-{
-  char *path = NULL;
-  char *choice = NULL;
-  int   nb_probes ;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "time_average");
-  cs_xpath_add_test_attribute(&path, "label", property_name);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice) {
-    nb_probes = atoi(choice);
-    BFT_FREE(choice);
-  }
-  else
-    nb_probes = -1;
-
-  BFT_FREE(path);
-
-  return nb_probes;
-}
-
-/*-----------------------------------------------------------------------------
- * Return probe number for sub balise "probe_recording" for time average of
- * properties.
- *
- * parameters:
- *   property_name    <-- label of property
- *   num_probe        <-- number of balise "probe_recording"
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_time_average_probe_name(const char *const property_name,
-                                          const int         num_probe)
-{
-  char *path = NULL;
-  char *strvalue = NULL;
-  int   value;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "time_average");
-  cs_xpath_add_test_attribute(&path, "label", property_name);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
-  cs_xpath_add_attribute(&path, "name");
-
-  strvalue = cs_gui_get_attribute_value(path);
-
-  if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  value = atoi(strvalue);
-
-  BFT_FREE(path);
-  BFT_FREE(strvalue);
-
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Post-processing options for temporal averaging.
- *
- * parameters:
- *   property_name      <-- property name
- *   ipp                <-- property id
- *   ippfld             <-- ipp -> field mapping
- *   ihisvr             --> histo output
- *   nvppmx             <-- number of printed variables
- *----------------------------------------------------------------------------*/
-
-static void
-_gui_time_average_post(const char  *property_name,
-                       int          ipp,
-                       const int   *ippfld,
-                       int         *ihisvr,
-                       const int   *nvppmx)
-{
-  int nb_probes;
-  int iprob;
-  int num_probe;
-
-  if (ipp == 1) return;
-
-  if (ippfld[ipp - 1] > -1) {
-    int   f_post = 0, f_log = 0;
-    const int k_post = cs_field_key_id("post_vis");
-    const int k_log = cs_field_key_id("log");
-
-    cs_gui_time_average_status(property_name,
-                               "postprocessing_recording",
-                               &f_post);
-
-    cs_gui_time_average_status(property_name,
-                               "listing_printing",
-                               &f_log);
-
-    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
-    cs_field_set_key_int(f, k_post, f_post);
-    cs_field_set_key_int(f, k_log, f_log);
-  }
-
-  nb_probes = cs_gui_time_average_number_probes(property_name);
-
-  ihisvr[0 + (ipp - 1)] = nb_probes;
-
-  if (nb_probes > 0) {
-    for (iprob =0; iprob < nb_probes; iprob++){
-      num_probe = cs_gui_time_average_probe_name(property_name,
-                                                 iprob+1);
-
-      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
-    }
-  }
-  _gui_copy_varname(property_name, ipp);
-
-}
-
-/*-----------------------------------------------------------------------------
- * Return the label attribute of a property markup.
- *
- * parameters:
- *   property_name        <--  name of the property
- *----------------------------------------------------------------------------*/
-
-static char *cs_gui_properties_label(const char *const property_name)
-{
-  char *path = NULL;
-  char *label = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property_name);
-  cs_xpath_add_attribute(&path, "label");
-
-  label = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label;
-}
-
-/*-----------------------------------------------------------------------------
- * Return status of thr property markup.
- *
- * parameters:
- *   property_name  <-- name of property
- *   value_type     <-- type of balise (listing_printing, postprocessing, ...)
- *   keyword        --> number of balise "probe_recording"
- *----------------------------------------------------------------------------*/
-
-static void cs_gui_properties_status(const char *const property_name,
-                                     const char *const value_type,
-                                     int        *const keyword)
-{
-  char *path = NULL;
-  int   result;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property_name);
-  cs_xpath_add_element(&path, value_type);
-  cs_xpath_add_attribute(&path, "status");
-
-  if (cs_gui_get_status(path, &result))
-    *keyword = result;
-  else
-    *keyword = 1;
-
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Return number of probes for property.
- *
- * parameters:
- *   property_name  <-- name of property
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_properties_number_probes(const char *const property_name)
-{
-  char *path = NULL;
-  char *choice = NULL;
-  int   nb_probes;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property_name);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice) {
-    nb_probes = atoi(choice);
-    BFT_FREE(choice);
-  }
-  else
-    nb_probes = -1;
-
-  BFT_FREE(path);
-
-  return nb_probes;
-}
-
-/*-----------------------------------------------------------------------------
- * Return probe number for sub balise "probe_recording" for properties
- *
- * parameters:
- *   property_name   <-- name of property
- *   num_probe       <-- number of balise <probe_recording>
- *----------------------------------------------------------------------------*/
-
-static int cs_gui_properties_probe_name(const char *const property_name,
-                                        const int         num_probe)
-{
-  char *path = NULL;
-  char *strvalue = NULL;
-  int   value;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property_name);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
-  cs_xpath_add_attribute(&path, "name");
-
-  strvalue = cs_gui_get_attribute_value(path);
-
-  if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  value = atoi(strvalue);
-
-  BFT_FREE(path);
-  BFT_FREE(strvalue);
-
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Post-processing options for physical properties
- *
- * parameters:
- *   property_name      <-- property name
- *   ipp                <-- property id
- *   ippfld             <-- ipp -> field mapping
- *   ihisvr             --> histo output
- *   nvppmx             <-- number of printed variables
- *----------------------------------------------------------------------------*/
-
-static void
-_gui_properties_post(const char  *property_name,
-                     const int    ipp,
-                     const int   *ippfld,
-                     int         *ihisvr,
-                     const int   *nvppmx)
-{
-  int nb_probes;
-  int iprob;
-  char *varname = NULL;
-  int num_probe;
-
-  if (ipp == 1) return;
-
-  varname = cs_gui_properties_label(property_name);
-  if (varname == NULL) return;
-
-  _gui_copy_varname(varname, ipp);
-  BFT_FREE(varname);
-
-  if (ippfld[ipp - 1] > -1) {
-    int   f_post = 0, f_log = 0;
-    const int k_post = cs_field_key_id("post_vis");
-    const int k_log = cs_field_key_id("log");
-
-    cs_gui_properties_status(property_name,
-                             "postprocessing_recording",
-                             &f_post);
-
-    cs_gui_properties_status(property_name,
-                             "listing_printing",
-                             &f_log);
-
-    cs_field_t *f = cs_field_by_id(ippfld[ipp - 1]);
-    cs_field_set_key_int(f, k_post, f_post);
-    cs_field_set_key_int(f, k_log, f_log);
-  }
-
-  nb_probes = cs_gui_properties_number_probes(property_name);
-
-  ihisvr[0 + (ipp - 1)] = nb_probes;
-
-  if (nb_probes > 0) {
-    for (iprob =0; iprob < nb_probes; iprob++){
-      num_probe = cs_gui_properties_probe_name(property_name,
-                                               iprob+1);
-
-      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
-    }
-  }
-
-}
 
 /*-----------------------------------------------------------------------------
  * Return a single coordinate of a monitoring probe.
@@ -1630,30 +1246,8 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE)
       _gui_variable_post(f->id, ihisvr, nvppmx);
-  }
-
-  /* Physical properties */
-  if (vars->nsalpp > 0) {
-    for (i = 0; i < vars->nsalpp; i++) {
-      _gui_model_property_post(vars->model, i,
-                               ihisvr, ippfld, nvppmx);
-    }
-  }
-
-  for (i = vars->nsalpp; i < vars->nprop; i++) {
-    if (vars->ntimaver != 0 && i >= vars->nprop - vars->ntimaver) {
-      _gui_time_average_post(vars->properties_name[i],
-                             vars->properties_ipp[i],
-                             ippfld,
-                             ihisvr,
-                             nvppmx);
-    }
-    else
-      _gui_properties_post(vars->properties_name[i],
-                           vars->properties_ipp[i],
-                           ippfld,
-                           ihisvr,
-                           nvppmx);
+    else if (f->type & CS_FIELD_PROPERTY)
+      _gui_property_post(f->id, ihisvr, nvppmx);
   }
 
   _field_labels_from_gui();

@@ -73,6 +73,8 @@ class InitializationModel(Model):
         self.node_therm      = self.models.xmlGetNode('thermal_scalar', 'model')
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.node_comp = self.models.xmlGetNode('compressible_model', 'model')
+            self.node_prop   = self.case.xmlGetNode('physical_properties')
+            self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
 
         self.turb = TurbulenceModel(self.case)
         self.therm = ThermalScalarModel(self.case)
@@ -293,7 +295,7 @@ omega = k^0.5/almax;"""
         """
         Return status of Density for the initialisation
         """
-        node = self.node_comp.xmlGetNode('property', name = 'Rho')
+        node = self.node_fluid.xmlGetNode('property', name = 'density')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         status = n['status']
         if not status:
@@ -308,7 +310,7 @@ omega = k^0.5/almax;"""
         Put status of Density for the initialisation
         """
         self.isOnOff(status)
-        node = self.node_comp.xmlGetNode('property', name = 'Rho')
+        node = self.node_fluid.xmlGetNode('property', name = 'density')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         n['status'] = status
 
@@ -428,7 +430,7 @@ omega = k^0.5/almax;"""
         Set the formula for density.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('property', name = 'Rho')
+        node = self.node_fluid.xmlGetNode('property', name = 'density')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -443,7 +445,7 @@ omega = k^0.5/almax;"""
         Return the formula for density.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('property', name = 'Rho')
+        node = self.node_fluid.xmlGetNode('property', name = 'density')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)

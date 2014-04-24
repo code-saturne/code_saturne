@@ -170,9 +170,9 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create list of variables for a class
         """
-        modelVariables =  ["np_coal", "x_coal", "w_ck_coal", "h2_coal"]
+        modelVariables =  ["n_p_", "x_p_coal_", "x_p_char_", "x_p_h_"]
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
-            modelVariables.append("xwt_coal")
+            modelVariables.append("x_p_wt_")
 
         return modelVariables
 
@@ -182,16 +182,16 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create list of properties for a class
         """
-        modelProperties = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                                "Ga_DV1",  "Ga_DV2", "Ga_HET_O2"]
+        modelProperties = ["t_coal", "w_solid_coal", "rho_coal", "diameter_coal", "dissapear_rate_coal",
+                                "m_transfer_v1_coal",  "m_transfer_v2_coal", "het_ts_o2_coal"]
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
-            modelProperties.append("Ga_SEC")
+            modelProperties.append("dry_ts_coal")
 
         if self.getCO2KineticsStatus() == 'on':
-            modelProperties.append("Ga_HET_CO2")
+            modelProperties.append("het_ts_co2_coal")
 
         if self.getH2OKineticsStatus() == 'on':
-            modelProperties.append("Ga_HET_H2O")
+            modelProperties.append("het_ts_h2o_coal")
 
         return modelProperties
 
@@ -207,7 +207,7 @@ class CoalCombustionModel(Variables, Model):
         lst = []
 
         # list of coal variables
-        baseNames = ["mv1_fraction_", "mv2_fraction_"]
+        baseNames = ["fr_mv1_", "fr_mv2_"]
         for baseName in baseNames:
             for coal in range(0, coalsNumber):
                 name = '%s%2.2i' % (baseName, coal+1)
@@ -220,31 +220,31 @@ class CoalCombustionModel(Variables, Model):
                 name = '%s%2.2i' % (baseName, classe+1)
                 lst.append(name)
 
-        lst.append("het_o2_fraction")
+        lst.append("fr_het_o2")
 
         if self.getCO2KineticsStatus() == "on":
-            lst.append("het_co2_fraction")
+            lst.append("fr_het_co2")
 
         if self.getH2OKineticsStatus() == "on":
-            lst.append("het_h2o_fraction")
+            lst.append("fr_het_h2o")
 
         if self.getNOxFormationStatus() == "on":
-            lst.append("hcn_fraction")
-            lst.append("no_fraction")
-            lst.append("ox_enthalpy")
-            lst.append("nh3_fraction")
+            lst.append("x_c_hcn")
+            lst.append("x_c_no")
+            lst.append("x_c_h_ox")
+            lst.append("x_c_nh3")
 
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
-            lst.append("h2o_fraction")
+            lst.append("fr_h2o")
 
         if self.getOxidantNumber() >= 2:
-            lst.append("oxyd2_fraction")
+            lst.append("fr_oxyd2")
 
         if self.getOxidantNumber() == 3:
-            lst.append("oxyd3_fraction")
+            lst.append("fr_oxyd3")
 
         # ieqco2 fix to true
-        lst.append("co2_fraction")
+        lst.append("x_c_co2")
 
         lst.append("f1f2_variance")
 
@@ -262,14 +262,14 @@ class CoalCombustionModel(Variables, Model):
         lst = []
 
         # list of class variables
-        baseNames =  ["h2_coal"]
+        baseNames =  ["x_p_h_"]
         for baseName in baseNames:
             for classe in range(0, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 lst.append(name)
 
         if self.getNOxFormationStatus() == "on":
-            lst.append("ox_enthalpy")
+            lst.append("x_c_h_ox")
 
         return lst
 
@@ -291,7 +291,7 @@ class CoalCombustionModel(Variables, Model):
 
         for name in new_list:
             if name not in previous_list:
-                self.setNewVariable(self.node_fuel, name, tpe="model")
+                self.setNewVariable(self.node_fuel, name, tpe="model", label=name)
 
 
     def __createModelPropertiesList(self):
@@ -301,10 +301,10 @@ class CoalCombustionModel(Variables, Model):
         """
         classesNumber = self.getClassesNumber()
 
-        lst = ["Temp_GAZ", "ROM_GAZ", "YM_CHx1m", "YM_CHx2m",
-               "YM_CO", "YM_O2", "YM_CO2", "YM_H2O", "YM_N2",
-               "YM_H2S", "YM_H2", "YM_HCN", "YM_NH3", "YM_SO2",
-               "XM", "Bilan_C", "Bilan_O", "Bilan_H"]
+        lst = ["t_gas", "rho_gas", "ym_chx1m", "ym_chx2m",
+               "ym_co", "ym_o2", "ym_co2", "ym_h2o", "ym_n2",
+               "ym_h2s", "ym_h2", "ym_hcn", "ym_nh3", "ym_so2",
+               "xm", "balance_c", "balance_o", "balance_h"]
 
         baseNames = self.__getPropertiesList()
 
@@ -313,27 +313,27 @@ class CoalCombustionModel(Variables, Model):
                 name = '%s%2.2i' % (baseName, classe+1)
                 lst.append(name)
 
-        lst.append("IntLuminance_4PI")
+        lst.append("intensity")
 
         if self.getNOxFormationStatus() == "on":
-            lst.append("EXP1")
-            lst.append("EXP2")
-            lst.append("EXP3")
-            lst.append("EXP4")
-            lst.append("EXP5")
-            lst.append("F_HCN_DEV")
-            lst.append("F_HCN_HET")
-            lst.append("F_NH3_DEV")
-            lst.append("F_NH3_HET")
-            lst.append("F_NO_HCN")
-            lst.append("F_NO_NH3")
-            lst.append("F_NO_HET")
-            lst.append("F_NO_THE")
-            lst.append("C_NO_HCN")
-            lst.append("C_NO_NH3")
-            lst.append("F_HCN_RB")
-            lst.append("C_NO_RB")
-            lst.append("EXP_RB")
+            lst.append("exp1")
+            lst.append("exp2")
+            lst.append("exp3")
+            lst.append("exp4")
+            lst.append("exp5")
+            lst.append("f_hcn_dev")
+            lst.append("f_hcn_het")
+            lst.append("f_nh3_dev")
+            lst.append("f_nh3_het")
+            lst.append("f_no_hcn")
+            lst.append("f_no_nh3")
+            lst.append("f_no_het")
+            lst.append("f_no_the")
+            lst.append("c_no_hcn")
+            lst.append("c_no_nh3")
+            lst.append("f_hcn_rb")
+            lst.append("c_no_rb")
+            lst.append("exp_rb")
 
         return lst
 
@@ -373,19 +373,19 @@ class CoalCombustionModel(Variables, Model):
     def __updateWetScalarsAndProperty(self, model):
         """
         Private method
-        Delete scalars xwt_coal and h2o_fraction and property Ga_SEC
+        Delete scalars x_p_wt_ and fr_h2o and property dry_ts_coal
         if model isn't 'homogeneous_fuel_moisture'
         """
         # TODO a supprimer doit etre appele si on change le modele uniquement
         if model != 'homogeneous_fuel_moisture' and self.getCoalCombustionModel() != 'homogeneous_fuel_moisture_lagr':
-            nod = self.node_fuel.xmlGetNode('variable', type="model", name="h2o_fraction")
+            nod = self.node_fuel.xmlGetNode('variable', type="model", name="fr_h2o")
             if nod:
                 nod.xmlRemoveNode()
             for node in self.node_fuel.xmlGetNodeList('variable', type="model"):
-                if node['name'][:6] == "xwt_coal":
+                if node['name'][:6] == "x_p_wt_":
                     node.xmlRemoveNode()
             for node in self.node_fuel.xmlGetNodeList('property'):
-                if node['name'][:6] == "Ga_SEC":
+                if node['name'][:6] == "dry_ts_coal":
                     node.xmlRemoveNode()
 
 
@@ -415,12 +415,12 @@ class CoalCombustionModel(Variables, Model):
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
-                self.setNewVariable(self.node_fuel, name, tpe="model")
+                self.setNewVariable(self.node_fuel, name, tpe="model", label=name)
 
-        baseNames = ["mv1_fraction_", "mv2_fraction_"]
+        baseNames = ["fr_mv1_", "fr_mv2_"]
         for baseName in baseNames:
             name = '%s%2.2i' % (baseName, coalsNumber)
-            self.setNewVariable(self.node_fuel, name, tpe="model")
+            self.setNewVariable(self.node_fuel, name, tpe="model", label=name)
 
 
     def __createCoalModelProperties(self, coalsNumber, coalClassesNumber, classesNumber):
@@ -486,7 +486,7 @@ class CoalCombustionModel(Variables, Model):
         # create new scalars
         for i in range(len(baseNames)):
             name = '%s%2.2i' % (baseNames[i], classNum)
-            self.setNewVariable(self.node_fuel, name, tpe="model")
+            self.setNewVariable(self.node_fuel, name, tpe="model", label=name)
 
 
     @Variables.undoGlobal
@@ -601,7 +601,7 @@ class CoalCombustionModel(Variables, Model):
             self.deleteClass(coalNumber, classId)
 
         # Remove fuel scalars
-        baseNames = [ "mv1_fraction_", "mv2_fraction_"]
+        baseNames = [ "fr_mv1_", "fr_mv2_"]
         nodeList = self.node_fuel.xmlGetNodeList('variable')
         if nodeList != None:
             for node in nodeList :
@@ -1969,45 +1969,45 @@ class CoalCombustionModelTestCase(ModelTest):
         model.setCoalCombustionModel('coal_homo')
 
         doc = '''<solid_fuels model="coal_homo">
-                    <variable label="NP_CP01" name="np_coal01" type="model">
+                    <variable label="NP_CP01" name="n_p_01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCH_CP01" name="x_coal01" type="model">
+                    <variable label="XCH_CP01" name="x_p_coal_01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP01" name="w_ck_coal01" type="model">
+                    <variable label="XCK_CP01" name="x_p_char_01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="ENT_CP01" name="h2_coal01" type="model">
+                    <variable label="ENT_CP01" name="x_p_h_01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model">
+                    <variable label="Fr_MV101" name="fr_mv1_01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model">
+                    <variable label="Fr_MV201" name="fr_mv2_01" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
                     <variable label="Fr_HET" name="het_fraction" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_GAZ" name="Temp_GAZ"/>
-                    <property label="ROM_GAZ" name="ROM_GAZ"/>
-                    <property label="YM_CHx1m" name="YM_CHx1m"/>
-                    <property label="YM_CHx2m" name="YM_CHx2m"/>
-                    <property label="YM_CO" name="YM_CO"/>
-                    <property label="YM_O2" name="YM_O2"/>
-                    <property label="YM_CO2" name="YM_CO2"/>
-                    <property label="YM_H2O" name="YM_H2O"/>
-                    <property label="YM_N2" name="YM_N2"/>
-                    <property label="XM" name="XM"/>
-                    <property label="Temp_CP01" name="Temp_CP01"/>
-                    <property label="Frm_CP01" name="Frm_CP01"/>
-                    <property label="Rho_CP01" name="Rho_CP01"/>
-                    <property label="Dia_CK01" name="Dia_CK01"/>
-                    <property label="Ga_DCH01" name="Ga_DCH01"/>
-                    <property label="Ga_DV101" name="Ga_DV101"/>
-                    <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
+                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="ROM_GAZ" name="rho_gas"/>
+                    <property label="YM_CHx1m" name="ym_chx1m"/>
+                    <property label="YM_CHx2m" name="ym_chx2m"/>
+                    <property label="YM_CO" name="ym_co"/>
+                    <property label="YM_O2" name="ym_o2"/>
+                    <property label="YM_CO2" name="ym_co2"/>
+                    <property label="YM_H2O" name="ym_h2o"/>
+                    <property label="YM_N2" name="ym_n2"/>
+                    <property label="XM" name="xm"/>
+                    <property label="Temp_CP01" name="t_coal01"/>
+                    <property label="Frm_CP01" name="w_solid_coal01"/>
+                    <property label="Rho_CP01" name="rho_coal01"/>
+                    <property label="Dia_CK01" name="diameter_coal01"/>
+                    <property label="Ga_DCH01" name="dissapear_rate_coal01"/>
+                    <property label="Ga_DV101" name="m_transfer_v1_coal01"/>
+                    <property label="Ga_DV201" name="m_transfer_v2_coal01"/>
+                    <property label="Ga_HET_O201" name="het_ts_o2_coal01"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
             </solid_fuels>'''
 
@@ -2028,58 +2028,58 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="NP_CP01" name="n_p_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_p_coal_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="x_p_char_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="x_p_h_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="Temp_GAZ"/>
-                    <property label="ROM_GAZ" name="ROM_GAZ"/>
-                    <property label="YM_CHx1m" name="YM_CHx1m"/>
-                    <property label="YM_CHx2m" name="YM_CHx2m"/>
-                    <property label="YM_CO" name="YM_CO"/>
-                    <property label="YM_O2" name="YM_O2"/>
-                    <property label="YM_CO2" name="YM_CO2"/>
-                    <property label="YM_H2O" name="YM_H2O"/>
-                    <property label="YM_N2" name="YM_N2"/>
-                    <property label="XM" name="XM"/>
-                    <property label="Temp_CP01" name="Temp_CP01"/>
-                    <property label="Frm_CP01" name="Frm_CP01"/>
-                    <property label="Rho_CP01" name="Rho_CP01"/>
-                    <property label="Dia_CK01" name="Dia_CK01"/>
-                    <property label="Ga_DCH01" name="Ga_DCH01"/>
-                    <property label="Ga_DV101" name="Ga_DV101"/>
-                    <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
+                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="ROM_GAZ" name="rho_gas"/>
+                    <property label="YM_CHx1m" name="ym_chx1m"/>
+                    <property label="YM_CHx2m" name="ym_chx2m"/>
+                    <property label="YM_CO" name="ym_co"/>
+                    <property label="YM_O2" name="ym_o2"/>
+                    <property label="YM_CO2" name="ym_co2"/>
+                    <property label="YM_H2O" name="ym_h2o"/>
+                    <property label="YM_N2" name="ym_n2"/>
+                    <property label="XM" name="xm"/>
+                    <property label="Temp_CP01" name="t_coal01"/>
+                    <property label="Frm_CP01" name="w_solid_coal01"/>
+                    <property label="Rho_CP01" name="rho_coal01"/>
+                    <property label="Dia_CK01" name="diameter_coal01"/>
+                    <property label="Ga_DCH01" name="dissapear_rate_coal01"/>
+                    <property label="Ga_DV101" name="m_transfer_v1_coal01"/>
+                    <property label="Ga_DV201" name="m_transfer_v2_coal01"/>
+                    <property label="Ga_HET_O201" name="het_ts_o2_coal01"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <variable label="NP_CP02" name="np_coal02" type="model">
+                    <variable label="NP_CP02" name="n_p_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCH_CP02" name="x_coal02" type="model">
+                    <variable label="XCH_CP02" name="x_p_coal_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP02" name="w_ck_coal02" type="model">
+                    <variable label="XCK_CP02" name="x_p_char_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="ENT_CP02" name="h2_coal02" type="model">
+                    <variable label="ENT_CP02" name="x_p_h_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
+                    <variable label="Fr_MV102" name="fr_mv1_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
+                    <variable label="Fr_MV202" name="fr_mv2_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_CP02" name="Temp_CP02"/>
-                    <property label="Frm_CP02" name="Frm_CP02"/>
-                    <property label="Rho_CP02" name="Rho_CP02"/>
-                    <property label="Dia_CK02" name="Dia_CK02"/>
-                    <property label="Ga_DCH02" name="Ga_DCH02"/>
-                    <property label="Ga_DV102" name="Ga_DV102"/>
-                    <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
+                    <property label="Temp_CP02" name="t_coal02"/>
+                    <property label="Frm_CP02" name="w_solid_coal02"/>
+                    <property label="Rho_CP02" name="rho_coal02"/>
+                    <property label="Dia_CK02" name="diameter_coal02"/>
+                    <property label="Ga_DCH02" name="dissapear_rate_coal02"/>
+                    <property label="Ga_DV102" name="m_transfer_v1_coal02"/>
+                    <property label="Ga_DV202" name="m_transfer_v2_coal02"/>
+                    <property label="Ga_HET_O202" name="het_ts_o2_coal02"/>
             </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\
@@ -2097,96 +2097,96 @@ class CoalCombustionModelTestCase(ModelTest):
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="NP_CP01" name="n_p_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_p_coal_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="x_p_char_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="x_p_h_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="Temp_GAZ"/>
-                    <property label="ROM_GAZ" name="ROM_GAZ"/>
-                    <property label="YM_CHx1m" name="YM_CHx1m"/>
-                    <property label="YM_CHx2m" name="YM_CHx2m"/>
-                    <property label="YM_CO" name="YM_CO"/>
-                    <property label="YM_O2" name="YM_O2"/>
-                    <property label="YM_CO2" name="YM_CO2"/>
-                    <property label="YM_H2O" name="YM_H2O"/>
-                    <property label="YM_N2" name="YM_N2"/>
-                    <property label="XM" name="XM"/>
-                    <property label="Temp_CP01" name="Temp_CP01"/>
-                    <property label="Frm_CP01" name="Frm_CP01"/>
-                    <property label="Rho_CP01" name="Rho_CP01"/>
-                    <property label="Dia_CK01" name="Dia_CK01"/>
-                    <property label="Ga_DCH01" name="Ga_DCH01"/>
-                    <property label="Ga_DV101" name="Ga_DV101"/>
-                    <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
+                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="ROM_GAZ" name="rho_gas"/>
+                    <property label="YM_CHx1m" name="ym_chx1m"/>
+                    <property label="YM_CHx2m" name="ym_chx2m"/>
+                    <property label="YM_CO" name="ym_co"/>
+                    <property label="YM_O2" name="ym_o2"/>
+                    <property label="YM_CO2" name="ym_co2"/>
+                    <property label="YM_H2O" name="ym_h2o"/>
+                    <property label="YM_N2" name="ym_n2"/>
+                    <property label="XM" name="xm"/>
+                    <property label="Temp_CP01" name="t_coal01"/>
+                    <property label="Frm_CP01" name="w_solid_coal01"/>
+                    <property label="Rho_CP01" name="rho_coal01"/>
+                    <property label="Dia_CK01" name="diameter_coal01"/>
+                    <property label="Ga_DCH01" name="dissapear_rate_coal01"/>
+                    <property label="Ga_DV101" name="m_transfer_v1_coal01"/>
+                    <property label="Ga_DV201" name="m_transfer_v2_coal01"/>
+                    <property label="Ga_HET_O201" name="het_ts_o2_coal01"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <variable label="NP_CP03" name="np_coal03" type="model">
+                    <variable label="NP_CP03" name="n_p_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCH_CP03" name="x_coal03" type="model">
+                    <variable label="XCH_CP03" name="x_p_coal_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP03" name="w_ck_coal03" type="model">
+                    <variable label="XCK_CP03" name="x_p_char_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="ENT_CP03" name="h2_coal03" type="model">
+                    <variable label="ENT_CP03" name="x_p_h_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
+                    <variable label="Fr_MV102" name="fr_mv1_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
+                    <variable label="Fr_MV202" name="fr_mv2_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_CP02" name="Temp_CP02"/>
-                    <property label="Frm_CP02" name="Frm_CP02"/>
-                    <property label="Rho_CP02" name="Rho_CP02"/>
-                    <property label="Dia_CK02" name="Dia_CK02"/>
-                    <property label="Ga_DCH02" name="Ga_DCH02"/>
-                    <property label="Ga_DV102" name="Ga_DV102"/>
-                    <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
-                    <variable label="NP_CP04" name="np_coal04" type="model">
+                    <property label="Temp_CP02" name="t_coal02"/>
+                    <property label="Frm_CP02" name="w_solid_coal02"/>
+                    <property label="Rho_CP02" name="rho_coal02"/>
+                    <property label="Dia_CK02" name="diameter_coal02"/>
+                    <property label="Ga_DCH02" name="dissapear_rate_coal02"/>
+                    <property label="Ga_DV102" name="m_transfer_v1_coal02"/>
+                    <property label="Ga_DV202" name="m_transfer_v2_coal02"/>
+                    <property label="Ga_HET_O202" name="het_ts_o2_coal02"/>
+                    <variable label="NP_CP04" name="n_p_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCH_CP04" name="x_coal04" type="model">
+                    <variable label="XCH_CP04" name="x_p_coal_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP04" name="w_ck_coal04" type="model">
+                    <variable label="XCK_CP04" name="x_p_char_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="ENT_CP04" name="h2_coal04" type="model">
+                    <variable label="ENT_CP04" name="x_p_h_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV103" name="mv1_fraction_03" type="model">
+                    <variable label="Fr_MV103" name="fr_mv1_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV203" name="mv2_fraction_03" type="model">
+                    <variable label="Fr_MV203" name="fr_mv2_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_CP03" name="Temp_CP03"/>
-                    <property label="Frm_CP03" name="Frm_CP03"/>
-                    <property label="Rho_CP03" name="Rho_CP03"/>
-                    <property label="Dia_CK03" name="Dia_CK03"/>
-                    <property label="Ga_DCH03" name="Ga_DCH03"/>
-                    <property label="Ga_DV103" name="Ga_DV103"/>
-                    <property label="Ga_DV203" name="Ga_DV203"/>
-                    <property label="Ga_HET_O203" name="Ga_HET_O203"/>
-                    <variable label="NP_CP02" name="np_coal02" type="model"/>
-                    <variable label="XCH_CP02" name="x_coal02" type="model"/>
-                    <variable label="XCK_CP02" name="w_ck_coal02" type="model"/>
-                    <variable label="ENT_CP02" name="h2_coal02" type="model"/>
-                    <property label="Temp_CP04" name="Temp_CP04"/>
-                    <property label="Frm_CP04" name="Frm_CP04"/>
-                    <property label="Rho_CP04" name="Rho_CP04"/>
-                    <property label="Dia_CK04" name="Dia_CK04"/>
-                    <property label="Ga_DCH04" name="Ga_DCH04"/>
-                    <property label="Ga_DV104" name="Ga_DV104"/>
-                    <property label="Ga_DV204" name="Ga_DV204"/>
-                    <property label="Ga_HET_O204" name="Ga_HET_O204"/>
+                    <property label="Temp_CP03" name="t_coal03"/>
+                    <property label="Frm_CP03" name="w_solid_coal03"/>
+                    <property label="Rho_CP03" name="rho_coal03"/>
+                    <property label="Dia_CK03" name="diameter_coal03"/>
+                    <property label="Ga_DCH03" name="dissapear_rate_coal03"/>
+                    <property label="Ga_DV103" name="m_transfer_v1_coal03"/>
+                    <property label="Ga_DV203" name="m_transfer_v2_coal03"/>
+                    <property label="Ga_HET_O203" name="het_ts_o2_coal03"/>
+                    <variable label="NP_CP02" name="n_p_02" type="model"/>
+                    <variable label="XCH_CP02" name="x_p_coal_02" type="model"/>
+                    <variable label="XCK_CP02" name="x_p_char_02" type="model"/>
+                    <variable label="ENT_CP02" name="x_p_h_02" type="model"/>
+                    <property label="Temp_CP04" name="t_coal04"/>
+                    <property label="Frm_CP04" name="w_solid_coal04"/>
+                    <property label="Rho_CP04" name="rho_coal04"/>
+                    <property label="Dia_CK04" name="diameter_coal04"/>
+                    <property label="Ga_DCH04" name="dissapear_rate_coal04"/>
+                    <property label="Ga_DV104" name="m_transfer_v1_coal04"/>
+                    <property label="Ga_DV204" name="m_transfer_v2_coal04"/>
+                    <property label="Ga_HET_O204" name="het_ts_o2_coal04"/>
                 </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\
@@ -2205,78 +2205,78 @@ class CoalCombustionModelTestCase(ModelTest):
         model.deleteCoalModelScalarsAndProperties(coalThermoChModel, 1)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="NP_CP01" name="n_p_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_p_coal_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="x_p_char_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="x_p_h_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="Temp_GAZ"/>
-                    <property label="ROM_GAZ" name="ROM_GAZ"/>
-                    <property label="YM_CHx1m" name="YM_CHx1m"/>
-                    <property label="YM_CHx2m" name="YM_CHx2m"/>
-                    <property label="YM_CO" name="YM_CO"/>
-                    <property label="YM_O2" name="YM_O2"/>
-                    <property label="YM_CO2" name="YM_CO2"/>
-                    <property label="YM_H2O" name="YM_H2O"/>
-                    <property label="YM_N2" name="YM_N2"/>
-                    <property label="XM" name="XM"/>
-                    <property label="Temp_CP01" name="Temp_CP01"/>
-                    <property label="Frm_CP01" name="Frm_CP01"/>
-                    <property label="Rho_CP01" name="Rho_CP01"/>
-                    <property label="Dia_CK01" name="Dia_CK01"/>
-                    <property label="Ga_DCH01" name="Ga_DCH01"/>
-                    <property label="Ga_DV101" name="Ga_DV101"/>
-                    <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
+                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="ROM_GAZ" name="rho_gas"/>
+                    <property label="YM_CHx1m" name="ym_chx1m"/>
+                    <property label="YM_CHx2m" name="ym_chx2m"/>
+                    <property label="YM_CO" name="ym_co"/>
+                    <property label="YM_O2" name="ym_o2"/>
+                    <property label="YM_CO2" name="ym_co2"/>
+                    <property label="YM_H2O" name="ym_h2o"/>
+                    <property label="YM_N2" name="ym_n2"/>
+                    <property label="XM" name="xm"/>
+                    <property label="Temp_CP01" name="t_coal01"/>
+                    <property label="Frm_CP01" name="w_solid_coal01"/>
+                    <property label="Rho_CP01" name="rho_coal01"/>
+                    <property label="Dia_CK01" name="diameter_coal01"/>
+                    <property label="Ga_DCH01" name="dissapear_rate_coal01"/>
+                    <property label="Ga_DV101" name="m_transfer_v1_coal01"/>
+                    <property label="Ga_DV201" name="m_transfer_v2_coal01"/>
+                    <property label="Ga_HET_O201" name="het_ts_o2_coal01"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <variable label="NP_CP02" name="np_coal02" type="model">
+                    <variable label="NP_CP02" name="n_p_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCH_CP02" name="x_coal02" type="model">
+                    <variable label="XCH_CP02" name="x_p_coal_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP02" name="w_ck_coal02" type="model">
+                    <variable label="XCK_CP02" name="x_p_char_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="ENT_CP02" name="h2_coal02" type="model">
+                    <variable label="ENT_CP02" name="x_p_h_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_CP02" name="Temp_CP02"/>
-                    <property label="Frm_CP02" name="Frm_CP02"/>
-                    <property label="Rho_CP02" name="Rho_CP02"/>
-                    <property label="Dia_CK02" name="Dia_CK02"/>
-                    <property label="Ga_DCH02" name="Ga_DCH02"/>
-                    <property label="Ga_DV102" name="Ga_DV102"/>
-                    <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
-                    <variable label="NP_CP04" name="np_coal04" type="model">
+                    <property label="Temp_CP02" name="t_coal02"/>
+                    <property label="Frm_CP02" name="w_solid_coal02"/>
+                    <property label="Rho_CP02" name="rho_coal02"/>
+                    <property label="Dia_CK02" name="diameter_coal02"/>
+                    <property label="Ga_DCH02" name="dissapear_rate_coal02"/>
+                    <property label="Ga_DV102" name="m_transfer_v1_coal02"/>
+                    <property label="Ga_DV202" name="m_transfer_v2_coal02"/>
+                    <property label="Ga_HET_O202" name="het_ts_o2_coal02"/>
+                    <variable label="NP_CP04" name="n_p_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCH_CP04" name="x_coal04" type="model">
+                    <variable label="XCH_CP04" name="x_p_coal_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP04" name="w_ck_coal04" type="model">
+                    <variable label="XCK_CP04" name="x_p_char_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="ENT_CP04" name="h2_coal04" type="model">
+                    <variable label="ENT_CP04" name="x_p_h_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
+                    <variable label="Fr_MV102" name="fr_mv1_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
+                    <variable label="Fr_MV202" name="fr_mv2_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_CP04" name="Temp_CP04"/>
-                    <property label="Frm_CP04" name="Frm_CP04"/>
-                    <property label="Rho_CP04" name="Rho_CP04"/>
-                    <property label="Dia_CK04" name="Dia_CK04"/>
-                    <property label="Ga_DCH04" name="Ga_DCH04"/>
-                    <property label="Ga_DV104" name="Ga_DV104"/>
-                    <property label="Ga_DV204" name="Ga_DV204"/>
-                    <property label="Ga_HET_O204" name="Ga_HET_O204"/>
+                    <property label="Temp_CP04" name="t_coal04"/>
+                    <property label="Frm_CP04" name="w_solid_coal04"/>
+                    <property label="Rho_CP04" name="rho_coal04"/>
+                    <property label="Dia_CK04" name="diameter_coal04"/>
+                    <property label="Ga_DCH04" name="dissapear_rate_coal04"/>
+                    <property label="Ga_DV104" name="m_transfer_v1_coal04"/>
+                    <property label="Ga_DV204" name="m_transfer_v2_coal04"/>
+                    <property label="Ga_HET_O204" name="het_ts_o2_coal04"/>
                 </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\
@@ -2295,84 +2295,84 @@ class CoalCombustionModelTestCase(ModelTest):
         model.deleteClassModelScalars(coalThermoChModel, 2, 1)
 
         doc = '''<solid_fuels model="coal_homo">
-                    <variable label="NP_CP01" name="np_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCH_CP01" name="x_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="XCK_CP01" name="w_ck_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="ENT_CP01" name="h2_coal01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
-                    <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="NP_CP01" name="n_p_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCH_CP01" name="x_p_coal_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="XCK_CP01" name="x_p_char_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="ENT_CP01" name="x_p_h_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
+                    <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="Temp_GAZ"/>
-                    <property label="ROM_GAZ" name="ROM_GAZ"/>
-                    <property label="YM_CHx1m" name="YM_CHx1m"/>
-                    <property label="YM_CHx2m" name="YM_CHx2m"/>
-                    <property label="YM_CO" name="YM_CO"/>
-                    <property label="YM_O2" name="YM_O2"/>
-                    <property label="YM_CO2" name="YM_CO2"/>
-                    <property label="YM_H2O" name="YM_H2O"/>
-                    <property label="YM_N2" name="YM_N2"/>
-                    <property label="XM" name="XM"/>
-                    <property label="Temp_CP01" name="Temp_CP01"/>
-                    <property label="Frm_CP01" name="Frm_CP01"/>
-                    <property label="Rho_CP01" name="Rho_CP01"/>
-                    <property label="Dia_CK01" name="Dia_CK01"/>
-                    <property label="Ga_DCH01" name="Ga_DCH01"/>
-                    <property label="Ga_DV101" name="Ga_DV101"/>
-                    <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
+                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="ROM_GAZ" name="rho_gas"/>
+                    <property label="YM_CHx1m" name="ym_chx1m"/>
+                    <property label="YM_CHx2m" name="ym_chx2m"/>
+                    <property label="YM_CO" name="ym_co"/>
+                    <property label="YM_O2" name="ym_o2"/>
+                    <property label="YM_CO2" name="ym_co2"/>
+                    <property label="YM_H2O" name="ym_h2o"/>
+                    <property label="YM_N2" name="ym_n2"/>
+                    <property label="XM" name="xm"/>
+                    <property label="Temp_CP01" name="t_coal01"/>
+                    <property label="Frm_CP01" name="w_solid_coal01"/>
+                    <property label="Rho_CP01" name="rho_coal01"/>
+                    <property label="Dia_CK01" name="diameter_coal01"/>
+                    <property label="Ga_DCH01" name="dissapear_rate_coal01"/>
+                    <property label="Ga_DV101" name="m_transfer_v1_coal01"/>
+                    <property label="Ga_DV201" name="m_transfer_v2_coal01"/>
+                    <property label="Ga_HET_O201" name="het_ts_o2_coal01"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
-                    <variable label="Fr_MV102" name="mv1_fraction_02" type="model">
+                    <variable label="Fr_MV102" name="fr_mv1_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV202" name="mv2_fraction_02" type="model">
+                    <variable label="Fr_MV202" name="fr_mv2_02" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_CP03" name="Temp_CP03"/>
-                    <property label="Frm_CP03" name="Frm_CP03"/>
-                    <property label="Rho_CP03" name="Rho_CP03"/>
-                    <property label="Dia_CK03" name="Dia_CK03"/>
-                    <property label="Ga_DCH03" name="Ga_DCH03"/>
-                    <property label="Ga_DV103" name="Ga_DV103"/>
-                    <property label="Ga_DV203" name="Ga_DV203"/>
-                    <property label="Ga_HET_O203" name="Ga_HET_O203"/>
-                    <variable label="NP_CP04" name="np_coal04" type="model">
+                    <property label="Temp_CP03" name="t_coal03"/>
+                    <property label="Frm_CP03" name="w_solid_coal03"/>
+                    <property label="Rho_CP03" name="rho_coal03"/>
+                    <property label="Dia_CK03" name="diameter_coal03"/>
+                    <property label="Ga_DCH03" name="dissapear_rate_coal03"/>
+                    <property label="Ga_DV103" name="m_transfer_v1_coal03"/>
+                    <property label="Ga_DV203" name="m_transfer_v2_coal03"/>
+                    <property label="Ga_HET_O203" name="het_ts_o2_coal03"/>
+                    <variable label="NP_CP04" name="n_p_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCH_CP04" name="x_coal04" type="model">
+                    <variable label="XCH_CP04" name="x_p_coal_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="XCK_CP04" name="w_ck_coal04" type="model">
+                    <variable label="XCK_CP04" name="x_p_char_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="ENT_CP04" name="h2_coal04" type="model">
+                    <variable label="ENT_CP04" name="x_p_h_04" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV103" name="mv1_fraction_03" type="model">
+                    <variable label="Fr_MV103" name="fr_mv1_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <variable label="Fr_MV203" name="mv2_fraction_03" type="model">
+                    <variable label="Fr_MV203" name="fr_mv2_03" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_CP04" name="Temp_CP04"/>
-                    <property label="Frm_CP04" name="Frm_CP04"/>
-                    <property label="Rho_CP04" name="Rho_CP04"/>
-                    <property label="Dia_CK04" name="Dia_CK04"/>
-                    <property label="Ga_DCH04" name="Ga_DCH04"/>
-                    <property label="Ga_DV104" name="Ga_DV104"/>
-                    <property label="Ga_DV204" name="Ga_DV204"/>
-                    <property label="Ga_HET_O204" name="Ga_HET_O204"/>
-                    <variable label="NP_CP02" name="np_coal02" type="model"/>
-                    <variable label="XCH_CP02" name="x_coal02" type="model"/>
-                    <variable label="XCK_CP02" name="w_ck_coal02" type="model"/>
-                    <variable label="ENT_CP02" name="h2_coal02" type="model"/>
-                    <property label="Temp_CP02" name="Temp_CP02"/>
-                    <property label="Frm_CP02" name="Frm_CP02"/>
-                    <property label="Rho_CP02" name="Rho_CP02"/>
-                    <property label="Dia_CK02" name="Dia_CK02"/>
-                    <property label="Ga_DCH02" name="Ga_DCH02"/>
-                    <property label="Ga_DV102" name="Ga_DV102"/>
-                    <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
+                    <property label="Temp_CP04" name="t_coal04"/>
+                    <property label="Frm_CP04" name="w_solid_coal04"/>
+                    <property label="Rho_CP04" name="rho_coal04"/>
+                    <property label="Dia_CK04" name="diameter_coal04"/>
+                    <property label="Ga_DCH04" name="dissapear_rate_coal04"/>
+                    <property label="Ga_DV104" name="m_transfer_v1_coal04"/>
+                    <property label="Ga_DV204" name="m_transfer_v2_coal04"/>
+                    <property label="Ga_HET_O204" name="het_ts_o2_coal04"/>
+                    <variable label="NP_CP02" name="n_p_02" type="model"/>
+                    <variable label="XCH_CP02" name="x_p_coal_02" type="model"/>
+                    <variable label="XCK_CP02" name="x_p_char_02" type="model"/>
+                    <variable label="ENT_CP02" name="x_p_h_02" type="model"/>
+                    <property label="Temp_CP02" name="t_coal02"/>
+                    <property label="Frm_CP02" name="w_solid_coal02"/>
+                    <property label="Rho_CP02" name="rho_coal02"/>
+                    <property label="Dia_CK02" name="diameter_coal02"/>
+                    <property label="Ga_DCH02" name="dissapear_rate_coal02"/>
+                    <property label="Ga_DV102" name="m_transfer_v1_coal02"/>
+                    <property label="Ga_DV202" name="m_transfer_v2_coal02"/>
+                    <property label="Ga_HET_O202" name="het_ts_o2_coal02"/>
             </solid_fuels>'''
 
         assert model.node_fuel == self.xmlNodeFromString(doc),\

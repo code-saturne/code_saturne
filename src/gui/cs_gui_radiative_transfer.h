@@ -95,24 +95,6 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
 
 void CS_PROCF (uiray4, UIRAY4) (int *const iirayo);
 
-/*-----------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for physical properties of radiative transfer
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
-                                const int *const nrphas,
-                                const int *const ipppro,
-                                const int *const ipproc,
-                                const int *const ilumin,
-                                const int *const iqx,
-                                const int *const iqy,
-                                const int *const iqz,
-                                const int *const itsre,
-                                const int *const itsri,
-                                const int *const iabs,
-                                const int *const iemi,
-                                const int *const icak);
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables.

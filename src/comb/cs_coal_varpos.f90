@@ -131,8 +131,8 @@ iscdri = i_coal_drift
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'np_coal_', icla
-  write(f_label,'(a,i2.2)') 'Np_Coal_', icla
+  write(f_name,'(a,i2.2)') 'n_p_', icla
+  write(f_label,'(a,i2.2)') 'Np_', icla
   call add_model_scalar_field(f_name, f_label, inp(icla))
   f_id = ivarfl(isca(inp(icla)))
 
@@ -154,8 +154,8 @@ enddo
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'x_coal_', icla
-  write(f_label,'(a,i2.2)') 'Xch_Coal_', icla
+  write(f_name,'(a,i2.2)') 'x_p_coal_', icla
+  write(f_label,'(a,i2.2)') 'Xp_Ch_', icla
   call add_model_scalar_field(f_name, f_label, ixch(icla))
   f_id = ivarfl(isca(ixch(icla)))
 
@@ -177,8 +177,8 @@ enddo
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'w_ck_coal_', icla
-  write(f_label,'(a,i2.2)') 'w_ck_Coal_', icla
+  write(f_name,'(a,i2.2)') 'x_p_char_', icla
+  write(f_label,'(a,i2.2)') 'Xp_Ck_', icla
   call add_model_scalar_field(f_name, f_label, ixck(icla))
   f_id = ivarfl(isca(ixck(icla)))
 
@@ -202,8 +202,8 @@ if (ippmod(iccoal).eq.1) then
 
   do icla = 1, nclacp
 
-    write(f_name,'(a,i2.2)') 'xwt_coal_', icla
-    write(f_label,'(a,i2.2)') 'Xwt_Coal_', icla
+    write(f_name,'(a,i2.2)') 'x_p_wt_', icla
+    write(f_label,'(a,i2.2)') 'Xp_wt_', icla
     call add_model_scalar_field(f_name, f_label, ixwt(icla))
     f_id = ivarfl(isca(ixwt(icla)))
 
@@ -228,8 +228,8 @@ endif
 
 do icla = 1, nclacp
 
-  write(f_name,'(a,i2.2)') 'h2_coal_', icla
-  write(f_label,'(a,i2.2)') 'Ent_Coal_', icla
+  write(f_name,'(a,i2.2)') 'x_p_h_', icla
+  write(f_label,'(a,i2.2)') 'Xp_Ent_', icla
   call add_model_scalar_field(f_name, f_label, ih2(icla))
   f_id = ivarfl(isca(ih2(icla)))
 
@@ -253,8 +253,8 @@ if (i_coal_drift.eq.1) then
 
   do icla = 1, nclacp
 
-    write(f_name,'(a,i2.2)') 'x_age_coal_', icla
-    write(f_label,'(a,i2.2)') 'X_Age_Coal_', icla
+    write(f_name,'(a,i2.2)') 'n_p_age_', icla
+    write(f_label,'(a,i2.2)') 'Np_Age_', icla
     call add_model_scalar_field(f_name, f_label, iagecp_temp(icla))
     f_id = ivarfl(isca(iagecp_temp(icla)))
 
@@ -289,10 +289,13 @@ icla = -1
 
 do icha = 1, ncharb
 
-  write(f_name,'(a13,i2.2)') 'mv1_fraction_', icha
-  write(f_label,'(a6,i2.2)') 'Fr_mv1_', icha
+  write(f_name,'(a,i2.2)') 'fr_mv1_', icha
+  write(f_label,'(a,i2.2)') 'Fr_mv1_', icha
   call add_model_scalar_field(f_name, f_label, if1m(icha))
   f_id = ivarfl(isca(if1m(icha)))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -317,10 +320,13 @@ enddo
 
 do icha = 1, ncharb
 
-  write(f_name,'(a13,i2.2)') 'mv2_fraction_', icha
-  write(f_label,'(a6,i2.2)') 'Fr_mv2_', icha
+  write(f_name,'(a,i2.2)') 'fr_mv2_', icha
+  write(f_label,'(a,i2.2)') 'Fr_mv2_', icha
   call add_model_scalar_field(f_name, f_label, if2m(icha))
   f_id = ivarfl(isca(if2m(icha)))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -338,10 +344,13 @@ enddo
 
 if (noxyd .ge. 2) then
 
-  f_name = 'oxyd2_fraction'
-  f_label  = 'FR_OXYD2'
+  f_name = 'fr_oxyd2'
+  f_label = 'FR_OXYD2'
   call add_model_scalar_field(f_name, f_label, if4m)
   f_id = ivarfl(isca(if4m))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -359,10 +368,13 @@ endif
 
 if (noxyd .ge. 3) then
 
-  f_name = 'oxyd3_fraction'
-  f_label  = 'FR_OXYD3'
+  f_name = 'fr_oxyd3'
+  f_label = 'FR_OXYD3'
   call add_model_scalar_field(f_name, f_label, if5m)
   f_id = ivarfl(isca(if5m))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -380,10 +392,13 @@ endif
 
 if (ippmod(iccoal).eq.1) then
 
-  f_name = 'h2o_fraction'
-  f_label  = 'FR_H2O'
+  f_name = 'fr_h2o'
+  f_label = 'FR_H2O'
   call add_model_scalar_field(f_name, f_label, if6m)
   f_id = ivarfl(isca(if6m))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -397,12 +412,15 @@ if (ippmod(iccoal).eq.1) then
 
 endif
 
-! Products of combustion of Coke with O2
-
-f_name = 'het_o2_fraction'
+! Mass of the Carbon from coal oxydized by O2 divided by the mass of bulk
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+f_name = 'fr_het_o2'
 f_label  = 'FR_HET_O2'
 call add_model_scalar_field(f_name, f_label, if7m)
 f_id = ivarfl(isca(if7m))
+
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
 
 ! Set min and max clipping
 call field_set_key_double(f_id, kscmin, 0.d0)
@@ -418,10 +436,13 @@ endif
 
 if (ihtco2.eq.1) then
 
-  f_name = 'het_co2_fraction'
+  f_name = 'fr_het_co2'
   f_label  = 'FR_HET_CO2'
   call add_model_scalar_field(f_name, f_label, if8m)
   f_id = ivarfl(isca(if8m))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -439,10 +460,13 @@ endif
 
 if (ihth2o.eq.1) then
 
-  f_name = 'het_h2o_fraction'
+  f_name = 'fr_het_h2o'
   f_label  = 'FR_HET_H2O'
   call add_model_scalar_field(f_name, f_label, if9m)
   f_id = ivarfl(isca(if9m))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -463,6 +487,9 @@ f_label  = 'Var_F1F2'
 call add_model_scalar_field(f_name, f_label, ifvp2m)
 f_id = ivarfl(isca(ifvp2m))
 
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
+
 ! Set min and max clipping
 call field_set_key_double(f_id, kscmin, 0.d0)
 call field_set_key_double(f_id, kscmax, 0.25d0)
@@ -477,10 +504,13 @@ endif
 
 if (ieqco2.ge.1) then
 
-  f_name = 'co2_fraction'
-  f_label  = 'FR_CO2'
+  f_name = 'x_c_co2'
+  f_label  = 'Xc_CO2'
   call add_model_scalar_field(f_name, f_label, iyco2)
   f_id = ivarfl(isca(iyco2))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -498,11 +528,14 @@ endif
 
 if (ieqnox.eq.1) then
 
-  f_name = 'hcn_fraction'
-  f_label = 'FR_HCN'
+  f_name = 'x_c_hcn'
+  f_label = 'Xc_HCN'
   call add_model_scalar_field(f_name, f_label, iyhcn)
   f_id = ivarfl(isca(iyhcn))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
@@ -513,23 +546,31 @@ if (ieqnox.eq.1) then
     call field_set_key_int(f_id, keydri, iscdri)
   endif
 
-  ! Add NH3 as transported variable
-
-  f_name =  'nh3_fraction'
-  f_label =  'FR_NH3'
+  ! Mass of the NH3 divided by the mass of bulk
+  ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  f_name =  'x_c_nh3'
+  f_label =  'Xc_NH3'
   call add_model_scalar_field(f_name, f_label, iynh3)
   f_id = ivarfl(isca(iynh3))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
 
-  f_name =  'no_fraction'
-  f_label =  'FR_NO'
+  ! Mass of the NO divided by the mass of bulk
+  ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  f_name =  'x_c_no'
+  f_label =  'Xc_NO'
   call add_model_scalar_field(f_name, f_label, iyno)
   f_id = ivarfl(isca(iyno))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
@@ -541,10 +582,15 @@ if (ieqnox.eq.1) then
     call field_set_key_int(f_id, keydri, iscdri)
   endif
 
-  f_name =  'ox_enthalpy'
-  f_label =  'Enth_Ox'
+  ! Enthalpy of the oxydizer times the fraction of gas divided by the mass of bulk
+  ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  f_name =  'x_c_h_ox'
+  f_label =  'Xc_Ent_Ox'
   call add_model_scalar_field(f_name, f_label, ihox)
   f_id = ivarfl(isca(ihox))
+
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
 
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, -grand)
@@ -560,8 +606,8 @@ endif
 
 if (i_coal_drift.eq.1) then
 
-  f_name = 'x_age_gas'
-  f_label = 'X_Age_Gas'
+  f_name = 'age'
+  f_label = 'Age'
   call add_model_scalar_field(f_name, f_label, iaggas_temp)
   f_id = ivarfl(isca(iaggas_temp))
 

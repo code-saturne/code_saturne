@@ -347,24 +347,24 @@ class ReferenceValuesTestCase(ModelTest):
                     <variable label="Fr_MV101" name="mv1_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="mv2_fraction_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="Temp_GAZ"/>
-                    <property label="ROM_GAZ" name="ROM_GAZ"/>
-                    <property label="YM_CHx1m" name="YM_CHx1m"/>
-                    <property label="YM_CHx2m" name="YM_CHx2m"/>
-                    <property label="YM_CO" name="YM_CO"/>
-                    <property label="YM_O2" name="YM_O2"/>
-                    <property label="YM_CO2" name="YM_CO2"/>
-                    <property label="YM_H2O" name="YM_H2O"/>
-                    <property label="YM_N2" name="YM_N2"/>
-                    <property label="XM" name="XM"/>
-                    <property label="Temp_CP01" name="Temp_CP01"/>
-                    <property label="Frm_CP01" name="Frm_CP01"/>
-                    <property label="Rho_CP01" name="Rho_CP01"/>
-                    <property label="Dia_CK01" name="Dia_CK01"/>
-                    <property label="Ga_DCH01" name="Ga_DCH01"/>
-                    <property label="Ga_DV101" name="Ga_DV101"/>
-                    <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET01" name="Ga_HET01"/>
+                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="ROM_GAZ" name="rho_gas"/>
+                    <property label="YM_CHx1m" name="ym_chx1m"/>
+                    <property label="YM_CHx2m" name="ym_chx2m"/>
+                    <property label="YM_CO" name="ym_co"/>
+                    <property label="YM_O2" name="ym_o2"/>
+                    <property label="YM_CO2" name="ym_co2"/>
+                    <property label="YM_H2O" name="ym_h2o"/>
+                    <property label="YM_N2" name="ym_n2"/>
+                    <property label="XM" name="xm"/>
+                    <property label="Temp_CP01" name="t_coal01"/>
+                    <property label="Frm_CP01" name="w_solid_coal01"/>
+                    <property label="Rho_CP01" name="rho_coal01"/>
+                    <property label="Dia_CK01" name="diameter_coal01"/>
+                    <property label="Ga_DCH01" name="dissapear_rate_coal01"/>
+                    <property label="Ga_DV101" name="m_transfer_v1_coal01"/>
+                    <property label="Ga_DV201" name="m_transfer_v2_coal01"/>
+                    <property label="Ga_HET01" name="het_ts_coal01"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
                     <reference_temperature>55.5</reference_temperature>
                  </solid_fuels>"""

@@ -73,7 +73,6 @@ class CompressibleModel(Variables, Model):
 
         self.comp_choice = ['off', 'constant_gamma', 'variable_gamma', 'van_der_waals']
         self.var_list   = ['temperature']
-        self.prop_list   = ['Rho']
 
 
     def _defaultCompressibleValues(self):
@@ -104,16 +103,14 @@ class CompressibleModel(Variables, Model):
                         Boundary("inlet", zone.getLabel(), self.case).deleteCompressibleInlet()
                 self.__removeVariablesAndProperties()
                 self.node_np.xmlRemoveChild('hydrostatic_equilibrium')
-                self.node_fluid.xmlRemoveChild('property', name = 'volumic_viscosity')
+                self.node_fluid.xmlRemoveChild('property', name = 'volume_viscosity')
                 self.node_ref.xmlRemoveChild('mass_molar')
                 self.node_ref.xmlRemoveChild('temperature')
                 ThermalScalarModel(self.case).setThermalModel('off')
             else :
                 ThermalScalarModel(self.case).setThermalModel('total_energy')
                 for v in self.var_list:
-                    self.setNewVariable(self.node_comp, v, tpe="model")
-                for p in self.prop_list:
-                    self.setNewProperty(self.node_comp, p)
+                    self.setNewVariable(self.node_comp, v, tpe="model", label=v)
                 from Pages.TurbulenceModel import TurbulenceModel
                 TurbulenceModel(self.case).setTurbulenceModel('off')
                 del TurbulenceModel
@@ -138,8 +135,6 @@ class CompressibleModel(Variables, Model):
         """
         for v in self.var_list:
             self.node_comp.xmlRemoveChild('variable', name=v)
-        for p in self.prop_list:
-            self.node_comp.xmlRemoveChild('property', name=p)
 
 
 #-------------------------------------------------------------------------------
