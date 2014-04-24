@@ -108,7 +108,7 @@ integer, allocatable, dimension(:) :: lstelt
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
-double precision, allocatable, dimension(:) :: xcp 
+double precision, allocatable, dimension(:) :: xcp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer ::  crom
@@ -178,16 +178,16 @@ if (inpdt0.eq.0) then
   if (itherm.eq.1) then
     if (icp.gt.0) then
       do iel = 1, ncel
-        xcp(iel) = propce(iel,ipproc(icp)) 
+        xcp(iel) = propce(iel,ipproc(icp))
       enddo
     else
       do iel = 1, ncel
-        xcp(iel) = cp0 
+        xcp(iel) = cp0
       enddo
     endif
   else
     do iel = 1, ncel
-      xcp(iel) = 1.d0 
+      xcp(iel) = 1.d0
     enddo
   endif
 
