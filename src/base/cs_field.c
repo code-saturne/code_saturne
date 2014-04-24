@@ -1743,42 +1743,46 @@ cs_field_current_to_previous(cs_field_t  *f)
 
   if (f->n_time_vals > 1) {
 
-    cs_lnum_t ii;
-    const int dim = f->dim;
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-    const cs_lnum_t _n_elts = n_elts[2];
 
-    if (f->is_owner) {
-      if (dim == 1) {
-        int kk;
-#     pragma omp parallel for prinvate(kk)
-        for (kk = 1; kk < f->n_time_vals; kk++)
-          for (ii = 0; ii < _n_elts; ii++)
-            f->vals[kk][ii] = f->vals[kk-1][ii];
+#   pragma omp parallel
+    {
+      const int dim = f->dim;
+      const cs_lnum_t _n_elts = n_elts[2];
+
+      if (f->is_owner) {
+        if (dim == 1) {
+          for (int kk = 1; kk < f->n_time_vals; kk++) {
+#           pragma omp for
+            for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
+              f->vals[kk][ii] = f->vals[kk-1][ii];
+          }
+        }
+        else {
+          for (int kk = 1; kk < f->n_time_vals; kk++) {
+#           pragma omp for
+            for (cs_lnum_t ii = 0; ii < _n_elts; ii++) {
+              for (cs_lnum_t jj = 0; jj < dim; jj++)
+                f->vals[kk][ii*dim + jj] = f->vals[kk-1][ii*dim + jj];
+            }
+          }
+        }
       }
       else {
-        int kk;
-        cs_lnum_t jj;
-#     pragma omp parallel for private(jj, kk)
-        for (kk = 1; kk < f->n_time_vals; kk++)
-          for (ii = 0; ii < _n_elts; ii++)
-            for (jj = 0; jj < dim; jj++)
-              f->vals[kk][ii*dim + jj] = f->vals[kk-1][ii*dim + jj];
-      }
-    }
-    else {
-      if (dim == 1) {
-#     pragma omp parallel for prinvate(kk)
-          for (ii = 0; ii < _n_elts; ii++)
+        if (dim == 1) {
+#         pragma omp for
+          for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
             f->val_pre[ii] = f->val[ii];
-      }
-      else {
-        cs_lnum_t jj;
-#     pragma omp parallel for private(jj, kk)
-          for (ii = 0; ii < _n_elts; ii++)
-            for (jj = 0; jj < dim; jj++)
+        }
+        else {
+#         pragma omp for
+          for (cs_lnum_t ii = 0; ii < _n_elts; ii++) {
+            for (cs_lnum_t jj = 0; jj < dim; jj++)
               f->val_pre[ii*dim + jj] = f->val[ii*dim + jj];
+          }
+        }
       }
+
     }
 
   }

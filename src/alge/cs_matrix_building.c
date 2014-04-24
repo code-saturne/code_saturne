@@ -1144,7 +1144,7 @@ cs_matrix_time_step(const cs_mesh_t          *m,
   /* 4. Contribution of border faces to the diagonal */
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for if(n_b_faces > THR_MIN)
+#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
