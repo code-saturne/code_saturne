@@ -287,8 +287,8 @@ contains
     use numvar
     use optcal, only: itytur
     use parall, only: irangp
+    use paramx
     use period, only: iperio
-    use field
 
     implicit none
 
