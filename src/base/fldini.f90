@@ -157,9 +157,11 @@ do ii = 1, nscal
         itycat = FIELD_INTENSIVE + FIELD_PROPERTY  ! for properties
       endif
       call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
-      call field_set_key_int(iflid, keycpl, 1)
-      ! Tensorial diffusivity
-      call field_set_key_int(iflid, kdiftn, 6)
+      if (ityturt(ii).eq.3) then
+        call field_set_key_int(iflid, keycpl, 1)
+        ! Tensorial diffusivity
+        call field_set_key_int(iflid, kdiftn, 6)
+      endif
       call field_set_key_int(iflid, keyvis, f_vis)
       call field_set_key_int(iflid, keylog, f_log)
     endif
