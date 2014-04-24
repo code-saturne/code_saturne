@@ -150,6 +150,12 @@ do ii = 1, nscal
     if (ityturt(ii).gt.0) then
       call field_get_name (f_id, name)
       f_name = trim(name)//'_turbulent_flux'
+
+      if (ityturt(ii).eq.3) then
+        itycat = FIELD_INTENSIVE + FIELD_VARIABLE  ! for variables
+      else
+        itycat = FIELD_INTENSIVE + FIELD_PROPERTY  ! for properties
+      endif
       call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
       call field_set_key_int(iflid, keycpl, 1)
       ! Tensorial diffusivity
