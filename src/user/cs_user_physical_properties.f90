@@ -1938,6 +1938,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
