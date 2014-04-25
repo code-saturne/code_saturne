@@ -871,21 +871,38 @@ class BoundaryLocalizationModel(LocalizationModel):
         """
         Replace a zone by another in the XML file
         """
-        Boundary(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
-        newLabel, newCodeNumber, newLocal = LocalizationModel.replaceZone(self, old_zone, new_zone)
+        if (new_zone.getNature() != old_zone.getNature()):
+            Boundary(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
+            newLabel, newCodeNumber, newLocal = LocalizationModel.replaceZone(self, old_zone, new_zone)
 
-        newNature = new_zone.getNature()
-        Model().isInList(newNature, self.__natureList)
+            newNature = new_zone.getNature()
+            Model().isInList(newNature, self.__natureList)
 
-        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary',
+            node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary',
                                                             label = old_zone.getLabel())
 
-        node['label'] = newLabel
-        node['name'] = newCodeNumber
-        node['nature'] = newNature
-        node.xmlSetTextNode(newLocal)
+            node['label'] = newLabel
+            node['name'] = newCodeNumber
+            node['nature'] = newNature
+            node.xmlSetTextNode(newLocal)
 
-        Boundary(new_zone.getNature(), new_zone.getLabel(), self.case)
+            Boundary(new_zone.getNature(), new_zone.getLabel(), self.case)
+        else:
+            label      = old_zone.getLabel()
+            codeNumber = old_zone.getCodeNumber()
+            localis    = old_zone.getLocalization()
+
+            newLabel = new_zone.getLabel()
+            if label != newLabel:
+                self.setLabel(label, newLabel)
+
+            newCodeNumber = new_zone.getCodeNumber()
+            if codeNumber != newCodeNumber:
+                self.setCodeNumber(codeNumber, newCodeNumber)
+
+            newLocal = new_zone.getLocalization()
+            if localis != newLocal:
+                self.setLocalization(newLabel, newLocal)
 
 
     @Variables.undoGlobal
@@ -914,8 +931,13 @@ class BoundaryLocalizationModel(LocalizationModel):
         node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'name', 'nature', label = label)
         node.xmlSetTextNode(localization)
 
+        lst.reverse()
+
         for z in lst:
             n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label', name = z + 1)
+            label = n['label']
+            nature = n['nature']
+            Boundary(nature, label, self.case).delete()
             n.xmlRemoveNode()
 
         count = 1
