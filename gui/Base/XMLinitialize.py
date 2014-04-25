@@ -628,7 +628,8 @@ class XMLinit(Variables):
                     ("Coef_Abso",                    "absorption_coeff"),
                     ("c_NO_HCN",                     "radiation_source"),
                     ("Sigma",                        "elec_sigma"),
-                    ("IntLuminance_4PI",             "intensity")]
+                    ("IntLuminance_4PI",             "intensity"),
+                    ("volumic_viscosity",            "volume_viscosity")]
 
         dicoP = {}
         for (u,v) in dicoProp:
