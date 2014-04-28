@@ -1814,6 +1814,8 @@ cs_field_destroy_all(void)
       BFT_FREE(f->bc_coeffs->bf);
       BFT_FREE(f->bc_coeffs->ad);
       BFT_FREE(f->bc_coeffs->bd);
+      BFT_FREE(f->bc_coeffs->ac);
+      BFT_FREE(f->bc_coeffs->bc);
       BFT_FREE(f->bc_coeffs);
     }
   }
