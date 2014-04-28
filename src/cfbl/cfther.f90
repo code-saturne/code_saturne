@@ -1986,9 +1986,9 @@ if (ieos.eq.1) then
         ! Density
         brom(ifac) = ro1
         ! Velocity
-        bval(ifac,iu) = vel(1,iel) - a * surfbo(1,ifac) / surfbn(ifac)
-        bval(ifac,iv) = vel(2,iel) - a * surfbo(2,ifac) / surfbn(ifac)
-        bval(ifac,iw) = vel(3,iel) - a * surfbo(3,ifac) / surfbn(ifac)
+        bval(ifac,iu) = vel(1,iel) + a * surfbo(1,ifac) / surfbn(ifac)
+        bval(ifac,iv) = vel(2,iel) + a * surfbo(2,ifac) / surfbn(ifac)
+        bval(ifac,iw) = vel(3,iel) + a * surfbo(3,ifac) / surfbn(ifac)
         ! Total energy
         bval(ifac,ien) = pinf / ((gamagp - 1.d0) * ro1)                     &
                        + 0.5d0 * (bval(ifac,iu)**2                          &
