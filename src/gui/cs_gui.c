@@ -612,6 +612,7 @@ _compressible_physical_property(const char *const param,
       time0 = cs_timer_wtime();
 
       ev_law = mei_tree_new(law);
+      BFT_FREE(law);
 
       mei_tree_insert(ev_law, "x", 0.0);
       mei_tree_insert(ev_law, "y", 0.0);
