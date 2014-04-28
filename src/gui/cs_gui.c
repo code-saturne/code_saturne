@@ -4577,12 +4577,15 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   cs_var_t  *vars = cs_glob_var;
 
   /* law for density */
-  if (*irovar == 1) {
-    cs_field_t *c_rho = CS_F_(rho);
-    _physical_property("density", "density",
-                       ncel, ncelet, itherm, iscalt, icp,
-                       p0, ro0, cp0, viscl0, visls0,
-                       c_rho->val);
+  if (!cs_gui_strcmp(vars->model, "compressible_model") ||
+       cs_glob_time_step->nt_cur == 1) {
+      if (*irovar == 1) {
+          cs_field_t *c_rho = CS_F_(rho);
+          _physical_property("density", "density",
+                             ncel, ncelet, itherm, iscalt, icp,
+                             p0, ro0, cp0, viscl0, visls0,
+                             c_rho->val);
+      }
   }
 
   /* law for molecular viscosity */
