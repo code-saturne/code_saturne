@@ -79,6 +79,7 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_physical_properties.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
