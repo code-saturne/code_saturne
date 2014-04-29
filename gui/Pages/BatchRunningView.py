@@ -295,6 +295,7 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
         self.result  = self.default.copy()
 
         v = IntValidator(self.lineEditStopIter, min=1)
+        v.setExclusiveMin(True)
         self.lineEditStopIter.setValidator(v)
 
         # Previous values
