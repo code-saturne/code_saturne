@@ -198,19 +198,27 @@ cs_turbomachinery_get_rotation_velocity(int  rotor_num);
 
 /*----------------------------------------------------------------------------
  * Rotation of vector and tensor fields.
+ *
+ * parameters:
+ *   dt <-- cell time step values
  *----------------------------------------------------------------------------*/
 
 void
 cs_turbomachinery_rotate_fields(const cs_real_t dt[]);
 
 /*----------------------------------------------------------------------------
- * Relative velocity
+ * Compute velocity relative to fixed coordinates at a given point
+ *
+ * parameters:
+ *   rotor_num <-- associated rotor number (1 to n numbering)
+ *   coords    <-- point coordinates
+ *   velocity  --> velocity relative to fixed coordinates
  *----------------------------------------------------------------------------*/
 
 void
-cs_turbomachinery_relative_velocity(int             rotor_num,
-                                    const cs_real_t coord[3],
-                                    cs_real_t       velocity[3]);
+cs_turbomachinery_relative_velocity(int              rotor_num,
+                                    const cs_real_t  coords[3],
+                                    cs_real_t        velocity[3]);
 
 /*----------------------------------------------------------------------------*/
 

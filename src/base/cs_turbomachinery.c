@@ -362,6 +362,32 @@ _apply_sym_tensor_rotation(cs_real_t  matrix[3][4],
 }
 
 /*----------------------------------------------------------------------------
+ * Compute velocity relative to fixed coordinates at a given point
+ *
+ * parameters:
+ *   omega           <-- rotation velocity
+ *   axis            <-- components of rotation axis direction vector (3)
+ *   invariant_point <-- components of invariant point (3)
+ *   coords          <-- coordinates at point
+ *   velocity        --> resulting relative velocity
+ *---------------------------------------------------------------------------*/
+
+static void
+_relative_velocity(double        omega,
+                   const double  axis[3],
+                   const double  invariant_point[3],
+                   const double  coords[3],
+                   cs_real_t     velocity[3])
+{
+  velocity[0] = (- axis[2] * (coords[1] - invariant_point[1])
+                 + axis[1] * (coords[2] - invariant_point[2])) * omega;
+  velocity[1] = (  axis[2] * (coords[0] - invariant_point[0])
+                 - axis[0] * (coords[2] - invariant_point[2])) * omega;
+  velocity[2] = (- axis[1] * (coords[0] - invariant_point[0])
+                 + axis[0] * (coords[1] - invariant_point[1])) * omega;
+}
+
+/*----------------------------------------------------------------------------
  * Duplicate a cs_mesh_t structure.
  *
  * Note that some fields which are recomputable are not copied.
@@ -1373,31 +1399,33 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
   }
 }
 
-/*----------------------------------------------------------------------------
- * Relative velocity
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute velocity relative to fixed coordinates at a given point
+ *
+ * \param[in]   rotor_num  rotor number (1 to n numbering)
+ * \param[in]   coords     point coordinates
+ * \param[out]  velocity   velocity relative to fixed coordinates
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_turbomachinery_relative_velocity(int             rotor_num,
-                                    const cs_real_t coord[3],
-                                    cs_real_t       velocity[3])
+cs_turbomachinery_relative_velocity(int              rotor_num,
+                                    const cs_real_t  coords[3],
+                                    cs_real_t        velocity[3])
 {
   if (rotor_num != 1)
     bft_error(__FILE__, __LINE__, 0,
               "%s: only one rotor may be used in the current version.",
               __func__);
 
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  const cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
-  velocity[0] = -tbm->rotation_axis[2] * (coord[1] - tbm->rotation_invariant[1]) +
-                 tbm->rotation_axis[1] * (coord[2] - tbm->rotation_invariant[2]);
-  velocity[1] =  tbm->rotation_axis[2] * (coord[0] - tbm->rotation_invariant[0]) -
-                 tbm->rotation_axis[0] * (coord[2] - tbm->rotation_invariant[2]);
-  velocity[2] = -tbm->rotation_axis[1] * (coord[0] - tbm->rotation_invariant[0]) +
-                 tbm->rotation_axis[0] * (coord[1] - tbm->rotation_invariant[1]);
-
-  for (int i = 0; i < 3; i++)
-    velocity[i] *= tbm->omega;
+  _relative_velocity(tbm->omega,
+                     tbm->rotation_axis,
+                     tbm->rotation_invariant,
+                     coords,
+                     velocity);
 }
 
 /*----------------------------------------------------------------------------*/
