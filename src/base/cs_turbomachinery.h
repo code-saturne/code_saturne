@@ -203,6 +203,15 @@ cs_turbomachinery_get_rotation_velocity(int  rotor_num);
 void
 cs_turbomachinery_rotate_fields(const cs_real_t dt[]);
 
+/*----------------------------------------------------------------------------
+ * Relative velocity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_relative_velocity(int             rotor_num,
+                                    const cs_real_t coord[3],
+                                    cs_real_t       velocity[3]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

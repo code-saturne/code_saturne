@@ -1373,6 +1373,33 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Relative velocity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_relative_velocity(int             rotor_num,
+                                    const cs_real_t coord[3],
+                                    cs_real_t       velocity[3])
+{
+  if (rotor_num != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: only one rotor may be used in the current version.",
+              __func__);
+
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+
+  velocity[0] = -tbm->rotation_axis[2] * (coord[1] - tbm->rotation_invariant[1]) +
+                 tbm->rotation_axis[1] * (coord[2] - tbm->rotation_invariant[2]);
+  velocity[1] =  tbm->rotation_axis[2] * (coord[0] - tbm->rotation_invariant[0]) -
+                 tbm->rotation_axis[0] * (coord[2] - tbm->rotation_invariant[2]);
+  velocity[2] = -tbm->rotation_axis[1] * (coord[0] - tbm->rotation_invariant[0]) +
+                 tbm->rotation_axis[0] * (coord[1] - tbm->rotation_invariant[1]);
+
+  for (int i = 0; i < 3; i++)
+    velocity[i] *= tbm->omega;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
