@@ -304,7 +304,7 @@ $D^{imp}_\ib$ must be specified by the user. The boundary type code is $3$ (see 
 
 %-------------------------------------------------------------------------------
 \subsection{Mixed or Robin boundary conditions}
-As explained in the introduction \ref{sec:bndcnd:intro}, the simple case of a heat flux $q_w$ from a solid wall reads: $q_w = \lambda \grad T \cdot \vect{n}_\ib = - \lambda \dfrac{T_\centip - T_\centf}{\overline{\centip \centf}} = -h_{int} \left( T_\centip T_\centf \right)$ where $h_{int} = \dfrac{\lambda}{\overline{\centip \centf}}$ is displayed in \tablename~ \ref{tab:bndcnd:hint_phi_condli}.
+As explained in the introduction \ref{sec:bndcnd:intro}, the simple case of a heat flux $q_w$ from a solid wall reads: $q_w = \lambda \grad T \cdot \vect{n}_\ib = - \lambda \dfrac{T_\centip - T_\centf}{\overline{\centip \centf}} = -h_{int} \left( T_\centip - T_\centf \right)$ where $h_{int} = \dfrac{\lambda}{\overline{\centip \centf}}$ is displayed in \tablename~ \ref{tab:bndcnd:hint_phi_condli}.
 As presented in \S~ \ref{sec:bndcnd:dirichlet_bc}, Dirichlet condition $T_\centf = T_w$ simply leads to $A^f = - h_{int} T_w$ and $B^f = h_{int}$.
 In some cases, heat transfer outside the flow domain is described by a one-dimensional conduction equation $q = -h_{ext} \left(T_{REF} - T_w \right)$
 in which some reference temperature $T_{REF}$ is given and the coefficient $h_{ext}$ is known from an analytical or experimental correlation.
