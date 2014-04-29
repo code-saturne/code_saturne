@@ -1173,7 +1173,7 @@ class MonitoringPointDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        text = str(index.model().data(index, Qt.DisplayRole))
+        text = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         if isinstance(editor, QLineEdit):
             editor.setText(text)
 
