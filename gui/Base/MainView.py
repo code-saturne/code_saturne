@@ -395,10 +395,7 @@ class MainView(object):
         settings = QSettings()
 
         try:
-            self.recentFiles = settings.value("RecentFiles", [], type=QStringList)
-            self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray(), type=QByteArray))
-            self.restoreState(settings.value("MainWindow/State", QByteArray(), type=QByteArray))
-        except:
+            # API 2
             if settings.value("RecentFiles", []) is not None:
                 try:
                     recentFiles = settings.value("RecentFiles").toStringList()
@@ -409,8 +406,13 @@ class MainView(object):
                     self.recentFiles = list(settings.value("RecentFiles", []))
             else:
                 self.recentFiles = []
-            self.restoreGeometry(from_qvariant(settings.value("MainWindow/Geometry", QByteArray()), to_text_string))
-            self.restoreState(from_qvariant(settings.value("MainWindow/State", QByteArray()), to_text_string))
+            self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray()))
+            self.restoreState(settings.value("MainWindow/State", QByteArray()))
+        except:
+            # API 1
+            self.recentFiles = settings.value("RecentFiles").toStringList()
+            self.restoreGeometry(settings.value("MainWindow/Geometry").toByteArray())
+            self.restoreState(settings.value("MainWindow/State").toByteArray())
 
         color = settings.value("MainWindow/Color",
                   self.palette().color(QPalette.Window).name())
