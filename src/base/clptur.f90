@@ -184,7 +184,7 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cp
+double precision, dimension(:), pointer :: viscl, visct, cp, yplbr
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 
 double precision, dimension(:,:), pointer :: coefau, cofafu
@@ -240,6 +240,8 @@ rinfiv(3) = rinfin
 uet = 1.d0
 utau = 1.d0
 sqrcmu = sqrt(cmu)
+
+if (ipstdv(ipstyp).ne.0) call field_get_val_s(iyplbr, yplbr)
 
 ! --- Gradient and flux boundary conditions
 

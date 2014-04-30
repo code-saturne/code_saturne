@@ -201,7 +201,8 @@ double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, pointer, dimension(:,:) :: dttens
-double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:), pointer :: tplusp, tstarp, yplbr
+double precision, pointer, dimension(:,:) :: forbr
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 double precision, dimension(:), pointer :: bmasfl
@@ -270,6 +271,9 @@ if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
 if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 
 if (idtten.ge.0) call field_get_val_v(idtten, dttens)
+
+if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
+if (ipstdv(ipstyp).ne.0) call field_get_val_s(iyplbr, yplbr)
 
 ! Pointers to velcocity BC coefficients
 call field_get_coefa_v(ivarfl(iu), coefau)

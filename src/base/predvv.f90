@@ -109,7 +109,6 @@ subroutine predvv &
 use paramx
 use dimens, only: ndimfb
 use numvar
-use pointe, only: forbr
 use entsor
 use cstphy
 use cstnum
@@ -219,6 +218,7 @@ double precision, dimension(:,:), allocatable :: coefat
 double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, dimension(:,:), allocatable :: divt
+double precision, dimension(:,:), pointer :: forbr
 
 !===============================================================================
 
@@ -251,6 +251,8 @@ endif
 if (iporos.ge.1) then
   call field_get_val_s(ipori, porosi)
 endif
+
+if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
 
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)

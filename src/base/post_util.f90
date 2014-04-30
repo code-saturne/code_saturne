@@ -618,8 +618,11 @@ double precision, dimension(3, nfbrps), intent(out) :: effort
 
 integer          :: ifac  , iloc
 double precision :: srfbn
+double precision, dimension(:,:), pointer :: forbr
 
 !===============================================================================
+
+call field_get_val_v(iforbr, forbr)
 
 do iloc = 1, nfbrps
   ifac = lstfbr(iloc)
@@ -692,8 +695,11 @@ double precision, dimension(nfbrps), intent(out)    :: effnrm
 integer                        :: ifac  , iloc
 double precision               :: srfbn
 double precision, dimension(3) :: srfnor
+double precision, dimension(:,:), pointer :: forbr
 
 !===============================================================================
+
+call field_get_val_v(iforbr, forbr)
 
 do iloc = 1, nfbrps
   ifac = lstfbr(iloc)
@@ -769,8 +775,11 @@ double precision, dimension(3, nfbrps), intent(out) :: effort
 integer                        :: ifac  , iloc
 double precision               :: srfbn, fornor
 double precision, dimension(3) :: srfnor
+double precision, dimension(:,:), pointer :: forbr
 
 !===============================================================================
+
+call field_get_val_v(iforbr, forbr)
 
 do iloc = 1, nfbrps
   ifac = lstfbr(iloc)

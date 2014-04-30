@@ -57,7 +57,6 @@ module pointe
     double precision, dimension(:),  pointer :: p !< rank 1 array pointer
   end type pmapper_double_r1
 
-
   !> container for rank 2 double precision array pointer.
   type pmapper_double_r2
     double precision, dimension(:,:),  pointer :: p !< rank 2 array pointer
@@ -109,15 +108,9 @@ module pointe
   !> and the closest wall is therefore \c yplpar(iel1)
   double precision, allocatable, dimension(:)   :: yplpar
 
-  !> \f$y^+\f$ at boundary, if post-processed
-  double precision, allocatable, dimension(:)   :: yplbr
-
   !> friction velocity at the wall, in the case of a LES calculation
   !> with van Driest-wall damping
   double precision, allocatable, dimension(:)   :: uetbor
-
-  !> stresses at boundary (if post-processed)
-  double precision, allocatable, dimension(:,:) :: forbr
 
   !> \}
 
@@ -432,23 +425,11 @@ contains
       allocate(ifapat(ncelet))
     endif
 
-    ! Forces on boundary faces
-
-    if (ineedf.eq.1) then
-      allocate(forbr(3,nfabor))
-    endif
-
     ! Friction velocity on boundary faces
 
     if (     (itytur.eq.4 .and. idries.eq.1) &
         .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
       allocate(uetbor(nfabor))
-    endif
-
-    ! Non-dimensional distance to the wall (for post-processing)
-
-    if (ipstdv(ipstyp).ne.0) then
-      allocate(yplbr(nfabor))
     endif
 
     ! Temporary storage arrays for k-omega model
@@ -620,9 +601,7 @@ contains
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(ifapat)) deallocate(ifapat)
-    if (allocated(forbr)) deallocate(forbr)
     if (allocated(uetbor)) deallocate(uetbor)
-    if (allocated(yplbr)) deallocate(yplbr)
     if (allocated(s2kw)) deallocate(s2kw, divukw)
     if (allocated(straio))  deallocate(straio)
     if (allocated(b_head_loss)) deallocate(b_head_loss)

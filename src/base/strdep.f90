@@ -104,6 +104,7 @@ double precision delta
 
 double precision, allocatable, dimension(:,:) :: forast
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:,:), pointer :: forbr
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp
@@ -118,6 +119,8 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_val_v(iforbr, forbr)
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)

@@ -320,6 +320,17 @@ if (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0) then
   call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
 endif
 
+ilved = .true.
+
+if (ineedf.eq.1) then
+  call field_create('boundary_forces', itycat, ityloc, idim3, ilved, inoprv, &
+                    iforbr)
+endif
+
+if (ipstdv(ipstyp).ne.0) then
+  call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
+endif
+
 ! Porosity fields
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY

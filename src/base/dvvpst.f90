@@ -124,7 +124,7 @@ double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
-double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: crom, yplbr
 double precision, dimension(:,:), pointer :: vel
 
 double precision, allocatable, dimension(:,:,:) :: gradv
@@ -449,6 +449,7 @@ else if (numtyp .eq. -2) then
   if (ipstdv(ipstyp).ne.0) then
 
     idimt = 1  ! variable dimension
+    call field_get_val_s(iyplbr, yplbr)
 
     ! Compute variable on boundary faces
 

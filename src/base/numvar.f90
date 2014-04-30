@@ -187,7 +187,7 @@ module numvar
   !> cell and boundary density field ids of the variables
   integer, save :: icrom, ibrom
 
-  !> cell porosity key ids of the properties
+  !> cell porosity field ids of the properties
   integer, save :: ipori, iporf
 
   !> dynamic constant of Smagorinsky
@@ -215,6 +215,12 @@ module numvar
 
   !> pointer for thermal expansion coefficient
   integer, save :: ibeta
+
+  !> stresses at boundary field id (if post-processed)
+  integer, save :: iforbr
+
+  !> \f$y^+\f$ at boundary field id (if post-processed)
+  integer, save :: iyplbr
 
   !> \}
 

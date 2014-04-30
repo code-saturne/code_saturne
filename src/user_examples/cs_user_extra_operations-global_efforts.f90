@@ -95,6 +95,7 @@ integer          ii
 integer          ilelt  , nlelt
 
 double precision xfor(3)
+double precision, dimension(:,:), pointer :: forbr
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
@@ -104,6 +105,8 @@ integer, allocatable, dimension(:) :: lstelt
 !===============================================================================
 ! Initialization
 !===============================================================================
+
+if (ineedf.eq.1) call field_get_val_v(iforbr, forbr)
 
 ! Allocate a temporary array for cells or interior/boundary faces selection
 allocate(lstelt(max(ncel,nfac,nfabor)))
