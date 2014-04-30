@@ -152,6 +152,7 @@ double precision trprod, trrij , deltij
 double precision tuexpr, thets , thetv , thetp1
 double precision d1s3  , d2s3
 double precision ccorio, matrot(3,3)
+double precision rctse
 
 double precision rvoid(1)
 
@@ -601,8 +602,21 @@ if (idften(ivar).eq.6) then
    weighf , weighb ,             &
    viscf  , viscb  )
 
+! Scalar diffusivity
 else
-  call csexit(1)
+
+  do iel = 1, ncel
+    trrij = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+    rctse = crom(iel) * csrij * trrij**2 / rtpa(iel,iep)
+    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse
+  enddo
+
+  call viscfa                    &
+  !==========
+ ( imvisf ,                      &
+   w1     ,                      &
+   viscf  , viscb  )
+
 endif
 
 !===============================================================================

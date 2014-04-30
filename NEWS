@@ -4,6 +4,8 @@ Trunk (unreleased)
 
 Changes:
 --------
+- Add the Shir model for the turbulent diffusion of the second moment turbulence models
+  (Rij and epsilon, isotropic diffusion). Available with the idirsm=0.
 
 - Enable use of sparse matrix-vector tuning mechanism in regular calculations.
   Automatic tuning or variant selection may be done using the

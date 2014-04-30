@@ -363,14 +363,29 @@ elseif (itytur.eq.3) then
     thetav(ir23) = 0.5d0
     thetav(iep ) = 0.5d0
   endif
-  ! Daly Harlow (GGDH) on Rij and epsilon by Default
-  idften(ir11) = 6
-  idften(ir22) = 6
-  idften(ir33) = 6
-  idften(ir12) = 6
-  idften(ir23) = 6
-  idften(ir13) = 6
-  idften(iep)  = 6
+
+  ! Diffusivity model:
+
+  ! Daly Harlow (GGDH) on Rij and epsilon by default
+  if (idirsm.ne.0) then
+    idften(ir11) = 6
+    idften(ir22) = 6
+    idften(ir33) = 6
+    idften(ir12) = 6
+    idften(ir23) = 6
+    idften(ir13) = 6
+    idften(iep)  = 6
+
+  ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
+  else
+    idften(ir11) = 1
+    idften(ir22) = 1
+    idften(ir33) = 1
+    idften(ir12) = 1
+    idften(ir23) = 1
+    idften(ir13) = 1
+    idften(iep)  = 1
+  endif
 
   if (iturb.eq.32) then
     if (abs(thetav(ial)+999.d0).gt.epzero) then
@@ -946,10 +961,14 @@ else
   sigmae = 1.30d0
 endif
 
-if (iturb.eq.32) then
-  csrij = 0.21d0
+if (idirsm.eq.0) then
+  csrij = 0.11d0
 else
-  csrij = 0.22d0
+  if (iturb.eq.32) then
+    csrij = 0.21d0
+  else
+    csrij = 0.22d0
+  endif
 endif
 
 ! ---> ICLVFL

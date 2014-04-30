@@ -464,8 +464,19 @@ if (idften(ivar).eq.6) then
    weighf , weighb ,             &
    viscf  , viscb  )
 
+! Scalar diffusivity
 else
-  call csexit(1)
+
+  do iel = 1, ncel
+    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*propce(iel,ipcvst)/sigmae
+  enddo
+
+  call viscfa                    &
+  !==========
+ ( imvisf ,                      &
+   w1     ,                      &
+   viscf  , viscb  )
+
 endif
 
 !===============================================================================

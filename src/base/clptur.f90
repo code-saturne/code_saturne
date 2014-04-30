@@ -1031,8 +1031,9 @@ do ifac = 1, nfabor
 
           hint = viscis/surfbn(ifac)/fikis
 
+        ! Scalar diffusivity
         else
-          call csexit(1)
+          hint = (visclc+visctc*csrij/cmu)/distbf
         endif
 
         ! Translate into Diffusive flux BCs
@@ -1134,8 +1135,9 @@ do ifac = 1, nfabor
 
         hint = viscis/surfbn(ifac)/fikis
 
+      ! Scalar diffusivity
       else
-        call csexit(1)
+        hint = (visclc+visctc/sigmae)/distbf
       endif
 
       if ((iturb.eq.30).or.(iturb.eq.31)) then

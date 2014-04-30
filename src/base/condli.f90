@@ -1198,8 +1198,10 @@ elseif (itytur.eq.3) then
 
         hint = viscis/surfbn(ifac)/fikis
 
+      ! Scalar diffusivity
       else
-        call csexit(1)
+        visctc = propce(iel,ipcvst)
+        hint = (visclc+visctc*csrij/cmu)/distbf
       endif
 
       ! Dirichlet Boundary Condition
@@ -1324,8 +1326,9 @@ elseif (itytur.eq.3) then
 
       hint = viscis/surfbn(ifac)/fikis
 
+    ! Scalar diffusivity
     else
-      call csexit(1)
+      hint = (visclc+visctc/sigmae)/distbf
     endif
 
     ! Dirichlet Boundary Condition

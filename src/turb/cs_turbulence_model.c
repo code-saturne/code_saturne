@@ -118,6 +118,10 @@ BEGIN_C_DECLS
         models
         - 1: Cazalbou correction (default when irccor=1 and itytur=2 or 5)
         - 2: Spalart-Shur correction (default when irccor=1 and iturb=60 or 70)
+  \var  cs_turb_rans_model_t::idirsm
+        turbulent diffusion model for second moment closure
+        - 0: scalar diffusivity (Shir model)
+        - 1: tensorial diffusivity (Daly and Harlow model, default model)
   \var  cs_turb_rans_model_t::iclkep
         clipping of k and epsilon
         - 0: absolute value clipping
@@ -228,6 +232,7 @@ cs_f_turb_model_get_pointers(int     **iturb,
 void
 cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **itycor,
+                                  int     **idirsm,
                                   int     **iclkep,
                                   int     **igrhok,
                                   int     **igrake,
@@ -287,6 +292,7 @@ cs_f_turb_model_get_pointers(int     **iturb,
  * parameters:
  *   irccor --> pointer to cs_glob_turb_rans_model->irccor
  *   itycor --> pointer to cs_glob_turb_rans_model->itycor
+ *   idirsm --> pointer to cs_glob_turb_rans_model->idirsm
  *   iclkep --> pointer to cs_glob_turb_rans_model->iclkep
  *   igrhok --> pointer to cs_glob_turb_rans_model->igrhok
  *   igrake --> pointer to cs_glob_turb_rans_model->igrake
@@ -303,6 +309,7 @@ cs_f_turb_model_get_pointers(int     **iturb,
 void
 cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **itycor,
+                                  int     **idirsm,
                                   int     **iclkep,
                                   int     **igrhok,
                                   int     **igrake,
@@ -317,6 +324,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
 {
   *irccor = &(_turb_rans_model.irccor);
   *itycor = &(_turb_rans_model.itycor);
+  *idirsm = &(_turb_rans_model.idirsm);
   *iclkep = &(_turb_rans_model.iclkep);
   *igrhok = &(_turb_rans_model.igrhok);
   *igrake = &(_turb_rans_model.igrake);

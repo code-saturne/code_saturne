@@ -148,7 +148,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb , irccor , itherm, icp)
+call usipph(iihmpu , nfecra , iturb , irccor , idirsm , itherm, icp)
 
 ! --- ALE parameters
 

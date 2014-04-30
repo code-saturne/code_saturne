@@ -558,6 +558,11 @@ module optcal
   !>    - 2 Spalart-Shur correction (default when irccor=1 and iturb=60 or 70)
   integer(c_int), pointer, save :: itycor
 
+  !> Turbulent diffusion model for second moment closure
+  !>    - 0: scalar diffusivity (Shir model)
+  !>    - 1: tensorial diffusivity (Daly and Harlow model, default model)
+  integer(c_int), pointer, save :: idirsm
+
   !>  Wall functions
   !>    - 0: one scale of friction velocities
   !>    - 1: two scale of friction velocities
@@ -1085,17 +1090,17 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! RANS turbulence model structure
 
-    subroutine cs_f_turb_rans_model_get_pointers(irccor, itycor, iclkep, &
-                                                 igrhok, igrake, igrari, &
-                                                 ikecou, irijnu, irijrb, &
-                                                 irijec, idifre, iclsyr, &
-                                                 iclptr)                 &
+    subroutine cs_f_turb_rans_model_get_pointers(irccor, itycor, idirsm, &
+                                                 iclkep, igrhok, igrake, &
+                                                 igrari, ikecou, irijnu, &
+                                                 irijrb, irijec, idifre, &
+                                                 iclsyr, iclptr)         &
       bind(C, name='cs_f_turb_rans_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: irccor, itycor, iclkep, igrhok, igrake
-      type(c_ptr), intent(out) :: igrari, ikecou, irijnu, irijrb, irijec
-      type(c_ptr), intent(out) :: idifre, iclsyr, iclptr
+      type(c_ptr), intent(out) :: irccor, itycor, idirsm, iclkep, igrhok
+      type(c_ptr), intent(out) :: igrake, igrari, ikecou, irijnu, irijrb
+      type(c_ptr), intent(out) :: irijec, idifre, iclsyr, iclptr
     end subroutine cs_f_turb_rans_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1235,18 +1240,19 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_irccor, c_itycor, c_iclkep, c_igrhok, c_igrake, c_igrari
-    type(c_ptr) :: c_ikecou, c_irijnu, c_irijrb, c_irijec, c_idifre, c_iclsyr
-    type(c_ptr) :: c_iclptr
+    type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok, c_igrake
+    type(c_ptr) :: c_igrari, c_ikecou, c_irijnu, c_irijrb, c_irijec, c_idifre
+    type(c_ptr) :: c_iclsyr, c_iclptr
 
-    call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_iclkep, &
-                                            c_igrhok, c_igrake, c_igrari, &
-                                            c_ikecou, c_irijnu, c_irijrb, &
-                                            c_irijec, c_idifre, c_iclsyr, &
-                                            c_iclptr)
+    call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_idirsm, &
+                                            c_iclkep, c_igrhok, c_igrake, &
+                                            c_igrari, c_ikecou, c_irijnu, &
+                                            c_irijrb, c_irijec, c_idifre, &
+                                            c_iclsyr, c_iclptr)
 
     call c_f_pointer(c_irccor, irccor)
     call c_f_pointer(c_itycor, itycor)
+    call c_f_pointer(c_idirsm, idirsm)
     call c_f_pointer(c_iclkep, iclkep)
     call c_f_pointer(c_igrhok, igrhok)
     call c_f_pointer(c_igrake, igrake)

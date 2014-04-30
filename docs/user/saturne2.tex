@@ -839,15 +839,15 @@ useful if {\tt idtvar} $\ne$ 0}
 
 \motcle{relxst}{r}{0 $<$ real $\leqslant$ 1}{0.9}{O}{L2}
 {relaxation coefficient for the steady algorithm
- ({\tt relaxp(iphas)}=1: no relaxation)\\
+ ({\tt relaxp}=1: no relaxation)\\
 useful if {\tt idtvar}=-1}
 
 \motcle{relaxv}{ra}{0 $\leqslant$ real $\leqslant$ 1}{0.7 or 1.}{O}{L3}
 {for each variable {\tt ivar}, relaxation coefficient of the variable.
 This relaxation parameter is only useful for the pressure with the unsteady
 algorithm (so as to improve the convergence in case of meshes of insufficient
-quality or and for some of the turbulent models ({\tt iturb(iphas)} = 20, 21,
-50 or 60 and {\tt ikecou(iphas)}=0; if {\tt ikecou(iphas)}=1, {\tt relaxv(ivar)}
+quality or and for some of the turbulent models ({\tt iturb} = 20, 21,
+50 or 60 and {\tt ikecou}=0; if {\tt ikecou}=1, {\tt relaxv(ivar)}
 is not used, whatever its value may be). Default values are 0.7 for turbulent
 variables and 1. for pressure.\\
 It also stores the value of the relaxation coefficient when using the steady
@@ -877,7 +877,12 @@ the maximum, then to the minimum limit.\\
 \subsubsection{Turbulence}
 %==================================
 
-\motcleb{iturb}{ia}{0, 10, 20, 21, 30, 31, 32, 40, 41, 42, 50, 51, 60, 70}{-999}{O}{L1}
+\motcleb{iturb}{i}{
+\begin{tabular}{l}
+0, 10, 20, 21, 30, 31, 32, \\
+40, 41, 42, 50, 51, 60, 70
+\end{tabular}
+}{-999}{O}{L1}
 {indicator of the turbulence model {\tt iturb}\\
 \hspace*{1.3cm}= -999: not initialised. This value is not allowed and
 must be modified by the user\\
@@ -933,7 +938,7 @@ does not implement his own way of averaging the dynamic constant in
 \texttt{ussmag} (\textit{i.e.} if the user keeps the local average based
 on the extended neighbourhood).\\
 
-\motcleb{iturt}{ia}{0, 10, 20 or 30}{0}{O}{L1}
+\motcleb{iturt}{ia}{0, 10, 20 or 30}{0}{O}{L2}
 {indicator of the turbulent flux model $ \overline{\varia^\prime \vect{u}^\prime}$
 for any scalar $\varia$\\
 \hspace*{1.3cm}= 0: Simple Gradient Hypothesis (default value)\\
@@ -943,7 +948,7 @@ for any scalar $\varia$\\
 GGDH, AFM and DFM are only available when a second order closure is used {\tt iturb}=30, 31, 32.
 }
 
-\motcle{ideuch}{ia}{0, 1 or 2}{0 or 1}{O}{L2}
+\motcle{ideuch}{i}{0, 1 or 2}{0 or 1}{O}{L2}
 {indicates the type of wall function is used for
  the velocity boundary conditions on a frictional wall.\\
 \hspace*{1.3cm}= 0: one-scale model\\
@@ -968,12 +973,12 @@ the problems related to the use of High-Reynolds models on very refined
 meshes.\\
 useful if {\tt iturb} is different from 50}
 
-\motcle{ilogpo}{ia}{0 or 1}{1}{O}{L3}
+\motcle{ilogpo}{i}{0 or 1}{1}{O}{L3}
 {type of wall function used for the velocity: power law
 ({\tt ilogpo}=0, deprecated) or logarithmic law ({\tt ilogpo}=1)\\
 always useful}
 
-\motcle{ypluli}{ra}{real number $>$ 0}{\tt 1/xkappa, 10.88}{O}{L3}
+\motcle{ypluli}{r}{real number $>$ 0}{\tt 1/xkappa, 10.88}{O}{L3}
 {limit value of $y^+$ for the viscous sub-layer\\
 {\tt ypluli} depends on the chosen wall function: it is
 initialised to 10.88 for the scalable wall function ({\tt ideuch}=2),
@@ -984,14 +989,14 @@ always useful}
 \minititre{ $k-\varepsilon$, $k-\varepsilon$ with linear production,
 v2-f and $k-\omega$ SST}
 
-\motcle{igrake}{ia}{0 or 1}{1}{O}{L1}
+\motcle{igrake}{i}{0 or 1}{1}{O}{L1}
 {indicates if the terms related to gravity in the
 equations of $k$ and $\varepsilon$ or $\omega$ are taken into account
 ({\tt igrake}=1) or not (0)\\
 useful if and only if {\tt iturb} = 20, 21, 50 or 60, ({\tt gx, gy, gz})
 $\ne$ (0,0,0) and the density is not uniform}
 
-\motcle{igrhok}{ia}{0 or 1}{0}{O}{L2}
+\motcle{igrhok}{i}{0 or 1}{0}{O}{L2}
 {indicates if the term $\frac{2}{3}\grad \rho k$
 is taken into account\\ ({\tt igrhok}=1) or not (0) in the velocity
 equation\\
@@ -1000,7 +1005,7 @@ This term may generate
 non-physical velocities at the wall. When it is not explicitly taken into
 account, it is implicitly included into the pressure.}
 
-\motcle{ikecou}{ia}{0 or 1}{0 or 1}{O}{L3}
+\motcle{ikecou}{i}{0 or 1}{0 or 1}{O}{L3}
 {indicates if the coupling of the source terms of
 $k$ and $\varepsilon$ or $k$ and $\omega$ is taken into account
 ({\tt ikecou}=1) or not (0)\\
@@ -1014,7 +1019,7 @@ and to 1 if\\
 useful if and only if {\tt iturb} = 20, 21 or 60 ($k-\varepsilon$ and
 $k-\omega$ models)}
 
-\motcle{iclkep}{ia}{0 or 1}{0}{O}{L3}
+\motcle{iclkep}{i}{0 or 1}{0}{O}{L3}
 {indicates the clipping method used for $k$ and
 $\varepsilon$, for the $k-\varepsilon$ and v2f models\\
 \hspace*{1.3cm}= 0: clipping in absolute value\\
@@ -1041,30 +1046,33 @@ useful if and only if {\tt iturb} = 20, 21, 50, 51, 60, 70 (eddy viscosity model
 
 \minititre{ $R_{ij}-\varepsilon$ (LRR and SSG)}
 
-\motcle{iclptr}{ia}{0 or 1}{0}{O}{L3}
+\motcle{iclptr}{i}{0 or 1}{0}{O}{L3}
 {indicates if $R_{ij}$ is made partially implicit
 ({\tt iclptr}=1) or not (0) in the wall boundary conditions.\\
 useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
 
-\motcle{iclsyr}{ia}{0 or 1}{0}{O}{L3}
+\motcle{iclsyr}{i}{0 or 1}{0}{O}{L3}
 {indicates if $R_{ij}$ is made partially implicit
 ({\tt iclsyr}=1) or not (0) in the symmetry boundary conditions.\\
 useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
 
-\motcle{idifre}{ia}{0 or 1}{1}{O}{L3}
+\motcle{idifre}{i}{0 or 1}{1}{O}{L3}
 {complete ({\tt idifre=1}) or simplified (0)
 taking into account of the diagonals of the diffusion tensors of $R_{ij}$
 and $\varepsilon$, for the LLR model.\\
 useful if and only if {\tt iturb} = 30 (LLR $R_{ij}-\varepsilon$ model)}
 
-\motcle{igrari}{ia}{0 or 1}{1}{O}{L1}
+\motcle{igrari}{i}{0 or 1}{1}{O}{L1}
 {indicates if the terms related to gravity are
 taken into account ({\tt igrari}=1) or not (0) in the equations of
 $R_{ij}-\varepsilon$. \\
 useful if and only if {\tt iturb} = 30 or 31 and ({\tt gx, gy, gz}) $\ne$
 (0,0,0) ($R_{ij}-\varepsilon$ model with gravity) and the density is not uniform}
 
-\motcle{irijec}{ia}{0 or 1}{0}{O}{L2}
+\motcle{idirsm}{i}{0 or 1}{1}{O}{L3}
+{model for the turbulent diffusion of $R_{ij}$ and $\varepsilon$ in second moment closure. Shir model (isotropic diffusion) if 0, Daly and Harlow model if 1, default value.}
+
+\motcle{irijec}{i}{0 or 1}{0}{O}{L2}
 {indicates if the wall echo terms in
 $R_{ij}-\varepsilon$ LRR model are
 taken into account ({\tt irijec}=1) or not (0).\\
@@ -1079,7 +1087,7 @@ The wall echo terms imply the calculation of the distance to the wall
 for every cell in the domain. See {\tt icdpar} for potential restrictions
 due to this.}
 
-\motcle{irijnu}{ia}{0 or 1}{0}{O}{L3}
+\motcle{irijnu}{i}{0 or 1}{0}{O}{L3}
 {addition ({\tt irijnu}=1) or not (0) of a
 turbulent viscosity in the matrix of the incremental system solved
 for the velocity in $R_{ij}-\varepsilon$ models. The goal is to improve
@@ -1090,7 +1098,7 @@ viscosity does not change the final solution for steady flows. However,
 for unsteady flows, the parameter {\tt nswrsm} should be increased.\\
 useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model).}
 
-\motcle{irijrb}{ia}{0 or 1}{0}{O}{L3}
+\motcle{irijrb}{i}{0 or 1}{0}{O}{L3}
 {reconstruction ({\tt irijrb}=1)
 or not (0) of the boundary conditions at the walls for $R_{ij}$ and  $\varepsilon$.\\
 useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
@@ -1119,7 +1127,7 @@ If {\tt isuisy}=1, synthetic fluctuations are not re-initialized in case of rest
 useful if {\tt iturb}=40, 41 or 42
 }
 
-\motcle{idries}{ia}{0 or 1}{0,1}{O}{L2}
+\motcle{idries}{i}{0 or 1}{0,1}{O}{L2}
 {{\tt idries} activates (1) or not (0) the van
 Driest wall-damping for the Smagorinsky constant (the Smagorinsky
 constant is multiplied by the damping function
@@ -1131,13 +1139,13 @@ nearest wall for each cell in the domain. Refer to keyword {\tt icdpar}
 for potential limitations\\
 useful if and only if {\tt iturb} = 40 or 41}
 
-\motcle{cdries}{ra}{real number $>$ 0}{26}{O}{L3}
+\motcle{cdries}{r}{real number $>$ 0}{26}{O}{L3}
 {{\tt cdries} is the constant appearing in the
 van Driest damping function applied to the Smagorinsky constant:
  $1-e^{-y^+/{\tt cdries}}$\\
 useful if and only if {\tt iturb} = 40 or 41}
 
-\motcle{csmago}{ra}{real number $>$ 0}{0.065}{O}{L2}
+\motcle{csmago}{r}{real number $>$ 0}{0.065}{O}{L2}
 {{\tt csmago} is the Smagorinsky constant used in
 the Smagorinsky model for LES\\
 the sub-grid scale viscosity is calculated by
@@ -1146,7 +1154,7 @@ where $\bar{\Delta}$ is the width of the filter and $\bar{S}_{ij}$ the filtered
 strain rate\\
 useful if and only if {\tt iturb} = 40}
 
-\motcle{smagmx}{ra}{real number $>$ 0}{10*csmago}{O}{L3}
+\motcle{smagmx}{r}{real number $>$ 0}{10*csmago}{O}{L3}
 {${\tt smagmx}^2$ is
 the maximum allowed value for the variable $C$ appearing in the LES dynamic
 model (the ``square'' comes from the fact that the
@@ -1155,25 +1163,25 @@ constant of the Smagorinsky model). Any larger value yielded by the calculation
 procedure of the dynamic model will be clipped to ${\tt smagmx}^2$\\
 useful if and only if {\tt iturb} = 41}
 
-\motcle{xlesfl}{ra}{real number $>$ 0}{2}{O}{L3}
+\motcle{xlesfl}{r}{real number $>$ 0}{2}{O}{L3}
 {{\tt xlesfl} is a constant used to define, for
 each cell $\Omega_i$, the width of the (implicit) filter:\\
 $\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
 useful if and only if {\tt iturb} = 40 or 41}
 
-\motcle{ales}{ra}{real number $>$ 0}{1}{O}{L3}
+\motcle{ales}{r}{real number $>$ 0}{1}{O}{L3}
 {{\tt ales} is a constant used to define, for
 each cell $\Omega_i$, the width of the (implicit) filter:\\
 $\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
 useful if and only if {\tt iturb} = 40 or 41}
 
-\motcle{bles}{ra}{real number $>$ 0}{1/3}{O}{L3}
+\motcle{bles}{r}{real number $>$ 0}{1/3}{O}{L3}
 {{\tt bles} is a constant used to define, for
 each cell $\Omega_i$, the width of the (implicit) filter:\\
 $\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
 useful if and only if {\tt iturb} = 40 or 41}
 
-\motcle{xlesfd}{ra}{real number $>$ 0}{1.5}{O}{L3}
+\motcle{xlesfd}{r}{real number $>$ 0}{1.5}{O}{L3}
 {{\tt xlesfd} is the constant used to define, for
 each cell $\Omega_i$, the width of the explicit filter used in the framework of
 the LES dynamic model:\\
@@ -1204,7 +1212,7 @@ below. Hence, in standard cases, the user does not need to specify these
 options.
 
 
-\motcle{ischtp}{ia}{1 or 2}{1 or 2}{O}{L2}
+\motcle{ischtp}{i}{1 or 2}{1 or 2}{O}{L2}
 {{\tt ischtp} indicates the order of the
 activated time scheme (this indicator allows the code to automatically complete
 the other indicators related to the time scheme)\\
@@ -1220,7 +1228,7 @@ by default, {\tt ischtp} is initialised to 2 with the LES model and 1
 otherwise\\
 always useful}
 
-\motcle{istmpf}{ia}{0, 1 or 2}{0 or 1}{O}{L3}
+\motcle{istmpf}{i}{0, 1 or 2}{0 or 1}{O}{L3}
 {{\tt istmpf} specifies the time scheme activated
 for the mass flow. The chosen value for {\tt istmpf} will automatically
 determine the value given to the variable {\tt thetfl}\\
@@ -1240,7 +1248,7 @@ by default, {\tt istmpf}=2 is used in the case of a second-order time
 scheme (if {\tt ischtp}=2) and {\tt istmpf}=1 otherwise\\
 always useful}
 
-\motcle{isno2t}{ia}{0, 1 or 2}{0 or 1}{O}{L3}
+\motcle{isno2t}{i}{0, 1 or 2}{0 or 1}{O}{L3}
 {{\tt isno2t} specifies the time scheme activated
 for the source terms of the momentum equation, apart from convection and
 diffusion (for instance: head loss, transposed gradient, ...).\\
@@ -1264,7 +1272,7 @@ by default, {\tt isno2t} is initialised to 1 (second-order) when
 the selected time scheme is second-order ({\tt ischtp}=2), otherwise to 0.\\
 always useful}
 
-\motcle{isto2t}{ia}{0, 1 or 2}{0}{O}{L3}
+\motcle{isto2t}{i}{0, 1 or 2}{0}{O}{L3}
 {{\tt isto2t} specifies the time scheme
 activated for the source terms of the turbulence equations (related to $k$,
 $R_{ij}$, $\varepsilon$, $\omega$, $\varphi$, $\overline{f}$), apart
@@ -1316,7 +1324,7 @@ time scheme is second-order ({\tt ischtp}=2), otherwise to 0.\\
 always useful}
 
 
-\motcle{iroext}{ia}{0, 1 or 2}{0}{O}{L3}
+\motcle{iroext}{i}{0, 1 or 2}{0}{O}{L3}
 {{\tt iroext} specifies the time scheme activated
 for the physical property $\phi$ ``density''.\\
 \hspace*{1.3cm}= 0: ``standard'' first-order: the value calculated at
@@ -1331,7 +1339,7 @@ extrapolated at $n+1$ according to the
 same formula as when {\tt iroext}=1 but with $\theta$={\tt thetro}=1\\
 always useful}
 
-\motcle{iviext}{ia}{0, 1 or 2}{0}{O}{L3}
+\motcle{iviext}{i}{0, 1 or 2}{0}{O}{L3}
 {{\tt iviext} specifies the time scheme activated
 for the physical property $\phi$ ``total viscosity''
 (molecular+turbulent or sub-grid viscosities).\\
@@ -1347,7 +1355,7 @@ extrapolated at $n+1$ according to the
 same formula as when {\tt iviext}=1, but with $\theta$={\tt thetvi}=1\\
 always useful}
 
-\motcle{icpext}{ia}{0, 1 or 2}{0}{O}{L3}
+\motcle{icpext}{i}{0, 1 or 2}{0}{O}{L3}
 {{\tt icpext} specifies the time scheme activated
 for the physical property $\phi$ ``specific heat''.\\
 \hspace*{1.3cm}= 0: ''standard'' first-order: the value calculated at
@@ -1393,7 +1401,7 @@ second-order time scheme is activated by {\tt ischtp}=2 (standard value for
 LES calculations), otherwise {\tt thetav} is set to 1.\\
 always useful}
 
-\motcle{thetfl}{ra}{0 $\leqslant$ real $\leqslant$1}{0 or 0.5}{O}{L3}
+\motcle{thetfl}{r}{0 $\leqslant$ real $\leqslant$1}{0 or 0.5}{O}{L3}
 {{\tt thetfl} is the value of $\theta$ used to
 interpolate the convective fluxes of the variables when a second-order time
 scheme has been activated for the mass flow (see {\tt istmpf})\\
@@ -1406,7 +1414,7 @@ flux will be interpolated according to the formula
 $Q^{n+\theta}=\frac{1}{2-\theta}Q^{n+1}+\frac{1-\theta}{2-\theta}Q^{n+1-\theta}$).\\
 always useful}
 
-\motcle{thetsn}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
+\motcle{thetsn}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
 {{\tt thetsn} is the value of $\theta$ used to
 extrapolate the non linear explicit source terms $S_e$ of the momentum equation,
 when the source term extrapolation has been activated (see {\tt isno2t}),
@@ -1421,7 +1429,7 @@ allowed to modify this variable.\\
 \hspace*{1.3cm}= 1: first-order (used when {\tt isno2t}=2) \\
 always useful}
 
-\motcle{thetst}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
+\motcle{thetst}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
 {{\tt thetst} is the value of $\theta$ used to
 extrapolate the non linear explicit source terms $S_e$ of the turbulence equations,
 when the source term extrapolation has been activated (see {\tt isto2t}),
@@ -1452,7 +1460,7 @@ allowed to modify this variable.\\
 useful if {\tt nscal}$>$1}
 
 
-\motcle{thetro}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
+\motcle{thetro}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
 {{\tt thetro} is the value of $\theta$ used to
 extrapolate the physical property $\phi$ ``density'' when the extrapolation has
 been activated (see {\tt iroext}),according to the
@@ -1466,7 +1474,7 @@ allowed to modify this variable.\\
 \hspace*{1.3cm}= 1: first-order (corresponds to {\tt iroext}=2) \\
 always useful}
 
-\motcle{thetvi}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
+\motcle{thetvi}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
 {{\tt thetvi} is the value of $\theta$ used to
 extrapolate the physical property $\phi$ ``total viscosity'' when the extrapolation has
 been activated (see {\tt iviext}),according to the
@@ -1480,7 +1488,7 @@ allowed to modify this variable.\\
 \hspace*{1.3cm}= 1: first-order (corresponds to {\tt iviext}=2) \\
 always useful}
 
-\motcle{thetcp}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
+\motcle{thetcp}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
 {{\tt thetcp} is the value of $\theta$ used to
 extrapolate the physical property $\phi$ ``specific heat'' when the extrapolation has
 been activated (see {\tt icpext}),according to the
@@ -1738,7 +1746,7 @@ always useful}
 Rhie\& Chow filter\\
 always useful}
 
-\motcle{irevmc}{ia}{0, 1 or 2}{0}{O}{L3}
+\motcle{irevmc}{i}{0}{0}{O}{L3}
 {method used to update the velocity after the pressure
 correction:\\
 \hspace*{0,5cm}- standard gradient of pressure increment
@@ -1751,7 +1759,7 @@ correction:\\
 the method {\tt irevmc}=2 is generally not recommended.\\
 always useful}
 
-\motcle{iphydr}{i}{0 or 1}{0}{O}{L2}
+\motcle{iphydr}{i}{0 or 1 or 2}{0}{O}{L2}
 {method for taking into account the balance between the pressure gradient and
 the source terms (gravity and head losses): by extension it will be
 referenced as ``taking into account of the hydrostatic pressure''\\

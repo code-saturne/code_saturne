@@ -89,6 +89,11 @@ typedef struct {
                                       and itytur=2 or 5)
                                  - 2: Spalart-Shur correction (default when
                                       irccor=1 and iturb=60 or 70) */
+  int           idirsm;       /* turbulent diffusion model for second moment
+                                 closure
+                                 - 0: scalar diffusivity (Shir model)
+                                 - 1: tensorial diffusivity (Daly and Harlow
+                                      model, default model) */
   int           iclkep;       /* clipping of k and epsilon
                                  - 0: absolute value clipping
                                  - 1: coupled clipping based on physical

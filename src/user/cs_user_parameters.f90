@@ -485,7 +485,7 @@ end subroutine usppmo
 
 subroutine usipph &
 !================
- ( ixmlpu, nfecra , iturb , irccor , itherm, icp )
+ ( ixmlpu, nfecra , iturb , irccor , idirsm, itherm, icp )
 
 
 !===============================================================================
@@ -502,10 +502,12 @@ subroutine usipph &
 ! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
-! iturb            ! ia ! <-> ! turbulence model                               !
-! irccor           ! ia ! <-> ! flag for rotation/curvature correction or not  !
-! itherm           ! ia ! <-> ! thermal model                                  !
-! icp              ! ia ! <-> ! flag for uniform Cp or not                     !
+! iturb            ! i  ! <-> ! turbulence model                               !
+! irccor           ! i  ! <-> ! flag for rotation/curvature correction or not  !
+! idirsm           ! i  ! <-> ! turbulent diffusion model for second moment    !
+!                  !    ! <-> !   closure                                      !
+! itherm           ! i  ! <-> ! thermal model                                  !
+! icp              ! i  ! <-> ! flag for uniform Cp or not                     !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -527,7 +529,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu, nfecra
-integer iturb, irccor, itherm, icp
+integer iturb, irccor, idirsm, itherm, icp
 
 ! Local variables
 
@@ -622,6 +624,16 @@ endif
 if (.false.) then
 
   irccor = 1
+
+endif
+
+! --- Turbulent diffusion model for second moment closure (iturb = 30, 31, 32)
+!      0: scalar diffusivity (Shir model)
+!      1: tensorial diffusivity (Daly and Harlow model, default model)
+
+if (.false.) then
+
+  idirsm = 1
 
 endif
 
