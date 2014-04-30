@@ -95,6 +95,72 @@ enum {
   CS_FREE_INLET = 14
 };
 
+/*----------------------------------------------------------------------------
+ * Space discretisation options descriptor
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  int           imvisf;       /* face viscosity field interpolation
+                                 - 1: harmonic
+                                 - 0: arithmetic (default) */
+
+  int           imrgra;       /* type of gradient reconstruction
+                                 - 0: iterative process
+                                 - 1: standard least square method
+                                 - 2: least square method with extended
+                                      neighbourhood
+                                 - 3: least square method with reduced extended
+                                      neighbourhood
+                                 - 4: iterative precess initialized by the least
+                                      square method */
+
+  double        anomax;       /* non orthogonality angle of the faces, in radians.
+                                 For larger angle values, cells with one node
+                                 on the wall are kept in the extended support of
+                                 the neighbouring cells. */
+
+  int           iflxmw;       /* method to compute interior mass flux due to ALE
+                                 mesh velocity
+                                 - 1: based on cell center mesh velocity
+                                 - 0: based on nodes displacement */
+
+} cs_space_disc_t;
+
+/*----------------------------------------------------------------------------
+ * PISO descriptor
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  int           nterup;       /* number of interations on the pressure-velocity
+                                 coupling on Navier-Stokes */
+
+  double        epsup;        /* relative precision for the convergence test of
+                                 the iterative process on pressure-velocity
+                                 coupling */
+
+  double        xnrmu;        /* norm  of the increment
+                                 \f$ \vect{u}^{k+1} - \vect{u}^k \f$
+                                 of the iterative process on pressure-velocity
+                                 coupling */
+
+  double        xnrmu0;       /* norm of \f$ \vect{u}^0 \f$ */
+
+} cs_piso_t;
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Pointer to space discretisation options structure */
+
+extern const cs_space_disc_t  *cs_glob_space_disc;
+
+/* Pointer to PISO structure */
+
+extern const cs_piso_t  *cs_glob_piso;
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -102,7 +168,7 @@ enum {
 /*----------------------------------------------------------------------------
  * Define general field keys.
  *
- * A recommened practice for different submodules would be to use
+ * A recommended practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.
  *----------------------------------------------------------------------------*/
 

@@ -71,6 +71,58 @@ BEGIN_C_DECLS
   \file cs_parameters.c
         General parameters and options management.
 */
+/*----------------------------------------------------------------------------*/
+
+/*! \struct cs_space_disc_t
+
+  \brief Space discretisation options descriptor.
+
+  Members of this space discretisation structure are publicly accessible, to
+  allow for concise syntax, as they are expected to be used in many places.
+
+  \var  cs_space_disc_t::imvisf
+        face viscosity field interpolation
+        - 1: harmonic
+        - 0: arithmetic (default)
+  \var  cs_space_disc_t::imrgra
+        type of gradient reconstruction
+        - 0: iterative process
+        - 1: standard least square method
+        - 2: least square method with extended neighbourhood
+        - 3: least square method with reduced extended neighbourhood
+        - 4: iterative process initialized by the least square method
+  \var  cs_space_disc_t::anomax
+        non orthogonality angle of the faces, in radians.
+
+        For larger angle values, cells with one node on the wall are kept in the
+        extended support of the neighbouring cells.
+  \var  cs_space_disc_t::iflxmw
+        method to compute interior mass flux due to ALE mesh velocity
+        - 1: based on cell center mesh velocity
+        - 0: based on nodes displacement
+*/
+/*----------------------------------------------------------------------------*/
+
+/*! \struct cs_piso_t
+
+  \brief PISO options descriptor.
+
+  Members of this PISO structure are publicly accessible, to allow for
+  concise  syntax, as they are expected to be used in many places.
+
+  \var  cs_piso_t::nterup
+        number of interations on the pressure-velocity coupling on Navier-Stokes
+  \var  cs_piso_t::epsup
+        relative precision for the convergence test of the iterative process on
+        pressure-velocity coupling
+  \var  cs_piso_t::xnrmu
+        norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$ of the
+        iterative process on pressure-velocity coupling
+  \var  cs_piso_t::xnrmu0
+        norm of \f$ \vect{u}^0 \f$
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
  * Macro definitions
@@ -112,6 +164,35 @@ static cs_var_cal_opt_t _var_cal_opt =
   1.     /* relaxv */
 };
 
+/* Space discretisation options structure and associated pointer */
+
+static cs_space_disc_t  _space_disc = {0, 0, -1e12*10.0, 1};
+
+const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
+
+/* PISO structure and associated pointer */
+
+static cs_piso_t  _piso = {1, 1e-5, 0, 0};
+
+const cs_piso_t  *cs_glob_piso = &_piso;
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_space_disc_get_pointers(int     **imvisf,
+                             int     **imrgra,
+                             double  **anomax,
+                             int     **iflxmw);
+
+void
+cs_f_piso_get_pointers(int     **nterup,
+                       double  **epsup,
+                       double  **xnrmu,
+                       double  **xnrmu0);
+
 /*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
@@ -147,6 +228,64 @@ _log_func_var_opt_cal(const void *t)
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "extrag", _t->extrag);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "relaxv", _t->relaxv);
 }
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global space disc structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   imvisf  --> pointer to cs_glob_space_disc->imvisf
+ *   imrgra  --> pointer to cs_glob_space_disc->imrgra
+ *   anomax  --> pointer to cs_glob_space_disc->anomax
+ *   iflxmw  --> pointer to cs_glob_space_disc->iflxmw
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_space_disc_get_pointers(int     **imvisf,
+                             int     **imrgra,
+                             double  **anomax,
+                             int     **iflxmw)
+{
+  *imvisf = &(_space_disc.imvisf);
+  *imrgra = &(_space_disc.imrgra);
+  *anomax = &(_space_disc.anomax);
+  *iflxmw = &(_space_disc.iflxmw);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global piso structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   nterup  --> pointer to cs_glob_piso->nterup
+ *   epsup   --> pointer to cs_glob_piso->epsup
+ *   xnrmu   --> pointer to cs_glob_piso->xnrmu
+ *   xnrmu0  --> pointer to cs_glob_piso->xnrmu0
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_piso_get_pointers(int     **nterup,
+                       double  **epsup,
+                       double  **xnrmu,
+                       double  **xnrmu0)
+{
+  *nterup = &(_piso.nterup);
+  *epsup  = &(_piso.epsup);
+  *xnrmu  = &(_piso.xnrmu);
+  *xnrmu0 = &(_piso.xnrmu0);
+}
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*=============================================================================
  * Public function definitions

@@ -109,7 +109,7 @@ module optcal
 
   !> number of interations on the pressure-velocity coupling on Navier-Stokes
   !> (for the PISO algorithm)
-  integer, save ::          nterup
+  integer(c_int), pointer, save ::          nterup
 
   !> extrapolation of source terms in the Navier-Stokes equations
   !>    - 1: true
@@ -214,14 +214,14 @@ module optcal
 
   !> relative precision for the convergence test of the iterative process on
   !> pressure-velocity coupling (PISO)
-  double precision, save :: epsup
+  real(c_double), pointer, save :: epsup
 
   !> norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$
   !> of the iterative process on pressure-velocity coupling (PISO)
-  double precision, save :: xnrmu
+  real(c_double), pointer, save :: xnrmu
 
   !> norm of \f$ \vect{u}^0 \f$ (used by PISO algorithm)
-  double precision, save :: xnrmu0
+  real(c_double), pointer, save :: xnrmu0
 
   !> \}
 
@@ -256,7 +256,7 @@ module optcal
   !> method to compute interior mass flux due to ALE mesh velocity
   !>    - 1: based on cell center mesh velocity
   !>    - 0: based on nodes displacement
-  integer, save ::          iflxmw
+  integer(c_int), pointer, save :: iflxmw
 
   !> \}
 
@@ -266,16 +266,16 @@ module optcal
 
   !> type of gradient reconstruction
   !>    - 0: iterative process
-  !>    - 1: standard least suqare methode
-  !>    - 2: least suqare methode with extended neighbourhood
-  !>    - 3: least suqare methode with reduced extended neighbourhood
-  !>    - 4: iterative precess initialized by the least square methode
-  integer, save ::          imrgra
+  !>    - 1: standard least square method
+  !>    - 2: least square method with extended neighbourhood
+  !>    - 3: least square method with reduced extended neighbourhood
+  !>    - 4: iterative precess initialized by the least square method
+  integer(c_int), pointer, save :: imrgra
 
   !> anomax : angle de non orthogonalite des faces en radian au dela duquel
   !> on retient dans le support etendu des cellules voisines
   !> de la face les cellules dont un noeud est sur la face
-  double precision, save :: anomax
+  real(c_double), pointer, save :: anomax
 
   !> max number of iterations for the iterative gradient
   integer, save ::          nswrgr(nvarmx)
@@ -311,7 +311,7 @@ module optcal
   !> face viscosity field interpolation
   !>    - 1: harmonic
   !>    - 0: arithmetic (default)
-  integer, save :: imvisf
+  integer(c_int), pointer, save :: imvisf
 
   !> \}
 
@@ -1113,8 +1113,6 @@ module optcal
       type(c_ptr), intent(out) :: idries, ivrtex
     end subroutine cs_f_turb_les_model_get_pointers
 
-
-
     ! Interface to C function retrieving pointers to members of the
     ! Stokes options structure
 
@@ -1129,6 +1127,26 @@ module optcal
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: iifren, icalhy, icond
     end subroutine cs_f_stokes_options_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global spatial discretisation options structure
+
+    subroutine cs_f_space_disc_get_pointers(imvisf, imrgra, anomax, iflxmw) &
+      bind(C, name='cs_f_space_disc_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: imvisf, imrgra, anomax, iflxmw
+    end subroutine cs_f_space_disc_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global PISO options structure
+
+    subroutine cs_f_piso_get_pointers(nterup, epsup, xnrmu, xnrmu0) &
+      bind(C, name='cs_f_piso_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: nterup, epsup, xnrmu, xnrmu0
+    end subroutine cs_f_piso_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -1286,9 +1304,7 @@ contains
 
   end subroutine turb_les_model_init
 
-
-
-  !> \brief Initialize Fortran time step API.
+  !> \brief Initialize Fortran Stokes options API.
   !> This maps Fortran pointers to global C structure members.
 
   subroutine stokes_options_init
@@ -1324,6 +1340,49 @@ contains
     call c_f_pointer(c_icond , icond )
 
   end subroutine stokes_options_init
+
+  !> \brief Initialize Fortran space discretisation options API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine space_disc_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_imvisf, c_imrgra, c_anomax, c_iflxmw
+
+    call cs_f_space_disc_get_pointers(c_imvisf, c_imrgra, c_anomax, &
+                                      c_iflxmw)
+
+    call c_f_pointer(c_imvisf, imvisf)
+    call c_f_pointer(c_imrgra, imrgra)
+    call c_f_pointer(c_anomax, anomax)
+    call c_f_pointer(c_iflxmw, iflxmw)
+
+  end subroutine space_disc_options_init
+
+  !> \brief Initialize Fortran PISO options API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine piso_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0
+
+    call cs_f_piso_get_pointers(c_nterup, c_epsup, c_xnrmu, c_xnrmu0)
+
+    call c_f_pointer(c_nterup, nterup)
+    call c_f_pointer(c_epsup, epsup)
+    call c_f_pointer(c_xnrmu, xnrmu)
+    call c_f_pointer(c_xnrmu0, xnrmu0)
+
+  end subroutine piso_options_init
 
   !=============================================================================
 
