@@ -54,6 +54,7 @@ from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.QMeiEditorView import QMeiEditorView
 from Pages.Boundary import Boundary
 from Pages.CompressibleModel import CompressibleModel
+from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -134,6 +135,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.therm   = ThermalScalarModel(self.__case)
         self.sca_mo  = DefineUserScalarsModel(self.__case)
         self.comp    = CompressibleModel(self.__case)
+        self.atm     = AtmosphericFlowsModel(self.__case)
 
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
@@ -182,24 +184,6 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         else:
             self.groupBoxSpecies.hide()
 
-        self.meteo_list = ""
-        self.meteo_list = self.sca_mo.getMeteoScalarsList()
-
-        self.groupBoxMeteo.hide()
-
-        if (self.meteo_list and (self.nature == 'inlet' or self.nature == 'outlet')):
-            label = self.__boundary.getLabel()
-            nature = "meteo_" + self.nature
-            bb = Boundary(nature, label, self.__case)
-
-            if bb.getMeteoDataStatus() == 'off':
-                self.groupBoxMeteo.show()
-                self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
-                for m in self.meteo_list:
-                    self.modelMeteo.addItem(self.tr(m), m)
-                self.meteo = self.meteo_list[0]
-                self.modelMeteo.setItem(str_model = self.meteo)
-
         self.model_th = self.therm.getThermalScalarModel()
         if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
             self.groupBoxThermal.show()
@@ -209,6 +193,34 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelThermal.setItem(str_model = self.thermal)
         else:
             self.groupBoxThermal.hide()
+
+        self.meteo_list = ""
+        self.meteo_list = self.sca_mo.getMeteoScalarsList()
+
+        self.groupBoxMeteo.hide()
+
+        if (self.atm.getAtmosphericFlowsModel() != "off" and self.nature == 'wall'):
+            self.groupBoxThermal.hide()
+
+        if (self.atm.getAtmosphericFlowsModel() != "off" and \
+           (self.nature == 'inlet' or self.nature == 'outlet')):
+            label = self.__boundary.getLabel()
+            nature = "meteo_" + self.nature
+            bb = Boundary(nature, label, self.__case)
+
+            if bb.getMeteoDataStatus() == 'off':
+                self.groupBoxMeteo.hide()
+                self.groupBoxThermal.show()
+                self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
+                if len(self.meteo_list) > 0:
+                    self.groupBoxMeteo.show()
+                    for m in self.meteo_list:
+                        self.modelMeteo.addItem(self.tr(m), m)
+                    self.meteo = self.meteo_list[0]
+                    self.modelMeteo.setItem(str_model = self.meteo)
+            else:
+                self.groupBoxMeteo.hide()
+                self.groupBoxThermal.hide()
 
         self.initializeVariables()
 

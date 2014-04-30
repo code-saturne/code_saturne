@@ -552,7 +552,10 @@ class MainView(object):
             # :
             # self.recentFiles = self.recentFiles[:8]
             while len(self.recentFiles) > 9:
-                self.recentFiles.pop()
+                try:
+                    self.recentFiles.removeLast()
+                except:
+                    self.recentFiles.pop()
 
 
     def closeEvent(self, event):
