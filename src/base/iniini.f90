@@ -129,6 +129,8 @@ call turb_rans_model_init
 call turb_les_model_init
 call wall_functions_init
 call stokes_options_init
+call physical_constants_init
+call fluid_properties_init
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

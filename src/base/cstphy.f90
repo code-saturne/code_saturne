@@ -27,6 +27,8 @@ module cstphy
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use paramx
 
   implicit none
@@ -60,19 +62,19 @@ module cstphy
   parameter(rair = 287.d0)
 
   !> Gravity
-  double precision, save :: gx, gy, gz
+  real(c_double), pointer, save :: gx, gy, gz
 
-  integer, save :: icorio
+  integer(c_int), pointer, save :: icorio
 
   !> Rotation vector
-  double precision, save :: omegax, omegay, omegaz
+  real(c_double), pointer, save :: omegax, omegay, omegaz
 
   ! TODO
   double precision, save :: irot(3,3), prot(3,3), qrot(3,3), rrot(3,3)
 
   !> Constantes physiques du fluide
   !> filling \ref xyzp0 indicator
-  integer, save ::          ixyzp0
+  integer(c_int), pointer, save ::          ixyzp0
 
   !> reference density.
   !> Negative value: not initialised.
@@ -83,7 +85,7 @@ module cstphy
   !> it is therefore better to specify its value.
   !>
   !> Always useful otherwise, even if a law defining the density is given by
-  !> the user subroutine \ref usphyv or \ref uselph.
+  !> the user subroutines \ref usphyv or \ref uselph.
   !> indeed, except with the
   !> compressible module, CS  does not use
   !> the total pressure \f$P\f$ when solving the Navier-Stokes equation, but a
@@ -99,14 +101,14 @@ module cstphy
   !> both \f$P\f$ and \f$P^*\f$ appear in the listing and the post-processing outputs..
   !> with the compressible module, the calculation is made directly on the total
   !> pressure
-  double precision, save :: ro0
+  real(c_double), pointer, save :: ro0
 
   !> reference molecular dynamic viscosity.
   !> Negative value: not initialised.
   !>
   !> Always useful, it is the used value unless the user specifies the
   !> viscosity in the subroutine \ref usphyv
-  double precision, save :: viscl0
+  real(c_double), pointer, save :: viscl0
 
   !> reference pressure for the total pressure.
   !> except with the compressible module, the total pressure \f$P\f$ is evaluated
@@ -115,7 +117,7 @@ module cstphy
   !> (given by \ref xyzp0).
   !> with the compressible module, the total pressure is solved directly.
   !> always Useful
-  double precision, save :: p0
+  real(c_double), pointer, save :: p0
 
   !> reference value for the reduced pressure \f$P^*\f$ (see \ref ro0).
   !> It is especially used to initialise the reduced pressure and as a reference
@@ -126,7 +128,7 @@ module cstphy
   !> equations directly represents the total pressure.
   !> It is therefore initialised to \ref p0 and not \ref pred0 (see \ref ro0).
   !> Always useful, except with the compressible module
-  double precision, save :: pred0
+  real(c_double), pointer, save :: pred0
 
   !> coordinates of the reference point \f$\vect{x}_0\f$ for the total pressure.
   !>  - When there are no Dirichlet conditions for the pressure (closed domain),
@@ -153,7 +155,7 @@ module cstphy
   !> \ref xyzp0 is therefore not used..
   !>
   !> Always useful, except with the compressible module.
-  double precision, save :: xyzp0(3)
+  real(c_double), pointer, save :: xyzp0(:)
 
   !> reference temperature.
   !>
@@ -161,7 +163,7 @@ module cstphy
   !> of the density), for the electricity modules to initialise the domain
   !> temperature and for the compressible module (initialisations).
   !> It must be given in Kelvin.
-  double precision, save :: t0
+  real(c_double), pointer, save :: t0
 
   !> reference specific heat.
   !>
@@ -175,23 +177,23 @@ module cstphy
   !> calculate the diffusivity of the thermal scalars,
   !> based on their conductivity; it is therefore needed, unless the
   !> diffusivity is also specified in \ref usphyv.
-  double precision, save :: cp0
+  real(c_double), pointer, save :: cp0
 
   !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref ieos=1)
   !>
   !> Always useful
-  double precision, save :: xmasmr
+  real(c_double), pointer, save :: xmasmr
 
   !> Uniform thermodynamic pressure for the low-Mach algorithm
   !> Thermodynamic pressure for the current time step
-  double precision, save :: pther
+  real(c_double), pointer, save :: pther
 
   !> Thermodynamic pressure for the previous time step
-  double precision, save :: pthera
+  real(c_double), pointer, save :: pthera
 
   !>   pthermax: Thermodynamic maximum pressure for user clipping,
   !>             used to model a venting effect
-  double precision, save :: pthermax
+  real(c_double), pointer, save :: pthermax
 
   !> \defgroup csttur Module for turbulence constants
 
@@ -658,6 +660,113 @@ module cstphy
   !> \}
 
   !> \}
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical constants structure
+
+    subroutine cs_f_physical_constants_get_pointers(gx, gy, gz, icorio,     &
+                                                    omegax, omegay, omegaz) &
+      bind(C, name='cs_f_physical_constants_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: gx, gy, gz, icorio, omegax, omegay, omegaz
+    end subroutine cs_f_physical_constants_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global fluid properties structure
+
+    subroutine cs_f_fluid_properties_get_pointers(ixyzp0, ro0, viscl0, p0, &
+                                                  pred0, xyzp0, t0, cp0,   &
+                                                  xmasmr, pther, pthera,   &
+                                                  pthermax)                &
+      bind(C, name='cs_f_fluid_properties_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ixyzp0, ro0, viscl0, p0, pred0, xyzp0, t0, cp0
+      type(c_ptr), intent(out) :: xmasmr, pther, pthera, pthermax
+    end subroutine cs_f_fluid_properties_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \endcond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran time step API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine physical_constants_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_gx, c_gy, c_gz, c_icorio, c_omegax, c_omegay, c_omegaz
+
+    call cs_f_physical_constants_get_pointers(c_gx, c_gy, c_gz, c_icorio, &
+                                              c_omegax, c_omegay, c_omegaz)
+
+    call c_f_pointer(c_gx, gx)
+    call c_f_pointer(c_gy, gy)
+    call c_f_pointer(c_gz, gz)
+    call c_f_pointer(c_icorio, icorio)
+    call c_f_pointer(c_omegax, omegax)
+    call c_f_pointer(c_omegay, omegay)
+    call c_f_pointer(c_omegaz, omegaz)
+
+  end subroutine physical_constants_init
+
+  !> \brief Initialize Fortran time step API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine fluid_properties_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ixyzp0, c_ro0, c_viscl0, c_p0, c_pred0, c_xyzp0, c_t0
+    type(c_ptr) :: c_cp0, c_xmasmr, c_pther, c_pthera, c_pthermax
+
+    call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ro0, c_viscl0, c_p0, &
+                                            c_pred0, c_xyzp0, c_t0, c_cp0,   &
+                                            c_xmasmr, c_pther, c_pthera,     &
+                                            c_pthermax)
+
+    call c_f_pointer(c_ixyzp0, ixyzp0)
+    call c_f_pointer(c_ro0, ro0)
+    call c_f_pointer(c_viscl0, viscl0)
+    call c_f_pointer(c_p0, p0)
+    call c_f_pointer(c_pred0, pred0)
+    call c_f_pointer(c_xyzp0, xyzp0, [3])
+    call c_f_pointer(c_t0, t0)
+    call c_f_pointer(c_cp0, cp0)
+    call c_f_pointer(c_xmasmr, xmasmr)
+    call c_f_pointer(c_pther, pther)
+    call c_f_pointer(c_pthera, pthera)
+    call c_f_pointer(c_pthermax, pthermax)
+
+  end subroutine fluid_properties_init
 
   !=============================================================================
 
