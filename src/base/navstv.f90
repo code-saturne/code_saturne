@@ -692,8 +692,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       endif
 
       rcodcx = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
-      rcodcx = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
-      rcodcx = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
+      rcodcy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
+      rcodcz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
 
       ! Gradient boundary conditions (Dirichlet)
       !-----------------------------
