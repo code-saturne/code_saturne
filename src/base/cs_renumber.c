@@ -2157,7 +2157,7 @@ _estimate_imbalance(const cs_numbering_t  *face_numbering)
       n_t_faces_mean = (double)n_t_faces_sum / n_threads;
 
       imbalance = (n_t_faces_max / n_t_faces_mean) - 1.0;
-      t_imbalance_tot = imbalance*n_t_faces_sum;
+      t_imbalance_tot += imbalance*n_t_faces_sum;
 
     }
 
