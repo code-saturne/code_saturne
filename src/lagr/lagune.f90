@@ -106,7 +106,7 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          ip     , npt    , iok
-integer          iel    , ivf
+integer          iel    , ivf    , ivar, ifld
 integer          npar1  , npar2
 integer          modntl
 
@@ -247,10 +247,12 @@ dnbres = 0.d0
 !         mais la presence de cs_user_extra_operations incite a la prudence...
 
 if (iilagr.eq.3) then
-  do ivf = 1,nvar
-    do iel = 1,ncel
-      rtpa(iel,ivf) = rtp(iel,ivf)
-    enddo
+  ifld = -1
+  do ivar = 1,nvar
+    if (ivarfl(ivar) .ne. ifld) then
+      ifld = ivarfl(ivar)
+      call field_current_to_previous(ifld)
+    endif
   enddo
 endif
 

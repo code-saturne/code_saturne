@@ -110,7 +110,7 @@ double precision, pointer, dimension(:) :: prhyd
 ! Local variables
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
-integer          ncp   , ncv   , iok
+integer          ncp   , ncv   , iok   , ifld
 integer          iiptot
 integer          nbccou
 integer          ntrela
@@ -391,8 +391,12 @@ endif
 !       pour eviter une nouvelle communication sur RTPA et les autres
 !       tableaux du pas de temps precedent
 
+ifld = -1
 do ivar = 1, nvar
-  call field_current_to_previous(ivarfl(ivar))
+  if (ivarfl(ivar) .ne. ifld) then
+    ifld = ivarfl(ivar)
+    call field_current_to_previous(ifld)
+  endif
 enddo
 
 ! If required, the density at time step n-1 is updated
