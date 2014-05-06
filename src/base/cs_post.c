@@ -1497,6 +1497,13 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 
     }
 
+    /* Drop trajectory sub-mesh if it is empty
+       (otherwise, EnSight is OK, but ParaView can't display variables) */
+
+    if (   post_mesh->ent_flag[3] == 2
+        && fvm_nodal_get_n_g_elements(exp_mesh, FVM_EDGE) == 0)
+      exp_mesh = fvm_nodal_destroy(exp_mesh);
+
   }
 
   /* Fix category id */
@@ -1991,6 +1998,9 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
 
       if (post_mesh->exp_mesh == NULL)
         _define_mesh(post_mesh, ts);
+
+      if (post_mesh->exp_mesh == NULL)
+        continue;
 
       _divide_poly(post_mesh, writer);
 
@@ -5218,6 +5228,9 @@ cs_post_write_vars(const cs_time_step_t  *ts)
     if (active == true) {
 
       const fvm_nodal_t * exp_mesh = post_mesh->exp_mesh;
+
+      if (exp_mesh == NULL)
+        continue;
 
       dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
       n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
