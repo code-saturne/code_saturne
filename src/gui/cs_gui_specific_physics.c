@@ -140,12 +140,7 @@ _set_scalar_name_label(cs_field_t  *f,
   char *path = NULL;
   char *label  = NULL;
 
-  cs_var_t  *vars = cs_glob_var;
-
-  const int keysca = cs_field_key_id("scalar_id");
   const int klbl = cs_field_key_id("label");
-
-  int scal_id = cs_field_get_key_int(f, keysca);
 
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,
@@ -180,12 +175,7 @@ _set_thermal_scalar_name_label(cs_field_t  *f,
   char *path = NULL;
   char *label  = NULL;
 
-  cs_var_t  *vars = cs_glob_var;
-
-  const int keysca = cs_field_key_id("scalar_id");
   const int klbl = cs_field_key_id("label");
-
-  int scal_id = cs_field_get_key_int(f, keysca);
 
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 3,

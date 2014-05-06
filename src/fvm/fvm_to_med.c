@@ -2021,7 +2021,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
 
       /* Convert FVM connectivity to be congruent with MED standard */
 
-      BFT_MALLOC(_vertex_num, stride * section->n_elements, med_int);
+      BFT_MALLOC(_vertex_num, stride * section->n_elements, cs_lnum_t);
 
       i_num = 0;
       for (i_elt = 0; i_elt < section->n_elements; i_elt++) {

@@ -3037,7 +3037,6 @@ cs_io_skip(const cs_io_sec_header_t  *header,
   size_t  type_size = 0;
   cs_file_off_t  n_vals = pp_io->n_vals;
   cs_io_log_t  *log = NULL;
-  size_t  stride = 1;
 
   assert(pp_io  != NULL);
   assert(header->n_vals == pp_io->n_vals);
@@ -3046,11 +3045,6 @@ cs_io_skip(const cs_io_sec_header_t  *header,
     log = _cs_io_log[pp_io->mode] + pp_io->log_id;
     t_start = cs_timer_wtime();
   }
-
-  /* Choose global or block mode */
-
-  if (header->n_location_vals > 1)
-    stride = header->n_location_vals;
 
   /* Datatype size given by FVM datatype */
 

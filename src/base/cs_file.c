@@ -3151,8 +3151,6 @@ cs_file_defaults_info(void)
 {
 #if defined(HAVE_MPI)
 
-  bool have_mpi_io = false;
-
   const char *fmt[4] = {N_("  I/O read method:     %s\n"),
                         N_("  I/O write method:    %s\n"),
                         N_("  I/O read method:     %s (%s)\n"),
@@ -3169,7 +3167,6 @@ cs_file_defaults_info(void)
 
 #if defined(HAVE_MPI_IO)
     if (method > CS_FILE_STDIO_PARALLEL) {
-      have_mpi_io = true;
       bft_printf(_(fmt[mode + 2]),
                  _(cs_file_access_name[method]),
                  _(cs_file_mpi_positionning_name[_mpi_io_positionning]));

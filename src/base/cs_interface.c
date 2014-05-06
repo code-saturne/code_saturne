@@ -4205,7 +4205,7 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
   cs_lnum_t j;
   int local_rank = 0;
   int type_size = cs_datatype_size[datatype];
-  cs_lnum_t send_size = 0, recv_size = 0, itf_index_size = 0;
+  cs_lnum_t send_size = 0, itf_index_size = 0;
   cs_lnum_t *itf_index = NULL, *itf_s_index = NULL, *itf_r_index = NULL;
   unsigned char *send_buf = NULL;
   unsigned char *_dest = dest;
@@ -4266,7 +4266,6 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
       j += itf->size;
       itf_r_index[i+1] = dest_index[j];
     }
-    recv_size = itf_r_index[ifs->size];
   }
   else
     itf_r_index = itf_s_index;
