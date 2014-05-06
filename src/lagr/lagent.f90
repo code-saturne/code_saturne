@@ -977,6 +977,8 @@ do ii = 1,nfrtot
         iel = itepa(ip,jisor)
         ifac = iwork(ip)
 
+        itepa(ip,jord1) = 0
+
 !-->COMPOSANTES DE LA VITESSE DES PARTICULES
 
 !             si composantes de la vitesse imposee :

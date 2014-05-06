@@ -25,7 +25,7 @@ subroutine lagrus &
 
  ( ncelet , ncel   ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  , indep  ,                                              &
+   itepa  ,                                                       &
    ettp   , ettpa  , tepa  , croule )
 
 !===============================================================================
@@ -54,7 +54,6 @@ subroutine lagrus &
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! indep(nbpmax)    ! te ! <-- ! numero de sa cellule de depart                 !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -90,7 +89,7 @@ implicit none
 
 integer          ncelet , ncel
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          itepa(nbpmax,nivep) , indep(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -131,10 +130,10 @@ dnpkil = 0.d0
 
 do npt = 1,nbpart
 
-  if (itepa(npt,jisor).ne.indep(npt)) then
+  if (itepa(npt,jisor).ne.itepa(npt,jisora)) then
 
     iel  = itepa(npt,jisor)
-    ield = indep(npt)
+    ield = itepa(npt,jisora)
 
 ! Rapport des fonction d'importance entre la cellule de depart
 ! et celle d'arrivee

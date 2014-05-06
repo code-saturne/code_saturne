@@ -271,6 +271,7 @@ enddo
 ! Caracteristiques et infos particulaires (ENTIERS)
 
 nomite(jisor) = 'indicateur_'
+nomite(jord1) = 'order_1'
 
 if (iphyla.eq.2) then
   nomite(jinch) = 'numero_charbon'
@@ -298,7 +299,7 @@ nbval  = 1
 irtyp  = 1
 
 do ii = 1, nivep
-  if (ii .ne. jisor) then
+  if (ii .ne. jisor .and. ii .ne. jisora .and. ii .ne.jirka) then
     rubriq = nomite(ii)
     if (ii.eq.jdfac) then
       idbase = 1

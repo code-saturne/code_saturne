@@ -37,23 +37,16 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define  CS_LAGR_N_LAYERS  5
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
 typedef enum {
 
-  CS_LAGR_CUR_CELL_NUM,     /* current local cell number */
-  CS_LAGR_LAST_FACE_NUM,
+  CS_LAGR_CELL_NUM,         /* local cell number */
+  CS_LAGR_RANK_ID,          /* local parallel rank id */
 
   CS_LAGR_SWITCH_ORDER_1,
-  CS_LAGR_STATE,            /* < 0 : - number of the boundary face where
-                                      the particle is kept
-                                 0   : particle has to be destroyed
-                                 1   : particle has to be synchronized
-                                 2   : particle treated. End of displacement */
 
   CS_LAGR_RANDOM_VALUE,     /* random value associated with the particle */
 
@@ -73,7 +66,6 @@ typedef enum {
   CS_LAGR_NEIGHBOR_FACE_ID,
   CS_LAGR_MARKO_VALUE,
   CS_LAGR_DEPOSITION_FLAG,
-  CS_LAGR_RANK_FLAG,
 
   /* Resuspension model additional parameters */
 
@@ -124,25 +116,25 @@ typedef enum {
 
 typedef struct {
 
-  size_t            n_attributes;  /* number of particle attributes */
-  size_t            extents;       /* size (in bytes) of particle structure */
+  size_t          extents;                         /* size (in bytes) of particle
+                                                      structure */
 
-  size_t           *size;          /* size (in bytes) of attributes
-                                      in particle structure */
-  ptrdiff_t        *displ;         /* displacement (in bytes) of attributes
-                                      in particle structure */
-  cs_datatype_t    *datatype;      /* datatype of associated attributes */
-  int              *count;         /* number of values for each attribute */
+  int             n_time_vals;                     /* number of time values
+                                                      handled */
 
-  bool             *have_previous; /* present in particle sets for
-                                      previous time steps */
+  size_t          size[CS_LAGR_N_ATTRIBUTES];      /* size (in bytes) of attributes
+                                                      in particle structure for
+                                                      a given time value */
+  cs_datatype_t   datatype[CS_LAGR_N_ATTRIBUTES];  /* datatype of associated
+                                                      attributes */
+  ptrdiff_t      (*displ)[CS_LAGR_N_ATTRIBUTES];   /* displacement (in bytes) of
+                                                      attributes in particle data,
+                                                      per associated time_id*/
+  int            (*count)[CS_LAGR_N_ATTRIBUTES];   /* number of values for each
+                                                      attribute, per associated
+                                                      time_id */
 
 } cs_lagr_attribute_map_t;
-
-/* Particle description */
-/* -------------------- */
-
-typedef struct _cs_lagr_particle_t  cs_lagr_particle_t;
 
 /* Linked list */
 /* ----------- */
@@ -173,7 +165,8 @@ typedef struct {
   cs_lnum_t  first_used_id;
   cs_lnum_t  first_free_id;
 
-  const cs_lagr_attribute_map_t  *p_am;       /* particle attributes map */
+  const cs_lagr_attribute_map_t  *p_am;       /* particle attributes maps
+                                                 (p_am + i for time n-i) */
   unsigned char                  *p_buffer;   /* Particles data buffer */
 
   cs_lagr_tracking_list_t        *used_id;    /* active particles list,
@@ -181,11 +174,34 @@ typedef struct {
 
 } cs_lagr_particle_set_t;
 
+/* Global parameters for Lagrangian module */
+
+typedef struct {
+
+  int  physical_model;  /* FIXME: => enum: CS_LAGR_PHYS_STD,
+                                           CS_LAGR_PHYS_COAL,
+                                           CS_LAGR_PHYS_HEAT... */
+  int  n_temperature_layers;
+
+  int  deposition;
+  int  roughness;
+  int  resuspension;
+  int  clogging;
+
+  int  n_stat_classes;
+  int  n_user_variables;
+
+} cs_lagr_param_t;
+
 /*=============================================================================
  * Global variables
  *============================================================================*/
 
 extern const char *cs_lagr_attribute_name[];
+
+/* Pointer to global Lagragian module parameters */
+
+extern const cs_lagr_param_t  *cs_glob_lagr_params;
 
 /*============================================================================
  * Public function prototypes for Fortran API
@@ -215,46 +231,49 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_int_t    *nbclst,
                           cs_lnum_t          icocel[],
                           cs_lnum_t          itycel[],
-                          const cs_lnum_t   *jisor,
-                          const cs_lnum_t   *jrval,
-                          const cs_lnum_t   *jrpoi,
-                          const cs_lnum_t   *jrtsp,
-                          const cs_lnum_t   *jdp,
-                          const cs_lnum_t   *jmp,
-                          const cs_lnum_t   *jxp,
-                          const cs_lnum_t   *jyp,
-                          const cs_lnum_t   *jzp,
-                          const cs_lnum_t   *jup,
-                          const cs_lnum_t   *jvp,
-                          const cs_lnum_t   *jwp,
-                          const cs_lnum_t   *juf,
-                          const cs_lnum_t   *jvf,
-                          const cs_lnum_t   *jwf,
-                          const cs_lnum_t   *jtaux,
-                          const cs_lnum_t   *jryplu,
-                          const cs_lnum_t   *jrinpf,
-                          const cs_lnum_t   *jdfac,
-                          const cs_lnum_t   *jimark,
-                          const cs_lnum_t   *jtp,
-                          const cs_lnum_t    jhp[],
-                          const cs_lnum_t   *jtf,
-                          const cs_lnum_t   *jmwat,
-                          const cs_lnum_t    jmch[],
-                          const cs_lnum_t    jmck[],
-                          const cs_lnum_t   *jcp,
-                          const cs_lnum_t   *jrdck,
-                          const cs_lnum_t   *jrd0p,
-                          const cs_lnum_t   *jinch,
-                          const cs_lnum_t    jrhock[],
-                          const cs_lnum_t   *jreps,
-                          const cs_lnum_t   *jdepo,
-                          const cs_lnum_t   *jnbasg,
-                          const cs_lnum_t   *jnbasp,
-                          const cs_lnum_t   *jfadh,
-                          const cs_lnum_t   *jmfadh,
-                          const cs_lnum_t   *jndisp,
-                          const cs_lnum_t   *jclst,
-                          const cs_lnum_t   *jvls);
+                          const cs_int_t    *jisor,
+                          const cs_int_t    *jisora,
+                          const cs_int_t    *jirka,
+                          const cs_int_t    *jord1,
+                          const cs_int_t    *jrval,
+                          const cs_int_t    *jrpoi,
+                          const cs_int_t    *jrtsp,
+                          const cs_int_t    *jdp,
+                          const cs_int_t    *jmp,
+                          const cs_int_t    *jxp,
+                          const cs_int_t    *jyp,
+                          const cs_int_t    *jzp,
+                          const cs_int_t    *jup,
+                          const cs_int_t    *jvp,
+                          const cs_int_t    *jwp,
+                          const cs_int_t    *juf,
+                          const cs_int_t    *jvf,
+                          const cs_int_t    *jwf,
+                          const cs_int_t    *jtaux,
+                          const cs_int_t    *jryplu,
+                          const cs_int_t    *jrinpf,
+                          const cs_int_t    *jdfac,
+                          const cs_int_t    *jimark,
+                          const cs_int_t    *jtp,
+                          const cs_int_t     jhp[],
+                          const cs_int_t    *jtf,
+                          const cs_int_t    *jmwat,
+                          const cs_int_t     jmch[],
+                          const cs_int_t     jmck[],
+                          const cs_int_t    *jcp,
+                          const cs_int_t    *jrdck,
+                          const cs_int_t    *jrd0p,
+                          const cs_int_t    *jinch,
+                          const cs_int_t     jrhock[],
+                          const cs_int_t    *jreps,
+                          const cs_int_t    *jdepo,
+                          const cs_int_t    *jnbasg,
+                          const cs_int_t    *jnbasp,
+                          const cs_int_t    *jfadh,
+                          const cs_int_t    *jmfadh,
+                          const cs_int_t    *jndisp,
+                          const cs_int_t    *jclst,
+                          const cs_int_t    *jvls);
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in
@@ -272,9 +291,7 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *nbpmax,
                           const cs_real_t   ettp[],
                           const cs_real_t   ettpa[],
                           const cs_int_t    itepa[],
-                          const cs_real_t   tepa[],
-                          const cs_int_t    ibord[],
-                          const cs_int_t    indep[]);
+                          const cs_real_t   tepa[]);
 
 /*----------------------------------------------------------------------------
  * Put variables and parameters associated to each particles into FORTRAN
@@ -310,8 +327,7 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
                           cs_real_t         ettp[],
                           cs_real_t         ettpa[],
                           cs_int_t          itepa[],
-                          cs_real_t         tepa[],
-                          cs_int_t          ibord[]);
+                          cs_real_t         tepa[]);
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in
@@ -412,9 +428,7 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
                           const cs_real_t    ettp[],
                           const cs_real_t    ettpa[],
                           const cs_lnum_t    itepa[],
-                          const cs_real_t    tepa[],
-                          const cs_lnum_t    ibord[],
-                          const cs_lnum_t    indep[]);
+                          const cs_real_t    tepa[]);
 
 /*============================================================================
  * Public function prototypes
@@ -428,6 +442,7 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
  *
  * parameters:
  *   particles <-- associated particle set
+ *   time_id   <-- associated time id (0: current, 1: previous)
  *   attr      <-- particle attribute
  *   extents   --> size (in bytes) of particle structure, or NULL
  *   size      --> size (in bytes) of attribute in particle structure, or NULL
@@ -438,6 +453,7 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
 
 void
 cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
+                      int                            time_id,
                       cs_lagr_attribute_t            attr,
                       size_t                        *extents,
                       size_t                        *size,
@@ -446,105 +462,186 @@ cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
                       int                           *count);
 
 /*----------------------------------------------------------------------------
- * Return pointers to the main cs_lagr_particle_set_t structures.
+ * Return pointer to the main cs_lagr_particle_set_t structure.
  *
- * parameters:
- *   current_set  --> pointer to current particle set, or NULL
- *   previous_set --> pointer to previous particle set, or NULL
+ * returns:
+ *   pointer to current particle set, or NULL
  *----------------------------------------------------------------------------*/
 
-void
-cs_lagr_get_particle_sets(cs_lagr_particle_set_t  **current_set,
-                          cs_lagr_particle_set_t  **previous_set);
+cs_lagr_particle_set_t  *
+cs_lagr_get_particle_set(void);
 
 /*----------------------------------------------------------------------------
- * Delete cs_lagr_particle_set_t structure and delete other useful buffers.
+ * Delete particle set structure and other useful buffers.
  *----------------------------------------------------------------------------*/
 
 void
 cs_lagr_destroy(void);
 
-/*----------------------------------------------------------------------------
- * Get pointer to an attribute of a given particle in a set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to a current attribute of a given particle in a set.
  *
- * parameters:
- *   particle_set  <-- pointer to particle set
- *   particle_id   <-- particle id
- *   attr          <-- requested attribute id
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
  *
- * return:
- *   pointer to requested attribute
- *----------------------------------------------------------------------------*/
+ * \return    pointer to current attribute data
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void *
 cs_lagr_particles_attr(cs_lagr_particle_set_t  *particle_set,
                        cs_lnum_t                particle_id,
                        cs_lagr_attribute_t      attr)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
-  return   particle_set->p_buffer
+  return   (unsigned char *)particle_set->p_buffer
          + particle_set->p_am->extents*particle_id
-         + particle_set->p_am->displ[attr];
+         + particle_set->p_am->displ[0][attr];
 }
 
-/*----------------------------------------------------------------------------
- * Get const pointer to an attribute of a given particle in a set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get const pointer to current attribute data
+ *        of a given particle in a set.
  *
- * parameters:
- *   particle_set  <-- pointer to particle set
- *   particle_id   <-- particle id
- *   attr          <-- requested attribute id
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
  *
- * return:
- *   pointer to requested attribute
- *----------------------------------------------------------------------------*/
+ * \return    pointer to current attribute data
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static const void *
 cs_lagr_particles_attr_const(const cs_lagr_particle_set_t  *particle_set,
                              cs_lnum_t                      particle_id,
                              cs_lagr_attribute_t            attr)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
   return   particle_set->p_buffer
          + particle_set->p_am->extents*particle_id
-         + particle_set->p_am->displ[attr];
+         + particle_set->p_am->displ[0][attr];
 }
 
-/*----------------------------------------------------------------------------
- * Get attribute value of type cs_lnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to attribute data of a given particle in a set
+ *        at a given time.
  *
- * parameters:
- *   particle_set  <-- pointer to particle set
- *   particle_id   <-- particle id
- *   attr          <-- requested attribute id
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  time_id       0 for current, 1 for previous
+ * \param[in]  attr          requested attribute id
  *
- * returns:
- *   value of type cs_lnum_t
- *----------------------------------------------------------------------------*/
+ * \return    pointer to attribute data at given time
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void *
+cs_lagr_particles_attr_n(cs_lagr_particle_set_t  *particle_set,
+                         cs_lnum_t                particle_id,
+                         int                      time_id,
+                         cs_lagr_attribute_t      attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return   particle_set->p_buffer
+         + particle_set->p_am->extents*particle_id
+         + particle_set->p_am->displ[time_id][attr];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get const pointer to attribute data of a given particle in a set
+ *        at a given time.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  time_id       0 for current, 1 for previous
+ * \param[in]  attr          requested attribute id
+ *
+ * \return    pointer to attribute data at given time
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static const void *
+cs_lagr_particles_attr_n_const(const cs_lagr_particle_set_t  *particle_set,
+                               cs_lnum_t                      particle_id,
+                               int                            time_id,
+                               cs_lagr_attribute_t            attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return   particle_set->p_buffer
+         + particle_set->p_am->extents*particle_id
+         + particle_set->p_am->displ[time_id][attr];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_lnum_t of a given particle in a set.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
+ *
+ * \return  attribute value
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static cs_lnum_t
 cs_lagr_particles_get_lnum(const cs_lagr_particle_set_t  *particle_set,
                            cs_lnum_t                      particle_id,
                            cs_lagr_attribute_t            attr)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
-  return *((cs_lnum_t *)(  particle_set->p_buffer
-                         + particle_set->p_am->extents*particle_id
-                         + particle_set->p_am->displ[attr]));
+  return *((const cs_lnum_t *)(  particle_set->p_buffer
+                               + particle_set->p_am->extents*particle_id
+                               + particle_set->p_am->displ[0][attr]));
 }
 
-/*----------------------------------------------------------------------------
- * Set attribute value of type cs_lnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_lnum_t of a given particle in a set
+ *        at a given time.
  *
- * parameters:
- *   particle_set  <-- pointer to particle set
- *   particle_id   <-- particle id
- *   attr          <-- requested attribute id
- *   value         <-- value to assign
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  time_id       0 for current, 1 for previous
+ * \param[in]  attr          requested attribute id
+ *
+ * \return  attribute value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_lnum_t
+cs_lagr_particles_get_lnum_n(const cs_lagr_particle_set_t  *particle_set,
+                             cs_lnum_t                      particle_id,
+                             int                            time_id,
+                             cs_lagr_attribute_t            attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return *((const cs_lnum_t *)(  particle_set->p_buffer
+                               + particle_set->p_am->extents*particle_id
+                               + particle_set->p_am->displ[time_id][attr]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_lnum_t of a given particle in a set.
+ *
+ * \param[in, out]   particle_set  pointer to particle set
+ * \param[in]        particle_id   particle id
+ * \param[in]        attr          requested attribute id
+ * \param[in]        value         value to assign
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particles_set_lnum(cs_lagr_particle_set_t  *particle_set,
@@ -552,46 +649,101 @@ cs_lagr_particles_set_lnum(cs_lagr_particle_set_t  *particle_set,
                            cs_lagr_attribute_t      attr,
                            cs_lnum_t                value)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
   *((cs_lnum_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
-                  + particle_set->p_am->displ[attr])) = value;
+                  + particle_set->p_am->displ[0][attr])) = value;
 }
 
-/*----------------------------------------------------------------------------
- * Get attribute value of type cs_gnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_lnum_t of a given particle in a set
+ *        at a given time.
  *
- * parameters:
- *   particle_set <-- pointer to particle set
- *   particle_id  <-- particle id
- *   attr         <-- requested attribute id
+ * \param[in, out]   particle_set  pointer to particle set
+ * \param[in]        particle_id   particle id
+ * \param[in]        time_id       0 for current, 1 for previous
+ * \param[in]        attr          requested attribute id
+ * \param[in]        value         value to assign
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particles_set_lnum_n(cs_lagr_particle_set_t  *particle_set,
+                             cs_lnum_t                particle_id,
+                             int                      time_id,
+                             cs_lagr_attribute_t      attr,
+                             cs_lnum_t                value)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  *((cs_lnum_t *)(  particle_set->p_buffer
+                  + particle_set->p_am->extents*particle_id
+                  + particle_set->p_am->displ[time_id][attr])) = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_gnum_t of a given particle in a set.
  *
- * returns:
- *   value of type cs_gnum_t
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
+ *
+ * \return  attribute value
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static cs_gnum_t
 cs_lagr_particles_get_gnum(const cs_lagr_particle_set_t  *particle_set,
                            cs_lnum_t                      particle_id,
                            cs_lagr_attribute_t            attr)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
-  return *((cs_gnum_t *)(  particle_set->p_buffer
-                         + particle_set->p_am->extents*particle_id
-                         + particle_set->p_am->displ[attr]));
+  return *((const cs_gnum_t *)(  particle_set->p_buffer
+                               + particle_set->p_am->extents*particle_id
+                               + particle_set->p_am->displ[0][attr]));
 }
 
-/*----------------------------------------------------------------------------
- * Set attribute value of type cs_gnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_gnum_t of a given particle in a set
+ *        at a given time.
  *
- * parameters:
- *   particle_set <-- pointer to particle set
- *   particle_id  <-- particle id
- *   attr         <-- requested attribute id
- *   value        <-- value to assign
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  time_id       0 for current, 1 for previous
+ * \param[in]  attr          requested attribute id
+ *
+ * \return  attribute value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_gnum_t
+cs_lagr_particles_get_gnum_n(const cs_lagr_particle_set_t  *particle_set,
+                             cs_lnum_t                      particle_id,
+                             int                            time_id,
+                             cs_lagr_attribute_t            attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return *((const cs_gnum_t *)(  particle_set->p_buffer
+                               + particle_set->p_am->extents*particle_id
+                               + particle_set->p_am->displ[time_id][attr]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_gnum_t of a given particle in a set.
+ *
+ * \param[in, out]   particle_set  pointer to particle set
+ * \param[in]        particle_id   particle id
+ * \param[in]        attr          requested attribute id
+ * \param[in]        value         value to assign
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particles_set_gnum(cs_lagr_particle_set_t  *particle_set,
@@ -599,46 +751,101 @@ cs_lagr_particles_set_gnum(cs_lagr_particle_set_t  *particle_set,
                            cs_lagr_attribute_t      attr,
                            cs_gnum_t                value)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
   *((cs_gnum_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
-                  + particle_set->p_am->displ[attr])) = value;
+                  + particle_set->p_am->displ[0][attr])) = value;
 }
 
-/*----------------------------------------------------------------------------
- * Get attribute value of type cs_real_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_gnum_t of a given particle in a set
+ *        at a given time.
  *
- * parameters:
- *   particle_set <-- pointer to particle set
- *   particle_id  <-- particle id
- *   attr         <-- requested attribute id
+ * \param[in, out]   particle_set  pointer to particle set
+ * \param[in]        particle_id   particle id
+ * \param[in]        time_id       0 for current, 1 for previous
+ * \param[in]        attr          requested attribute id
+ * \param[in]        value         value to assign
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particles_set_gnum_n(cs_lagr_particle_set_t  *particle_set,
+                             cs_lnum_t                particle_id,
+                             int                      time_id,
+                             cs_lagr_attribute_t      attr,
+                             cs_gnum_t                value)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  *((cs_gnum_t *)(  particle_set->p_buffer
+                  + particle_set->p_am->extents*particle_id
+                  + particle_set->p_am->displ[time_id][attr])) = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_real_t of a given particle in a set.
  *
- * returns:
- *   value of type cs_real_t
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
+ *
+ * \return  attribute value
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static cs_real_t
 cs_lagr_particles_get_real(const cs_lagr_particle_set_t  *particle_set,
                            cs_lnum_t                      particle_id,
                            cs_lagr_attribute_t            attr)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
-  return *((cs_real_t *)(  particle_set->p_buffer
-                         + particle_set->p_am->extents*particle_id
-                         + particle_set->p_am->displ[attr]));
+  return *((const cs_real_t *)(  particle_set->p_buffer
+                               + particle_set->p_am->extents*particle_id
+                               + particle_set->p_am->displ[0][attr]));
 }
 
-/*----------------------------------------------------------------------------
- * Set attribute value of type cs_real_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_real_t of a given particle in a set
+ *        at a given time.
  *
- * parameters:
- *   particle_set <-- pointer to particle set
- *   particle_id  <-- particle id
- *   attr         <-- requested attribute id
- *   value        <-- value to assign
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  time_id       0 for current, 1 for previous
+ * \param[in]  attr          requested attribute id
+ *
+ * \return  attribute value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+cs_lagr_particles_get_real_n(const cs_lagr_particle_set_t  *particle_set,
+                             cs_lnum_t                      particle_id,
+                             int                            time_id,
+                             cs_lagr_attribute_t            attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return *((const cs_real_t *)(  particle_set->p_buffer
+                               + particle_set->p_am->extents*particle_id
+                               + particle_set->p_am->displ[time_id][attr]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_real_t of a given particle in a set.
+ *
+ * \param[in, out]   particle_set  pointer to particle set
+ * \param[in]        particle_id   particle id
+ * \param[in]        attr          requested attribute id
+ * \param[in]        value         value to assign
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particles_set_real(cs_lagr_particle_set_t  *particle_set,
@@ -646,89 +853,192 @@ cs_lagr_particles_set_real(cs_lagr_particle_set_t  *particle_set,
                            cs_lagr_attribute_t      attr,
                            cs_real_t                value)
 {
-  assert(particle_set->p_am->count[attr] > 0);
+  assert(particle_set->p_am->count[0][attr] > 0);
 
   *((cs_real_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
-                  + particle_set->p_am->displ[attr])) = value;
+                  + particle_set->p_am->displ[0][attr])) = value;
 }
 
-/*----------------------------------------------------------------------------
- * Get pointer to an attribute of a given particle.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_real_t of a given particle in a set
+ *        at a given time.
  *
- * parameters:
- *   particle  <-- pointer to particle data
- *   attr_map  <-- pointer to attribute map
- *   attr      <-- requested attribute id
+ * \param[in, out]   particle_set  pointer to particle set
+ * \param[in]        particle_id   particle id
+ * \param[in]        time_id       0 for current, 1 for previous
+ * \param[in]        attr          requested attribute id
+ * \param[in]        value         value to assign
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particles_set_real_n(cs_lagr_particle_set_t  *particle_set,
+                             cs_lnum_t                particle_id,
+                             int                      time_id,
+                             cs_lagr_attribute_t      attr,
+                             cs_real_t                value)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  *((cs_real_t *)(  particle_set->p_buffer
+                  + particle_set->p_am->extents*particle_id
+                  + particle_set->p_am->displ[time_id][attr])) = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to current attribute data of a particle.
  *
- * return:
- *   pointer to attribute
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  attr      requested attribute id
+ *
+ * \return  pointer to attribute data
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void *
 cs_lagr_particle_attr(void                           *particle,
                       const cs_lagr_attribute_map_t  *attr_map,
                       cs_lagr_attribute_t             attr)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
-  return   (void *)((unsigned char *)particle + attr_map->displ[attr]);
+  return  (unsigned char *)particle + attr_map->displ[0][attr];
 }
 
-/*----------------------------------------------------------------------------
- * Get const pointer to an attribute of a given particle.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get const pointer to current attribute data of a particle.
  *
- * parameters:
- *   particle <-- pointer to particle data
- *   attr_map <-- pointer to attribute map
- *   attr     <-- requested attribute id
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  attr      requested attribute id
  *
- * return:
- *   const pointer to attribute
- *----------------------------------------------------------------------------*/
+ * \return  const pointer to attribute
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static const void *
 cs_lagr_particle_attr_const(const void                     *particle,
                             const cs_lagr_attribute_map_t  *attr_map,
                             cs_lagr_attribute_t             attr)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
-  return   (const unsigned char *)particle + attr_map->displ[attr];
+  return  (const unsigned char *)particle + attr_map->displ[0][attr];
 }
 
-/*----------------------------------------------------------------------------
- * Get attribute value of type cs_lnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to attribute data of a particle at a given time.
  *
- * parameters:
- *   particle <-- pointer to particle data
- *   attr_map <-- pointer to attribute map
- *   attr     <-- requested attribute id
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  time_id   0 for current, 1 for previous
+ * \param[in]  attr      requested attribute id
  *
- * returns:
- *   value of type cs_lnum_t
- *----------------------------------------------------------------------------*/
+ * \return  pointer to attribute data
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void *
+cs_lagr_particle_attr_n(void                           *particle,
+                        const cs_lagr_attribute_map_t  *attr_map,
+                        int                             time_id,
+                        cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return  (unsigned char *)particle + attr_map->displ[time_id][attr];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get const pointer to attribute data of a particle at a given time.
+ *
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  time_id   0 for current, 1 for previous
+ * \param[in]  attr      requested attribute id
+ *
+ * \return  pointer to attribute data
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static const void *
+cs_lagr_particle_attr_n_const(const void                     *particle,
+                              const cs_lagr_attribute_map_t  *attr_map,
+                              int                             time_id,
+                              cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return    (const unsigned char *)particle
+          + attr_map->displ[time_id][attr];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_lnum_t of a given particle in a set
+ *
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  attr     requested attribute id
+ *
+ * \return attribute value
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static cs_lnum_t
 cs_lagr_particle_get_lnum(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
                           cs_lagr_attribute_t             attr)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
   return  *((const cs_lnum_t *)(  (const unsigned char *)particle
-                                + attr_map->displ[attr]));
+                                + attr_map->displ[0][attr]));
 }
 
-/*----------------------------------------------------------------------------
- * Set attribute value of type cs_lnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_lnum_t of a given particle
+ *        at a given time.
  *
- * parameters:
- *   particle <-- pointer to particle data
- *   attr_map <-- pointer to attribute map
- *   attr     <-- requested attribute id
- *   value    <-- value to assign
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  time_id   0 for current, 1 for previous
+ * \param[in]  attr      requested attribute id
+ *
+ * \return attribute value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_lnum_t
+cs_lagr_particle_get_lnum_n(const void                     *particle,
+                            const cs_lagr_attribute_map_t  *attr_map,
+                            int                             time_id,
+                            cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return  *((const cs_lnum_t *)(  (const unsigned char *)particle
+                                + attr_map->displ[time_id][attr]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_lnum_t of a given particle.
+ *
+ * \param[in, out]  particle  pointer to particle data
+ * \param[in]       attr_map  pointer to attribute map
+ * \param[in]       attr      requested attribute id
+ * \param[in]       value     value to assign
+ */
+ /*----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particle_set_lnum(void                           *particle,
@@ -736,43 +1046,97 @@ cs_lagr_particle_set_lnum(void                           *particle,
                           cs_lagr_attribute_t             attr,
                           cs_lnum_t                       value)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
-  *((cs_lnum_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
+  *((cs_lnum_t *)((unsigned char *)particle + attr_map->displ[0][attr]))
+    = value;
 }
 
-/*----------------------------------------------------------------------------
- * Get attribute value of type cs_gnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_lnum_t of a given particle
+ *        at a given time.
  *
- * parameters:
- *   particle <-- pointer to particle data
- *   attr_map <-- pointer to attribute map
- *   attr     <-- requested attribute id
+ * \param[in, out]  particle  pointer to particle data
+ * \param[in]       attr_map  pointer to attribute map
+ * \param[in]       time_id   0 for current, 1 for previous
+ * \param[in]       attr      requested attribute id
+ * \param[in]       value     value to assign
+ */
+ /*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particle_set_lnum_n(void                           *particle,
+                            const cs_lagr_attribute_map_t  *attr_map,
+                            int                             time_id,
+                            cs_lagr_attribute_t             attr,
+                            cs_lnum_t                       value)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  *((cs_lnum_t *)(  (unsigned char *)particle
+                  + attr_map->displ[time_id][attr])) = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_gnum_t of a given particle in a set
  *
- * returns:
- *   value of type cs_gnum_t
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  attr     requested attribute id
+ *
+ * \return attribute value
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static cs_gnum_t
 cs_lagr_particle_get_gnum(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
                           cs_lagr_attribute_t             attr)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
   return  *((const cs_gnum_t *)(  (const unsigned char *)particle
-                                + attr_map->displ[attr]));
+                                + attr_map->displ[0][attr]));
 }
 
-/*----------------------------------------------------------------------------
- * Set attribute value of type cs_gnum_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_gnum_t of a given particle
+ *        at a given time.
  *
- * parameters:
- *   particle  <-- pointer to particle data
- *   attr_map  <-- pointer to attribute map
- *   attr      <-- requested attribute id
- *   value     <-- value to assign
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  time_id   0 for current, 1 for previous
+ * \param[in]  attr      requested attribute id
+ *
+ * \return attribute value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_gnum_t
+cs_lagr_particle_get_gnum_n(const void                     *particle,
+                            const cs_lagr_attribute_map_t  *attr_map,
+                            int                             time_id,
+                            cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return  *((const cs_gnum_t *)(  (const unsigned char *)particle
+                                + attr_map->displ[time_id][attr]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_gnum_t of a given particle.
+ *
+ * \param[in, out]  particle  pointer to particle data
+ * \param[in]       attr_map  pointer to attribute map
+ * \param[in]       attr      requested attribute id
+ * \param[in]       value     value to assign
+ */
+ /*----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particle_set_gnum(void                           *particle,
@@ -780,43 +1144,97 @@ cs_lagr_particle_set_gnum(void                           *particle,
                           cs_lagr_attribute_t             attr,
                           cs_gnum_t                       value)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
-  *((cs_gnum_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
+  *((cs_gnum_t *)((unsigned char *)particle + attr_map->displ[0][attr]))
+    = value;
 }
 
-/*----------------------------------------------------------------------------
- * Get attribute value of type cs_real_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_gnum_t of a given particle
+ *        at a given time.
  *
- * parameters:
- *   particle <-- pointer to particle data
- *   attr_map <-- pointer to attribute map
- *   attr     <-- requested attribute id
+ * \param[in, out]  particle  pointer to particle data
+ * \param[in]       attr_map  pointer to attribute map
+ * \param[in]       time_id   0 for current, 1 for previous
+ * \param[in]       attr      requested attribute id
+ * \param[in]       value     value to assign
+ */
+ /*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particle_set_gnum_n(void                           *particle,
+                            const cs_lagr_attribute_map_t  *attr_map,
+                            int                             time_id,
+                            cs_lagr_attribute_t             attr,
+                            cs_gnum_t                       value)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  *((cs_gnum_t *)(  (unsigned char *)particle
+                  + attr_map->displ[time_id][attr])) = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_real_t of a given particle in a set
  *
- * returns:
- *   value of type cs_real_t
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  attr     requested attribute id
+ *
+ * \return attribute value
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static cs_real_t
 cs_lagr_particle_get_real(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
                           cs_lagr_attribute_t             attr)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
   return  *((const cs_real_t *)(  (const unsigned char *)particle
-                                + attr_map->displ[attr]));
+                                + attr_map->displ[0][attr]));
 }
 
-/*----------------------------------------------------------------------------
- * Set attribute value of type cs_real_t of a given particle in a set
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get attribute value of type cs_real_t of a given particle
+ *        at a given time.
  *
- * parameters:
- *   particle <-- pointer to particle data
- *   attr_map <-- pointer to attribute map
- *   attr     <-- requested attribute id
- *   value    <-- value to assign
- *----------------------------------------------------------------------------*/
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  time_id   0 for current, 1 for previous
+ * \param[in]  attr      requested attribute id
+ *
+ * \return attribute value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+cs_lagr_particle_get_real_n(const void                     *particle,
+                            const cs_lagr_attribute_map_t  *attr_map,
+                            int                             time_id,
+                            cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return  *((const cs_real_t *)(  (const unsigned char *)particle
+                                + attr_map->displ[time_id][attr]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_real_t of a given particle.
+ *
+ * \param[in, out]  particle  pointer to particle data
+ * \param[in]       attr_map  pointer to attribute map
+ * \param[in]       attr      requested attribute id
+ * \param[in]       value     value to assign
+ */
+ /*----------------------------------------------------------------------------*/
 
 inline static void
 cs_lagr_particle_set_real(void                           *particle,
@@ -824,9 +1242,36 @@ cs_lagr_particle_set_real(void                           *particle,
                           cs_lagr_attribute_t             attr,
                           cs_real_t                       value)
 {
-  assert(attr_map->count[attr] > 0);
+  assert(attr_map->count[0][attr] > 0);
 
-  *((cs_real_t *)((unsigned char *)particle + attr_map->displ[attr])) = value;
+  *((cs_real_t *)((unsigned char *)particle + attr_map->displ[0][attr]))
+    = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_real_t of a given particle
+ *        at a given time.
+ *
+ * \param[in, out]  particle  pointer to particle data
+ * \param[in]       attr_map  pointer to attribute map
+ * \param[in]       time_id   0 for current, 1 for previous
+ * \param[in]       attr      requested attribute id
+ * \param[in]       value     value to assign
+ */
+ /*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particle_set_real_n(void                           *particle,
+                            const cs_lagr_attribute_map_t  *attr_map,
+                            int                             time_id,
+                            cs_lagr_attribute_t             attr,
+                            cs_real_t                       value)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  *((cs_real_t *)(  (unsigned char *)particle
+                  + attr_map->displ[time_id][attr])) = value;
 }
 
 /*----------------------------------------------------------------------------

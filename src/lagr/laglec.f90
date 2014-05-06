@@ -438,6 +438,8 @@ endif
 
 nberro = 0
 
+nomite(jord1) = 'order_1'
+
 if (nbclst.gt.0) then
   nomite(jclst) = 'numero_groupe_statistiques'
 endif

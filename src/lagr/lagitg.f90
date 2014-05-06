@@ -23,9 +23,9 @@
 subroutine lagitg &
 !================
 
- ( nbpmax , nvp    , nvp1   ,                                     &
+ ( nbpmax , nvp    , nvp1   , nivep  ,                            &
    ivar   ,                                                       &
-   isorti , ibord  ,                                              &
+   itepa  ,                                                       &
    ettp   , ettpa  , tcarac , pip    , tsvar  )
 
 !===============================================================================
@@ -56,11 +56,8 @@ subroutine lagitg &
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! ivar             ! e  ! <-- ! numero de la variable a integrer               !
 !                  !    !     ! dans le tableau ettp                           !
-! isorti(nbpmax    ! te ! <-- ! pour chaque particule :                        !
-!                  !    !     !    * numero de sa cellule                      !
-!                  !    !     !    * 0 si sortie du domaine                    !
-! ibord            ! te ! <-- ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
+! itepa            ! te ! --> ! info particulaires (entiers)                   !
+! (nbpmax,nivep)   !    !     !   (cellule de la particule,...)                !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -97,9 +94,9 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp , nvp1
+integer          nbpmax , nvp , nvp1, nivep
 integer          ivar
-integer          isorti(nbpmax) , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision ettp(nbpmax,nvp) ,  ettpa(nbpmax,nvp)
 double precision tcarac(nbpmax) , pip(nbpmax)
@@ -116,7 +113,7 @@ double precision aux1 , aux2 , ter1 , ter2 , ter3
   if (nor.eq.1) then
 
     do npt = 1, nbpart
-      if (isorti(npt).gt.0) then
+      if (itepa(npt,jisor).gt.0) then
 
         if (tcarac(npt).le.0.d0) then
           write(nfecra,2000) ivar, tcarac(npt), npt
@@ -144,7 +141,7 @@ double precision aux1 , aux2 , ter1 , ter2 , ter3
   else if (nor.eq.2) then
 
     do npt = 1, nbpart
-      if (isorti(npt).gt.0 .and. ibord(npt).eq.0)  then
+      if (itepa(npt,jisor).gt.0 .and. itepa(npt,jord1).eq.0) then
 
         if (tcarac(npt).le.0.d0) then
           write(nfecra,2000) ivar, tcarac(npt), npt

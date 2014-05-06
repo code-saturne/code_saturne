@@ -24,7 +24,7 @@ subroutine lagitp &
 !================
 
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  , ibord  ,                                              &
+   itepa  ,                                                       &
    propce ,                                                       &
    ettp   , ettpa  , tepa   , tempct ,                            &
    tsvar  , auxl1  , auxl2  )
@@ -50,8 +50,6 @@ subroutine lagitp &
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ibord            ! te ! <-- ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
@@ -98,7 +96,7 @@ implicit none
 
 integer          nbpmax , nvp , nvp1 , nvep , nivep
 
-integer          itepa(nbpmax,nivep) , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
@@ -175,9 +173,9 @@ endif
 
 call lagitg                                                       &
 !==========
- ( nbpmax , nvp    , nvp1   ,                                     &
+ ( nbpmax , nvp    , nvp1   , nivep  ,                            &
    jtp    ,                                                       &
-   itepa(1,jisor)  , ibord  ,                                     &
+   itepa  ,                                                       &
    ettp   , ettpa  , auxl1  , auxl2  , tsvar  )
 
 !===============================================================================

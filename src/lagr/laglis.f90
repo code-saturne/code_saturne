@@ -23,10 +23,8 @@
 subroutine laglis &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
-   ettp   , tepa   , statis , stativ , tslagr , parbor )
+ ( nvlsta , nvisbr ,                                                           &
+   statis , stativ , parbor )
 
 !===============================================================================
 ! Purpose:
@@ -42,29 +40,15 @@ subroutine laglis &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis           ! tr ! <-- ! cumul pour les moyennes des                    !
-!(ncelet,nvlsta    !    !     !   statistiques volumiques                      !
+!  (ncelet,nvlsta) !    !     !   statistiques volumiques                      !
 ! stativ           ! tr ! <-- ! cumul pour les variances des                   !
-!(ncelet,          !    !     !    statistiques volumiques                     !
+!  (ncelet,        !    !     !    statistiques volumiques                     !
 !   nvlsta-1)      !    !     !                                                !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
 ! parbor           ! tr ! <-- ! infos sur interaction des particules           !
-!(nfabor,nvisbr    !    !     !   aux faces de bord                            !
+!  (nfabor,nvisbr) !    !     !   aux faces de bord                            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -93,15 +77,10 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep)
-
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
-double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
 
 ! Local variables
@@ -393,6 +372,10 @@ if (iensi3.eq.1) then
          ivff   ,                                                 &
          gmin   , gmax   ,                                        &
          parbor , tabvr  , tabvrfou )
+      if (irangp.ge.0) then
+        call parmin(gmin)
+        call parmax(gmax)
+      endif
       write(nfecra,6010) nombrd(ivf),  gmin, gmax
     enddo
     ! Free memory

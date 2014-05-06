@@ -1374,12 +1374,11 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
   /* Create associated structure */
 
   {
-    cs_lagr_particle_set_t  *p_set = NULL, *p_set_prev = NULL;
     cs_gnum_t *global_num = NULL;
     cs_coord_3_t *coords = NULL;
     fvm_io_num_t  *io_num = NULL;
 
-    cs_lagr_get_particle_sets(&p_set, &p_set_prev);
+    cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
     /* Particle positions */
 
@@ -1430,7 +1429,6 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
       BFT_MALLOC(coords, n_particles*2, cs_coord_3_t);
 
       cs_lagr_get_trajectory_values(p_set,
-                                    p_set_prev,
                                     CS_LAGR_COORDS,
                                     CS_REAL_TYPE,
                                     3,
@@ -4562,8 +4560,6 @@ cs_post_write_particle_values(int                    mesh_id,
   cs_post_mesh_t  *post_mesh;
   cs_post_writer_t  *writer;
 
-  cs_lagr_particle_set_t  *p_set = NULL, *p_set_prev = NULL;
-
   cs_lagr_attribute_t  attr = attr_id;
 
   cs_lnum_t    n_particles = 0, n_pts = 0;
@@ -4594,13 +4590,14 @@ cs_post_write_particle_values(int                    mesh_id,
     return;
 
   n_particles = cs_lagr_get_n_particles();
-  cs_lagr_get_particle_sets(&p_set, &p_set_prev);
+
+  const cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
   assert(p_set != NULL);
 
   /* Get attribute values info, returning if not present */
 
-  cs_lagr_get_attr_info(p_set, attr,
+  cs_lagr_get_attr_info(p_set, 0, attr,
                         &extents, &size, &displ, &datatype, &stride);
 
   if (stride == 0)
@@ -4647,7 +4644,6 @@ cs_post_write_particle_values(int                    mesh_id,
   else if (post_mesh->ent_flag[3] == 2) {
     nt_cur = -1; t_cur = 0.;
     cs_lagr_get_trajectory_values(p_set,
-                                  p_set_prev,
                                   attr,
                                   datatype,
                                   stride,

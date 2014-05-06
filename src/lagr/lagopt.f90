@@ -81,7 +81,7 @@ use ihmpre
 
 implicit none
 
-integer  ii , ilayer , ip , irf , icha , i1 , i2 , i3, iok
+integer  ii , ilayer , irf , icha , iok
 
 !===============================================================================
 ! 0. INITIALISATION
@@ -1152,7 +1152,7 @@ nor = 0
 
 nvp   = 12
 nvep  = 3
-nivep = 1
+nivep = 4
 
 if (nbclst.gt.0) then
 
@@ -1399,7 +1399,10 @@ endif
 !   3.3.3 TABLEAU ITEPA
 !   ~~~~~~~~~~~~~~~~~~~
 
-!     JISOR       : MAILLE D'ARRIVEE
+!     JISOR       : arrival cell
+!     JISORA      : start cell
+!     JIRKA       : start rank
+!     JORD1       : switch to order 1
 
 !   Statistique par classe
 !   ----------------------
@@ -1412,9 +1415,12 @@ endif
 
 jinch = 0
 
-jisor = 1
+jisor  = 1
+jisora = 2
+jirka  = 3
+jord1  = 4
 
-irf = jisor
+irf = jord1
 
 if (nbclst .gt. 0) then
   jclst = irf + 1
@@ -2007,7 +2013,7 @@ endif
 
 ! Postprocessing options
 
-call lagpvr(iphyla, ivisv1, ivisv2,  ivistp, ivisdm, iviste, &
+call lagpvr(ivisv1, ivisv2,  ivistp, ivisdm, iviste, &
 !==========
             ivismp, ivisdk, iviswat, ivisch, ivisck)
 

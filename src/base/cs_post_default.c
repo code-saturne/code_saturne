@@ -415,10 +415,9 @@ void CS_PROCF (pstvar, PSTVAR)
  *
  * subroutine lagpvr
  * *****************
- *                  ( iphyla, ivisv1, ivisv2, ivistp,  ivisdm, iviste,
+ *                  ( ivisv1, ivisv2, ivistp,  ivisdm, iviste,
  *                    ivismp, ivisdk, iviswat, ivisch, ivisck )
  *
- * integer          iphyla      : <-- : type of lagrangian calculation
  * integer          ivisv1      : <-- : display of variable 'fluid velocity'
  * integer          ivisv2      : <-- : display of variable 'particles velocity'
  * integer          ivistp      : <-- : display of variable 'resident time'
@@ -433,7 +432,6 @@ void CS_PROCF (pstvar, PSTVAR)
 
 void CS_PROCF (lagpvr, LAGPVR)
 (
- const cs_int_t  *iphyla,
  const cs_int_t  *ivisv1,
  const cs_int_t  *ivisv2,
  const cs_int_t  *ivistp,
@@ -467,8 +465,9 @@ void CS_PROCF (lagpvr, LAGPVR)
 
   if (*iviste) {
     _default_input.particle_attr[CS_LAGR_TEMPERATURE] = true;
-    if (CS_LAGR_N_LAYERS > 1 && *iphyla == 2)
-      _default_input.particle_multicomponent_export[CS_LAGR_TEMPERATURE] = CS_LAGR_N_LAYERS;
+    if (cs_glob_lagr_params->n_temperature_layers > 1)
+      _default_input.particle_multicomponent_export[CS_LAGR_TEMPERATURE]
+        = cs_glob_lagr_params->n_temperature_layers;
   }
 
   if (*ivismp)
@@ -482,14 +481,16 @@ void CS_PROCF (lagpvr, LAGPVR)
 
   if (*ivisch) {
     _default_input.particle_attr[CS_LAGR_COAL_MASS] = true;
-    if (CS_LAGR_N_LAYERS > 1 && *iphyla == 2)
-      _default_input.particle_multicomponent_export[CS_LAGR_COAL_MASS] = CS_LAGR_N_LAYERS;
+    if (cs_glob_lagr_params->n_temperature_layers > 1)
+      _default_input.particle_multicomponent_export[CS_LAGR_COAL_MASS]
+        = cs_glob_lagr_params->n_temperature_layers;
   }
 
   if (*ivisck) {
     _default_input.particle_attr[CS_LAGR_COKE_MASS] = true;
-    if (CS_LAGR_N_LAYERS > 1 && *iphyla == 2)
-      _default_input.particle_multicomponent_export[CS_LAGR_COKE_MASS] = CS_LAGR_N_LAYERS;
+    if (cs_glob_lagr_params->n_temperature_layers > 1)
+      _default_input.particle_multicomponent_export[CS_LAGR_COKE_MASS]
+        = cs_glob_lagr_params->n_temperature_layers;
   }
 
 }

@@ -115,8 +115,6 @@ integer          ifac
 double precision visccf, romf
 double precision ustarmoy, surftot, surfb
 
-integer, allocatable, dimension(:) :: indep, ibord
-
 double precision, allocatable, dimension(:) :: taup
 double precision, allocatable, dimension(:,:) :: tlag, piil
 double precision, allocatable, dimension(:,:) :: vagaus
@@ -159,7 +157,6 @@ save             ipass
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(indep(nbpmax), ibord(nbpmax))
 allocate(auxl(nbpmax,3))
 allocate(taup(nbpmax))
 allocate(tlag(nbpmax,3))
@@ -266,7 +263,8 @@ if (iplar.eq.1) then
   !==========
  ( nbpmax , nlayer , iphyla , idepst , irough , ireent , iclogst, &
    nvls   , nbclst , icocel , itycel ,                            &
-   jisor  , jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
+   jisor  , jisora , jirka  , jord1  ,                            &
+   jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
    juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
    jrinpf , jdfac  , jimark ,                                     &
@@ -480,10 +478,11 @@ endif
 !
 if (nbpartall.eq.0) goto 20
 
-!-->On enregistre l'element de depart de la particule
+! On enregistre l'element de depart de la particule
 
 do ip = 1,nbpart
-  indep(ip) = itepa(ip,jisor)
+  itepa(ip,jisora) = itepa(ip,jisor)
+  itepa(ip,jirka) = irangp
 enddo
 
 !===============================================================================
@@ -609,8 +608,7 @@ call lagesp                                                       &
    ( nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
-     itepa  , ibord  ,                                            &
-     dlgeo  ,                                                     &
+     itepa  ,                                                     &
      dt     , rtpa   , rtp    , propce ,                          &
      ettp   , ettpa  , tepa   ,                                   &
      statis , stativ , taup   , tlag   , piil   ,                 &
@@ -628,7 +626,7 @@ if (iphyla.eq.1 .or. iphyla.eq.2) then
     !==========
     ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
-      itepa  , ibord  ,                                           &
+      itepa  ,                                                    &
       dt     , rtpa   , propce ,                                  &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
@@ -637,7 +635,7 @@ if (iphyla.eq.1 .or. iphyla.eq.2) then
     !==========
     ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
-      itepa  , ibord  ,                                           &
+      itepa  ,                                                    &
       dt     , rtp    , propce ,                                  &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
@@ -658,7 +656,6 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
   !==========
    ( nbpmax ,                                                     &
      ntersl ,                                                     &
-     indep  , ibord  ,                                            &
      rtp    , propce ,                                            &
      taup   , tempct , tsfext ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
@@ -718,8 +715,7 @@ if (nor.eq.1) then
   call prtget                                                     &
   !==========
  ( nbpmax , nbpart ,                                              &
-   ettp   , ettpa  , itepa  , tepa   ,                            &
-   ibord  , indep  )
+   ettp   , ettpa  , itepa  , tepa   )
 
   call dplprt                                                     &
   !==========
@@ -735,8 +731,7 @@ if (nor.eq.1) then
   !==========
  ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr , dnbper,  &
    nbpdep , dnbdep , npencr , dnpenc ,                            &
-   ettp   , ettpa  , itepa  , tepa   ,                            &
-   ibord  )
+   ettp   , ettpa  , itepa  , tepa   )
 
 
   if (ierr.eq.1) then
@@ -810,7 +805,7 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
   !==========
    ( ncelet , ncel   ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     itepa  , indep  ,                                            &
+     itepa  ,                                                     &
      ettp   , ettpa  , tepa   , croule )
 
   if (npclon.gt.0) then
@@ -854,7 +849,7 @@ call ucdprt                                                        &
 !==========
  ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr ,           &
    dnbper , nbpdep , dnbdep , npencr , dnpenc ,                    &
-   ettp   , ettpa  , itepa  , tepa   , ibord  , indep  )
+   ettp   , ettpa  , itepa  , tepa   )
 
 !===============================================================================
 ! 17. NOMBRE DE PARITICULES PERDUES (SUITES COMPRISES)
@@ -892,7 +887,6 @@ endif
 
 ! Free memory
 
-deallocate(indep, ibord)
 deallocate(auxl)
 deallocate(taup)
 deallocate(tlag)

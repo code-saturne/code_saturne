@@ -24,7 +24,7 @@ subroutine lages2 &
 !================
 
  ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  , ibord  ,                                              &
+   itepa  ,                                                       &
    rtpa   , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   , taup   , tlag   , piil   ,          &
    tsuf   , tsup   , bx     , tsfext ,                            &
@@ -57,8 +57,6 @@ subroutine lages2 &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -120,7 +118,7 @@ implicit none
 ! Arguments
 
 integer          nbpmax , nvp    , nvep  , nivep
-integer          itepa(nbpmax,nivep) , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
@@ -327,7 +325,7 @@ else
 
     do ip = 1,nbpart
 
-      if (itepa(ip,jisor).gt.0 .and. ibord(ip).eq.0) then
+      if (itepa(ip,jisor).gt.0 .and. itepa(ip,jord1).eq.0) then
 
         aux0 = -dtp / taup(ip)
         aux1 = -dtp / tlag(ip,id)

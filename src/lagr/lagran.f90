@@ -242,6 +242,8 @@ module lagran
   integer, save ::   jryplu
   !> Additional pointer in the ITEPA array (contains the particule state)
   integer, save ::   jrinpf
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jord1
 
   !> \}
 
@@ -421,6 +423,12 @@ module lagran
   !> for \ref itepa array; this
   !> number is re-actualised during the trajectography step
   integer, save :: jisor
+  !> pointer to number of the previous cell containing the particle
+  !> for \ref itepa array
+  integer, save :: jisora
+  !> pointer to number of the previous rank containing the particle
+  !> for \ref itepa array
+  integer, save :: jirka
   !> pointer to number of the coal particle for \ref itepa array
   integer, save :: jinch
   !> pointer to class of the particle for \ref itepa array
@@ -1361,8 +1369,8 @@ contains
 
     ! Arguments
 
-    integer, dimension(ndlaim)          :: i_cz_params
-    double precision, dimension(ndlagm) :: r_cz_params
+    integer(c_int), dimension(ndlaim) :: i_cz_params
+    real(c_double), dimension(ndlagm) :: r_cz_params
 
     ! Local variables
 
@@ -1428,10 +1436,10 @@ contains
 
     ! Arguments
 
-    integer, value                      :: class_id
-    integer, value                      :: zone_id
-    integer, dimension(ndlaim)          :: i_cz_params
-    double precision, dimension(ndlagm) :: r_cz_params
+    integer(c_int), value             :: class_id
+    integer(c_int), value             :: zone_id
+    integer(c_int), dimension(ndlaim) :: i_cz_params
+    real(c_double), dimension(ndlagm) :: r_cz_params
 
     ! Local variables
 

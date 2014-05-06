@@ -1128,10 +1128,8 @@ if (modntl.eq.0) then
   if (iilagr.gt.0) then
     call laglis                                                   &
     !==========
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
-   ettp   , tepa   , statis , stativ , tslagr , parbor )
+    ( nvlsta , nvisbr ,                                           &
+      statis , stativ , parbor )
   endif
 
 endif

@@ -24,9 +24,9 @@ subroutine lagitf &
 !================
 
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  , ibord  ,                                              &
+   itepa  ,                                                       &
    rtp    , propce ,                                              &
-   ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
+   ettp   , ettpa  , tepa   , tsvar  ,                            &
    auxl1  )
 
 !===============================================================================
@@ -51,8 +51,6 @@ subroutine lagitf &
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ibord            ! te ! <-- ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -62,9 +60,6 @@ subroutine lagitf &
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
 ! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
 ! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
 !                  !    !     !   correction au 2eme sous-pas                  !
@@ -103,13 +98,12 @@ implicit none
 
 integer          nbpmax , nvp , nvp1 , nvep , nivep
 
-integer          itepa(nbpmax,nivep) , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision taup(nbpmax), tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax)
 
@@ -249,7 +243,7 @@ else if (nor.eq.2) then
 
   do npt = 1,nbpart
 
-    if ( itepa(npt,jisor).gt.0 .and. ibord(npt).eq.0 ) then
+    if (itepa(npt,jisor).gt.0 .and. itepa(npt,jord1).eq.0) then
 
       iel = itepa(npt,jisor)
 

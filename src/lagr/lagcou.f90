@@ -25,7 +25,6 @@ subroutine lagcou &
 
  ( nbpmax ,                                                       &
    ntersl ,                                                       &
-   indep  , ibord  ,                                              &
    rtp    , propce ,                                              &
    taup   , tempct , tsfext ,                                     &
    cpgd1  , cpgd2  , cpght  ,                                     &
@@ -62,10 +61,8 @@ subroutine lagcou &
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! indep            ! te ! <-- ! pour chaque particule :                        !
-!  (nbpmax)        !    !     !    numero de la cellule de depart              !
-! ibord            ! te ! <-- ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
+! itepa            ! te ! --> ! info particulaires (entiers)                   !
+! (nbpmax,nivep)   !    !     !   (cellule de la particule,...)                !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -122,7 +119,6 @@ implicit none
 
 integer          nbpmax
 integer          ntersl
-integer          indep(nbpmax), ibord(nbpmax)
 
 double precision propce(ncelet,*) , rtp(ncelet,nflown:nvar)
 double precision taup(nbpmax) , tempct(nbpmax,2)
@@ -183,7 +179,7 @@ enddo
 
 do npt = 1,nbpart
   aux1 = dtp/taup(npt)
-  if (nordre.eq.1 .or. ibord(npt).gt.0) then
+  if (nordre.eq.1 .or. itepa(npt,jord1).gt.0) then
     tsfext(npt)= (1.d0-exp(-aux1)) *ettp(npt,jmp) *taup(npt)
   else
     tsfext(npt) = tsfext(npt)                                     &
@@ -215,7 +211,7 @@ if (ltsdyn.eq.1) then
 
   do npt = 1,nbpart
 
-    iel = indep(npt)
+    iel = itepa(npt,jisora)
 
 ! Volume et masse des particules dans la maille
 
@@ -247,7 +243,7 @@ if (ltsdyn.eq.1) then
 
     do npt = 1,nbpart
 
-      iel = indep(npt)
+      iel = itepa(npt,jisora)
 
       uuf = 0.5d0 * ( ettpa(npt,juf) + ettp(npt,juf) )
       vvf = 0.5d0 * ( ettpa(npt,jvf) + ettp(npt,jvf) )
@@ -273,7 +269,7 @@ if (ltsdyn.eq.1) then
 
     do npt = 1,nbpart
 
-      iel = indep(npt)
+      iel = itepa(npt,jisora)
 
       uuf = 0.5d0 * ( ettpa(npt,juf) + ettp(npt,juf) )
       vvf = 0.5d0 * ( ettpa(npt,jvf) + ettp(npt,jvf) )
@@ -341,7 +337,7 @@ if ( ltsmas.eq.1 .and. (impvar.eq.1 .or. idpvar.eq.1) ) then
 
 ! Dans saturne TSmasse > 0 ===> Apport de masse sur le fluide
 
-    iel = indep(npt)
+    iel = itepa(npt,jisora)
 
     tslag(iel,itsmas) = tslag(iel,itsmas) - tepa(npt,jrpoi)       &
      * ( ettp(npt,jmp) - ettpa(npt,jmp) ) /dtp
@@ -360,7 +356,7 @@ if (ltsthe.eq.1) then
 
     do npt = 1,nbpart
 
-      iel = indep(npt)
+      iel = itepa(npt,jisora)
 
       tslag(iel,itste) = tslag(iel,itste)                         &
      -( ettp(npt,jmp)  *ettp(npt,jtp) *ettp(npt,jcp)              &
@@ -376,7 +372,7 @@ if (ltsthe.eq.1) then
 
       do npt = 1,nbpart
 
-        iel = indep(npt)
+        iel = itepa(npt,jisora)
 
         aux1 = pi *ettp(npt,jdp) *ettp(npt,jdp) *tepa(npt,jreps)  &
                 *(propce(iel,ipproc(ilumin))                      &
@@ -401,7 +397,7 @@ if (ltsthe.eq.1) then
 
       do npt = 1,nbpart
 
-        iel = indep(npt)
+        iel = itepa(npt,jisora)
         icha = itepa(npt,jinch)
 
         tslag(iel,itste) = tslag(iel,itste)                         &

@@ -127,7 +127,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
                             void                          *values);
 
 /*----------------------------------------------------------------------------
- * Extract trajectory values joining 2 sets of particles.
+ * Extract trajectory values for a set of particles.
  *
  * Trajectories are defined as a mesh of segments, whose start and end
  * points are copied in an interleaved manner in the segment_values array
@@ -138,7 +138,6 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
  *
  * parameters:
  *   particles      <-- associated particle set
- *   particles_prev <-- associated previous particle set
  *   attr           <-- attribute whose values are required
  *   datatype       <-- associated value type
  *   stride         <-- number of values per particle
@@ -154,7 +153,6 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
 
 int
 cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
-                              const cs_lagr_particle_set_t  *particles_prev,
                               cs_lagr_attribute_t            attr,
                               cs_datatype_t                  datatype,
                               int                            stride,

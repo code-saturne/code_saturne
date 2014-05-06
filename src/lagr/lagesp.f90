@@ -26,8 +26,7 @@ subroutine lagesp &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ibord  ,                                              &
-   dlgeo  ,                                                       &
+   itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
@@ -66,10 +65,6 @@ subroutine lagesp &
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
-! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -135,7 +130,7 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep) , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
@@ -199,7 +194,7 @@ call uslafe                                                       &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ibord  ,                                              &
+   itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
@@ -257,7 +252,7 @@ else
   call lages2                                                     &
   !==========
    ( nbpmax , nvp    , nvep   , nivep  ,                          &
-     itepa  , ibord  ,                                            &
+     itepa  ,                                                     &
      rtpa   , rtp    , propce ,                                   &
      ettp   , ettpa  , tepa   ,                                   &
      taup   , tlag   , piil   ,                                   &

@@ -25,7 +25,7 @@ subroutine lagphy &
 
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ibord  ,                                              &
+   itepa  ,                                                       &
    dt     , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
    tempct , tsvar  , auxl   ,                                     &
@@ -63,8 +63,6 @@ subroutine lagphy &
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ibord            ! te ! <-- ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -118,7 +116,7 @@ implicit none
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep) , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
@@ -151,10 +149,10 @@ if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
   call lagitf                                                     &
   !==========
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    itepa  , ibord  ,                                             &
+    itepa  ,                                                      &
     rtp    , propce ,                                             &
-    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
-    tsvar  , auxl(1,1) )
+    ettp   , ettpa  , tepa   , tsvar  ,                           &
+    auxl(1,1) )
 
 endif
 
@@ -167,7 +165,7 @@ if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
   call lagitp                                                     &
   !==========
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    itepa  , ibord  ,                                             &
+    itepa  ,                                                      &
     propce ,                                                      &
     ettp   , ettpa  , tepa   , tempct ,                           &
     tsvar  , auxl(1,1) , auxl(1,2)  )
@@ -183,8 +181,8 @@ if ( iphyla.eq.1 .and. idpvar.eq.1 ) then
   call lagidp                                                     &
   !==========
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    itepa  , ibord  ,                                             &
-    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
+    itepa  ,                                                      &
+    ettp   , ettpa  , tepa   ,                                    &
     tsvar  , auxl(1,1) , auxl(1,2)  )
 
 endif
@@ -198,8 +196,8 @@ if (iphyla.eq.1 .and. impvar.eq.1) then
   call lagimp                                                     &
   !==========
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    itepa  , ibord  ,                                             &
-    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
+    itepa  ,                                                      &
+    ettp   , ettpa  , tepa   ,                                    &
     tsvar  , auxl(1,1) , auxl(1,2)  )
 
 endif
@@ -213,7 +211,7 @@ if (iphyla.eq.2) then
   call lagich                                                     &
   !==========
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    itepa  , ibord  , propce , ettp   , ettpa  ,                  &
+    itepa  , propce , ettp   , ettpa  ,                           &
     tepa   , tempct , tsvar  , cpgd1  , cpgd2  ,                  &
     cpght  )
 
@@ -229,7 +227,7 @@ if (nvls.ge.1) then
   !==========
     ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
-      itepa  , ibord  ,                                           &
+      itepa  ,                                                    &
       dt     , rtp    , propce ,                                  &
       ettp   , ettpa  , tepa   , taup   , tlag   ,                &
       tempct , tsvar  ,                                           &

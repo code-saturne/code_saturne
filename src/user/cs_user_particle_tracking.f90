@@ -27,7 +27,7 @@ subroutine uslaed &
 
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ibord  ,                                              &
+   itepa  ,                                                       &
    dt     , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
    auxl1  , auxl2  , auxl3  )
@@ -85,8 +85,6 @@ subroutine uslaed &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! ibord            ! ia ! <-- ! number of the boundary face of part./wall      !
-!   (nbpmax)       !    !     ! interaction                                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! transported variables at the current           !
 ! (ncelet,*)       !    !     ! and previous time step                         !
@@ -140,7 +138,7 @@ implicit none
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep)  , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
@@ -248,9 +246,9 @@ do iiii = 1,nvls
 
   call lagitg                                                     &
   !==========
-   ( nbpmax , nvp    , nvp1   ,                                   &
+   ( nbpmax , nvp    , nvp1   , nivep ,                           &
      ipl    ,                                                     &
-     itepa(1,jisor)  , ibord  ,                                   &
+     itepa  ,                                                     &
      ettp   , ettpa  , auxl1  , auxl2  , tsvar  )
 
 enddo
@@ -273,7 +271,7 @@ subroutine uslafe &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ibord  ,                                              &
+   itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
@@ -314,8 +312,6 @@ subroutine uslafe &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep)   !    !     !                                                !
-! ibord(nbpmax)    ! ia ! --> ! if nordre=2, contains the number of the        !
-!                  !    !     ! boundary face of particle/wall interaction     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers for      !
 ! (ncelet,*)       !    !     ! the current and the previous time step         !
@@ -382,7 +378,7 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep) , ibord(nbpmax)
+integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
