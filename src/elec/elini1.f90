@@ -104,19 +104,23 @@ if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
 endif
 
 if (ippmod(ielarc).ge.2) then
-  ivar = isca(ipotva)
-  iconv (ivar) = 0
-  istat (ivar) = 0
-  idiff (ivar) = 1
-  idifft(ivar) = 0
-  idircl(ivar) = 1
-  imgr  (ivar) = 0
+  do idimve = 1, ndimve
+    ivar = isca(ipotva(idimve))
+    iconv (ivar) = 0
+    istat (ivar) = 0
+    idiff (ivar) = 1
+    idifft(ivar) = 0
+    idircl(ivar) = 1
+    imgr  (ivar) = 0
+  enddo
 endif
 
 ! --> "Viscosite" associee au potentiel vecteur
 !     (c'est la seule qui est constante)
 if (ippmod(ielarc).ge.2) then
-  visls0(ipotva) = 1.d0
+  visls0(ipotva(1)) = 1.d0
+  visls0(ipotva(2)) = 1.d0
+  visls0(ipotva(3)) = 1.d0
 endif
 
 ! --> Schmidt ou Prandtl turbulent

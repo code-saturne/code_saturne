@@ -144,10 +144,14 @@ endif
 if (ippmod(ielarc).ge.2) then
 
   ! Vector potential
-  call add_model_field('vec_potential', 'POT_VEC', ndimve, ipotva)
-  f_id = ivarfl(isca(ipotva))
-  call field_set_key_double(f_id, kscmin, -grand)
-  call field_set_key_double(f_id, kscmax, +grand)
+  do idimve = 1, ndimve
+    write(f_name,'(a14,i2.2)') 'vec_potential_',idimve
+    write(f_label,'(a7,i2.2)') 'POT_VEC',idimve
+    call add_model_scalar_field(f_name, f_label, ipotva(idimve))
+    f_id = ivarfl(isca(ipotva(idimve)))
+    call field_set_key_double(f_id, kscmin, -grand)
+    call field_set_key_double(f_id, kscmax, +grand)
+  enddo
 endif
 
 ! 1.3 Conduction ionique
@@ -205,7 +209,9 @@ enddo
 ! ---- "Viscosite dynamique moleculaire" = 1
 !                                  pour le potentiel vecteur en Arc
 if (ippmod(ielarc).ge.2) then
-  ivisls(ipotva) = 0
+  do idimve = 1, ndimve
+    ivisls(ipotva(idimve)) = 0
+  enddo
 endif
 
 ! ---- Cp est variable ; pas sur que ce soit indispensable pour le verre

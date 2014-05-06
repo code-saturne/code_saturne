@@ -127,8 +127,6 @@ double precision, dimension(:,:,:), pointer :: cofbtp
 double precision, dimension(:), pointer :: crom, yplbr
 double precision, dimension(:,:), pointer :: vel
 
-double precision, allocatable, dimension(:,:,:) :: gradv
-
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
@@ -809,7 +807,6 @@ if (numtyp.eq.-1) then
       .or. ippmod(ielion).ge.1) then
 
     allocate(grad(ncelet,3))
-    allocate(gradv(3, 3 ,ncelet))
 
     if (.true.) then
 
@@ -936,23 +933,104 @@ if (numtyp.eq.-1) then
 
     if (.true. .and. ippmod(ielarc).ge.2) then
 
-      ! A Component
+      ! Ax Component
 
-      ivar = isca(ipotva)
+      ivar = isca(ipotva(1))
 
-      iprev = 0
       inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
 
-      call field_gradient_vector(ivarfl(ivar), iprev, imrgra, inc,     &
-                                 gradv)
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad)
 
       ! B = rot A ( B = curl A)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = gradv(2,3,iel) - gradv(3,2,iel)
-        tracel(2 + (iloc-1)*idimt) = gradv(3,1,iel) - gradv(1,3,iel)
-        tracel(3 + (iloc-1)*idimt) = gradv(1,2,iel) - gradv(2,1,iel)
+        tracel(1 + (iloc-1)*idimt) =  zero
+        tracel(2 + (iloc-1)*idimt) =  grad(iel,3)
+        tracel(3 + (iloc-1)*idimt) = -grad(iel,2)
+      enddo
+
+      ! Ay component
+
+      ivar = isca(ipotva(2))
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad)
+
+      ! B = rot A (B = curl A)
+
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) - grad(iel,3)
+        tracel(3 + (iloc-1)*idimt) = tracel(3 + (iloc-1)*idimt) + grad(iel,1)
+      enddo
+
+      ! Az component
+
+      ivar = isca(ipotva(3))
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad   )
+
+      ! B = rot A (B = curl A)
+
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) + grad(iel,2)
+        tracel(2 + (iloc-1)*idimt) = tracel(2 + (iloc-1)*idimt) - grad(iel,1)
       enddo
 
       idimt  = 3
@@ -1025,7 +1103,6 @@ if (numtyp.eq.-1) then
 
     ! Free memory
     deallocate(grad)
-    deallocate(gradv)
 
   endif
 

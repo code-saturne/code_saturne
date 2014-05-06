@@ -236,9 +236,11 @@ irb = 0
 
 ! ---> Initialisation pour l'effet Joule , Arc electrique et conduction ionique
 
-ipotr  = 0
-ipoti  = 0
-ipotva = 0
+ipotr     = 0
+ipoti     = 0
+ipotva(1) = 0
+ipotva(2) = 0
+ipotva(3) = 0
 do iesp=1,ngazgm
   iycoel(iesp) = 0
 enddo

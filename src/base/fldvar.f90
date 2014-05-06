@@ -970,7 +970,7 @@ integer, intent(out)         :: iscal
 ! Local variables
 
 integer  ivar, id, ii
-integer  type_flag, location_id
+integer  type_flag, location_id,  keycpl
 logical  interleaved, has_previous
 
 integer, save :: keyvar = -1
@@ -991,6 +991,7 @@ endif
 ! Create field
 
 if (keysca.lt.0) then
+  call field_get_key_id('coupled', keycpl)
   call field_get_key_id("scalar_id", keysca)
   call field_get_key_id("variable_id", keyvar)
 endif
@@ -1008,29 +1009,29 @@ endif
 ivar = nvar + 1
 nvar = nvar + dim
 nscal = nscal + dim
+iscal = nscaus + nscapp + 1
 nscapp = nscapp + dim
-iscal = nscaus + nscapp - dim + 1
 
 ! Check we have enough slots
 call fldvar_check_nvar
 call fldvar_check_nscapp
 
-isca(iscal) = nvar - dim + 1
-iscapp(nscapp - dim + 1) = iscal
-ivarfl(isca(iscal)) = id
-ipprtp(isca(iscal)) = nvpp + 1
 nvpp = nvpp + dim
 
-do ii = 2, dim
-  isca(iscal + ii - 1) = isca(iscal) + ii - 1
+do ii = 1, dim
+  isca(iscal + ii - 1) =  nvar - dim + ii
   ivarfl(isca(iscal + ii - 1)) = id
-  ipprtp(isca(iscal + ii - 1)) = ipprtp(isca(iscal)) -1 + ii
-  iscapp(nscapp - dim + ii) = iscal
+  ipprtp(isca(iscal + ii - 1)) = nvpp - dim + ii
+  iscapp(nscapp - dim + ii) = iscal + ii - 1
 enddo
 
 call field_set_key_int(id, keyvar, nvar)
 call field_set_key_int(id, keysca, iscal)
 call field_set_key_int(id, keyipp, ipprtp(isca(iscal)))
+
+if (dim .gt. 1) then
+  call field_set_key_int(id, keycpl, 1)
+endif
 
 return
 

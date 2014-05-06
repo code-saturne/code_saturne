@@ -1255,7 +1255,7 @@ _init_boundaries(const int  *nfabor,
                                "thermophysical_models",
                                "atmospheric_flows",
                                "variable");
-        cs_gui_get_text_values(path_meteo, &size);
+        size = cs_gui_get_nb_element(path_meteo);
         BFT_FREE(path_meteo);
 
         for (int j = 0; j < size; j++)
@@ -1264,7 +1264,7 @@ _init_boundaries(const int  *nfabor,
           cs_xpath_add_elements(&path_meteo, 2,
                                  "thermophysical_models",
                                  "atmospheric_flows");
-          cs_xpath_add_element_num(&path_meteo, "variable", j);
+          cs_xpath_add_element_num(&path_meteo, "variable", j +1);
           cs_xpath_add_element(&path_meteo, "name");
           cs_xpath_add_function_text(&path_meteo);
           char *name = cs_gui_get_text_value(path_meteo);
@@ -1283,7 +1283,7 @@ _init_boundaries(const int  *nfabor,
                                "thermophysical_models",
                                "joule_effect",
                                "variable");
-        cs_gui_get_text_values(path_elec, &size);
+        size = cs_gui_get_nb_element(path_elec);
         BFT_FREE(path_elec);
 
         for (int j = 0; j < size; j++)
@@ -1292,10 +1292,9 @@ _init_boundaries(const int  *nfabor,
           cs_xpath_add_elements(&path_elec, 2,
                                  "thermophysical_models",
                                  "joule_effect");
-          cs_xpath_add_element_num(&path_elec, "variable", j);
-          cs_xpath_add_element(&path_elec, "name");
-          cs_xpath_add_function_text(&path_elec);
-          char *name = cs_gui_get_text_value(path_elec);
+          cs_xpath_add_element_num(&path_elec, "variable", j +1);
+          cs_xpath_add_attribute(&path_elec, "name");
+          char *name = cs_gui_get_attribute_value(path_elec);
 
           cs_field_t *c = cs_field_by_name_try(name);
 
