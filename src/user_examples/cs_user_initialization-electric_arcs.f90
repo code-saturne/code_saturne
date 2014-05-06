@@ -234,10 +234,10 @@ if ( isuite.eq.0 ) then
 
 !     -- Vector potential (3D electric arc 3D)
   if ( ippmod(ielarc).ge.2 ) then
-    do iel = 1, ncel
-      rtp(iel,isca(ipotva)    ) = 0.d0
-      rtp(iel,isca(ipotva) + 1) = 0.d0
-      rtp(iel,isca(ipotva) + 2) = 0.d0
+    do idimve = 1, ndimve
+      do iel = 1, ncel
+        rtp(iel,isca(ipotva(idimve))) = 0.d0
+      enddo
     enddo
   endif
 

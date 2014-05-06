@@ -322,13 +322,11 @@ do ilelt = 1, nlelt
   ! the electrodes (see above)
 
   if (ippmod(ielarc).ge.2) then
-    ii = ipotva
-    icodcl(ifac,isca(ii))       = 3
-    rcodcl(ifac,isca(ii),3)     = 0.d0
-    icodcl(ifac,isca(ii) + 1)   = 3
-    rcodcl(ifac,isca(ii) + 1,3) = 0.d0
-    icodcl(ifac,isca(ii) + 2)   = 3
-    rcodcl(ifac,isca(ii) + 2,3) = 0.d0
+    do idim= 1,ndimve
+      ii = ipotva(idim)
+      icodcl(ifac,isca(ii))   = 3
+      rcodcl(ifac,isca(ii),3) = 0.d0
+    enddo
   endif
 
 enddo
@@ -546,13 +544,11 @@ do ilelt = 1, nlelt
         cdgfbo(3,ifac) .le. -2.249d-2  .or.                      &
         cdgfbo(3,ifac) .ge.  2.249d-2      ) then
       iel = ifabor(ifac)
-      ii = ipotva
-      icodcl(ifac,isca(ii))   = 1
-      rcodcl(ifac,isca(ii),1) = rtpa(iel,isca(ii))
-      icodcl(ifac,isca(ii) + 1)   = 3
-      rcodcl(ifac,isca(ii) + 1,3) = rtpa(iel,isca(ii) + 1)
-      icodcl(ifac,isca(ii) + 2)   = 3
-      rcodcl(ifac,isca(ii) + 2,3) = rtpa(iel,isca(ii) + 2)
+      do idim = 1, ndimve
+        ii = ipotva(idim)
+        icodcl(ifac,isca(ii))   = 1
+        rcodcl(ifac,isca(ii),1) = rtpa(iel,isca(ii))
+      enddo
     endif
   endif
 
@@ -626,13 +622,11 @@ do ilelt = 1, nlelt
   ! Vector potential : Zero flux
 
   if (ippmod(ielarc).ge.2) then
-    ii = ipotva
-    icodcl(ifac,isca(ii))   = 3
-    rcodcl(ifac,isca(ii),3) = 0.d0
-    icodcl(ifac,isca(ii) + 1)   = 3
-    rcodcl(ifac,isca(ii) + 1,3) = 0.d0
-    icodcl(ifac,isca(ii) + 2)   = 3
-    rcodcl(ifac,isca(ii) + 2,3) = 0.d0
+    do idim= 1,ndimve
+      ii = ipotva(idim)
+      icodcl(ifac,isca(ii))   = 3
+      rcodcl(ifac,isca(ii),3) = 0.d0
+    enddo
   endif
 
 enddo
