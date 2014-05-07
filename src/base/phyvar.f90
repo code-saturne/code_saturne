@@ -410,8 +410,8 @@ if (iok.eq.1) then
         visten(2,iel) = rottke*rtp(iel,ir22)
         visten(3,iel) = rottke*rtp(iel,ir33)
         visten(4,iel) = rottke*rtp(iel,ir12)
-        visten(5,iel) = rottke*rtp(iel,ir13)
-        visten(6,iel) = rottke*rtp(iel,ir23)
+        visten(5,iel) = rottke*rtp(iel,ir23)
+        visten(6,iel) = rottke*rtp(iel,ir13)
       enddo
 
     ! LRR or SSG
@@ -424,8 +424,8 @@ if (iok.eq.1) then
         visten(2,iel) = rottke*rtp(iel,ir22)
         visten(3,iel) = rottke*rtp(iel,ir33)
         visten(4,iel) = rottke*rtp(iel,ir12)
-        visten(5,iel) = rottke*rtp(iel,ir13)
-        visten(6,iel) = rottke*rtp(iel,ir23)
+        visten(5,iel) = rottke*rtp(iel,ir23)
+        visten(6,iel) = rottke*rtp(iel,ir13)
       enddo
     endif
 
