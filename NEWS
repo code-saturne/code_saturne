@@ -68,6 +68,17 @@ Architectural changes
 - Finalized cleanup of handling of boundary condition coefficients. Fields now allocate
   their coefficients, rather than map them from a common array.
 
+Bug fixes:
+----------
+
+ - Fix bug in the Generalized Gradient Diffusion Hypothesis (GGDH).
+      - swich between two components (R13 and R23): this is not impacting the validation
+        database because this model is only validated on 2D test cases
+        where the R13 and R23 components are both 0.
+      - from version 3.1, it is impacting all the Rij-epsilon calculations
+        because from this version, the Daly Harlow model is passed by default on Rij
+        (this model induces a GGDH on Rij and epsilon).
+
 Release 3.2.0 (4 Dec 2013)
 ==========================
 
