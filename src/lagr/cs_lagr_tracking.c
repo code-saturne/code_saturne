@@ -1115,6 +1115,7 @@ _create_lagr_halo(size_t  extents)
   assert(n_halo_cells == halo->index[2*halo->n_c_domains]);
   assert(n_halo_cells == mesh->n_ghost_cells);
 
+  lagr_halo->extents = extents;
   lagr_halo->n_cells = n_halo_cells;
 
   /* Allocate buffers to enable the exchange between communicating ranks */
@@ -1126,10 +1127,6 @@ _create_lagr_halo(size_t  extents)
 
   lagr_halo->send_buf_size = CS_LAGR_MIN_COMM_BUF_SIZE;
   lagr_halo->recv_buf_size = CS_LAGR_MIN_COMM_BUF_SIZE;
-
-  MPI_Aint lb, extent;
-  MPI_Type_get_extent(_cs_mpi_particle_type, &lb, &extent);
-  lagr_halo->extents = extents;
 
   BFT_MALLOC(lagr_halo->send_buf,
              lagr_halo->send_buf_size * extents,
