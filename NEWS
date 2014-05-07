@@ -16,6 +16,11 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix bug in the Generalized Gradient Diffusion Hypothesis (GGDH):
+  swich between two components (R13 and R23): this is not impacting the validation
+  database because this model is only validated on 2D test cases
+  where the R13 and R23 components are both 0. 
+
 - PDF documentation is now correctly installed from ".tar.gz" distribution
   release (built by "make dist") even when LaTeX is not present.
 

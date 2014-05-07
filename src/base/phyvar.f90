@@ -459,8 +459,8 @@ if (iok.eq.1) then
       visten(2,iel) = csteps*rtp(iel,ir22)
       visten(3,iel) = csteps*rtp(iel,ir33)
       visten(4,iel) = csteps*rtp(iel,ir12)
-      visten(5,iel) = csteps*rtp(iel,ir13)
-      visten(6,iel) = csteps*rtp(iel,ir23)
+      visten(5,iel) = csteps*rtp(iel,ir23)
+      visten(6,iel) = csteps*rtp(iel,ir13)
     enddo
 
   else
