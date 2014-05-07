@@ -155,6 +155,11 @@ module optcal
   !> initcp : =1 si  chaleur specifique relue dans un suite
   integer, save ::          initcp
 
+  !> ibdtso : backward differential scheme in time order
+  ! TODO: only for velocity prediction step at the moment, ibdtso should be
+  ! updated to array of size nscamx.
+  integer, save ::          ibdtso
+
   !> initvs : =1 si  diffusivite scalaire relue dans un suite
   integer, save ::          initvs(nscamx)
 

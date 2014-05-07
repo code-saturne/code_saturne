@@ -555,7 +555,10 @@ thetsn =-999.d0
 !     Noter cpdt que le TS d'acc. masse n'est pas regi par I..EXT
 !       (il suit bilsc2)
 isto2t = -999
-thetst =-999.d0
+thetst = -999.d0
+
+! Backward differential time scheme order
+ibdtso = -999
 
 !    -- Proprietes physiques
 !     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau

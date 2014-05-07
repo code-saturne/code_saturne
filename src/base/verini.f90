@@ -387,6 +387,13 @@ do iscal = 1, nscal
   endif
 enddo
 
+if (ischtp.eq.2.and.ibdtso.gt.1) then
+  ! NB: this test does not prevent from incompatible user modifications of
+  ! isno2t, thetav, etc.
+  write(nfecra,1135)
+  iok = iok + 1
+endif
+
 !     Test du theta de la diffusivite des scalaires et de Cp : ils doivent etre
 !       variables en (en espace) si on les extrapole (en temps) (...)
 if ( icpext.gt.0 .and. icp.le.0 ) then
@@ -2110,6 +2117,19 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute',                             /,&
 '@',                                                            /,&
+'@  Verifier les parametres donnes via l''interface',           /,&
+'@    ou cs_user_parameters.f90.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 1135 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ERREUR :     ARRET A L''ENTREE DES DONNEES',              /,&
+'@    ========',                                                /,&
+'@   LE CHOIX DU SCHEMA EN TEMPS ISCHTP = 2 N''EST PAS',        /,&
+'@   COMPATIBLE AVEC IBDTSO > 1',                               /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -4683,6 +4703,19 @@ endif
 '@',                                                            /,&
 '@  Computation will NOT proceed',                              /,&
 '@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 1135 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ERROR :      WHEN READING INPUT DATA',                    /,&
+'@    ========',                                                /,&
+'@   CHOICE OF TIME-SCHEME ISCHTP = 2 IS NOT COMPATIBLE WITH',  /,&
+'@   IBDTSO > 1',                                               /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&

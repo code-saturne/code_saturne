@@ -116,7 +116,11 @@ BEGIN_C_DECLS
   \var  cs_field_t::location_id
         Id of matching mesh location
   \var  cs_field_t::n_time_vals
-        Number of time values (1 or 2)
+        Number of time values
+  \var  cs_field_t::vals
+        vals[0][:] is a pointer to val
+        vals[1][:] is a pointer to val_pre
+        vals[p][:] is a pointer to p ith previous field values
   \var  cs_field_t::val
         For each active location, pointer to matching values array
   \var  cs_field_t::val_pre
@@ -1345,11 +1349,13 @@ cs_field_set_n_time_vals(cs_field_t  *f,
   if (_n_time_vals < 1)
     _n_time_vals = 1;
 
-  else if (_n_time_vals > 2)
+  else if (_n_time_vals > 3)
     bft_error(__FILE__, __LINE__, 0,
               "%s called for field \"%s\" with n_time_vals = %d\n"
-              " but only values 1 and 2 are currently supported.",
+              " but only values 1, 2 and 3 are currently supported.",
               __func__, f->name, n_time_vals);
+  else
+    _n_time_vals = n_time_vals;
 
   if (_n_time_vals == n_time_vals_ini)
     return;
@@ -1752,14 +1758,14 @@ cs_field_current_to_previous(cs_field_t  *f)
 
       if (f->is_owner) {
         if (dim == 1) {
-          for (int kk = 1; kk < f->n_time_vals; kk++) {
+          for (int kk = f->n_time_vals - 1; kk > 0; kk--) {
 #           pragma omp for
             for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
               f->vals[kk][ii] = f->vals[kk-1][ii];
           }
         }
         else {
-          for (int kk = 1; kk < f->n_time_vals; kk++) {
+          for (int kk = f->n_time_vals - 1; kk > 0; kk--) {
 #           pragma omp for
             for (cs_lnum_t ii = 0; ii < _n_elts; ii++) {
               for (cs_lnum_t jj = 0; jj < dim; jj++)

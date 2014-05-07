@@ -383,6 +383,19 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Add terms from backward differentiation in time.
+
+    subroutine cs_backward_differentiation_in_time(field_id,                  &
+                                                   exp_part, imp_part)        &
+      bind(C, name='cs_backward_differentiation_in_time')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: field_id
+      real(kind=c_double), dimension(*), intent(inout) :: exp_part, imp_part
+    end subroutine cs_backward_differentiation_in_time
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for extra operations
 
     subroutine cs_user_extra_operations()  &
@@ -840,10 +853,10 @@ contains
   !> \param[out]  moment_id     id of new moment in case of success,
   !>                            -1 in case of error.
 
-  subroutine time_moment_define_by_field_ids(name, n_fields,                    &
-                                             field_id, component_id,            &
-                                             type, nt_start, t_start,           &
-                                             restart_id,                        &
+  subroutine time_moment_define_by_field_ids(name, n_fields,                   &
+                                             field_id, component_id,           &
+                                             type, nt_start, t_start,          &
+                                             restart_id,                       &
                                              moment_id)
     use, intrinsic :: iso_c_binding
     implicit none

@@ -4,6 +4,9 @@ Trunk (unreleased)
 
 Changes:
 --------
+- Add 2 order backward Euler scheme in time for velocity prediction.
+  Set ibdtso = 2 in usipsu to activate it.
+
 - Add the Shir model for the turbulent diffusion of the second moment turbulence models
   (Rij and epsilon, isotropic diffusion). Available with the idirsm=0.
 
@@ -44,6 +47,8 @@ Changes:
 
 Architectural changes
 ---------------------
+- Velocity field is now created as "owner field" in C (removed from rtp
+  and rtpa). Velocity is now fully interleaved.
 
 - Ensure only platform-independent files are installed to datarootdir
   (either as defined by ${prefix}/share or as ${datarootdir}. Files

@@ -96,6 +96,7 @@ cs_matrix_tuning.c \
 cs_matrix_util.c \
 cs_multigrid.c \
 cs_sles.c \
+cs_bw_time_diff.c \
 bilsca.f90 \
 bilscv.f90 \
 grdcel.f90 \

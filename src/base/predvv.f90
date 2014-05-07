@@ -125,6 +125,7 @@ use ihmpre, only: iihmpr
 use mesh
 use turbomachinery
 use cs_f_interfaces
+use cs_c_bindings
 use cfpoin
 use field
 use field_operator
@@ -1278,6 +1279,13 @@ ipp  = ipprtp(iu)
 ! The computation of esplicit and implicit source terms is performed
 ! at the first iter only.
 if (iterns.eq.1) then
+
+  if (ibdtso.gt.1.and.ntcabs.gt.2.and.(idtvar.eq.0.or.idtvar.eq.1)) then
+    ! TODO: remove test on ntcabs and implemente a "proper" condition for
+    ! initialization.
+    f_id = ivarfl(iu)
+    call cs_backward_differentiation_in_time(f_id, tsexp, tsimp)
+  endif
 
   if (iihmpr.eq.1) then
     call uitsnv (vel, tsexp, tsimp)

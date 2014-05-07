@@ -143,6 +143,7 @@ double precision, allocatable, dimension(:,:) :: l_velocity
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer :: val_vp
 
 !===============================================================================
 !     A noter :
@@ -1006,6 +1007,23 @@ if (iecaux.eq.1) then
   car54 =' End writing the boundary conditions                  '
 #endif
   write(nfecra,1110)car54
+
+  ! Backward differential scheme in time
+  if (ibdtso.gt.1) then
+
+    ! Warning: must be adapted if ivar.ne.iu
+    !          must be adapted if ibdtso.gt.2
+    ivar = iu
+    f_id = ivarfl(ivar)
+    call field_get_val_prev_v(f_id, val_vp)
+    rubriq = 'velocity_prev'
+    itysup = 1 ! cells location
+    nbval = 3 ! interleaved velocity
+    irtyp  = 2 ! double precision
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                val_vp)
+
+  endif
 
 ! ---> Termes sources
 !      Lorsqu'ils sont extrapoles (pour les versions elec, voir plus bas)

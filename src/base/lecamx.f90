@@ -140,6 +140,7 @@ double precision tmpstr(27)
 
 integer, allocatable, dimension(:) :: mflnum
 double precision, dimension(:), pointer :: sval
+double precision, dimension(:,:), pointer :: val_vp
 
 !===============================================================================
 
@@ -1156,12 +1157,31 @@ endif
 
 
 !===============================================================================
-! 7. TERMES SOURCES EXTRAPOLES
+! 7. TERMES SOURCES EXTRAPOLES et TERMES SOURCES SCHEMA EN TEMPS
 !===============================================================================
 
-
-nberro=0
+nberro = 0
 ilu = 0
+
+if (ibdtso.gt.1) then
+
+  ! Warning: must be adapted if ivar.ne.iu
+  !          must be adapted if ibdtso.gt.2
+  ivar = iu
+  f_id = ivarfl(ivar)
+  call field_get_val_prev_v(f_id, val_vp)
+  rubriq = 'velocity_prev'
+  itysup = 1 ! cells location
+  nbval = 3 ! interleaved velocity
+  irtyp  = 2 ! double precision
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+              val_vp,ierror)
+  nberro=nberro+ierror
+
+  ilu = ilu + 1
+
+endif
+
 
 ! ---> Termes sources Navier-Stokes
 
@@ -1461,7 +1481,8 @@ if(isto2t.gt.0) then
     !     si on est deja en k-omega.
     !     Il n'est en effet pas forcement tres judicieux de relire
     !     le TS de k et de mettre 0 pour le TS de eps.
-    !     Quant a essayer de transformer le TS de omega en TS de eps... no comment           !
+    !     Quant a essayer de transformer le TS de omega en TS de eps...
+    !     no comment!
   elseif(iturb.eq.60.and.jturb.eq.60) then
     iptsta = ipproc(itstua)
 

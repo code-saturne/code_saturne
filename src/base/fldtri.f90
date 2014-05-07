@@ -132,6 +132,10 @@ endif
 
 ivar = iu
 
+if (ibdtso.gt.1) then
+  call field_set_n_previous(ivarfl(ivar), ibdtso)
+endif
+
 if (ipass.eq.1) then
   if (ippmod(icompf).ge.0) then
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)
