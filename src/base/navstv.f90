@@ -127,7 +127,7 @@ double precision epsrgp, climgp, extrap, xyzmax(3)
 double precision thetap, xdu, xdv, xdw
 double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
-double precision xnrdis
+double precision xnrdis, xnrtmp
 double precision vitbox, vitboy, vitboz
 double precision t1, t2, t3, t4
 double precision visclc, visctc
@@ -256,14 +256,15 @@ if (nterup.gt.1) then
 
   ! Calcul de la norme L2 de la vitesse
   if (iterns.eq.1) then
-    xnrmu0 = 0.d0
-    !$omp parallel do reduction(+:xnrmu0)
+    xnrtmp = 0.d0
+    !$omp parallel do reduction(+:xnrtmp)
     do iel = 1, ncel
-      xnrmu0 = xnrmu0 +(vela(1,iel)**2        &
+      xnrtmp = xnrtmp +(vela(1,iel)**2        &
                       + vela(2,iel)**2        &
                       + vela(3,iel)**2)       &
                       * volume(iel)
     enddo
+    xnrmu0 = xnrtmp
     if (irangp.ge.0) then
       call parsom (xnrmu0)
       !==========
@@ -1215,15 +1216,15 @@ if (nterup.gt.1) then
 
   icvrge = 1
 
-  xnrmu = 0.d0
-  !$omp parallel do reduction(+:xnrmu0) private(xdu, xdv, xdw)
+  xnrtmp = 0.d0
+  !$omp parallel do reduction(+:xnrtmp) private(xdu, xdv, xdw)
   do iel = 1,ncel
     xdu = vel(1,iel) - uvwk(1,iel)
     xdv = vel(2,iel) - uvwk(2,iel)
     xdw = vel(3,iel) - uvwk(3,iel)
-    xnrmu = xnrmu +(xdu**2 + xdv**2 + xdw**2)     &
-                                * volume(iel)
+    xnrtmp = xnrmu +(xdu**2 + xdv**2 + xdw**2) * volume(iel)
   enddo
+  xnrmu = xnrtmp
   ! --->    TRAITEMENT DU PARALLELISME
 
   if (irangp.ge.0) call parsom (xnrmu)
