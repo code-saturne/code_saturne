@@ -268,9 +268,13 @@ endif
 ! The choice made in VARPOS specifies that we will only be interested in
 ! properties at cell centers (no mass flux, nor density at the boundary).
 
+f_id = -1
 do iprop = 1, nproce
   if (iprop.eq.ipcrom .or. iprop.eq.ipcroa) cycle
-  call field_map_values(iprpfl(iprop), propce(1, iprop), propce(1, iprop))
+  if (iprpfl(iprop).ne.f_id) then
+    f_id = iprpfl(iprop)
+    call field_map_values(iprpfl(iprop), propce(1, iprop), propce(1, iprop))
+  endif
 enddo
 
 ! Reserved fields whose ids are not saved (may be queried by name)
