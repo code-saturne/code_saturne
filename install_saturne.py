@@ -619,7 +619,7 @@ class Setup:
                     url="http://sourceforge.net/projects/cgns/files/cgnslib_3.2/%s/download")
 
         p = self.packages['cgns']
-        p.config_opts = "-CGNS_DENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
+        p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
 
         # MED library
 
