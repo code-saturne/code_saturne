@@ -367,15 +367,15 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cflags_default="-qlanglvl=stdc99 -q64"
     cflags_default_opt="-O3"
     cflags_default_hot="-O3"
-    cflags_default_dbg="-g"
-    cflags_default_prf="-pg"
+    cflags_default_dbg="-g -qfullpath"
+    cflags_default_prf="-pg -qfullpath"
     cflags_default_omp="-qsmp=omp -qthreaded"
 
     # Default  linker flags
     ldflags_default=""
     ldflags_default_opt="-O3"
-    ldflags_default_dbg="-g"
-    ldflags_default_prf="-pg"
+    ldflags_default_dbg="-g -qfullpath"
+    ldflags_default_prf="-pg -qfullpath"
     ldflags_rpath="-R"
 
     # Adjust options for IBM Blue Gene cross-compiler
