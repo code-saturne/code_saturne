@@ -475,14 +475,14 @@ if ( irangp .ge. 0 ) then
   call parcpt(nbpartall)
 endif
 
-!
 if (nbpartall.eq.0) goto 20
 
-! On enregistre l'element de depart de la particule
+! Record particle's starting cell and rank, and reset order 1 switch
 
 do ip = 1,nbpart
   itepa(ip,jisora) = itepa(ip,jisor)
   itepa(ip,jirka) = irangp
+  itepa(ip,jord1) = 0
 enddo
 
 !===============================================================================
