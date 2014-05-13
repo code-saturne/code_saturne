@@ -336,6 +336,13 @@ nbval  = 1
 irtyp  = 1
 call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iale)
 
+!  ---> Cavitation
+rubriq = 'cavitation'
+itysup = 0
+nbval  = 1
+irtyp  = 1
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,icavit)
+
 rubriq = 'instant_mobile_precedent'
 itysup = 0
 nbval  = 1
@@ -401,6 +408,9 @@ if (iale.eq.1) then
   nomrtp(iuma)='vit_maillage_u_ce'
   nomrtp(ivma)='vit_maillage_v_ce'
   nomrtp(iwma)='vit_maillage_w_ce'
+endif
+if (icavit.ge.0) then
+  nomrtp(ivoidf)='taux_vide_ce'
 endif
 
 !     Dans le cas ou il y a plusieurs phases,
@@ -559,6 +569,13 @@ if (iecaux.eq.1) then
   irtyp  = 1
   call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iale)
 
+  !  ---> Cavitation
+  rubriq = 'cavitation'
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,icavit)
+
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des dimensions et des options     '
@@ -603,7 +620,8 @@ if (iecaux.eq.1) then
   endif
 
   !     Masse volumique si elle est variable uniquement
-  if (irovar.eq.1) then
+  !     La masse volumique est egalement ecrite pour le modele de cavitation
+  if (irovar.eq.1.or.icavit.ge.0) then
     !          Masse volumique - cellules
     rubriq = 'rho_ce_phase'//cphase
     itysup = 1
@@ -611,6 +629,16 @@ if (iecaux.eq.1) then
     irtyp  = 2
     call field_get_val_s(icrom, sval)
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
+
+    ! Masse volumique du pdt precedent - cellules (uniquement pour cavitation)
+    if (icavit.ge.0) then
+      rubriq = 'rho_old_ce_phase'//cphase
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      call field_get_val_prev_s(icrom, sval)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
+    endif
 
     !          Masse volumique - faces de bord
     rubriq = 'rho_fb_phase'//cphase
@@ -621,7 +649,8 @@ if (iecaux.eq.1) then
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
   endif
 
-  !     On n'ecrit les proprietes physiques que si on les extrapole.
+  !     On n'ecrit les proprietes physiques que si on les extrapole ou
+  !     pour le modele de cavitation
   !       On pourrait les ecrire a tous les coups en prevision d'une
   !       suite avec extrapolation, mais
   !          - c'est rare
@@ -631,9 +660,9 @@ if (iecaux.eq.1) then
   !       Une exception : on ecrit egalement Cp en effet joule pour
   !         pouvoir calculer la temperature H/Cp en debut de calcul
 
-  if (iviext.gt.0) then
-    !         Viscosite moleculaire - cellules (si variable)
-    if (ivivar.eq.1) then
+  if (iviext.gt.0.or.icavit.ge.0) then
+    !         Viscosite moleculaire - cellules (si variable ou cavitation)
+    if (ivivar.eq.1.or.icavit.ge.0) then
       rubriq = 'viscl_ce_phase'//cphase
       itysup = 1
       nbval  = 1
@@ -642,13 +671,15 @@ if (iecaux.eq.1) then
                   propce(1,ipproc(iviscl)))
     endif
 
-    !         Viscosite turbulente ou de sous-maille - cellules
-    rubriq = 'visct_ce_phase'//cphase
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propce(1,ipproc(ivisct)))
+    if (iviext.gt.0) then
+      !         Viscosite turbulente ou de sous-maille - cellules
+      rubriq = 'visct_ce_phase'//cphase
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,ipproc(ivisct)))
+    endif
   endif
 
   if ((icpext.gt.0.and.icp.gt.0).or.              &
@@ -774,6 +805,9 @@ if (iecaux.eq.1) then
     nomflu(ivma)='fm_vit_maill_v'
     nomflu(iwma)='fm_vit_maill_w'
   endif
+  if (icavit.ge.0) then
+    nomflu(ivoidf)='fm_taux_vide'
+  endif
 
   ! For variables
 
@@ -877,6 +911,9 @@ if (iecaux.eq.1) then
     nomflu(iuma)='fm_a_vit_maill_u'
     nomflu(ivma)='fm_a_vit_maill_v'
     nomflu(iwma)='fm_a_vit_maill_w'
+  endif
+  if (icavit.ge.0) then
+    nomflu(ivoidf)='fm_a_taux_vide'
   endif
 
   do ivar = 1, nvar
@@ -989,6 +1026,9 @@ if (iecaux.eq.1) then
     nomcli(ivma)='_vit_maillage_v'
     nomcli(iwma)='_vit_maillage_w'
   endif
+  if (icavit.ge.0) then
+    nomcli(ivoidf)='_taux_vide'
+  endif
 
   call restart_write_bc_coeffs(impavx)
 
@@ -1030,7 +1070,7 @@ if (iecaux.eq.1) then
 
   iecr = 0
 
-! ---> Termes sources Navier-Stokes
+! ---> Termes sources Navier-Stokes (plus taux de vide si cavitation)
 
   !     Si les termes sont a l'ordre 2
   if (isno2t.gt.0) then
@@ -1053,6 +1093,12 @@ if (iecaux.eq.1) then
     rubriq = 'tsource_ns_ce_z_phase'//cphase
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                 propce(1,iptsna+2))
+
+    if (icavit.ge.0) then
+      rubriq = 'tsource_vf_ce_phase'//cphase
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                propce(1,iptsna+3))
+    endif
 
   endif
 

@@ -19,44 +19,40 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine lecamo &
-!================
-
- ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
-   dt     , rtp    , propce ,                                     &
-   frcxt  , prhyd  )
-
 !===============================================================================
+! Function :
+! --------
 
-! FONCTION :
-! ----------
-! LECTURE DES FICHIERS SUITE
+!> \file lecamo.f90
+!>
+!> \brief Reading of restart file.
+!>
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
-! rtp              ! tr ! --> ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant        )          !
-! propce           ! tr ! --> ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
-! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-! prhyd(ncelet)    ! ra ! --> ! pression hydrostatic predite                   !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     nfac          number of inner faces
+!> \param[in]     nfabor        number of boundary faces
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[out]    dt            time step (per cell)
+!> \param[out]    rtp           calculated variables at cell centers
+!> \param[out]    propce        physical properties at cell centers
+!> \param[out]    frcxt         external forces making hydrostatic pressure
+!> \param[out]    prhyd         predicted hydrostatic pressure
+!_______________________________________________________________________________
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+
+subroutine lecamo &
+ ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
+   dt     , rtp    , propce ,                                     &
+   frcxt  , prhyd  )
+
 !===============================================================================
 
 !===============================================================================
@@ -78,7 +74,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel   , nfabor
+integer          ncelet , ncel   , nfac   , nfabor
 integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,nflown:nvar)
@@ -118,8 +114,8 @@ if (ileaux.eq.1) then
 
   call lecamx &
   !==========
-( ncelet , ncel   , nfabor , nvar   , nscal  ,       &
-  dt     , propce ,                                  &
+( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  , &
+  dt     , propce ,                                     &
   frcxt  , prhyd  )
 
 endif

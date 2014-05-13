@@ -67,6 +67,7 @@ use ppincl
 use cplsat
 use field
 use mesh
+use cavitation
 
 !===============================================================================
 
@@ -91,6 +92,7 @@ integer          iptsna, iptsta, iptsca
 integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          f_id, f_id_prv, f_dim
+integer          kscmin, kscmax
 
 logical          interleaved
 
@@ -98,7 +100,7 @@ double precision xxk, xcmu, trii
 
 double precision rvoid(1)
 
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: brom, crom, crom_prev2
 double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
@@ -145,18 +147,25 @@ enddo
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
-!     Masse volumique aux cellules (et au pdt precedent si ordre2 ou icalhy)
+!     Masse volumique aux cellules (et au pdt precedent si ordre2 ou icalhy
+!     ou cavitation)
 do iel = 1, ncel
   crom(iel)  = ro0
 enddo
-if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
+if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0) then
   call field_current_to_previous(icrom)
+endif
+if (icavit.ge.0) then
+  call field_get_val_s(icroaa, crom_prev2)
+  do iel = 1, ncelet
+    crom_prev2(iel) = crom(iel)
+  enddo
 endif
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)
 do ifac = 1, nfabor
   brom(ifac) = ro0
 enddo
-if (iroext.gt.0) then
+if (iroext.gt.0.or.icavit.ge.0) then
   call field_current_to_previous(ibrom)
 endif
 
@@ -289,7 +298,6 @@ do iel = 1, ncel
   rtp(iel,ipr) = pred0
 enddo
 
-
 !     Toutes les variables a 0
 f_id = -1
 
@@ -320,6 +328,22 @@ do ivar = 1, nvar
     enddo
   endif
 enddo
+
+! On definit les clipping du taux de vide et on initialize au clipping inf.
+if (icavit.ge.0) then
+
+  call field_get_key_id("min_scalar_clipping", kscmin)
+  call field_get_key_id("max_scalar_clipping", kscmax)
+
+  call field_set_key_double(ivarfl(ivoidf), kscmin, clvfmn)
+  call field_set_key_double(ivarfl(ivoidf), kscmax, clvfmx)
+
+  call field_get_val_s(ivarfl(ivoidf), field_s_v)
+  do iel = 1, ncel
+    field_s_v(iel) = clvfmn
+  enddo
+
+endif
 
 !===============================================================================
 ! 5. INITIALISATION DE K, RIJ ET EPS
@@ -558,6 +582,11 @@ if(isno2t.gt.0) then
       propce(iel,iptsna+ii-1) = 0.d0
     enddo
   enddo
+  if (icavit.ge.0) then
+    do iel = 1, ncel
+      propce(iel,iptsna+3) = 0.d0
+    enddo
+  endif
 endif
 
 !     les termes sources turbulents

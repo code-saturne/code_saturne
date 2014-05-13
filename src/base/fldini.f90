@@ -283,6 +283,26 @@ enddo
 
 !====================================================================
 
+! Cavitation: the void fraction has its spectific convective flux
+
+if (icavit.ge.0) then
+
+  itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
+
+  ityloc = 2  ! inner faces
+  f_name = 'inner_void_fraction_flux'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_int(ivarfl(ivoidf), kimasf, f_id)
+
+  ityloc = 3 ! boundary faces
+  f_name = 'boundary_void_fraction_flux'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_int(ivarfl(ivoidf), kbmasf, f_id)
+
+endif
+
+!====================================================================
+
 ! Combustion
 
 if (iirayo .gt. 0) then

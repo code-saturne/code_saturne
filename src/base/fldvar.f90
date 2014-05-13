@@ -177,6 +177,13 @@ else
 endif
 iconv (ipr) = 0
 
+! Void fraction (cavitating flows)
+
+if (icavit.ge.0) then
+  call add_variable_field('void_fraction', 'Void Fraction', 1, ivoidf)
+  idiff(ivoidf) = 0
+endif
+
 ! --- Turbulence
 
 if (itytur.eq.2) then

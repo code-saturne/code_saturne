@@ -50,6 +50,7 @@ use cplsat
 use ppincl
 use mesh
 use field
+use cavitation
 
 !===============================================================================
 
@@ -889,6 +890,12 @@ epsdp  = 1.0d-12
 iphydr = 0
 icalhy = -1
 
+! --- Cavitation module (not activated by default)
+!       -1: module not activated
+!        0: no vaporization/condensation model
+!        1: Merkle's model
+icavit = -1
+
 ! --- No Bernoulli free entrance faces
 iifren = 0
 
@@ -1402,7 +1409,14 @@ tslagr => rvoid2
 nullify(dlgeo)
 
 !===============================================================================
-! 14. SORTIE
+! 14. INITIALISATION DES PARAMETRES DU MODULE DE CAVITATION
+!===============================================================================
+
+call init_cavitation
+!===================
+
+!===============================================================================
+! 15. SORTIE
 !===============================================================================
 
 return

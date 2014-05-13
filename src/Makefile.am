@@ -48,6 +48,7 @@ $(top_srcdir)/src/base/field_operator.f90 \
 $(top_srcdir)/src/base/alaste.f90 \
 $(top_srcdir)/src/base/albase.f90 \
 $(top_srcdir)/src/base/alstru.f90 \
+$(top_srcdir)/src/base/cavitation.f90 \
 $(top_srcdir)/src/base/cplsat.f90 \
 $(top_srcdir)/src/base/cstphy.f90 \
 $(top_srcdir)/src/base/cstnum.f90 \
@@ -93,6 +94,7 @@ $(top_srcdir)/src/base/turbomachinery.f90
 
 $(top_srcdir)/src/base/albase.f90: cplsat.lo optcal.lo
 $(top_srcdir)/src/base/alstru.f90: paramx.lo
+$(top_srcdir)/src/base/cavitation.f90: cstphy.lo field.lo numvar.lo optcal.lo pointe.lo mesh.lo paramx.lo entsor.lo parall.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
 $(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo field.lo field_operator.lo

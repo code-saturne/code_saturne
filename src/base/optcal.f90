@@ -782,6 +782,23 @@ module optcal
   !> \}
 
   !----------------------------------------------------------------------------
+  ! Homogeneous mixture modelling
+  !----------------------------------------------------------------------------
+
+  !> \defgroup homegeneous_mixture Homogeneous mixture modelling
+
+  !> \addtogroup homegeneous_mixture
+  !> \{
+
+  !> cavitation module
+  !>    - -1: module not activated
+  !>    -  0: no vaporization/condensation model
+  !>    -  1: Merkle's model
+  integer, save :: icavit
+
+  !> \}
+
+  !----------------------------------------------------------------------------
   ! Temporal mean and moments calculation
   !----------------------------------------------------------------------------
 

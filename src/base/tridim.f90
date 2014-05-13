@@ -146,7 +146,7 @@ double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
-double precision, dimension(:), pointer :: brom, crom, crom_prev
+double precision, dimension(:), pointer :: brom, crom, crom_prev, crom_prev2
 
 double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
@@ -399,8 +399,17 @@ do ivar = 1, nvar
   endif
 enddo
 
+! If required, the density at time step n-2 is updated
+if (icavit.ge.0) then
+  call field_get_val_prev_s(icrom, crom_prev)
+  call field_get_val_s(icroaa, crom_prev2)
+  do iel = 1, ncelet
+    crom_prev2(iel) = crom_prev(iel)
+  enddo
+endif
+
 ! If required, the density at time step n-1 is updated
-if (icalhy.eq.1.or.idilat.gt.1) then
+if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0) then
   call field_get_val_s(icrom, crom)
   call field_get_val_prev_s(icrom, crom_prev)
   do iel = 1, ncelet

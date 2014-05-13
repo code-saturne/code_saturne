@@ -1738,7 +1738,7 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 8. Rotating frame and unsteady rotor/stator coupling : 9000 formats
+! 8. Rotating frame and unsteady rotor/stator coupling: 9000 formats
 !===============================================================================
 
 if (icorio.ne.0 .and. icorio.ne.1) then
@@ -1764,6 +1764,24 @@ endif
 if (iturbo.eq.2.and.iilagr.ne.0) then
     write(nfecra,9012)
     iok = iok + 1
+endif
+
+!===============================================================================
+! 10. Cavitation modelling: 9100 formats
+!===============================================================================
+
+if (icavit.ge.0) then
+  ! For now, cavitation model is not compatible with the handling of
+  ! hydrostatic pressure
+  if (iphydr.ne.0) then
+    write(nfecra,9110) iphydr
+    iok = iok + 1
+  endif
+  ! Cavitation model is not compatible with dilatable or low-mach algorithms
+  if (idilat.gt.1) then
+    write(nfecra,9120) idilat
+    iok = iok + 1
+  endif
 endif
 
 !===============================================================================
@@ -4351,6 +4369,39 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 9110  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@   LE MODELE DE CAVITATION N''EST PAS COMPATIBLE AVEC LES',   /,&
+'@     ALGORITHMES DE PRISE EN COMPTE DE LA PRESSION',          /,&
+'@     HYDROSTATIQUE',                                          /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  L''indicateur IPHYDR a ete positionne a', i10,              /,&
+'@    par l''interface ou dans cs_user_parameter.f90',          /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9120  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@   LE MODELE DE CAVITATION N''EST PAS COMPATIBLE AVEC LES',   /,&
+'@     ALGORITHMES D''ECOULEMENTS DILATABLES OU BAS-MACH',      /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  L''indicateur IDILAT a ete positionne a', i10,              /,&
+'@    par l''interface ou dans cs_user_parameter.f90',          /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
 
 #else
 
@@ -6934,6 +6985,38 @@ endif
 '@     WITH THE LAGRANGIAN MODULE',                             /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9110  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@   THE CAVITATION MODEL IS NOT COMPATIBLE WITH THE HANDLING', /,&
+'@     OF HYDROSTATIC PRESSURE ALGORITHMS',                     /,&
+'@',                                                            /,&
+'@  Computation CAN NOT run',                                   /,&
+'@',                                                            /,&
+'@  Integer parameter IPHYDR was set to', i10,                  /,&
+'@    through the User Interface or in cs_user_parameters.f90.',/,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9120  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@   THE CAVITATION MODEL IS NOT COMPATIBLE WITH THE',          /,&
+'@     DILATABLE OR LOW-MACH FLOWS ALGORITHMS',                 /,&
+'@',                                                            /,&
+'@  Computation CAN NOT run',                                   /,&
+'@',                                                            /,&
+'@  Integer parameter IDILAT was set to', i10,                  /,&
+'@    through the User Interface or in cs_user_parameters.f90.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

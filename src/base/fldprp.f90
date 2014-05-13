@@ -264,6 +264,12 @@ if (icp.ne.0) then
   call add_property_field('specific_heat', 'Specific Heat', icp)
 endif
 
+! Density at the second previous time step for cavitation algorithm
+if (icavit.ge.0) then
+  call add_property_field('density_old', 'Density Old', iromaa)
+  icroaa = iprpfl(iromaa)
+endif
+
 ! Cs^2 si on est en LES dynamique
 if (iturb.eq.41) then
   call add_property_field('smagorinsky_constant^2', 'Csdyn2', ismago)

@@ -301,6 +301,10 @@ module pointe
   !> symmetric tensor cell visco
   double precision, allocatable, dimension(:,:) :: visten
 
+  !> liquid-vapour mass transfer term for cavitating flows
+  !> and its derivative with respect to pressure
+  double precision, allocatable, dimension(:) :: gamcav, dgdpca
+
   !> \}
 
   !=============================================================================
@@ -445,6 +449,12 @@ contains
       if (idtvar.ge.0) then
         allocate(straio(ncelet,6))
       endif
+    endif
+
+    ! liquid-vapour mass transfer term for cavitating flows
+    ! and its part implicit in pressure
+    if (icavit.ge.0) then
+      allocate(gamcav(ncelet), dgdpca(ncelet))
     endif
 
     return
@@ -605,6 +615,7 @@ contains
     if (allocated(s2kw)) deallocate(s2kw, divukw)
     if (allocated(straio))  deallocate(straio)
     if (allocated(b_head_loss)) deallocate(b_head_loss)
+    if (allocated(gamcav)) deallocate(gamcav, dgdpca)
 
     return
 

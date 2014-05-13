@@ -373,9 +373,10 @@ if (idilat.eq.4) then
   call field_set_key_int(id, keyvis, 0)
 endif
 
-! The density at the previous time step is required if idilat>1 or if
-! we perform a hydrostatic pressure correction (icalhy=1)
-if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.ippmod(icompf).ge.0) then
+! The density at the previous time step is required if idilat>1 or icavit>=0 or
+! if we perform a hydrostatic pressure correction (icalhy=1)
+if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0 &
+     .or.ippmod(icompf).ge.0) then
   nproce = nproce + 1
   iroma  = nproce
   call field_set_n_previous(iprpfl(irom), 1)
@@ -400,9 +401,15 @@ if (icp.ne.0) then
 endif
 
 ! On a besoin d'un tableau pour les termes sources de Navier Stokes
-!  a extrapoler. Ce tableau est NDIM
+!  a extrapoler. Ce tableau est NDIM dans le cas general et NDIM+1
+!  si on extrapole aussi les termes sources de l equation sur le taux
+!  de vide pour le modele de cavitation.
 if (isno2t.gt.0) then
-  call add_property_field_nd('navier_stokes_st_prev', '', 3, itsnsa)
+  if (icavit.ge.0) then
+    call add_property_field_nd('navier_stokes_st_prev', '', 3, itsnsa)
+  else
+    call add_property_field_nd('navier_stokes_st_prev', '', 4, itsnsa)
+  endif
 endif
 
 if (isto2t.gt.0) then

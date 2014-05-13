@@ -145,6 +145,18 @@ if (ipass.eq.1) then
   call field_init_bc_coeffs(ivarfl(ivar))
 endif
 
+! Void fraction for cavitation
+!-----------------------------
+
+if (icavit.ge.0) then
+  ivar = ivoidf
+  call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
+  if (ipass .eq. 1) then
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+    call field_init_bc_coeffs(ivarfl(ivar))
+  endif
+endif
+
 ! Turbulence
 !-----------
 

@@ -491,7 +491,7 @@ if (isuite.eq.1) then
 
   call lecamo &
   !==========
- ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
+ ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
    dt     , rtp    , propce ,                                     &
    frcxt  , prhyd  )
 

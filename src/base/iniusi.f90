@@ -148,7 +148,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb , irccor , idirsm , itherm, icp)
+call usipph(iihmpu , nfecra , iturb , irccor , idirsm , itherm, icp, icavit)
 
 ! --- ALE parameters
 
@@ -474,7 +474,6 @@ call comcoc(imrgra)
 !      1er passage
 call varpos
 !==========
-
 
 !===============================================================================
 ! 5. INITIALISATION DE PARAMETRES UTILISATEUR (entree sorties)

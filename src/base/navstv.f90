@@ -91,6 +91,7 @@ use lagdim, only: ntersl
 use turbomachinery
 use ptrglo
 use field
+use cavitation
 
 !===============================================================================
 
@@ -121,6 +122,7 @@ integer          nswrgp, imligp, iwarnp
 integer          nbrval, iappel, iescop
 integer          ndircp, icpt
 integer          numcpl
+integer          iflvoi, iflvob
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, surf  , rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3)
@@ -149,6 +151,7 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:), allocatable :: coefa_dp, coefb_dp
+double precision, dimension(:), allocatable :: xinvro
 
 double precision, dimension(:,:), pointer :: grdphd
 double precision, dimension(:,:), pointer :: vel, vela
@@ -162,7 +165,9 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: brom, crom, viscl, visct
+double precision, dimension(:), pointer :: brom, crom, croma, viscl, visct
+double precision, dimension(:), pointer :: ivoifl, bvoifl
+double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
 
 !===============================================================================
@@ -347,7 +352,18 @@ if ( ippmod(icompf).ge.0 ) then
 endif
 
 !===============================================================================
-! 4. Velocity prediction step
+! 4. Compute liquid-vapour mass transfer term for cavitating flows
+!===============================================================================
+
+if (icavit.ge.0) then
+
+  call cavitation_compute_source_term (rtpa(:,ipr), rtpa(:,ivoidf))
+  !==================================
+
+endif
+
+!===============================================================================
+! 5. Velocity prediction step
 !===============================================================================
 
 iappel = 1
@@ -539,7 +555,7 @@ if (iprco.le.0) then
 endif
 
 !===============================================================================
-! 4. Update mesh for unsteady turbomachinery computations
+! 6. Update mesh for unsteady turbomachinery computations
 !===============================================================================
 
 if (iturbo.eq.2 .and. iterns.eq.1) then
@@ -723,7 +739,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 endif
 
 !===============================================================================
-! 5. Pressure correction step
+! 7. Pressure correction step
 !===============================================================================
 
 if (iwarni(iu).ge.1) then
@@ -751,7 +767,7 @@ if (ippmod(icompf).lt.0) then
 endif
 
 !===============================================================================
-! 6. Mesh velocity solving (ALE)
+! 8. Mesh velocity solving (ALE)
 !===============================================================================
 
 if (iale.eq.1) then
@@ -764,8 +780,18 @@ if (iale.eq.1) then
 endif
 
 !===============================================================================
-! 7. Update of the fluid velocity field
+! 9. Update of the fluid velocity field
 !===============================================================================
+
+! Mass flux initialization for cavitating flows
+if (icavit.ge.0) then
+  do ifac = 1, nfac
+    imasfl(ifac) = 0.d0
+  enddo
+  do ifac = 1, nfabor
+    bmasfl(ifac) = 0.d0
+  enddo
+endif
 
 if (ippmod(icompf).lt.0) then
 
@@ -811,13 +837,29 @@ if (ippmod(icompf).lt.0) then
     !Allocation
     allocate(gradp(ncelet,3))
 
-    call grdpot &
-    !==========
-    ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
-      iwarnp , epsrgp , climgp , extrap ,                            &
-      dfrcxt ,                                                       &
-      drtp   , coefa_dp        , coefb_dp        ,                   &
-      gradp  )
+    if (icavit.ge.0) then
+      call grdpot &
+      !==========
+      ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+        iwarnp , epsrgp , climgp , extrap ,                            &
+        dfrcxt ,                                                       &
+        drtp   , coefa_dp        , coefb_dp        ,                   &
+        gradp  )
+    else
+      allocate(xinvro(ncelet))
+      do iel = 1, ncel
+        xinvro(iel) = 1.d0/crom(iel)
+      enddo
+
+      call grdpre &
+      !==========
+      ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+        iwarnp , epsrgp , climgp , extrap ,                            &
+        drtp   , xinvro , coefa_dp , coefb_dp ,                        &
+        gradp  )
+
+      deallocate(xinvro)
+    endif
 
     thetap = thetav(ipr)
     !$omp parallel do private(isou)
@@ -1077,7 +1119,57 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 endif
 
 !===============================================================================
-! 8. Compute error estimators for correction step and the global algo
+! 10. Cavitation: void fraction solving and update the mixture density/viscosity
+!      and mass flux (resopv solved the convective flux of void fraction, divU)
+!===============================================================================
+
+if (icavit.ge.0) then
+
+  ! Void fraction solving
+
+  call resvoi(dt, rtp, rtpa)
+  !==========
+
+  ! Halo synchronization
+
+  call synsca(rtp(:,ivoidf))
+  !==========
+
+  ! Get the void fraction boundary conditions
+
+  call field_get_coefa_s(ivarfl(ivoidf), coavoi)
+  call field_get_coefb_s(ivarfl(ivoidf), cobvoi)
+
+  ! Get the convective flux of the void fraction
+
+  call field_get_key_int(ivarfl(ivoidf), kimasf, iflvoi)
+  call field_get_key_int(ivarfl(ivoidf), kbmasf, iflvob)
+  call field_get_val_s(iflvoi, ivoifl)
+  call field_get_val_s(iflvob, bvoifl)
+
+  ! Update mixture density/viscosity and mass flux
+
+  call cavitation_update_phys_prop &
+  !===============================
+ ( rtp(:,ivoidf), coavoi, cobvoi, ivoifl, bvoifl, &
+   crom, brom, propce(:,ipproc(iviscl)), imasfl, bmasfl )
+
+  ! Verbosity
+
+  if (mod(ntcabs,ntlist).eq.0.and.iterns.eq.nterup) then
+
+    call field_get_val_prev_s(icrom, croma)
+
+    call cavitation_print_mass_budget &
+    !================================
+   ( crom, croma, dt, imasfl, bmasfl )
+
+  endif
+
+endif
+
+!===============================================================================
+! 11. Compute error estimators for correction step and the global algo
 !===============================================================================
 
 if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
@@ -1207,7 +1299,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 endif
 
 !===============================================================================
-! 9. Loop on the velocity/Pressure coupling (PISO)
+! 12. Loop on the velocity/Pressure coupling (PISO)
 !===============================================================================
 
 if (nterup.gt.1) then
@@ -1275,7 +1367,7 @@ if (ippmod(icompf).lt.0) then
 endif
 
 !===============================================================================
-! 10. Printing
+! 13. Printing
 !===============================================================================
 
 if (iwarni(iu).ge.1) then

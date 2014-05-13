@@ -212,6 +212,7 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, cfbale, clbale
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cofadp, cofbdp
 double precision, dimension(:,:), pointer :: vel, vela
+double precision, dimension(:), pointer :: crom
 
 !===============================================================================
 
@@ -668,7 +669,7 @@ if (ipatrg.ne.0) then
 endif
 
 !===============================================================================
-! 7. Symmetry for vectors and tensors
+! 8. Symmetry for vectors and tensors
 !       (u,v,w,Rij)
 !===============================================================================
 !   On a besoin de velipb et de rijipb
@@ -688,7 +689,7 @@ if (iclsym.ne.0) then
 endif
 
 !===============================================================================
-! 8. Velocity: Outlet, Dirichlet and Neumann and convectiv outlet
+! 9. Velocity: Outlet, Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 ! ---> Outlet: in case of incomming mass flux, the mass flux is set to zero.
@@ -881,13 +882,14 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 9. Pressure: Dirichlet and Neumann and convective outlet
+! 10. Pressure: Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 call field_get_coefa_s(ivarfl(ipr), coefap)
 call field_get_coefb_s(ivarfl(ipr), coefbp)
 call field_get_coefaf_s(ivarfl(ipr), cofafp)
 call field_get_coefbf_s(ivarfl(ipr), cofbfp)
+if (icavit.ge.0)  call field_get_val_s(icrom, crom)
 
 do ifac = 1, nfabor
 
@@ -899,11 +901,13 @@ do ifac = 1, nfabor
   ! If a flux dt.grad P (W/m2) is set in cs_user_boundary
   if (idften(ipr).eq.1) then
     hint = dt(iel)/distbf
+    if (icavit.ge..0)  hint = hint/crom(iel)
   else if (idften(ipr).eq.3) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
            + dttens(3, iel)*surfbo(3,ifac)**2              &
            ) / (surfbn(ifac)**2 * distbf)
+    if (icavit.ge.0)  hint = hint/crom(iel)
   ! Symmetric tensor diffusivity
   elseif (idften(ipr).eq.6) then
 
@@ -949,6 +953,7 @@ do ifac = 1, nfabor
     fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
 
     hint = viscis/surfbn(ifac)/fikis
+    if (icavit.ge.0)  hint = hint/crom(iel)
 
   endif
 
@@ -1023,9 +1028,73 @@ do ifac = 1, nfabor
 
 enddo
 
+!===============================================================================
+! 11. Void fraction (cavitation): Dirichlet and Neumann and convective outlet
+!===============================================================================
+
+if (icavit.ge.0) then
+
+  call field_get_coefa_s(ivarfl(ivoidf), coefap)
+  call field_get_coefb_s(ivarfl(ivoidf), coefbp)
+  call field_get_coefaf_s(ivarfl(ivoidf), cofafp)
+  call field_get_coefbf_s(ivarfl(ivoidf), cofbfp)
+
+  do ifac = 1, nfabor
+
+    ! hint in unused since there is no diffusion for the void fraction
+    hint = 1.d0
+
+    ! Dirichlet Boundary Condition
+    !-----------------------------
+
+    if (icodcl(ifac,ivoidf).eq.1) then
+
+      pimp = rcodcl(ifac,ivoidf,1)
+      hext = rcodcl(ifac,ivoidf,2)
+
+      call set_dirichlet_scalar &
+      !====================
+    ( coefap(ifac), cofafp(ifac),                        &
+      coefbp(ifac), cofbfp(ifac),                        &
+      pimp              , hint              , hext )
+
+    endif
+
+    ! Neumann Boundary Conditions
+    !----------------------------
+
+    if (icodcl(ifac,ivoidf).eq.3) then
+
+      qimp = rcodcl(ifac,ivoidf,3)
+
+      call set_neumann_scalar &
+      !==================
+    ( coefap(ifac), cofafp(ifac),                        &
+      coefbp(ifac), cofbfp(ifac),                        &
+      qimp              , hint )
+
+      ! Convective Boundary Conditions
+      !-------------------------------
+
+    elseif (icodcl(ifac,ivoidf).eq.2) then
+
+      pimp = rcodcl(ifac,ivoidf,1)
+      cfl = rcodcl(ifac,ivoidf,2)
+
+      call set_convective_outlet_scalar &
+      !==================
+    ( coefap(ifac), cofafp(ifac),                        &
+      coefbp(ifac), cofbfp(ifac),                        &
+      pimp              , cfl               , hint )
+
+    endif
+
+  enddo
+
+endif
 
 !===============================================================================
-! 10. Turbulent quantities: Dirichlet and Neumann and convectiv outlet
+! 12. Turbulent quantities: Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 ! ---> k-epsilon and k-omega
@@ -1744,7 +1813,7 @@ elseif (iturb.eq.70) then
 endif
 
 !===============================================================================
-! 11. Other scalars (except variances):
+! 13. Other scalars (except variances):
 !     Dirichlet and Neumann and convectiv outlet
 !===============================================================================
 
@@ -2162,7 +2231,7 @@ if (nscal.ge.1) then
 endif
 
 !===============================================================================
-! 13. Mesh velocity (ALE module): Dirichlet and Neumann and convective outlet
+! 14. Mesh velocity (ALE module): Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 if (iale.eq.1) then
@@ -2249,7 +2318,7 @@ if (iale.eq.1) then
 endif
 
 !===============================================================================
-! 14. Compute stresses at boundary (step 1 over 5)
+! 15. Compute stresses at boundary (step 1 over 5)
 !===============================================================================
 
 if (ineedf.eq.1 .and. iterns.eq.1) then
@@ -2288,7 +2357,7 @@ deallocate(velipb)
 if (allocated(rijipb)) deallocate(rijipb)
 
 !===============================================================================
-! 15. Formats
+! 16. Formats
 !===============================================================================
 
 #if defined(_CS_LANG_FR)

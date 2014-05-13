@@ -296,6 +296,7 @@ prehyd.f90 \
 prmoy0.f90 \
 pthrbm.f90 \
 resopv.f90 \
+resvoi.f90 \
 scalai.f90 \
 schtmp.f90 \
 stdtcl.f90 \

@@ -129,6 +129,8 @@ use cs_c_bindings
 use cfpoin
 use field
 use field_operator
+use pointe, only: gamcav
+use cavitation
 
 !===============================================================================
 
@@ -201,7 +203,7 @@ double precision rvoid(1)
 
 ! Working arrays
 double precision, allocatable, dimension(:,:) :: eswork
-double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:) :: grad, gradni
 double precision, dimension(:,:), allocatable :: smbr
 double precision, dimension(:,:,:), allocatable :: fimp
 double precision, dimension(:,:), allocatable :: gavinj
@@ -209,6 +211,7 @@ double precision, dimension(:,:), allocatable :: tsexp
 double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
+double precision, dimension(:), allocatable :: xinvro
 double precision, dimension(:), pointer :: brom, crom, croma, pcrom
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
@@ -360,9 +363,51 @@ else
   iprev = 1
 endif
 
-call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
-                              iccocg, iphydr,                     &
-                              frcxt, grad)
+if (icavit.ge.0) then
+  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
+                                iccocg, iphydr,                     &
+                                frcxt, grad)
+
+else
+
+  ! Cavitating flows: consitency of the gradient with the diffusive flux scheme
+  ! of the correction step
+
+  call field_get_coefa_s (ivarfl(ipr), coefa_p)
+  call field_get_coefb_s (ivarfl(ipr), coefb_p)
+
+  allocate(gradni(ncelet,3))
+  allocate(xinvro(ncelet))
+
+  do iel = 1, ncel
+    xinvro(iel) = 1.d0/crom(iel)
+  enddo
+
+  iccocg = 1
+  inc    = 1
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
+
+  call grdpre (ipr, imrgra, inc, iccocg, nswrgp, imligp,  &
+               iwarnp, epsrgp, climgp, extrap,            &
+               rtpa(1,ipr), xinvro, coefa_p, coefb_p,     &
+               gradni )
+
+  do iel = 1, ncelet
+    do isou = 1, 3
+      grad(isou,iel) = gradni(iel,isou)
+    enddo
+  enddo
+
+  deallocate(gradni)
+  deallocate(xinvro)
+
+endif
+
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
@@ -432,6 +477,9 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 !     Calcul de rho dt/rho*grad P.n aux faces
 !       Pour gagner du temps, on ne reconstruit pas.
   itypfl = 1
+  ! Cavitation algorithm: the pressure step corresponds to the
+  ! correction of the volumetric flux, not the mass flux
+  if (icavit.eq.1)  itypfl = 0
   init   = 1
   inc    = 0
   iflmb0 = 1
@@ -470,6 +518,13 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
       xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))
     enddo
 
+  endif
+
+  ! Cavitation source term
+  if (icavit.gt.0) then
+    do iel = 1, ncel
+      xnormp(iel) = xnormp(iel) -volume(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+    enddo
   endif
 
 !     On conserve XNORMP, on complete avec u* a la fin et
@@ -689,6 +744,10 @@ if (iappel.eq.1) then
   ! Low Mach compressible Algos
   if (idilat.gt.1.or.ippmod(icompf).ge.0) then
     call field_get_val_prev_s(icrom, pcrom)
+
+  ! Cavitation
+  else if (icavit.ge.0) then
+    call field_get_val_s(icroaa, pcrom)
 
   ! Standard algo
   else
@@ -1822,6 +1881,9 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
   ! To save time, no space reconstruction
   itypfl = 1
+  ! Cavitation algorithm: the pressure step corresponds to the
+  ! correction of the volumetric flux, not the mass flux
+  if (icavit.ge.0)  itypfl = 0
   init   = 1
   inc    = 1
   iflmb0 = 1

@@ -108,7 +108,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb, b_head_loss
+use pointe, only: itypfb, b_head_loss, gamcav, dgdpca
 use albase
 use parall
 use period
@@ -119,6 +119,7 @@ use cplsat
 use mesh
 use field
 use field_operator
+use cavitation
 use cs_f_interfaces
 
 !===============================================================================
@@ -133,11 +134,13 @@ integer          ncesmp
 integer          icetsm(ncesmp)
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision, dimension (1:ncelet), target :: dt
 double precision propce(ncelet,*)
 double precision smacel(ncesmp,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
-double precision tpucou(6, ncelet), trav(3,ncelet)
+double precision, dimension (1:6,1:ncelet), target :: tpucou
+double precision trav(3,ncelet)
 double precision viscf(nfac), viscb(ndimfb)
 double precision drtp(ncelet)
 double precision tslagr(ncelet,*)
@@ -171,6 +174,7 @@ integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
 integer          insqrt
+integer          imvisp
 
 integer          icvflb, f_id0
 integer          ivoid(1)
@@ -205,6 +209,12 @@ double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, allocatable, dimension(:) :: iflux, bflux
+double precision, allocatable, dimension(:) :: xunsro
+double precision, allocatable, dimension(:), target :: xdtsro
+double precision, allocatable, dimension(:,:), target :: tpusro
+double precision, dimension(:), pointer :: viscap
+double precision, dimension(:,:), pointer :: vitenp
+double precision, allocatable, dimension(:,:) :: gradni
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 
@@ -229,6 +239,10 @@ if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet))
 
 ! Diffusive flux Boundary conditions for delta P
 allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
+
+! Associate pointers to pressure diffusion coefficient
+viscap => dt(:)
+if (idften(ipr).eq.6)  vitenp => tpucou(:,:)
 
 ! --- Writing
 call field_get_name(ivarfl(ipr), chaine)
@@ -279,6 +293,44 @@ else
 endif
 
 isqrt = 1
+
+! Initialization dedicated to cavitation module
+if (icavit.ge.0) then
+
+  ! The pressure correction is done through the volumetric flux (that is
+  ! the convective flux of the void fraction), not the mass flux
+  call field_get_key_int(ivarfl(ivoidf), kimasf, iflmas)
+  call field_get_key_int(ivarfl(ivoidf), kbmasf, iflmab)
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
+
+  ! Allocate and initialize specific arrays
+  allocate(xunsro(ncelet))
+  do iel = 1, ncelet
+    xunsro(iel) = 1.d0/crom(iel)
+  enddo
+  if (idften(ipr).eq.1) then
+    allocate(xdtsro(ncelet))
+    do iel = 1, ncelet
+      xdtsro(iel) = dt(iel)/crom(iel)
+    enddo
+  elseif (idften(ipr).eq.6) then
+    allocate(tpusro(6,ncelet))
+    do iel = 1, ncelet
+      tpusro(1,iel) = tpucou(1,iel)*xunsro(iel)
+      tpusro(2,iel) = tpucou(2,iel)*xunsro(iel)
+      tpusro(3,iel) = tpucou(3,iel)*xunsro(iel)
+      tpusro(4,iel) = tpucou(4,iel)*xunsro(iel)
+      tpusro(5,iel) = tpucou(5,iel)*xunsro(iel)
+      tpusro(6,iel) = tpucou(6,iel)*xunsro(iel)
+    enddo
+  endif
+
+  ! Associate pointers to pressure diffusion coefficient
+  viscap => xdtsro(:)
+  if (idften(ipr).eq.6)  vitenp => tpusro(:,:)
+
+endif
 
 !===============================================================================
 ! 2. Norm residual
@@ -340,7 +392,7 @@ if(irnpnw.ne.1) then
   epsrgp = epsrgr(iu )
   climgp = climgr(iu )
   itypfl = 1
-  if (idilat.eq.4) itypfl = 0
+  if (idilat.eq.4.or.icavit.ge.0) itypfl = 0
 
   call inimav &
   !==========
@@ -367,6 +419,13 @@ if(irnpnw.ne.1) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
       res(iel) = res(iel) -volume(iel)*smacel(ii,ipr)
+    enddo
+  endif
+
+  ! Cavitation source term
+  if (icavit.gt.0) then
+    do iel = 1, ncel
+      res(iel) = res(iel) -volume(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
     enddo
   endif
 
@@ -693,11 +752,18 @@ if (idiff(ipr).ge.1) then
 
   ! Scalar diffusivity
   if (idften(ipr).eq.1) then
+
+    if (icavit.ge.0) then
+      imvisp = imvisf
+    else
+      imvisp = 1  ! Cavitation: continuity of the flux across internal faces
+    endif
+
     call viscfa &
     !==========
- ( imvisf ,                                                       &
-   dt     ,                                                       &
-   viscf  , viscb  )
+   ( imvisp ,            &
+     viscap ,            &
+     viscf  , viscb  )
 
   ! Tensor diffusivity
   else if (idften(ipr).eq.6) then
@@ -710,7 +776,7 @@ if (idiff(ipr).ge.1) then
 
     call vitens &
     !==========
-   ( tpucou , iwarnp ,             &
+   ( vitenp , iwarnp ,             &
      weighf , weighb ,             &
      viscf  , viscb  )
 
@@ -746,6 +812,13 @@ if (idilat.eq.3) then
   enddo
 endif
 
+! Implicit part of the cavitation source
+if (icavit.gt.0.and.itscvi.eq.1) then
+  do iel = 1, ncel
+    dam(iel) = dam(iel) - volume(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
+  enddo
+endif
+
 ! Free memory
 deallocate(iflux, bflux)
 
@@ -762,9 +835,34 @@ iccocg = 1
 iprev  = 1
 inc    = 1
 
-call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
-                              iccocg, iphydr,                     &
-                              frcxt, gradp)
+if (icavit.lt.0) then
+  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
+                                iccocg, iphydr,                     &
+                                frcxt, gradp)
+else
+  ! Cavitating flows: continuity of the diffusive flux across internal faces
+  allocate(gradni(ncelet,3))
+
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
+
+  call grdpre (ipr, imrgra, inc, iccocg, nswrgp, imligp,  &
+               iwarnp, epsrgp, climgp, extrap,            &
+               rtp(:,ipr), xunsro, coefa_p , coefb_p,     &
+               gradni )
+
+  do iel = 1, ncelet
+    do isou = 1, 3
+      gradp(isou,iel) = gradni(iel,isou)
+    enddo
+  enddo
+
+  deallocate(gradni)
+endif
 
 do iel = 1, ncelet
   do isou = 1, 3
@@ -868,6 +966,7 @@ iwarnp = iwarni(ipr)
 epsrgp = epsrgr(iu )
 climgp = climgr(iu )
 itypfl = 1
+if (icavit.ge.0) itypfl = 0
 
 call inimav &
 !==========
@@ -951,7 +1050,7 @@ if (arak.gt.0.d0) then
   !-------------------
   if (idften(ipr).eq.1) then
     do iel = 1, ncel
-      dt(iel) = arak*dt(iel)
+      viscap(iel) = arak*viscap(iel)
     enddo
 
     nswrgp = nswrgr(ipr )
@@ -970,7 +1069,7 @@ if (arak.gt.0.d0) then
    rtpa(1,ipr)  ,                                                 &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+   viscap , viscap , viscap ,                                     &
    imasfl , bmasfl )
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
@@ -1007,7 +1106,7 @@ if (arak.gt.0.d0) then
     ! --- Correction du pas de temps
     unsara = 1.d0/arak
     do iel = 1, ncel
-      dt(iel) = dt(iel)*unsara
+      viscap(iel) = viscap(iel)*unsara
     enddo
 
   ! Tensor diffusivity
@@ -1015,12 +1114,12 @@ if (arak.gt.0.d0) then
   else if (idften(ipr).eq.6) then
 
     do iel = 1, ncel
-      tpucou(1,iel) = arak*tpucou(1,iel)
-      tpucou(2,iel) = arak*tpucou(2,iel)
-      tpucou(3,iel) = arak*tpucou(3,iel)
-      tpucou(4,iel) = arak*tpucou(4,iel)
-      tpucou(5,iel) = arak*tpucou(5,iel)
-      tpucou(6,iel) = arak*tpucou(6,iel)
+      vitenp(1,iel) = arak*vitenp(1,iel)
+      vitenp(2,iel) = arak*vitenp(2,iel)
+      vitenp(3,iel) = arak*vitenp(3,iel)
+      vitenp(4,iel) = arak*vitenp(4,iel)
+      vitenp(5,iel) = arak*vitenp(5,iel)
+      vitenp(6,iel) = arak*vitenp(6,iel)
     enddo
 
     nswrgp = nswrgr(ipr)
@@ -1040,29 +1139,29 @@ if (arak.gt.0.d0) then
    rtpa(1,ipr)  ,                                                 &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
+   vitenp ,                                                       &
    weighf , weighb ,                                              &
    imasfl , bmasfl )
 
-   ! Projection du terme source pour oter la partie hydrostat de la pression
-   if (iphydr.eq.1) then
-     init   = 0
-     inc    = 0
-     nswrgp = nswrgr(ipr)
-     imligp = imligr(ipr)
-     iwarnp = iwarni(ipr)
-     epsrgp = epsrgr(ipr)
-     climgp = climgr(ipr)
+    ! Projection du terme source pour oter la partie hydrostat de la pression
+    if (iphydr.eq.1) then
+      init   = 0
+      inc    = 0
+      nswrgp = nswrgr(ipr)
+      imligp = imligr(ipr)
+      iwarnp = iwarni(ipr)
+      epsrgp = epsrgr(ipr)
+      climgp = climgr(ipr)
 
-     ! A 0 boundary coefficient coefbf_dp is passed to projtv
-     ! to cancel boundary terms
-     allocate(cofbfp(ndimfb))
-     do ifac = 1, nfabor
-       cofbfp(ifac) = 0.d0
-     enddo
+      ! A 0 boundary coefficient coefbf_dp is passed to projtv
+      ! to cancel boundary terms
+      allocate(cofbfp(ndimfb))
+      do ifac = 1, nfabor
+        cofbfp(ifac) = 0.d0
+      enddo
 
-     call projtv &
-     !==========
+      call projtv &
+      !==========
    ( init   , nswrgp , ircflp ,                                     &
      frcxt  ,                                                       &
      cofbfp ,                                                       &
@@ -1071,19 +1170,19 @@ if (arak.gt.0.d0) then
      weighf ,                                                       &
      imasfl, bmasfl )
 
-     deallocate(cofbfp)
+      deallocate(cofbfp)
 
-   endif
+    endif
 
     ! --- Correction du pas de temps
     unsara = 1.d0/arak
     do iel = 1, ncel
-      tpucou(1,iel) = unsara*tpucou(1,iel)
-      tpucou(2,iel) = unsara*tpucou(2,iel)
-      tpucou(3,iel) = unsara*tpucou(3,iel)
-      tpucou(4,iel) = unsara*tpucou(4,iel)
-      tpucou(5,iel) = unsara*tpucou(5,iel)
-      tpucou(6,iel) = unsara*tpucou(6,iel)
+      vitenp(1,iel) = unsara*vitenp(1,iel)
+      vitenp(2,iel) = unsara*vitenp(2,iel)
+      vitenp(3,iel) = unsara*vitenp(3,iel)
+      vitenp(4,iel) = unsara*vitenp(4,iel)
+      vitenp(5,iel) = unsara*vitenp(5,iel)
+      vitenp(6,iel) = unsara*vitenp(6,iel)
     enddo
 
   endif
@@ -1100,12 +1199,21 @@ if (arak.gt.0.d0) then
   ! the non-zero value
   if (nbrcpl.gt.0) then
     if (idiff(ipr).ge.1) then
+
+      !Scalar diffusivity
       if (idften(ipr).eq.1) then
+
+        if (icavit.lt.0) then
+          imvisp = imvisf
+        else
+          imvisp = 1
+        endif
+
         call viscfa &
         !==========
-     ( imvisf ,                                                       &
-       dt     ,                                                       &
-       viscf  , viscb  )
+      ( imvisp ,            &
+        viscap ,            &
+        viscf  , viscb  )
 
       ! Tensor diffusivity
       else if (idften(ipr).eq.6) then
@@ -1114,7 +1222,7 @@ if (arak.gt.0.d0) then
 
         call vitens &
         !==========
-       ( tpucou , iwarnp ,             &
+       ( vitenp , iwarnp ,             &
          weighf , weighb ,             &
          viscf  , viscb  )
 
@@ -1271,6 +1379,13 @@ if (iilagr.eq.2 .and. ltsmas.eq.1) then
   enddo
 endif
 
+! --- Cavitation source term
+if (icavit.gt.0) then
+  do iel = 1, ncel
+    divu(iel) = divu(iel) - volume(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+  enddo
+endif
+
 ! --- Initial right hand side
 do iel = 1, ncel
   rhs(iel) = - divu(iel)
@@ -1334,7 +1449,7 @@ if (iswdyp.ge.1) then
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+   viscap , viscap , viscap ,                                     &
    rhs0   )
 
   else if (idften(ipr).eq.6) then
@@ -1349,7 +1464,7 @@ if (iswdyp.ge.1) then
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
+   vitenp ,                                                       &
    weighf , weighb ,                                              &
    rhs0   )
 
@@ -1433,7 +1548,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      coefa_dp  , coefb_dp  ,                                        &
      coefaf_dp , coefbf_dp ,                                        &
      viscf  , viscb  ,                                              &
-     dt     , dt     , dt     ,                                     &
+     viscap , viscap , viscap ,                                     &
      adxk   )
 
     else if (idften(ipr).eq.6) then
@@ -1448,7 +1563,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      coefa_dp  , coefb_dp  ,                                        &
      coefaf_dp , coefbf_dp ,                                        &
      viscf  , viscb  ,                                              &
-     tpucou ,                                                       &
+     vitenp ,                                                       &
      weighf , weighb ,                                              &
      adxk   )
 
@@ -1566,7 +1681,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+   viscap , viscap , viscap ,                                     &
    rhs    )
 
   else if (idften(ipr).eq.6) then
@@ -1581,7 +1696,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
+   vitenp ,                                                       &
    weighf , weighb ,                                              &
    rhs    )
 
@@ -1596,6 +1711,14 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   if (idilat.eq.3) then
     do iel = 1, ncel
       rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
+    enddo
+  endif
+
+  ! Add the implicit part of the cavitation source
+  if (icavit.gt.0.and.itscvi.eq.1) then
+    do iel = 1, ncel
+      rhs(iel) = rhs(iel) + volume(iel)*rtp(iel,ipr) &
+           *dgdpca(iel)*(1.d0/rov - 1.d0/rol)
     enddo
   endif
 
@@ -1674,6 +1797,7 @@ climgp = climgr(ipr)
 extrap = extrag(ipr)
 
 if (idften(ipr).eq.1) then
+
   call itrmas &
   !==========
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
@@ -1684,7 +1808,7 @@ if (idften(ipr).eq.1) then
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+   viscap , viscap , viscap ,                                     &
    imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -1703,7 +1827,7 @@ if (idften(ipr).eq.1) then
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+   viscap , viscap , viscap ,                                     &
    imasfl , bmasfl )
 
 else if (idften(ipr).eq.6) then
@@ -1718,7 +1842,7 @@ else if (idften(ipr).eq.6) then
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
+   vitenp ,                                                       &
    weighf , weighb ,                                              &
    imasfl , bmasfl )
 
@@ -1739,7 +1863,7 @@ else if (idften(ipr).eq.6) then
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
-   tpucou ,                                                       &
+   vitenp ,                                                       &
    weighf , weighb ,                                              &
    imasfl , bmasfl )
 
@@ -2130,6 +2254,11 @@ deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy)
+if (icavit.ge.1) then
+  deallocate(xdtsro)
+  if (allocated(xunsro)) deallocate(xunsro)
+  if (allocated(tpusro)) deallocate(tpusro)
+endif
 
 !--------
 ! Formats

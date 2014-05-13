@@ -67,6 +67,7 @@ use lagran
 use mltgrd
 use mesh
 use field
+use cavitation
 
 !===============================================================================
 
@@ -325,6 +326,87 @@ write(nfecra,9900)
 '       DIFTL0 = ', e14.5,    ' (Ref. dynamic diffusivity    )',/)
 
 #endif
+
+! --- Modele diphasique homogene de cavitation
+
+write(nfecra,2100)
+write(nfecra,2110) icavit
+
+if (icavit.ge.0) then
+
+  write(nfecra,2120) rol, mul
+  write(nfecra,2130) rov, muv
+  if (icavit.eq.1) then
+    write(nfecra,2140) presat, linf, uinf
+  endif
+  if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
+    write(nfecra,2150) icvevm, mcav
+  endif
+
+endif
+
+write(nfecra,9900)
+
+
+#if defined(_CS_LANG_FR)
+
+ 2100 format(                                                     &
+                                                                /,&
+' ** MODELE DIPHASIQUE HOMOGENE DE CAVITATION',                 /,&
+'    ----------------------------------------',                 /)
+ 2110 format(                                                     &
+'       ICAVIT = ',4x,i10,    ' (-1: ecoulement monophasique )',/,&
+'                               ( 0: sans transfert de masse )',/,&
+'                               ( 1: modele de Merkle        )' ,/)
+ 2120 format(                                                     &
+'  -- Phase lique :',                                           /,&
+'       ROL    = ', e14.5,    ' (Masse volumique     de ref. )',/,&
+'       MUL    = ', e14.5,    ' (Visc. molec. dynam. de ref. )',/)
+ 2130 format(                                                     &
+'  -- Phase gazeuse :',                                         /,&
+'       ROV    = ', e14.5,    ' (Masse volumique     de ref. )',/,&
+'       MUV    = ', e14.5,    ' (Visc. molec. dynam. de ref. )',/)
+ 2140 format(                                                     &
+'  -- Modele de vaporisation/condensation (Merkle)',            /,&
+'       PRESAT = ', e14.5,    ' (Pression de saturation      )',/,&
+'       LINF   = ', e14.5,    ' (Longueur de reference       )',/,&
+'       UINF   = ', e14.5,    ' (Vitesse de reference        )',/)
+ 2150 format(                                                     &
+'  -- Correction de viscosite turbulente de Reboud',            /,&
+'       ICVEVM = ',4x,i10,    ' (Active (1) ou non     (0)   )',/,&
+'       MCAV   = ', e14.5,    ' (Constante mcav              )',/)
+
+#else
+
+ 2100 format(                                                     &
+                                                                /,&
+' ** HOMOGENEOUS MIXTURE MODEL FOR CAVITATION',                 /,&
+'    ----------------------------------------',                 /)
+ 2110 format(                                                     &
+'       ICAVIT = ',4x,i10,    ' (-1: single phase flow       )',/,&
+'                               ( 0: no vap./cond. model     )',/,&
+'                               ( 1: Merkle''s model        )' ,/)
+ 2120 format(                                                     &
+'  -- Liquid phase:',                                           /,&
+'       ROL    = ', e14.5,    ' (Reference density           )',/,&
+'       MUL    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
+ 2130 format(                                                     &
+'  -- Gas phase:',                                              /,&
+'       ROV    = ', e14.5,    ' (Reference density           )',/,&
+'       MUV    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
+ 2140 format(                                                     &
+'  -- Vaporization/condensation model (Merkle)',                /,&
+'       PRESAT = ', e14.5,    ' (Saturation pressure         )',/,&
+'       LINF   = ', e14.5,    ' (Reference length scale      )',/,&
+'       UINF   = ', e14.5,    ' (Reference velocity          )',/)
+ 2150 format(                                                     &
+'  -- Eddy-viscosity correction (Reboud correction)',           /,&
+'       ICVEVM = ',4x,i10,    ' (Activated (1) or not (0)    )',/,&
+'       MCAV   = ', e14.5,    ' (mcav constant               )',/)
+
+#endif
+
+! --- Thermique
 
 write(nfecra,2500) itherm, iscalt
 

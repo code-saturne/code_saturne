@@ -109,7 +109,7 @@ integer          ierror, irtyp,  itysup, nbval
 integer          nberro, ilecec
 integer          iturph, jturph, itytph, jtytph
 integer          nfmtsc, nfmtru
-integer          jturb, jtytur, jale, jturbt
+integer          jturb, jtytur, jale, jturbt, jcavit
 integer          impamo
 integer          ival, isou
 integer          f_id
@@ -408,6 +408,25 @@ nberro=nberro+ierror
 if (nberro.ne.0) then
   if (iale.eq.1) write(nfecra,9401)
   jale = 0
+endif
+
+!     Cavitation
+
+nberro = 0
+
+rubriq = 'cavitation'
+itysup = 0
+nbval  = 1
+irtyp  = 1
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jcavit,    &
+            ierror)
+nberro=nberro+ierror
+
+! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
+!       -> on n'affiche le message que si ICAVIT>=0 (sinon RAS)
+if (nberro.ne.0) then
+  if (icavit.ge.0) write(nfecra,9401)
+  jcavit = -1
 endif
 
 ! --->  Stop si pas de temps incoherent
@@ -1092,6 +1111,29 @@ if (iale.eq.1 .and. jale.eq.1) then
 
 endif
 
+!  ---> Cavitation
+
+if (icavit.ge.0 .and. jcavit.ge.0) then
+
+  nberro = 0
+
+  itysup = 1
+  nbval  = 1
+  irtyp  = 2
+
+  rubriq = 'taux_vide_ce'
+  call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+       rtp(1,ivoidf),ierror)
+  nberro=nberro+ierror
+
+  if (nberro.ne.0) then
+    write(nfecra,9514)
+  endif
+
+  write(nfecra,1601)
+
+endif
+
 !================================================================
 ! 6. LECTURE D'INFORMATIONS COMPLEMENTAIRES LEGERES
 !================================================================
@@ -1146,6 +1188,8 @@ return
  1599 format('   Fin de la lecture des scalaires                    '  )
  1600 format('   Fin de la lecture de la vitesse de maillage        ',/,&
        '                                  (methode ALE)       '  )
+ 1601 format('   Fin de la lecture du taux de vide'                  ,/,&
+       '                                (modele de cavitation)'  )
  1799 format(' Fin de la lecture                                    '  )
 
 #else
@@ -1159,6 +1203,7 @@ return
        '        variables complete                            '  )
  1599 format('   Reading scalars complete                           '  )
  1600 format('   Reading the mesh velocity (ALE method) complete    '  )
+ 1601 format('   Reading the void fraction (cavitation) complete'      )
  1799 format(' Reading complete                                     '  )
 
 #endif
@@ -1707,6 +1752,24 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 9514 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : LECTURE DU FICHIER SUITE PRINCIPAL',          /,&
+'@    =========',                                               /,&
+'@',                                                            /,&
+'@      ERREUR LORS DE LA LECTURE DU TAUX DE VIDE',             /,&
+'@        (MODELE DE CAVITATION)',                              /,&
+'@',                                                            /,&
+'@    Verifier que le fichier suite utilise n''a pas ete',      /,&
+'@        endommage.',                                          /,&
+'@',                                                            /,&
+'@    Le calcul peut neanmoins etre execute (taux de vide',     /,&
+'@                                           reinitialisee)'   ,/,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
 
 #else
 
@@ -1998,6 +2061,24 @@ return
 '@    The calculation can be executed however (mesh           ',/,&
 '@                                     velocity reset)        ',/,&
 '@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9514 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING : AT THE MAIN RESTART FILE READING',              /,&
+'@    =========',                                               /,&
+'@',                                                            /,&
+'@      ERROR AT THE READING OF VOID FRACTION',                 /,&
+'@        (CAVITATION MODELING)',                               /,&
+'@',                                                            /,&
+'@    Please check the integrity of the file used as',          /,&
+'@        restart file',                                        /,&
+'@',                                                            /,&
+'@    The calculation can be executed however (void fraction',  /,&
+'@                                             reset)',         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 

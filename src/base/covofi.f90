@@ -655,8 +655,8 @@ if (isso2t(iscal).gt.0) then
   enddo
 endif
 
-! Low Mach compressible algos (conservative in time)
-if (idilat.gt.1) then
+! Low Mach compressible algos (conservative in time). Same algo for cavitation.
+if (idilat.gt.1 .or. icavit.eq.1) then
   call field_get_val_prev_s(icrom, pcrom)
 
 ! Standard algo

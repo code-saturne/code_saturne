@@ -60,6 +60,9 @@ module numvar
   !> velocity component \f$ u_z \f$
   integer, save :: iw
 
+  !> void fraction for cavitation modelling
+  integer, save :: ivoidf
+
   !> turbulent kinetic energy \f$ k \f$
   integer, save :: ik
 
@@ -145,6 +148,9 @@ module numvar
   !> Density at the previous time step
   integer, save :: iroma
 
+  !> Density at the second previous time
+  integer, save :: iromaa
+
   !> dynamic molecular viscosity (in kg/(m.s))
   integer, save :: iviscl
 
@@ -186,6 +192,9 @@ module numvar
 
   !> cell and boundary density field ids of the variables
   integer, save :: icrom, ibrom
+
+  !> cell density at the second previous time step key id of the variables
+  integer, save :: icroaa
 
   !> cell porosity field ids of the properties
   integer, save :: ipori, iporf

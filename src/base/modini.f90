@@ -324,6 +324,18 @@ elseif (ischtp.eq.2) then
   thetav(ipr) = 1.d0
 endif
 
+!     Taux de vide en diphasique homogene
+if (icavit.ge.0) then
+  if (abs(thetav(ivoidf)+999.d0).gt.epzero) then
+    write(nfecra,1031) 'TAUX DE VIDE','THETAV'
+    iok = iok + 1
+  elseif (ischtp.eq.1) then
+    thetav(ivoidf) = 1.d0
+  elseif (ischtp.eq.2) then
+    thetav(ivoidf) = 0.5d0
+  endif
+endif
+
 !     Turbulence (en k-eps : ordre 1)
 if (itytur.eq.2) then
   if (abs(thetav(ik )+999.d0).gt.epzero.or.               &
@@ -527,12 +539,25 @@ enddo
 !                  0 (ie upwind pur) pour le reste
 !   (en particulier, en L.E.S. toutes les variables sont donc en centre)
 
+!  Pour le modele de cavitation on force dans tous les cas le taux de vide en
+!  upwind et on affiche un message si l'utilisateur avait specifie autre chose
+
 ii = iu
 if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
 ii = iv
 if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
 ii = iw
 if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
+
+if (icavit.ge.0) then
+  ii = ivoidf
+  if (abs(blencv(ii)).gt.epzero) then
+    if (abs(blencv(ii)+999.d0).gt.epzero) &
+         write(nfecra,3000) 0.d0, blencv(ii)
+    blencv(ii) = 0.d0
+  endif
+endif
+
 do jj = 1, nscaus
   ii = isca(jj)
   if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
@@ -1363,6 +1388,23 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 3000 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@',                                                            /,&
+'@  Le modele de cavitation necessite un schema upwind pour la',/,&
+'@    convection du taux de vide (BLENCV(IVOIDF)=',e14.5,').',  /,&
+'@  L''utilisateur a choisi BLENCV(IVOIDF)=',e14.5,             /,&
+'@',                                                            /,&
+'@  Le schema upwind pour le taux de vide est force.',          /,&
+'@',                                                            /,&
+'@  Le calcul sera execute.',                                   /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
 
 #else
 
@@ -1532,6 +1574,23 @@ endif
 '@    option for a re-calculation of the wall distance',        /,&
 '@    (ICDPAR=-1). There might be a small shift in the',        /,&
 '@    turbulent viscosity at the first time-step.',             /,&
+'@',                                                            /,&
+'@  The calculation will be run.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 3000 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@',                                                            /,&
+'@  The cavitation model requires an upwind convection scheme' ,/,&
+'@    for the void fraction (BLENCV(IVOIDF)=',e14.5,').',       /,&
+'@  The user has set BLENCV(IVOIDF)=',e14.5,                    /,&
+'@',                                                            /,&
+'@  The upwind scheme for the void fraction is forced.',        /,&
 '@',                                                            /,&
 '@  The calculation will be run.',                              /,&
 '@',                                                            /,&

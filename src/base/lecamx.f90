@@ -20,49 +20,47 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine lecamx &
-!================
-
- ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
-   dt     , propce ,                                              &
-   frcxt  , prhyd  )
-
 !===============================================================================
+! Function :
+! --------
 
-! FONCTION :
-! ----------
-! LECTURE DU FICHIER SUITE AUXILIAIRE
-
-! ON PASSE ICI SI ILEAUX = 1
-! ON S'ARRETE SI ON NE PEUT PAS OUVRIR LE FICHIER
-!          OU SI CE N'EST PAS UN FICHIER AUXILIAIRE
-!          OU SI NCEL N'EST PAS CORRECT
-!          OU SI ON NE PEUT PAS LIRE JPHAS, JTURB, JDTVAR
-!          OU SI ON NE PEUT PAS LIRE UNE MOYENNE QU'ON VEUT POURSUIVRE
+!> \file lecamx.f90
+!>
+!> \brief Reading of aucxiliary restart file.
+!>
+!> Here ileaux = 1.
+!> We stop if:
+!>  - the file cannot be opened
+!>  - the file is not an auxiliary restart file
+!>  - ncel is not correct
+!>  - jturb or jdtvar is not readable
+!>  - a required temporal moment is not readable
+!
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
-! rtp              ! tr ! --> ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant        )          !
-! propce           ! tr ! --> ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
-! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-! prhyd(ncelet)    ! ra ! --> ! hydrostatic pressure predicted                 !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     nfac          number of inner faces
+!> \param[in]     nfabor        number of boundary faces
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[out]    dt            time step (per cell)
+!> \param[out]    propce        physical properties at cell centers
+!> \param[out]    frcxt         external forces making hydrostatic pressure
+!> \param[out]    prhyd         predicted hydrostatic pressure
+!_______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+
+subroutine lecamx &
+ ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
+   dt     , propce ,                                              &
+   frcxt  , prhyd  )
+
 !===============================================================================
 
 !===============================================================================
@@ -90,6 +88,7 @@ use elincl
 use ppcpfu
 use mesh, only: isympa
 use field
+use cavitation
 use cs_c_bindings
 
 !===============================================================================
@@ -98,7 +97,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel   , nfabor
+integer          ncelet , ncel   , nfac   , nfabor
 integer          nvar   , nscal
 
 double precision dt(ncelet)
@@ -132,14 +131,15 @@ integer          ilu   , ilecec, ideblu, iannul, ierrch
 integer          impamx
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
-integer          jturb , jtytur, jale
-integer          f_id, nfld, iflmas, iflmab
+integer          jturb , jtytur, jale, jcavit
+integer          f_id, nfld, iflmas, iflmab, iflvoi, iflvob
 integer          ngbstr(2)
 double precision d2s3  , tsrii
 double precision tmpstr(27)
 
 integer, allocatable, dimension(:) :: mflnum
 double precision, dimension(:), pointer :: sval
+double precision, dimension(:), pointer :: voidfl
 double precision, dimension(:,:), pointer :: val_vp
 
 !===============================================================================
@@ -314,6 +314,25 @@ if (italin.eq.-999) then
   endif
 endif
 
+!     Cavitation
+
+nberro = 0
+
+RUBRIQ = 'cavitation'
+itysup = 0
+nbval  = 1
+irtyp  = 1
+call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,jcavit,    &
+            ierror)
+nberro=nberro+ierror
+
+! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
+!       -> on n'affiche le message que si ICAVIT>=0 (sinon RAS)
+if (nberro.ne.0) then
+  if (icavit.ge.0) write(nfecra,9220)
+  jcavit = -1
+endif
+
 ! --->  Donnees modifiees
 if (iturb .ne. jturb)                             &
      write(nfecra,8220) iturb, jturb
@@ -374,10 +393,11 @@ endif
 !     Pour les suites a rho constant, cependant, on ne la lit pas,
 !       afin de ne pas ecraser la valeur RO0 fixee par l'utilisateur
 !       et eventuellement modifiee.
+!     La masse volumique est egalement lue pour le modele de cavitation
 
 inierr = 0
 
-if (irovar.eq.1) then
+if (irovar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
 
   ! Masse volumique - cellules
   rubriq = 'rho_ce_phase01'
@@ -388,6 +408,18 @@ if (irovar.eq.1) then
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
   nberro = nberro+ierror
   inierr = inierr+ierror
+
+  ! Masse volumique du pdt precedent - cellules (uniquement pour cavitation)
+  if (icavit.ge.0.and.jcavit.ge.0) then
+    rubriq = 'rho_old_ce_phase01'
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+    call field_get_val_prev_s(icrom, sval)
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
+    nberro = nberro+ierror
+    inierr = inierr+ierror
+  endif
 
   ! Masse volumique - faces de bord
   if (nfabok.eq.1) then
@@ -415,16 +447,16 @@ endif
 
 ! ---> Viscosite moleculaire et "turbulente" ou de "sous-maille"
 !     Si elle est extrapolee en temps, on la lit
+!     La viscosite moleculaire est egalement lue pour le modele de cavitation
 !     Si on reussit, on l'indique
 
-!     On cherche a lire uniquement si on doit extrapoler en temps
-if(iviext.gt.0) then
+if(iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
 
   inierr = 0
 
   !         Viscosite moleculaire - cellules
-  !         Uniquement si elle est variable
-  if(ivivar.eq.1) then
+  !         Uniquement si elle est variable ou pour le modele de cavitation
+  if(ivivar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
     RUBRIQ = 'viscl_ce_phase'//CPHASE
     itysup = 1
     nbval  = 1
@@ -436,14 +468,16 @@ if(iviext.gt.0) then
   endif
 
   !         Viscosite turbulente ou de sous-maille - cellules
-  RUBRIQ = 'visct_ce_phase'//CPHASE
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       propce(1,ipproc(ivisct)),ierror)
-  nberro = nberro+ierror
-  inierr = inierr+ierror
+  if(iviext.gt.0) then
+    RUBRIQ = 'visct_ce_phase'//CPHASE
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+         propce(1,ipproc(ivisct)),ierror)
+    nberro = nberro+ierror
+    inierr = inierr+ierror
+  endif
 
   !     Si on a initialise les viscosites, on l'indique (pour schtmp)
   if (inierr.eq.0) then
@@ -760,6 +794,9 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     nomflu(ivma)='fm_vit_maill_v'
     nomflu(iwma)='fm_vit_maill_w'
   endif
+  if (icavit.ge.0) then
+    nomflu(ivoidf)='fm_taux_vide'
+  endif
 
   ! For variables
   do ivar = 1, nvar
@@ -823,6 +860,25 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
       endif
     endif
   enddo
+
+  ! Initialization of the void fraction convective flux, if required
+  if (icavit.ge.0.and.jcavit.lt.0) then
+    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+    call field_get_val_s(iflmas, sval)
+    call field_get_key_int(ivarfl(ivoidf), kimasf, iflvoi)
+    call field_get_val_s(iflvoi, voidfl)
+    do ifac = 1, nfac
+      voidfl(ifac) = sval(ifac)/rol
+    enddo
+
+    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+    call field_get_val_s(iflmab, sval)
+    call field_get_key_int(ivarfl(ivoidf), kbmasf, iflvob)
+    call field_get_val_s(iflvob, voidfl)
+    do ifac = 1, nfabor
+      voidfl(ifac) = sval(ifac)/rol
+    enddo
+  endif
 
   ! An now, the same for the preceding time step
 
@@ -955,6 +1011,9 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     nomflu(ivma)='fm_a_vit_maill_v'
     nomflu(iwma)='fm_a_vit_maill_w'
   endif
+  if (icavit.ge.0) then
+    nomflu(ivoidf)='fm_a_taux_vide'
+  endif
 
   ! For variables
 
@@ -1026,6 +1085,25 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
   enddo
 
   deallocate(mflnum)
+
+  ! Initialization of the void fraction convective flux, if required
+  if (icavit.ge.0.and.jcavit.lt.0) then
+    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+    call field_get_val_s(iflmas, sval)
+    call field_get_key_int(ivarfl(ivoidf), kimasf, iflvoi)
+    call field_get_val_s(iflvoi, voidfl)
+    do ifac = 1, nfac
+      voidfl(ifac) = sval(ifac)/rol
+    enddo
+
+    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+    call field_get_val_s(iflmab, sval)
+    call field_get_key_int(ivarfl(ivoidf), kbmasf, iflvob)
+    call field_get_val_s(iflvob, voidfl)
+    do ifac = 1, nfabor
+      voidfl(ifac) = sval(ifac)/rol
+    enddo
+  endif
 
   ! In case of error, warn but do not stop
   if (nberro.ne.0) then
@@ -1121,6 +1199,9 @@ if (nfabok.eq.1) then
     nomcli(ivma)='_vit_maillage_v'
     nomcli(iwma)='_vit_maillage_w'
   endif
+  if (icavit.ge.0) then
+    nomcli(ivoidf)='_taux_vide'
+  endif
 
   ! Variable BC coefficients
 
@@ -1183,7 +1264,7 @@ if (ibdtso.gt.1) then
 endif
 
 
-! ---> Termes sources Navier-Stokes
+! ---> Termes sources Navier-Stokes (plus taux de vide si cavitation)
 
 !     Si le terme est a l'ordre 2
 if(isno2t.gt.0) then
@@ -1207,6 +1288,13 @@ if(isno2t.gt.0) then
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
        propce(1,iptsna+2),ierror)
   nberro=nberro+ierror
+
+  if (icavit.ge.0) then
+    RUBRIQ = 'tsource_vf_ce_phase'//CPHASE
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+         propce(1,iptsna+3),ierror)
+    nberro=nberro+ierror
+  endif
 
   ilu = ilu + 1
 
@@ -3122,6 +3210,27 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 9220 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
+'@    =========                                     AUXILIAIRE',/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE L''INDICATEUR DE MODELE DE     ',/,&
+'@                                                  CAVITATION',/,&
+'@                                                            ',/,&
+'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
+'@      version anterieure de Code_Saturne, sans modele de    ',/,&
+'@                                                 cavitation.',/,&
+'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
+'@      donnees du modele de cavitation.                      ',/,&
+'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
+'@        pas ete endommage.                                  ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3289,6 +3398,25 @@ return
 '@      version of Code_Saturne, without the ALE method.      ',/,&
 '@    The run will be executed with reinitialising all        ',/,&
 '@      ALE data.                                             ',/,&
+'@                                                            ',/,&
+'@    Verify that the restart file used has not been damaged. ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9220 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ERROR WHILE READING THE AUXILIARY RESTART FILE ',/,&
+'@    =======                                                 ',/,&
+'@                                                            ',/,&
+'@      ERROR WHEN READING THE INDICATOR OF THE CAVITATION    ',/,&
+'@                                                      MODEL ',/,&
+'@                                                            ',/,&
+'@    It is possible that the file read corresponds to an old ',/,&
+'@      version of Code_Saturne, without the cavitation model.',/,&
+'@    The run will be executed with reinitialising all        ',/,&
+'@      cavitation model data.                                ',/,&
 '@                                                            ',/,&
 '@    Verify that the restart file used has not been damaged. ',/,&
 '@                                                            ',/,&

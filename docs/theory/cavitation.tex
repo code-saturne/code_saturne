@@ -1,0 +1,144 @@
+\section{System equations}
+\label{sec:cavit:system_equations}
+The cavitation model is based on an homogeneous mixture model. In this
+model, the physical properties, the density $\rho$ and the dynamic
+viscosity $\mu$, of the mixture depends on a resolved void fraction
+$\alpha$ and constant reference properties $\rho_l, \, \mu_l$ for the
+liquid phase and $\rho_v, \, \mu_v$ for the gas phase, following the
+relations:
+\begin{align}
+%\begin{array}
+\label{eq:cavit:eq_rho}\rho&= \alpha\rho_v+(1-\alpha)\rho_l, \\
+\label{eq:cavit:eq_mu}\mu&= \alpha\mu_v+(1-\alpha)\mu_l.
+%\end{array}
+\end{align}
+In this model, it is assumed that the mixture dynamic is ruled by the
+classical incompressible Navier--Stokes equations:
+\begin{equation}
+\label{eq:cavit:mass}
+\frac{\partial\rho}{\partial t}+\divs \left(\rho\vect{u} \right) = 0,
+\end{equation}
+\begin{equation}
+\label{eq:cavit:qdm}
+\dfrac{\partial }{\partial t}(\rho \vect{u})
++\divv \left( \vect{u}\otimes \rho \vect{u} \right)
+= - \grad P + \divv  \tens{\tau}.
+\end{equation}
+Eq.~\eqref{eq:cavit:qdm} corresponds to the momentum equation in
+Eq.~\eqref{eq:navier_stokes_conservative} where the volume source
+terms have been removed for brevity and $\Gamma\equiv0$ for the mass
+source term.
+
+Using \eqref{eq:cavit:eq_rho}, the mass equation can be splitted into:
+\begin{equation}
+\label{eq:cavit:eq_vf0}
+\der{(\alpha\rho_v)}{t}+\divs(\alpha\rho_v\vect{u}) = \Gamma_V,
+\end{equation}
+\begin{equation}
+\label{eq:cavit:eq_lf0}
+\der{\left((1-\alpha)\rho_l\right)}{t}+\divs\left((1-\alpha)\rho_l\vect{u}\right) = -\Gamma_V ,
+\end{equation}
+with $\Gamma_V$ representing the vaporization (resp. condensation) source (resp. sink)
+term, appearing with an opposite sign in the liquid part of the
+density budget.
+
+Using the fact that the reference densities $\rho_v$ and $\rho_l$ are
+constant, Eqs.~\eqref{eq:cavit:eq_vf0} and \eqref{eq:cavit:eq_lf0} can be easilly
+written in the form:
+\begin{equation}
+\label{eq:cavit:eq_vf1}
+\der{\alpha}{t} + \divs(\alpha\vect{u}) =
+\dfrac{\Gamma_V}{\rho_v},
+\end{equation}
+%
+\begin{equation}
+\label{eq:cavit:eq_lf1}
+\divs(\vect{u})=\Gamma_V\left(\frac{1}{\rho_v}-\frac{1}{\rho_l}\right).
+\end{equation}
+It is seen that the mass equation of the mixture Eq.~\eqref{eq:cavit:eq_rho}
+has been splitted into two equations: one simple convection equation
+which can be used to solve the void fraction and one equation
+structurally similar to the one solved at the correction step of the
+predictior-corrector solver of \CS (see \appendixname~\ref{ap:resopv}).
+The global resolution scheme of the cavitation module is thus the
+following:
+\begin{enumerate}
+\item Prediction of the velocity using Eq.~\eqref{eq:cavit:qdm} (see
+\appendixname~\ref{ap:predvv}).
+\item Correction of the velocity using Eq.~\eqref{eq:cavit:eq_lf1} (see
+\appendixname~\ref{ap:resopv}).
+\item Resolution of the void fraction using Eq.~\eqref{eq:cavit:eq_vf1}.
+\item Update physcal properties of the mixture using
+Eqs.~\eqref{eq:cavit:eq_rho} and \eqref{eq:cavit:eq_mu}.
+\end{enumerate}
+%
+\section{Vaporization source term}
+\label{sec:cavit:source_term}
+In the cavitation module of \CS, the $\Gamma_V$ source term is
+modeled using the Merkle model:
+\begin{equation*}
+\Gamma_v \left(\alpha, P\right) = m^+ + m^-,
+\end{equation*}
+ with:
+\begin{equation}
+m^+ = -\dfrac{C_{prod} \rho_l \min \left( P-P_V,0
+\right)}{0.5\rho_lu_\infty^2t_\infty},\qquad
+m^- = -\dfrac{C_{dest} \rho_v \max \left( P-P_V,0
+\right)}{0.5\rho_lu_\infty^2t_\infty},
+\end{equation}
+and
+$ C_{prod} = 1000, \, C_{dest} = 50 $
+empirical constants, $t_\infty=l_\infty/u_\infty$ a reference time
+scale and $P_V$ the reference saturation pressure. $l_\infty$,
+$u_\infty$ and $P_V$ may be provided by the user.
+%
+\section{Time stepping}\label{sec:cavit:time_stepping}
+At each time step $n$, the global resolution scheme follows successively
+the steps 1 to 4 described above (\S
+\ref{sec:cavit:system_equations}). In this resolution scheme, the physical
+properties are updated at the end of the time step $n$.
+
+\paragraph{Prediction step} The procedure is almost identical to the
+classical one described at \appendixname~\ref{ap:predvv}. Only the
+discretization of the time derivative at the l.h.s of
+Eq.~\eqref{eq:cavit:qdm} is modified in order to take into account that the
+mixture density is updated at the end of the time step. In the
+cavitation algorithm, the time derivative at time step $n+1$ is
+discretized by:
+\begin{equation*}
+\der{}{
+t}(\rho\vect{u})\simeq \frac{\rho^n\widetilde{\vect{u}}^{n+1}-\rho^{n-1}\vect{u}^n}{\Delta t^n},
+\end{equation*}
+%
+with $\widetilde{\vect{u}}^{n+1}$ the predicted velocity at time step
+$n+1$.
+%
+\paragraph{Correction step}
+With the Merkle model described above (\S
+\ref{sec:cavit:source_term}), the correction step equation of the
+cavitation model writes:
+\begin{equation*}
+\divs\left(\frac{1}{\rho}\grad\delta P\right) =
+\divs(\widetilde{u})-\Gamma_V(\alpha,P).
+\end{equation*}
+In this equation, the pressure in the cavitation source term is taken
+implicit while the void fraction is explicit:
+\begin{equation*}
+\divs\left(\frac{1}{\rho}\grad(\delta P)^{n+1}\right) =
+\divs(\widetilde{u}^{n+1})-\Gamma_V(\alpha^n,P^{n+1})\left(\frac{1}{\rho_v}-\frac{1}{\rho_l}\right).
+\end{equation*}
+%
+\paragraph{Void fraction resolution}
+The time discretization of Eq.~\eqref{eq:cavit:eq_lf1} is:
+\begin{equation}\label{eq:cavit:eq_vf_dis}
+\frac{\alpha^{n+1}-\alpha^n}{\Delta t^n}+\divs(\alpha^{n+\theta}\vect{u}^{n+\theta}) =
+\frac{1}{\rho_v}\Gamma_V(\alpha^n,P^{n+1}).
+\end{equation}
+In this equation, the cavitation source term is discretized with the
+time scheme as the one used at the correction step in order to
+ensure the exact mass conservation (it is recalled that the void
+faction transport equation and correction step are two part of the
+mixture mass conservation equation, Eq.~\eqref{eq:cavit:mass}.
+
+%
+%\section{Space discretization}

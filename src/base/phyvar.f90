@@ -74,6 +74,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use cavitation
 
 !===============================================================================
 
@@ -444,7 +445,23 @@ if (iok.eq.1) then
 endif
 
 !===============================================================================
-! 7. User modification of the turbulent viscosity and symmetric tensor
+! 7. Eddy viscosity correction for cavitating flows
+!===============================================================================
+
+if (icavit.ge.0 .and. icvevm.eq.1) then
+  if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
+
+    ipcvst = ipproc(ivisct)
+    call field_get_val_s(icrom, crom)
+
+    call cavitation_correct_visc_turb (crom, rtp(:,ivoidf), propce(:,ipcvst))
+    !================================
+
+  endif
+endif
+
+!===============================================================================
+! 8. User modification of the turbulent viscosity and symmetric tensor
 !    diffusivity
 !===============================================================================
 
@@ -457,7 +474,7 @@ call usvist &
   ckupdc , smacel )
 
 !===============================================================================
-! 8. Clipping of the turbulent viscosity in dynamic LES
+! 9. Clipping of the turbulent viscosity in dynamic LES
 !===============================================================================
 
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
@@ -485,7 +502,7 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 9. User modification of the mesh viscosity in ALE
+! 10. User modification of the mesh viscosity in ALE
 !===============================================================================
 
 if (iale.eq.1.and.ntcabs.eq.0) then
@@ -515,7 +532,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 endif
 
 !===============================================================================
-! 10. Checcking of the user values
+! 11. Checcking of the user values
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions
@@ -769,7 +786,7 @@ if (iok.ne.0) then
 endif
 
 !===============================================================================
-! 11. Parallelism and periodicity
+! 12. Parallelism and periodicity
 !===============================================================================
 
 ! Pour navstv et visecv on a besoin de ROM dans le halo

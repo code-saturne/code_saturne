@@ -485,7 +485,7 @@ end subroutine usppmo
 
 subroutine usipph &
 !================
- ( ixmlpu, nfecra , iturb , irccor , idirsm, itherm, icp )
+ ( ixmlpu, nfecra , iturb , irccor , idirsm, itherm, icp, icavit )
 
 
 !===============================================================================
@@ -508,6 +508,7 @@ subroutine usipph &
 !                  !    ! <-> !   closure                                      !
 ! itherm           ! i  ! <-> ! thermal model                                  !
 ! icp              ! i  ! <-> ! flag for uniform Cp or not                     !
+! icavit           ! i  ! <-> ! cavitation model
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -529,7 +530,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu, nfecra
-integer iturb, irccor, idirsm, itherm, icp
+integer iturb, irccor, idirsm, itherm, icp, icavit
 
 ! Local variables
 
@@ -671,6 +672,21 @@ endif
 if (ixmlpu.eq.0) then
 
   icp = 0
+
+endif
+
+! --- Cavitation module
+!    - -1: module not activated
+!    -  0: no vaporization/condensation model
+!    -  1: Merkle's model
+!
+!  Specific cavitation module input parameters should be set usipsu
+!  (see example in cs_user_parameters-cavitation.f90)
+!
+
+if (.false.) then
+
+  icavit = -1
 
 endif
 
@@ -1142,6 +1158,7 @@ use coincl
 use cpincl
 use elincl
 use field
+use cavitation
 
 !===============================================================================
 
