@@ -72,6 +72,8 @@ call field_get_n_fields(n_fields)
 
 call field_get_key_id("variable_id", keyvar)
 
+call cs_f_turb_complete_constants
+
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
 !===============================================================================

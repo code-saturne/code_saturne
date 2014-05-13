@@ -133,6 +133,10 @@ typedef struct {
   int           iclptr;       /* partial implicitation of wall BCs of R
                                  - 1: true
                                  - 0: false (default) */
+  double        almax;        /* characteristic macroscopic length of the
+                                 domain */
+  double        uref;         /* characteristic flow velocity */
+  double        xlomlg;       /* mixing length */
 
 } cs_turb_rans_model_t;
 
@@ -166,6 +170,105 @@ extern const cs_turb_rans_model_t    *cs_glob_turb_rans_model;
 /* Pointer to LES turbulence model descriptor structure */
 
 extern const cs_turb_les_model_t     *cs_glob_turb_les_model;
+
+/* Constant for turbulence models */
+
+extern const double xkappa;
+extern const double cstlog;
+extern const double apow;
+extern const double bpow;
+extern double dpow;
+extern const double cmu;
+extern double cmu025;
+extern const double ce1;
+extern const double ce2;
+extern const double ce4;
+extern const double sigmak;
+extern double sigmae;
+extern const double crij1;
+extern const double crij2;
+extern const double crij3;
+extern const double crijp1;
+extern const double crijp2;
+extern const double cssge2;
+extern const double cssgs1;
+extern const double cssgs2;
+extern const double cssgr1;
+extern const double cssgr2;
+extern const double cssgr3;
+extern const double cssgr4;
+extern const double cssgr5;
+extern const double cebms1;
+extern const double cebms2;
+extern const double cebmr1, cebmr2, cebmr3, cebmr4, cebmr5, cebmr6;
+extern double csrij;
+extern const double cebme2;
+extern const double cebmmu;
+extern const double xcl;
+extern const double xa1;
+extern const double xct;
+extern const double xceta;
+extern const double cpale1;
+extern const double cpale2;
+extern const double cpale3;
+extern const double cpale4;
+extern const double cpalse;
+extern const double cpalmu;
+extern const double cpalc1;
+extern const double cpalc2;
+extern const double cpalct;
+extern const double cpalcl;
+extern const double cpalet;
+extern const double ckwsk1;
+extern const double ckwsk2;
+extern const double ckwsw1;
+extern const double ckwsw2;
+extern const double ckwbt1;
+extern const double ckwbt2;
+extern double ckwgm1;
+extern double ckwgm2;
+extern const double ckwa1;
+extern const double ckwc1;
+extern const double csab1;
+extern const double csab2;
+extern const double csasig;
+extern const double csav1;
+extern double csaw1;
+extern const double csaw2;
+extern const double csaw3;
+extern const double cssr1;
+extern const double cssr2;
+extern const double cssr3;
+extern const double ccaze2;
+extern const double ccazsc;
+extern const double ccaza;
+extern const double ccazb;
+extern const double ccazc;
+extern const double ccazd;
+extern const double xlesfl;
+extern const double ales;
+extern const double bles;
+extern const double csmago;
+extern const double xlesfd;
+extern double smagmx;
+extern const double cdries;
+extern const double cv2fa1;
+extern const double cv2fe2;
+extern const double cv2fmu;
+extern const double cv2fc1;
+extern const double cv2fc2;
+extern const double cv2fct;
+extern const double cv2fcl;
+extern const double cv2fet;
+extern const double cwale;
+extern const double xiafm;
+extern const double etaafm;
+extern const double c1trit;
+extern const double c2trit;
+extern const double c3trit;
+extern const double c4trit;
+extern const double cthafm;
+extern const double cthdfm;
 
 /*=============================================================================
  * Public function prototypes

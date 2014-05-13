@@ -681,8 +681,7 @@ do ifac = 1, nfabor
     endif
 
     call wallfunctions &
-  ( iwallf, ifac  , xkappa, cstlog, cmu025, ypluli,        &
-    apow  , bpow  , dpow  ,                                &
+  ( iwallf, ifac  ,                                        &
     xnuii , xnuit , utau  , distbf, ek    ,                &
     iuntur, nsubla, nlogla,                                &
     uet   , uk    , yplus , ypup  , cofimp, dplus )

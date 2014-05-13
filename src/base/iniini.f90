@@ -133,6 +133,8 @@ call physical_constants_init
 call fluid_properties_init
 call space_disc_options_init
 call piso_options_init
+call wall_reference_values_init
+call turb_reference_values_init
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

@@ -58,6 +58,7 @@
 
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -99,6 +100,13 @@ BEGIN_C_DECLS
         wall functions with
         - 0: a power lay (deprecated)
         - 1: a log lay
+  \var  cs_wall_functions_t::ypluli
+        limit value of \f$y^+\f$ for the viscous sublayer
+
+        \ref ypluli depends on the chosen wall function: it is initialised to
+        10.88 for the scalable wall function (\ref ideuch=2), otherwise it is
+        initialised to \f$1/\kappa\approx 2,38\f$. In LES, \ref ypluli is taken
+        by default to be 10.88. Always useful.
 */
 /*----------------------------------------------------------------------------*/
 
@@ -111,7 +119,7 @@ BEGIN_C_DECLS
 /* wall functions structure and associated pointer */
 
 static cs_wall_functions_t  _wall_functions =
-  {-999, 0, 1};
+  {-999, 0, 1, -1e13};
 
 const cs_wall_functions_t  *cs_glob_wall_functions = &_wall_functions;
 
@@ -122,8 +130,11 @@ const cs_wall_functions_t  *cs_glob_wall_functions = &_wall_functions;
 
 void
 cs_f_wall_functions_get_pointers(int     **ideuch,
-                                  int     **iwallt,
-                                  int     **ilogpo);
+                                 int     **iwallt,
+                                 int     **ilogpo);
+
+void
+cs_f_wall_reference_values(double  **ypluli);
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -135,10 +146,6 @@ cs_f_wall_functions_get_pointers(int     **ideuch,
  * Power law: Werner & Wengle
  *
  * parameters:
- *   ypluli   <-- y+ limit
- *   apow     <-- Coef of the Wener law
- *   bpow     <-- Coef of the Wener law
- *   dpow     <-- Coef of the Wener law
  *   l_visc   <-- kinematic viscosity
  *   vel      <-- wall projected cell center velocity
  *   y        <-- wall distance
@@ -153,11 +160,7 @@ cs_f_wall_functions_get_pointers(int     **ideuch,
  *----------------------------------------------------------------------------*/
 
 static void
-_1scale_power_law(cs_real_t   ypluli,
-                  cs_real_t   apow,
-                  cs_real_t   bpow,
-                  cs_real_t   dpow,
-                  cs_real_t   l_visc,
+_1scale_power_law(cs_real_t   l_visc,
                   cs_real_t   vel,
                   cs_real_t   y,
                   int        *iuntur,
@@ -169,6 +172,8 @@ _1scale_power_law(cs_real_t   ypluli,
                   cs_real_t  *ypup,
                   cs_real_t  *cofimp)
 {
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
   const double ydvisc =  y / l_visc;
 
   /* Compute the friction velocity ustar */
@@ -208,12 +213,6 @@ _1scale_power_law(cs_real_t   ypluli,
  *
  * parameters:
  *   ifac   <-- face number
- *   xkappa <-- Von Karman constant
- *   cstlog <-- Log law constant
- *   ypluli <-- y+ limit
- *   apow   <-- Coef of the Wener law
- *   bpow   <-- Coef of the Wener law
- *   dpow   <-- Coef of the Wener law
  *   l_visc <-- kinematic viscosity
  *   vel    <-- wall projected cell center velocity
  *   y      <-- wall distance
@@ -229,12 +228,6 @@ _1scale_power_law(cs_real_t   ypluli,
 
 static void
 _1scale_log_law(cs_lnum_t    ifac,
-                cs_real_t    xkappa,
-                cs_real_t    cstlog,
-                cs_real_t    ypluli,
-                cs_real_t    apow,
-                cs_real_t    bpow,
-                cs_real_t    dpow,
                 cs_real_t    l_visc,
                 cs_real_t    vel,
                 cs_real_t    y,
@@ -247,6 +240,8 @@ _1scale_log_law(cs_lnum_t    ifac,
                 cs_real_t   *ypup,
                 cs_real_t   *cofimp)
 {
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
   double ustarwer, ustarmin, ustaro, ydvisc;
   double eps = 0.001;
   int niter_max = 100;
@@ -317,10 +312,6 @@ _1scale_log_law(cs_lnum_t    ifac,
  * friction and the TKE.
  *
  * parameters:
- *   xkappa     <-- Von Karman constant
- *   cstlog     <-- Log law constant
- *   cmu025     <-- C_mu^1/4
- *   ypluli     <-- y+ limit
  *   l_visc     <-- kinematic viscosity
  *   t_visc     <-- turbulent kinematic viscosity
  *   vel        <-- wall projected cell center velocity
@@ -337,11 +328,7 @@ _1scale_log_law(cs_lnum_t    ifac,
  *----------------------------------------------------------------------------*/
 
 static void
-_2scales_log_law(cs_real_t   xkappa,
-                 cs_real_t   cstlog,
-                 cs_real_t   cmu025,
-                 cs_real_t   ypluli,
-                 cs_real_t   l_visc,
+_2scales_log_law(cs_real_t   l_visc,
                  cs_real_t   t_visc,
                  cs_real_t   vel,
                  cs_real_t   y,
@@ -355,6 +342,8 @@ _2scales_log_law(cs_real_t   xkappa,
                  cs_real_t  *ypup,
                  cs_real_t  *cofimp)
 {
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
   double rcprod, ml_visc, Re, g;
 
   /* Compute the friction velocity ustar */
@@ -402,10 +391,6 @@ _2scales_log_law(cs_real_t   xkappa,
  * Scalable wall function: shift the wall if "y+ < y+lim".
  *
  * parameters:
- *   xkappa     <-- Von Karman constant
- *   cstlog     <-- Log law constant
- *   cmu025     <-- C_mu^1/4
- *   ypluli     <-- y+ limit
  *   l_visc     <-- kinematic viscosity
  *   t_visc     <-- turbulent kinematic viscosity
  *   vel        <-- wall projected cell center velocity
@@ -423,11 +408,7 @@ _2scales_log_law(cs_real_t   xkappa,
  *----------------------------------------------------------------------------*/
 
 static void
-_2scales_scalable_wallfunction(cs_real_t   xkappa,
-                               cs_real_t   cstlog,
-                               cs_real_t   cmu025,
-                               cs_real_t   ypluli,
-                               cs_real_t   l_visc,
+_2scales_scalable_wallfunction(cs_real_t   l_visc,
                                cs_real_t   t_visc,
                                cs_real_t   vel,
                                cs_real_t   y,
@@ -443,6 +424,8 @@ _2scales_scalable_wallfunction(cs_real_t   xkappa,
                                cs_real_t  *cofimp
 )
 {
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
   double rcprod, ml_visc, Re, g;
   /* Compute the friction velocity ustar */
 
@@ -490,7 +473,6 @@ _2scales_scalable_wallfunction(cs_real_t   xkappa,
  * No wall fucntions
  *
  * parameters:
- *   ypluli     <-- y+ limit
  *   l_visc     <-- kinematic viscosity
  *   t_visc     <-- turbulent kinematic viscosity
  *   vel        <-- wall projected cell center velocity
@@ -507,8 +489,7 @@ _2scales_scalable_wallfunction(cs_real_t   xkappa,
  *----------------------------------------------------------------------------*/
 
 static void
-_no_wallfunction(cs_real_t   ypluli,
-                 cs_real_t   l_visc,
+_no_wallfunction(cs_real_t   l_visc,
                  cs_real_t   t_visc,
                  cs_real_t   vel,
                  cs_real_t   y,
@@ -522,6 +503,8 @@ _no_wallfunction(cs_real_t   ypluli,
                  cs_real_t  *ypup,
                  cs_real_t  *cofimp)
 {
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
   /* Compute the friction velocity ustar */
 
   *ustar = sqrt(vel * l_visc / y);
@@ -572,6 +555,22 @@ cs_f_wall_functions_get_pointers(int     **ideuch,
   *ilogpo = &(_wall_functions.ilogpo);
 }
 
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the wall functions structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   ypluli --> pointer to cs_glob_wall_functions->ypluli
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_wall_reference_values(double  **ypluli)
+{
+  *ypluli = &(_wall_functions.ypluli);
+}
+
 /*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
@@ -586,13 +585,6 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 (
  const cs_int_t   *const iwallf,
  const cs_lnum_t  *const ifac,
- const cs_real_t  *const xkappa,
- const cs_real_t  *const cstlog,
- const cs_real_t  *const cmu025,
- const cs_real_t  *const ypluli,
- const cs_real_t  *const apow,
- const cs_real_t  *const bpow,
- const cs_real_t  *const dpow,
  const cs_real_t  *const l_visc,
  const cs_real_t  *const t_visc,
  const cs_real_t  *const vel,
@@ -611,13 +603,6 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 {
   cs_wall_functions_velocity(*iwallf,
                              *ifac,
-                             *xkappa,
-                             *cstlog,
-                             *cmu025,
-                             *ypluli,
-                             *apow,
-                             *bpow,
-                             *dpow,
                              *l_visc,
                              *t_visc,
                              *vel,
@@ -675,13 +660,6 @@ void CS_PROCF (hturbp, HTURBP)
 /*!
  * \param[in]     iwallf        wall function type
  * \param[in]     ifac          face number
- * \param[in]     xkappa        Von Karman constant
- * \param[in]     cstlog        Log law constant
- * \param[in]     cmu025        \f$ C_{\mu}^{1/4} \f$
- * \param[in]     ypluli        \f$y^+\f$ limit
- * \param[in]     apow          Coef of the Wener law
- * \param[in]     bpow          Coef of the Wener law
- * \param[in]     dpow          Coef of the Wener law
  * \param[in]     l_visc        kinematic viscosity
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
@@ -704,13 +682,6 @@ void CS_PROCF (hturbp, HTURBP)
 void
 cs_wall_functions_velocity(int          iwallf,
                            cs_lnum_t    ifac,
-                           cs_real_t    xkappa,
-                           cs_real_t    cstlog,
-                           cs_real_t    cmu025,
-                           cs_real_t    ypluli,
-                           cs_real_t    apow,
-                           cs_real_t    bpow,
-                           cs_real_t    dpow,
                            cs_real_t    l_visc,
                            cs_real_t    t_visc,
                            cs_real_t    vel,
@@ -734,11 +705,7 @@ cs_wall_functions_velocity(int          iwallf,
 
   if (iwallf == 3) {
 
-    _1scale_power_law(ypluli,
-                      apow,
-                      bpow,
-                      dpow,
-                      l_visc,
+    _1scale_power_law(l_visc,
                       vel,
                       y,
                       iuntur,
@@ -753,12 +720,6 @@ cs_wall_functions_velocity(int          iwallf,
   } else if (iwallf == 0) {
 
     _1scale_log_law(ifac,
-                    xkappa,
-                    cstlog,
-                    ypluli,
-                    apow,
-                    bpow,
-                    dpow,
                     l_visc,
                     vel,
                     y,
@@ -773,11 +734,7 @@ cs_wall_functions_velocity(int          iwallf,
 
   } else if (iwallf == 1) {
 
-    _2scales_log_law(xkappa,
-                     cstlog,
-                     cmu025,
-                     ypluli,
-                     l_visc,
+    _2scales_log_law(l_visc,
                      t_visc,
                      vel,
                      y,
@@ -793,11 +750,7 @@ cs_wall_functions_velocity(int          iwallf,
 
   } else if (iwallf == 2) {
 
-    _2scales_scalable_wallfunction(xkappa,
-                                   cstlog,
-                                   cmu025,
-                                   ypluli,
-                                   l_visc,
+    _2scales_scalable_wallfunction(l_visc,
                                    t_visc,
                                    vel,
                                    y,
@@ -814,8 +767,7 @@ cs_wall_functions_velocity(int          iwallf,
 
   } else if (iwallf == 4) {
 
-    _no_wallfunction(ypluli,
-                     l_visc,
+    _no_wallfunction(l_visc,
                      t_visc,
                      vel,
                      y,

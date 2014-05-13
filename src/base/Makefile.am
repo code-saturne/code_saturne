@@ -41,6 +41,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)

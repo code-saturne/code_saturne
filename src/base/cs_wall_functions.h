@@ -61,6 +61,8 @@ typedef struct {
   int           ilogpo;       /* wall function with
                                  - 0: a power lay (deprecated)
                                  - 1: a log lay */
+  double        ypluli;       /* limit value of y+ for the viscous
+                                 sublayer */
 
 } cs_wall_functions_t;
 
@@ -84,13 +86,6 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 (
  const cs_int_t   *const iwallf,
  const cs_lnum_t  *const ifac,
- const cs_real_t  *const xkappa,
- const cs_real_t  *const cstlog,
- const cs_real_t  *const cmu025,
- const cs_real_t  *const ypluli,
- const cs_real_t  *const apow,
- const cs_real_t  *const bpow,
- const cs_real_t  *const cpow,
  const cs_real_t  *const viscosity,
  const cs_real_t  *const t_visc,
  const cs_real_t  *const vel,
@@ -137,13 +132,6 @@ void CS_PROCF (hturbp, HTURBP)
 /*!
  * \param[in]     iwallf        wall function type
  * \param[in]     ifac          face number
- * \param[in]     xkappa        Von Karman constant
- * \param[in]     cstlog        Log law constant
- * \param[in]     cmu025        \f$ C_{\mu}^{1/4} \f$
- * \param[in]     ypluli        \f$y^+\f$ limit
- * \param[in]     apow          Coef of the Wener law
- * \param[in]     bpow          Coef of the Wener law
- * \param[in]     dpow          Coef of the Wener law
  * \param[in]     l_visc        kinematic viscosity
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected
@@ -169,13 +157,6 @@ void CS_PROCF (hturbp, HTURBP)
 void
 cs_wall_functions_velocity(int          iwallf,
                            cs_lnum_t    ifac,
-                           cs_real_t    xkappa,
-                           cs_real_t    cstlog,
-                           cs_real_t    cmu025,
-                           cs_real_t    ypluli,
-                           cs_real_t    apow,
-                           cs_real_t    bpow,
-                           cs_real_t    dpow,
                            cs_real_t    l_visc,
                            cs_real_t    t_visc,
                            cs_real_t    vel,

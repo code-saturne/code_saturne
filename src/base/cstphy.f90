@@ -225,7 +225,7 @@ module cstphy
   !> In LES, \ref ypluli is taken by default to be 10.88.
   !>
   !> Always useful
-  double precision, save :: ypluli
+  real(c_double), pointer, save :: ypluli
 
   !> Werner and Wengle coefficient
   double precision, save :: apow
@@ -272,7 +272,7 @@ module cstphy
   double precision, save :: ce4
 
   !> Prandtl number for \f$k\f$ with \f$k-\varepsilon\f$ and v2f models.
-  !> nUseful if and only if \ref iturb=20, 21 or 50
+  !> Useful if and only if \ref iturb=20, 21 or 50
   !> (\f$k-\varepsilon\f$ or v2f)
   double precision, save :: sigmak
 
@@ -517,7 +517,7 @@ module cstphy
   !> the domain volume).
   !>
   !> Useful if and only if \ref turb = 20, 21, 30, 31, 50 or 60 (RANS models)
-  double precision, save :: almax
+  real(c_double), pointer, save :: almax
 
   !> the characteristic flow velocity,
   !> used for the initialisation of the turbulence.
@@ -526,12 +526,12 @@ module cstphy
   !> Useful if and only if \ref iturb= 20, 21, 30, 31, 50 or 60 (RANS model)
   !> and the turbulence is not initialised somewhere
   !> else (restart file or subroutine \ref cs\_user\_initialization)
-  double precision, save :: uref
+  real(c_double), pointer, save :: uref
 
   !> mixing length for the mixing length model
   !>
   !> Useful if and only if \ref iturb= 10 (mixing length)
-  double precision, save :: xlomlg
+  real(c_double), pointer, save :: xlomlg
 
   !> constant used in the definition of LES filtering diameter:
   !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}} \f$
@@ -696,6 +696,36 @@ module cstphy
       type(c_ptr), intent(out) :: xmasmr, pther, pthera, pthermax
     end subroutine cs_f_fluid_properties_get_pointers
 
+    ! Interface to C function retrieving pointers to members of the
+    ! RANS turbulence model structure
+
+    subroutine cs_f_turb_reference_values(almax, uref, xlomlg) &
+      bind(C, name='cs_f_turb_reference_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: almax , uref  , xlomlg
+    end subroutine cs_f_turb_reference_values
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global wall functions structure
+
+    subroutine cs_f_wall_reference_values(ypluli) &
+      bind(C, name='cs_f_wall_reference_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ypluli
+    end subroutine cs_f_wall_reference_values
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function completing the constants of the
+    ! turbulence model
+
+    subroutine cs_f_turb_complete_constants() &
+      bind(C, name='cs_f_turb_complete_constants')
+      use, intrinsic :: iso_c_binding
+    end subroutine cs_f_turb_complete_constants
+
     !---------------------------------------------------------------------------
 
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
@@ -767,6 +797,44 @@ contains
     call c_f_pointer(c_pthermax, pthermax)
 
   end subroutine fluid_properties_init
+
+  !> \brief Initialize Fortran RANS turbulence model API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine turb_reference_values_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_almax , c_uref  , c_xlomlg
+
+    call cs_f_turb_reference_values( c_almax, c_uref, c_xlomlg)
+
+    call c_f_pointer(c_almax , almax )
+    call c_f_pointer(c_uref  , uref  )
+    call c_f_pointer(c_xlomlg, xlomlg)
+
+  end subroutine turb_reference_values_init
+
+  !> \brief Initialize Fortran wall functions API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine wall_reference_values_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ypluli
+
+    call cs_f_wall_reference_values( c_ypluli)
+
+    call c_f_pointer(c_ypluli , ypluli )
+
+  end subroutine wall_reference_values_init
 
   !=============================================================================
 
