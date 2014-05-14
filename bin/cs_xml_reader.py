@@ -257,13 +257,16 @@ class Parser:
             if len(path) > 0:
                 name = os.path.join(path, name)
             if len(number) > 0:
-                l_args.append('--num ' + number)
+                l_args.append('--num ')
+                l_args.append(number)
             if reorient:
                 l_args.append('--reorient')
             if len(grp_cel) > 0:
-                l_args.append('--grp-cel ' + grp_cel)
+                l_args.append('--grp-cel')
+                l_args.append(grp_cel)
             if len(grp_fac) > 0:
-                l_args.append('--grp-fac ' + grp_fac)
+                l_args.append('--grp-fac')
+                l_args.append(grp_fac)
 
             if len(l_args) >  0:
                 l_args.insert(0, name)
