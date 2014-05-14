@@ -666,6 +666,7 @@ class XMLinit(Variables):
                 if f != None:
                     f = f.replace("rho =", "density =")
                     f = f.replace("mu =", "molecular_viscosity =")
+                    f = f.replace("cp =", "specific_heat =")
                     f = f.replace("lambda =", "thermal_conductivity =")
                     f = f.replace("viscv =", "volume_viscosity =")
                     n.xmlSetTextNode(f)
