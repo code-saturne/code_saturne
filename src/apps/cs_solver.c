@@ -86,6 +86,7 @@
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
+#include "cs_matrix_default.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
