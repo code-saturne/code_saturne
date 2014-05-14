@@ -94,7 +94,6 @@ use cstphy
 use cstnum
 use ppppar
 use ppthch
-use pointe, only: visten
 use coincl
 use cpincl
 use cs_fuel_incl
@@ -173,7 +172,7 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
 double precision, allocatable, dimension(:) :: srcmas
 
-double precision, dimension(:,:), pointer :: xut
+double precision, dimension(:,:), pointer :: xut, visten
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
@@ -706,6 +705,8 @@ if (idiff(ivar).ge.1) then
     allocate(viscce(6,ncelet))
     allocate(weighf(2,nfac))
     allocate(weighb(nfabor))
+
+    call field_get_val_v(ivsten, visten)
 
     if (ipcvsl.eq.0) then
       do iel = 1, ncel

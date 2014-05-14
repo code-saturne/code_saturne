@@ -102,7 +102,6 @@ use cstnum
 use parall
 use period
 use lagran
-use pointe, only: visten
 use mesh
 use field
 use field_operator
@@ -174,6 +173,7 @@ double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:,:), pointer :: visten
 
 !===============================================================================
 
@@ -707,6 +707,8 @@ endif
 
 ! Symmetric tensor diffusivity (GGDH)
 if (idften(ivar).eq.6) then
+
+  call field_get_val_v(ivsten, visten)
 
   do iel = 1, ncel
     viscce(1,iel) = visten(1,iel) + propce(iel,ipcvis)

@@ -67,7 +67,6 @@ use cstnum
 use cstphy
 use parall
 use period
-use pointe, only:visten
 use field
 use mesh
 use cs_f_interfaces
@@ -126,7 +125,7 @@ double precision, allocatable, dimension(:,:,:) :: viscf
 double precision, allocatable, dimension(:,:) :: smbrut
 double precision, allocatable, dimension(:,:,:) :: fimp
 
-double precision, dimension(:,:), pointer :: coefav, cofafv
+double precision, dimension(:,:), pointer :: coefav, cofafv, visten
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer ::  crom
@@ -158,6 +157,8 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_val_v(ivsten, visten)
 
 ivar = isca(iscal)
 ipput = ipprtp(ivar)

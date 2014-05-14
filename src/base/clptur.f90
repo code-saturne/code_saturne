@@ -187,7 +187,7 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cp, yplbr
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 
-double precision, dimension(:,:), pointer :: coefau, cofafu
+double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
 double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
 double precision, dimension(:), pointer :: coefa_ep, coefaf_ep
@@ -242,6 +242,7 @@ utau = 1.d0
 sqrcmu = sqrt(cmu)
 
 if (ipstdv(ipstyp).ne.0) call field_get_val_s(iyplbr, yplbr)
+if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
 ! --- Gradient and flux boundary conditions
 
@@ -1878,7 +1879,7 @@ double precision, dimension(:), pointer :: viscl, visct, cp, cv
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
+double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
 !===============================================================================
@@ -1895,6 +1896,10 @@ call field_get_key_int (f_id, kivisl, ifcvsl)
 
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
+endif
+
+if (idften(ivar).eq.6.or.ityturt(iscal).eq.3) then
+  call field_get_val_v(ivsten, visten)
 endif
 
 call field_get_coefa_s(f_id, coefap)

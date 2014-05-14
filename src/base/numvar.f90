@@ -196,11 +196,14 @@ module numvar
   !> cell density at the second previous time step key id of the variables
   integer, save :: icroaa
 
-  !> cell porosity field ids of the properties
+  !> field ids of the cell porosity
   integer, save :: ipori, iporf
 
   !> dynamic constant of Smagorinsky
   integer, save :: ismago
+
+  !> field id of the anisotropic turbulent viscosity
+  integer, save :: ivsten
 
   !> Courant number
   integer, save :: icour
@@ -225,10 +228,10 @@ module numvar
   !> pointer for thermal expansion coefficient
   integer, save :: ibeta
 
-  !> stresses at boundary field id (if post-processed)
+  !> field id of the stresses at boundary  (if post-processed)
   integer, save :: iforbr
 
-  !> \f$y^+\f$ at boundary field id (if post-processed)
+  !>  field id of \f$y^+\f$ at boundary (if post-processed)
   integer, save :: iyplbr
 
   !> \}

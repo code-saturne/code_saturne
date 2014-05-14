@@ -87,6 +87,7 @@ integer          kdiftn
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv, lprev
 integer          f_id, kscavr, f_vis, f_log
+integer          idfm
 
 character*80     name
 character*80     f_name
@@ -137,6 +138,8 @@ call field_get_key_id("diffusivity_tensor", kdiftn)
 ! User variables
 !---------------
 
+idfm = 0
+
 do ii = 1, nscal
 
   if (isca(ii) .gt. 0) then
@@ -161,6 +164,7 @@ do ii = 1, nscal
         call field_set_key_int(iflid, keycpl, 1)
         ! Tensorial diffusivity
         call field_set_key_int(iflid, kdiftn, 6)
+        idfm = 1
       endif
       call field_set_key_int(iflid, keyvis, f_vis)
       call field_set_key_int(iflid, keylog, f_log)
@@ -281,9 +285,10 @@ do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kbmasf, f_id)
 enddo
 
-!====================================================================
+!===============================================================================
 
 ! Cavitation: the void fraction has its spectific convective flux
+!----------------------------------------------------------------
 
 if (icavit.ge.0) then
 
@@ -301,9 +306,10 @@ if (icavit.ge.0) then
 
 endif
 
-!====================================================================
+!===============================================================================
 
 ! Combustion
+!-----------
 
 if (iirayo .gt. 0) then
 
@@ -325,6 +331,40 @@ if (iirayo .gt. 0) then
   endif
 
 endif
+
+!===============================================================================
+
+! Turbulence
+!-----------
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 1 ! cells
+ilved = .true.
+
+if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
+  call field_create('anisotropic_turbulent_viscosity', itycat, ityloc, idim6, &
+                    ilved, inoprv, ivsten)
+endif
+
+!===============================================================================
+
+! Porosity
+!---------
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 1 ! cells
+ilved = .true.
+
+if (iporos.ge.1) then
+  name = 'porosity'
+  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ipori)
+  if (iporos.eq.2) then
+    name = 'tensorial_porosity'
+    call field_create(name, itycat, ityloc, idim6, ilved, inoprv, iporf)
+  endif
+endif
+
+!===============================================================================
 
 ! Additional fields
 !------------------
@@ -351,20 +391,7 @@ if (ipstdv(ipstyp).ne.0) then
   call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
 endif
 
-! Porosity fields
 
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-ityloc = 1 ! cells
-ilved = .true.
-
-if (iporos.ge.1) then
-  name = 'porosity'
-  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ipori)
-  if (iporos.eq.2) then
-    name = 'tensorial_porosity'
-    call field_create(name, itycat, ityloc, idim6, ilved, inoprv, iporf)
-  endif
-endif
 
 return
 

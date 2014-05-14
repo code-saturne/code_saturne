@@ -200,7 +200,7 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
-double precision, pointer, dimension(:,:) :: dttens
+double precision, pointer, dimension(:,:) :: dttens, visten
 double precision, dimension(:), pointer :: tplusp, tstarp, yplbr
 double precision, pointer, dimension(:,:) :: forbr
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
@@ -1215,6 +1215,8 @@ elseif (itytur.eq.3) then
     call field_get_coefad_s(ivarfl(ivar), cofadp)
     call field_get_coefbd_s(ivarfl(ivar), cofbdp)
 
+    if (idften(ivar).eq.6) call field_get_val_v(ivsten, visten)
+
     do ifac = 1, nfabor
 
       iel = ifabor(ifac)
@@ -1341,6 +1343,8 @@ elseif (itytur.eq.3) then
   call field_get_coefb_s(ivarfl(ivar), coefbp)
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
+  if (idften(ivar).eq.6) call field_get_val_v(ivsten, visten)
 
   do ifac = 1, nfabor
 
@@ -1859,6 +1863,10 @@ if (nscal.ge.1) then
     call field_get_coefb_s(ivarfl(ivar), coefbp)
     call field_get_coefaf_s(ivarfl(ivar), cofafp)
     call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
+    if (idften(ivar).eq.6.or.ityturt(ii).eq.3) then
+      call field_get_val_v(ivsten, visten)
+    endif
 
     do ifac = 1, nfabor
 

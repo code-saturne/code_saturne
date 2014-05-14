@@ -298,9 +298,6 @@ module pointe
   !> See the user subroutine \ref ustsma
   double precision, allocatable, dimension(:,:) :: smacel
 
-  !> symmetric tensor cell visco
-  double precision, allocatable, dimension(:,:) :: visten
-
   !> liquid-vapour mass transfer term for cavitating flows
   !> and its derivative with respect to pressure
   double precision, allocatable, dimension(:) :: gamcav, dgdpca
@@ -361,7 +358,7 @@ contains
     integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
-    integer                iok, ivar, iscal, ifac
+    integer                ivar, iscal, ifac
     integer                kdiftn
 
     ! Key id for diffusivity tensor
@@ -389,26 +386,11 @@ contains
       allocate(idfstr(nfabor))
     endif
 
-    ! Symmetric cell diffusivity when needed
-    iok = 0
-    do ivar = 1, nvarmx
-      if (idften(ivar).eq.6) iok = 1
-    enddo
-
-    do iscal = 1, nscamx
-      if (ityturt(iscal).eq.3) iok = 1
-    enddo
-
     ! Also tensorial diffusion for the velocity in case of tensorial porosity
     if (iporos.eq.2) then
       idften(iu) = 6
       ! Key word: tensorial diffusivity
       call field_set_key_int(ivarfl(iu), kdiftn, idften(iu))
-      iok = 1
-    endif
-
-    if (iok.eq.1) then
-      allocate(visten(6,ncelet))
     endif
 
     ! Diagonal cell tensor for the pressure solving when needed
@@ -482,26 +464,6 @@ contains
     ! Resize/copy arrays
 
     allocate(buffer(ncelet))
-
-    ! Symmetric cell diffusivity when needed
-
-    if (allocated(visten)) then
-      allocate(buff2(6,ncel))
-      do iel = 1, ncel
-        do isou = 1, 6
-          buff2(isou,iel) = visten(isou,iel)
-        enddo
-      enddo
-      deallocate(visten)
-      allocate(visten(6,ncelet))
-      do iel = 1, ncel
-        do isou = 1, 6
-          visten(isou,iel) = buff2(isou,iel)
-        enddo
-      enddo
-      deallocate(buff2)
-      call syntis(visten)
-    endif
 
     ! Wall-distance calculation
 
@@ -607,7 +569,6 @@ contains
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
-    if (allocated(visten)) deallocate(visten)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(ifapat)) deallocate(ifapat)

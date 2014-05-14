@@ -1504,7 +1504,7 @@ double precision, dimension(:), pointer :: viscl, visct, cp, cv
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
+double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
 !===============================================================================
@@ -1521,6 +1521,10 @@ call field_get_key_int (f_id, kivisl, ifcvsl)
 
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
+endif
+
+if (idften(ivar).eq.6.or.ityturt(iscal).eq.3) then
+  call field_get_val_v(ivsten, visten)
 endif
 
 call field_get_coefa_s(f_id, coefap)

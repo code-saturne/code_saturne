@@ -103,6 +103,7 @@ double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: sval
+double precision, dimension(:,:), pointer :: visten
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -391,6 +392,9 @@ do iscal = 1, nscal
 enddo
 
 if (iok.eq.1) then
+
+  call field_get_val_v(ivsten, visten)
+
   if (itytur.eq.3) then
 
     call field_get_val_s(icrom, crom)

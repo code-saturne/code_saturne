@@ -124,6 +124,7 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, cfaale, claale
+double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, cfbale, clbale
 double precision, dimension(:), pointer :: coefa_r11, coefaf_r11, coefad_r11
 double precision, dimension(:), pointer :: coefb_r11, coefbf_r11, coefbd_r11
@@ -145,6 +146,8 @@ double precision, dimension(:), pointer :: coefb_r23, coefbf_r23, coefbd_r23
 !===============================================================================
 
 cpp = 0.d0
+
+if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
 ! Boundary Conditions
 
@@ -782,7 +785,7 @@ character(len=80) :: fname
 
 double precision, dimension(:), pointer :: val_s, crom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
+double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
 !===============================================================================
@@ -793,6 +796,8 @@ ivar = isca(iscal)
 f_id = ivarfl(ivar)
 
 call field_get_val_s(ivarfl(ivar), val_s)
+
+call field_get_val_v(ivsten, visten)
 
 call field_get_coefa_s(f_id, coefap)
 call field_get_coefb_s(f_id, coefbp)
