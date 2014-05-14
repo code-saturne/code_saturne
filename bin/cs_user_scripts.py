@@ -159,7 +159,8 @@ def define_domain_parameters(domain):
     # a tuple containing a file name followed by additional options
     # may be used instead of a simple file name, for example:
     #   domain.meshes = ['part1.des',
-    #                    ('part2_med', '--format med --num 2', '--reorient'),
+    #                    ('part2_med', '--format', 'med',
+    #                     '--num', '2', '--reorient'),
     #                    '~/meshdatabase/part3.unv']
 
     if domain.param == None:
