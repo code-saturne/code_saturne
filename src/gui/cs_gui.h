@@ -168,9 +168,8 @@ void CS_PROCF (uithsc, UITHSC) (int *const iscalt);
  * integer          itherm     <--  type of thermal model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csisca, CSISCA) (      int *const iscavr,
-                                      int *const itherm,
-                                const int *const iscapp);
+void CS_PROCF (csisca, CSISCA) (int        *iscavr,
+                                const int  *itherm);
 
 /*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
@@ -515,16 +514,12 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
  *
  * INTEGER          NCEL     <--  number of cells whithout halo
  * INTEGER          NCELET   <--  number of cells whith halo
- * INTEGER          NSCAUS   <--  number of user scalar including thermal scalar
- * INTEGER          IVISCL   <--  pointer for mulecular viscosity mu
  * INTEGER          ICP      <--  pointer for predifined heat Cp
  * INTEGER          IVISLS   <--  pointer for Lambda/Cp
  * INTEGER          IROVAR   <--  =1 if rho variable, =0 if rho constant
  * INTEGER          IVIVAR   <--  =1 if mu variable, =0 if mu constant
- * INTEGER          ISCA     <--  indirection array for scalar number
  * INTEGER          ISCALT   <--  pointer for the thermal scalar in ISCA
  * INTEGER          ISCAVR   <--  scalars that are variance
- * INTEGER          IPPROC   <--  indirection array for cell properties
  * INTEGER          IVISCV   <--  pointer for volumic viscosity viscv
  * INTEGER          ITEMPK   <--  pointer for temperature (in K)
  * DOUBLE PRECISION P0       <--  pressure reference value
@@ -538,17 +533,13 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_int_t  *ncelet,
-                              const cs_int_t  *nscaus,
                               const cs_int_t  *itherm,
-                              const cs_int_t  *iviscl,
                               const cs_int_t  *icp,
                               const cs_int_t   ivisls[],
                               const cs_int_t  *irovar,
                               const cs_int_t  *ivivar,
-                              const cs_int_t   isca[],
                               const cs_int_t  *iscalt,
                               const cs_int_t   iscavr[],
-                              const cs_int_t   ipproc[],
                               const cs_int_t  *iviscv,
                               const cs_int_t  *itempk,
                               const cs_real_t *p0,

@@ -1752,10 +1752,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 1;
                 char *name = NULL;
                 BFT_MALLOC(name, strlen(f->name) + 4, char);
-                strcpy(name, f->name);
-                strcat(name, "[");
-                strcat(name, i);
-                strcat(name, "]");
+                sprintf(name, "%s[%d]", f->name, i);
                 mei_evaluate(ev_formula);
                 rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = mei_tree_lookup(ev_formula, name);
@@ -1790,10 +1787,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 5;
                 char *name = NULL;
                 BFT_MALLOC(name, strlen(f->name) + 4, char);
-                strcpy(name, f->name);
-                strcat(name, "[");
-                strcat(name, i);
-                strcat(name, "]");
+                sprintf(name, "%s[%d]", f->name, i);
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
                 mei_evaluate(ev_formula);
                 rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
@@ -2256,7 +2250,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         cs_xpath_add_function_text(&path1);
         char *formula = cs_gui_get_text_value(path1);
         if (formula != NULL) {
-          const int var_key_id = cs_field_key_id("variable_id");
           mei_tree_t *ev_formula = mei_tree_new(formula);
           mei_tree_insert(ev_formula,"x",0.0);
           mei_tree_insert(ev_formula,"y",0.0);

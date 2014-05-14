@@ -273,11 +273,11 @@ endif
 
 if (iihmpr.eq.1) then
 
-  call  csisca(iscavr, itherm, iscapp)
-  !===========
+  call csisca(iscavr, itherm)
+  !==========
 
-  call  csivis(iscavr, ivisls, iscalt, itherm, itempk)
-  !===========
+  call csivis(iscavr, ivisls, iscalt, itherm, itempk)
+  !==========
 
 endif
 

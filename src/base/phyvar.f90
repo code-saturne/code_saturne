@@ -154,10 +154,9 @@ mbrom = 0
 if (iihmpr.eq.1) then
   call uiphyv &
   !===========
-( ncel, ncelet, nscaus, itherm,                                 &
-  iviscl, icp,    ivisls, irovar, ivivar,                       &
-  isca, iscalt, iscavr, ipproc, iviscv, itempk,                 &
-  p0  , t0    , ro0   , cp0   , viscl0, visls0, viscv0)
+( ncel   , ncelet , itherm , icp    , ivisls , irovar , ivivar ,          &
+  iscalt , iscavr , iviscv , itempk ,                                     &
+  p0     , t0     , ro0    , cp0    , viscl0 , visls0 , viscv0 )
 endif
 
 call usphyv &

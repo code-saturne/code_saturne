@@ -80,50 +80,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Return the activated specific physics scalar number
- *----------------------------------------------------------------------------*/
-
-static int
-_scalar_number(const char* model)
-{
-  char *path = NULL;
-  int   nb;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, model);
-  cs_xpath_add_element(&path, "variable");
-
-  nb = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return nb;
-}
-
-/*-----------------------------------------------------------------------------
- * Return the activated thermal scalar
- *----------------------------------------------------------------------------*/
-
-static int
-_thermal_scalar(void)
-{
-  char *path = NULL;
-  int   nb;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "thermophysical_models");
-  cs_xpath_add_element(&path, "thermal_scalar");
-  cs_xpath_add_element(&path, "variable");
-
-  nb = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return nb;
-}
-
-/*-----------------------------------------------------------------------------
  * Return the label or the name from a specific physics scalar.
  *
  * parameters:
