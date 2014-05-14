@@ -51,6 +51,7 @@ Changes:
 
 Architectural changes
 ---------------------
+
 - Velocity field is now created as "owner field" in C (removed from rtp
   and rtpa). Velocity is now fully interleaved.
 
@@ -66,6 +67,9 @@ Architectural changes
   Field pointers for all variables are accessible from C using the macros in
   cs_field_pointer.h. The ichrvr, ilisvr, scamin and scamax arrays are also replaced by
   field keywords.
+
+- Lagrangian module: for tracking, particle structure is replaced by raw data
+  mapped at run-time, allowing for allocation only of useful data.
 
 - Remove support for obsolete LAM and MPICH1 MPI libraries.
 
