@@ -308,10 +308,10 @@ As explained in the introduction \ref{sec:bndcnd:intro}, the simple case of a he
 As presented in \S~ \ref{sec:bndcnd:dirichlet_bc}, Dirichlet condition $T_\centf = T_w$ simply leads to $A^f = - h_{int} T_w$ and $B^f = h_{int}$.
 In some cases, heat transfer outside the flow domain is described by a one-dimensional conduction equation $q = -h_{ext} \left(T_{REF} - T_w \right)$
 in which some reference temperature $T_{REF}$ is given and the coefficient $h_{ext}$ is known from an analytical or experimental correlation.
-Equaling this to the heat flux on the first fluid cell this to the heat flux on the first fluid cell boundary gives $ h_{ext} \left(T_{REF} - T_w \right) = h_{int} \left( T_\centip T_\centf \right)$. This relation between the variable and its gradient at the boundary is called a Robin or mixed boundary condtion.
+Equaling this to the heat flux computed in the first fluid cell at the boundary gives $ h_{ext} \left(T_{REF} - T_w \right) = h_{int} \left( T_\centip - T_\centf \right)$. This relation between the variable and its gradient at the boundary is called a Robin or mixed boundary condtion.
 
 More generally, to impose an external Dirichlet $\varia^{imp, \, ext}$ at some distance outside the boundary face,
-this is done by a user prescribded externalent $h_{ext}$
+this is done by a user prescribed external coefficient $h_{ext}$
 (see \figurename~\ref{fig:bndcnd:boundary_flux}), and the boundary condition coefficients then read:
 
 \begin{equation}
@@ -336,7 +336,7 @@ The harmonic mean (as in \eqref{eq:spadis:harmonic_viscosity}) comes from summin
 Note that this case reduces to Dirichlet condition if $h_{ext}$ tends to the infinity.
 
 \begin{remark}
-Both $\varia^{imp, \, ext} $ and $ h_{ext} $ must be specified by the user. The boundary code is $1$ (see \tablename~\ref{tab:ICODCLadm_condli}). Take care that an outgoing flux is counted positive.
+Both $\varia^{imp, \, ext} $ and $ h_{ext} $ must be specified by the user. The boundary code is $1$ (see \tablename~\ref{tab:ICODCLadm_condli}). Take care that an outgoing flux is counted positively.
 \end{remark}
 
 %-------------------------------------------------------------------------------
