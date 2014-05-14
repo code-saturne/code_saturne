@@ -584,39 +584,39 @@ class InletBoundary(Boundary):
         """
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
             formula = """k = 0.;
-eps = 0.;"""
+epsilon = 0.;"""
 
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
-            formula = """R11 = 0.;
-R22 = 0.;
-R33 = 0.;
-R12 = 0.;
-R13 = 0.;
-R23 = 0.;
-eps = 0.;"""
+            formula = """r11 = 0.;
+r22 = 0.;
+r33 = 0.;
+r12 = 0.;
+r13 = 0.;
+r23 = 0.;
+epsilon = 0.;"""
 
         elif turb_model == 'Rij-EBRSM':
-            formula = """R11 = 0.;
-R22 = 0.;
-R33 = 0.;
-R12 = 0.;
-R13 = 0.;
-R23 = 0.;
-eps = 0.;
+            formula = """r11 = 0.;
+r22 = 0.;
+r33 = 0.;
+r12 = 0.;
+r13 = 0.;
+r23 = 0.;
+epsilon = 0.;
 alpha = 0.;"""
 
         elif turb_model == 'v2f-BL-v2/k':
             formula = """k = 0.;
-eps = 0.;
+epsilon = 0.;
 phi = 0.;
-al = 0.;"""
+alpha = 0.;"""
 
         elif turb_model == 'k-omega-SST':
             formula = """k = 0.;
 omega = 0.;"""
 
         elif turb_model == 'Spalart-Allmaras':
-            formula = """nusa = 0.;"""
+            formula = """nu_tilda = 0.;"""
 
         return formula
 

@@ -89,7 +89,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
     Class to open Molecular Properties Page.
     """
     density = """# Density of air
-rho = 1.293*(273.15 / TempK);
+density = 1.293*(273.15 / TempK);
 
 
 # density for mixtures of gases
@@ -100,7 +100,7 @@ rho = 1.293*(273.15 / TempK);
 rho1 = 1.25051;
 rho2 = 1.7832;
 A = (Y1 / rho1) + (Y2 /rho2);
-rho = 1.0 / A;
+density = 1.0 / A;
 
 """
     molecular_viscosity="""# Sutherland's Formula
@@ -120,9 +120,9 @@ T0 = 291.15;
 mu_ref = 18.27e-6;
 
 if ( TempK > 0 && TempK < 555) {
-mu = mu_ref * (T0+CST / TempK+CST) * (TempK/T0)^(3./2.);
+molecular_viscosity = mu_ref * (T0+CST / TempK+CST) * (TempK/T0)^(3./2.);
 } else {
-mu = -999.0;
+molecular_viscosity = -999.0;
 }
 
 """
@@ -133,18 +133,18 @@ mu = -999.0;
 
 Cp1 = 520.3;
 Cp2 = 1040.0;
-cp = Y1 * Cp1 + Y2 *Cp2;
+specific_heat = Y1 * Cp1 + Y2 *Cp2;
 """
     volume_viscosity="""# volume_viscosity
 """
     thermal_conductivity="""# oxygen
-lambda = 6.2e-5 * TempK + 8.1e-3;
+thermal_conductivity = 6.2e-5 * TempK + 8.1e-3;
 
 # nitrogen
-lambda = 6.784141e-5 * TempK + 5.564317e-3;
+thermal_conductivity = 6.784141e-5 * TempK + 5.564317e-3;
 
 # hydrogen
-lambda = 4.431e-4 * TempK + 5.334e-2;
+thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
 
 """
     def __init__(self, parent, case):
@@ -249,7 +249,6 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('variable'), 'variable')
-        self.modelDiff.addItem(self.tr('thermal law'), 'thermal_law')
 
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
         self.modelViscv0.addItem(self.tr('variable'), 'variable')
@@ -769,7 +768,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         User formula for density
         """
         exp = self.mdl.getFormula('density')
-        req = [('rho', 'Density')]
+        req = [('density', 'Density')]
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarLabel()
         if s == "TempC":
@@ -807,7 +806,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         User formula for molecular viscosity
         """
         exp = self.mdl.getFormula('molecular_viscosity')
-        req = [('mu', 'Molecular Viscosity')]
+        req = [('molecular_viscosity', 'Molecular Viscosity')]
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarLabel()
         if s == "TempC":
@@ -850,7 +849,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         User formula for specific heat
         """
         exp = self.mdl.getFormula('specific_heat')
-        req = [('cp', 'Specific heat')]
+        req = [('specific_heat', 'Specific heat')]
         exa = FluidCharacteristicsView.specific_heat
 
         symbols_cp = []
@@ -880,7 +879,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         User formula for volumic viscosity
         """
         exp = self.mdl.getFormula('volume_viscosity')
-        req = [('viscv', 'Volumic viscosity')]
+        req = [('volume_viscosity', 'Volumic viscosity')]
         exa = FluidCharacteristicsView.volume_viscosity
         symbols_viscv0 = []
         for s in self.list_scalars:
@@ -911,7 +910,7 @@ lambda = 4.431e-4 * TempK + 5.334e-2;
         User formula for thermal conductivity
         """
         exp = self.mdl.getFormula('thermal_conductivity')
-        req = [('lambda', 'Thermal conductivity')]
+        req = [('thermal_conductivity', 'Thermal conductivity')]
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarLabel()
         if s == "TempC":
