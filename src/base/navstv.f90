@@ -1127,7 +1127,7 @@ if (icavit.ge.0) then
 
   ! Void fraction solving
 
-  call resvoi(dt, rtp, rtpa)
+  call resvoi(dt, rtp, rtpa, propce)
   !==========
 
   ! Halo synchronization
