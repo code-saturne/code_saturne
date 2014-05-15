@@ -16,6 +16,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Avoid uncontroled crash in bad cells detection in case of negative volume.
+
 - Fix bug in the Generalized Gradient Diffusion Hypothesis (GGDH):
   swich between two components (R13 and R23): this is not impacting the validation
   database because this model is only validated on 2D test cases

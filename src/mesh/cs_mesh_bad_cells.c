@@ -289,7 +289,8 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
 
-  const cs_real_t *surfbo  = mesh_quantities->b_face_normal;
+  const cs_real_3_t *b_face_normal
+    = (const cs_real_3_t *)mesh_quantities->b_face_normal;
 
   int           sweep_id, n_sweeps;
   cs_lnum_t     i, k, face_id, cell1, cell2, cell_id;
@@ -321,7 +322,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
       vect[i] = cell_center2[i] - cell_center1[i];
     }
 
-    unsdij = 1.0 / sqrt(pow(vect[0], 2) + pow(vect[1], 2) + pow(vect[2], 2));
+    unsdij = 1.0 / _MODULE_3D(vect);
 
     for (i = 0; i < dim; i++)
       dij[i] = vect[i] * unsdij;
@@ -348,14 +349,12 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
     cell1 = mesh->b_face_cells[face_id] - 1;
 
-    surfn = sqrt(  pow(surfbo[face_id * 3], 2)
-                 + pow(surfbo[face_id * 3 + 1], 2)
-                 + pow(surfbo[face_id * 3 + 2], 2));
+    surfn = _MODULE_3D(b_face_normal[face_id]);
 
     surf_n_inv = 1.0 / surfn;
 
     for (i = 0; i < dim; i++)
-      dij[i] = surfbo[face_id * 3 + i] * surf_n_inv;
+      dij[i] = b_face_normal[face_id][i] * surf_n_inv;
 
     w1[cell1] += dij[0] * dij[0];
     w1[cell1 + n_cells_wghosts] += dij[1] * dij[1];
@@ -816,7 +815,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   /* Condition 2: Orthogonal A-Frame */
   /*---------------------------------*/
 
-  if (_type_flag_compute[call_type] & CS_BAD_CELL_OFFSET) {
+  if (   _type_flag_compute[call_type] & CS_BAD_CELL_OFFSET
+      && cs_glob_mesh_quantities->min_vol >= 0.) {
 
     _compute_offsetting(mesh,
                         mesh_quantities,
