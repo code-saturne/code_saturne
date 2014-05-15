@@ -16,6 +16,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix preprocessor crash when using "-grp-cel sections" option with block
+  structured meshes.
+
 - Avoid uncontroled crash in bad cells detection in case of negative volume.
 
 - Fix bug in the Generalized Gradient Diffusion Hypothesis (GGDH):
