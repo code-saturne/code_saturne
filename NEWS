@@ -4,6 +4,9 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix preprocessor crash when using "-grp-cel sections" option with block
+  structured meshes.
+
 - Avoid uncontroled crash in bad cells detection in case of negative volume.
 
 - Fix script error when using some additional options for preprocessor,

@@ -2372,6 +2372,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
               if (ind_zone_ent[ient] != NULL)
                 ind_zone_ent[ient][cpt_elt_ent[ient]] = ind_zone;
+              if (ind_section_ent[ient] != NULL)
+                ind_section_ent[ient][cpt_elt_ent[ient]] = 0;
 
               cpt_elt_ent[ient]++;
 
@@ -3102,7 +3104,7 @@ ecs_loc_pre_cgns__cree_grps_zs(const ecs_loc_cgns_base_t  *base_maillage,
 
     }
 
-    if (tab_ind_zs_ent != NULL && ient > ECS_ENTMAIL_NONE) {
+    if (tab_ind_zs_ent != NULL && renum_zs != NULL && ient > ECS_ENTMAIL_NONE) {
 
       ind_zs = 0;
 
