@@ -96,6 +96,31 @@ if test "x$with_hdf5" != "xno" ; then
   LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS}"
   LIBS="${LIBS} ${HDF5_LIBS}"
 
+  # If HDF5 was built with MPI support, it might also be needed here
+
+  AC_EGREP_CPP([cs_hdf5_parallel],
+               [
+                #include <hdf5.h>
+                #ifdef H5_HAVE_PARALLEL
+                #if (H5_HAVE_PARALLEL > 0)
+                cs_hdf5_parallel
+                #endif
+                #endif
+                ],
+                [cs_hdf5_need_mpi=yes],
+                [cs_hdf5_need_mpi=no])
+
+  if test "x$cs_hdf5_need_mpi" = "xyes" ; then
+    HDF5_CPPFLAGS_MPI=$MPI_CPPFLAGS
+    HDF5_LDFLAGS_MPI=$MPI_LDFLAGS
+    HDF5_LIBS_MPI=$MPI_LIBS
+    CPPFLAGS="${CPPFLAGS} ${HDF5_CPPFLAGS_MPI}"
+    LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS_MPI}"
+    LIBS="${HDF5_LIBS} ${HDF5_LIBS_MPI}"
+  fi
+
+  # Now check library
+
   AC_CHECK_LIB(hdf5, H5Fopen, 
                [ AC_DEFINE([HAVE_HDF5], 1, [HDF5 file support])
                  cs_have_hdf5=yes
@@ -110,6 +135,9 @@ if test "x$with_hdf5" != "xno" ; then
 
   if test "x$cs_have_hdf5" = "xno"; then
     HDF5_LIBS=""
+    HDF5_CPPFLAGS_MPI=""
+    HDF5_LDFLAGS_MPI=""
+    HDF5_LIBS_MPI=""
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
@@ -123,10 +151,15 @@ if test "x$with_hdf5" != "xno" ; then
 fi
 
 AC_SUBST(cs_have_hdf5)
+
 AC_SUBST(HDF5_CPPFLAGS)
 AC_SUBST(HDF5_LDFLAGS)
 AC_SUBST(HDF5_LIBS)
 AC_SUBST(HDF5RUNPATH)
+
+AC_SUBST(HDF5_CPPFLAGS_MPI)
+AC_SUBST(HDF5_LDFLAGS_MPI)
+AC_SUBST(HDF5_LIBS_MPI)
 
 ])dnl
 

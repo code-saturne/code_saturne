@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2013 EDF S.A.
+dnl Copyright (C) 1998-2014 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -74,9 +74,9 @@ if test "x$with_cgns" != "xno" ; then
   saved_LIBS="$LIBS"
 
   CGNS_LIBS="-lcgns"
-  CPPFLAGS="${CPPFLAGS} ${CGNS_CPPFLAGS}"
-  LDFLAGS="${LDFLAGS} ${CGNS_LDFLAGS} $HDF5_LDFLAGS"
-  LIBS="${LIBS} ${CGNS_LIBS} $HDF5_LIBS"
+  CPPFLAGS="${CPPFLAGS} ${CGNS_CPPFLAGS} ${HDF5_CPPFLAGS_MPI}"
+  LDFLAGS="${LDFLAGS} ${CGNS_LDFLAGS} ${HDF5_LDFLAGS} ${HDF5_LDFLAGS_MPI}"
+  LIBS="${CGNS_LIBS} ${HDF5_LIBS} ${HDF5_LIBS_MPI} ${LIBS}"
 
   # Check that a header file exists and that the version is compatible
   #-------------------------------------------------------------------

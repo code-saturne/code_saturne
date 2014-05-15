@@ -8,6 +8,8 @@ Changes:
 
 - MedCoupling and ParaMEDMEM adapters may now build with Salome 7.3.
 
+- Improve robustness of builds using parallel HDF5.
+
 - Allow usage of CS_SCRATCHDIR and CS_MPIEXEC_OPTIONS environment variables
   to define case-local options in a manner similar to versions 3.2 and above.
   The old mechanism based on user Python scripts is still operational,
