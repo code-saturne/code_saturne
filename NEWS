@@ -4,6 +4,8 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Avoid uncontroled crash in bad cells detection in case of negative volume.
+
 - Fix script error when using some additional options for preprocessor,
   as well as matching syntax options in cs_use_scripts.py example.
 
