@@ -4,6 +4,9 @@ Release 3.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix script error when using some additional options for preprocessor,
+  as well as matching syntax options in cs_use_scripts.py example.
+
 - Fix off-by-one bug leading to crash in renumbering for OpenMP in some cases.
 
 - Fix pointer initialization bug for coal combustion with drying.
