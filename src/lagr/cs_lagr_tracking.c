@@ -2965,7 +2965,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_lnum_t deposition_flag
     = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
   if (   deposition_flag == CS_LAGR_PART_DEPOSITED
-      && move_particle == CS_LAGR_PART_MOVE_ON
       && part_b_mass_flux != NULL)
     part_b_mass_flux[face_id]
       += particle_stat_weight * particle_mass / face_area;
@@ -3667,7 +3666,7 @@ _local_propagation(void                           *particle,
           cs_real_t face_area = fvq->b_face_surf[*neighbor_face_id];
 
           part_b_mass_flux[*neighbor_face_id]
-            -= cur_stat_weight * cur_mass / face_area;
+            += cur_stat_weight * cur_mass / face_area;
         }
 
       }
