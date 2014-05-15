@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2014 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -67,6 +67,6 @@ $(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
 $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
 $(MED_LDFLAGS) $(MEDRUNPATH) $(MED_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
-$(HDF5_LDFLAGS) $(HDF5RUNPATH) $(HDF5_LIBS) \
+$(HDF5_LDFLAGS) $(HDF5RUNPATH) $(HDF5_LIBS) $(HDF5_MPI_LIBS) \
 -lm
 

@@ -62,6 +62,8 @@ Architectural changes
   which contain install-related paths (such as salome/fsi_appli_config.xml)
   are now installed in sysconfdir.
 
+- Improve robustness of builds using parallel HDF5.
+
 Release 3.2.2 (27 Feb 2014)
 ===========================
 

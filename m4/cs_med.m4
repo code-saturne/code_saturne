@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2013 EDF S.A.
+dnl Copyright (C) 1998-2014 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -88,9 +88,9 @@ if test "x$with_med" != "xno" ; then
 
   MED_LIBS="-lmedC"
 
-  CPPFLAGS="${CPPFLAGS} ${MED_CPPFLAGS} ${HDF5_CPPFLAGS}"
-  LDFLAGS="${MED_LDFLAGS} ${HDF5_LDFLAGS} ${LDFLAGS}"
-  LIBS="${MED_LIBS} ${HDF5_LIBS} ${LIBS}"
+  CPPFLAGS="${CPPFLAGS} ${MED_CPPFLAGS} ${HDF5_CPPFLAGS} ${HDF5_CPPFLAGS_MPI}"
+  LDFLAGS="${MED_LDFLAGS} ${HDF5_LDFLAGS} ${HDF5_LDFLAGS_MPI} ${LDFLAGS}"
+  LIBS="${MED_LIBS} ${HDF5_LIBS} ${HDF5_LIBS_MPI} ${LIBS}"
 
   # Check that MED header files exist and that the version is compatible
   #---------------------------------------------------------------------
@@ -174,10 +174,6 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
       if test "x$cs_have_med_link_cxx" = "xno"; then
         AC_LANG_PUSH(C++)
       fi
-
-      CPPFLAGS="${CPPFLAGS} ${MPI_CPPFLAGS}"
-      LDFLAGS="${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${saved_LDFLAGS}"
-      LIBS="${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${saved_LIBS}"
 
       AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <mpi.h>

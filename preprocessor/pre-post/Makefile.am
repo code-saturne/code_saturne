@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2014 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,10 +25,11 @@
 # Main part
 
 AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
-$(HDF5_CPPFLAGS) $(CCM_CPPFLAGS) $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
+$(HDF5_CPPFLAGS) $(HDF5_CPPFLAGS_MPI) \
+$(CCM_CPPFLAGS) $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS = \
-$(HDF5_LDFLAGS) $(CCM_LDFLAGS) $(MED_LDFLAGS) $(CGNS_LDFLAGS)
+$(CCM_LDFLAGS) $(MED_LDFLAGS) $(CGNS_LDFLAGS) $(HDF5_LDFLAGS) $(HDF5_LDFLAGS_MPI)
 
 # Headers
 
