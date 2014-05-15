@@ -83,8 +83,8 @@ if test "x$with_ccm" != "xno" ; then
   elif test "x$CGNS_LIBS" != "x" ; then
     CCM_LIBS="-lccmio"
     CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
-    LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS} $CGNS_LDFLAGS $HDF5_LDFLAGS"
-    LIBS="${CCM_LIBS} $CGNS_LIBS $HDF5_LIBS ${LIBS}"
+    LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS} ${CGNS_LDFLAGS} ${HDF5_LDFLAGS} ${HDF5_LDFLAGS_MPI}"
+    LIBS="${CCM_LIBS} ${CGNS_LIBS} ${HDF5_LIBS} ${HDF5_LIBS_MPI} ${LIBS}"
   fi
 
 # Check that CCMIO header files exist
