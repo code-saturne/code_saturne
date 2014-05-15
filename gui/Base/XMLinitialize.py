@@ -638,7 +638,7 @@ class XMLinit(Variables):
             name = node["name"]
             if name:
                 for key in dicoP.keys():
-                    if name.startswith(key):
+                    if name.startswith(key) and name != "smagorinsky_constant^2":
                         idx = name.find(key) + len(key)
                         node["name"] = dicoP[key] + name[idx:]
                         break
@@ -647,7 +647,7 @@ class XMLinit(Variables):
             name = node["name"]
             if name:
                 for key in dicoP.keys():
-                    if name.startswith(key):
+                    if name.startswith(key) and name != "smagorinsky_constant^2":
                         idx = name.find(key) + len(key)
                         node["name"] = dicoP[key] + name[idx:]
                         break
