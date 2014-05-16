@@ -55,6 +55,9 @@ Changes:
 Architectural changes
 ---------------------
 
+- Remove rtp, rtpa and propce in user subroutines API. The access to the
+  variables and the properties is carry out using field structure.
+
 - Velocity field is now created as "owner field" in C (removed from rtp
   and rtpa). Velocity is now fully interleaved.
 
@@ -154,7 +157,6 @@ Changes:
   - added new NOx model for coal combustion;
   - introduction of the coal thermal conductivity
     (for the calculation of intra particle gradients in particle-tracking module)
-
 
 - Boundary conditions:
    * Fix in the wall boundary conditions for the viscous boundary term
