@@ -2964,8 +2964,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   cs_lnum_t deposition_flag
     = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
-  if (   deposition_flag == CS_LAGR_PART_DEPOSITED
-      && part_b_mass_flux != NULL)
+  if (deposition_flag == CS_LAGR_PART_DEPOSITED && part_b_mass_flux != NULL)
     part_b_mass_flux[face_id]
       += particle_stat_weight * particle_mass / face_area;
 
@@ -4279,11 +4278,8 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
     cs_lagr_particles_set_lnum_n(particles, i, 1, CS_LAGR_CELL_NUM,
                                  itepa[i + _jisora * (*nbpmax)]);
 
-    /* TODO map indep and previous rank id together;
-       previous rank_id is currently only a placeholder,
-       as it is reset each time this function is called */
     cs_lagr_particles_set_lnum_n(particles, i, 1, CS_LAGR_RANK_ID,
-                                 cs_glob_rank_id);
+                                 itepa[i + _jirka * (*nbpmax)]);
 
     cs_lagr_particles_set_real(particles, i, CS_LAGR_RANDOM_VALUE,
                                tepa[i + _jrval * (*nbpmax)]);
@@ -4438,10 +4434,6 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
     if (am->size[CS_LAGR_ADHESION_TORQUE] > 0) {
       id = _jmfadh  * (*nbpmax) + i;
       cs_lagr_particles_set_real(particles, i, CS_LAGR_ADHESION_TORQUE, tepa[id]);
-    }
-
-    if (lagr_params->resuspension > 0) {
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_RANK_ID, cs_glob_rank_id);
     }
 
     if (am->size[CS_LAGR_TEMPERATURE] > 0) {
