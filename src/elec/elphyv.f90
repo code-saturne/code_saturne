@@ -709,7 +709,7 @@ call uselph                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     )
 
 
 

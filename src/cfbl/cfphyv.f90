@@ -103,7 +103,7 @@ save             ipass
 call uscfpv                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     )
 
 !===============================================================================
 ! 3. MISE A JOUR DE LAMBDA/CV

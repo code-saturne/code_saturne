@@ -472,7 +472,7 @@ call usvist &
 ( nvar   , nscal  ,                                              &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtp    , rtpa   , propce ,                            &
+  dt     ,                                                       &
   ckupdc , smacel )
 
 !===============================================================================
@@ -527,7 +527,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   call usvima &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    propce(1,ipproc(ivisma(1))) ,                                  &
    propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) )
 
