@@ -25,8 +25,8 @@ subroutine visdyn &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
-   ckupdc , smacel ,                            &
+   dt     ,                                                       &
+   ckupdc , smacel ,                                              &
    smagor )
 
 !===============================================================================
@@ -421,7 +421,7 @@ call ussmag                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    smagor , w1     , w2     )
 

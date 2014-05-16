@@ -254,7 +254,7 @@ if (ippmod(iatmos).ge.2) then ! humid atmosphere physics
 endif ! (ippmod(iatmos).ge.2)
 
 ! User re-definition:
-call usatph (propce)
+call usatph ()
 
 !===============================================================================
 ! FORMATS
