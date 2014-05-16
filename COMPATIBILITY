@@ -10,7 +10,8 @@ Other versions of these elements might not be compatible.
 
 Compilers and interpreters
 --------------------------
-* C 99 and Fortran 95 compilers (and optionally a C++ compiler)
+* C 99 and Fortran 95 compilers supporting Fortran 2003 iso_c_bindings
+  (and optionally a C++ compiler)
 * Python 2.5 or above and Bourne shell interpreters
 
 
@@ -39,4 +40,4 @@ number at the time of writing is given), but no specific command is
 used in the code so any other MPI library should work.
 * MPICH2: 1.2.5
 * MPICH:  3.0.4
-* Open-MPI: 1.6.4
+* Open-MPI: 1.6.5
