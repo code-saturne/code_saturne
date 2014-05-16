@@ -25,8 +25,8 @@ subroutine visdyn &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel ,                                              &
+   dt     , rtp    , rtpa   , propce ,                            &
+   ckupdc , smacel ,                            &
    smagor )
 
 !===============================================================================
