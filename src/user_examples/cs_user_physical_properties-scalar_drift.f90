@@ -40,16 +40,12 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     mbrom         indicator of filling of romb array
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
-   propce )
+   dt     )
 
 !===============================================================================
 
@@ -80,15 +76,13 @@ integer          nvar   , nscal
 
 integer          mbrom
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 !< [loc_var_dec]
 integer          ivart, iel, ifac
-integer          ipcvis
-integer          ipcvsl, iscal, iflid, iscdri
+integer          iscal, iflid, iscdri
 integer          f_id, keydri, nfld, keysca
 double precision rho, viscl
 double precision diamp, rhop, cuning
@@ -96,9 +90,14 @@ double precision xrtp, xk, xeps, beta1
 
 character*80     fname
 
-double precision, dimension(:), pointer :: taup
-double precision, dimension(:), pointer :: taufpt
-double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cpro_taup
+double precision, dimension(:), pointer :: cpro_taufpt
+double precision, dimension(:), pointer :: cpro_rom
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cpro_viscl, cpro_vscal
+double precision, dimension(:), pointer :: cvar_scalt
+
 !< [loc_var_dec]
 
 !===============================================================================
@@ -108,8 +107,8 @@ double precision, dimension(:), pointer :: crom
 !===============================================================================
 
 !< [init]
-ipcvis = ipproc(iviscl)
-call field_get_val_s(icrom, crom)
+call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+call field_get_val_s(icrom, cpro_rom)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -131,7 +130,7 @@ call field_get_n_fields(nfld)
 !  =======
 !  (Brownian motion) to be variable in space and set the proper relation
 !  between the molecular diffusivity and T:
-!  ex: Kb x T x cuning /(3*pi*diamp(iscal)*propce(iel,ipcvis))
+!  ex: Kb x T x cuning /(3*pi*diamp(iscal)*cpro_viscl(iel))
 !===============================================================================
 
 !    Excluding:
@@ -162,18 +161,18 @@ do iflid = 0, nfld-1
     ! --- Number of the thermal variable
     if (iscalt.gt.0) then
       ivart = isca(iscalt)
+      call field_get_val_s(ivarfl(ivart), cvar_scalt)
     else
       write(nfecra,9010) iscalt
       call csexit (1)
     endif
 
-    ! --- Rank of scalar's diffusivity (Brownian motion)
-    !     in 'propce', physical properties at element centers: 'ipcvsl'
+    ! --- Scalar's diffusivity (Brownian motion)
 
     if (ivisls(iscal).gt.0) then
-      ipcvsl = ipproc(ivisls(iscal))
+      call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vscal)
     else
-      ipcvsl = 0
+      cpro_vscal => NULL()
     endif
 
     ! --- Coefficients of drift scalar CHOSEN BY THE USER
@@ -189,14 +188,14 @@ do iflid = 0, nfld-1
     ! Name of the scalar with a drift
     call field_get_name(iflid, fname)
 
-    ! Index of the corresponding relaxation time (taup)
+    ! Index of the corresponding relaxation time (cpro_taup)
     call field_get_id('drift_tau_'//trim(fname), f_id)
-    call field_get_val_s(f_id, taup)
+    call field_get_val_s(f_id, cpro_taup)
 
-    ! Index of the corresponding interaction time particle--eddies (taufpt)
+    ! Index of the corresponding interaction time particle--eddies (cpro_taufpt)
     if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
       call field_get_id('drift_turb_tau_'//trim(fname), f_id)
-      call field_get_val_s(f_id, taufpt)
+      call field_get_val_s(f_id, cpro_taufpt)
     endif
 
     ! Computation of the relaxation time of the particles
@@ -205,11 +204,11 @@ do iflid = 0, nfld-1
     if (diamp.le.1.d-6) then
       ! Cuningham's correction for submicronic particules
       do iel = 1, ncel
-        taup(iel) = cuning*diamp**2*rhop/(18.d0*propce(iel,ipcvis))
+        cpro_taup(iel) = cuning*diamp**2*rhop/(18.d0*cpro_viscl(iel))
       enddo
     else
       do iel = 1, ncel
-        taup(iel) = diamp**2*rhop/(18.d0*propce(iel,ipcvis))
+        cpro_taup(iel) = diamp**2*rhop/(18.d0*cpro_viscl(iel))
       enddo
     endif
 
@@ -220,29 +219,37 @@ do iflid = 0, nfld-1
 
       ! k-epsilon or v2-f models
       if (itytur.eq.2 .or. itytur.eq.5) then
+        call field_get_val_s(ivarfl(ik), cvar_k)
+        call field_get_val_s(ivarfl(iep), cvar_ep)
         do iel = 1, ncel
-          xk = rtp(iel,ik)
-          xeps = rtp(iel,iep)
-          taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
+          xk = cvar_k(iel)
+          xeps = cvar_ep(iel)
+          cpro_taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
         enddo
 
       ! Rij-epsilon models
       else if (itytur.eq.3) then
+        call field_get_val_s(ivarfl(ir11), cvar_r11)
+        call field_get_val_s(ivarfl(ir22), cvar_r22)
+        call field_get_val_s(ivarfl(ir33), cvar_r33)
+        call field_get_val_s(ivarfl(iep), cvar_ep)
         beta1  = 0.5d0+3.d0/(4.d0*xkappa)
         do iel = 1, ncel
-          xk = 0.5d0*( rtp(iel,ir11)                    &
-                      +rtp(iel,ir22)                    &
-                      +rtp(iel,ir33) )
-          xeps = rtp(iel,iep)
-          taufpt(iel) = xk/xeps/beta1
+          xk = 0.5d0*( cvar_r11(iel)                    &
+                      +cvar_r22(iel)                    &
+                      +cvar_r33(iel) )
+          xeps = cvar_ep(iel)
+          cpro_taufpt(iel) = xk/xeps/beta1
         enddo
 
       ! k-omega models
       else if (iturb.eq.60) then
+        call field_get_val_s(ivarfl(ik), cvar_k)
+        call field_get_val_s(ivarfl(iomg), cvar_omg)
         do iel = 1, ncel
-          xk = rtp(iel,ik)
-          xeps = cmu*xk*rtp(iel,iomg)
-          taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
+          xk = cvar_k(iel)
+          xeps = cmu*xk*cvar_omg(iel)
+          cpro_taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
         enddo
       endif
 
@@ -252,17 +259,17 @@ do iflid = 0, nfld-1
     !-----------------------------------
 
     ! --- Stop if the diffusivity is not variable
-    if (ipcvsl.le.0) then
+    if (ivisls(iscal).le.0) then
       write(nfecra,1010) iscal, iscal, ivisls(iscal)
       call csexit (1)
     endif
 
     ! Homogeneous to a dynamic viscosity
     do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      rho = crom(iel)
-      viscl = propce(iel, ipcvis)
-      propce(iel,ipcvsl) = rho*kboltz*xrtp*cuning/(3.d0*pi*diamp*viscl)
+      xrtp = cvar_scalt(iel)
+      rho = cpro_rom(iel)
+      viscl = cpro_viscl(iel)
+      cpro_vscal(iel) = rho*kboltz*xrtp*cuning/(3.d0*pi*diamp*viscl)
     enddo
 
   endif ! --- Tests on drift scalar

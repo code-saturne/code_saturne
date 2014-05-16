@@ -56,9 +56,6 @@
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -78,7 +75,7 @@
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -121,8 +118,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -137,8 +133,15 @@ double precision acc(2), fmprsc, fmul, uref2, vnrm
 
 integer, allocatable, dimension(:) :: lstelt, mrkcel
 
-double precision, dimension(:), pointer :: brom
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: bfpro_rom
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r23, cvar_r13
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
+double precision, dimension(:), pointer :: cvar_omg
+double precision, dimension(:), pointer :: cvar_al, cvar_fb
+double precision, dimension(:), pointer :: cvar_nusa
+double precision, dimension(:), pointer :: cvar_scal
+double precision, dimension(:,:), pointer :: cvar_vel
 !< [loc_var_dec]
 
 !===============================================================================
@@ -149,8 +152,50 @@ double precision, dimension(:,:), pointer :: vel
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
-call field_get_val_s(ibrom, brom)
+call field_get_val_v(ivarfl(iu), cvar_vel)
+call field_get_val_s(ibrom, bfpro_rom)
+
+if (itytur.eq.2) then
+
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+
+elseif (itytur.eq.3) then
+
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
+  call field_get_val_s(ivarfl(ir12), cvar_r12)
+  call field_get_val_s(ivarfl(ir13), cvar_r13)
+  call field_get_val_s(ivarfl(ir23), cvar_r23)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+
+  if (iturb.eq.32) then
+    call field_get_val_s(ivarfl(ial), cvar_al)
+  endif
+
+elseif (itytur.eq.5) then
+
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+  call field_get_val_s(ivarfl(iphi), cvar_phi)
+
+  if (iturb.eq.50) then
+    call field_get_val_s(ivarfl(ifb), cvar_fb)
+  elseif (iturb.eq.51) then
+    call field_get_val_s(ivarfl(ial), cvar_al)
+  endif
+
+elseif (iturb.eq.60) then
+
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iomg), cvar_omg)
+
+elseif (iturb.eq.70) then
+
+  call field_get_val_s(ivarfl(inusa), cvar_nusa)
+
+endif
 
 d2s3 = 2.d0/3.d0
 !< [init]
@@ -243,7 +288,7 @@ if (ntcabs.eq.1) then
     !     and of k and epsilon at the inlet (xkent and xeent) using
     !     standard laws for a circular pipe
     !     (their initialization is not needed here but is good practice).
-    rhomoy  = brom(ifac)
+    rhomoy  = bfpro_rom(ifac)
     xustar2 = 0.d0
     xkent   = epzero
     xeent   = epzero
@@ -322,7 +367,7 @@ else
     ifac = lstelt(ilelt)
     iel = ifabor(ifac)
 
-    vnrm = sqrt(vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2)
+    vnrm = sqrt(cvar_vel(1,iel)**2 + cvar_vel(2,iel)**2 + cvar_vel(3,iel)**2)
     acc(1) = acc(1) + vnrm*surfbn(ifac)
     acc(2) = acc(2) + surfbn(ifac)
 
@@ -343,7 +388,7 @@ else
 
     itypfb(ifac) = ientre
 
-    vnrm = sqrt(vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2)
+    vnrm = sqrt(cvar_vel(1,iel)**2 + cvar_vel(2,iel)**2 + cvar_vel(3,iel)**2)
 
     rcodcl(ifac,iu,1) = - fmul * vnrm * surfbo(1,ifac) / surfbn(ifac)
     rcodcl(ifac,iv,1) = - fmul * vnrm * surfbo(2,ifac) / surfbn(ifac)
@@ -351,43 +396,43 @@ else
 
     if (itytur.eq.2) then
 
-      rcodcl(ifac,ik,1)  = rtp(iel,ik)
-      rcodcl(ifac,iep,1) = rtp(iel,iep)
+      rcodcl(ifac,ik,1)  = cvar_k(iel)
+      rcodcl(ifac,iep,1) = cvar_ep(iel)
 
     elseif (itytur.eq.3) then
 
-      rcodcl(ifac,ir11,1) = rtp(iel,ir11)
-      rcodcl(ifac,ir22,1) = rtp(iel,ir22)
-      rcodcl(ifac,ir33,1) = rtp(iel,ir33)
-      rcodcl(ifac,ir12,1) = rtp(iel,ir12)
-      rcodcl(ifac,ir13,1) = rtp(iel,ir13)
-      rcodcl(ifac,ir23,1) = rtp(iel,ir23)
-      rcodcl(ifac,iep,1)  = rtp(iel,iep)
+      rcodcl(ifac,ir11,1) = cvar_r11(iel)
+      rcodcl(ifac,ir22,1) = cvar_r22(iel)
+      rcodcl(ifac,ir33,1) = cvar_r33(iel)
+      rcodcl(ifac,ir12,1) = cvar_r12(iel)
+      rcodcl(ifac,ir13,1) = cvar_r13(iel)
+      rcodcl(ifac,ir23,1) = cvar_r23(iel)
+      rcodcl(ifac,iep,1)  = cvar_ep(iel)
 
       if (iturb.eq.32) then
-        rcodcl(ifac,ial,1)  = rtp(iel,ial)
+        rcodcl(ifac,ial,1)  = cvar_al(iel)
       endif
 
     elseif (itytur.eq.5) then
 
-      rcodcl(ifac,ik,1)  = rtp(iel,ik)
-      rcodcl(ifac,iep,1) = rtp(iel,iep)
-      rcodcl(ifac,iphi,1) = rtp(iel,iphi)
+      rcodcl(ifac,ik,1)  = cvar_k(iel)
+      rcodcl(ifac,iep,1) = cvar_ep(iel)
+      rcodcl(ifac,iphi,1) = cvar_phi(iel)
 
       if (iturb.eq.50) then
-        rcodcl(ifac,ifb,1)  = rtp(iel,ifb)
+        rcodcl(ifac,ifb,1)  = cvar_fb(iel)
       elseif (iturb.eq.51) then
-        rcodcl(ifac,ial,1)  = rtp(iel,ial)
+        rcodcl(ifac,ial,1)  = cvar_al(iel)
       endif
 
     elseif (iturb.eq.60) then
 
-      rcodcl(ifac,ik,1)  = rtp(iel,ik)
-      rcodcl(ifac,iomg,1) = rtp(iel,iomg)
+      rcodcl(ifac,ik,1)  = cvar_k(iel)
+      rcodcl(ifac,iomg,1) = cvar_omg(iel)
 
     elseif (iturb.eq.70) then
 
-      rcodcl(ifac,inusa,1) = rtp(iel,inusa)
+      rcodcl(ifac,inusa,1) = cvar_nusa(iel)
 
     endif
 
@@ -395,7 +440,8 @@ else
     !                 rather than the simpler code below)
     if (nscal.gt.0) then
       do ii = 1, nscal
-        rcodcl(ifac,isca(ii),1) = rtp(iel,isca(ii))
+        call field_get_val_s(ivarfl(isca(ii)), cvar_scal)
+        rcodcl(ifac,isca(ii),1) = cvar_scal(ii)
       enddo
     endif
 

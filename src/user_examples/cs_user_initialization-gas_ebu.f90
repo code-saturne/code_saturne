@@ -39,14 +39,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -75,6 +72,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -84,7 +82,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -94,6 +92,7 @@ double precision hinit, coefg(ngazgm)
 double precision sommqf, sommqt, sommq, tentm, fmelm
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: cvar_ygfm, cvar_fm, cvar_scalt
 !< [loc_var_dec]
 
 !===============================================================================
@@ -101,6 +100,10 @@ integer, allocatable, dimension(:) :: lstelt
 !---------------
 ! Initialization
 !---------------
+
+call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
+call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
 !< [init]
 allocate(lstelt(ncel)) ! temporary array for cells selection
@@ -166,18 +169,18 @@ if ( isuite.eq.0 ) then
 
 ! ----- Mass fraction of Unburned Gas
 
-    rtp(iel,isca(iygfm)) = 5.d-1
+    cvar_ygfm(iel) = 5.d-1
 
 ! ----- Mean Mixture Fraction
 
     if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
-      rtp(iel,isca(ifm)) = fmelm
+      cvar_fm(iel) = fmelm
     endif
 
 ! ----- Enthalpy
 
     if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-      rtp(iel,isca(iscalt)) = hinit
+      cvar_scalt(iel) = hinit
     endif
 
   enddo

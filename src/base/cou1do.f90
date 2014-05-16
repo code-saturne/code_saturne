@@ -169,7 +169,7 @@ call  uspt1d &
    tppt1d , rvoid  , rvoid  ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
-   dt     , rtpa   )
+   dt     )
 
 iappel = 3
 call vert1d &

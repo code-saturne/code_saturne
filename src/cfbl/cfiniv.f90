@@ -125,7 +125,7 @@ if ( isuite.eq.0 ) then
     call cs_user_initialization &
     !==========================
   ( nvar   , nscal  ,                                            &
-    dt     , rtp    , propce )
+    dt     )
 
   endif
 

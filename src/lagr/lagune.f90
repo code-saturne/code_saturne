@@ -439,7 +439,7 @@ if (iroule.ge.1) then
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa ,                                      &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   , vagaus , croule , auxl ,                     &
    dispar , yplpar )
 
@@ -836,7 +836,7 @@ call uslast                                                       &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     ,                                                       &
    taup   , tlag   , tempct )
 
 !===============================================================================

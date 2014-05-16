@@ -39,15 +39,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -76,6 +73,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -85,13 +83,14 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 !< [loc_var_dec]
 integer          iel, iutile
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: cvar_scal
 !< [loc_var_dec]
 
 !===============================================================================
@@ -108,16 +107,17 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 ! Variables initialization:
 !
 !   isca(1) is the number related to the first user-defined scalar variable.
-!   rtp(iel,isca(1)) is the value of this variable in cell number iel.
+!   cvar_scal(iel) is the value of this variable in cell number iel.
 !
 !   ONLY done if there is no restart computation
 !===============================================================================
 
 !< [init]
 if (isuite.eq.0) then
+  call field_get_val_s(ivarfl(isca(1)), cvar_scal)
 
   do iel = 1, ncel
-    rtp(iel,isca(1)) = 25.d0
+    cvar_scal(iel) = 25.d0
   enddo
 
 endif

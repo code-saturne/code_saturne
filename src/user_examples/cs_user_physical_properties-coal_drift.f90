@@ -40,16 +40,12 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     mbrom         indicator of filling of romb array
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
-   propce )
+   dt     )
 
 !===============================================================================
 
@@ -81,19 +77,16 @@ integer          nvar   , nscal
 
 integer          mbrom
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 !< [loc_var_dec]
 integer          ivart, iel, ifac
-integer          ipcvis, ipccp
-integer          ipcvsl, ivar
+integer          ipccp
+integer          ivar
 integer          f_id
-integer          iclapc, idecal
-integer          ll
-integer          ipcte1, icla, iromf
+integer          icla
 integer          iscdri, keydri, iflid, nfld, keyccl
 
 double precision xrtp
@@ -112,8 +105,15 @@ character*80     fname
 
 double precision, allocatable, dimension(:) :: x1, visco
 
-double precision, dimension(:), pointer :: taup
-double precision, dimension(:), pointer :: taupg
+double precision, dimension(:), pointer :: cpro_rom1, cpro_rom2, cpro_diam2
+double precision, dimension(:), pointer :: cpro_viscl
+double precision, dimension(:), pointer :: cpro_temp1, cpro_x2
+double precision, dimension(:), pointer :: cpro_ym1_3, cpro_ym1_5, cpro_ym1_7
+double precision, dimension(:), pointer :: cpro_ym1_8
+double precision, dimension(:), pointer :: cpro_ym1_9, cpro_ym1_11, cpro_ym1_12
+
+double precision, dimension(:), pointer :: cpro_taup
+double precision, dimension(:), pointer :: cpro_taupg
 !< [loc_var_dec]
 
 !===============================================================================
@@ -123,8 +123,16 @@ double precision, dimension(:), pointer :: taupg
 !===============================================================================
 
 !< [init]
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), cpro_viscl)
 allocate(x1(ncelet), visco(ncelet))
+
+call field_get_val_s(iprpfl(iym1(3)), cpro_ym1_3)
+call field_get_val_s(iprpfl(iym1(5)), cpro_ym1_5)
+call field_get_val_s(iprpfl(iym1(7)), cpro_ym1_7)
+call field_get_val_s(iprpfl(iym1(8)), cpro_ym1_8)
+call field_get_val_s(iprpfl(iym1(9)), cpro_ym1_9)
+call field_get_val_s(iprpfl(iym1(11)), cpro_ym1_11)
+call field_get_val_s(iprpfl(iym1(12)), cpro_ym1_12)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -153,19 +161,21 @@ call field_get_n_fields(nfld)
 g = sqrt(gx**2 + gy**2 + gz**2)
 
 ! Temperature
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(itemp1), cpro_temp1)
 
 ! Gas density
-iromf = ipproc(irom1)
+call field_get_val_s(iprpfl(irom1), cpro_rom1)
 
 ! First initialization
 if (ntcabs.le.1) then
   do iel = 1, ncel
     visco(iel) = viscl0
-    propce(iel,iromf) = ro0
+    cpro_rom1(iel) = ro0
     do icla = 1, nclacp
-      propce(iel,ipproc(irom2(icla)))  = ro0
-      propce(iel,ipproc(idiam2(icla))) = diam20(icla)
+      call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
+      call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
+      cpro_rom2(iel)  = ro0
+      cpro_diam2(iel) = diam20(icla)
     enddo
   enddo
 endif
@@ -211,13 +221,13 @@ dd7 = 2.9979d-15
 
 !-------------------------------------------------------------------------------
 !      law                    mu   = a + b T + c T**2 + d T**3
-!      so      propce(iel, ipcvis) = a +b*xrtp+c*xrtp**2 + d*xrtp**3
+!      so      cpro_viscl(iel) = a +b*xrtp+c*xrtp**2 + d*xrtp**3
 !-------------------------------------------------------------------------------
 
 if (ntcabs.gt.1) then
   do iel = 1, ncel
 
-    xrtp = propce(iel,ipcte1)
+    xrtp = cpro_temp1(iel)
     visco_O2  = aa1 + xrtp*bb1 + cc1*xrtp**2 + dd1*xrtp**3
     visco_CO  = aa2 + xrtp*bb2 + cc2*xrtp**2 + dd2*xrtp**3
     visco_H2  = aa3 + xrtp*bb3 + cc3*xrtp**2 + dd3*xrtp**3
@@ -227,28 +237,29 @@ if (ntcabs.gt.1) then
     visco_CO2 = aa7 + xrtp*bb7 + cc7*xrtp**2 + dd7*xrtp**3
 
     ! Viscosity of the mixing
-    visco(iel) = ( propce(iel,ipproc(iym1(8))) * visco_O2                     &
-                 + propce(iel,ipproc(iym1(3))) * visco_CO                     &
-                 + propce(iel,ipproc(iym1(5))) * visco_H2                     &
-                 + propce(iel,ipproc(iym1(12)))* visco_N2                     &
-                 + propce(iel,ipproc(iym1(11)))* visco_SO2                    &
-                 + propce(iel,ipproc(iym1(7))) * visco_NH3                    &
-                 + propce(iel,ipproc(iym1(9))) * visco_CO2 )/                 &
-                 ( propce(iel,ipproc(iym1(8))) + propce(iel,ipproc(iym1(3)))  &
-                 + propce(iel,ipproc(iym1(5))) + propce(iel,ipproc(iym1(12))) &
-                 + propce(iel,ipproc(iym1(11)))+ propce(iel,ipproc(iym1(7)))  &
-                 + propce(iel,ipproc(iym1(9))))
+    visco(iel) = ( cpro_ym1_8(iel) * visco_O2                     &
+                 + cpro_ym1_3(iel) * visco_CO                     &
+                 + cpro_ym1_5(iel) * visco_H2                     &
+                 + cpro_ym1_12(iel)* visco_N2                     &
+                 + cpro_ym1_11(iel)* visco_SO2                    &
+                 + cpro_ym1_7(iel) * visco_NH3                    &
+                 + cpro_ym1_9(iel) * visco_CO2 )/                 &
+                 ( cpro_ym1_8(iel) + cpro_ym1_3(iel)                   &
+                 + cpro_ym1_5(iel) + cpro_ym1_12(iel)                  &
+                 + cpro_ym1_11(iel)+ cpro_ym1_7(iel)                   &
+                 + cpro_ym1_9(iel))
 
   enddo
 endif
 
-! Compute x1 = 1 - sum x2
+! Compute x1 = 1 - sum cpro_x2
 do iel = 1, ncel
 
   x1(iel) = 1.d0
 
   do icla = 1, nclacp
-    x1(iel) = x1(iel) - propce(iel,ipproc(ix2(icla))) !FIXME is propce(iel,ipproc(ix2(icla))) initialized ?
+    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+    x1(iel) = x1(iel) - cpro_x2(iel) !FIXME is x2(iel) initialized ?
   enddo
 
 enddo
@@ -272,14 +283,14 @@ do iflid = 0, nfld-1
     ! Name of the drift scalar
     call field_get_name(iflid, fname)
 
-    ! Index of the corresponding "relaxation time" (taupg) for the gas
+    ! Index of the corresponding "relaxation time" (cpro_taupg) for the gas
     ! WARNING: for the gas, this tau might be negative
     call field_get_id('drift_tau_'//trim(fname), f_id)
-    call field_get_val_s(f_id, taupg)
+    call field_get_val_s(f_id, cpro_taupg)
 
     ! Initialize to 0
     do iel = 1, ncel
-      taupg(iel) = 0.d0
+      cpro_taupg(iel) = 0.d0
     enddo
 
   endif
@@ -296,6 +307,10 @@ do iflid = 0, nfld-1
 
   call field_get_key_int(iflid, keydri, iscdri)
 
+  call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
+  call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
+  call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+
   ! We only handle here one scalar with a drift per particle class
   if (icla.ge.1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
@@ -305,9 +320,9 @@ do iflid = 0, nfld-1
     ! Name of the drift scalar
     call field_get_name(iflid, fname)
 
-    ! Index of the corresponding relaxation time (taup)
+    ! Index of the corresponding relaxation time (cpro_taup)
     call field_get_id('drift_tau_'//trim(fname), f_id)
-    call field_get_val_s(f_id, taup)
+    call field_get_val_s(f_id, cpro_taup)
 
     ! Computation of the relaxation time of the particles
     ! the drift is therefore v_g = tau_p * g
@@ -316,8 +331,8 @@ do iflid = 0, nfld-1
     do iel = 1, ncel
 
       ! Simple model for Low Reynolds Numbers
-      taup(iel) = x1(iel) * propce(iel,ipproc(irom2(icla)))          &
-                          * propce(iel,ipproc(idiam2(icla)))**2      &
+      cpro_taup(iel) = x1(iel) * cpro_rom2(iel)                               &
+                          * cpro_diam2(iel)**2                           &
                           / (18.d0*visco(iel))
 
     enddo
@@ -326,8 +341,8 @@ do iflid = 0, nfld-1
     ! tau_pg = - Sum_i X2_i v_gi
     do iel = 1, ncel
 
-      taupg(iel) = taupg(iel)                                       &
-                 - ( taup(iel) * propce(iel,ipproc(ix2(icla))) )
+      cpro_taupg(iel) = cpro_taupg(iel)                                  &
+                 - ( cpro_taup(iel) * cpro_x2(iel) )
 
     enddo
 

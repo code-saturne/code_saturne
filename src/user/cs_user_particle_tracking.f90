@@ -28,7 +28,7 @@ subroutine uslaed &
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
    auxl1  , auxl2  , auxl3  )
 
@@ -86,10 +86,6 @@ subroutine uslaed &
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! transported variables at the current           !
-! (ncelet,*)       !    !     ! and previous time step                         !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -140,8 +136,7 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
@@ -272,7 +267,7 @@ subroutine uslafe &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     ,                                                       &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
@@ -313,10 +308,6 @@ subroutine uslafe &
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep)   !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers for      !
-! (ncelet,*)       !    !     ! the current and the previous time step         !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     !                                                !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -380,8 +371,7 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,*),stativ(ncelet,*)
@@ -739,7 +729,7 @@ subroutine uslapr &
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart  ,         &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   )
 
 !===============================================================================
@@ -795,10 +785,6 @@ subroutine uslapr &
 ! ddpart           !  r ! <-- ! particle diameter                              !
 ! ttpart           !  r ! <-- ! particle temperature                           !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! transported variables at the previous          !
-! (ncelet,*)       !    !     ! time step                                      !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -848,8 +834,7 @@ double precision xxpart , yypart , zzpart
 double precision tvpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 
-double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables
@@ -970,7 +955,7 @@ subroutine uslaru &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  ,                                     &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   , vagaus , croule , auxl  ,                    &
    distpa , distyp )
 
@@ -1006,10 +991,6 @@ subroutine uslaru &
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep)   !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! transported variables at cell centers for      !
-! (ncelet,*)       !    !     ! the previous timestep                          !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -1057,8 +1038,7 @@ integer          ntersl , nvlsta , nvisbr
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*) , croule(ncelet)
 double precision auxl(nbpmax,3)
@@ -1146,7 +1126,7 @@ subroutine uslast &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     ,                                                       &
    taup   , tlag   , tempct )
 
 !===============================================================================
@@ -1201,10 +1181,6 @@ subroutine uslast &
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers at       !
-! (ncelet,*)       !    !     ! the current and previous time step             !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! taup(nbpmax)     ! ra ! <-- ! particle relaxation time                       !
 ! tlag(nbpmax)     ! ra ! <-- ! relaxation time for the flow                   !
 ! tempct           ! ra ! <-- ! thermal relaxation time                        !
@@ -1244,8 +1220,7 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 
 ! Local variables
@@ -1540,7 +1515,7 @@ subroutine uslatc &
    numpt  , itepa  ,                                              &
    rep    , uvwr   , romf   , romp   , xnul   ,                   &
    xcp    , xrkl   , tauc   ,                                     &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    ettp   , ettpa  , tepa   )
 
 !===============================================================================
@@ -1632,10 +1607,6 @@ subroutine uslatc &
 !                  !    !     ! position                                       !
 ! tauc             ! r  ! --> ! thermal relaxation time                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! transported variables at cell centers at       !
-! (ncelet,*)       !    !     ! the current time step                          !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -1683,8 +1654,7 @@ integer          itepa(nbpmax,nivep)
 double precision rep    , uvwr   , romf   , romp   , xnul
 double precision xcp    , xrkl   , tauc
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 
@@ -1760,7 +1730,7 @@ subroutine uslatp &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    numpt  , itepa  ,                                              &
    rep    , uvwr   , romf   , romp   , xnul   , taup   ,          &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    ettp   , ettpa  , tepa   )
 
 !===============================================================================
@@ -1835,10 +1805,6 @@ subroutine uslatp &
 !                  !    !     ! particle position                              !
 ! taup             ! r  ! --> ! particle relaxation time                       !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! transported variables at cells centers         !
-! (ncelet,*)       !    !     ! at the previous time step                      !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -1885,8 +1851,7 @@ integer          itepa(nbpmax,nivep)
 
 double precision rep    , uvwr   , romf   , romp   , xnul  , taup
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 

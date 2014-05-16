@@ -345,7 +345,7 @@ if (nscapp.gt.0) then
             call elreca(dt, rtp, propce)
             !==========
 
-            call uselrc(nvar, nscal, dt, rtpa, rtp, propce)
+            call uselrc(nvar, nscal, dt)
             !==========
 
           endif

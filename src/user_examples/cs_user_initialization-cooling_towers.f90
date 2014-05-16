@@ -39,15 +39,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -76,6 +73,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -85,7 +83,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -98,6 +96,7 @@ double precision d2s3
 double precision, dimension(:,:), pointer :: vel
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: cvar_temp4, cvar_humid
 !< [loc_var_dec]
 
 !===============================================================================
@@ -126,10 +125,13 @@ if (isuite.eq.0) then
 !                      de l'humidite de l'air a 0.0063
 !       pour toutes les cellules
 
+  call field_get_val_s(ivarfl(isca(itemp4)), cvar_temp4)
+  call field_get_val_s(ivarfl(isca(ihumid)), cvar_humid)
+
   do iel = 1, ncel
 
-    rtp(iel,isca(itemp4)) = 11.d0
-    rtp(iel,isca(ihumid)) = 0.0063d0
+    cvar_temp4(iel) = 11.d0
+    cvar_humid(iel) = 0.0063d0
 
   enddo
 
@@ -147,8 +149,8 @@ if (isuite.eq.0) then
 
     vel(1,iel) = -0.5d0
 
-    rtp(iel,isca(itemp4)) = 20.d0
-    rtp(iel,isca(ihumid)) = 0.012d0
+    cvar_temp4(iel) = 20.d0
+    cvar_humid(iel) = 0.012d0
 
   enddo
 

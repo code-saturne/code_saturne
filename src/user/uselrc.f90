@@ -26,7 +26,7 @@ subroutine uselrc &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -49,9 +49,6 @@ subroutine uselrc &
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
@@ -89,14 +86,12 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 integer          iel    , ifac   , iutile
-integer          ipcefj , ipcdc1 , ipcdc2 , ipcdc3 , ipcsig
-integer          ipdcrp , idimve , jaiex
+integer          idimve , jaiex
 
 double precision somje , coepoa , coefav , coepot
 double precision emax  , aiex   , amex
@@ -106,6 +101,9 @@ double precision xelec , yelec  , zelec, diff
 
 double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cscalt, cpotr
+double precision, dimension(:), pointer :: vspotr, efjou, djr3
+double precision, dimension(:,:), pointer :: djr
 
 !===============================================================================
 
@@ -124,6 +122,8 @@ if (1.eq.1) return
 !===============================================================================
 
 call field_get_val_s(icrom, crom)
+call field_get_val_s(ivarfl(isca(iscalt)), cscalt)
+call field_get_val_s(ivarfl(isca(ipotr)), cpotr)
 
 !===============================================================================
 ! 2.  ARC ELECTRIQUE
@@ -174,16 +174,14 @@ if ( ippmod(ielarc).ge.1 ) then
 
 !     les composantes du champ electrique : J/SIGMA
 
-      ipcdc1 = ipproc(idjr(1))
-      ipcdc2 = ipproc(idjr(2))
-      ipcdc3 = ipproc(idjr(3))
-      ipcsig = ipproc(ivisls(ipotr))
+      call field_get_val_v(iprpfl(idjr(1)), djr)
+      call field_get_val_s(iprpfl(ivisls(ipotr)), vspotr)
 
       do iel = 1, ncel
 
-        xelec = propce(iel,ipcdc1)/propce(iel,ipcsig)
-        yelec = propce(iel,ipcdc2)/propce(iel,ipcsig)
-        zelec = propce(iel,ipcdc3)/propce(iel,ipcsig)
+        xelec = djr(1,iel)/vspotr(iel)
+        yelec = djr(2,iel)/vspotr(iel)
+        zelec = djr(3,iel)/vspotr(iel)
 
 !       Calcul du champ E
         w1(iel) = sqrt ( xelec**2 + yelec**2 + zelec**2 )
@@ -292,7 +290,7 @@ if ( ippmod(ielarc).ge.1 ) then
                  -zclaq)**2)
             posi=xclaq*xyzcen(1,iel)
             if( rayo.le.5d-4 .and. posi.ge.0d0 ) then
-              rtp(iel,isca(iscalt)) = 8.d7
+              cscalt(iel) = 8.d7
             endif
           endif
         enddo
@@ -305,10 +303,10 @@ if ( ippmod(ielarc).ge.1 ) then
 !        -----------------------------------
 !        (c'est forcement positif ou nul)
 
-    ipcefj = ipproc(iefjou)
+    call field_get_val_s(iprpfl(iefjou), efjou)
     somje = 0.d0
     do iel = 1, ncel
-      somje = somje+propce(iel,ipcefj)*volume(iel)
+      somje = somje+efjou(iel)*volume(iel)
     enddo
 
     if(irangp.ge.0) then
@@ -328,14 +326,14 @@ if ( ippmod(ielarc).ge.1 ) then
 !       ATTENTION : changer la valeur des tests sur CDGFAC(3,IFAC)
 !                   en fonction du maillage
 
-    ipcdc3 = ipproc(idjr(3))
+    call field_get_val_s(iprpfl(idjr(3)), djr3)
     elcou = 0.d0
     do ifac = 1, nfac
       if( abs(surfac(1,ifac)).le.1.d-8 .and. abs(surfac(2,ifac)).le.1.d-8 &
            .and. cdgfac(3,ifac) .gt. 0.05d-2                              &
            .and. cdgfac(3,ifac) .lt. 0.08d-2 ) then
         iel = ifacel(1,ifac)
-        elcou = elcou + propce(iel,ipcdc3) * surfac(3,ifac)
+        elcou = elcou + djr3(iel) * surfac(3,ifac)
       endif
     enddo
 
@@ -360,10 +358,10 @@ if ( ippmod(ielarc).ge.1 ) then
 
     do iel = 1, ncel
       if (crom(iel).ne.0.d0)                                   &
-           delhsh =  propce(iel,ipcefj) * dt(iel) / crom(iel)
+           delhsh =  efjou(iel) * dt(iel) / crom(iel)
 
       if(delhsh.ne.0.d0) then
-        dtjm= rtp(iel,isca(iscalt))/delhsh
+        dtjm= cscalt(iel)/delhsh
       else
         dtjm= dtj
       endif
@@ -400,7 +398,7 @@ if ( ippmod(ielarc).ge.1 ) then
 !         --------------------
 
     do iel = 1, ncel
-      rtp(iel,isca(ipotr)) = rtp(iel,isca(ipotr))*coepot
+      cpotr(iel) = cpotr(iel)*coepot
     enddo
 
 
@@ -408,10 +406,10 @@ if ( ippmod(ielarc).ge.1 ) then
 !      ------------------
 
     if(ippmod(ielarc).ge.1 ) then
+      call field_get_val_v(iprpfl(idjr(1)), djr)
       do idimve = 1, ndimve
         do iel = 1, ncel
-          ipdcrp = ipproc(idjr(idimve))
-          propce(iel,ipdcrp) = propce(iel,ipdcrp) * coepot
+          djr(idimve,iel) =  djr(idimve,iel) * coepot
         enddo
       enddo
     endif
@@ -419,9 +417,9 @@ if ( ippmod(ielarc).ge.1 ) then
 !      Effet Joule (sert pour H au pas de temps suivant)
 !      -----------
 
-    ipcefj = ipproc(iefjou)
+    call field_get_val_s(iprpfl(iefjou), efjou)
     do iel = 1, ncel
-      propce(iel,ipcefj) = propce(iel,ipcefj)*coepot**2
+      efjou(iel) = efjou(iel)*coepot**2
     enddo
 
 endif

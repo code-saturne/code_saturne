@@ -317,7 +317,7 @@ call ustssc &
 ( nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscal  ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtpa   , rtp    , propce ,                            &
+  dt     ,                                                       &
   ckupdc , smacel , smbrs  , rovsdt )
 
 ! Atmospheric chemistry

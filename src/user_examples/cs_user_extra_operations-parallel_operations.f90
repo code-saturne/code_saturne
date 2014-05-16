@@ -40,14 +40,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -84,8 +81,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -97,7 +93,7 @@ integer          itab(3)
 double precision rrr
 double precision xyz(3)
 
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer :: cvar_vel
 
 !< [loc_var_dec]
 
@@ -108,7 +104,7 @@ double precision, dimension(:,:), pointer :: vel
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
+call field_get_val_v(ivarfl(iu), cvar_vel)
 
 !===============================================================================
 ! Example use of parallel utility functions for several operations
@@ -146,7 +142,8 @@ if (irangp.ge.0) then
 endif
 ! print the global maximum value
 write(nfecra,5010)ii
- 5010 format(' cs_user_extra_operations: max. number of cells per process = ', i10)
+ 5010 format(' cs_user_extra_operations: max. number of cells per process = ',&
+            i10)
 !< [example_2]
 
 ! Sum of a real 'rrr', here the volume
@@ -276,7 +273,7 @@ if (irangp.ge.0) then
 endif
 ! print the global sums
 write(nfecra,5080) itab(1), itab(2), itab(3)
- 5080 format(' cs_user_extra_operations: Number of cells =          ', i10, /,  &
+ 5080 format(' cs_user_extra_operations: Number of cells =         ', i10, /,  &
              '         Number of interior faces = ', i10, /,  &
              '         Number of boundary faces = ', i10)
 !< [example_8]
@@ -296,7 +293,8 @@ if (irangp.ge.0) then
 endif
 ! print the global maxima
 write(nfecra,5090) itab(1), itab(2), itab(3)
- 5090 format(' cs_user_extra_operations: Max. number of cells per proc. =          ', i10, /,  &
+ 5090 format(' cs_user_extra_operations: Max. number of cells per proc. =    &
+             ', i10, /,  &
              '         Max. number of interior faces per proc. = ', i10, /,  &
              '         Max. number of boundary faces per proc. = ', i10)
 !< [example_9]
@@ -316,7 +314,8 @@ if (irangp.ge.0) then
 endif
 ! print the global minima
 write(nfecra,5100) itab(1), itab(2), itab(3)
- 5100 format(' cs_user_extra_operations: Min. number of cells per proc. =          ', i10, /,  &
+ 5100 format(' cs_user_extra_operations: Min. number of cells per proc. =    &
+             ', i10, /,  &
              '         Min. number of interior faces per proc. = ', i10, /,  &
              '         Min. number of boundary faces per proc. = ', i10)
 !< [example_10]
@@ -331,9 +330,9 @@ xyz(1) = 0.d0
 xyz(2) = 0.d0
 xyz(3) = 0.d0
 do iel = 1, ncel
-  xyz(1) = xyz(1) + vel(1,iel)
-  xyz(2) = xyz(2) + vel(2,iel)
-  xyz(3) = xyz(3) + vel(3,iel)
+  xyz(1) = xyz(1) + cvar_vel(1,iel)
+  xyz(2) = xyz(2) + cvar_vel(2,iel)
+  xyz(3) = xyz(3) + cvar_vel(3,iel)
 enddo
 ! global sum
 if (irangp.ge.0) then
@@ -341,7 +340,7 @@ if (irangp.ge.0) then
 endif
 ! print the global sums
 write(nfecra,5110) xyz(1), xyz(2), xyz(3)
- 5110 format(' cs_user_extra_operations: Sum of U on the domain = ', e14.5, /,   &
+ 5110 format(' cs_user_extra_operations: Sum of U on the domain = ', e14.5, /, &
              '         Sum of V on the domain = ', e14.5, /,   &
              '         Sum of V on the domain = ', e14.5)
 !< [example_11]
@@ -352,13 +351,13 @@ write(nfecra,5110) xyz(1), xyz(2), xyz(3)
 ! local values
 !< [example_12]
 nbr = 3
-xyz(1) = vel(1,1)
-xyz(2) = vel(2,1)
-xyz(3) = vel(3,1)
+xyz(1) = cvar_vel(1,1)
+xyz(2) = cvar_vel(2,1)
+xyz(3) = cvar_vel(3,1)
 do iel = 1, ncel
-  xyz(1) = max(xyz(1),vel(1,iel))
-  xyz(2) = max(xyz(2),vel(2,iel))
-  xyz(3) = max(xyz(3),vel(3,iel))
+  xyz(1) = max(xyz(1),cvar_vel(1,iel))
+  xyz(2) = max(xyz(2),cvar_vel(2,iel))
+  xyz(3) = max(xyz(3),cvar_vel(3,iel))
 enddo
 ! global maximum
 if (irangp.ge.0) then
@@ -366,7 +365,8 @@ if (irangp.ge.0) then
 endif
 ! print the global maxima
 write(nfecra,5120) xyz(1), xyz(2), xyz(3)
- 5120 format(' cs_user_extra_operations: Maximum of U on the domain = ', e14.5, /,   &
+ 5120 format(' cs_user_extra_operations: Maximum of U on the domain = ',  &
+             e14.5, /,   &
              '         Maximum of V on the domain = ', e14.5, /,   &
              '         Maximum of V on the domain = ', e14.5)
 !< [example_12]
@@ -377,13 +377,13 @@ write(nfecra,5120) xyz(1), xyz(2), xyz(3)
 !< [example_13]
 ! local values
 nbr = 3
-xyz(1) = vel(1,1)
-xyz(2) = vel(2,1)
-xyz(3) = vel(3,1)
+xyz(1) = cvar_vel(1,1)
+xyz(2) = cvar_vel(2,1)
+xyz(3) = cvar_vel(3,1)
 do iel = 1, ncel
-  xyz(1) = min(xyz(1),vel(1,iel))
-  xyz(2) = min(xyz(2),vel(2,iel))
-  xyz(3) = min(xyz(3),vel(3,iel))
+  xyz(1) = min(xyz(1),cvar_vel(1,iel))
+  xyz(2) = min(xyz(2),cvar_vel(2,iel))
+  xyz(3) = min(xyz(3),cvar_vel(3,iel))
 enddo
 ! global minimum
 if (irangp.ge.0) then
@@ -391,7 +391,8 @@ if (irangp.ge.0) then
 endif
 ! print the global maxima
 write(nfecra,5130) xyz(1), xyz(2), xyz(3)
- 5130 format(' cs_user_extra_operations: Minimum of U on the domain = ', e14.5, /,   &
+ 5130 format(' cs_user_extra_operations: Minimum of U on the domain = ', &
+             e14.5, /,   &
              '         Minimum of V on the domain = ', e14.5, /,   &
              '         Minimum of V on the domain = ', e14.5)
 !< [example_13]
@@ -413,7 +414,7 @@ if (irangp.ge.0) then
 endif
 ! print values broadcast and received from rank 'irangv'
 write(nfecra,5140) irangv, itab(1), itab(2), itab(3)
- 5140 format(' cs_user_extra_operations: On rank ', i10 , /,                     &
+ 5140 format(' cs_user_extra_operations: On rank ', i10 , /,   &
              '         Number of cells          = ', i10, /,   &
              '         Number of interior faces = ', i10, /,   &
              '         Number of boundary faces = ', i10)
@@ -426,16 +427,16 @@ write(nfecra,5140) irangv, itab(1), itab(2), itab(3)
 ! local values
 irangv = 0
 nbr = 3
-xyz(1) = vel(1,1)
-xyz(2) = vel(2,1)
-xyz(3) = vel(3,1)
+xyz(1) = cvar_vel(1,1)
+xyz(2) = cvar_vel(2,1)
+xyz(3) = cvar_vel(3,1)
 ! broadcast from rank irangv to all others
 if (irangp.ge.0) then
   call parbcr(irangv, nbr, xyz)
 endif
 ! print values broadcast and received from rank 'irangv'
 write(nfecra,5150) irangv, xyz(1), xyz(2), xyz(3)
- 5150 format(' cs_user_extra_operations: On rank ', i10 , /,                       &
+ 5150 format(' cs_user_extra_operations: On rank ', i10 , /,     &
              '         Velocity U in first cell = ', e14.5, /,   &
              '         Velocity V in first cell = ', e14.5, /,   &
              '         Velocity W in first cell = ', e14.5)

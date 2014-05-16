@@ -230,7 +230,7 @@ if (itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ckupdc , smacel , tsimp  , tsexp     )
 
 

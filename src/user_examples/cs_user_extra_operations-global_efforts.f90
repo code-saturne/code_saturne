@@ -40,14 +40,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -84,8 +81,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -95,7 +91,7 @@ integer          ii
 integer          ilelt  , nlelt
 
 double precision xfor(3)
-double precision, dimension(:,:), pointer :: forbr
+double precision, dimension(:,:), pointer :: bfprp_for
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
@@ -106,7 +102,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !===============================================================================
 
-if (ineedf.eq.1) call field_get_val_v(iforbr, forbr)
+if (ineedf.eq.1) call field_get_val_v(iforbr, bfprp_for)
 
 ! Allocate a temporary array for cells or interior/boundary faces selection
 allocate(lstelt(max(ncel,nfac,nfabor)))
@@ -132,7 +128,7 @@ if (ineedf.eq.1) then
     ifac = lstelt(ilelt)
 
     do ii = 1, ndim
-      xfor(ii) = xfor(ii) + forbr(ii, ifac)
+      xfor(ii) = xfor(ii) + bfprp_for(ii, ifac)
     enddo
 
   enddo

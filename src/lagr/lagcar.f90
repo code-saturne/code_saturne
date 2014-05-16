@@ -241,7 +241,7 @@ do ip = 1,nbpart
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
        ip     , itepa  ,                                          &
        rep    , uvwr   , rom    , romp(ip) , xnul , taup(ip) ,    &
-       dt     , rtp    , propce ,                                 &
+       dt     ,                                                   &
        ettp   , ettpa  , tepa   )
 
 !--->  CALCUL DE Tc
@@ -288,7 +288,7 @@ do ip = 1,nbpart
        ip     , itepa  ,                                          &
        rep    , uvwr   , rom    , romp(ip) , xnul ,               &
        xcp    , xrkl   , tempct(ip,1) ,                           &
-       dt     , rtp    , propce ,                                 &
+       dt     ,                                                   &
        ettp   , ettpa  , tepa   )
 
 ! Terme source implicite pour le couplage retour thermique

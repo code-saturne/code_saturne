@@ -53,9 +53,6 @@
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -75,7 +72,7 @@
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -118,8 +115,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -139,6 +135,8 @@ double precision sirt(nbtrmx)  ,siit(nbtrmx)
 character*200    chain
 
 integer, allocatable, dimension(:) :: lstelt
+
+double precision, dimension(:), pointer :: cpro_dji, cpro_djr
 !< [loc_var_dec]
 
 !===============================================================================
@@ -201,14 +199,16 @@ do i = 1,nbelec
       iel = ifabor(ifac)
 
       do id=1,ndimve
+        call field_get_val_s(iprpfl(idjr(id)), cpro_djr)
         sir(i) = sir(i)                                           &
-             +propce(iel,ipproc(idjr(id)))*surfbo(id,ifac)
+             + cpro_djr(iel)*surfbo(id,ifac)
       enddo
 
       if ( ippmod(ieljou) .eq. 4 ) then
         do id=1,ndimve
+          call field_get_val_s(iprpfl(idji(id)), cpro_dji)
           sii(i) = sii(i)                                         &
-               +propce(iel,ipproc(idji(id)))*surfbo(id,ifac)
+               + cpro_dji(iel)*surfbo(id,ifac)
         enddo
       endif
 

@@ -39,14 +39,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -83,8 +80,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -97,7 +93,10 @@ integer          iun
 
 double precision xyz(3), xabs, xu, xv, xw, xk, xeps
 
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer :: cvar_vel
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+
 !< [loc_var_dec]
 
 !===============================================================================
@@ -106,7 +105,23 @@ double precision, dimension(:,:), pointer :: vel
 if (ntcabs.eq.ntmabs) then
 
   ! Map field arrays
-  call field_get_val_v(ivarfl(iu), vel)
+  call field_get_val_v(ivarfl(iu), cvar_vel)
+
+  if (itytur.eq.2 .or. iturb.eq.50    &
+       .or. iturb.eq.60) then
+    call field_get_val_s(ivarfl(ik), cvar_k)
+  elseif (itytur.eq.3) then
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+  endif
+  if (     itytur.eq.2 .or. itytur.eq.3    &
+       .or. iturb.eq.50) then
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+  elseif (iturb.eq.60) then
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
+  endif
 
   ! Only process of rank 0 (parallel) or -1 (scalar) writes to this file.
   ! We use 'user' Fortran units.
@@ -137,23 +152,23 @@ if (ntcabs.eq.ntmabs) then
       ! the point and then send it to other processes.
       if (irangp.eq.irangv) then
         xabs = xyzcen(2,iel)
-        xu   = vel(1,iel)
-        xv   = vel(2,iel)
-        xw   = vel(3,iel)
+        xu   = cvar_vel(1,iel)
+        xv   = cvar_vel(2,iel)
+        xw   = cvar_vel(3,iel)
         xk   = 0.d0
         xeps = 0.d0
         if (     itytur.eq.2 .or. iturb.eq.50    &
             .or. iturb.eq.60) then
-          xk = rtp(iel,ik)
+          xk = cvar_k(iel)
         elseif (itytur.eq.3) then
-          xk = (  rtp(iel,ir11) + rtp(iel,ir22)  &
-                + rtp(iel,ir33)) / 2.d0
+          xk = (  cvar_r11(iel) + cvar_r22(iel)          &
+                + cvar_r33(iel)) / 2.d0
         endif
         if (     itytur.eq.2 .or. itytur.eq.3    &
             .or. iturb.eq.50) then
-          xeps = rtp(iel,iep)
+          xeps = cvar_ep(iel)
         elseif (iturb.eq.60) then
-          xeps = cmu*rtp(iel,ik)*rtp(iel,iomg)
+          xeps = cmu*cvar_k(iel)*cvar_omg(iel)
         endif
       else
         xabs = 0.d0

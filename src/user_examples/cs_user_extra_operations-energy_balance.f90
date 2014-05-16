@@ -39,14 +39,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -83,8 +80,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -93,7 +89,7 @@ integer          iel    , ifac   , ivar
 integer          iel1   , iel2   , ieltsm
 integer          iortho
 integer          inc    , iccocg
-integer          ipcvst , iflmas , iflmab , ipccp
+integer          iflmas , iflmab , ipccp
 integer          iscal
 integer          ilelt  , nlelt
 
@@ -112,6 +108,8 @@ double precision, allocatable, dimension(:) :: xcp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: cpro_visct, cpro_cp
+double precision, dimension(:), pointer :: cvar_scal, cvara_scal
 !< [loc_var_dec]
 
 !===============================================================================
@@ -161,9 +159,12 @@ if (inpdt0.eq.0) then
   iscal = iscalt         ! temperature scalar number
   ivar =  isca(iscal)    ! temperature variable number
 
+  call field_get_val_s(ivarfl(ivar), cvar_scal)
+  call field_get_val_prev_s(ivarfl(ivar), cvara_scal)
+
   ! Physical quantity numbers
   call field_get_val_s(icrom, crom)
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(ivisct), cpro_visct)
 
   ! Pointers to the mass fluxes
   call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
@@ -174,11 +175,13 @@ if (inpdt0.eq.0) then
   ! The balance is in Joule, so store the specific heat when dealing
   ! with the Temperature.
 
+  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+
   ! If it is a temperature
   if (itherm.eq.1) then
     if (icp.gt.0) then
       do iel = 1, ncel
-        xcp(iel) = propce(iel,ipproc(icp))
+        xcp(iel) = cpro_cp(iel)
       enddo
     else
       do iel = 1, ncel
@@ -201,7 +204,6 @@ if (inpdt0.eq.0) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-
   ! --> Compute value reconstructed at I' for boundary faces
 
   allocate(treco(nfabor))
@@ -211,7 +213,7 @@ if (inpdt0.eq.0) then
   ! treco(ifac) (with ifac=1, nfabor)
 
   ! For orthogonal meshes, it is sufficient to assign:
-  ! rtp(iel, ivar) to treco(ifac), with iel=ifabor(ifac)
+  ! cvar_scal(iel) to treco(ifac), with iel=ifabor(ifac)
   ! (this option corresponds to the second branch of the test below,
   ! with iortho different from 0).
 
@@ -238,7 +240,7 @@ if (inpdt0.eq.0) then
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      treco(ifac) =   rtp(iel,ivar)       &
+      treco(ifac) =   cvar_scal(iel)       &
                     + diipb(1,ifac)*grad(1,iel)  &
                     + diipb(2,ifac)*grad(2,iel)  &
                     + diipb(3,ifac)*grad(3,iel)
@@ -256,7 +258,7 @@ if (inpdt0.eq.0) then
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      treco(ifac) = rtp(iel,ivar)
+      treco(ifac) = cvar_scal(iel)
     enddo
 
   endif
@@ -271,8 +273,8 @@ if (inpdt0.eq.0) then
   ! of the time step using the temperature from the previous time step.
 
   do iel = 1, ncel
-    xrtpa = rtpa(iel,ivar)
-    xrtp  = rtp (iel,ivar)
+    xrtpa = cvara_scal(iel)
+    xrtp  = cvar_scal(iel)
     xbilvl =   xbilvl                              &
              + volume(iel) * xcp(iel) * crom(iel)  &
                            * (xrtpa - xrtp)
@@ -285,14 +287,14 @@ if (inpdt0.eq.0) then
 
     iel1 = ifacel(1,ifac)
     if (iel1.le.ncel) then
-      ctb1 = imasfl(ifac)*xcp(iel1)*rtp(iel1,ivar)*dt(iel1)
+      ctb1 = imasfl(ifac)*xcp(iel1)*cvar_scal(iel1)*dt(iel1)
     else
       ctb1 = 0d0
     endif
 
     iel2 = ifacel(2,ifac)
     if (iel2.le.ncel) then
-      ctb2 = imasfl(ifac)*xcp(iel2)*rtp(iel2,ivar)*dt(iel2)
+      ctb2 = imasfl(ifac)*xcp(iel2)*cvar_scal(iel2)*dt(iel2)
     else
       ctb2 = 0d0
     endif
@@ -304,7 +306,7 @@ if (inpdt0.eq.0) then
     iel = ifabor(ifac)
     xbildv = xbildv + dt(iel) * xcp(iel)             &
                               * bmasfl(ifac)         &
-                              * rtp(iel,ivar)
+                              * cvar_scal(iel)
   enddo
 
 
@@ -313,7 +315,7 @@ if (inpdt0.eq.0) then
   if (ncetsm.gt.0) then
     do ieltsm = 1, ncetsm
       iel = icetsm(ieltsm)
-      xrtp  = rtp (iel,ivar)
+      xrtp  = cvar_scal(iel)
       xgamma = smacel(ieltsm,ipr)
       xbildv =   xbildv                            &
                - volume(iel) * xcp(iel) * dt(iel)  &
@@ -475,17 +477,17 @@ if (inpdt0.eq.0) then
       iel = icetsm(ieltsm)
       xgamma = smacel(ieltsm,ipr)
       if (itypsm(ieltsm,ivar).eq.0 .or. xgamma.lt.0.d0) then
-        xrtp = rtp (iel,ivar)
+        xrtp = cvar_scal(iel)
       else
         xrtp = smacel(ieltsm,ivar)
       endif
-      if (ipccp.gt.0) then
+      if (icp.gt.0) then
         if (xgamma.lt.0.d0) then
           xbilma =   xbilma  &
-                   + volume(iel) * propce(iel,ipccp) * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cpro_cp(iel) * dt(iel) * xgamma * xrtp
         else
           xbilmi =   xbilmi  &
-                   + volume(iel) * propce(iel,ipccp) * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cpro_cp(iel) * dt(iel) * xgamma * xrtp
         endif
       else
         if (xgamma.lt.0.d0) then

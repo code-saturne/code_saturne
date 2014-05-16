@@ -39,15 +39,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -76,6 +73,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -83,7 +81,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -94,6 +92,8 @@ integer          iesp , idimve
 double precision tinit, hinit, coefe(ngazem)
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: cvar_scalt, cvar_ycoel
+double precision, dimension(:), pointer :: cvar_potr, cvar_poti, cvar_potva
 !< [loc_var_dec]
 
 !===============================================================================
@@ -199,20 +199,23 @@ if ( isuite.eq.0 ) then
 
 !    -- Entahlpy value
 
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
   do iel = 1, ncel
-    rtp(iel,isca(iscalt)) = hinit
+    cvar_scalt(iel) = hinit
   enddo
 
 
 ! --> Mass fraction  = 1 ou 0
 
   if ( ngazg .gt. 1 ) then
+    call field_get_val_s(ivarfl(isca(iycoel(1))), cvar_ycoel)
     do iel = 1, ncel
-      rtp(iel,isca(iycoel(1))) = 1.d0
+      cvar_ycoel(iel) = 1.d0
     enddo
     do iesp = 2, ngazg-1
+      call field_get_val_s(ivarfl(isca(iycoel(iesp))), cvar_ycoel)
       do iel = 1, ncel
-        rtp(iel,isca(iycoel(iesp))) = 0.d0
+        cvar_ycoel(iel) = 0.d0
       enddo
     enddo
   endif
@@ -221,22 +224,25 @@ if ( isuite.eq.0 ) then
 ! --> Electric potentials = 0
 
 !     -- Real Component
+  call field_get_val_s(ivarfl(isca(ipotr)), cvar_potr)
   do iel = 1, ncel
-    rtp(iel,isca(ipotr)) = 0.d0
+    cvar_potr(iel) = 0.d0
   enddo
 
 !     -- Imaginary (for Joule heating by direct conduction)
   if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
+    call field_get_val_s(ivarfl(isca(ipoti)), cvar_poti)
     do iel = 1, ncel
-      rtp(iel,isca(ipoti)) = 0.d0
+      cvar_poti(iel) = 0.d0
     enddo
   endif
 
 !     -- Vector potential (3D electric arc 3D)
   if ( ippmod(ielarc).ge.2 ) then
     do idimve = 1, ndimve
+      call field_get_val_s(ivarfl(isca(ipotva(idimve))), cvar_potva)
       do iel = 1, ncel
-        rtp(iel,isca(ipotva(idimve))) = 0.d0
+        cvar_potva(iel) = 0.d0
       enddo
     enddo
   endif

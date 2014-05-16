@@ -40,14 +40,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine cs_f_user_extra_operations &
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -84,14 +81,14 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 !< [loc_var_dec]
 integer          iel
 integer          iscal
+double precision, dimension(:), pointer :: cvar_scal
 !< [loc_var_dec]
 
 !===============================================================================
@@ -114,8 +111,9 @@ iscal = iscalt
 if (ttcabs .ge. 12.d0) then
 
   if (iscal.gt.0 .and. iscal.le.nscal) then
+    call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
     do iel = 1, ncel
-      rtp(iel,isca(iscal)) = 20.d0
+      cvar_scal(iel) = 20.d0
     enddo
   endif
 

@@ -204,10 +204,7 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- const cs_real_t  dt[],      /* <-- local time step */
- const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
- const cs_real_t  rtp[],     /* <-- cell variables */
- const cs_real_t  propce[]   /* <-- cell physical properties */
+ const cs_real_t  dt[]       /* <-- local time step */
 );
 
 /*----------------------------------------------------------------------------

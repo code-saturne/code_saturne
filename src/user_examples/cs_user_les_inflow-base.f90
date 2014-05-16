@@ -298,7 +298,7 @@ subroutine cs_user_les_inflow_advanced &
  ( nument , nfbent ,                                              &
    nvar   , nscal ,                                               &
    lfbent ,                                                       &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     ,                                                       &
    uvwent , rijent , epsent )
 
 !===============================================================================
@@ -345,9 +345,6 @@ subroutine cs_user_les_inflow_advanced &
 ! nscal            ! i  ! <-- ! number of scalars                              !
 ! lfbent           ! i  ! <-> ! list of bound. faces of the inlet              !
 ! dt               ! r  ! <-- ! time step                                      !
-! rtpa             ! ra ! <-- ! variables at cells (previous)                  !
-! rtp              ! ra ! <-- ! variables at cells                             !
-! propce           ! ra ! <-- ! physical properties at cells                   !
 ! uent             ! ra ! --> ! mean velocity at the inlet faces               !
 ! rijent           ! ra ! --> ! turb. kin. ener. at the inlet faces            !
 ! epsent           ! ra ! --> ! turb. dissipation at the inlet faces           !
@@ -369,6 +366,7 @@ use entsor
 use cstphy
 use cstnum
 use mesh
+use field
 
 !===============================================================================
 
@@ -381,8 +379,7 @@ integer          nvar   , nscal
 integer          lfbent(nfbent)
 integer          iutile
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision uvwent(ndim,nfbent), rijent(6,nfbent)
 double precision epsent(nfbent)
 
@@ -390,16 +387,16 @@ double precision epsent(nfbent)
 
 !< [loc_var_dec3]
 integer          ii, ifac, iel
-integer          ipcvis
 double precision d2s3
 double precision utau, href, reyfro, yy, yplus, uplus, kplus, eplus
 double precision uref2, xdh, xitur, xkent, xeent
+double precision, dimension(:), pointer :: cpro_viscl
 !< [loc_var_dec3]
 
 !===============================================================================
 
 d2s3 = 2.d0/3.d0
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), cpro_viscl)
 
 ! Example 1 : - mean velocity, Reynolds stresses an dissipation are deduced
 !==========   from a wall law for the first synthetic turbulence inlet,
@@ -419,7 +416,7 @@ if (nument.eq.1) then
     ifac = lfbent(ii)
     iel  = ifabor(ifac)
 
-    reyfro = utau*href/propce(iel,ipcvis)
+    reyfro = utau*href/cpro_viscl(iel)
 
     ! Dimensionless wall distance
     yy = 1.d0-abs(cdgfbo(2,ifac))
@@ -447,7 +444,7 @@ if (nument.eq.1) then
     rijent(5,ii) = 0.d0
     rijent(6,ii) = 0.d0
 
-    epsent(ii) = eplus*utau**4/propce(iel,ipcvis)
+    epsent(ii) = eplus*utau**4/cpro_viscl(iel)
 
   enddo
 

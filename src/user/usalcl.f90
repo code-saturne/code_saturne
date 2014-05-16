@@ -305,9 +305,6 @@
 !> \param[out]    ialtyb        boundary face types for mesh velocity
 !> \param[in]     impale        indicator for fixed node displacement
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -330,7 +327,7 @@ subroutine usalcl &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    rcodcl , xyzno0 , depale )
 
 !===============================================================================
@@ -363,8 +360,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor), ialtyb(nfabor)
 integer          impale(nnod)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision depale(3,nnod), xyzno0(3,nnod)
 

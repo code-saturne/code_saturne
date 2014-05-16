@@ -67,20 +67,20 @@ implicit none
 integer          iel, ii, jj
 double precision x, pormin, pormax, hc, ll, dhc
 
-double precision, dimension(:), pointer :: porosi
+double precision, dimension(:), pointer :: cpro_porosi
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 !===============================================================================
 
 ! Retrieve porosity field
-call field_get_val_s(ipori, porosi)
+call field_get_val_s(ipori, cpro_porosi)
 
 ! Example: fixe a linear by part porosity profile
 
@@ -92,10 +92,10 @@ do iel = 1, ncel
     hc = 1.d0 - dhc + dhc*(2.d0*x-ll)/ll
   endif
 
-  porosi(iel) = hc
+  cpro_porosi(iel) = hc
 
-  pormin = min(pormin,porosi(iel))
-  pormax = max(pormax,porosi(iel))
+  pormin = min(pormin,cpro_porosi(iel))
+  pormax = max(pormax,cpro_porosi(iel))
 enddo
 
 ! Periodicity and parallelism treatment
@@ -105,7 +105,7 @@ if (irangp.ge.0) then
 endif
 
 if (iperio.eq.1.or.irangp.ge.0) then
-  call synsca(porosi)
+  call synsca(cpro_porosi)
 endif
 
 return

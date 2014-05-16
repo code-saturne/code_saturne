@@ -114,7 +114,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 call cs_user_initialization &
 !==========================
 ( nvar   , nscal  ,                                            &
-  dt     , rtp    , propce )
+  dt     )
 
 
 !----

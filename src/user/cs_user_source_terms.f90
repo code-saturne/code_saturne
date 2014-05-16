@@ -93,9 +93,6 @@
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (preceding time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate (see \ref ustsma)
@@ -107,7 +104,7 @@ subroutine ustsnv &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
@@ -139,11 +136,10 @@ integer          ivar
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer ::  cpro_rom
 ! Local variables
 
 character*80     chaine
@@ -174,7 +170,7 @@ if (iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
-call field_get_val_s(icrom, crom)
+call field_get_val_s(icrom, cpro_rom)
 
 !===============================================================================
 ! 2. Example of arbitrary source term for component u:
@@ -212,7 +208,7 @@ ckp  = 10.d0
 qdm  = 100.d0
 
 do iel = 1, ncel
-  crvimp(1, 1, iel) = - volume(iel)*crom(iel)*ckp
+  crvimp(1, 1, iel) = - volume(iel)*cpro_rom(iel)*ckp
 enddo
 
 do iel = 1, ncel
@@ -248,7 +244,7 @@ subroutine ustssc &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
@@ -351,11 +347,6 @@ subroutine ustssc &
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time step)                         !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (current time step)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
@@ -395,8 +386,7 @@ integer          iscal
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
@@ -409,7 +399,7 @@ integer          ilelt, nlelt
 double precision tauf, prodf, volf, pwatt
 
 integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer ::  cpro_rom
 
 !===============================================================================
 
@@ -443,8 +433,8 @@ call field_get_label(ivarfl(ivar), chaine)
 !           the scalar iscal is the variance of the scalar iscavr(iscal)
 iiscvr = iscavr(iscal)
 
-! --- Index number of the density in the propce array
-call field_get_val_s(icrom, crom)
+! --- Density
+call field_get_val_s(icrom, cpro_rom)
 
 if (iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
@@ -493,11 +483,11 @@ if (iscal.eq.2) then
    prodf = 100.d0
 
    do iel = 1, ncel
-      crvimp(iel) = - volume(iel)*crom(iel)/tauf
+      crvimp(iel) = - volume(iel)*cpro_rom(iel)/tauf
    enddo
 
    do iel = 1, ncel
-      crvexp(iel) =   volume(iel)*crom(iel)*prodf
+      crvexp(iel) =   volume(iel)*cpro_rom(iel)*prodf
    enddo
 
 endif
@@ -681,7 +671,7 @@ integer          f_id
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
@@ -693,8 +683,8 @@ double precision ff, tau
 character*80     fname
 
 integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer ::  crom
-double precision, dimension(:), pointer ::  pvar
+double precision, dimension(:), pointer ::  cpro_rom
+double precision, dimension(:), pointer ::  cvar_var
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -713,12 +703,12 @@ if (.true.) return
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-! --- Get the density array in crom
-call field_get_val_s(icrom, crom)
+! --- Get the density array in cpro_rom
+call field_get_val_s(icrom, cpro_rom)
 
 
 ! --- Get the array of the current turbulent variable and its name
-call field_get_val_s(f_id, pvar)
+call field_get_val_s(f_id, cvar_var)
 call field_get_name(f_id, fname)
 
 if (iwarni(inusa).ge.1) then
@@ -729,9 +719,9 @@ endif
 ! 2. Example of arbitrary additional source term for turbulence models
 !    (Source term on the TKE 'k' here)
 
-!      Source term for pvar:
-!         rho volume d(pvar)/dt       = ...
-!                        ... - rho*volume*ff - rho*volume*pvar/tau
+!      Source term for cvar_var:
+!         rho volume d(cvar_var)/dt       = ...
+!                        ... - rho*volume*ff - rho*volume*cvar_var/tau
 
 !      With ff=3.d0 and tau = 4.d0
 
@@ -755,13 +745,13 @@ if (.false.) then
 
     ! --- Explicit source terms
     do iel = 1, ncel
-      crvexp(iel) = -crom(iel)*volume(iel)*ff
+      crvexp(iel) = -cpro_rom(iel)*volume(iel)*ff
     enddo
 
     ! --- Implicit source terms
     !        crvimp is already initialized to 0, no need to set it here
     do iel = 1, ncel
-      crvimp(iel) = -crom(iel)*volume(iel)/tau
+      crvimp(iel) = -cpro_rom(iel)*volume(iel)/tau
     enddo
 
   endif

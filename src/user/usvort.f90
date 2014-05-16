@@ -27,7 +27,7 @@ subroutine usvort &
 
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   dt     , rtpa   , propce )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -57,9 +57,6 @@ subroutine usvort &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -86,8 +83,7 @@ implicit none
 integer          nvar   , nscal
 integer          iappel
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 

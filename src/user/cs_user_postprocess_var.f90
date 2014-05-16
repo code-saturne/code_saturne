@@ -64,9 +64,6 @@
 !> \param[in]     lstfac        list of interior faces in post-processing mesh
 !> \param[in]     lstfbr        list of boundary faces in post-processing mesh
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine usvpst &
@@ -75,7 +72,7 @@ subroutine usvpst &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -110,8 +107,7 @@ integer          ncelps, nfacps, nfbrps
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar), rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -119,15 +115,19 @@ integer          ntindp
 integer          iel, ifac, iloc, ivar
 integer          idimt, ii , jj
 logical          ientla, ivarpr
-integer          imom1, imom2, ipcmo1, ipcmo2, idtcm
+integer          imom1, imom2, idtcm
 double precision pnd
 double precision rvoid(1)
 
 double precision, dimension(:), allocatable :: scel, sfac, sfbr
 double precision, dimension(:,:), allocatable :: vcel, vfac, vfbr
-double precision, dimension(:), pointer :: brom
+double precision, dimension(:), pointer :: bfpro_rom
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_var
 
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cmom_1, cmom_2
+
+double precision, dimension(:,:), pointer :: cvar_vel
 
 integer          intpst
 data             intpst /0/
@@ -234,11 +234,15 @@ if (ipart .eq. -1) then
 
     allocate(scel(ncelps))
 
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      scel(iloc) = 0.5d0*(  rtp(iel,ir11)  &
-                          + rtp(iel,ir22)  &
-                          + rtp(iel,ir33))
+      scel(iloc) = 0.5d0*(  cvar_r11(iel)  &
+                          + cvar_r22(iel)  &
+                          + cvar_r33(iel))
     enddo
 
     idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
@@ -269,10 +273,9 @@ if (ipart .eq. -1) then
     imom1 = 1
     imom2 = 2
 
-    ! Position in 'propce' of the array of temporal accumulation for moments,
-    ! propce(iel,ipcmom)
-    ipcmo1 = ipproc(icmome(imom1))
-    ipcmo2 = ipproc(icmome(imom2))
+    ! Temporal accumulation for moments
+    call field_get_val_s(iprpfl(icmome(imom1)),cmom_1)
+    call field_get_val_s(iprpfl(icmome(imom2)),cmom_2)
 
     ! The temporal accumulation for moments must be divided by the accumulated
     ! time, which id an array of size ncel or a single real number:
@@ -286,7 +289,7 @@ if (ipart .eq. -1) then
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      scel(iloc) =    propce(iel,ipcmo2) - (propce(iel,ipcmo1))
+      scel(iloc) =    cmom_2(iel) - (cmom_1(iel))
     enddo
 
     idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
@@ -313,13 +316,13 @@ else if (ipart .eq. -2) then
 
   idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
   ientla = .true.  ! dimension 1 here, so no effect
-  ivarpr = .true.  ! we use the brom array defined on the parent mesh
+  ivarpr = .true.  ! we use the bfpro_rom array defined on the parent mesh
 
   ! Output values; as we have no cell or interior face values, we can pass a
   ! trivial array for those.
-  call field_get_val_s(ibrom, brom)
+  call field_get_val_s(ibrom, bfpro_rom)
   call post_write_var(ipart, 'Density at boundary', idimt, ientla, ivarpr,    &
-                      ntcabs, ttcabs, rvoid, rvoid, brom)
+                      ntcabs, ttcabs, rvoid, rvoid, bfpro_rom)
 
 !===============================================================================
 ! Examples of volume variables on user meshes 1 or 2
@@ -327,7 +330,7 @@ else if (ipart .eq. -2) then
 
 else if (ipart.eq.1 .or. ipart.eq.2) then
   ! Map field arrays
-  call field_get_val_v(ivarfl(iu), vel)
+  call field_get_val_v(ivarfl(iu), cvar_vel)
 
   ! Output of the velocity
   ! ----------------------
@@ -338,7 +341,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(vel)
+    call synvin(cvar_vel)
     !==========
   endif
 
@@ -351,9 +354,9 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    vfac(1,iloc) = pnd  * vel(1,ii) + (1.d0 - pnd) * vel(1,jj)
-    vfac(2,iloc) = pnd  * vel(2,ii) + (1.d0 - pnd) * vel(2,jj)
-    vfac(3,iloc) = pnd  * vel(3,ii) + (1.d0 - pnd) * vel(3,jj)
+    vfac(1,iloc) = pnd  * cvar_vel(1,ii) + (1.d0 - pnd) * cvar_vel(1,jj)
+    vfac(2,iloc) = pnd  * cvar_vel(2,ii) + (1.d0 - pnd) * cvar_vel(2,jj)
+    vfac(3,iloc) = pnd  * cvar_vel(3,ii) + (1.d0 - pnd) * cvar_vel(3,jj)
 
   enddo
 
@@ -365,9 +368,9 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    vfbr(1,iloc) = vel(1,ii)
-    vfbr(2,iloc) = vel(2,ii)
-    vfbr(3,iloc) = vel(3,ii)
+    vfbr(1,iloc) = cvar_vel(1,ii)
+    vfbr(2,iloc) = cvar_vel(2,ii)
+    vfbr(3,iloc) = cvar_vel(3,ii)
 
   enddo
 
@@ -387,6 +390,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
 
   ! Variable number
   ivar = ipr
+  call field_get_val_s(ivarfl(ivar), cvar_var)
 
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
@@ -394,7 +398,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ivar))
+    call synsca(cvar_var)
     !==========
   endif
 
@@ -407,8 +411,8 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    sfac(iloc) =           pnd  * rtp(ii, ivar)  &
-                 + (1.d0 - pnd) * rtp(jj, ivar)
+    sfac(iloc) =           pnd  * cvar_var(ii)  &
+                 + (1.d0 - pnd) * cvar_var(jj)
 
   enddo
 
@@ -420,7 +424,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    sfbr(iloc) = rtp(ii, ivar)
+    sfbr(iloc) = cvar_var(ii)
 
   enddo
 
@@ -560,7 +564,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
 else if (ipart.ge.3 .and. ipart.le.4) then
 
   ! Map field arrays
-  call field_get_val_v(ivarfl(iu), vel)
+  call field_get_val_v(ivarfl(iu), cvar_vel)
 
   ! Output of the velocity
   ! ----------------------
@@ -571,7 +575,7 @@ else if (ipart.ge.3 .and. ipart.le.4) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(vel)
+    call synvin(cvar_vel)
     !==========
   endif
 
@@ -584,12 +588,12 @@ else if (ipart.ge.3 .and. ipart.le.4) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    vfac(1,iloc) =            pnd  * vel(1,ii)   &
-                    + (1.d0 - pnd) * vel(1,jj)
-    vfac(2,iloc) =            pnd  * vel(2,ii)   &
-                    + (1.d0 - pnd) * vel(2,jj)
-    vfac(3,iloc) =            pnd  * vel(3,ii)   &
-                    + (1.d0 - pnd) * vel(3,jj)
+    vfac(1,iloc) =            pnd  * cvar_vel(1,ii)   &
+                    + (1.d0 - pnd) * cvar_vel(1,jj)
+    vfac(2,iloc) =            pnd  * cvar_vel(2,ii)   &
+                    + (1.d0 - pnd) * cvar_vel(2,jj)
+    vfac(3,iloc) =            pnd  * cvar_vel(3,ii)   &
+                    + (1.d0 - pnd) * cvar_vel(3,jj)
 
   enddo
 
@@ -601,9 +605,9 @@ else if (ipart.ge.3 .and. ipart.le.4) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    vfbr(1,iloc) = vel(1,ii)
-    vfbr(2,iloc) = vel(2,ii)
-    vfbr(3,iloc) = vel(3,ii)
+    vfbr(1,iloc) = cvar_vel(1,ii)
+    vfbr(2,iloc) = cvar_vel(2,ii)
+    vfbr(3,iloc) = cvar_vel(3,ii)
 
   enddo
 
@@ -623,6 +627,7 @@ else if (ipart.ge.3 .and. ipart.le.4) then
 
   ! Variable number
   ivar = ipr
+  call field_get_val_s(ivarfl(ivar), cvar_var)
 
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
@@ -630,7 +635,7 @@ else if (ipart.ge.3 .and. ipart.le.4) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ivar))
+    call synsca(cvar_var)
     !==========
   endif
 
@@ -643,8 +648,8 @@ else if (ipart.ge.3 .and. ipart.le.4) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    sfac(iloc)  =           pnd  * rtp(ii, ivar)   &
-                  + (1.d0 - pnd) * rtp(jj, ivar)
+    sfac(iloc)  =           pnd  * cvar_var(ii)   &
+                  + (1.d0 - pnd) * cvar_var(jj)
 
   enddo
 
@@ -656,7 +661,7 @@ else if (ipart.ge.3 .and. ipart.le.4) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    sfbr(iloc) = rtp(ii, ivar)
+    sfbr(iloc) = cvar_var(ii)
 
   enddo
 

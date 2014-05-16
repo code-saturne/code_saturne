@@ -28,7 +28,7 @@ subroutine ustsma &
  ( nvar   , nscal  , ncepdp ,                                     &
    ncesmp , iappel ,                                              &
    icepdc , icetsm , itypsm , izctsm ,                            &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ckupdc , smacel )
 
 !===============================================================================
@@ -154,9 +154,6 @@ subroutine ustsma &
 !  (ncesmp,nvar)   !    !     !  (see uttsma.f90)                              !
 ! izctsm(ncelet)   ! ia ! <-- ! cells zone for mass source terms definition    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time steps)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate                     !
@@ -195,8 +192,7 @@ integer          icepdc(*)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izctsm(ncel)
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6)
 double precision smacel(ncesmp,nvar)
 

@@ -27,7 +27,7 @@ subroutine usvosy &
 
  ( inbcou , ncecpl ,                                              &
    iscal  ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    lcecpl , hvol )
 
 !===============================================================================
@@ -57,11 +57,6 @@ subroutine usvosy &
 ! ncecpl           ! i  ! <-- ! number of cells implied for this coupling      !
 ! iscal            ! i  ! <-- ! index number of the temperature scalar         !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (current time step)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time step)                         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! lcecpl(ncecpl)   ! ri ! <-- ! list of coupled cells                          !
 ! hvol(ncecpl)     ! ra ! --> ! volume exchange coefficient to compute         !
 !__________________!____!_____!________________________________________________!
@@ -96,20 +91,19 @@ integer          iscal  , inbcou
 
 integer          lcecpl(ncecpl)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision hvol(ncecpl)
 
 ! Local variables
 
 integer          iiscvr, iel, iloc
-integer          ipcvsl, ipcvis, ipccp
 
 double precision cp, mu, lambda, rho, uloc, L, sexcvo
 double precision nu, re, pr
 double precision hcorr, hvol_cst, lambda_over_cp
-double precision, dimension(:), pointer ::  crom
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer ::  cpro_rom
+double precision, dimension(:,:), pointer :: cvar_vel
+double precision, dimension(:), pointer :: cpro_viscl, cpro_vscal, cpro_cp
 
 !===============================================================================
 
@@ -127,22 +121,17 @@ if(1.eq.1) return
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
+call field_get_val_v(ivarfl(iu), cvar_vel)
 
-! --- Index number of the cell properties the propce array
-call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
-
-if (icp.gt.0) then
-   ipccp = ipproc(icp)
-else
-   ipccp = 0
-endif
+! Cell properties
+call field_get_val_s(icrom, cpro_rom)
+call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
 if (ivisls(iscal).gt.0) then
-   ipcvsl = ipproc(ivisls(iscal))
+   call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vscal)
 else
-   ipcvsl = 0
+   cpro_vscal => NULL()
 endif
 
 !===============================================================================
@@ -204,21 +193,21 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
 
    ! Get cell properties of the current element
 
-   rho = crom(iel)
-   mu = propce(iel, ipcvis)
+   rho = cpro_rom(iel)
+   mu = cpro_viscl(iel)
 
-   if (ipccp.gt.0) then
-      cp = propce(iel, ipccp)
+   if (icp.gt.0) then
+      cp = cpro_cp(iel)
    else
       cp = cp0
    endif
 
-   if (ipcvsl.gt.0) then ! lambda/Cp is variable
+   if (ivisls(iscal).gt.0) then ! lambda/Cp is variable
      if (iscacp(iscal).eq.1) then
-       lambda =  propce(iel, ipcvsl)
+       lambda =  cpro_vscal(iel)
        lambda_over_cp = lambda/cp
      else
-       lambda_over_cp = propce(iel, ipcvsl)
+       lambda_over_cp = cpro_vscal(iel)
        lambda =  lambda_over_cp * cp
      endif
    else
@@ -237,7 +226,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
 
    ! Compute a local Reynolds number
 
-   uloc = sqrt(vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2)
+   uloc = sqrt(cvar_vel(1,iel)**2 + cvar_vel(2,iel)**2 + cvar_vel(3,iel)**2)
    re = max(uloc*rho*L/mu, 1.d0) ! To avoid division by zero
 
    ! Compute Nusselt number thanks to Colburn correlation

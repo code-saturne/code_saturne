@@ -28,7 +28,7 @@ subroutine usray3 &
  ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    ck     )
 
 !===============================================================================
@@ -65,9 +65,6 @@ subroutine usray3 &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor    ! ia ! <-- ! zone number for boundary faces                 !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ck(ncelet)       ! ra ! --> ! medium's absorption coefficient                !
 !                  !    !     ! (zero if transparent)                          !
 !__________________!____!_____!________________________________________________!
@@ -108,8 +105,7 @@ integer          nvar   , nscal  , iappel
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 double precision ck(ncelet)
 
@@ -276,7 +272,7 @@ subroutine usray4 &
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    tparop , hparop , tempk  )
 
 !===============================================================================
@@ -304,9 +300,6 @@ subroutine usray4 &
 !                  !    !     ! mode =-1 temperature -> enthaly                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! tparop(nfabor)   ! i  ! <-- ! temperature in kelvin for wall boundary faces  !
 ! hparop(nfabor)   ! i  ! --> ! enthalpy for wall boundary faces               !
 ! tempk(ncelet)    ! i  ! --> ! temperature in kelvin                          !
@@ -335,6 +328,7 @@ use cpincl
 use ppincl
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -348,8 +342,7 @@ integer          mode
 
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)
@@ -357,6 +350,8 @@ double precision tparop(nfabor), hparop(nfabor)
 ! Local variables
 
 integer          iel , ifac , iscal
+
+double precision, dimension(:), pointer :: cvara_scal
 
 !===============================================================================
 
@@ -377,8 +372,10 @@ iscal = iscalt
 
 if (mode.eq.1) then
 
+  call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
+
   do iel = 1,ncel
-    call usthht(mode,rtpa(iel,isca(iscal)),tempk(iel))
+    call usthht(mode,cvara_scal(iel),tempk(iel))
   enddo
 
 endif
@@ -422,7 +419,7 @@ subroutine usray5 &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrdp ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   )
@@ -452,9 +449,6 @@ subroutine usray5 &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! coefap, coefbp   ! ra ! --> ! boundary conditions for intensity or P-1 model !
 !  cofafp,cofbfp   !    !     !                                                !
 ! tparoi(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
@@ -504,8 +498,7 @@ integer          itypfb(nfabor)
 integer          icodcl(nfabor,nvar)
 integer          izfrdp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvar,3)
 
 double precision coefap(nfabor), coefbp(nfabor)

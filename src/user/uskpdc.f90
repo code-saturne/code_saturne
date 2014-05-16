@@ -28,7 +28,7 @@ subroutine uskpdc &
  ( nvar   , nscal  ,                                              &
    ncepdp , iappel ,                                              &
    icepdc , izcpdc ,                                              &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     ,                                                       &
    ckupdc )
 
 !===============================================================================
@@ -109,9 +109,6 @@ subroutine uskpdc &
 ! icepdc(ncepdp    ! te ! <-- ! numbers of ncepdp cells with head loss         !
 ! izcpdc(ncelet)   ! ia ! <-- ! cells zone for head loss definition            !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! work array for head loss                       !
 !  (ncepdp,6)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -147,8 +144,7 @@ integer          iappel
 integer          icepdc(ncepdp)
 integer          izcpdc(ncel)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6)
 
 ! Local variables
@@ -159,7 +155,7 @@ integer          izone
 
 double precision alpha, cosalp, sinalp, vit, ck1, ck2
 
-double precision, dimension(:,:), pointer :: vela
+double precision, dimension(:,:), pointer :: cvara_vel
 
 integer, allocatable, dimension(:) :: lstelt
 
@@ -177,7 +173,7 @@ if (1.eq.1) return
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_prev_v(ivarfl(iu), vela)
+call field_get_val_prev_v(ivarfl(iu), cvara_vel)
 
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
@@ -295,7 +291,7 @@ else if (iappel.eq.3) then
 
   do ielpdc = 1, ncepdp
     iel=icepdc(ielpdc)
-    vit = sqrt(vela(1,iel)**2 + vela(2,iel)**2 + vela(3,iel)**2)
+    vit = sqrt(cvara_vel(1,iel)**2 + cvara_vel(2,iel)**2 + cvara_vel(3,iel)**2)
     ckupdc(ielpdc,1) = 10.d0*vit
     ckupdc(ielpdc,2) =  0.d0*vit
     ckupdc(ielpdc,3) =  0.d0*vit
@@ -325,7 +321,7 @@ else if (iappel.eq.3) then
 
   do ielpdc = 1, ncepdp
     iel = icepdc(ielpdc)
-    vit = sqrt(vela(1,iel)**2 + vela(2,iel)**2 + vela(3,iel)**2)
+    vit = sqrt(cvara_vel(1,iel)**2 + cvara_vel(2,iel)**2 + cvara_vel(3,iel)**2)
     ckupdc(ielpdc,1) = (cosalp**2*ck1 + sinalp**2*ck2)*vit
     ckupdc(ielpdc,2) = (sinalp**2*ck1 + cosalp**2*ck2)*vit
     ckupdc(ielpdc,3) =  0.d0

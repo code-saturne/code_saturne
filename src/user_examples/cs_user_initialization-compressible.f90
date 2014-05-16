@@ -39,15 +39,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -87,7 +84,7 @@ implicit none
 
 integer          nvar, nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -100,8 +97,10 @@ integer  iscal, imodif
 
 double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 
-double precision, dimension(:), pointer ::  crom
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer ::  cpro_rom
+double precision, dimension(:,:), pointer :: cvar_vel
+double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_scal, cvar_tempk, cvar_energ
 !< [loc_var_dec]
 
 !===============================================================================
@@ -116,8 +115,9 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
-call field_get_val_s(icrom, crom)
+call field_get_val_v(ivarfl(iu), cvar_vel)
+call field_get_val_s(icrom, cpro_rom)
+call field_get_val_s(ivarfl(ipr), cvar_pr)
 imodif = 1
 !< [alloc]
 
@@ -132,9 +132,9 @@ if ( isuite.eq.0 ) then
 ! --- Velocity components
 
   do iel = 1, ncel
-    vel(1,iel) = 0.d0
-    vel(2,iel) = 0.d0
-    vel(3,iel) = 0.d0
+    cvar_vel(1,iel) = 0.d0
+    cvar_vel(2,iel) = 0.d0
+    cvar_vel(3,iel) = 0.d0
   enddo
 
 
@@ -147,9 +147,11 @@ if ( isuite.eq.0 ) then
       ! If the scalar is associated to the considered phase iphas
 !      if(iphsca(iscal).eq.iphas) then
 
+        call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
+
         ! Initialize each cell value
         do iel = 1, ncel
-          rtp(iel,isca(iscal)) = 0.d0
+          cvar_scal(iel) = 0.d0
         enddo
 
 !      endif
@@ -180,7 +182,7 @@ if ( isuite.eq.0 ) then
   if(.true.) then
     ithvar = ithvar*2
     do iel = 1, ncel
-      rtp(iel,ipr) = p0
+      cvar_pr(iel) = p0
     enddo
   endif
 
@@ -188,23 +190,25 @@ if ( isuite.eq.0 ) then
   if(.false.) then
     ithvar = ithvar*3
     do iel = 1, ncel
-        crom(iel) = ro0
+        cpro_rom(iel) = ro0
     enddo
   endif
 
   ! 3. Temperature (K -- Warning: Kelvin)
   if(.true.) then
     ithvar = ithvar*5
+    call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
     do iel = 1, ncel
-      rtp(iel,isca(itempk)) = t0
+      cvar_tempk(iel) = t0
     enddo
   endif
 
   ! 4. Total Energy (J/kg)
   if(.false.) then
     ithvar = ithvar*7
+    call field_get_val_s(ivarfl(isca(ienerg)), cvar_energ)
     do iel = 1, ncel
-      rtp(iel,isca(ienerg)) = cv0*t0
+      cvar_energ(iel) = cv0*t0
     enddo
   endif
 

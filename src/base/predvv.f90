@@ -1355,7 +1355,7 @@ if (iterns.eq.1) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu   ,                                                         &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ckupdc , smacel , tsexp  , tsimp  )
 
 

@@ -221,12 +221,12 @@ enddo
 ! HEAT VOLUMIC SOURCE TERM: RHO * PHI *VOLUME
 ! =================================
 
-call ustssc                                                                     &
+call ustssc                                                                    &
 !==========
-( nvar   , nscal  , ncepdp , ncesmp ,                                           &
-  iscal  ,                                                                      &
-  icepdc , icetsm , itypsm ,                                                    &
-  dt     , rtpa   , rtp    , propce ,                                           &
+( nvar   , nscal  , ncepdp , ncesmp ,                                          &
+  iscal  ,                                                                     &
+  icepdc , icetsm , itypsm ,                                                   &
+  dt     ,                                                                     &
   ckupdc , smacel , smbrs  , rovsdt )
 
 do iel = 1, ncel
@@ -246,10 +246,10 @@ enddo
 !                                     inj
 if (ncesmp.gt.0) then
   iterns = 1
-  call catsma ( ncelet , ncel , ncesmp , iterns ,                               &
-                isno2t, thetav(ivar),                                           &
-                icetsm , itypsm(1,ivar) ,                                       &
-                volume , rtpa(1,ivar) , smacel(1,ivar) ,                        &
+  call catsma ( ncelet , ncel , ncesmp , iterns ,                              &
+                isno2t, thetav(ivar),                                          &
+                icetsm , itypsm(1,ivar) ,                                      &
+                volume , rtpa(1,ivar) , smacel(1,ivar) ,                       &
                 smacel(1,ipr) , smbrs , rovsdt , w1    )
 endif
 
@@ -259,7 +259,7 @@ endif
 ! ======================       DT
 
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel)                                                     &
+  rovsdt(iel) = rovsdt(iel)                                                    &
                 + istat(ivar)*(cromo(iel)/dt(iel))*volume(iel)
 enddo
 
@@ -367,8 +367,8 @@ endif
 do ifac = 1, nfac
   iel1 = ifacel(1,ifac)
   iel2 = ifacel(2,ifac)
-  viscf(ifac) =                                                                 &
-     - rtp(iel1,ipr)/w9(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))         &
+  viscf(ifac) =                                                                &
+     - rtp(iel1,ipr)/w9(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))        &
      - rtp(iel2,ipr)/w9(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
 enddo
 
@@ -381,8 +381,8 @@ call field_get_coefb_s(ivarfl(ipr), coefb_p)
 do ifac = 1, nfabor
   if (icvfli(ifac).eq.0) then
     iel = ifabor(ifac)
-    viscb(ifac) = - bmasfl(ifac)                                                &
-                    * (coefa_p(ifac) + coefb_p(ifac)*rtp(iel,ipr))              &
+    viscb(ifac) = - bmasfl(ifac)                                               &
+                    * (coefa_p(ifac) + coefb_p(ifac)*rtp(iel,ipr))             &
                     / brom(ifac)
   else
     viscb(ifac) = 0.d0
@@ -475,8 +475,8 @@ if( idiff(ivar).ge. 1 ) then
 ! Computation of the gradient of (0.5*u*u+EPSILONsup)
 
   do iel = 1, ncel
-    w7(iel) = 0.5d0*( vel(1,iel)**2                                             &
-                     +vel(2,iel)**2                                             &
+    w7(iel) = 0.5d0*( vel(1,iel)**2                                            &
+                     +vel(2,iel)**2                                            &
                      +vel(3,iel)**2 ) + w9(iel)
   enddo
 
@@ -678,9 +678,9 @@ call cf_check_internal_energy(rtp(1,isca(ienerg)), ncel,       &
 
 if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)                                                     &
-            - istat(ivar)*(crom(iel)/dt(iel))*volume(iel)              &
-                *(rtp(iel,ivar)-rtpa(iel,ivar))                                 &
+    smbrs(iel) = smbrs(iel)                                                    &
+            - istat(ivar)*(crom(iel)/dt(iel))*volume(iel)                      &
+                *(rtp(iel,ivar)-rtpa(iel,ivar))                                &
                 * max(0,min(nswrsm(ivar)-2,1))
   enddo
   isqrt = 1

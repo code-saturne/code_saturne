@@ -29,7 +29,7 @@ subroutine usray2 &
    itypfb ,                                                       &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , rcodcl ,                   &
+   dt     , rcodcl ,                                              &
    thwall , qincid , hfcnvp , flcnvp ,                            &
    xlamp  , epap   , epsp   , textp  , tintp  )
 
@@ -152,9 +152,6 @@ subroutine usray2 &
 ! tmin             ! r  !     ! min value of the wall temperature              !
 ! tmax             ! r  !     ! max value of the wall temperature              !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
 !                  !    !     ! rcodcl(3) = flux density value                 !
 !                  !    !     !  (negative for gain) in w/m2                   !
@@ -205,8 +202,7 @@ integer          izfrdp(nfabor), isothp(nfabor)
 
 double precision tmin , tmax , tx
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 double precision thwall(nfabor), qincid(nfabor)

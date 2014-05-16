@@ -291,9 +291,7 @@ _write_additional_vars(void                  *input,
                             &n_cells, &n_i_faces, &n_b_faces,
                             itypps,
                             cell_list, i_face_list, b_face_list,
-                            _input->dt,
-                            _input->rtpa, _input->rtp,
-                            _input->propce);
+                            _input->dt);
 
 }
 

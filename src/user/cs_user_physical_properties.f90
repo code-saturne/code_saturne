@@ -39,7 +39,7 @@
 !>
 !> - icp = 1 must <b> have been specified </b>
 !>    in \ref usipph if we wish to define a variable specific heat
-!>    cp (otherwise: memory overwrite).
+!>    cpro_cp (otherwise: memory overwrite).
 !>
 !> - ivisls = 1 must <b> have been specified </b>
 !>    in \ref usipsc if we wish to define a variable viscosity
@@ -60,11 +60,11 @@
 !>  - We may define here variation laws for cell properties, for:
 !>     - density:                                    rom    kg/m3
 !>     - density at boundary faces:                  romb   kg/m3)
-!>     - molecular viscosity:                        viscl  kg/(m s)
-!>     - specific heat:                              cp     J/(kg degrees)
-!>     - diffusivities associated with scalars:      visls kg/(m s)
+!>     - molecular viscosity:                        cpro_viscl  kg/(m s)
+!>     - specific heat:                              cpro_cp     J/(kg degrees)
+!>     - diffusivities associated with scalars:      cpro_vscalt kg/(m s)
 !>
-!> \b Warning: if the scalar is the temperature, visls corresponds
+!> \b Warning: if the scalar is the temperature, cpro_vscalt corresponds
 !> to its conductivity (Lambda) in W/(m K)
 !>
 !>
@@ -94,16 +94,12 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     mbrom         indicator of filling of romb array
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
-   propce )
+   dt     )
 
 !===============================================================================
 
@@ -132,21 +128,22 @@ integer          nvar   , nscal
 
 integer          mbrom
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 integer          ivart, iel, ifac
-integer          ipcvis, ipccp
-integer          ipcvsl, ith, iscal, ii
+integer          ith, iscal, ii
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
 double precision xrtp
 
 double precision, dimension(:), pointer :: coefap, coefbp
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: bfpro_rom, cpro_rom
+double precision, dimension(:), pointer :: cpro_viscl, cpro_vscalt, cpro_cp, cpro_beta
+double precision, dimension(:), pointer :: cvar_scalt
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -205,6 +202,7 @@ if (.false.) then
 
   if (iscalt.gt.0) then
     ivart = isca(iscalt)
+    call field_get_val_s(ivarfl(ivart), cvar_scalt)
   else
     write(nfecra,9010) iscalt
     call csexit (1)
@@ -212,8 +210,8 @@ if (.false.) then
 
   ! --- Pointers to density values
 
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
+  call field_get_val_s(icrom, cpro_rom)
+  call field_get_val_s(ibrom, bfpro_rom)
 
   ! --- Coefficients of laws chosen by the user
   !       Values given here are fictitious
@@ -225,17 +223,19 @@ if (.false.) then
   ! Density at cell centers
   !------------------------
   ! law                    rho  = t  * ( a *  t +  b) +   c
-  ! so      crom(iel) = xrtp * (vara*xrtp+varb) + varc
+  ! so      cpro_rom(iel) = xrtp * (vara*xrtp+varb) + varc
 
   ! Volumic thermal expansion coefficient
   !--------------------------------------
-  ! law                     beta  = -1/rho * (d rho / d T)
-  ! so propce(iel, ipproc(ibeta)) = (-1.d0/crom(iel))*(2.d0*vara*xrtp+varb)
+  ! law                     cpro_beta  = -1/rho * (d rho / d T)
+  ! so cpro_beta(iel) = (-1.d0/cpro_rom(iel))*(2.d0*vara*xrtp+varb)
+
+  call field_get_val_s(iprpfl(ibeta), cpro_beta)
 
   do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    crom(iel) = xrtp * (vara*xrtp+varb) + varc
-    propce(iel,ipproc(ibeta))= (-1.d0/crom(iel))*(2.d0*vara*xrtp+varb)
+    xrtp = cvar_scalt(iel)
+    cpro_rom(iel) = xrtp * (vara*xrtp+varb) + varc
+    cpro_beta(iel)= (-1.d0/cpro_rom(iel))*(2.d0*vara*xrtp+varb)
   enddo
 
 
@@ -245,7 +245,7 @@ if (.false.) then
   ! By default, the value of rho at the boundary is the value taken
   !   at the center of adjacent cells. This is the recommended approach.
   ! To be in this case, nothing needs to be done:
-  !   do not prescribe a value for brom(ifac) and
+  !   do not prescribe a value for bfpro_rom(ifac) and
   !   do not modify mbrom
 
   ! For users who do not wish to follow this recommendation, we
@@ -257,7 +257,7 @@ if (.false.) then
 
   ! If we wish to specify a law anyways:
   !                        rho  = t  * ( a *  t +  b) +   c
-  ! so      brom(ifac) = xrtp * (vara*xrtp+varb) + varc
+  ! so      bfpro_rom(ifac) = xrtp * (vara*xrtp+varb) + varc
 
   ! 't' being the temperature at boundary face centers, we may use the
   ! following lines of code (voluntarily deactived, as the must be used
@@ -281,8 +281,8 @@ if (.false.) then
 
       ! ifabor(ifac) is the cell adjacent to the boundary face
       iel = ifabor(ifac)
-      xrtp = coefap(ifac) + rtp(iel, ivart)*coefbp(ifac)
-      brom(ifac) = xrtp * (vara*xrtp+varb) + varc
+      xrtp = coefap(ifac) + cvar_scalt(iel)*coefbp(ifac)
+      bfpro_rom(ifac) = xrtp * (vara*xrtp+varb) + varc
     enddo
 
   endif ! --- Test on .false.
@@ -310,15 +310,15 @@ if (.false.) then
 
   if (iscalt.gt.0) then
     ivart = isca(iscalt)
+    call field_get_val_s(ivarfl(ivart), cvar_scalt)
   else
     write(nfecra,9010) iscalt
     call csexit(1)
   endif
 
-  ! --- Rank of molecular dynamic viscosity
-  !     in 'propce', physical properties at element centers: 'ipcvis'
+  ! --- Molecular dynamic viscosity
 
-  ipcvis = ipproc(iviscl)
+  call field_get_val_s(iprpfl(iviscl), cpro_viscl)
 
   ! --- Coefficients of laws chosen by the user
   !       Values given here are fictitious
@@ -331,11 +331,11 @@ if (.false.) then
   ! Molecular dynamic viscosity in kg/(m.s) at cell centers
   !--------------------------------------------------------
   ! law                    mu   = t * (t * (am * t + bm) + cm) + dm
-  ! so      propce(iel, ipcvis) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  ! so      cpro_viscl(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
   do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipcvis) =                                        &
+    xrtp = cvar_scalt(iel)
+    cpro_viscl(iel) =                                        &
          xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
   enddo
 
@@ -362,23 +362,19 @@ if (.false.) then
 
   if (iscalt.gt.0) then
     ivart = isca(iscalt)
+    call field_get_val_s(ivarfl(ivart), cvar_scalt)
   else
     write(nfecra,9010) iscalt
     call csexit (1)
   endif
 
-  ! --- Rank of the specific heat
-  !     in 'propce', physical properties at element centers: 'ipccp'
+  ! --- Specific heat
 
-  if (icp.gt.0) then
-    ipccp  = ipproc(icp   )
-  else
-    ipccp  = 0
-  endif
+  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
   ! --- Stop if Cp is not variable
 
-  if (ipccp.le.0) then
+  if (icp.le.0) then
     write(nfecra,1000) icp
     call csexit (1)
   endif
@@ -391,12 +387,12 @@ if (.false.) then
 
   ! Specific heat in J/(kg.degrees) at cell centers
   !------------------------------------------------
-  ! law                    cp  = ac * t + bm
-  ! so      propce(iel, ipccp) = varac*xrtp + varbc
+  ! law                    cpro_cp  = ac * t + bm
+  ! so          cpro_cp(iel) = varac*xrtp + varbc
 
   do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipccp ) = varac*xrtp + varbc
+    xrtp = cvar_scalt(iel)
+    cpro_cp(iel) = varac*xrtp + varbc
   enddo
 
 endif ! --- Test on .false.
@@ -424,23 +420,23 @@ if (.false.) then
 
   if (iscalt.gt.0) then
     ivart = isca(iscalt)
+    call field_get_val_s(ivarfl(ivart), cvar_scalt)
   else
     write(nfecra,9010) iscalt
     call csexit (1)
   endif
 
-  ! --- Rank of Lambda/Cp of the thermal (or Lambda if temperature is used)
-  !     in 'propce', physical properties at element centers: 'ipcvsl'
+  ! --- Lambda/Cp of the thermal (or Lambda if temperature is used)
 
   if (ivisls(iscalt).gt.0) then
-    ipcvsl = ipproc(ivisls(iscalt))
+    call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_vscalt)
   else
-    ipcvsl = 0
+    cpro_vscalt => NULL()
   endif
 
   ! --- Stop if Lambda/CP (or Lambda if temperature is used) is not variable
 
-  if (ipcvsl.le.0) then
+  if (ivisls(iscalt).le.0) then
     write(nfecra,1010)                                          &
          iscalt, iscalt, ivisls(iscalt)
     call csexit (1)
@@ -449,14 +445,9 @@ if (.false.) then
   ! if thermal variable is not temperature
   if (iscacp(iscal).le.0) then
 
-    ! --- Rank of the specific heat
-    !     in 'propce', physical properties at element centers: 'ipccp'
+    ! --- Specific heat
 
-    if (icp.gt.0) then
-      ipccp  = ipproc(icp)
-    else
-      ipccp  = 0
-    endif
+    if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
     ! --- Coefficients of laws chosen by the user
     !       Values given here are fictitious
@@ -469,29 +460,29 @@ if (.false.) then
     ! Lambda/Cp in kg/(m.s) at cell centers
     !--------------------------------------
     ! law    Lambda/Cp = {t * (t * (al * t +  bl) + cl) + dl} / Cp
-    ! so     propce(iel,ipcvsl) &
+    ! so     cpro_vscalt(iel) &
     !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0
 
     ! We assume Cp has been defined previously.
 
-    if (ipccp.le.0) then
+    if (icp.le.0) then
 
       ! --- If Cp is uniform, we use cp0
       do iel = 1, ncel
-        xrtp = rtp(iel,ivart)
-        propce(iel,ipcvsl) =                                      &
+        xrtp = cvar_scalt(iel)
+        cpro_vscalt(iel) =                                              &
              (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
              /cp0
       enddo
 
     else
 
-      ! --- If Cp is not uniform, we use propce above
+      ! --- If Cp is not uniform, we use cpro_vscalt above
       do iel = 1, ncel
-        xrtp = rtp(iel,ivart)
-        propce(iel,ipcvsl) =                                      &
+        xrtp = cvar_scalt(iel)
+        cpro_vscalt(iel) =                                              &
              (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
-             /propce(iel,ipccp)
+             /cpro_cp(iel)
       enddo
 
     endif
@@ -510,12 +501,12 @@ if (.false.) then
     ! Lambda in W/(m.K) at cell centers
     !--------------------------------------
     ! law    Lambda = {t * (t * (al * t +  bl) + cl) + dl}
-    ! so     propce(iel,ipcvsl) &
+    ! so     cpro_vscalt(iel) &
     !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
 
     do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      propce(iel,ipcvsl) =                                      &
+      xrtp = cvar_scalt(iel)
+      cpro_vscalt(iel) =                                                &
            (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
     enddo
 
@@ -553,7 +544,7 @@ if (.false.) then
     ! --- If the variable is a fluctuation, its diffusivity is the same
     !       as that of the scalar to which it is attached:
     !       there is nothing to do here, we move on to the next variable
-    !       without setting propce(iel,ipcvsl).
+    !       without setting cpro_vscalt(iel).
 
     ! We only handle here non-thermal variables which are not fluctuations
     if (ith.eq.0.and.iscavr(iscal).le.0) then
@@ -566,23 +557,23 @@ if (.false.) then
 
       if (iscalt.gt.0) then
         ivart = isca(iscalt)
+        call field_get_val_s(ivarfl(ivart), cvar_scalt)
       else
         write(nfecra,9010) iscalt
         call csexit (1)
       endif
 
-      ! --- Rank of scalar's Lambda
-      !     in 'propce', physical properties at element centers: 'ipcvsl'
+      ! --- Scalar's Lambda
 
       if (ivisls(iscal).gt.0) then
-        ipcvsl = ipproc(ivisls(iscal))
+        call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_vscalt)
       else
-        ipcvsl = 0
+        cpro_vscalt => NULL()
       endif
 
       ! --- Stop if Lambda is not variable
 
-      if (ipcvsl.le.0) then
+      if (ivisls(iscal).le.0) then
         write(nfecra,1010) iscal, iscal, ivisls(iscal)
         call csexit (1)
       endif
@@ -598,12 +589,12 @@ if (.false.) then
       ! Lambda in kg/(m.s) at cell centers
       !--------------------------------------
       ! law    Lambda = {t * (t * (al * t +  bl) + cl) + dl}
-      ! so     propce(iel,ipcvsl) &
+      ! so     cpro_vscalt(iel) &
       !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
 
       do iel = 1, ncel
-        xrtp = rtp(iel,ivart)
-        propce(iel,ipcvsl) =                                      &
+        xrtp = cvar_scalt(iel)
+        cpro_vscalt(iel) =                                              &
              (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
       enddo
 
@@ -780,9 +771,9 @@ end subroutine usphyv
 !>     - the unknown variables (null by default)
 !>
 !> This subroutine allows the user to set the cell values for:
-!>   - the molecular viscosity:                            viscl  kg/(m s)
+!>   - the molecular viscosity:                            cpro_viscl  kg/(m s)
 !>   - the isobaric specific heat
-!>   (\f$ C_p = \left. \dfrac{\dd h}{\dd T}\right|_P \f$): cp     J/(kg degree)
+!>   (\f$ C_p = \left. \dfrac{\dd h}{\dd T}\right|_P \f$): cpro_cp     J/(kg degree)
 !>   - the molecular thermal conductivity:                 lambda W/(m degree)
 !>   - the molecular diffusivity for user-defined scalars: viscls kg/(m s)
 !>
@@ -790,7 +781,7 @@ end subroutine usphyv
 !>
 !> The density <b> must not </b> be set here: for the compressible scheme,
 !> it is one of the unknowns, and it can be initialized as such in the user
-!> subroutine \ref cs_user_initialization (rtp array).
+!> subroutine \ref cs_user_initialization.
 !>
 !> The turbulent viscosity <b> must not </b> be modified here (to modify this
 !> variable, use the user subroutine \ref usvist)
@@ -829,14 +820,11 @@ end subroutine usphyv
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtpR, rtpa    calculated variables at cell centers
-!>                               (at current and preceding time steps)
-!> \param[in,out] propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine uscfpv &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     )
 
 !===============================================================================
 
@@ -865,20 +853,22 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 integer          ivart, iel
-integer          ipcvis, ipcvsv, ipccp
-integer          ipcvsl, ith, iscal, ii
+integer          ith, iscal, ii
 double precision varam, varbm, varcm, vardm
 double precision varal, varbl, varcl, vardl
 double precision varac, varbc
 double precision xrtp
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, dimension(:), pointer :: cpro_viscl, cpro_viscv
+double precision, dimension(:), pointer :: cpro_vtmpk, cpro_vscal
+double precision, dimension(:), pointer :: cpro_cp, cpro_cv
+double precision, dimension(:), pointer :: cvar_scalt
 
 !===============================================================================
 
@@ -942,16 +932,16 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 if (.false.) then
 
-  ! --- Rank of the temperature in the array 'rtp'
   !     To refer to the user-defined scalar number 2 instead, for example, use
   !     ivart = isca(2)
 
   ivart = isca(itempk)
+  call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
-  ! --- Rank 'ipcvis' of the molecular dynamic viscosity
-  !     in the array 'propce' (physical properties at the cell centers)
+  ! --- Molecular dynamic viscosity 'cpro_viscl'
+  !     (physical properties at the cell centers)
 
-  ipcvis = ipproc(iviscl)
+  call field_get_val_s(iprpfl(iviscl), cpro_viscl)
 
   ! --- User-defined coefficients for the selected law.
   !     The values hereafter are provided as a mere example. They
@@ -966,11 +956,11 @@ if (.false.) then
   !     In this example, mu is provided as a function of the temperature T:
   !       mu(T)              =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
   !     that is:
-  !       propce(iel,ipcvis) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  !       cpro_viscl(iel) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
   do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipcvis) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+    xrtp = cvar_scalt(iel)
+    cpro_viscl(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
   enddo
 
 endif ! --- Test on .false.
@@ -994,24 +984,23 @@ endif
 
 if (.false.) then
 
-  ! --- Rank of the temperature in the array 'rtp'
   !     To refer to the user-defined scalar number 2 instead, for example, use
   !     ivart = isca(2)
 
   ivart = isca(itempk)
+  call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
-  ! --- Rank 'ipcvsv' of the molecular dynamic viscosity
-  !     in the array 'propce' (physical properties at the cell centers)
+  ! --- Molecular dynamic viscosity
 
   if (iviscv.gt.0) then
-    ipcvsv = ipproc(iviscv)
+    call field_get_val_s(iprpfl(iviscv), cpro_viscv)
   else
-    ipcvsv = 0
+    cpro_viscv => NULL()
   endif
 
   ! --- Stop if the viscosity has not been defined as variable
 
-  if (ipcvsv.le.0) then
+  if (iviscv.le.0) then
     write(nfecra,2000) iviscv
     call csexit (1)
   endif
@@ -1029,11 +1018,11 @@ if (.false.) then
   !     In this example, kappa is provided as a function of the temperature T:
   !       kappa(T)           =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
   !     that is:
-  !       propce(iel,ipcvsv) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  !       cpro_viscv(iel) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
   do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipcvsv) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+    xrtp = cvar_scalt(iel)
+    cpro_viscv(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
   enddo
 
 endif ! --- Test on .false.
@@ -1064,26 +1053,20 @@ if (.false.) then
   ! Indeed, this variable needs to be computed from the isobaric specific heat
   ! using the thermodynamics laws.
 
-  ! --- Rank of the temperature in the array 'rtp'
   !     To refer to the user-defined scalar number 2 instead, for example, use
   !     ivart = isca(2)
 
   ivart = isca(itempk)
+  call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
-  ! --- Rank 'ipcpp' of the isobaric specific heat
-  !     in the array 'propce' (physical properties at the cell
-  !     centers)
+  ! --- Isobaric specific heat
 
-  if (icp.gt.0) then
-    ipccp  = ipproc(icp   )
-  else
-    ipccp  = 0
-  endif
+  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
-  ! --- Stop if the iobaric or iochoric specific heat (cp or cv) has not
+  ! --- Stop if the iobaric or iochoric specific heat (cpro_cp or cpro_cv) has not
   !     been defined as variable
 
-  if (ipccp.le.0) then
+  if (icp.le.0) then
     write(nfecra,1000) icp
     call csexit (1)
   endif
@@ -1099,20 +1082,21 @@ if (.false.) then
   varac = 0.00001d0
   varbc = 1000.0d0
 
-  ! --- Isobaric specific heat cp at the cell centres, J/(kg degree)
-  !     In this example, cp is provided as a function of the temperature T:
-  !       cp(T)              =      ac * T  + ab
+  ! --- Isobaric specific heat cpro_cp at the cell centres, J/(kg degree)
+  !     In this example, cpro_cp is provided as a function of the temperature T:
+  !       cpro_cp(T)              =      ac * T  + ab
   !     that is:
-  !       propce(iel,ipccp ) =    varac*xrtp+varbc
+  !       cpro_cp(iel)            =    varac*xrtp+varbc
 
   do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipccp ) = varac*xrtp + varbc
+    xrtp = cvar_scalt(iel)
+    cpro_cp(iel) = varac*xrtp + varbc
   enddo
 
   ! --- The isochoric specific heat is deduced from the isobaric specific heat
 
-  call cf_thermo_cv(propce(1, ipccp), propce(1, ipproc(icv)), ncel)
+  call field_get_val_s(iprpfl(icv), cpro_cv)
+  call cf_thermo_cv(cpro_cp, cpro_cv, ncel)
 
 endif ! --- Test on .false.
 
@@ -1135,26 +1119,24 @@ endif
 
 if (.false.) then
 
-  ! --- Rank of the temperature in the array 'rtp'
   !     To refer to the user-defined scalar number 2 instead, for example, use
   !     ivart = isca(2)
 
   ivart = isca(itempk)
+  call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
-  ! --- Rank 'ipcvsl' of the olecular thermal conductivity
-  !     in the array 'propce' (physical properties at the cell
-  !     centers)
+  ! --- Molecular thermal conductivity
 
   if (ivisls(itempk).gt.0) then
-    ipcvsl = ipproc(ivisls(itempk))
+    call field_get_val_s(iprpfl(ivisls(itempk)), cpro_vtmpk)
   else
-    ipcvsl = 0
+    cpro_vtmpk => NULL()
   endif
 
   ! --- Stop if the molecular thermal conductivity has not
   !     been defined as variable
 
-  if (ipcvsl.le.0) then
+  if (ivisls(itempk).le.0) then
     write(nfecra,1010) itempk, itempk, ivisls(itempk)
     call csexit (1)
   endif
@@ -1172,11 +1154,11 @@ if (.false.) then
   !     In this example, lambda is provided as a function of the temperature T:
   !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
   !     that is:
-  !       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
+  !       cpro_vtmpk(iel) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
 
   do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipcvsl) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+    xrtp = cvar_scalt(iel)
+    cpro_vtmpk(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
   enddo
 
 endif ! --- Test on .false.
@@ -1229,24 +1211,23 @@ if (.false.) then
       !     the enthalpy and the variance of the fluctuations of another
       !     scalar variable.
 
-      ! --- Rank of the temperature in the array 'rtp'
       !     To refer to the user-defined scalar number 2 instead, for example, use
       !     ivart = isca(2)
 
       ivart = isca(itempk)
+      call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
-      ! --- Rank 'ipcvsl' of the molecular diffusivity of the current scalar iscal
-      !     in the array 'propce' (physical properties at the cell centers)
+      ! --- Molecular diffusivity of the current scalar iscal
 
       if (ivisls(iscal).gt.0) then
-        ipcvsl = ipproc(ivisls(iscal))
+        call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vscal)
       else
-        ipcvsl = 0
+        cpro_vscal => NULL()
       endif
 
       ! --- Stop if the molecular diffusivity has not been defined as variable
 
-      if (ipcvsl.le.0) then
+      if (ivisls(iscal).le.0) then
         write(nfecra,1010) iscal, iscal, ivisls(iscal)
         call csexit (1)
       endif
@@ -1264,11 +1245,11 @@ if (.false.) then
       !     In this example, lambda is provided as a function of the temperature T:
       !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
       !     that is:
-      !       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
+      !       cpro_vscal(iel) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
 
       do iel = 1, ncel
-        xrtp = rtp(iel,ivart)
-        propce(iel,ipcvsl) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+        xrtp = cvar_scalt(iel)
+        cpro_vscal(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
       enddo
 
 
@@ -1417,7 +1398,7 @@ subroutine uselph &
 
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -1502,9 +1483,6 @@ subroutine uselph &
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1539,20 +1517,23 @@ integer          nvar   , nscal
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 integer          iel
-integer          ipcvis, ipccp , ipcvsl, ipcsig
 integer          mode
 
 double precision tp
 double precision xkr   , xbr
 double precision rom0  , temp0 , dilar , aa    , bb    , cc
 double precision srrom1, rhonp1
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: cpro_rom
+double precision, dimension(:), pointer :: cpro_viscl, cpro_vscalt
+double precision, dimension(:), pointer :: cpro_vpoti, cpro_vpotr
+double precision, dimension(:), pointer :: cpro_cp, cpro_temp
+double precision, dimension(:), pointer :: cvar_scalt
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -1665,9 +1646,12 @@ if (ippmod(ieljou).ge.1) then
 !       MODE = 1 : H=RTP(IEL,ISCA(IHM)) -> T=PROPCE(IEL,IPPROC(ITEMP))
   mode = 1
 
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+  call field_get_val_s(iprpfl(itemp), cpro_temp)
+
   do iel = 1, ncel
     call usthht (mode,                                            &
-         rtp(iel,isca(iscalt)),propce(iel,ipproc(itemp)))
+         cvar_scalt(iel),cpro_temp(iel))
   enddo
 
 
@@ -1678,7 +1662,7 @@ if (ippmod(ieljou).ge.1) then
 !     =========
 !       Dans le module electrique effet Joule, on fournira
 !       OBLIGATOIREMENT la loi de variation de la masse volumique ici
-!       en renseignant crom(iel)
+!       en renseignant cpro_rom(iel)
 !       (meme si elle est uniforme ou constante).
 
 
@@ -1696,11 +1680,11 @@ if (ippmod(ieljou).ge.1) then
     srrom1 = 0.d0
   endif
 
-  call field_get_val_s(icrom, crom)
+  call field_get_val_s(icrom, cpro_rom)
   do iel = 1, ncel
     rhonp1 = rom0 /                                               &
-            (1.d0+ dilar * (propce(iel,ipproc(itemp))-temp0) )
-    crom(iel) = srrom1*crom(iel)+(1.d0-srrom1)*rhonp1
+            (1.d0+ dilar * (cpro_temp(iel)-temp0) )
+    cpro_rom(iel) = srrom1*cpro_rom(iel)+(1.d0-srrom1)*rhonp1
   enddo
 
 
@@ -1711,7 +1695,7 @@ if (ippmod(ieljou).ge.1) then
 !     =========
 !       Dans le module electrique effet Joule, on fournira
 !       OBLIGATOIREMENT la loi de variation de la viscosite ici
-!       en renseignant PROPCE(IEL,IPCVIS)
+!       en renseignant cpro_viscl(iel)
 !       (meme si elle est uniforme ou constante).
 
 
@@ -1719,18 +1703,18 @@ if (ippmod(ieljou).ge.1) then
 !          (Choudhary)
 !      Plard (HE-25/94/017) ; limite a 1173K par C Delalondre
 
-  ipcvis = ipproc(iviscl)
+  call field_get_val_s(iprpfl(iviscl), cpro_viscl)
   aa     = 10425.d0
   bb     =   500.d0
   cc     =-6.0917d0
 
   do iel = 1, ncel
-    if ( propce(iel,ipproc(itemp)) .gt. 1173.d0 ) then
-      tp = propce(iel,ipproc(itemp))
+    if ( cpro_temp(iel) .gt. 1173.d0 ) then
+      tp = cpro_temp(iel)
     else
       tp= 1173.d0
     endif
-    propce(iel,ipcvis) = exp( (aa/(tp-bb))+cc )
+    cpro_viscl(iel) = exp( (aa/(tp-bb))+cc )
   enddo
 
 
@@ -1748,9 +1732,9 @@ if (ippmod(ieljou).ge.1) then
 !        CP = 1381 (Choudhary)
 !          coherent avec Plard (HE-25/94/017)
 
-  ipccp  = ipproc(icp)
+  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
   do iel = 1, ncel
-    propce(iel,ipccp) = 1381.d0
+    cpro_cp(iel) = 1381.d0
   enddo
 
 
@@ -1770,21 +1754,21 @@ if (ippmod(ieljou).ge.1) then
 
 !          Plard (HE-25/94/017)
 
-  ipcvsl = ipproc(ivisls(iscalt))
+  call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_vscalt)
 
   do iel = 1, ncel
     xbr = 85.25d0                                                 &
-         -5.93d-2*(propce(iel,ipproc(itemp))-tkelvi)              &
-         +2.39d-5*(propce(iel,ipproc(itemp))-tkelvi)**2
-    xkr = 16.d0*stephn*(1.4d0)**2*(propce(iel,ipproc(itemp)))**3  &
+         -5.93d-2*(cpro_temp(iel)-tkelvi)                              &
+         +2.39d-5*(cpro_temp(iel)-tkelvi)**2
+    xkr = 16.d0*stephn*(1.4d0)**2*(cpro_temp(iel))**3                  &
          /(3.d0*xbr)
 
-    propce(iel,ipcvsl) = 1.73d0 + xkr
+    cpro_vscalt(iel) = 1.73d0 + xkr
   enddo
 
-! --- On utilise CP calcule  dans PROPCE ci dessus
+! --- On utilise CP calcule dans cpro_vscalt ci dessus
   do iel = 1, ncel
-    propce(iel,ipcvsl) = propce(iel,ipcvsl)/propce(iel,ipccp)
+    cpro_vscalt(iel) = cpro_vscalt(iel)/cpro_cp(iel)
   enddo
 
 
@@ -1801,10 +1785,10 @@ if (ippmod(ieljou).ge.1) then
 
 !         SIGMA  (Plard HE-25/94/017)
 
-  ipcsig = ipproc(ivisls(ipotr))
+  call field_get_val_s(iprpfl(ivisls(ipotr)), cpro_vpotr)
   do iel = 1, ncel
-    propce(iel,ipcsig) =                                          &
-         exp(7.605d0-7200.d0/propce(iel,ipproc(itemp)))
+    cpro_vpotr(iel) =                                                  &
+         exp(7.605d0-7200.d0/cpro_temp(iel))
   enddo
 
 !     La conductivite electrique pour le potentiel imaginaire est
@@ -1821,9 +1805,9 @@ if (ippmod(ieljou).ge.1) then
 !     Sinon, on pourrait faire ceci :
   if (1.eq.0) then
     if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
+      call field_get_val_s(iprpfl(ivisls(ipoti)), cpro_vpoti)
       do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ipoti))) =                       &
-             propce(iel,ipproc(ivisls(ipotr)))
+        cpro_vpoti(iel) = cpro_vpotr(iel)
       enddo
     endif
   endif
@@ -1908,9 +1892,6 @@ end subroutine uselph
 !> \param[in]     itypsm        kind of mass source for each variable
 !>                               (cf. \ref ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     ckupdc        work array for head loss terms
 !> \param[in]     smacel        values of variables related to mass source
 !>                              term. If ivar=ipr, smacel=mass flux
@@ -1919,7 +1900,7 @@ end subroutine uselph
 subroutine usvist &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    ckupdc , smacel )
 
 !===============================================================================
@@ -1952,18 +1933,18 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
 integer          iel, inc, iprev
-integer          ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
 
 double precision, allocatable, dimension(:,:,:) :: gradv
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: cpro_rom
+double precision, dimension(:), pointer :: cpro_visct
+
 !===============================================================================
 
 !===============================================================================
@@ -1989,10 +1970,8 @@ if (.true.) return
 ! First component is for x,y,z  and the 2nd for u,v,w
 allocate(gradv(3,3,ncelet))
 
-! --- Physical quantity numbers in PROPCE (physical quantities defined
-!     at each cell center)
-ipcvst = ipproc(ivisct)
-call field_get_val_s(icrom, crom)
+call field_get_val_s(iprpfl(ivisct), cpro_visct)
+call field_get_val_s(icrom, cpro_rom)
 
 !===============================================================================
 ! 1.3 Compute velocity gradient
@@ -2011,8 +1990,8 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,     &
 do iel = 1, ncel
 
   ! --- Current dynamic viscosity and fluid density
-  visct = propce(iel,ipcvst)
-  rom   = crom(iel)
+  visct = cpro_visct(iel)
+  rom   = cpro_rom(iel)
   ! --- Various computations
   dudx = gradv(1,1,iel)
   dudy = gradv(1,2,iel)
@@ -2023,7 +2002,7 @@ do iel = 1, ncel
   visct = max (visct,rom*sqdu)
 
   ! --- Store the new computed dynamic viscosity
-  propce(iel,ipcvst) = visct
+  cpro_visct(iel) = visct
 
 enddo
 
@@ -2050,7 +2029,7 @@ subroutine ussmag &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    smagor , mijlij , mijmij )
 
@@ -2087,9 +2066,6 @@ subroutine ussmag &
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -2132,8 +2108,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
 
@@ -2234,9 +2209,6 @@ end subroutine ussmag
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and preceding time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[out]    viscmx        mesh viscosity in X direction
 !> \param[out]    viscmy        mesh viscosity in Y direction
 !> \param[out]    viscmz        mesh viscosity in Z direction
@@ -2244,7 +2216,7 @@ end subroutine ussmag
 
 subroutine usvima &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    viscmx , viscmy , viscmz )
 
 !===============================================================================
@@ -2274,8 +2246,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
 
 ! Local variables
@@ -2362,11 +2333,9 @@ end subroutine usvima
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
-subroutine usatph &
-   (propce)
+subroutine usatph
 
 !===============================================================================
 ! Module files
@@ -2390,8 +2359,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-double precision propce(ncelet,*)
 
 ! Local variables
 

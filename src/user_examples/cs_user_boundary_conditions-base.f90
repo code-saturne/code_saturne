@@ -53,9 +53,6 @@
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -75,7 +72,7 @@
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -118,8 +115,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -134,7 +130,7 @@ double precision xitur
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer :: brom
+double precision, dimension(:), pointer :: bfpro_rom
 !< [loc_var_dec]
 
 !===============================================================================
@@ -148,7 +144,7 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 d2s3 = 2.d0/3.d0
 
-call field_get_val_s(ibrom, brom)
+call field_get_val_s(ibrom, bfpro_rom)
 !< [init]
 
 !===============================================================================
@@ -203,7 +199,7 @@ do ilelt = 1, nlelt
   !     and of k and epsilon at the inlet (xkent and xeent) using
   !     standard laws for a circular pipe
   !     (their initialization is not needed here but is good practice).
-  rhomoy  = brom(ifac)
+  rhomoy  = bfpro_rom(ifac)
   xustar2 = 0.d0
   xkent   = epzero
   xeent   = epzero

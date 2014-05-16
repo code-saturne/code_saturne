@@ -26,7 +26,7 @@ subroutine ushist &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
 !===============================================================================
 ! Purpose:
@@ -45,9 +45,6 @@ subroutine ushist &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -68,6 +65,7 @@ use entsor
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -77,13 +75,14 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
 integer          ii, kk, node, ndrang, nvarpp, numcel, lng
 double precision xx, yy, zz, xyztmp(3)
+
+double precision, dimension(:), pointer :: cvar_var
 
 ! Monitoring points number (lower than a maximum of 100)
 integer          ncapmx
@@ -279,16 +278,17 @@ endif
 ! Write the time step number,
 !       the physical time value
 !       the variable at each monitoring points
-! In a serial run:   the value is merely 'rtp(icapt(kk),ii)'
+! In a serial run:   the value is merely 'cvar_var(icapt(kk))'
 ! In a parallel run: the value may come from a different processor, to be
 !                    determined in 'vacapt(kk)' with the 'parhis' subroutine)
 
 do ii = 1 , nvarpp
+  call field_get_val_s(ivarfl(ii), cvar_var)
   do kk = 1, ncapts
     if (irangp.lt.0) then
-      vacapt(kk) = rtp(icapt(kk),ii)
+      vacapt(kk) = cvar_var(icapt(kk))
     else
-      call parhis(icapt(kk), ircapt(kk), rtp(1,ii), vacapt(kk))
+      call parhis(icapt(kk), ircapt(kk), cvar_var, vacapt(kk))
       !==========
     endif
   enddo

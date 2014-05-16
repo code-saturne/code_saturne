@@ -29,7 +29,7 @@ subroutine uslag2 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   )
 
 !===============================================================================
@@ -75,10 +75,6 @@ subroutine uslag2 &
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! transported variables at the previous          !
-! (ncelet,*)       !    !     ! time step                                      !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -121,8 +117,7 @@ integer          ntersl , nvlsta , nvisbr
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 
-double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables

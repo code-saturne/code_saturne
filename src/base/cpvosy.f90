@@ -161,7 +161,7 @@ do inbcou = 1, nbccou
     call usvosy &
     !==========
   ( inbcoo , ncecpl , iscalt ,                              &
-    dt     , rtp   , rtpa   , propce ,                      &
+    dt     ,                                                &
     lcecpl , hvol  )
 
     ! Send fluid temperature and exchange coefficient

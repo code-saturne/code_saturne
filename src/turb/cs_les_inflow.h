@@ -126,9 +126,6 @@ void CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
  const cs_int_t  *const nscal,     /* --> number of scalars                   */
  const cs_int_t         lfbent[],  /* --> list of bound. faces of the inlet   */
  const cs_real_t        dt[],      /* --> time step                           */
- const cs_real_t        rtpa[],    /* --> variables at cells (previous)       */
- const cs_real_t        rtp[],     /* --> variables at cells                  */
- const cs_real_t        propce[],  /* --> physical properties at cells        */
        cs_real_t        uent[],    /* <-- mean velocity at the inlet faces    */
        cs_real_t        rijent[],  /* <-- turb. kin. ener. at the inlet faces */
        cs_real_t        epsent[]   /* <-- turb. dissipation at the inlet faces*/

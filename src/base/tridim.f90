@@ -537,7 +537,7 @@ if (ncpdct.gt.0) then
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
-  dt     , rtpa   , rtp    , propce ,                            &
+  dt     ,                                                       &
   ckupdc )
 
 endif
@@ -565,7 +565,7 @@ if(nctsmt.gt.0) then
   ncetsm , iappel ,                                              &
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
-  dt     , rtpa   , propce ,                                     &
+  dt     ,                                                       &
   ckupdc , smacel )
 
 endif
@@ -653,8 +653,7 @@ if (ivrtex.eq.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   dt     , rtpa   ,                                              &
-   propce )
+   dt     )
 
 !     Verification des donnees entrees par l'utilisateur
 !       (au premier passage seulement)
@@ -812,7 +811,7 @@ do while (iterns.le.nterup)
   !===============================
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
-    dt     , rtp    , rtpa   , propce ,                            &
+    dt     ,                                                       &
     rcodcl )
 
   !     - Interface Code_Saturne
@@ -900,7 +899,7 @@ do while (iterns.le.nterup)
     nvar   , nscal  ,                                              &
     icodcl , itypfb , ialtyb ,                                     &
     impale ,                                                       &
-    dt     , rtp    , rtpa   , propce ,                            &
+    dt     ,                                                       &
     rcodcl , xyzno0 , depale )
 
     !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on

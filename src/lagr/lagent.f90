@@ -228,7 +228,7 @@ call uslag2                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   )
 
 
@@ -1018,7 +1018,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   )
 
           ettp(ip,jup) = uupart
@@ -1075,7 +1075,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   )
 
           ettp(ip,jdp) = ddpart
@@ -1116,7 +1116,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   )
 
               ettp(ip,jtp) = ttpart
@@ -1249,7 +1249,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   )
 
           volp = pis6*d3

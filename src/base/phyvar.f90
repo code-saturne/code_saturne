@@ -163,8 +163,7 @@ call usphyv &
 !==========
 ( nvar   , nscal  ,                                              &
   mbrom  ,                                                       &
-  dt     , rtp    , rtpa   ,                                     &
-  propce )
+  dt     )
 
 if (ippmod(iphpar).ge.1) then
   call ppphyv &

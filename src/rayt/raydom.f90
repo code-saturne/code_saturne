@@ -284,7 +284,7 @@ else
 ( nvar   , nscal  , iappel ,                                     &
   itypfb ,                                                       &
   izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce ,                            &
+  dt     ,                                                       &
   propce(1,ipproc(icak(1))))
 
 endif
@@ -363,7 +363,7 @@ if (idverl.ge.0) then
       ( nvar   , nscal  ,                                            &
         mode   ,                                                     &
         itypfb ,                                                     &
-        dt     , rtp    , rtpa   , propce ,                          &
+        dt     ,                                                     &
         tparo  , flurdb , tempk(1,1)  )
 
     else
@@ -709,7 +709,7 @@ call usray5 &
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
   izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce ,                            &
+  dt     ,                                                       &
   coefap , coefbp ,                                              &
   cofafp , cofbfp ,                                              &
   tparo  , bqinci ,                                              &

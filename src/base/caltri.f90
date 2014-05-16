@@ -249,7 +249,6 @@ call  uskpdc &
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   ivoid  , izcpdc ,                                              &
-  rvoid  , rvoid  , rvoid  ,                                     &
   rvoid  ,                                                       &
   rvoid  )
 
@@ -284,7 +283,6 @@ call ustsma &
   ncetsm , iappel ,                                              &
   ivoid  ,                                                       &
   ivoid  , ivoid  , izctsm ,                                     &
-  rvoid  , rvoid  ,                                              &
   rvoid  ,                                                       &
   ckupdc , rvoid  )
 
@@ -310,7 +308,7 @@ call uspt1d &
    ivoid  , izft1d , ivoid  , ivoid  ,                            &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  ,                                              &
    rvoid  , rvoid  )
 
 nfpt1t = nfpt1d
@@ -610,7 +608,7 @@ if (nfpt1t.gt.0) then
    tppt1d , rgpt1d , eppt1d ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
-   dt     , rtpa   )
+   dt     )
 
   iappel = 2
   call vert1d &
@@ -700,7 +698,7 @@ if(ncpdct.gt.0) then
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
-  dt     , rtpa   , rtp  , propce ,                              &
+  dt     ,                                                       &
   ckupdc )
 
 endif
@@ -720,7 +718,7 @@ if(nctsmt.gt.0) then
   ncetsm , iappel ,                                              &
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
-  dt     , rtpa   , propce ,                                     &
+  dt     ,                                                       &
   ckupdc , smacel )
 
 endif
@@ -740,7 +738,7 @@ if (ivrtex.eq.1) then
   call usvort &
   !==========
  ( nvar   , nscal  , iappel ,                                     &
-   dt     , rtpa   , propce )
+   dt     )
 
   call vorver (nfabor, iappel)
   !==========
@@ -910,7 +908,7 @@ if (itrale.gt.0) then
   call cs_f_user_extra_operations &
   !==============================
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     )
 
   call cs_user_extra_operations()
 
@@ -1102,7 +1100,7 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
 endif
 
-call ushist(nvar, nscal, dt, rtpa, rtp, propce)
+call ushist(nvar, nscal, dt)
 !==========
 
 !===============================================================================

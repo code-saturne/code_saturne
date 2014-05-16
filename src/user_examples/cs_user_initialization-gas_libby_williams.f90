@@ -39,15 +39,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     )
 
 !===============================================================================
 
@@ -86,7 +83,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -101,6 +98,9 @@ integer          iscal, ivar, ii
 double precision valmax, valmin
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: cvar_yfm, cvar_fm, cvar_cyfp2m
+double precision, dimension(:), pointer :: cvar_fp2m, cvar_coyfp
+double precision, dimension(:), pointer :: cvar_scalt, cvar_scal
 !< [loc_var_dec]
 
 !===============================================================================
@@ -108,6 +108,13 @@ integer, allocatable, dimension(:) :: lstelt
 !---------------
 ! Initialization
 !---------------
+
+call field_get_val_s(ivarfl(isca(iyfm)), cvar_yfm)
+call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ivarfl(isca(iyfp2m)), cvar_cyfp2m)
+call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
+call field_get_val_s(ivarfl(isca(icoyfp)), cvar_coyfp)
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
 !< [init]
 allocate(lstelt(ncel)) ! temporary array for cells selection
@@ -173,25 +180,25 @@ if ( isuite.eq.0 ) then
     ! b. Initialisation
 
     ! Mass fraction of Unburned (fresh) Gas
-    rtp(iel,isca(iyfm))  = 0.0d0*fmelm
+    cvar_yfm(iel)  = 0.0d0*fmelm
     ! Mean Mixture Fraction
-    rtp(iel,isca(ifm))   = 0.d0*fmelm
+    cvar_fm(iel)   = 0.d0*fmelm
     ! Variance of fuel Mass fraction
-    rtp(iel,isca(iyfp2m)) = zero
+    cvar_cyfp2m(iel) = zero
     ! Variance of Mixture Fraction
-    rtp(iel,isca(ifp2m))  = zero
+    cvar_fp2m(iel)  = zero
 
     ! Covariance for NDIRAC >= 3
 
     if ( ippmod(icolwc).ge. 2 ) then
-      rtp(iel,isca(icoyfp))   = zero
+      cvar_coyfp(iel)   = zero
     endif
 
     ! Enthalpy
 
     if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
                              .or. ippmod(icolwc).eq.5 ) then
-      rtp(iel,isca(iscalt)) = hinit
+      cvar_scalt(iel) = hinit
     endif
 
   enddo
@@ -203,11 +210,12 @@ if ( isuite.eq.0 ) then
   do ii  = 1, nscapp
     iscal = iscapp(ii)
     ivar  = isca(iscal)
+    call field_get_val_s(ivarfl(isca(ivar)), cvar_scal)
     valmax = -grand
     valmin =  grand
     do iel = 1, ncel
-      valmax = max(valmax,rtp(iel,ivar))
-      valmin = min(valmin,rtp(iel,ivar))
+      valmax = max(valmax,cvar_scal(iel))
+      valmin = min(valmin,cvar_scal(iel))
     enddo
     if ( irangp.ge.0 ) then
       call parmax(valmax)

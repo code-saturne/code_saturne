@@ -261,7 +261,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
-  dt     , rtp    , rtpa   , propce , rcodcl ,                   &
+  dt     , rcodcl ,                                              &
   thwall , bfnet  , bhconv , bfconv ,                            &
   bxlam  , bepa   , beps   ,                                     &
   text   , tint   )
@@ -317,7 +317,7 @@ call usray2 &
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
-  dt     , rtp    , rtpa   , propce , rcodcl ,                   &
+  dt     , rcodcl ,                                              &
   thwall , bfnet ,  bfconv ,                                     &
   bfconv , bxlam , bepa   , beps ,                               &
   text   , tint   )
@@ -660,7 +660,7 @@ elseif (itherm.eq.2) then
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    tparo  , thwall , tempk  )
       ! Resultat : T en K
 
@@ -801,7 +801,7 @@ elseif (itherm.eq.2) then
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce ,                            &
+      dt     ,                                                       &
       tparo  , bfnet  ,                                              &
       tempk  )
       ! HPAROI
@@ -838,7 +838,7 @@ elseif (itherm.eq.2) then
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce ,                            &
+      dt     ,                                                       &
       text   , thwall , tempk  )
       ! HEXT
 

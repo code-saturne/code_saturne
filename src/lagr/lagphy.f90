@@ -228,7 +228,7 @@ if (nvls.ge.1) then
     ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
       itepa  ,                                                    &
-      dt     , rtp    , propce ,                                  &
+      dt     ,                                                    &
       ettp   , ettpa  , tepa   , taup   , tlag   ,                &
       tempct , tsvar  ,                                           &
       auxl(1,1) ,  auxl(1,2) ,  auxl(1,3) )

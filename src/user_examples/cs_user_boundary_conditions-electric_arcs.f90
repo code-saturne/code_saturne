@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-electric_arcs.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for electric arcs
+!> \brief Example of cs_user_boundary_conditions subroutine for electric arcs
 !
 !-------------------------------------------------------------------------------
 
@@ -53,9 +53,6 @@
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -75,7 +72,7 @@
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -118,8 +115,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -136,7 +132,8 @@ double precision xkent, xeent
 double precision z1   , z2
 
 integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer :: brom
+double precision, dimension(:), pointer :: bfpro_rom
+double precision, dimension(:), pointer :: cvara_potva
 !< [loc_var_dec]
 
 !===============================================================================
@@ -164,7 +161,7 @@ d2s3 = 2.d0/3.d0
 !        =============================================
 !
 !< [example_1]
-call field_get_val_s(ibrom, brom)
+call field_get_val_s(ibrom, bfpro_rom)
 !===================
 
 call getfbr('1', nlelt, lstelt)
@@ -221,7 +218,7 @@ do ilelt = 1, nlelt
     ! standard laws for a circular pipe
     ! (their initialization is not needed here but is good practice).
 
-    rhomoy = brom(ifac)
+    rhomoy = bfpro_rom(ifac)
     ustar2 = 0.d0
     xkent  = epzero
     xeent  = epzero
@@ -546,8 +543,9 @@ do ilelt = 1, nlelt
       iel = ifabor(ifac)
       do idim = 1, ndimve
         ii = ipotva(idim)
+        call field_get_val_prev_s(ivarfl(isca(ii)), cvara_potva)
         icodcl(ifac,isca(ii))   = 1
-        rcodcl(ifac,isca(ii),1) = rtpa(iel,isca(ii))
+        rcodcl(ifac,isca(ii),1) = cvara_potva(iel)
       enddo
     endif
   endif
