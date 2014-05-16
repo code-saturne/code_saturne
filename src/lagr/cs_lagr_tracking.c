@@ -3650,7 +3650,9 @@ _local_propagation(void                           *particle,
 
   if (lagr_params->deposition > 0) {
 
-    if (move_particle == CS_LAGR_PART_MOVE_OFF) {
+    if (   move_particle == CS_LAGR_PART_MOVE_OFF
+        && particle_state != CS_LAGR_PART_OUT
+        && particle_state != CS_LAGR_PART_ERR) {
 
       if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
            == CS_LAGR_PART_ROLLING) {
