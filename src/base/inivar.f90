@@ -190,7 +190,7 @@ if (ippmod(iphpar).eq.0) then
   call cs_user_initialization &
   !==========================
 ( nvar   , nscal  ,                                                             &
-  dt     , rtp    , propce )
+  dt     )
 
   !     Avec l'interface, il peut y avoir eu initialisation,
   !       meme si usiniv n'est pas utilise.
