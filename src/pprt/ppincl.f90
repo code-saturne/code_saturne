@@ -342,11 +342,11 @@ module ppincl
   !        Phase continue (melange gazeux)
 
   !> mean value of the tracer 1 representing the light
-  !> volatiles released by the coal \ref icha
+  !> volatiles released by the coal \c icha
   integer, save :: if1m(ncharm)
 
   !> mean value of the tracer 2 representing the heavy
-  !> volatiles released by the coal \ref icha
+  !> volatiles released by the coal \c icha
   integer, save :: if2m(ncharm)
 
   !> mean value of the tracer 3 representing
@@ -388,13 +388,13 @@ module ppincl
   !> coke mass fraction related to the class icla
   integer, save :: ixck(nclcpm)
 
-  !> reactive coal mass fraction related to the class \ref icla
+  !> reactive coal mass fraction related to the class \c icla
   integer, save :: ixch(nclcpm)
 
-  !> number of particles of the class \ref icla per kg of air-coal mixture
+  !> number of particles of the class \c icla per kg of air-coal mixture
   integer, save :: inp(nclcpm)
 
-  !>  mass enthalpy of the coal of class \ref icla, if we are in permeatic conditions
+  !>  mass enthalpy of the coal of class \c icla, if we are in permeatic conditions
   integer, save :: ih2(nclcpm)
 
   ! TODO absent de la doc utilisateur
@@ -432,32 +432,32 @@ module ppincl
 
   !        Phase dispersee (classes de particules)
 
-  !> temperature of the particles of the class \ref icla
+  !> temperature of the particles of the class \c icla
   integer, save :: itemp2(nclcpm)
 
-  !> density of the particles of the class \ref icla
+  !> density of the particles of the class \c icla
   integer, save :: irom2(nclcpm)
 
-  !> diameter of the particles of the class \ref icla
+  !> diameter of the particles of the class \c icla
   integer, save :: idiam2(nclcpm)
 
-  !>  solid mass fraction of the class \ref icla
+  !>  solid mass fraction of the class \c icla
   integer, save :: ix2(nclcpm)
 
-  !> disappearance rate of the reactive coal of the class \ref icla
+  !> disappearance rate of the reactive coal of the class \c icla
   integer, save :: igmdch(nclcpm)
 
-  !> coke disappearance rate of the coke burnout of the class \ref icla
+  !> coke disappearance rate of the coke burnout of the class \c icla
   integer, save :: igmhet(nclcpm)
 
   ! TODO absent de la doc utilisateur
   !> State variables of dispersed phase (particles class)
   integer, save :: ighco2(nclcpm)
 
-  !>  mass transfer caused by the release of light volatiles  of the class \ref icla
+  !>  mass transfer caused by the release of light volatiles  of the class \c icla
   integer, save :: igmdv1(nclcpm)
 
-  !>  mass transfer caused by the release of heavy volatiles  of the class \ref icla
+  !>  mass transfer caused by the release of heavy volatiles  of the class \c icla
   integer, save :: igmdv2(nclcpm)
 
   ! TODO absent de la doc utilisateur

@@ -533,6 +533,7 @@ module optcal
   !> \addtogroup turbulence
   !> \{
 
+  !> \anchor iturb
   !> turbulence model
   !>    - 0: no turbulence model (laminar flow)
   !>    - 10: mixing length model
@@ -714,6 +715,7 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: ipucou
 
+  !> \anchor iccvfg
   !> calculation with a fixed velocity field
   !>    - 1: true
   !>    - 0: false (default)

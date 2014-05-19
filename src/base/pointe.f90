@@ -121,6 +121,7 @@ module pointe
   !> \addtogroup coupled_case
   !> \{
 
+  !> \anchor itypfb
   !> boundary condition type at the boundary face \c ifac
   !> (see user subroutine \ref cs\_user\_boundary\_conditions)
   integer, allocatable, dimension(:) :: itypfb
@@ -317,10 +318,17 @@ module pointe
   integer, allocatable, dimension(:) :: icocel, itycel
   integer, allocatable, dimension(:) :: ifrlag
 
-  double precision, pointer, dimension(:,:) :: ettp => null(), ettpa => null()
+  !> \anchor ettp
+  double precision, pointer, dimension(:,:) :: ettp => null()
+  !> \anchor ettpa
+  double precision, pointer, dimension(:,:) :: ettpa => null()
+  !> \anchor tepa
   double precision, pointer, dimension(:,:) :: tepa => null()
+  !> \anchor statis 
   double precision, pointer, dimension(:,:) :: statis => null()
+  !> \anchor parbor 
   double precision, pointer, dimension(:,:) :: parbor => null()
+  !> \anchor tslagr
   double precision, pointer, dimension(:,:) :: tslagr => null()
   double precision, pointer, dimension(:,:) :: stativ, dlgeo
 

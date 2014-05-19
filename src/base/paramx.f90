@@ -105,9 +105,11 @@ module paramx
   integer    ntypmx
   parameter(ntypmx=200)
 
+  !> \anchor iindef
   !> pointer for undefined type face (non-standard case)
   integer   iindef
 
+  !> \anchor ientre
   !> if \ref itypfb=ientre: inlet face.
   !> -  Zero-flux condition for pressure and Dirichlet condition for all
   !> other variables. The value of the Dirichlet must be given in
@@ -116,6 +118,7 @@ module paramx
   !> \ref icodcl are filled automatically.
   integer   ientre
 
+  !> \anchor isolib
   !> if \ref itypfb=isolib: free outlet face (or more precisely free inlet/outlet
   !> with forced pressure)
   !>  - The pressure is always treated with a Dirichlet condition, calculated with the constraint
@@ -138,13 +141,16 @@ module paramx
   !> condition (\ref icodcl=3) for the other variables.
   integer   isolib
 
+  !> \anchor isymet
   !> if \ref itypfb=isymet: symmetry face (or wall without friction).
   !> - Nothing to be writen in \ref icodcl and  \ref rcodcl.
   integer   isymet
 
+  !> \anchor iparoi
   !> if \ref itypfb=iparoi: smooth solid wall face, impermeable and with friction.
   integer   iparoi
 
+  !> \anchor iparug
   !> if \ref itypfb=iparug: rough solid wall face, impermeable and with friction.
   integer   iparug
 
@@ -216,6 +222,7 @@ module paramx
   ! TODO : mot absent de la doc
   integer   icscpl
 
+  !> \anchor ifrent
   !> if \ref itypfb=ifrent: free entrance based on Bernoulli equation when
   !> the flow is incoming, standard outlet when outgoing
   integer   ifrent
@@ -333,10 +340,15 @@ module paramx
 
   ! conditions aux limites possibles pour la vitesse de maillage en ale
 
+  !> \anchor ibfixe
   !> boundary condition type for mesh velocity in ALE: fixed wall
   integer   ibfixe
+
+  !> \anchor igliss
   !> boundary condition type for mesh velocity in ALE: sliding wall
   integer   igliss
+
+  !> \anchor ivimpo
   !> boundary condition type for mesh velocity in ALE: imposed velocity.
   !> - In the case where all the nodes of a face have a imposed displacement,
   !> it is not necessary to fill the tables with boundary conditions
@@ -350,6 +362,7 @@ module paramx
   !> (in which case it is this speed which is considered).
   integer   ivimpo
 
+  !> \anchor ifresf
   !> boundary condition type for mesh velocity in ALE for modelling
   !> free surface (\f$ \vect{u} \cdot \vect{S} = \vect{w} \cdot \vect{S} \f$).
   integer   ifresf
