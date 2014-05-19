@@ -51,7 +51,6 @@ from Base.QtPage import RegExpValidator, DoubleValidator
 from Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Base.Toolbox import GuiParam
 from Pages.FacesSelectionForm import Ui_FacesSelectionForm
-from Pages.SolutionDomainModel import SolutionDomainModel
 
 #-------------------------------------------------------------------------------
 # log config

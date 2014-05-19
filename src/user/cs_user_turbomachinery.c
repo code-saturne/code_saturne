@@ -107,13 +107,17 @@ cs_user_turbomachinery_rotor(void)
     double rotation_velocity = 2.;
     double rotation_axis[3] = {0., 0., 1.};
 
+    /* change invariant point is not available yet */
+    double rotation_invariant[3] = {0., 0., 0.};
+
     const char cell_criteria[]  = "cylinder[0.0, 0.0, 0.0,"
                                           " 0.0, 0.0, 1.0,"
                                           " 2.0]";
 
     cs_turbomachinery_add_rotor(cell_criteria,
                                 rotation_velocity,
-                                rotation_axis);
+                                rotation_axis,
+                                rotation_invariant);
 
     /* Define joining associated with rotor/stator interface */
 

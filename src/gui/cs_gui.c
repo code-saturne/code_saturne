@@ -80,6 +80,7 @@
 #include "cs_timer.h"
 #include "cs_physical_properties.h"
 #include "cs_time_step.h"
+#include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -5080,6 +5081,182 @@ cs_gui_reference_initialization(const char  *param,
     *value = result;
   BFT_FREE(path);
 }
+
+/*-----------------------------------------------------------------------------
+ * Set turbomachinery model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_turbomachinery(void)
+{
+  char *path = NULL;
+  char *model = NULL;
+
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2,
+                        "thermophysical_models",
+                        "turbomachinery");
+  cs_xpath_add_attribute(&path, "model");
+  model = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  if (cs_gui_strcmp(model, "off"))
+    cs_turbomachinery_set_model(CS_TURBOMACHINERY_NONE);
+  else if (cs_gui_strcmp(model, "transient"))
+    cs_turbomachinery_set_model(CS_TURBOMACHINERY_TRANSIENT);
+  else if (cs_gui_strcmp(model, "frozen"))
+    cs_turbomachinery_set_model(CS_TURBOMACHINERY_FROZEN);
+  else
+    bft_error(__FILE__, __LINE__, 0, _("Invalid model for turbomachinery: %s\n"), model);
+
+  BFT_FREE(model);
+
+}
+
+/*----------------------------------------------------------------------------
+ * Return the value of the choice attribute for rotor (turbomachinery)
+ *
+ * parameters:
+ *   rotor_id    <--  id of the rotor
+ *   name        <--  name of the property
+ *----------------------------------------------------------------------------*/
+
+static int
+_rotor_option(const char *const rotor_id,
+              const char *const name)
+{
+  double value = 0.;
+  char *path   = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "turbomachinery",
+                        "rotor");
+  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
+  cs_xpath_add_element(&path, "rotation");
+  cs_xpath_add_element(&path, name);
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_double(path, &value);
+  BFT_FREE(path);
+
+  return value;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the value to a face joining markup for turbomachinery
+ *
+ * parameters:
+ *   keyword <-- label of the markup
+ *   number  <-- joining number
+ *----------------------------------------------------------------------------*/
+
+static char *
+_get_rotor_face_joining(const char  *keyword,
+                        int          number)
+{
+  char* value = NULL;
+  char *path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "turbomachinery",
+                                  "joining");
+  cs_xpath_add_element_num(&path, "face_joining", number);
+  cs_xpath_add_element(&path, keyword);
+  cs_xpath_add_function_text(&path);
+  value = cs_gui_get_text_value(path);
+  BFT_FREE(path);
+  return value;
+}
+
+/*-----------------------------------------------------------------------------
+ * Set turbomachinery options.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_turbomachinery_rotor(void)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  char *path = NULL;
+
+  double rotation_axis[3];
+  double rotation_invariant[3];
+  double rotation_velocity;
+  char *cell_criteria;
+
+  const char rotor_id[] = "0";
+
+  rotation_axis[0] = _rotor_option(rotor_id, "axis_x");
+  rotation_axis[1] = _rotor_option(rotor_id, "axis_y");
+  rotation_axis[2] = _rotor_option(rotor_id, "axis_z");
+
+  rotation_invariant[0] = _rotor_option(rotor_id, "invariant_x");
+  rotation_invariant[1] = _rotor_option(rotor_id, "invariant_y");
+  rotation_invariant[2] = _rotor_option(rotor_id, "invariant_z");
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "turbomachinery",
+                        "rotor");
+
+  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
+  cs_xpath_add_element(&path, "velocity");
+  cs_xpath_add_element(&path, "value");
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_double(path, &rotation_velocity);
+  BFT_FREE(path);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "turbomachinery",
+                        "rotor");
+
+  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
+  cs_xpath_add_element(&path, "criteria");
+  cs_xpath_add_function_text(&path);
+  cell_criteria = cs_gui_get_text_value(path);
+  BFT_FREE(path);
+
+  cs_turbomachinery_add_rotor(cell_criteria,
+                              rotation_velocity,
+                              rotation_axis,
+                              rotation_invariant);
+
+  int n_join = 0;
+  n_join = cs_gui_get_tag_number("/thermophysical_models/turbomachinery/joining/face_joining", 1);
+
+  if (n_join != 0)
+  {
+    for (int join_id = 0; join_id < n_join; join_id++) {
+
+      char *selector_s  =  _get_rotor_face_joining("selector", join_id+1);
+      char *fraction_s  =  _get_rotor_face_joining("fraction", join_id+1);
+      char *plane_s     =  _get_rotor_face_joining("plane", join_id+1);
+      char *verbosity_s =  _get_rotor_face_joining("verbosity", join_id+1);
+      char *visu_s      =  _get_rotor_face_joining("visualization", join_id+1);
+
+      double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
+      double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
+      int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
+      int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
+
+
+      int join_num = cs_turbomachinery_join_add(selector_s,
+                                                fraction,
+                                                plane,
+                                                verbosity,
+                                                visualization);
+    }
+  }
+}
+
 
 /*-----------------------------------------------------------------------------
  * Set partitioning options.

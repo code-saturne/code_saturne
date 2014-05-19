@@ -81,15 +81,17 @@ cs_turbomachinery_get_model(void);
  * Define a rotor by its axis and cell selection criteria.
  *
  * parameters:
- *   cell_criteria     <-- cell selection criteria string
- *   rotation_velocity <-- rotation velocity, in radians/second
- *   rotation_axis     <-- rotation axis vector
+ *   cell_criteria         <-- cell selection criteria string
+ *   rotation_velocity     <-- rotation velocity, in radians/second
+ *   rotation_axis         <-- rotation axis vector
+ *   rotation_invariant    <-- rotation invariant point
  *----------------------------------------------------------------------------*/
 
 void
 cs_turbomachinery_add_rotor(const char    *cell_criteria,
                             double         rotation_velocity,
-                            const double   rotation_axis[3]);
+                            const double   rotation_axis[3],
+                            const double   rotation_invariant[3]);
 
 /*----------------------------------------------------------------------------
  * Add a cs_join_t structure to the list of rotor/stator joinings.

@@ -414,6 +414,7 @@ Thermophysical models
     Conjugate heat transfer
     Atmospheric flows
     Species transport
+    TurboMachinery
 Physical properties
     Fluid properties
     Reference values

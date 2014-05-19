@@ -47,6 +47,7 @@
 #include "cs_base.h"
 #include "cs_benchmark.h"
 #include "cs_gradient.h"
+#include "cs_gui.h"
 #include "cs_gui_mesh.h"
 #include "cs_gui_output.h"
 #include "cs_gradient.h"
@@ -783,16 +784,18 @@ cs_turbomachinery_get_model(void)
 /*!
  * \brief Define a rotor by its axis and cell selection criteria.
  *
- * \param[in]  cell_criteria      cell selection criteria string
- * \param[in]  rotation_velocity  rotation velocity, in radians/second
- * \param[in]  rotation_axis      rotation axis vector
+ * \param[in]  cell_criteria       cell selection criteria string
+ * \param[in]  rotation_velocity   rotation velocity, in radians/second
+ * \param[in]  rotation_axis       rotation axis vector
+ * \param[in]  rotation_invariant  rotation invariant point
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turbomachinery_add_rotor(const char    *cell_criteria,
                             double         rotation_velocity,
-                            const double   rotation_axis[3])
+                            const double   rotation_axis[3],
+                            const double   rotation_invariant[3])
 {
   static int n_calls = 0;
   const double   invariant_point[3] = {0., 0., 0.};
@@ -814,7 +817,7 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
   tbm->omega = rotation_velocity;
   for (int i = 0; i < 3; i++) {
     tbm->rotation_axis[i] = v[i]/len;
-    tbm->rotation_invariant[i] = invariant_point[i];
+    tbm->rotation_invariant[i] = rotation_invariant[i];
   }
 
   BFT_REALLOC(tbm->rotor_cells_c, strlen(cell_criteria) + 1, char);
@@ -1068,6 +1071,7 @@ cs_turbomachinery_initialize(void)
 {
   /* Define model; could be moved anywhere before time loop. */
 
+  cs_gui_turbomachinery();
   cs_user_turbomachinery();
 
   if (cs_glob_turbomachinery == NULL)
@@ -1080,6 +1084,7 @@ cs_turbomachinery_initialize(void)
 
   /* Define rotor(s) */
 
+  cs_gui_turbomachinery_rotor();
   cs_user_turbomachinery_rotor();
   _select_rotor_cells(tbm);
 

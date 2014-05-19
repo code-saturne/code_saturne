@@ -119,6 +119,8 @@ TimeAveragesModel.py \
 TimeAveragesView.py \
 TimeStepModel.py \
 TimeStepView.py \
+TurboMachineryModel.py \
+TurboMachineryView.py \
 TurbulenceModel.py \
 TurbulenceView.py \
 VerifyExistenceLabelDialogView.py \
@@ -188,6 +190,7 @@ ThermalRadiationForm.ui \
 ThermalScalarForm.ui \
 TimeAveragesForm.ui \
 TimeStepForm.ui \
+TurboMachineryForm.ui \
 TurbulenceAdvancedOptionsDialogForm.ui \
 TurbulenceForm.ui \
 VerifyExistenceLabelDialogForm.ui \
