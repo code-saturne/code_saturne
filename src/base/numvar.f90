@@ -48,81 +48,107 @@ module numvar
   !> \addtogroup main_variables
   !> \{
 
+  !> \anchor ipr
   !> pressure
   integer, save :: ipr
 
+  !> \anchor iu
   !> velocity component \f$ u_x \f$
   integer, save :: iu
 
+  !> \anchor iv
   !> velocity component \f$ u_y \f$
   integer, save :: iv
 
+  !> \anchor iw
   !> velocity component \f$ u_z \f$
   integer, save :: iw
 
+  !> \anchor ivoidf
   !> void fraction for cavitation modelling
   integer, save :: ivoidf
 
+  !> \anchor ik
   !> turbulent kinetic energy \f$ k \f$
   integer, save :: ik
 
+  !> \anchor iep
   !> turbulent dissipation \f$ \varepsilon \f$
   integer, save :: iep
 
+  !> \anchor ir11
   !> Reynolds stress component \f$ R_{xx} \f$
   integer, save :: ir11
 
+  !> \anchor ir22
   !> Reynolds stress component \f$ R_{yy} \f$
   integer, save :: ir22
 
+  !> \anchor ir33
   !> Reynolds stress component \f$ R_{zz} \f$
   integer, save :: ir33
 
+  !> \anchor ir12
   !> Reynolds stress component \f$ R_{xy} \f$
   integer, save :: ir12
 
+  !> \anchor ir23
   !> Reynolds stress component \f$ R_{yz} \f$
   integer, save :: ir23
 
+  !> \anchor ir13
   !> Reynolds stress component \f$ R_{zz} \f$
   integer, save :: ir13
 
+  !> \anchor iphi
   !> variable \f$ \phi \f$ of the \f$ \phi-f_b \f$ model
   integer, save :: iphi
 
+  !> \anchor ifb
   !> variable \f$ f_b \f$ of the \f$ \phi-f_b \f$ model
   integer, save :: ifb
 
+  !> \anchor ial
   !> variable \f$ \alpha \f$ of the \f$ Bl-v^2-k \f$ model
   integer, save :: ial
 
+  !> \anchor iomg
   !> variable \f$ \omega \f$ of the \f$ k-\omega \f$ SST
   integer, save :: iomg
 
+  !> \anchor inusa
   !> variable \f$ \widetilde{\nu}_T \f$ of the Spalart Allmaras
   integer, save :: inusa
 
+  !> \anchor isca
   !> isca(i) is the index of the scalar i
   integer, save :: isca(nscamx)
 
+  !> \anchor iscapp
   !> iscapp(i) is the index of the specific physics scalar i
   integer, save :: iscapp(nscamx)
 
+  !> \anchor nscaus
   !> number of user scalars
   integer, save :: nscaus
 
+  !> \anchor nscapp
   !> number of specific physics scalars
   integer, save :: nscapp
 
+  !> \anchor nscasp
   !> number of species scalars
   integer, save :: nscasp
 
+  !> \anchor iuma
   !> mesh velocity component \f$ w_x \f$
   integer, save :: iuma
 
+  !> \anchor ivma
   !> mesh velocity component \f$ w_y \f$
   integer, save :: ivma
 
+  !> \anchor iwma
   !> mesh velocity component \f$ w_z \f$
   integer, save :: iwma
 

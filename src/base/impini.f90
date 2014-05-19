@@ -1493,7 +1493,7 @@ write(nfecra,9900)
 
 ! --- Stokes
 
-write(nfecra,4110) iphydr,icalhy,iprco,ipucou,nterup
+write(nfecra,4110) idilat,iporos,iphydr,icalhy,iprco,ipucou,nterup
 write(nfecra,4111) irevmc
 if (idtvar.ge.0) then
   write(nfecra,4112) relaxv(ipr),arak
@@ -1539,6 +1539,14 @@ write(nfecra,9900)
                                                                 /,&
 ' ** STOKES',                                                   /,&
 '    ------',                                                   /,&
+'       IDILAT = ',4x,i10,  ' (1 : sans prise en compte du',    /,&
+'                ',14x,     '      terme instationnaire dans',  /,&
+'                ',14x,     '      l''equation de continuite',  /,&
+'                ',14x,     '  2 : avec prise en compte du',    /,&
+'                ',14x,     '      terme instationnaire dans',  /,&
+'                ',14x,     '      l''equation de continuite',  /,&
+'       IPOROS = ',4x,i10,  ' (0 : sans modelisation poreuse',  /,&
+'                ',14x,     '  1 : avec modelisation poreuse)', /,&
 '       IPHYDR = ',4x,i10,  ' (1 : prise en compte explicite',  /,&
 '                ',14x,     '      de l''equilibre entre grad', /,&
 '                ',14x,     '      de pression et termes',      /,&
@@ -1627,6 +1635,12 @@ write(nfecra,9900)
                                                                 /,&
 ' ** STOKES',                                                   /,&
 '    ------',                                                   /,&
+'       IDILAT = ',4x,i10,  ' (1 : without unsteady term',      /,&
+'                ',14x,     '      in the continuity equation', /,&
+'                ',14x,     '  2 : with unsteady term in ',     /,&
+'                ',14x,     '      the continuity equation)',   /,&
+'       IPOROS = ',4x,i10,  ' (0 : without porous media',       /,&
+'                ',14x,     '  1 : with porous media)',         /,&
 '       IPHYDR = ',4x,i10,  ' (1: account for explicit',        /,&
 '                ',14x,     '     balance between pressure',    /,&
 '                ',14x,     '     gradient, gravity source',    /,&

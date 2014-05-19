@@ -48,6 +48,7 @@ module lagran
   !> \addtogroup base
   !> \{
 
+  !> \anchor iilagr 
   !> activates (>0) or deactivates (=0) the Lagrangian module
   !> the different values correspond to the following modellings:
   !> - = 1 Lagrangian two-phase flow in one-way coupling (no influence of
@@ -67,6 +68,7 @@ module lagran
   !> the global calculation must also be a restart calculation
   integer, save ::           isuila
 
+  !> \anchor isttio
   !> indicates the steady (=1) or unsteady (=0) state of the
   !> continuous phase flow
   !> in particular, \ref isttio = 1 is needed in order to:
@@ -694,6 +696,7 @@ module lagran
   !> the statistics represent the significant results on the particle cloud
   integer, save ::  istala
 
+  !> \anchor isuist
   !> during a Lagrangian calculation restart, indicates whether the particle
   !> statistics (volume and boundary) and two-way coupling terms are to be read
   !> from a restart file (=1) or reinitialised (=0).
@@ -713,7 +716,7 @@ module lagran
   !> Useful if \ref istala = 1
   integer, save ::  idstnt
 
-  !>
+  !> \anchor nstist
   !> absolute Lagrangian iteration number (includings the restarts) after
   !> which the volume statistics are cumulated over time (they are then said
   !> to be stationary).
@@ -872,6 +875,7 @@ module lagran
   !> Variance of the air scalar
   integer, save ::  itsfp4
 
+  !> \anchor nstits
   !> number of absolute Lagrangian iterations (including the restarts)
   !> after which a time-average of the two-way coupling source terms is
   !> calculated.
@@ -1070,6 +1074,7 @@ module lagran
   !> Useful if \ref iensi3=1
   integer, save ::  nusbor
 
+  !> \anchor nstbor
   !> number of absolute Lagrangian iterations (including the restarts)
   !> after which the statistics at the boundaries are considered stationary
   !> are veraged (over time or over the number of interactions).
@@ -1227,6 +1232,7 @@ module lagran
   !> \addtogroup visualization
   !> \{
 
+  !> \anchor iensi3
   !> activation (=1) or not (=0) of the recording of the particle/boundary
   !> interactions in  \ref parbor, and of the calculation of the
   !> statistics at the corresponding boundaries, for post-processing

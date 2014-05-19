@@ -181,6 +181,7 @@
 !>                      - \c rcodcl(ifac, ivar, 2)
 !>                      - \c rcodcl(ifac, ivar, 3)
 !>
+!> \anchor icodcl \anchor rcodcl
 !> The value of \c icodcl is taken from the following:
 !>  - 1: Dirichlet      (usable for any variable)
 !>  - 3: Neumann        (usable for any variable)
