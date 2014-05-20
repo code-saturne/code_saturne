@@ -77,6 +77,7 @@ class DefineUserScalarsModel(Variables, Model):
         default['diffusion_coefficient'] = 1.83e-05
         default['diffusion_choice']      = 'constant'
         default['zone_id']               = 1
+        default['GGDH']                  = "SGDH"
         if self.getScalarLabelsList():
             default['variance']          = self.getScalarLabelsList()[0]
         else:
@@ -372,6 +373,32 @@ class DefineUserScalarsModel(Variables, Model):
         for node in self.case.xmlGetNodeList('formula'):
             f = node.xmlGetTextNode().replace(old_label, new_label)
             node.xmlSetTextNode(f)
+
+
+    @Variables.noUndo
+    def getTurbulentFluxModel(self, l):
+        """
+        Get turbulent flux model of an additional_scalar with label I{l}.
+        """
+        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
+        self.isInList(l, lst)
+        n = self.case.xmlGetNode('variable', label=l)
+        mdl = n.xmlGetString('turbulent_flux_model')
+        if not mdl:
+            mdl = self.defaultScalarValues()['GGDH']
+            self.setTurbulentFluxModel(l, mdl)
+
+        return mdl
+
+
+    @Variables.undoGlobal
+    def setTurbulentFluxModel(self, scalar_label, TurbFlux):
+        """Put turbulent flux model of an additional_scalar with label scalar_label"""
+        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
+        self.isInList(scalar_label, lst)
+
+        n = self.case.xmlGetNode('variable', label=scalar_label)
+        n.xmlSetData('turbulent_flux_model', TurbFlux)
 
 
     @Variables.noUndo

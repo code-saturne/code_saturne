@@ -27,6 +27,7 @@ This module defines the 'Additional user's scalars' page.
 
 This module contains the following classes:
 - LabelDelegate
+- GGDHDelegate
 - VarianceNameDelegate
 - VarianceDelegate
 - StandardItemModelScalars
@@ -58,6 +59,7 @@ from Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Pages.DefineUserScalarsForm import Ui_DefineUserScalarsForm
 from Pages.LocalizationModel import LocalizationModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -122,6 +124,51 @@ class LabelDelegate(QItemDelegate):
                     new_plabel = self.old_plabel
 
             model.setData(index, to_qvariant(str(new_plabel)), Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for the modelized turbulent fluxes
+#-------------------------------------------------------------------------------
+
+class GGDHDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent, case):
+        super(GGDHDelegate, self).__init__(parent)
+        self.parent   = parent
+        self.case     = case
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        self.modelCombo = ComboModel(editor, 1, 1)
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+
+        self.modelCombo.addItem(self.tr("SGDH"), "SGDH")
+        if TurbulenceModel(self.case).getTurbulenceModel() == "Rij-epsilon" or \
+           TurbulenceModel(self.case).getTurbulenceModel() == "Rij-SSG" or \
+           TurbulenceModel(self.case).getTurbulenceModel() == "Rij-EBRSM":
+            self.modelCombo.addItem(self.tr("GGDH"), "GGDH")
+            self.modelCombo.addItem(self.tr("AFM"), "AFM")
+            self.modelCombo.addItem(self.tr("DFM"), "DFM")
+
+
+    def setModelData(self, comboBox, model, index):
+        txt = str(comboBox.currentText())
+        value = self.modelCombo.dicoV2M[txt]
+        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+
+
+    def tr(self, text):
+        """
+        Translation
+        """
+        return text
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the variance name
@@ -234,11 +281,12 @@ class StandardItemModelScalars(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
 
-        self.headers = [self.tr("Name")]
+        self.headers = [self.tr("Name"), self.tr("Turbulent flux model")]
 
         self.setColumnCount(len(self.headers))
 
-        self.toolTipRole = [self.tr("Code_Saturne keyword: NSCAUS")]
+        self.toolTipRole = [self.tr("Code_Saturne keyword: NSCAUS"),
+                            self.tr("Code_Saturne keyword: ITURT")]
 
         self._data = []
         self.parent = parent
@@ -287,6 +335,13 @@ class StandardItemModelScalars(QStandardItemModel):
             self._data[row][col] = new_plabel
             self.mdl.renameScalarLabel(old_plabel, new_plabel)
 
+        # GGDH
+        elif col == 1:
+            turbFlux = str(from_qvariant(value, to_text_string))
+            self._data[row][col] = turbFlux
+            [label, var] = self._data[row]
+            self.mdl.setTurbulentFluxModel(label, turbFlux)
+
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
 
@@ -303,7 +358,8 @@ class StandardItemModelScalars(QStandardItemModel):
         row = self.rowCount()
 
         label = self.mdl.addUserScalar(existing_label)
-        scalar = [label]
+        turbFlux = self.mdl.getTurbulentFluxModel(label)
+        scalar = [label, turbFlux]
 
         self.setRowCount(row+1)
         self._data.append(scalar)
@@ -313,8 +369,8 @@ class StandardItemModelScalars(QStandardItemModel):
         """
         Return the values for an item.
         """
-        [label] = self._data[row]
-        return label
+        [label, turbFlux] = self._data[row]
+        return label, turbFlux
 
 
     def deleteItem(self, row):
@@ -485,10 +541,12 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
 
         # Delegates
         delegateLabel        = LabelDelegate(self.tableScalars)
+        delegateGGDH         = GGDHDelegate(self.tableScalars, self.case)
         delegateVarianceName = VarianceNameDelegate(self.tableVariance)
         delegateVariance     = VarianceDelegate(self.tableVariance)
 
         self.tableScalars.setItemDelegateForColumn(0, delegateLabel)
+        self.tableScalars.setItemDelegateForColumn(1, delegateGGDH)
         self.tableVariance.setItemDelegateForColumn(0, delegateVarianceName)
         self.tableVariance.setItemDelegateForColumn(1, delegateVariance)
 

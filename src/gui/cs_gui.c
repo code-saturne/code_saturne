@@ -879,6 +879,42 @@ cs_gui_variable_value(const char   *const variable_name,
   BFT_FREE(path);
 }
 
+/*-----------------------------------------------------------------------------
+ * Return value of turbulent flux model
+ *
+ * parameters:
+ *   variable_name  <-- name of variable
+ *   value          --> value of turbulent flux model
+ *----------------------------------------------------------------------------*/
+
+static void
+cs_gui_variable_turbulent_flux_model(const char   *const variable_name,
+                                           int    *const value)
+{
+  char *path = NULL;
+  char *result = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable_name);
+  cs_xpath_add_element(&path, "turbulent_flux_model");
+  cs_xpath_add_function_text(&path);
+
+  result = cs_gui_get_text_value(path);
+
+  if (cs_gui_strcmp(result, "SGDH"))
+    *value = 0;
+  else if (cs_gui_strcmp(result, "GGDH"))
+    *value = 10;
+  else if (cs_gui_strcmp(result, "AFM"))
+    *value = 20;
+  else if (cs_gui_strcmp(result, "DFM"))
+    *value = 30;
+
+  BFT_FREE(path);
+  BFT_FREE(result);
+}
+
 /*----------------------------------------------------------------------------
  * Get the attribute value from the xpath query.
  *
@@ -2793,13 +2829,17 @@ void CS_PROCF (csphys, CSPHYS)
  *
  * Fortran Interface:
  *
- * subroutine cssca2 (iscalt, iscavr, scamin, scamax)
+ * subroutine cssca2 (iscavr, iturt)
  * *****************
  *
  * integer          iscavr   <--  number of the related variance if any
+ * integer          iturb    <--  turbulence model
+ * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const int  *iscavr)
+void CS_PROCF (cssca2, CSSCA2) (const int *const iscavr,
+                                const int *const iturb,
+                                      int *const iturt)
 {
 #if _XML_DEBUG_
   bft_printf("==>CSSCA2\n");
@@ -2825,6 +2865,13 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iscavr)
         cs_gui_variable_value(f->name, "max_value", &scal_max);
         cs_field_set_key_double(f, kscmin, scal_min);
         cs_field_set_key_double(f, kscmax, scal_max);
+
+        if (*iturb == 3)
+        {
+          int turb_mdl;
+          cs_gui_variable_turbulent_flux_model(f->name, &turb_mdl);
+          iturt[i] = turb_mdl;
+        }
 #if _XML_DEBUG_
         bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
         bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
@@ -5111,7 +5158,7 @@ cs_gui_turbomachinery(void)
   else if (cs_gui_strcmp(model, "frozen"))
     cs_turbomachinery_set_model(CS_TURBOMACHINERY_FROZEN);
   else
-    bft_error(__FILE__, __LINE__, 0, _("Invalid model for turbomachinery: %s\n"), model);
+    cs_turbomachinery_set_model(CS_TURBOMACHINERY_NONE);
 
   BFT_FREE(model);
 

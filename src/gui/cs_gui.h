@@ -87,10 +87,10 @@ void CS_PROCF (csther, CSTHER) (int  *itherm,
  * DOUBLE PRECISION XLOMLG  -->   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csturb, CSTURB) (int *const iturb,
-                                int *const ideuch,
-                                int *const igrake,
-                                int *const igrari,
+void CS_PROCF (csturb, CSTURB) (int    *const iturb,
+                                int    *const ideuch,
+                                int    *const igrake,
+                                int    *const igrari,
                                 double *const xlomlg);
 
 /*----------------------------------------------------------------------------
@@ -371,9 +371,13 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
  * *****************
  *
  * integer          iscavr   <--  number of the related variance if any
+ * integer          iturb    <--  turbulence model
+ * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr);
+void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
+                                const    int *const iturb,
+                                         int *const iturt);
 
 void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
                                 const    int *const iscalt,

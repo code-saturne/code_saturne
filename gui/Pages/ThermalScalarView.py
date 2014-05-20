@@ -89,6 +89,7 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
         # combo Model
 
         self.modelThermal = ComboModel(self.comboBoxThermal, 4, 1)
+
         self.modelThermal.addItem(self.tr("No thermal scalar"), 'off')
         self.modelThermal.addItem(self.tr("Temperature (Celsius)"), 'temperature_celsius')
         self.modelThermal.addItem(self.tr("Temperature (Kelvin)"), 'temperature_kelvin')

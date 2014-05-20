@@ -136,7 +136,7 @@ if (iihmpr.eq.1) then
   call csther(itherm, itpscl)
   !==========
 
-  call csturb(iturb, ideuch, igrake, igrari, xlomlg)
+  call csturb(iturb, iturt, ideuch, igrake, igrari, xlomlg)
   !==========
 
   call cscpva(icp)
@@ -419,8 +419,8 @@ if (iihmpr.eq.1) then
               ro0, viscl0, viscv0, visls0, cp0, t0,                   &
               p0, xmasmr, itempk, itherm, itpscl)
 
-!     Scamin, scamax
-  call cssca2(iscavr)
+!     Scamin, scamax, turbulent flux model
+  call cssca2(iscavr, itytur, iturt)
   !==========
 
   ! Diffusivites
