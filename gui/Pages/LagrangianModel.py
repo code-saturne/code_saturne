@@ -189,6 +189,10 @@ class LagrangianModel(Model):
 
         if model == 'two_way':
             node_2way = self.node_lagr.xmlInitChildNode('two_way_coupling')
+        else:
+            node_2way = self.node_lagr.xmlGetChildNode('two_way_coupling')
+            if node_2way:
+                node_2way.xmlRemoveNode()
 
 
     @Variables.noUndo
