@@ -136,7 +136,7 @@ if (iihmpr.eq.1) then
   call csther(itherm, itpscl)
   !==========
 
-  call csturb(iturb, iturt, ideuch, igrake, igrari, xlomlg)
+  call csturb(iturb, ideuch, igrake, igrari, xlomlg)
   !==========
 
   call cscpva(icp)
