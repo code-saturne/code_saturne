@@ -24,7 +24,6 @@ subroutine d3ptcl &
 !================
 
  ( itypfb , izfppp ,                                              &
-   propce ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -45,7 +44,6 @@ subroutine d3ptcl &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -95,19 +93,20 @@ implicit none
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
 integer          igg, ifac, izone, mode
 integer          ii, iel, ifue, ioxy, iok
-integer          icke, ipcvis
+integer          icke
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent
 double precision qcalc(nozppm)
 double precision coefg(ngazgm)
 double precision, dimension(:), pointer ::  brom
+double precision, dimension(:), pointer :: viscl
+
 !===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -115,7 +114,7 @@ double precision, dimension(:), pointer ::  brom
 
 
 call field_get_val_s(ibrom, brom)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 d2s3 = 2.d0/3.d0
 
@@ -280,7 +279,7 @@ do ifac = 1, nfabor
       uref2 = max(uref2,epzero)
       rhomoy = brom(ifac)
       iel    = ifabor(ifac)
-      viscla = propce(iel,ipcvis)
+      viscla = viscl(iel)
       icke   = icalke(izone)
       dhy    = dh(izone)
       xiturb = xintur(izone)

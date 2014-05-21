@@ -85,9 +85,9 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 integer          iis   , ivar  , iscal , imom
 integer          iel   , ifac  , isou
 integer          iclip , ii    , jj    , idim
-integer          iivisl, iivist, iivisa, iivism
-integer          iicp  , iicpa
-integer          iiviss, iiptot
+integer          iivisa, iivism
+integer          iicpa
+integer          iiviss
 integer          iptsna, iptsta, iptsca
 integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
@@ -106,6 +106,13 @@ double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
 double precision, dimension(:), pointer :: field_s_v
 double precision, dimension(:,:), pointer :: field_v_v
+
+double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
+double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 
 !===============================================================================
 
@@ -143,6 +150,8 @@ enddo
 ! 3.  INITIALISATION DES PROPRIETES PHYSIQUES
 !===============================================================================
 
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+
 !     Masse volumique
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
@@ -170,40 +179,40 @@ if (iroext.gt.0.or.icavit.ge.0) then
 endif
 
 !     Viscosite moleculaire
-iivisl = ipproc(iviscl)
-iivist = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 !     Viscosite moleculaire aux cellules (et au pdt precedent si ordre2)
 do iel = 1, ncel
-  propce(iel,iivisl) = viscl0
+  viscl(iel) = viscl0
 enddo
 if(iviext.gt.0) then
   iivisa = ipproc(ivisla)
   do iel = 1, ncel
-    propce(iel,iivisa) = propce(iel,iivisl)
+    propce(iel,iivisa) = viscl(iel)
   enddo
 endif
 !     Viscosite turbulente aux cellules (et au pdt precedent si ordre2)
 do iel = 1, ncel
-  propce(iel,iivist) = 0.d0
+  visct(iel) = 0.d0
 enddo
 if(iviext.gt.0) then
   iivisa = ipproc(ivista)
   do iel = 1, ncel
-    propce(iel,iivisa) = propce(iel,iivist)
+    propce(iel,iivisa) = visct(iel)
   enddo
 endif
 
 !     Chaleur massique aux cellules (et au pdt precedent si ordre2)
 if(icp.gt.0) then
-  iicp = ipproc(icp)
+  call field_get_val_s(iprpfl(icp), cpro_cp)
   do iel = 1, ncel
-    propce(iel,iicp) = cp0
+    cpro_cp(iel) = cp0
   enddo
   if(icpext.gt.0) then
     iicpa  = ipproc(icpa)
     do iel = 1, ncel
-      propce(iel,iicpa ) = propce(iel,iicp)
+      propce(iel,iicpa ) = cpro_cp(iel)
     enddo
   endif
 endif
@@ -212,9 +221,9 @@ endif
 !  si l'utilisateur n'a pas fait d'initialisation personnelle
 ! Non valable en compressible
 if (ippmod(icompf).lt.0) then
-  iiptot = ipproc(iprtot)
+  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
   do iel = 1, ncel
-    propce(iel,iiptot) = - rinfin
+    cpro_prtot(iel) = - rinfin
   enddo
 endif
 
@@ -295,7 +304,7 @@ endif
 !     On met la pression P* a PRED0
 !$omp parallel do
 do iel = 1, ncel
-  rtp(iel,ipr) = pred0
+  cvar_pr(iel) = pred0
 enddo
 
 !     Toutes les variables a 0
@@ -356,57 +365,73 @@ endif
 
 if(itytur.eq.2 .or. itytur.eq.5) then
 
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+
   xcmu = cmu
   if (iturb.eq.50) xcmu = cv2fmu
   if (iturb.eq.51) xcmu = cpalmu
 
   if (uref.ge.0.d0) then
     do iel = 1, ncel
-      rtp(iel,ik) = 1.5d0*(0.02d0*uref)**2
-      rtp(iel,iep) = rtp(iel,ik)**1.5d0*xcmu/almax
+      cvar_k(iel) = 1.5d0*(0.02d0*uref)**2
+      cvar_ep(iel) = cvar_k(iel)**1.5d0*xcmu/almax
     enddo
 
     iclip = 1
     call clipke(ncelet , ncel   , nvar    ,     &
          iclip  , iwarni(ik),                   &
-         propce , rtp    )
+         rtp    )
 
   else
     do iel = 1, ncel
-      rtp(iel,ik) = -grand
-      rtp(iel,iep) = -grand
+      cvar_k(iel) = -grand
+      cvar_ep(iel) = -grand
     enddo
   endif
 
   if (iturb.eq.50) then
+    call field_get_val_s(ivarfl(iphi), cvar_phi)
+    call field_get_val_s(ivarfl(ifb), cvar_fb)
     do iel = 1, ncel
-      rtp(iel,iphi) = 2.d0/3.d0
-      rtp(iel,ifb) = 0.d0
+      cvar_phi(iel) = 2.d0/3.d0
+      cvar_fb(iel) = 0.d0
     enddo
   endif
   if (iturb.eq.51) then
+    call field_get_val_s(ivarfl(ial), cvar_al)
+    call field_get_val_s(ivarfl(iphi), cvar_phi)
     do iel = 1, ncel
-      rtp(iel,iphi) = 2.d0/3.d0
-      rtp(iel,ial) = 1.d0
+      cvar_phi(iel) = 2.d0/3.d0
+      cvar_al(iel) = 1.d0
     enddo
   endif
 
 elseif(itytur.eq.3) then
+
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
+  call field_get_val_s(ivarfl(ir12), cvar_r12)
+  call field_get_val_s(ivarfl(ir13), cvar_r13)
+  call field_get_val_s(ivarfl(ir23), cvar_r23)
 
   if (uref.ge.0.d0) then
 
     trii   = (0.02d0*uref)**2
 
     do iel = 1, ncel
-      rtp(iel,ir11) = trii
-      rtp(iel,ir22) = trii
-      rtp(iel,ir33) = trii
-      rtp(iel,ir12) = 0.d0
-      rtp(iel,ir13) = 0.d0
-      rtp(iel,ir23) = 0.d0
-      xxk = 0.5d0*(rtp(iel,ir11)+                             &
-           rtp(iel,ir22)+rtp(iel,ir33))
-      rtp(iel,iep) = xxk**1.5d0*cmu/almax
+      cvar_r11(iel) = trii
+      cvar_r22(iel) = trii
+      cvar_r33(iel) = trii
+      cvar_r12(iel) = 0.d0
+      cvar_r13(iel) = 0.d0
+      cvar_r23(iel) = 0.d0
+      xxk = 0.5d0*(cvar_r11(iel)+                             &
+           cvar_r22(iel)+cvar_r33(iel))
+      cvar_ep(iel) = xxk**1.5d0*cmu/almax
     enddo
     iclip = 1
     call clprij(ncelet , ncel   , nvar    ,     &
@@ -416,18 +441,19 @@ elseif(itytur.eq.3) then
   else
 
     do iel = 1, ncel
-      rtp(iel,ir11) = -grand
-      rtp(iel,ir22) = -grand
-      rtp(iel,ir33) = -grand
-      rtp(iel,ir12) = -grand
-      rtp(iel,ir13) = -grand
-      rtp(iel,ir23) = -grand
-      rtp(iel,iep)  = -grand
+      cvar_r11(iel) = -grand
+      cvar_r22(iel) = -grand
+      cvar_r33(iel) = -grand
+      cvar_r12(iel) = -grand
+      cvar_r13(iel) = -grand
+      cvar_r23(iel) = -grand
+      cvar_ep(iel)  = -grand
     enddo
 
     if(iturb.eq.32)then
+      call field_get_val_s(ivarfl(ial), cvar_al)
       do iel = 1, ncel
-        rtp(iel,ial) = 1.d0
+        cvar_al(iel) = 1.d0
       enddo
     endif
 
@@ -435,30 +461,35 @@ elseif(itytur.eq.3) then
 
 elseif(iturb.eq.60) then
 
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iomg), cvar_omg)
+
   if (uref.ge.0.d0) then
 
     do iel = 1, ncel
-      rtp(iel,ik ) = 1.5d0*(0.02d0*uref)**2
+      cvar_k(iel) = 1.5d0*(0.02d0*uref)**2
       !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX et omega=eps/Cmu/k
-      rtp(iel,iomg) = rtp(iel,ik)**0.5d0/almax
+      cvar_omg(iel) = cvar_k(iel)**0.5d0/almax
     enddo
     !     pas la peine de clipper, les valeurs sont forcement positives
 
   else
 
     do iel = 1, ncel
-      rtp(iel,ik ) = -grand
-      rtp(iel,iomg) = -grand
+      cvar_k(iel) = -grand
+      cvar_omg(iel) = -grand
     enddo
 
   endif
 
 elseif(iturb.eq.70) then
 
+  call field_get_val_s(ivarfl(inusa), cvar_nusa)
+
   if (uref.ge.0.d0) then
 
     do iel = 1, ncel
-      rtp(iel,inusa ) = sqrt(1.5d0)*(0.02d0*uref)*almax
+      cvar_nusa(iel) = sqrt(1.5d0)*(0.02d0*uref)*almax
       !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX
       !     et nusa=Cmu*k**2/eps
     enddo
@@ -467,7 +498,7 @@ elseif(iturb.eq.70) then
   else
 
     do iel = 1, ncel
-      rtp(iel,inusa ) = -grand
+      cvar_nusa(iel) = -grand
     enddo
 
   endif

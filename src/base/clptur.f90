@@ -76,8 +76,6 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -106,7 +104,7 @@
 
 subroutine clptur &
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , rcodcl ,                                              &
+   rcodcl ,                                                       &
    velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
@@ -146,7 +144,6 @@ integer          nscal, isvhb
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision visvdr(ncelet)
@@ -184,8 +181,10 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cp, yplbr
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
+double precision, dimension(:), pointer :: cvar_k, cvar_ep
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -436,9 +435,23 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 if (icp.gt.0) then
   ifccp  = iprpfl(icp)
-  call field_get_val_s(ifccp, cp)
+  call field_get_val_s(ifccp, cpro_cp)
 else
   ifccp = -1
+endif
+
+if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. &
+     iturb.eq.50 .or. iturb.eq.50) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+endif
+if ((iturb.eq.30).or.(iturb.eq.31)) then
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+endif
+
+if (itytur.eq.3) then
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
 endif
 
 ! min. and max. of wall tangential velocity
@@ -663,9 +676,9 @@ do ifac = 1, nfabor
     xnuit = visctc/romc
 
     if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
-      ek = rtp(iel,ik)
+      ek = cvar_k(iel)
     else if (itytur.eq.3) then
-      ek = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
+      ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
     endif
 
 
@@ -1171,7 +1184,7 @@ do ifac = 1, nfabor
 
         else
 
-          pimp = pimp + rtp(iel,iep)
+          pimp = pimp + cvar_ep(iel)
 
           call set_dirichlet_scalar &
                !====================
@@ -1234,7 +1247,7 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on epsilon
       !----------------------------------------
 
-      pimp = 2.0d0*visclc/romc*rtp(iel,ik)/distbf**2
+      pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
@@ -1288,7 +1301,7 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on epsilon
       !----------------------------------------
 
-      pimp = visclc/romc*rtp(iel,ik)/distbf**2
+      pimp = visclc/romc*cvar_k(iel)/distbf**2
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
@@ -1874,7 +1887,7 @@ double precision visci(3,3), hintt(6)
 character(len=80) :: fname
 
 double precision, dimension(:), pointer :: val_s, crom, viscls
-double precision, dimension(:), pointer :: viscl, visct, cp, cv
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cv
 
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
@@ -1910,7 +1923,7 @@ call field_get_coefbf_s(f_id, cofbfp)
 call field_get_val_s(icrom, crom)
 if (icp.gt.0) then
   ifccp = iprpfl(icp)
-  call field_get_val_s(ifccp, cp)
+  call field_get_val_s(ifccp, cpro_cp)
 else
   ifccp = -1
 endif
@@ -2010,7 +2023,7 @@ do ifac = 1, nfabor
     cpp = 1.d0
     if (iscacp(iscal).eq.1) then
       if (ifccp.ge.0) then
-        cpp = cp(iel)
+        cpp = cpro_cp(iel)
       else
         cpp = cp0
       endif
@@ -2033,7 +2046,7 @@ do ifac = 1, nfabor
 
     if (iscal.eq.iscalt .and. itherm.eq.3) then
       if (ifccp.ge.0) then
-        prdtl = prdtl*cp(iel)
+        prdtl = prdtl*cpro_cp(iel)
       else
         prdtl = prdtl*cp0
       endif
@@ -2049,7 +2062,7 @@ do ifac = 1, nfabor
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (ifccp.ge.0) then
-          cpscv = cp(iel)
+          cpscv = cpro_cp(iel)
         else
           cpscv = cp0
         endif
@@ -2068,7 +2081,7 @@ do ifac = 1, nfabor
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (ifccp.ge.0) then
-          cpscv = cp(iel)
+          cpscv = cpro_cp(iel)
         else
           cpscv = cp0
         endif
@@ -2264,7 +2277,7 @@ do ifac = 1, nfabor
       !         iscsth(ii).eq.2 : hconv(ifac) = hint*cpr
       !         avec
       !            if (ipccp.gt.0) then
-      !              cpr = cp(iel)
+      !              cpr = cpro_cp(iel)
       !            else
       !              cpr = cp0
       !            endif
@@ -2290,7 +2303,7 @@ do ifac = 1, nfabor
         if (itherm.eq.2) then
           ! If Cp is variable
           if (ifccp.ge.0) then
-            bhconv(ifac) = hflui*cp(iel)
+            bhconv(ifac) = hflui*cpro_cp(iel)
           else
             bhconv(ifac) = hflui*cp0
           endif

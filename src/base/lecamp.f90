@@ -120,6 +120,12 @@ double precision, allocatable, dimension(:,:) :: l_velocity
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:,:), pointer :: vel
 
+double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
+double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+
 !===============================================================================
 
 !===============================================================================
@@ -154,6 +160,8 @@ write(cphase,'(i2.2)') 1
 if(nscamx.gt.nfmtsc) then
   write(nfecra,8001)nfmtsc,nscamx
 endif
+
+call field_get_val_s(ivarfl(ipr), cvar_pr)
 
 !===============================================================================
 ! 1. OUVERTURE DU FICHIER OU STOP
@@ -494,7 +502,7 @@ itysup = 1
 nbval  = 1
 irtyp  = 2
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            rtp(1,ipr),ierror)
+            cvar_pr,ierror)
 nberro=nberro+ierror
 
 
@@ -556,23 +564,29 @@ if (itytph.eq.2) then
 
   if(jtytph.eq.2 .or. jtytph.eq.5) then
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     !     * rij -> k-e
 
   elseif(jtytph.eq.3) then
+
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
 
     itysup = 1
     nbval  = 1
@@ -580,36 +594,39 @@ if (itytph.eq.2) then
 
     rubriq = 'R11_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     !            La variable epsilon sert de tableau de travail
     rubriq = 'R22_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iep)
+      cvar_k(iel) = cvar_k(iel) + cvar_ep(iel)
     enddo
 
     rubriq = 'R33_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iep))
+      cvar_k(iel) = 0.5d0*(cvar_k(iel)+cvar_ep(iel))
     enddo
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     !     * k-omega -> k-e
 
   else if(jturph.eq.60) then
+
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
 
     itysup = 1
     nbval  = 1
@@ -617,16 +634,16 @@ if (itytph.eq.2) then
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
     !           On transforme ensuite omega en epsilon
     do iel = 1, ncel
-      rtp(iel,iep) = cmu*rtp(iel,iep)*rtp(iel,ik)
+      cvar_ep(iel) = cmu*cvar_ep(iel)*cvar_k(iel)
     enddo
 
   endif
@@ -641,29 +658,37 @@ elseif(itytph.eq.3) then
 
   if (jtytph.eq.2 .or. jturph.eq.50) then
 
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ir11),ierror)
+         cvar_r11,ierror)
     nberro=nberro+ierror
 
     d2s3 = 2.d0/3.d0
     do iel = 1, ncel
-      d2s3xk = rtp(iel,ir11)*d2s3
-      rtp(iel,ir11) = d2s3xk
-      rtp(iel,ir22) = d2s3xk
-      rtp(iel,ir33) = d2s3xk
-      rtp(iel,ir12) = 0.d0
-      rtp(iel,ir13) = 0.d0
-      rtp(iel,ir23) = 0.d0
+      d2s3xk = cvar_r11(iel)*d2s3
+      cvar_r11(iel) = d2s3xk
+      cvar_r22(iel) = d2s3xk
+      cvar_r33(iel) = d2s3xk
+      cvar_r12(iel) = 0.d0
+      cvar_r13(iel) = 0.d0
+      cvar_r23(iel) = 0.d0
     enddo
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     !     * rij -> rij
@@ -702,9 +727,11 @@ elseif(itytph.eq.3) then
     enddo
     if (jturph.eq.32) then
 
+      call field_get_val_s(ivarfl(ial), cvar_al)
+
       rubriq = 'alp_ce_phase'//cphase
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                rtp(1,ial),ierror)
+                cvar_al,ierror)
       nberro=nberro+ierror
     endif
 
@@ -712,33 +739,41 @@ elseif(itytph.eq.3) then
 
   else if (jturph.eq.60) then
 
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ir11),ierror)
+         cvar_r11,ierror)
     nberro=nberro+ierror
 
     rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
     !     On transforme ensuite omega en epsilon
     do iel = 1, ncel
-      rtp(iel,iep) = cmu*rtp(iel,iep)*rtp(iel,ir11)
+      cvar_ep(iel) = cmu*cvar_ep(iel)*cvar_r11(iel)
     enddo
 
     d2s3 = 2.d0/3.d0
     do iel = 1, ncel
-      d2s3xk = rtp(iel,ir11)*d2s3
-      rtp(iel,ir11) = d2s3xk
-      rtp(iel,ir22) = d2s3xk
-      rtp(iel,ir33) = d2s3xk
-      rtp(iel,ir12) = 0.d0
-      rtp(iel,ir13) = 0.d0
-      rtp(iel,ir23) = 0.d0
+      d2s3xk = cvar_r11(iel)*d2s3
+      cvar_r11(iel) = d2s3xk
+      cvar_r22(iel) = d2s3xk
+      cvar_r33(iel) = d2s3xk
+      cvar_r12(iel) = 0.d0
+      cvar_r13(iel) = 0.d0
+      cvar_r23(iel) = 0.d0
     enddo
 
   endif
@@ -753,18 +788,21 @@ elseif(itytph.eq.5) then
   !     * k-e -> v2f (phi-fbar ou BL-v2/k)
   if(jtytph.eq.2) then
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
     !     On laisse pour phi et fb les initialisations de iniva0
 
@@ -772,37 +810,40 @@ elseif(itytph.eq.5) then
 
   elseif(jtytph.eq.3) then
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'R11_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     !            La variable epsilon sert de tableau de travail
     rubriq = 'R22_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iep)
+      cvar_k(iel) = cvar_k(iel) + cvar_ep(iel)
     enddo
 
     rubriq = 'R33_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iep))
+      cvar_k(iel) = 0.5d0*(cvar_k(iel)+cvar_ep(iel))
     enddo
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
     !     On laisse pour phi et fb l'initialisations de iniva0
     !     (le v2 qui intervient dans phi n'est pas vraiment une composante de Rij
@@ -812,34 +853,40 @@ elseif(itytph.eq.5) then
 
   elseif(jtytph.eq.5) then
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+    call field_get_val_s(ivarfl(iphi), cvar_phi)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
 
     rubriq = 'phi_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iphi),ierror)
+         cvar_phi,ierror)
     nberro=nberro+ierror
 
     if(iturph.eq.50.and.jturph.eq.50) then
+      call field_get_val_s(ivarfl(ifb), cvar_fb)
       rubriq = 'fb_ce_phase'//cphase
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rtp(1,ifb),ierror)
+           cvar_fb,ierror)
       nberro=nberro+ierror
     elseif(iturph.eq.51.and.jturph.eq.51) then
+      call field_get_val_s(ivarfl(ial), cvar_al)
       rubriq = 'al_ce_phase'//cphase
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rtp(1,ial),ierror)
+           cvar_al,ierror)
       nberro=nberro+ierror
     endif
     !     Si (phi-fbar -> BL-v2/k) ou (BL-v2/k -> phi-fbar)
@@ -849,22 +896,25 @@ elseif(itytph.eq.5) then
 
   else if(jturph.eq.60) then
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iep),ierror)
+         cvar_ep,ierror)
     nberro=nberro+ierror
     !           On transforme ensuite omega en epsilon
     do iel = 1, ncel
-      rtp(iel,iep) = cmu*rtp(iel,iep)*rtp(iel,ik)
+      cvar_ep(iel) = cmu*cvar_ep(iel)*cvar_k(iel)
     enddo
     !     On laisse pour phi et fb l'initialisations de iniva0
 
@@ -881,27 +931,33 @@ else if (iturph.eq.60) then
 
   if(jtytph.eq.2 .or. jturph.eq.50) then
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iomg),ierror)
+         cvar_omg,ierror)
     nberro=nberro+ierror
     !           On transforme ensuite epsilon en omega
     do iel = 1, ncel
-      rtp(iel,iomg) = rtp(iel,iomg)/cmu/rtp(iel,ik)
+      cvar_omg(iel) = cvar_omg(iel)/cmu/cvar_k(iel)
     enddo
 
     !     * rij -> k-omega
 
   elseif(jtytph.eq.3) then
+
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
 
     itysup = 1
     nbval  = 1
@@ -909,40 +965,43 @@ else if (iturph.eq.60) then
 
     rubriq = 'R11_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     !            La variable omega sert de tableau de travail
     rubriq = 'R22_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iomg),ierror)
+         cvar_omg,ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iomg)
+      cvar_k(iel) = cvar_k(iel) + cvar_omg(iel)
     enddo
 
     rubriq = 'R33_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iomg),ierror)
+         cvar_omg,ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iomg))
+      cvar_k(iel) = 0.5d0*(cvar_k(iel)+cvar_omg(iel))
     enddo
 
     rubriq = 'eps_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iomg),ierror)
+         cvar_omg,ierror)
     nberro=nberro+ierror
     !           On transforme ensuite epsilon en omega
     do iel = 1, ncel
-      rtp(iel,iomg) = rtp(iel,iomg)/cmu/rtp(iel,ik)
+      cvar_omg(iel) = cvar_omg(iel)/cmu/cvar_k(iel)
     enddo
 
     !     * k-omega -> k-omega
 
   else if(jturph.eq.60) then
+
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
 
     itysup = 1
     nbval  = 1
@@ -950,12 +1009,12 @@ else if (iturph.eq.60) then
 
     rubriq = 'k_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ik),ierror)
+         cvar_k,ierror)
     nberro=nberro+ierror
 
     rubriq = 'omega_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iomg),ierror)
+         cvar_omg,ierror)
     nberro=nberro+ierror
 
   endif
@@ -969,13 +1028,15 @@ else if (iturph.eq.70) then
 
   if(jturph.eq.70) then
 
+    call field_get_val_s(ivarfl(inusa), cvar_nusa)
+
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'nusa_ce_phase'//cphase
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,inusa),ierror)
+         cvar_nusa,ierror)
     nberro=nberro+ierror
 
   endif

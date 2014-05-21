@@ -172,7 +172,7 @@ if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
    !==========
  ( iscal  ,                                                       &
    itypfb ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   rtpa   , rtp    ,                                              &
    smbrs  , rovsdt , tslagr )
 endif
 
@@ -218,7 +218,6 @@ if (ippmod(iaeros).ge.0) then
    call cttssc                                                    &
    !==========
  ( iscal  ,                                                       &
-   rtp    ,                                                       &
    smbrs  , rovsdt )
 endif
 

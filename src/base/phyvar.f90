@@ -42,15 +42,15 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
+!> \param[in,out] rtp           calculated variables at cell centers
+!>                               (at current time steps)
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine phyvar &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     , rtp    , propce )
 
 !===============================================================================
 
@@ -84,7 +84,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -102,8 +102,12 @@ double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:), pointer :: viscl, visct
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -170,7 +174,7 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce )
+   dt     , rtp    , propce )
 
 endif
 
@@ -216,9 +220,9 @@ if (ntcabs.eq.ntpabs+1) then
   ! Viscosite moleculaire aux cellules
   iok2 = 0
   if (ivivar.eq.0) then
-    ipcvis = ipproc(iviscl)
+    call field_get_val_s(iprpfl(iviscl), viscl)
     do iel = 1, ncel
-      if ( abs(propce(iel ,ipcvis)-viscl0).gt.epzero) then
+      if ( abs(viscl(iel)-viscl0).gt.epzero) then
         iok2 = 1
       endif
     enddo
@@ -246,10 +250,10 @@ if     (iturb.eq. 0) then
 ! 5.1 Laminar
 ! ===========
 
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(ivisct), visct)
 
   do iel = 1, ncel
-    propce(iel,ipcvst) = 0.d0
+    visct(iel) = 0.d0
   enddo
 
 elseif (iturb.eq.10) then
@@ -257,20 +261,22 @@ elseif (iturb.eq.10) then
 ! 5.2 Mixing length model
 ! =======================
 
-  call vislmg(rtpa, propce)
+  call vislmg
 
 elseif (itytur.eq.2) then
 
 ! 5.3 k-epsilon
 ! =============
 
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(ivisct), visct)
   call field_get_val_s(icrom, crom)
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
 
   do iel = 1, ncel
-    xk = rtp(iel,ik)
-    xe = rtp(iel,iep)
-    propce(iel,ipcvst) = crom(iel)*cmu*xk**2/xe
+    xk = cvar_k(iel)
+    xe = cvar_ep(iel)
+    visct(iel) = crom(iel)*cmu*xk**2/xe
   enddo
 
 elseif (itytur.eq.3) then
@@ -278,13 +284,18 @@ elseif (itytur.eq.3) then
 ! 5.4 Rij-epsilon
 ! ===============
 
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(ivisct), visct)
   call field_get_val_s(icrom, crom)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
 
   do iel = 1, ncel
-    xk = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
-    xe = rtp(iel,iep)
-    propce(iel,ipcvst) = crom(iel)*cmu*xk**2/xe
+    xk = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+    xe = cvar_ep(iel)
+    visct(iel) = crom(iel)*cmu*xk**2/xe
   enddo
 
 elseif (iturb.eq.40) then
@@ -292,7 +303,7 @@ elseif (iturb.eq.40) then
 ! 5.5 LES Smagorinsky
 ! ===================
 
-  call vissma(rtpa, propce)
+  call vissma
   !==========
 
 elseif (iturb.eq.41) then
@@ -305,7 +316,7 @@ elseif (iturb.eq.41) then
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    propce(1,ipproc(ismago)) )
 
@@ -314,7 +325,7 @@ elseif (iturb.eq.42) then
 ! 5.7 LES WALE
 ! ============
 
-  call viswal(rtpa, propce)
+  call viswal
   !==========
 
 elseif (itytur.eq.5) then
@@ -324,24 +335,27 @@ elseif (itytur.eq.5) then
 
   if (iturb.eq.50) then
 
-    ipcvis = ipproc(iviscl)
-    ipcvst = ipproc(ivisct)
+    call field_get_val_s(iprpfl(iviscl), viscl)
+    call field_get_val_s(iprpfl(ivisct), visct)
     call field_get_val_s(icrom, crom)
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+    call field_get_val_s(ivarfl(iphi), cvar_phi)
 
     do iel = 1, ncel
-      xk = rtp(iel,ik)
-      xe = rtp(iel,iep)
+      xk = cvar_k(iel)
+      xe = cvar_ep(iel)
       xrom = crom(iel)
-      xnu = propce(iel,ipcvis)/xrom
+      xnu = viscl(iel)/xrom
       ttke = xk / xe
       ttmin = cv2fct*sqrt(xnu/xe)
       tt = max(ttke,ttmin)
-      propce(iel,ipcvst) = cv2fmu*xrom*tt*rtp(iel,iphi)*rtp(iel,ik)
+      visct(iel) = cv2fmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
     enddo
 
   else if (iturb.eq.51) then
 
-    call visv2f(rtp, rtpa, propce)
+    call visv2f
     !==========
 
   endif
@@ -351,7 +365,7 @@ elseif (iturb.eq.60) then
 ! 5.9 k-omega SST
 ! ===============
 
-  call vissst(rtpa, propce)
+  call vissst
   !==========
 
 elseif (iturb.eq.70) then
@@ -361,16 +375,17 @@ elseif (iturb.eq.70) then
 
   cv13 = csav1**3
 
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(ivarfl(inusa), cvar_nusa)
+  call field_get_val_s(iprpfl(ivisct), visct)
   call field_get_val_s(icrom, crom)
-  ipcvis = ipproc(iviscl)
+  call field_get_val_s(iprpfl(iviscl), viscl)
 
   do iel = 1, ncel
     xrom = crom(iel)
-    nusa = rtp(iel,inusa)
-    xi3  = (xrom*nusa/propce(iel,ipcvis))**3
+    nusa = cvar_nusa(iel)
+    xi3  = (xrom*nusa/viscl(iel))**3
     fv1  = xi3/(xi3+cv13)
-    propce(iel,ipcvst) = xrom*nusa*fv1
+    visct(iel) = xrom*nusa*fv1
   enddo
 
 endif
@@ -396,39 +411,47 @@ if (iok.eq.1) then
   if (itytur.eq.3) then
 
     call field_get_val_s(icrom, crom)
-    ipcvis = ipproc(iviscl)
+    call field_get_val_s(iprpfl(iviscl), viscl)
+
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
 
     ! EBRSM
     if (iturb.eq.32) then
       do iel = 1, ncel
-        trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
-        ttke  = trrij/rtp(iel,iep)
+        trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+        ttke  = trrij/cvar_ep(iel)
         ! Durbin scale
-        xttkmg = xct*sqrt(propce(iel,ipcvis)/crom(iel)   &
-                                            /rtp(iel,iep))
+        xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
         xttdrb = max(ttke,xttkmg)
         rottke  = csrij * crom(iel) * xttdrb
 
-        visten(1,iel) = rottke*rtp(iel,ir11)
-        visten(2,iel) = rottke*rtp(iel,ir22)
-        visten(3,iel) = rottke*rtp(iel,ir33)
-        visten(4,iel) = rottke*rtp(iel,ir12)
-        visten(5,iel) = rottke*rtp(iel,ir23)
-        visten(6,iel) = rottke*rtp(iel,ir13)
+        visten(1,iel) = rottke*cvar_r11(iel)
+        visten(2,iel) = rottke*cvar_r22(iel)
+        visten(3,iel) = rottke*cvar_r33(iel)
+        visten(4,iel) = rottke*cvar_r12(iel)
+        visten(5,iel) = rottke*cvar_r23(iel)
+        visten(6,iel) = rottke*cvar_r13(iel)
       enddo
 
     ! LRR or SSG
     else
       do iel = 1, ncel
-        trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
-        rottke  = csrij * crom(iel) * trrij / rtp(iel,iep)
+        trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+        rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
 
-        visten(1,iel) = rottke*rtp(iel,ir11)
-        visten(2,iel) = rottke*rtp(iel,ir22)
-        visten(3,iel) = rottke*rtp(iel,ir33)
-        visten(4,iel) = rottke*rtp(iel,ir12)
-        visten(5,iel) = rottke*rtp(iel,ir23)
-        visten(6,iel) = rottke*rtp(iel,ir13)
+        visten(1,iel) = rottke*cvar_r11(iel)
+        visten(2,iel) = rottke*cvar_r22(iel)
+        visten(3,iel) = rottke*cvar_r33(iel)
+        visten(4,iel) = rottke*cvar_r12(iel)
+        visten(5,iel) = rottke*cvar_r23(iel)
+        visten(6,iel) = rottke*cvar_r13(iel)
       enddo
     endif
 
@@ -485,13 +508,13 @@ call usvist &
 ! dans covofi
 
 if (iturb.eq.41) then
-  ipcvis = ipproc(iviscl)
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(iviscl), viscl)
+  call field_get_val_s(iprpfl(ivisct), visct)
   iclipc = 0
   do iel = 1, ncel
-    viscto = propce(iel,ipcvis) + propce(iel,ipcvst)
+    viscto = viscl(iel) + visct(iel)
     if (viscto.lt.0.d0) then
-      propce(iel,ipcvst) = 0.d0
+      visct(iel) = 0.d0
       iclipc = iclipc + 1
     endif
   enddo
@@ -544,6 +567,7 @@ iok = 0
 
 ! Rang des variables dans PROPCE
 call field_get_val_s(icrom, crom)
+call field_get_val_s(iprpfl(iviscl), viscl)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 if (icp.gt.0) then
@@ -683,8 +707,8 @@ if (nscal.ge.1) then
     vismin(iscal) =  grand
     if (ipcvis.gt.0) then
       do iel = 1, ncel
-        vismax(iscal) = max(vismax(iscal),propce(iel,ipcvis))
-        vismin(iscal) = min(vismin(iscal),propce(iel,ipcvis))
+        vismax(iscal) = max(vismax(iscal),viscl(iel))
+        vismin(iscal) = min(vismin(iscal),viscl(iel))
       enddo
       if (irangp.ge.0) then
         call parmax (vismax(iscal))

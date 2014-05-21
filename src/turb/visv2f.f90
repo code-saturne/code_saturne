@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine visv2f &
-!================
-
- ( rtp    , rtpa   , propce )
+subroutine visv2f
 
 !===============================================================================
 ! FONCTION :
@@ -41,10 +38,6 @@ subroutine visv2f &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -73,9 +66,6 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel, inc
@@ -91,6 +81,8 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 
 !===============================================================================
 
@@ -104,10 +96,13 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 ! --- Memoire
 allocate(s2(ncelet))
 
-! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
+
+call field_get_val_s(ivarfl(ik), cvar_k)
+call field_get_val_s(ivarfl(iep), cvar_ep)
+call field_get_val_s(ivarfl(iphi), cvar_phi)
 
 !===============================================================================
 ! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE
@@ -150,17 +145,17 @@ deallocate(gradv)
 
 do iel = 1, ncel
 
-  xk = rtp(iel,ik)
-  xe = rtp(iel,iep)
+  xk = cvar_k(iel)
+  xe = cvar_ep(iel)
   xrom = crom(iel)
-  xnu = propce(iel,ipcvis)/xrom
+  xnu = viscl(iel)/xrom
 
   ttke = xk / xe
   ttmin = cpalct*sqrt(xnu/xe)
-  ttlim = 0.6d0/rtp(iel,iphi)/sqrt(3.d0)/cpalmu/s2(iel)
+  ttlim = 0.6d0/cvar_phi(iel)/sqrt(3.d0)/cpalmu/s2(iel)
   tt = min(ttlim,sqrt(ttke**2 + ttmin**2))
 
-  propce(iel,ipcvst) = cpalmu*xrom*tt*rtp(iel,iphi)*rtp(iel,ik)
+  visct(iel) = cpalmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
 
 enddo
 

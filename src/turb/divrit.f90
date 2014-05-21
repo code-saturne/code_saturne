@@ -109,6 +109,9 @@ double precision, dimension(:,:,:), pointer :: cofbrut
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:,:), pointer :: xuta
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: cvara_ep
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 
 !===============================================================================
 
@@ -191,6 +194,15 @@ endif
 !===============================================================================
 if (ityturt(iscal).ne.3) then
 
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+  call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+  call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+
   allocate(w1(3,ncelet))
 
   do ifac = 1, nfac
@@ -202,17 +214,17 @@ if (ityturt(iscal).ne.3) then
 
   do iel = 1, ncel
     !Rij
-    xrij(1,1) = rtpa(iel,ir11)
-    xrij(2,2) = rtpa(iel,ir22)
-    xrij(3,3) = rtpa(iel,ir33)
-    xrij(1,2) = rtpa(iel,ir12)
-    xrij(1,3) = rtpa(iel,ir13)
-    xrij(2,3) = rtpa(iel,ir23)
+    xrij(1,1) = cvara_r11(iel)
+    xrij(2,2) = cvara_r22(iel)
+    xrij(3,3) = cvara_r33(iel)
+    xrij(1,2) = cvara_r12(iel)
+    xrij(1,3) = cvara_r13(iel)
+    xrij(2,3) = cvara_r23(iel)
     xrij(2,1) = xrij(1,2)
     xrij(3,1) = xrij(1,3)
     xrij(3,2) = xrij(2,3)
     ! Epsilon
-    xe = rtpa(iel,iep)
+    xe = cvara_ep(iel)
     ! Kinetic turbulent energy
     xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
 

@@ -63,13 +63,12 @@
 !______________________________________________________________________________!
 !> \param[in]     itypfb        boundary face types
 !> \param[in]     distpa        tab des distances a la paroi
-!> \param[in]     propce        physical properties at cell centers
 !> \param[out]    disty         dimensionless distance \f$ y^+ \f$
 !_______________________________________________________________________________
 
 subroutine distyp &
  ( itypfb ,                                                       &
-   distpa , propce , disty  )
+   distpa , disty  )
 
 !===============================================================================
 
@@ -98,7 +97,7 @@ implicit none
 
 integer          itypfb(nfabor)
 
-double precision distpa(ncelet),propce(ncelet,*)
+double precision distpa(ncelet)
 double precision disty(ncelet)
 
 ! Local variables
@@ -107,7 +106,7 @@ integer          idtva0, ivar  , f_id  , iconvp, idiffp
 integer          ndircp, ireslp
 integer          iescap, iflmb0, itypfl
 integer          ncymxp, nitmfp, ipp
-integer          ifac  , iel   , ipcvis, init
+integer          ifac  , iel   , init
 integer          inc   , iccocg, isym  , isweep, infpar
 integer          imucpp, idftnp, iswdyp, icvflb
 integer          isou  , jsou
@@ -131,6 +130,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: viscl
 
 integer          ipass
 data             ipass /0/
@@ -160,7 +160,7 @@ allocate(w2(ncelet))
 ipass  = ipass + 1
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 !===============================================================================
 ! 2. At the first time step
@@ -322,7 +322,7 @@ call inimav                                                       &
 do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
-    coefap(ifac) = uetbor(ifac)*crom(iel)/propce(iel,ipcvis)
+    coefap(ifac) = uetbor(ifac)*crom(iel)/viscl(iel)
     coefbp(ifac) = 0.0d0
   else
     coefap(ifac) = 0.0d0

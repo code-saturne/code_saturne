@@ -103,6 +103,8 @@ double precision, allocatable, dimension(:) :: produk, epsk
 double precision, allocatable, dimension(:) :: w2, w3, w4, w6
 double precision, allocatable, dimension(:) :: coefax, coefbx
 double precision, dimension(:), pointer :: crom, cromo
+double precision, dimension(:), pointer :: cvara_ep
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 
 !===============================================================================
 
@@ -138,6 +140,12 @@ if (isto2t.gt.0.and.iroext.gt.0) then
 else
   call field_get_val_s(icrom, cromo)
 endif
+
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
 
 deltij = 1.0d0
 if(isou.gt.3) then
@@ -235,8 +243,8 @@ endif
 
 do iel = 1 , ncel
   produk(iel) = 0.5d0 * (produc(1,iel)  + produc(2,iel)  + produc(3,iel))
-  xk          = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
-  epsk(iel)   = rtpa(iel,iep)/xk
+  xk          = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+  epsk(iel)   = cvara_ep(iel)/xk
 enddo
 
 
@@ -441,17 +449,17 @@ if(abs(icdpar).eq.2) then
          +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                     &
          +(cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
     distxn = sqrt(distxn)
-    trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
     aa = 1.d0
-    bb = cmu075*trrij**1.5d0/(xkappa*rtpa(iel,iep)*distxn)
+    bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
     w3(iel) = min(aa, bb)
   enddo
 else
   do iel = 1 , ncel
     distxn =  max(dispar(iel),epzero)
-    trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
     aa = 1.d0
-    bb = cmu075*trrij**1.5d0/(xkappa*rtpa(iel,iep)*distxn)
+    bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
     w3(iel) = min(aa, bb)
   enddo
 endif

@@ -26,10 +26,10 @@ subroutine lagent &
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+   ntersl , nvlsta , nvisbr , iprev  ,                            &
    itycel , icocel , dlgeo  ,                                     &
    itypfb , itrifb , ifrlag , itepa  ,                            &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   , vagaus )
 
 !===============================================================================
@@ -67,6 +67,9 @@ subroutine lagent &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
+! iprev            ! e  ! <-- ! time step indicator for fields                 !
+!                  !    !     !   0: use fields at current time step           !
+!                  !    !     !   1: use fields at previous time step          !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 ! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! icocel           ! te ! <-- ! connectivite cellules -> faces                 !
@@ -80,10 +83,6 @@ subroutine lagent &
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant prec ou                   !
-!                  !    !     !    instant courant si ntcabs = 1)              !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
@@ -131,13 +130,13 @@ integer          lndnod
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
+integer          iprev
 
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 
-double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision dlgeo(nfabor,ngeol)
@@ -166,6 +165,8 @@ integer, allocatable, dimension(:,:,:) :: iusloc
 integer, allocatable, dimension(:) :: ilftot
 
 double precision, dimension(:,:), pointer :: vela
+double precision, dimension(:), pointer :: cscalt
+double precision, dimension(:), pointer :: temp, temp1
 
 double precision unif(1), offset, rapsurf
 integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
@@ -175,7 +176,20 @@ save             ipass
 
 !===============================================================================
 
-call field_get_val_prev_v(ivarfl(iu), vela)
+if (iprev.eq.0) then
+  call field_get_val_v(ivarfl(iu), vela)
+  if (itherm.eq.1.or.itherm.eq.2) then
+    call field_get_val_s(ivarfl(isca(iscalt)), cscalt)
+  endif
+else if (iprev.eq.1) then
+  call field_get_val_prev_v(ivarfl(iu), vela)
+  if (itherm.eq.1.or.itherm.eq.2) then
+    call field_get_val_prev_s(ivarfl(isca(iscalt)), cscalt)
+  endif
+endif
+
+call field_get_val_s(iprpfl(itemp), temp)
+call field_get_val_s(iprpfl(itemp1), temp1)
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
@@ -1127,31 +1141,31 @@ do ii = 1,nfrtot
                  ippmod(icpl3c).ge.0 .or.                         &
                  ippmod(icfuel).ge.0      ) then
 
-              ettp(ip,jtf) = propce(iel,ipproc(itemp1)) -tkelvi
+              ettp(ip,jtf) = temp1(iel) -tkelvi
 
             else if ( ippmod(icod3p).ge.0 .or.                    &
                       ippmod(icoebu).ge.0 .or.                    &
                       ippmod(ielarc).ge.0 .or.                    &
                       ippmod(ieljou).ge.0      ) then
 
-              ettp(ip,jtf) = propce(iel,ipproc(itemp)) -tkelvi
+              ettp(ip,jtf) = temp(iel) -tkelvi
 
             else if (itherm.eq.1) then
 
               if (itpscl.eq.1) then !Kelvin
 
-                ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
+                ettp(ip,jtf) = cscalt(iel) -tkelvi
 
               else if (itpscl.eq.2) then ! Celsius
 
-                ettp(ip,jtf) = rtpa(iel,isca(iscalt))
+                ettp(ip,jtf) = cscalt(iel)
 
               endif
 
             else if (itherm.eq.2) then
 
               mode = 1
-              call usthht(mode, rtpa(iel,isca(iscalt)), ettp(ip,jtf))
+              call usthht(mode, cscalt(iel), ettp(ip,jtf))
 
             endif
 
@@ -1167,7 +1181,7 @@ do ii = 1,nfrtot
 
           ! Remplissage de ETTP
           ettp(ip,jtaux) = 0.0d0 ! non utilise pour iphyla=2
-          ettp(ip,jtf) = propce(iel,ipproc(itemp1)) - tkelvi
+          ettp(ip,jtf) = temp1(iel) - tkelvi
 
           do ilayer = 1, nlayer
 
@@ -1376,7 +1390,7 @@ enddo
 npar1 = nbpart+1
 npar2 = nbpart+ nlocnew
 
-call lagipn(nbpmax, npar1, npar2, rtpa, vagaus, propce)
+call lagipn(nbpmax, npar1, npar2, iprev, vagaus)
 !==========
 
 !===============================================================================
@@ -1388,9 +1402,9 @@ call uslain                                                       &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nlocnew ,                                                      &
+   nlocnew         , iprev  ,                                     &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
    ncmax  , nzmax  , iusloc )
 

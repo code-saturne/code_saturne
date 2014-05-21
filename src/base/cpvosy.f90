@@ -24,7 +24,7 @@ subroutine cpvosy &
 !================
 
  ( isvtf  ,                                                       &
-   dt     , rtp    , rtpa   , propce )
+   dt     , rtp    )
 
 !===============================================================================
 ! Purpose:
@@ -40,9 +40,8 @@ subroutine cpvosy &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! isvtf            ! i  ! <-- ! indicateur de scalaire pour la temp. fluide    !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time steps)                       !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -70,8 +69,7 @@ implicit none
 
 integer          isvtf
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 
 ! Local variables
 

@@ -23,9 +23,8 @@
 subroutine coupbo &
 !================
 
- ( ncp    , ncv    , ientha ,                                     &
-   rtp    ,                                                       &
-   cpcst  , cp     , cvcst  , cv     ,                            &
+ ( ncv    , ientha ,                                              &
+   cvcst  , cv     ,                                              &
    hbord  , tbord  )
 
 !===============================================================================
@@ -39,17 +38,12 @@ subroutine coupbo &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncp              ! i  ! <-- ! dimension de cp (ncelet ou 1)                  !
 ! ncv              ! i  ! <-- ! dimension de cv (ncelet ou 1)                  !
 ! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
 !                  ! i  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
-! rtp,             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
-! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
-! cp(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
-! cv(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
+! cv(ncv)          ! ra ! <-- ! chaleur specifique si variable                 !
 ! hbord(nfabor)    ! ra ! <-- ! coefficients d'echange aux bords               !
 ! tbord(nfabor)    ! ra ! <-- ! temperatures aux bords                         !
 !__________________!____!_____!________________________________________________!
@@ -77,12 +71,11 @@ implicit none
 
 ! Arguments
 
-integer          ncp    , ncv    , ientha
+integer          ncv    , ientha
 
-double precision cpcst  , cvcst
+double precision cvcst
 
-double precision rtp(ncelet,nflown:nvar)
-double precision cp(ncp), cv(ncv)
+double precision cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
 
 ! Local variables
@@ -96,11 +89,15 @@ double precision enthal, temper, energ, cvt
 integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cpro_cp
 
 !===============================================================================
 
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
+if(icp.gt.0 .and. ientha.eq.1) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+endif
 
 !===============================================================================
 
@@ -191,10 +188,10 @@ do inbcou = 1, nbccou
         call usthht(flag, enthal, temper)
         !==========
         tfluid(iloc) = temper
-        if (ncp.eq.ncelet) then
-          hparoi(iloc) = hparoi(iloc)*cp(iel)
+        if (icp.gt.0) then
+          hparoi(iloc) = hparoi(iloc)*cpro_cp(iel)
         else
-          hparoi(iloc) = hparoi(iloc)*cpcst
+          hparoi(iloc) = hparoi(iloc)*cp0
         endif
       enddo
 

@@ -24,7 +24,7 @@ subroutine cs_coal_varini &
 !========================
 
  ( nvar   , nscal  ,                                            &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -61,7 +61,6 @@ subroutine cs_coal_varini &
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,7 +95,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -112,6 +111,10 @@ double precision xkent, xeent, d2s3
 integer ioxy
 double precision wmh2o,wmco2,wmn2,wmo2,dmas
 
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
+double precision, dimension(:), pointer :: cvar_fb, cvar_omg
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -128,6 +131,27 @@ double precision, dimension(:), pointer :: xagecpi, xagegas
 ipass = ipass + 1
 
 d2s3 = 2.d0/3.d0
+
+if (itytur.eq.2) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (itytur.eq.3) then
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
+  call field_get_val_s(ivarfl(ir12), cvar_r12)
+  call field_get_val_s(ivarfl(ir13), cvar_r13)
+  call field_get_val_s(ivarfl(ir23), cvar_r23)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (iturb.eq.50) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+  call field_get_val_s(ivarfl(iphi), cvar_phi)
+  call field_get_val_s(ivarfl(ifb), cvar_fb)
+elseif (iturb.eq.60) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iomg), cvar_omg)
+endif
 
 !===============================================================================
 ! 2. INITIALISATION DES INCONNUES :
@@ -148,36 +172,36 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   if (itytur.eq.2) then
 
     do iel = 1, ncel
-      rtp(iel,ik)  = xkent
-      rtp(iel,iep) = xeent
+      cvar_k(iel)  = xkent
+      cvar_ep(iel) = xeent
     enddo
 
   elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      rtp(iel,ir11) = d2s3*xkent
-      rtp(iel,ir22) = d2s3*xkent
-      rtp(iel,ir33) = d2s3*xkent
-      rtp(iel,ir12) = 0.d0
-      rtp(iel,ir13) = 0.d0
-      rtp(iel,ir23) = 0.d0
-      rtp(iel,iep)  = xeent
+      cvar_r11(iel) = d2s3*xkent
+      cvar_r22(iel) = d2s3*xkent
+      cvar_r33(iel) = d2s3*xkent
+      cvar_r12(iel) = 0.d0
+      cvar_r13(iel) = 0.d0
+      cvar_r23(iel) = 0.d0
+      cvar_ep(iel)  = xeent
     enddo
 
   elseif (iturb.eq.50) then
 
     do iel = 1, ncel
-      rtp(iel,ik)   = xkent
-      rtp(iel,iep)  = xeent
-      rtp(iel,iphi) = d2s3
-      rtp(iel,ifb)  = 0.d0
+      cvar_k(iel)   = xkent
+      cvar_ep(iel)  = xeent
+      cvar_phi(iel) = d2s3
+      cvar_fb(iel)  = 0.d0
     enddo
 
   elseif (iturb.eq.60) then
 
     do iel = 1, ncel
-      rtp(iel,ik)   = xkent
-      rtp(iel,iomg) = xeent/cmu/xkent
+      cvar_k(iel)   = xkent
+      cvar_omg(iel) = xeent/cmu/xkent
     enddo
 
   endif

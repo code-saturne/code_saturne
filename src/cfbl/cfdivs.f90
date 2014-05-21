@@ -23,7 +23,7 @@
 subroutine cfdivs &
 !================
 
- ( rtpa   , propce ,                                              &
+ ( propce ,                                                      &
    diverg , vel)
 
 !===============================================================================
@@ -42,8 +42,6 @@ subroutine cfdivs &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant precedent)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -83,7 +81,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision diverg(ncelet)
 double precision vel(3,ncelet)
@@ -104,6 +101,7 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: tempv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
 
@@ -119,8 +117,8 @@ allocate(vistot(ncelet))
 allocate(gradv(3,3,ncelet))
 allocate(tempv(3, ncelet))
 
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 if(iviscv.gt.0) then
   ipcvsv = ipproc(iviscv)
 else
@@ -131,11 +129,11 @@ endif
 
 if (itytur.eq.3 ) then
   do iel = 1, ncel
-    vistot(iel) = propce(iel,ipcvis)
+    vistot(iel) = viscl(iel)
   enddo
 else
   do iel = 1, ncel
-    vistot(iel) = propce(iel,ipcvis) + propce(iel,ipcvst)
+    vistot(iel) = viscl(iel) + visct(iel)
   enddo
 endif
 

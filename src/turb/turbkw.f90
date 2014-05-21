@@ -108,7 +108,7 @@ integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          ipcvst, ipcvis, iflmas, iflmab
+integer          iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcvto, ipcvlo
@@ -148,6 +148,8 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: bromo, cromo
 double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
 double precision, dimension(:), pointer :: coefa_o, coefb_o, coefaf_o, coefbf_o
+double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_omg, cvara_omg
+double precision, dimension(:), pointer :: viscl, cvisct
 
 !===============================================================================
 
@@ -168,8 +170,8 @@ allocate(prodk(ncelet), prodw(ncelet))
 
 epz2 = epzero**2
 
-ipcvst = ipproc(ivisct)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(ivisct), cvisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 call field_get_key_int(ivarfl(ik), kimasf, iflmas)
 call field_get_key_int(ivarfl(ik), kbmasf, iflmab)
@@ -180,6 +182,11 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ibrom, bromo)
+
+call field_get_val_s(ivarfl(ik), cvar_k)
+call field_get_val_prev_s(ivarfl(ik), cvara_k)
+call field_get_val_s(ivarfl(iomg), cvar_omg)
+call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 
 call field_get_coefa_s(ivarfl(ik), coefa_k)
 call field_get_coefb_s(ivarfl(ik), coefb_k)
@@ -193,8 +200,8 @@ call field_get_coefbf_s(ivarfl(iomg), coefbf_o)
 
 thets  = thetst
 
-ipcvto = ipcvst
-ipcvlo = ipcvis
+ipcvto = ipproc(ivisct)
+ipcvlo = ipproc(iviscl)
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
@@ -273,8 +280,8 @@ endif
 do iel = 1, ncel
   rho = cromo(iel)
   xnu = propce(iel,ipcvlo)/rho
-  xk = rtpa(iel,ik)
-  xw  = rtpa(iel,iomg)
+  xk = cvara_k(iel)
+  xw  = cvara_omg(iel)
   cdkw = 2*rho/ckwsw2/xw*gdkgdw(iel)
   cdkw = max(cdkw,1.d-20)
   xarg1 = max(sqrt(xk)/cmu/xw/w2(iel), 500.d0*xnu/xw/w2(iel)**2)
@@ -300,8 +307,8 @@ enddo
 !===============================================================================
 
 do iel = 1, ncel
-  xk   = rtpa(iel,ik)
-  xw   = rtpa(iel,iomg)
+  xk   = cvara_k(iel)
+  xw   = cvara_omg(iel)
   xeps = cmu*xw*xk
   visct = propce(iel,ipcvto)
   rho = cromo(iel)
@@ -337,7 +344,7 @@ if (irccor.eq.1) then
   allocate(rotfct(ncel))
 
   ! Compute the rotation function (gdkgdw array not used)
-  call rotcor(dt, rtpa, rotfct, gdkgdw)
+  call rotcor(dt, rotfct, gdkgdw)
   !==========
 
   do iel = 1, ncel
@@ -411,7 +418,7 @@ if (igrake.eq.1) then
 
     ! Implicit Buoyant terms when negativ
     tinstk(iel) = tinstk(iel)                                        &
-                + max(-volume(iel)*visct/rtpa(iel,ik)*w2(iel), 0.d0)
+                + max(-volume(iel)*visct/cvara_k(iel)*w2(iel), 0.d0)
   enddo
 
   ! Free memory
@@ -470,8 +477,8 @@ if (isto2t.gt.0) then
     smbrk(iel) = - thets*tuexpk
     smbrw(iel) = - thets*tuexpw
     ! It is assumed that (-usimpk > 0) and though this term is implicit
-    smbrk(iel) = usimpk(iel)*rtpa(iel,ik) + smbrk(iel)
-    smbrw(iel) = usimpw(iel)*rtpa(iel,iomg) + smbrw(iel)
+    smbrk(iel) = usimpk(iel)*cvara_k(iel) + smbrk(iel)
+    smbrw(iel) = usimpw(iel)*cvara_omg(iel) + smbrw(iel)
 
     ! Implicit part
     tinstk(iel) = tinstk(iel) -usimpk(iel)*thetak
@@ -482,8 +489,8 @@ if (isto2t.gt.0) then
 else
   do iel = 1, ncel
     ! Explicit Part
-    smbrk(iel) = smbrk(iel) + usimpk(iel)*rtpa(iel,ik)
-    smbrw(iel) = smbrw(iel) + usimpw(iel)*rtpa(iel,iomg)
+    smbrk(iel) = smbrk(iel) + usimpk(iel)*cvara_k(iel)
+    smbrw(iel) = smbrw(iel) + usimpw(iel)*cvara_omg(iel)
 
     ! Implicit part
     tinstk(iel) = tinstk(iel) + max(-usimpk(iel),zero)
@@ -503,8 +510,8 @@ do iel = 1, ncel
 
   visct  = propce(iel,ipcvto)
   rho    = cromo(iel)
-  xk     = rtpa(iel,ik)
-  xw     = rtpa(iel,iomg)
+  xk     = cvara_k(iel)
+  xw     = cvara_omg(iel)
   xxf1   = xf1(iel)
   xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
   xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
@@ -527,7 +534,7 @@ enddo
 ! If the solving of k-omega is uncoupled, negative source terms are implicited
 if (ikecou.eq.0) then
   do iel=1,ncel
-    xw    = rtpa(iel,iomg)
+    xw    = cvara_omg(iel)
     xxf1  = xf1(iel)
     xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
     rho = crom(iel)
@@ -563,7 +570,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
     ! Termes sources implicte sur omega
     tinstw(iel) = tinstw(iel)                                     &
-                + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ik)) , zero)
+                + max( (-ce4*tslagr(iel,itske)/cvara_k(iel)) , zero)
   enddo
 
 endif
@@ -642,8 +649,8 @@ do ifac = 1, nfabor
   iel = ifabor(ifac)
 
   ! --- Physical Propreties
-  visclc = propce(iel,ipcvis)
-  visctc = propce(iel,ipcvst)
+  visclc = viscl(iel)
+  visctc = cvisct(iel)
 
   xxf1 = xf1(iel)
 
@@ -694,8 +701,8 @@ if (ikecou.eq.1) then
     do iel = 1, ncel
       xxf1 = xf1(iel)
       sigma = xxf1*ckwsk1 + (1.d0-xxf1)*ckwsk2
-      w7(iel) = propce(iel,ipcvis)                                &
-              + idifft(ivar)*propce(iel,ipcvst)/sigma
+      w7(iel) = viscl(iel)                                        &
+              + idifft(ivar)*cvisct(iel)/sigma
     enddo
     call viscfa &
     !==========
@@ -763,8 +770,8 @@ if (ikecou.eq.1) then
     do iel = 1, ncel
       xxf1 = xf1(iel)
       sigma = xxf1*ckwsw1 + (1.d0-xxf1)*ckwsw2
-      w7(iel) = propce(iel,ipcvis)                                &
-              + idifft(ivar)*propce(iel,ipcvst)/sigma
+      w7(iel) = viscl(iel)                                        &
+              + idifft(ivar)*cvisct(iel)/sigma
     enddo
     call viscfa &
     !==========
@@ -862,8 +869,8 @@ if(ikecou.eq.1) then
     smbrw(iel) = smbrw(iel)*romvsd
     divp23     = d2s3*max(divukw(iel),zero)
     produc     = w1(iel)*s2kw(iel)+w2(iel)
-    xk         = rtpa(iel,ik)
-    xw         = rtpa(iel,iomg)
+    xk         = cvara_k(iel)
+    xw         = cvara_omg(iel)
     xxf1       = xf1(iel)
     xgamma     = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
     xbeta      = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
@@ -917,8 +924,8 @@ if (idiff(ivar).ge. 1) then
   do iel = 1, ncel
     xxf1 = xf1(iel)
     sigma = xxf1*ckwsk1 + (1.d0-xxf1)*ckwsk2
-    w1(iel) = propce(iel,ipcvis)                                  &
-             + idifft(ivar)*propce(iel,ipcvst)/sigma
+    w1(iel) = viscl(iel)                                          &
+             + idifft(ivar)*cvisct(iel)/sigma
   enddo
   call viscfa &
   !==========
@@ -995,8 +1002,8 @@ if (idiff(ivar).ge. 1) then
   do iel = 1, ncel
     xxf1 = xf1(iel)
     sigma = xxf1*ckwsw1 + (1.d0-xxf1)*ckwsw2
-    w1(iel) = propce(iel,ipcvis)                                  &
-                        + idifft(ivar)*propce(iel,ipcvst)/sigma
+    w1(iel) = viscl(iel)                                          &
+                        + idifft(ivar)*cvisct(iel)/sigma
   enddo
   call viscfa &
   !==========
@@ -1089,21 +1096,21 @@ enddo
 iclipk = 0
 iclipw = 0
 do iel = 1, ncel
-  xk = rtp(iel,ik )
-  xw = rtp(iel,iomg)
+  xk = cvar_k(iel)
+  xw = cvar_omg(iel)
   if (abs(xk).le.epz2) then
     iclipk = iclipk + 1
-    rtp(iel,ik) = max(rtp(iel,ik),epz2)
+    cvar_k(iel) = max(cvar_k(iel),epz2)
   elseif(xk.le.0.d0) then
     iclipk = iclipk + 1
-    rtp(iel,ik) = -xk
+    cvar_k(iel) = -xk
   endif
   if (abs(xw).le.epz2) then
     iclipw = iclipw + 1
-    rtp(iel,iomg) = max(rtp(iel,iomg),epz2)
+    cvar_omg(iel) = max(cvar_omg(iel),epz2)
   elseif(xw.le.0.d0) then
     iclipw = iclipw + 1
-    rtp(iel,iomg) = -xw
+    cvar_omg(iel) = -xw
   endif
 enddo
 

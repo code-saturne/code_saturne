@@ -126,7 +126,7 @@ if (nscapp.gt.0) then
 
   if (ippmod(iphpar).ge.1) then
 
-    call ppinv2(nvar, nscal, dt, rtp, propce)
+    call ppinv2(nvar, nscal, dt, rtp)
     !==========
 
     ! TODO: check that the following loop may be removed, as it is

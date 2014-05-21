@@ -142,6 +142,9 @@ double precision, dimension(:), pointer :: sval
 double precision, dimension(:), pointer :: voidfl
 double precision, dimension(:,:), pointer :: val_vp
 
+double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cpro_cp
+
 !===============================================================================
 
 !===============================================================================
@@ -456,25 +459,25 @@ if(iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
 
   !         Viscosite moleculaire - cellules
   !         Uniquement si elle est variable ou pour le modele de cavitation
-  if(ivivar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
+  if (ivivar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
     RUBRIQ = 'viscl_ce_phase'//CPHASE
     itysup = 1
     nbval  = 1
     irtyp  = 2
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,ipproc(iviscl)),ierror)
+    call field_get_val_s(iprpfl(iviscl), viscl)
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,viscl,ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
 
   !         Viscosite turbulente ou de sous-maille - cellules
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     RUBRIQ = 'visct_ce_phase'//CPHASE
     itysup = 1
     nbval  = 1
     irtyp  = 2
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-         propce(1,ipproc(ivisct)),ierror)
+    call field_get_val_s(iprpfl(ivisct), visct)
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,visct,ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
@@ -505,8 +508,8 @@ if((icpext.gt.0.and.icp.gt.0).or.                &
   itysup = 1
   nbval  = 1
   irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       propce(1,ipproc(icp)),ierror)
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,cpro_cp,ierror)
   nberro = nberro+ierror
   inierr = inierr+ierror
 

@@ -23,7 +23,7 @@
 subroutine atphyv &
 !================
 
-   ( rtp    , rtpa   ,                                              &
+   ( rtp    ,                                                       &
      propce )
 
 !===============================================================================
@@ -90,7 +90,7 @@ subroutine atphyv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
@@ -129,7 +129,7 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -374,6 +374,8 @@ double precision sig_flu ! standard deviation of qw'-alpha*theta'
 double precision var_tl,var_q,cov_tlq
 double precision q1,qsup
 
+double precision, dimension(:), pointer :: cvar_k, cvar_ep
+
 ! rvap = rair*rvsra
 
 allocate(dtlsd(3,ncelet))
@@ -385,6 +387,9 @@ call grad_thetal(dtlsd)
 ! computation of grad(qw)
 call grad_qw(dqsd)
 
+call field_get_val_s(ivarfl(ik), cvar_k)
+call field_get_val_s(ivarfl(iep), cvar_ep)
+
 ! -------------------------------------------------------------
 ! Gradients are used for estimating standard deviations of the
 ! subgrid fluctuations.
@@ -395,7 +400,7 @@ lrhum = rhum
 a_const = 2.d0*cmu/2.3d0
 do iel = 1, ncel
 
-  a_coeff = a_const*rtp(iel, ik )**3/rtp(iel,iep)**2 ! 2 cmu/c2 * k**3 / eps**2
+  a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
   var_tl= a_coeff*(dtlsd(1,iel)**2 + dtlsd(2,iel)**2 + dtlsd(3,iel)**2)
   var_q = a_coeff*( dqsd(1,iel)**2 + dqsd(2,iel)**2 + dqsd(3,iel)**2)
   cov_tlq = a_coeff*(  dtlsd(1,iel)*dqsd(1,iel)   &

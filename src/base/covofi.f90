@@ -140,7 +140,7 @@ integer          ifac  , iel
 integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
-integer          ipcvst, ipcvsl, iflmas, iflmab
+integer          ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , iptsca, ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
@@ -177,6 +177,9 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: porosi
+double precision, dimension(:), pointer :: cka, cvara_ep, cvara_omg
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: visct, cpro_cp
 
 !===============================================================================
 
@@ -228,7 +231,7 @@ call field_have_previous(icrom, lprev)
 if (lprev) then
   call field_get_val_prev_s(icrom, croma)
 endif
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 if (ivisls(iscal).gt.0) then
   ipcvsl = ipproc(ivisls(iscal))
@@ -275,8 +278,9 @@ if (imucpp.eq.0) then
   enddo
 elseif (imucpp.eq.1) then
   if (icp.gt.0) then
+    call field_get_val_s(iprpfl(icp), cpro_cp)
     do iel = 1, ncel
-      xcpp(iel) = propce(iel,ipproc(icp))
+      xcpp(iel) = cpro_cp(iel)
     enddo
   else
     do iel = 1, ncel
@@ -532,7 +536,7 @@ if (itspdv.eq.1) then
     !   Si extrapolation : dans PROPCE
     if (isso2t(iscal).gt.0) then
       ! On prend la viscosite a l'instant n, meme si elle est extrapolee
-      ipcvso = ipcvst
+      ipcvso = ipproc(ivisct)
       if (iviext.gt.0) ipcvso = ipproc(ivista)
 
 
@@ -565,7 +569,7 @@ if (itspdv.eq.1) then
       endif
     ! Sinon : dans SMBRS
     else
-      ipcvso = ipcvst
+      ipcvso = ipproc(ivisct)
 
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
@@ -618,16 +622,30 @@ if (itspdv.eq.1) then
     else
       thetap = 1.d0
     endif
+
+    if (itytur.eq.2 .or. itytur.eq.5) then
+      call field_get_val_prev_s(ivarfl(ik), cka)
+      call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+    elseif (itytur.eq.3) then
+      call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+      call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+      call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+      call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+    elseif(iturb.eq.60) then
+      call field_get_val_prev_s(ivarfl(ik), cka)
+      call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
+    endif
+
     do iel = 1, ncel
       if (itytur.eq.2 .or. itytur.eq.5) then
-        xk = rtpa(iel,ik)
-        xe = rtpa(iel,iep)
+        xk = cka(iel)
+        xe = cvara_ep(iel)
       elseif (itytur.eq.3) then
-        xk = 0.5d0*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
-        xe = rtpa(iel,iep)
+        xk = 0.5d0*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
+        xe = cvara_ep(iel)
       elseif(iturb.eq.60) then
-        xk = rtpa(iel,ik)
-        xe = cmu*xk*rtpa(iel,iomg)
+        xk = cka(iel)
+        xe = cmu*xk*cvara_omg(iel)
       endif
       rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
              *volume(iel)
@@ -683,12 +701,12 @@ if (idiff(ivar).ge.1) then
     if (ipcvsl.eq.0) then
       do iel = 1, ncel
         w1(iel) = visls0(iscal)                                     &
-           + idifftp*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifftp*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     else
       do iel = 1, ncel
         w1(iel) = propce(iel,ipcvsl)                                &
-           + idifftp*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifftp*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     endif
 
@@ -806,7 +824,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
  call driflu &
  !=========
  ( iflid  ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtpa   , propce ,                                     &
    imasfl , bmasfl ,                                              &
    rovsdt , smbrs  )
 endif

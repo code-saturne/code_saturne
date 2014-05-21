@@ -25,7 +25,7 @@ subroutine vandri &
 
  (  ndim   , ncelet , ncel   , nfabor ,                           &
     itypfb , ifabor , ifapat ,                                    &
-    xyzcen , cdgfbo , visvdr , yplusc , propce )
+    xyzcen , cdgfbo , visvdr , yplusc )
 
 !===============================================================================
 ! FONCTION :
@@ -55,7 +55,6 @@ subroutine vandri &
 !                  !    !     !  de bord apres amortisst de v driest           !
 ! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
 ! (ncelet  )       !    !     !    dans le cas abs(icdpar).eq.1                !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -90,18 +89,19 @@ integer          ifapat(ncelet)
 double precision xyzcen(ndim,ncelet),cdgfbo(ndim,nfabor)
 double precision visvdr(ncelet)
 double precision yplusc(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel   , ifac  , ipcvis, ipcvst
+integer          iel   , ifac
 double precision yplus , yminpa, viscos
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: viscl, visct
+
 !===============================================================================
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 !     Calcul direct de la distance a la paroi (non compatible parall/perio)
 if(abs(icdpar).eq.2) then
@@ -110,12 +110,12 @@ if(abs(icdpar).eq.2) then
   if(irangp.lt.0) then
     do iel = 1, ncel
       ifac = ifapat(iel)
-      viscos = propce(iel,ipcvis)/crom(iel)
+      viscos = viscl(iel)/crom(iel)
       yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
            +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2             &
            +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
       yplus = uetbor(ifac) * yminpa/ viscos
-      propce(iel,ipcvst) = propce(iel,ipcvst)*                    &
+      visct(iel) = visct(iel)*                                    &
            (1.0d0-exp(-yplus/cdries))**2
     enddo
 !     En parallele, on n'amortit que la premiere maille de paroi :
@@ -124,15 +124,15 @@ if(abs(icdpar).eq.2) then
   else
     write(nfecra,1000)
     do ifac = 1, nfabor
-      if(itypfb(ifac).eq.iparoi .or.                        &
+      if(itypfb(ifac).eq.iparoi .or.                              &
          itypfb(ifac).eq.iparug ) then
         iel = ifabor(ifac)
-        viscos = propce(iel,ipcvis)/crom(iel)
+        viscos = viscl(iel)/crom(iel)
         yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2           &
              +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2           &
              +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
         yplus = uetbor(ifac) * yminpa/ viscos
-        propce(iel,ipcvst) = propce(iel,ipcvst)*                  &
+        visct(iel) = visct(iel)*                                  &
              (1.0d0-exp(-yplus/cdries))**2
       endif
     enddo
@@ -142,7 +142,7 @@ endif
 elseif(abs(icdpar).eq.1) then
   do iel = 1, ncel
     yplus = yplusc(iel)
-    propce(iel,ipcvst) = propce(iel,ipcvst)*                      &
+    visct(iel) = visct(iel)*                                      &
            (1.0d0-exp(-yplus/cdries))**2
   enddo
 endif
@@ -151,8 +151,8 @@ endif
 !     qui avait ete amortie dans clptur et qui a servi a calculer
 !     les conditions aux limites
 do iel = 1, ncel
-  if (visvdr(iel).gt.-900.d0)                               &
-       propce(iel,ipcvst) = visvdr(iel)
+  if (visvdr(iel).gt.-900.d0)                                     &
+       visct(iel) = visvdr(iel)
 enddo
 
 !--------

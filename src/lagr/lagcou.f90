@@ -25,7 +25,7 @@ subroutine lagcou &
 
  ( nbpmax ,                                                       &
    ntersl ,                                                       &
-   rtp    , propce ,                                              &
+   propce ,                                                       &
    taup   , tempct , tsfext ,                                     &
    cpgd1  , cpgd2  , cpght  ,                                     &
    tslag  , volp   , volm   ,                                     &
@@ -63,8 +63,6 @@ subroutine lagcou &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep)   !    !     !   (cellule de la particule,...)                !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tsfext(nbpmax    ! tr ! <-- ! forces externes                                !
@@ -120,7 +118,7 @@ implicit none
 integer          nbpmax
 integer          ntersl
 
-double precision propce(ncelet,*) , rtp(ncelet,nflown:nvar)
+double precision propce(ncelet,*)
 double precision taup(nbpmax) , tempct(nbpmax,2)
 double precision tsfext(nbpmax)
 double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)

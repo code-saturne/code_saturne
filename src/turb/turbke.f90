@@ -108,7 +108,7 @@ integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          ipcvst, ipcvis, iflmas, iflmab
+integer          iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcvto, ipcvlo
@@ -151,6 +151,9 @@ double precision, dimension(:), pointer :: brom, crom, bromo, cromo
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: cvara_k
+double precision, dimension(:), pointer :: cvara_ep, cvara_al, cvara_phi
+double precision, dimension(:), pointer :: viscl, cvisct
 
 !===============================================================================
 
@@ -183,8 +186,8 @@ call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
 call field_get_val_s(icrom, crom)
-ipcvst = ipproc(ivisct)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(ivisct), cvisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -193,14 +196,19 @@ call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_s(ibrom, brom)
 
+call field_get_val_prev_s(ivarfl(ik), cvara_k)
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+if (iturb.eq.50.or.iturb.eq.51) call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
+if (iturb.eq.51) call field_get_val_prev_s(ivarfl(ial), cvara_al)
+
 thets  = thetst
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ibrom, bromo)
-ipcvto = ipcvst
-ipcvlo = ipcvis
+ipcvto = ipproc(ivisct)
+ipcvlo = ipproc(iviscl)
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
@@ -299,8 +307,8 @@ if (iturb.eq.21) then
     rho   = cromo(iel)
     visct = propce(iel,ipcvto)
     xs = sqrt(strain(iel))
-    cmueta = min(cmu*rtpa(iel,ik)/rtpa(iel,iep)*xs, sqrcmu)
-    smbrk(iel) = rho*cmueta*xs*rtpa(iel,ik)
+    cmueta = min(cmu*cvara_k(iel)/cvara_ep(iel)*xs, sqrcmu)
+    smbrk(iel) = rho*cmueta*xs*cvara_k(iel)
     smbre(iel) = smbrk(iel)
   enddo
 else
@@ -325,7 +333,7 @@ if (irccor.eq.1) then
 
   ! Compute the modified Ceps2 coefficient (w1 array not used)
 
-  call rotcor(dt, rtpa, w1, ce2rc)
+  call rotcor(dt, w1, ce2rc)
   !==========
 
 else
@@ -411,8 +419,8 @@ else if (igrake.eq.1) then
   do iel = 1, ncel
     rho   = cromo(iel)
     visct = propce(iel,ipcvto)
-    xeps = rtpa(iel, iep)
-    xk   = rtpa(iel, ik)
+    xeps = cvara_ep(iel)
+    xk   = cvara_k(iel)
     ttke = xk / xeps
 
     gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
@@ -508,9 +516,9 @@ if (iturb.eq.51) then
   w10    )
 
   do iel = 1, ncel
-    w10(iel) = -w10(iel)/volume(iel)/rtpa(iel,iep)
+    w10(iel) = -w10(iel)/volume(iel)/cvara_ep(iel)
     w10(iel) = tanh(abs(w10(iel))**1.5d0)
-    w10(iel) = cpale2*(1.d0-(cpale2-cpale4)/cpale2*w10(iel)*rtpa(iel,ial)**3)
+    w10(iel) = cpale2*(1.d0-(cpale2-cpale4)/cpale2*w10(iel)*cvara_al(iel)**3)
   enddo
 
   ! Calcul du terme 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
@@ -519,7 +527,7 @@ if (iturb.eq.51) then
   ! Allocate a work array
   allocate(w12(ncelet))
 
-  call tsepls(rtpa, w12)
+  call tsepls(w12)
   !==========
 
   do iel = 1, ncel
@@ -527,16 +535,16 @@ if (iturb.eq.51) then
     rho   = cromo(iel)
     xnu   = propce(iel,ipcvlo)/rho
     xnut  = propce(iel,ipcvto)/rho
-    xeps = rtpa(iel,iep )
-    xk   = rtpa(iel,ik )
-    xphi = rtpa(iel,iphi)
+    xeps = cvara_ep(iel)
+    xk   = cvara_k(iel)
+    xphi = cvara_phi(iel)
 
     ttke = xk/xeps
     ttmin = cpalct*sqrt(xnu/xeps)
     tt = sqrt(ttke**2 + ttmin**2)
 
     w11(iel) = 2.d0*xnu*xnut*w12(iel)*cpale3/xeps                  &
-                *(1.d0-rtpa(iel,ial))**3
+                *(1.d0-cvara_al(iel))**3
 
   enddo
 
@@ -579,15 +587,15 @@ if (itytur.eq.2) then
     rho   = cromo(iel)
 
     smbrk(iel) = volume(iel)*                                     &
-               ( smbrk(iel) - rho*rtpa(iel,iep)                   &
-               - d2s3*rho*rtpa(iel,ik)*divu(iel)                  &
+               ( smbrk(iel) - rho*cvara_ep(iel)                       &
+               - d2s3*rho*cvara_k(iel)*divu(iel)                      &
                )
 
     smbre(iel) = volume(iel)*                                              &
-               ( rtpa(iel,iep)/rtpa(iel,ik)*( ce1*smbre(iel)               &
-                                            - ce2rc(iel)*rho*rtpa(iel,iep) &
+               ( cvara_ep(iel)/cvara_k(iel)*( ce1*smbre(iel)                       &
+                                            - ce2rc(iel)*rho*cvara_ep(iel)     &
                                             )                              &
-               - d2s3*rho*ce1*rtpa(iel,iep)*divu(iel)                      &
+               - d2s3*rho*ce1*cvara_ep(iel)*divu(iel)                          &
                )
 
   enddo
@@ -595,8 +603,8 @@ if (itytur.eq.2) then
   ! If the solving of k-epsilon is uncoupled, negative source terms are implicited
   if (ikecou.eq.0) then
     do iel = 1, ncel
-      xeps = rtpa(iel,iep )
-      xk   = rtpa(iel,ik )
+      xeps = cvara_ep(iel)
+      xk   = cvara_k(iel)
       rho = crom(iel)
       ttke = xk / xeps
       tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke            &
@@ -613,9 +621,9 @@ else if (iturb.eq.50) then
     visct = propce(iel,ipcvto)
     rho  = cromo(iel)
     xnu  = propce(iel,ipcvlo)/rho
-    xeps = rtpa(iel,iep)
-    xk   = rtpa(iel,ik)
-    xphi = rtpa(iel,iphi)
+    xeps = cvara_ep(iel)
+    xk   = cvara_k(iel)
+    xphi = cvara_phi(iel)
     xphi = max(xphi, epzero)
     ceps1= 1.4d0*(1.d0+cv2fa1*sqrt(1.d0/xphi))
     ttke = xk / xeps
@@ -624,8 +632,8 @@ else if (iturb.eq.50) then
 
     ! Explicit part
     smbrk(iel) = volume(iel)*                                     &
-               ( smbrk(iel) - rho*rtpa(iel,iep)                   &
-               - d2s3*rho*rtpa(iel,ik)*divu(iel)                  &
+               ( smbrk(iel) - rho*cvara_ep(iel)                       &
+               - d2s3*rho*cvara_k(iel)*divu(iel)                      &
                )
 
     smbre(iel) = volume(iel)*                                       &
@@ -635,7 +643,7 @@ else if (iturb.eq.50) then
 
     ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
     prdv2f(iel) = prdv2f(iel)                               &
-                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
+                - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
     ! Implicit part
     if (xk.gt.1.d-12) then !FIXME make it dimensionless
@@ -654,9 +662,9 @@ else if (iturb.eq.51) then
     visct = propce(iel,ipcvto)
     rho   = cromo(iel)
     xnu  = propce(iel,ipcvlo)/rho
-    xeps = rtpa(iel,iep )
-    xk   = rtpa(iel,ik )
-    xphi = rtpa(iel,iphi)
+    xeps = cvara_ep(iel)
+    xk   = cvara_k(iel)
+    xphi = cvara_phi(iel)
     ttke = xk / xeps
     ttmin = cpalct*sqrt(xnu/xeps)
     tt = sqrt(ttke**2.d0+ttmin**2.d0)
@@ -676,7 +684,7 @@ else if (iturb.eq.51) then
 
     ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
     prdv2f(iel) = prdv2f(iel)                               &
-                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
+                - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
     ! Implicit part
     if (xk.gt.1.d-12) then !FIXME make it dimensionless
@@ -744,8 +752,8 @@ if (isto2t.gt.0) then
     smbrk(iel) = - thets*tuexpk
     smbre(iel) = - thets*tuexpe
     ! It is assumed that (-usimpk > 0) and though this term is implicit
-    smbrk(iel) = usimpk(iel)*rtpa(iel,ik) + smbrk(iel)
-    smbre(iel) = usimpe(iel)*rtpa(iel,iep) + smbre(iel)
+    smbrk(iel) = usimpk(iel)*cvara_k(iel) + smbrk(iel)
+    smbre(iel) = usimpe(iel)*cvara_ep(iel) + smbre(iel)
 
     ! Implicit part
     tinstk(iel) = tinstk(iel) - usimpk(iel)*thetak
@@ -757,8 +765,8 @@ if (isto2t.gt.0) then
 else
   do iel = 1, ncel
     ! Explicit part
-    smbrk(iel) = smbrk(iel) + usimpk(iel)*rtpa(iel,ik) + w7(iel)
-    smbre(iel) = smbre(iel) + usimpe(iel)*rtpa(iel,iep) + w8(iel)
+    smbrk(iel) = smbrk(iel) + usimpk(iel)*cvara_k(iel) + w7(iel)
+    smbre(iel) = smbre(iel) + usimpe(iel)*cvara_ep(iel) + w8(iel)
 
     ! Implicit part
     tinstk(iel) = tinstk(iel) + max(-usimpk(iel),zero)
@@ -781,14 +789,14 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
     ! Termes sources explicte sur Eps
     smbre(iel)  = smbre(iel)                                    &
-                + ce4 *tslagr(iel,itske) *rtpa(iel,iep)         &
-                                         /rtpa(iel,ik)
+                + ce4 *tslagr(iel,itske) *cvara_ep(iel)             &
+                                         /cvara_k(iel)
 
     ! Termes sources implicite sur k
     tinstk(iel) = tinstk(iel) + max(-tslagr(iel,itsli),zero)
 
     ! Termes sources implicte sur Eps
-    tinste(iel) = tinste(iel) + max((-ce4*tslagr(iel,itske)/rtpa(iel,ik)), zero)
+    tinste(iel) = tinste(iel) + max((-ce4*tslagr(iel,itske)/cvara_k(iel)), zero)
 
   enddo
 
@@ -884,8 +892,8 @@ if (ikecou.eq.1) then
   if (idiff(ivar).ge. 1) then
 
     do iel = 1, ncel
-      w4(iel) = propce(iel,ipcvis)                              &
-              + idifft(ivar)*propce(iel,ipcvst)/sigmak
+      w4(iel) = viscl(iel)                                        &
+              + idifft(ivar)*cvisct(iel)/sigmak
     enddo
 
     call viscfa &
@@ -958,8 +966,8 @@ if (ikecou.eq.1) then
 
   if (idiff(ivar).ge. 1) then
     do iel = 1, ncel
-      w4(iel) = propce(iel,ipcvis)                              &
-              + idifft(ivar)*propce(iel,ipcvst)/sigmae
+      w4(iel) = viscl(iel)                                        &
+              + idifft(ivar)*cvisct(iel)/sigmae
     enddo
 
     call viscfa &
@@ -1048,10 +1056,10 @@ if (ikecou.eq.1) then
       smbre(iel)=smbre(iel)*romvsd
       divp23= d2s3*max(divu(iel),zero)
 
-      epssuk = rtpa(iel,iep)/rtpa(iel,ik)
+      epssuk = cvara_ep(iel)/cvara_k(iel)
 
       a11 = 1.d0/dt(iel)                                          &
-           -2.d0*rtpa(iel,ik)/rtpa(iel,iep)                       &
+           -2.d0*cvara_k(iel)/cvara_ep(iel)                               &
            *cmu*min(prdtke(iel)/visct,zero)+divp23
       a12 = 1.d0
       a21 = -ce1*cmu*prdeps(iel)/visct-ce2rc(iel)*epssuk*epssuk
@@ -1121,11 +1129,11 @@ if (idiff(ivar).ge.1) then
 
   do iel = 1, ncel
     if (iturb.eq.51) then
-      w1(iel) = propce(iel,ipcvis)/2.d0                           &
-              + idifft(ivar)*propce(iel,ipcvst)/sigmak
+      w1(iel) = viscl(iel)/2.d0                                   &
+              + idifft(ivar)*cvisct(iel)/sigmak
     else
-      w1(iel) = propce(iel,ipcvis)                                &
-              + idifft(ivar)*propce(iel,ipcvst)/sigmak
+      w1(iel) = viscl(iel)                                        &
+              + idifft(ivar)*cvisct(iel)/sigmak
     endif
   enddo
 
@@ -1207,11 +1215,11 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 if (idiff(ivar).ge.1) then
   do iel = 1, ncel
     if (iturb.eq.51) then
-      w1(iel) = propce(iel,ipcvis)/2.d0                           &
-              + idifft(ivar)*propce(iel,ipcvst)/cpalse
+      w1(iel) = viscl(iel)/2.d0                                   &
+              + idifft(ivar)*cvisct(iel)/cpalse
     else
-      w1(iel) = propce(iel,ipcvis)                                &
-              + idifft(ivar)*propce(iel,ipcvst)/sigmae
+      w1(iel) = viscl(iel)                                        &
+              + idifft(ivar)*cvisct(iel)/sigmae
     endif
   enddo
 
@@ -1290,7 +1298,7 @@ call clipke &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
    iclip  , iwarnp ,                                              &
-   propce , rtp    )
+   rtp    )
 
 ! Free memory
 deallocate(viscf, viscb)

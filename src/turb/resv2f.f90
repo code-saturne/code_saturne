@@ -110,7 +110,7 @@ double precision prdv2f(ncelet)
 integer          init  , ifac  , iel   , inc   , iprev , iccocg
 integer          ivar, ipp
 integer          iiun
-integer          ipcvis, ipcvlo, ipcvst, ipcvso
+integer          ipcvlo, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp
 integer          iconvp, idiffp, ndircp, ireslp
@@ -140,6 +140,9 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: cvar_fb
+double precision, dimension(:), pointer :: cka, cvara_ep, cvara_al, cvara_phi, cvara_fb
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
 
@@ -157,12 +160,22 @@ allocate(w4(ncelet), w5(ncelet))
 allocate(dpvar(ncelet))
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_val_prev_s(ivarfl(ik), cka)
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
+if(iturb.eq.50) then
+  call field_get_val_s(ivarfl(ifb), cvar_fb)
+  call field_get_val_prev_s(ivarfl(ifb), cvara_fb)
+elseif(iturb.eq.51) then
+  call field_get_val_prev_s(ivarfl(ial), cvara_al)
+endif
 
 if(isto2t.gt.0) then
   iptsta = ipproc(itstua)
@@ -231,7 +244,7 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcvlo = ipcvis
+ipcvlo = ipproc(iviscl)
 
 call field_get_val_s(icrom, cromo)
 if(isto2t.gt.0) then
@@ -349,7 +362,7 @@ call itrgrp &
    iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
-   rtpa(1,iphi)    ,                                              &
+   cvara_phi  ,                                                       &
    coefap , coefbp , cofafp , cofbfp ,                            &
    viscf  , viscb  ,                                              &
    w3     , w3     , w3     ,                                     &
@@ -359,8 +372,8 @@ call itrgrp &
 !      Dans le cas de l'ordre 2 en temps, T est calcule en n
 !      (il sera extrapole) et L^2 en n+theta (meme si k et eps restent en n)
 do iel=1,ncel
-  xk = rtpa(iel,ik)
-  xe = rtpa(iel,iep)
+  xk = cka(iel)
+  xe = cvara_ep(iel)
   xnu  = propce(iel,ipcvlo)/cromo(iel)
   ttke = xk / xe
   if(iturb.eq.50) then
@@ -371,7 +384,7 @@ do iel=1,ncel
     w3(iel) = sqrt(ttke**2 + ttmin**2)
   endif
 
-  xnu  = propce(iel,ipcvis)/crom(iel)
+  xnu  = viscl(iel)/crom(iel)
   llke = xk**d3s2/xe
   if(iturb.eq.50) then
     llmin = cv2fet*(xnu**3/xe)**d1s4
@@ -388,11 +401,11 @@ enddo
 do iel = 1, ncel
     xrom = cromo(iel)
     xnu  = propce(iel,ipcvlo)/xrom
-    xk = rtpa(iel,ik)
-    xe = rtpa(iel,iep)
+    xk = cka(iel)
+    xe = cvara_ep(iel)
     if(iturb.eq.50) then
       w5(iel) = - volume(iel)*                                    &
-           ( (cv2fc1-1.d0)*(rtpa(iel,iphi)-d2s3)/w3(iel)          &
+           ( (cv2fc1-1.d0)*(cvara_phi(iel)-d2s3)/w3(iel)              &
              -cv2fc2*prdv2f(iel)/xrom/xk                          &
              -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
     elseif(iturb.eq.51) then
@@ -403,7 +416,7 @@ enddo
 if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    propce(iel,iptsta+2) =                                   &
+    propce(iel,iptsta+2) =                                        &
     propce(iel,iptsta+2) + w5(iel)
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+2)
   enddo
@@ -417,9 +430,9 @@ endif
 !     Terme implicite
 do iel = 1, ncel
   if(iturb.eq.50) then
-    smbr(iel) = ( - volume(iel)*rtpa(iel,ifb) + smbr(iel) ) / w4(iel)
+    smbr(iel) = ( - volume(iel)*cvara_fb(iel) + smbr(iel) ) / w4(iel)
   elseif(iturb.eq.51) then
-    smbr(iel) = ( - volume(iel)*rtpa(iel,ial) + smbr(iel) ) / w4(iel)
+    smbr(iel) = ( - volume(iel)*cvara_al(iel) + smbr(iel) ) / w4(iel)
   endif
 enddo
 
@@ -506,7 +519,7 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcvso = ipcvst
+ipcvso = ipproc(ivisct)
 if(isto2t.gt.0) then
   if(iviext.gt.0) then
     ipcvso = ipproc(ivista)
@@ -566,15 +579,15 @@ if (ncesmp.gt.0) then
 !       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
   call catsma                                                     &
   !==========
- ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,    &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,    &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbr   ,  rovsdt , w2 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
   if(isto2t.gt.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+3) =                                 &
+      propce(iel,iptsta+3) =                                      &
       propce(iel,iptsta+3) + w2(iel)
     enddo
 !       Sinon on le met directement dans SMBR
@@ -612,8 +625,8 @@ enddo
 !     Terme explicite, stocke temporairement dans W2
 
 do iel = 1, ncel
-  xk = rtpa(iel,ik)
-  xe = rtpa(iel,iep)
+  xk = cka(iel)
+  xe = cvara_ep(iel)
   xrom = cromo(iel)
   xnu  = propce(iel,ipcvlo)/xrom
   if(iturb.eq.50) then
@@ -621,16 +634,16 @@ do iel = 1, ncel
 !    Rq : si on reste en RTP, il faut modifier le cas de l'ordre 2 (qui
 !         necessite RTPA pour l'extrapolation).
     w2(iel)   =  volume(iel)*                                       &
-         ( xrom*rtp(iel,ifb)                                     &
+         ( xrom*cvar_fb(iel)                                            &
            +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
   elseif(iturb.eq.51) then
     ttke = xk / xe
     ttmin = cpalct*sqrt(xnu/xe)
     tt = sqrt(ttke**2 + ttmin**2)
     fhomog = -1.d0/tt*(cpalc1-1.d0+cpalc2*prdv2f(iel)/xe/xrom)*     &
-             (rtpa(iel,iphi)-d2s3)
+             (cvara_phi(iel)-d2s3)
     w2(iel)   = volume(iel)*                                        &
-         ( rtpa(iel,ial)**3*fhomog*xrom                           &
+         ( cvara_al(iel)**3*fhomog*xrom                                 &
            +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
   endif
 
@@ -640,7 +653,7 @@ enddo
 if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    propce(iel,iptsta+3) =                                   &
+    propce(iel,iptsta+3) =                                          &
     propce(iel,iptsta+3) + w2(iel)
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+3)
   enddo
@@ -656,12 +669,12 @@ do iel = 1, ncel
   xrom = cromo(iel)
   if(iturb.eq.50) then
     smbr(iel) = smbr(iel)                                         &
-         - volume(iel)*prdv2f(iel)*rtpa(iel,iphi)/rtpa(iel,ik)
+         - volume(iel)*prdv2f(iel)*cvara_phi(iel)/cka(iel)
   elseif(iturb.eq.51) then
     smbr(iel) = smbr(iel)                                         &
-         - volume(iel)*(prdv2f(iel)+xrom*rtpa(iel,iep)/2        &
-                                    *(1.d0-rtpa(iel,ial)**3))   &
-         *rtpa(iel,iphi)/rtpa(iel,ik)
+         - volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
+                                    *(1.d0-cvara_al(iel)**3))         &
+         *cvara_phi(iel)/cka(iel)
   endif
 enddo
 
@@ -676,12 +689,12 @@ do iel = 1, ncel
   xrom = cromo(iel)
   if(iturb.eq.50) then
     rovsdt(iel) = rovsdt(iel)                                     &
-         + volume(iel)*prdv2f(iel)/rtpa(iel,ik)*thetap
+         + volume(iel)*prdv2f(iel)/cka(iel)*thetap
   elseif(iturb.eq.51) then
     rovsdt(iel) = rovsdt(iel)                                     &
-         + volume(iel)*(prdv2f(iel)+xrom*rtpa(iel,iep)/2        &
-                                    *(1.d0-rtpa(iel,ial)**3))   &
-           /rtpa(iel,ik)*thetap
+         + volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
+                                    *(1.d0-cvara_al(iel)**3))         &
+           /cka(iel)*thetap
   endif
 enddo
 
@@ -707,9 +720,9 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 if (idiff(ivar).ge.1) then
   do iel = 1, ncel
     if(iturb.eq.50) then
-      w2(iel) = propce(iel,ipcvis)      + propce(iel,ipcvst)/sigmak
+      w2(iel) = viscl(iel)      + visct(iel)/sigmak
     elseif(iturb.eq.51) then
-      w2(iel) = propce(iel,ipcvis)/2.d0 + propce(iel,ipcvst)/sigmak !FIXME
+      w2(iel) = viscl(iel)/2.d0 + visct(iel)/sigmak !FIXME
     endif
   enddo
 
@@ -813,7 +826,7 @@ call codits &
 ! 10. CLIPPING
 !===============================================================================
 
-   call clpv2f(ncelet, ncel, nvar, iwarni(iphi), rtp)
+   call clpv2f(ncelet, ncel, nvar, iwarni(iphi))
    !==========
 
 ! Free memory

@@ -53,8 +53,6 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtpa          calculated variables at cell centers
-!>                              (at previous time step)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     flumas        internal mass flux (depending on iappel)
 !> \param[in]     flumab        boundary mass flux (depending on iappel)
@@ -91,7 +89,7 @@ subroutine predvv &
  ( iappel ,                                                       &
    nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , vel    , vela   ,                            &
+   dt     , vel    , vela   ,                                     &
    propce ,                                                       &
    flumas , flumab ,                                              &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
@@ -145,7 +143,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
@@ -176,7 +174,6 @@ integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl
 integer          iccocg, inc   , iprev , init  , ii    , jj    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ipp
 integer          iswdyp, idftnp
-integer          ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -223,6 +220,10 @@ double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, dimension(:,:), allocatable :: divt
 double precision, dimension(:,:), pointer :: forbr
+double precision, dimension(:), pointer :: cvara_pr, cka
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
 
@@ -251,6 +252,38 @@ if (iroext.gt.0.or.idilat.gt.1) then
   call field_get_val_prev_s(icrom, croma)
 endif
 
+if (iappel.eq.2) then
+  if (ineedf.eq.1 .and. iterns.eq.1) then
+    call field_get_val_s(ivarfl(ipr), cvara_pr)
+    if((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
+      call field_get_val_s(ivarfl(ik), cka)
+    endif
+  endif
+  if (itytur.eq.3.and.iterns.eq.1) then
+    call field_get_val_s(ivarfl(ir11), cvara_r11)
+    call field_get_val_s(ivarfl(ir22), cvara_r22)
+    call field_get_val_s(ivarfl(ir33), cvara_r33)
+    call field_get_val_s(ivarfl(ir12), cvara_r12)
+    call field_get_val_s(ivarfl(ir23), cvara_r23)
+    call field_get_val_s(ivarfl(ir13), cvara_r13)
+  endif
+else
+  if (ineedf.eq.1 .and. iterns.eq.1) then
+    call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+    if((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
+      call field_get_val_prev_s(ivarfl(ik), cka)
+    endif
+  endif
+  if (itytur.eq.3.and.iterns.eq.1) then
+    call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+    call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+    call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+    call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+    call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+    call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+  endif
+endif
+
 ! With porosity
 if (iporos.ge.1) then
   call field_get_val_s(ipori, porosi)
@@ -258,8 +291,6 @@ endif
 
 if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
 
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
 ! Theta relatif aux termes sources explicites
 thets  = thetsn
 if(isno2t.gt.0) then
@@ -394,7 +425,7 @@ else
 
   call grdpre (ipr, imrgra, inc, iccocg, nswrgp, imligp,  &
                iwarnp, epsrgp, climgp, extrap,            &
-               rtpa(1,ipr), xinvro, coefa_p, coefb_p,     &
+               cvara_pr, xinvro, coefa_p, coefb_p,        &
                gradni )
 
   do iel = 1, ncelet
@@ -422,10 +453,10 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
-    pip = rtpa(iel,ipr) &
+    pip = cvara_pr(iel) &
         + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
     pfac = coefa_p(ifac) +coefb_p(ifac)*pip
-    pfac1= rtpa(iel,ipr)                                          &
+    pfac1= cvara_pr(iel)                                              &
          +(cdgfbo(1,ifac)-xyzcen(1,iel))*grad(1,iel)              &
          +(cdgfbo(2,ifac)-xyzcen(2,iel))*grad(2,iel)              &
          +(cdgfbo(3,ifac)-xyzcen(3,iel))*grad(3,iel)
@@ -854,7 +885,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      xkb = rtpa(iel,ik) + diipbx*grad(1,iel)                      &
+      xkb = cka(iel) + diipbx*grad(1,iel)                      &
            + diipby*grad(2,iel) + diipbz*grad(3,iel)
       xkb = coefa_k(ifac)+coefb_k(ifac)*xkb
       xkb = d2s3*crom(iel)*xkb
@@ -1064,12 +1095,12 @@ if(itytur.eq.3.and.iterns.eq.1) then
 
   allocate(rij(6,ncelet))
   do iel = 1, ncelet
-    rij(1,iel) = rtpa(iel,ir11)
-    rij(2,iel) = rtpa(iel,ir22)
-    rij(3,iel) = rtpa(iel,ir33)
-    rij(4,iel) = rtpa(iel,ir12)
-    rij(5,iel) = rtpa(iel,ir23)
-    rij(6,iel) = rtpa(iel,ir13)
+    rij(1,iel) = cvara_r11(iel)
+    rij(2,iel) = cvara_r22(iel)
+    rij(3,iel) = cvara_r33(iel)
+    rij(4,iel) = cvara_r12(iel)
+    rij(5,iel) = cvara_r23(iel)
+    rij(6,iel) = cvara_r13(iel)
   enddo
 
 ! --- Boundary conditions on the components of the tensor Rij
@@ -1194,13 +1225,16 @@ endif
 
 if (idiff(iu).ge. 1) then
 
+  call field_get_val_s(iprpfl(iviscl), viscl)
+  call field_get_val_s(iprpfl(ivisct), visct)
+
   if (itytur.eq.3) then
     do iel = 1, ncel
-      w1(iel) = propce(iel,ipcvis)
+      w1(iel) = viscl(iel)
     enddo
   else
     do iel = 1, ncel
-      w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+      w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
     enddo
   endif
 
@@ -1218,7 +1252,7 @@ if (idiff(iu).ge. 1) then
     if(itytur.eq.3.and.irijnu.eq.1) then
 
       do iel = 1, ncel
-        w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+        w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
       enddo
 
       call viscfa &
@@ -1251,7 +1285,7 @@ if (idiff(iu).ge. 1) then
     if(itytur.eq.3.and.irijnu.eq.1) then
 
       do iel = 1, ncel
-        w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+        w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
       enddo
 
       do iel = 1, ncel

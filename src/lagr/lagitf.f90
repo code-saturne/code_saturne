@@ -89,6 +89,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -116,6 +117,9 @@ double precision energ , dissip
 
 double precision, allocatable, dimension(:) :: tempf
 
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+
 !===============================================================================
 
 !===============================================================================
@@ -133,6 +137,19 @@ energ = 0.d0
 ct = 1.d0
 
 mode = 1
+
+if (itytur.eq.2.or.iturb.eq.50) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (itytur.eq.3) then
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (iturb.eq.60) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iomg), cvar_omg)
+endif
 
 !===============================================================================
 ! 2. Temperature moyenne Fluide en degres Celsius
@@ -187,20 +204,20 @@ do npt = 1,nbpart
 
       if ( itytur.eq.2 .or. iturb.eq.50 ) then
 
-        energ  = rtp(iel,ik)
-        dissip = rtp(iel,iep)
+        energ  = cvar_k(iel)
+        dissip = cvar_ep(iel)
 
       else if ( itytur.eq.3 ) then
 
-        energ  = 0.5d0 * ( rtp(iel,ir11)                   &
-                         + rtp(iel,ir22)                   &
-                         + rtp(iel,ir33) )
-        dissip = rtp(iel,iep)
+        energ  = 0.5d0 * ( cvar_r11(iel)                   &
+                         + cvar_r22(iel)                   &
+                         + cvar_r33(iel) )
+        dissip = cvar_ep(iel)
 
       else if (iturb.eq.60) then
 
-        energ  = rtp(iel,ik)
-        dissip = cmu*rtp(iel,ik)*rtp(iel,iomg)
+        energ  = cvar_k(iel)
+        dissip = cmu*cvar_k(iel)*cvar_omg(iel)
 
       endif
 

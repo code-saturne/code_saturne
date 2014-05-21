@@ -25,7 +25,7 @@ subroutine ppphyv &
 
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce )
+   dt     , rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -94,8 +94,8 @@ subroutine ppphyv &
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !        !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time steps)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
@@ -132,7 +132,7 @@ integer          nvar   , nscal
 
 integer          mbrom
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -213,7 +213,7 @@ double precision propce(ncelet,*)
 
   if ( ippmod(icfuel).ge.0 ) then
 
-    call cs_fuel_physprop(mbrom, izfppp, rtp, rtpa, propce)
+    call cs_fuel_physprop(mbrom, izfppp, rtp, propce)
     !====================
 
   endif
@@ -222,7 +222,7 @@ double precision propce(ncelet,*)
 
   if (ippmod(icompf).ge.0) then
 
-     call cfphyv(nvar, nscal, dt, rtp, rtpa, propce)
+     call cfphyv(nvar, nscal, dt, propce)
      !==========
 
    endif
@@ -245,7 +245,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     , rtp    , propce )
 
 endif
 
@@ -253,7 +253,7 @@ endif
 
 if ( ippmod(iaeros).ge.0 ) then
 
-   call ctphyv(rtp, propce)
+   call ctphyv(rtp)
    !==========
 
 endif
@@ -262,7 +262,7 @@ endif
 
 if (ippmod(iatmos).ge.1) then
 
-   call atphyv(rtp, rtpa, propce )
+   call atphyv(rtp, propce )
    !==========
 
 endif

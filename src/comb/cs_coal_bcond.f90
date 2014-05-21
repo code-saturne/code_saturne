@@ -24,7 +24,6 @@ subroutine cs_coal_bcond &
 !=======================
 
  ( itypfb , izfppp ,                                              &
-   propce ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -40,7 +39,6 @@ subroutine cs_coal_bcond &
 ! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
 ! izfppp(nfabor)   ! te ! <-- ! numero de zone de la face de bord              !
 !                  !    !     !  pour le module phys. part.                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -91,7 +89,6 @@ implicit none
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -100,7 +97,7 @@ character*80     name
 
 integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icha, iclapc, isol, icla
-integer          icke, idecal, ipcvis
+integer          icke, idecal
 integer          nbrval, ioxy
 integer          f_id, iaggas, keyvar
 
@@ -115,13 +112,14 @@ double precision f1mc  (ncharm) , f2mc (ncharm)
 double precision wmh2o,wmco2,wmn2,wmo2
 double precision, dimension(:), pointer ::  brom
 integer, dimension (:), allocatable :: iagecp
+double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
 
 call field_get_val_s(ibrom, brom)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 d2s3 = 2.d0/3.d0
 
@@ -382,7 +380,7 @@ do ifac = 1, nfabor
       uref2 = max(uref2,1.d-12)
       rhomoy = brom(ifac)
       iel    = ifabor(ifac)
-      viscla = propce(iel,ipcvis)
+      viscla = viscl(iel)
       icke   = icalke(izone)
       dhy    = dh(izone)
       xiturb = xintur(izone)

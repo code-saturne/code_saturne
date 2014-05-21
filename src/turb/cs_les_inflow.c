@@ -1353,7 +1353,6 @@ void CS_PROCF(synthe, SYNTHE)
  const cs_real_t        dt[],      /* --> time step                           */
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
  const cs_real_t        rtp[],     /* --> variables at cellules               */
- const cs_real_t        propce[],  /* --> physical properties at cells        */
        cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
  CS_ARGF_SUPP_CHAINE
 )

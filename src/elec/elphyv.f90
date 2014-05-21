@@ -25,7 +25,7 @@ subroutine elphyv &
 
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     , rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -108,8 +108,8 @@ subroutine elphyv &
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time steps)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -146,13 +146,13 @@ integer          nvar   , nscal
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel
-integer          ipcvis, ipccp , ipcray
+integer          ipcray
 integer          ipcvsl, ith   , iscal , ii
 integer          iiii  , ipcsig, it
 integer          iesp  , iesp1 , iesp2 , mode , isrrom
@@ -165,6 +165,8 @@ double precision coef(ngazgm,ngazgm)
 double precision roesp (ngazgm),visesp(ngazgm),cpesp(ngazgm)
 double precision sigesp(ngazgm),xlabes(ngazgm),xkabes(ngazgm)
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: viscl, cpro_cp
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -176,7 +178,6 @@ save             ipass
 
 ! Initialize variables to avoid compiler warnings
 
-ipccp = 0
 ipcvsl = 0
 ipcsig = 0
 ipcray = 0
@@ -225,16 +226,16 @@ endif
 !       IVISLS(IPOTI) = IVISLS(IPOTR)) et economiser NCEL reels .
 
 !      call field_get_val_s(icrom, crom)
-!      IPCVIS = IPPROC(IVISCL)
-!      IPCCP  = IPPROC(ICP)
+!      call field_get_val_s(iprpfl(iviscl), viscl)
+!      call field_get_val_s(iprpfl(icp), cpro_cp)
 !      IPCVSL = IPPROC(IVISLS(ISCALT))
 !      IPCSIR = IPPROC(IVISLS(IPOTR))
 !      IPCSII = IPPROC(IVISLS(IPOTI))
 
 !      PROPCE(IEL,IPPROC(ITEMP)) =
 !      crom(iel) =
-!      PROPCE(IEL,IPCVIS) =
-!      PROPCE(IEL,IPCCP) =
+!      viscl(iel) =
+!      cpro_cp(iel) =
 !      PROPCE(IEL,IPCVSL) =
 !      PROPCE(IEL,IPCSIR) =
 !      PROPCE(IEL,IPCSII) =
@@ -279,10 +280,8 @@ if ( ippmod(ielarc).ge.1 ) then
 !      Pointeurs pour les differentes variables
 
   call field_get_val_s(icrom, crom)
-  ipcvis = ipproc(iviscl)
-  if(icp.gt.0) then
-    ipccp  = ipproc(icp)
-  endif
+  call field_get_val_s(iprpfl(iviscl), viscl)
+  if(icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
   if(ivisls(iscalt).gt.0) then
     ipcvsl = ipproc(ivisls(iscalt))
   endif
@@ -440,7 +439,7 @@ if ( ippmod(ielarc).ge.1 ) then
       enddo
     enddo
 
-    propce(iel,ipcvis) = 0.d0
+    viscl(iel) = 0.d0
     do iesp1=1,ngazg
 
       somphi = 0.d0
@@ -451,7 +450,7 @@ if ( ippmod(ielarc).ge.1 ) then
         endif
       enddo
 
-      propce(iel,ipcvis) = propce(iel,ipcvis)                     &
+      viscl(iel) = viscl(iel)                     &
                           +visesp(iesp1)/(1.d0+somphi)
 
     enddo
@@ -461,10 +460,9 @@ if ( ippmod(ielarc).ge.1 ) then
 
     if(icp.gt.0) then
 
-      propce(iel,ipccp) = 0.d0
+      cpro_cp(iel) = 0.d0
       do iesp = 1, ngazg
-        propce(iel,ipccp) = propce(iel,ipccp )                    &
-                            +ym(iesp)*cpesp(iesp)
+        cpro_cp(iel) = cpro_cp(iel) + ym(iesp)*cpesp(iesp)
       enddo
 
     endif
@@ -492,8 +490,7 @@ if ( ippmod(ielarc).ge.1 ) then
         somphi = 0.d0
         do iesp2=1,ngazg
           if ( iesp1 .ne. iesp2 ) then
-            somphi = somphi                                       &
-                    +coef(iesp1,iesp2)*yvol(iesp2)/yvol(iesp1)
+            somphi = somphi + coef(iesp1,iesp2)*yvol(iesp2)/yvol(iesp1)
           endif
         enddo
 
@@ -505,7 +502,7 @@ if ( ippmod(ielarc).ge.1 ) then
 !        On divise par CP pour avoir Lambda/CP
 !          On suppose Cp renseigne au prealable.
 
-      if(ipccp.le.0) then
+      if(icp.le.0) then
 
 ! --- Si CP est uniforme, on utilise CP0
 
@@ -514,7 +511,7 @@ if ( ippmod(ielarc).ge.1 ) then
       else
 
 ! --- Si CP est non uniforme, on utilise le CP calcul au dessus
-        propce(iel,ipcvsl) = propce(iel,ipcvsl)/propce(iel,ipccp)
+        propce(iel,ipcvsl) = propce(iel,ipcvsl)/cpro_cp(iel)
 
       endif
     endif
@@ -613,20 +610,18 @@ if ( ippmod(ielion).ge.1  ) then
 !       VISCOSITE
 !       =========
 
-  ipcvis = ipproc(iviscl)
+  call field_get_val_s(iprpfl(iviscl), viscl)
   do iel = 1, ncel
-    propce(iel,ipcvis) = 1.d-2
+    viscl(iel) = 1.d-2
   enddo
 
 !       CHALEUR SPECIFIQUE VARIABLE J/(kg degres)
 !       =========================================
 
   if(icp.gt.0) then
-
-    ipccp  = ipproc(icp   )
-
+    call field_get_val_s(iprpfl(icp), cpro_cp)
     do iel = 1, ncel
-      propce(iel,ipccp ) = 1000.d0
+      cpro_cp(iel) = 1000.d0
     enddo
 
   endif
@@ -638,7 +633,7 @@ if ( ippmod(ielion).ge.1  ) then
 
     ipcvsl = ipproc(ivisls(iscalt))
 
-    if(ipccp.le.0) then
+    if(icp.le.0) then
 
 ! --- Si CP est uniforme, on utilise CP0
 
@@ -650,7 +645,7 @@ if ( ippmod(ielion).ge.1  ) then
 
 ! --- Si CP est non uniforme, on utilise PROPCE ci dessus
       do iel = 1, ncel
-        propce(iel,ipcvsl) = 1.d0 /propce(iel,ipccp)
+        propce(iel,ipcvsl) = 1.d0 /cpro_cp(iel)
       enddo
 
     endif

@@ -134,7 +134,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 integer          iel
 integer          ii    , jj    , kk    , iiun  , iii   , jjj
-integer          ipcvis, iflmas, iflmab
+integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -174,6 +174,10 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:), pointer :: cvara_ep, cvar_al
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
+double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 
@@ -198,7 +202,18 @@ if (iwarni(ivar).ge.1) then
 endif
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), viscl)
+
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+if (iturb.ne.31) call field_get_val_s(ivarfl(ial), cvar_al)
+
+call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
@@ -435,33 +450,33 @@ do iel=1,ncel
   endif
 
   ! Pij
-  xprod(1,1) = -2.0d0*(rtpa(iel,ir11)*gradv(1, 1, iel) +         &
-                       rtpa(iel,ir12)*gradv(2, 1, iel) +         &
-                       rtpa(iel,ir13)*gradv(3, 1, iel) )
-  xprod(1,2) = -(      rtpa(iel,ir11)*gradv(1, 2, iel) +         &
-                       rtpa(iel,ir12)*gradv(2, 2, iel) +         &
-                       rtpa(iel,ir13)*gradv(3, 2, iel) )         &
-               -(      rtpa(iel,ir12)*gradv(1, 1, iel) +         &
-                       rtpa(iel,ir22)*gradv(2, 1, iel) +         &
-                       rtpa(iel,ir23)*gradv(3, 1, iel) )
-  xprod(1,3) = -(      rtpa(iel,ir11)*gradv(1, 3, iel) +         &
-                       rtpa(iel,ir12)*gradv(2, 3, iel) +         &
-                       rtpa(iel,ir13)*gradv(3, 3, iel) )         &
-               -(      rtpa(iel,ir13)*gradv(1, 1, iel) +         &
-                       rtpa(iel,ir23)*gradv(2, 1, iel) +         &
-                       rtpa(iel,ir33)*gradv(3, 1, iel) )
-  xprod(2,2) = -2.0d0*(rtpa(iel,ir12)*gradv(1, 2, iel) +         &
-                       rtpa(iel,ir22)*gradv(2, 2, iel) +         &
-                       rtpa(iel,ir23)*gradv(3, 2, iel) )
-  xprod(2,3) = -(      rtpa(iel,ir12)*gradv(1, 3, iel) +         &
-                       rtpa(iel,ir22)*gradv(2, 3, iel) +         &
-                       rtpa(iel,ir23)*gradv(3, 3, iel) )         &
-               -(      rtpa(iel,ir13)*gradv(1, 2, iel) +         &
-                       rtpa(iel,ir23)*gradv(2, 2, iel) +         &
-                       rtpa(iel,ir33)*gradv(3, 2, iel) )
-  xprod(3,3) = -2.0d0*(rtpa(iel,ir13)*gradv(1, 3, iel) +         &
-                       rtpa(iel,ir23)*gradv(2, 3, iel) +         &
-                       rtpa(iel,ir33)*gradv(3, 3, iel) )
+  xprod(1,1) = -2.0d0*(cvara_r11(iel)*gradv(1, 1, iel) +         &
+                       cvara_r12(iel)*gradv(2, 1, iel) +         &
+                       cvara_r13(iel)*gradv(3, 1, iel) )
+  xprod(1,2) = -(      cvara_r11(iel)*gradv(1, 2, iel) +         &
+                       cvara_r12(iel)*gradv(2, 2, iel) +         &
+                       cvara_r13(iel)*gradv(3, 2, iel) )         &
+               -(      cvara_r12(iel)*gradv(1, 1, iel) +         &
+                       cvara_r22(iel)*gradv(2, 1, iel) +         &
+                       cvara_r23(iel)*gradv(3, 1, iel) )
+  xprod(1,3) = -(      cvara_r11(iel)*gradv(1, 3, iel) +         &
+                       cvara_r12(iel)*gradv(2, 3, iel) +         &
+                       cvara_r13(iel)*gradv(3, 3, iel) )         &
+               -(      cvara_r13(iel)*gradv(1, 1, iel) +         &
+                       cvara_r23(iel)*gradv(2, 1, iel) +         &
+                       cvara_r33(iel)*gradv(3, 1, iel) )
+  xprod(2,2) = -2.0d0*(cvara_r12(iel)*gradv(1, 2, iel) +         &
+                       cvara_r22(iel)*gradv(2, 2, iel) +         &
+                       cvara_r23(iel)*gradv(3, 2, iel) )
+  xprod(2,3) = -(      cvara_r12(iel)*gradv(1, 3, iel) +         &
+                       cvara_r22(iel)*gradv(2, 3, iel) +         &
+                       cvara_r23(iel)*gradv(3, 3, iel) )         &
+               -(      cvara_r13(iel)*gradv(1, 2, iel) +         &
+                       cvara_r23(iel)*gradv(2, 2, iel) +         &
+                       cvara_r33(iel)*gradv(3, 2, iel) )
+  xprod(3,3) = -2.0d0*(cvara_r13(iel)*gradv(1, 3, iel) +         &
+                       cvara_r23(iel)*gradv(2, 3, iel) +         &
+                       cvara_r33(iel)*gradv(3, 3, iel) )
 
   ! Rotating frame of reference => "Coriolis production" term
   if (icorio.eq.1 .or. iturbo.eq.1) then
@@ -483,7 +498,7 @@ do iel=1,ncel
   xprod(3,2) = xprod(2,3)
 
   trprod = d1s2 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
-  trrij  = d1s2 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+  trrij  = d1s2 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
 !-----> aII = aijaij
   aii    = 0.d0
   aklskl = 0.d0
@@ -491,12 +506,12 @@ do iel=1,ncel
   aikrjk = 0.d0
   aikakj = 0.d0
   ! aij
-  xaniso(1,1) = rtpa(iel,ir11)/trrij - d2s3
-  xaniso(2,2) = rtpa(iel,ir22)/trrij - d2s3
-  xaniso(3,3) = rtpa(iel,ir33)/trrij - d2s3
-  xaniso(1,2) = rtpa(iel,ir12)/trrij
-  xaniso(1,3) = rtpa(iel,ir13)/trrij
-  xaniso(2,3) = rtpa(iel,ir23)/trrij
+  xaniso(1,1) = cvara_r11(iel)/trrij - d2s3
+  xaniso(2,2) = cvara_r22(iel)/trrij - d2s3
+  xaniso(3,3) = cvara_r33(iel)/trrij - d2s3
+  xaniso(1,2) = cvara_r12(iel)/trrij
+  xaniso(1,3) = cvara_r13(iel)/trrij
+  xaniso(2,3) = cvara_r23(iel)/trrij
   xaniso(2,1) = xaniso(1,2)
   xaniso(3,1) = xaniso(1,3)
   xaniso(3,2) = xaniso(2,3)
@@ -566,28 +581,28 @@ do iel=1,ncel
   if (iturb.eq.31) then
 
     pij = xprod(iii,jjj)
-    phiij1 = -rtpa(iel,iep)* &
+    phiij1 = -cvara_ep(iel)* &
        (cssgs1*xaniso(iii,jjj)+cssgs2*(aikakj-d1s3*deltij*aii))
     phiij2 = - cssgr1*trprod*xaniso(iii,jjj)                             &
            +   trrij*xstrai(iii,jjj)*(cssgr2-cssgr3*sqrt(aii))           &
            +   cssgr4*trrij*(aiksjk-d2s3*deltij*aklskl)                  &
            +   cssgr5*trrij* aikrjk
-    epsij = -d2s3*rtpa(iel,iep)*deltij
+    epsij = -d2s3*cvara_ep(iel)*deltij
 
     w1(iel) = cromo(iel)*volume(iel)*(pij+phiij1+phiij2+epsij)
 
-    w2(iel) = volume(iel)/trrij*crom(iel)*(                &
-           cssgs1*rtpa(iel,iep) + cssgr1*max(trprod,0.d0) )
+    w2(iel) = volume(iel)/trrij*crom(iel)*(                              &
+           cssgs1*cvara_ep(iel) + cssgr1*max(trprod,0.d0) )
 
   ! EBRSM
   else
 
-    xrij(1,1) = rtpa(iel,ir11)
-    xrij(2,2) = rtpa(iel,ir22)
-    xrij(3,3) = rtpa(iel,ir33)
-    xrij(1,2) = rtpa(iel,ir12)
-    xrij(1,3) = rtpa(iel,ir13)
-    xrij(2,3) = rtpa(iel,ir23)
+    xrij(1,1) = cvara_r11(iel)
+    xrij(2,2) = cvara_r22(iel)
+    xrij(3,3) = cvara_r33(iel)
+    xrij(1,2) = cvara_r12(iel)
+    xrij(1,3) = cvara_r13(iel)
+    xrij(2,3) = cvara_r23(iel)
     xrij(2,1) = xrij(1,2)
     xrij(3,1) = xrij(1,3)
     xrij(3,2) = xrij(2,3)
@@ -607,10 +622,10 @@ do iel=1,ncel
         phiijw = phiijw - xrij(kk,ll)*xnal(kk)*xnal(ll)*xnnd
       enddo
     enddo
-    phiijw = -5.d0*rtpa(iel,iep)/trrij * phiijw
+    phiijw = -5.d0*cvara_ep(iel)/trrij * phiijw
 
     ! Calcul du terme quasi-homogene \Phi_{ij}^h --> W4
-    phiij1 = -rtpa(iel,iep)*cebms1*xaniso(iii,jjj)
+    phiij1 = -cvara_ep(iel)*cebms1*xaniso(iii,jjj)
     phiij2 = -cebmr1*trprod*xaniso(iii,jjj)                       &
                +trrij*xstrai(iii,jjj)*(cebmr2-cebmr3*sqrt(aii))   &
                +cebmr4*trrij   *(aiksjk-d2s3*deltij*aklskl)       &
@@ -618,17 +633,17 @@ do iel=1,ncel
 
     ! Calcul de \e_{ij}^w --> W5 (Rotta model)
     ! Rij/k*epsilon
-    epsijw =  xrij(iii,jjj)/trrij   *rtpa(iel,iep)
+    epsijw =  xrij(iii,jjj)/trrij   *cvara_ep(iel)
 
     ! Calcul de \e_{ij}^h --> W6
-    epsij =  d2s3*rtpa(iel,iep)*deltij
+    epsij =  d2s3*cvara_ep(iel)*deltij
 
     ! Calcul du terme source explicite de l'equation des Rij
     !   [ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
     !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ] --> W1
-    alpha3 = rtp(iel,ial)**3
+    alpha3 = cvar_al(iel)**3
 
-    w1(iel) = volume(iel)*crom(iel)*(                    &
+    w1(iel) = volume(iel)*crom(iel)*(                             &
                xprod(iii,jjj)                                     &
             + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)       &
             - (1.d0-alpha3)*epsijw - alpha3*epsij)
@@ -638,13 +653,13 @@ do iel=1,ncel
     ! le terme ci-dessous correspond a la partie implicitee du SSG
     ! dans le cadre de la ponderation elliptique, il est multiplie par
     ! \alpha^3
-    w2(iel) = volume(iel)*crom(iel)*(                    &
-              cebms1*rtpa(iel,iep)/trrij*alpha3                   &
+    w2(iel) = volume(iel)*crom(iel)*(                             &
+              cebms1*cvara_ep(iel)/trrij*alpha3                       &
              +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
     ! Implicitation de epsijw
     ! (le facteur 5 apparait lorsqu'on fait Phi_{ij}^w - epsijw)
-            + 5.d0 * (1.d0-alpha3)*rtpa(iel,iep)/trrij            &
-            +        (1.d0-alpha3)*rtpa(iel,iep)/trrij)
+            + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
+            +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
   endif
 
 enddo
@@ -681,7 +696,7 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe(nscal, ivar, rtpa, gradro, w7)
+  call rijthe(nscal, ivar, gradro, w7)
   !==========
 
   ! Si on extrapole les T.S. : PROPCE
@@ -711,9 +726,9 @@ if (idften(ivar).eq.6) then
   call field_get_val_v(ivsten, visten)
 
   do iel = 1, ncel
-    viscce(1,iel) = visten(1,iel) + propce(iel,ipcvis)
-    viscce(2,iel) = visten(2,iel) + propce(iel,ipcvis)
-    viscce(3,iel) = visten(3,iel) + propce(iel,ipcvis)
+    viscce(1,iel) = visten(1,iel) + viscl(iel)
+    viscce(2,iel) = visten(2,iel) + viscl(iel)
+    viscce(3,iel) = visten(3,iel) + viscl(iel)
     viscce(4,iel) = visten(4,iel)
     viscce(5,iel) = visten(5,iel)
     viscce(6,iel) = visten(6,iel)
@@ -731,9 +746,9 @@ if (idften(ivar).eq.6) then
 else
 
   do iel = 1, ncel
-    trrij = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
-    rctse = crom(iel) * csrij * trrij**2 / rtpa(iel,iep)
-    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse
+    trrij = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
+    w1(iel) = viscl(iel) + idifft(ivar)*rctse
   enddo
 
   call viscfa                    &

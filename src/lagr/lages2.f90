@@ -25,7 +25,7 @@ subroutine lages2 &
 
  ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   rtpa   , propce ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , piil   ,          &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , auxl   , gradpr ,                                     &
@@ -57,7 +57,7 @@ subroutine lages2 &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
+! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
@@ -120,7 +120,7 @@ implicit none
 integer          nbpmax , nvp    , nvep  , nivep
 integer          itepa(nbpmax,nivep)
 
-double precision rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
+double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)

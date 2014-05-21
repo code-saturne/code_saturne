@@ -81,10 +81,12 @@ double precision, dimension(nfbrps), intent(out)   :: bflux
 integer ::         inc, iccocg
 integer ::         ifac, iloc, ivar
 integer ::         iel
-integer ::         ipcvsl, ipcvst, iflmab
+integer ::         ipcvsl, iflmab
 
 double precision :: xvsl  , srfbn
 double precision :: visct , flumab, diipbx, diipby, diipbz, tcel
+
+double precision, dimension(:), pointer :: cvisct
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -117,7 +119,7 @@ if (iscalt.gt.0) then
   else
     ipcvsl = 0
   endif
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(ivisct), cvisct)
   call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
   call field_get_val_s(iflmab, bmasfl)
 
@@ -158,7 +160,7 @@ if (iscalt.gt.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct  = propce(iel,ipcvst)
+      visct  = cvisct(iel)
       flumab = bmasfl(ifac)
 
       bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
@@ -185,7 +187,7 @@ if (iscalt.gt.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct  = propce(iel,ipcvst)
+      visct  = cvisct(iel)
       flumab = bmasfl(ifac)
 
       bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
@@ -420,11 +422,13 @@ double precision, dimension(nfbrps), intent(out)   :: bnussl
 
 integer ::         inc, iccocg
 integer ::         iel, ifac, iloc, ivar
-integer ::         ipcvsl, ipcvst, itplus, itstar
+integer ::         ipcvsl, itplus, itstar
 
 double precision :: xvsl  , srfbn
 double precision :: visct , diipbx, diipby, diipbz
 double precision :: numer, denom, tcel
+
+double precision, dimension(:), pointer :: cvisct
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -459,7 +463,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
   else
     ipcvsl = 0
   endif
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(ivisct), cvisct)
 
   ! Compute variable values at boundary faces
 
@@ -501,7 +505,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct = propce(iel,ipcvst)
+      visct = cvisct(iel)
 
       numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
       denom = xvsl * tplusp(ifac)*tstarp(ifac)
@@ -533,7 +537,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct = propce(iel,ipcvst)
+      visct = cvisct(iel)
 
       numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
       denom = xvsl * tplusp(ifac)*tstarp(ifac)

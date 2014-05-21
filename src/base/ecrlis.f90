@@ -24,7 +24,7 @@ subroutine ecrlis &
 !================
 
  ( nvar   , ncelet , ncel   ,                                     &
-   rtp    , rtpa   , dt     , volume )
+   dt     , volume )
 
 !===============================================================================
 !  FONCTION  :
@@ -40,11 +40,6 @@ subroutine ecrlis &
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! irtp             ! e  ! <-- ! indice de rtp dans ra                          !
-! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
-! (ncelet,nvar)    !    !     !                                                !
-! rtpa             ! tr ! <-- ! tableaux des variables au pdt prec             !
-! (ncelet,nvar)    !    !     !                                                !
 ! dt   (ncelet)    ! tr ! <-- ! valeur du pas de temps                         !
 ! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
 ! (ncelet)         !    !     !                                                !
@@ -78,7 +73,6 @@ use field
 implicit none
 
 integer          nvar, ncelet, ncel
-double precision rtpa(ncelet,nflown:nvar), rtp(ncelet,nflown:nvar)
 double precision dt(ncelet), volume(ncelet)
 
 ! Local variables

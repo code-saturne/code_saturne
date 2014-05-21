@@ -184,8 +184,11 @@ double precision rinfiv(3)
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cp, yplbr
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr
 double precision, dimension(:), allocatable :: byplus, buk, buet, buplus, bcfnns
+
+double precision, dimension(:), pointer :: cvar_k
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 
 double precision, dimension(:,:), pointer :: coefau, cofafu
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -440,11 +443,23 @@ endif
 
 ! --- Physical quantities
 call field_get_val_s(icrom, crom)
+
+if (itytur.eq.2 .or. itytur.eq.5                             &
+    .or. iturb.eq.60 .or. iturb.eq.50 .or. iturb.eq.51) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+endif
+
+if(itytur.eq.3) then
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
+endif
+
 call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 if (icp.gt.0) then
   ifccp  = iprpfl(icp)
-  call field_get_val_s(ifccp, cp)
+  call field_get_val_s(ifccp, cpro_cp)
 else
   ifccp = -1
 endif
@@ -689,9 +704,9 @@ do ifac = 1, nfabor
     else
 
       if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
-        ek = rtp(iel,ik)
+        ek = cvar_k(iel)
       else if(itytur.eq.3) then
-        ek = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
+        ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
       endif
 
       uk = cmu025*sqrt(ek)
@@ -1066,7 +1081,7 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on epsilon
       !----------------------------------------
 
-      pimp = 2.0d0*visclc/romc*rtp(iel,ik)/distbf**2
+      pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
@@ -1120,7 +1135,7 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition on epsilon
       !----------------------------------------
 
-      pimp = visclc/romc*rtp(iel,ik)/distbf**2
+      pimp = visclc/romc*cvar_k(iel)/distbf**2
       hint = (visclc+visctc/sigmae)/distbf
 
       call set_dirichlet_scalar &
@@ -1499,7 +1514,7 @@ double precision visci(3,3), hintt(6)
 character(len=80) :: fname
 
 double precision, dimension(:), pointer :: val_s, crom, viscls
-double precision, dimension(:), pointer :: viscl, visct, cp, cv
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cv
 
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
@@ -1535,7 +1550,7 @@ call field_get_coefbf_s(f_id, cofbfp)
 call field_get_val_s(icrom, crom)
 if (icp.gt.0) then
   ifccp = iprpfl(icp)
-  call field_get_val_s(ifccp, cp)
+  call field_get_val_s(ifccp, cpro_cp)
 else
   ifccp = -1
 endif
@@ -1622,7 +1637,7 @@ do ifac = 1, nfabor
     cpp = 1.d0
     if (iscacp(iscal).eq.1) then
       if (ifccp.ge.0) then
-        cpp = cp(iel)
+        cpp = cpro_cp(iel)
       else
         cpp = cp0
       endif
@@ -1645,7 +1660,7 @@ do ifac = 1, nfabor
 
     if (iscal.eq.iscalt .and. itherm.eq.3) then
       if (ifccp.ge.0) then
-        prdtl = prdtl*cp(iel)
+        prdtl = prdtl*cpro_cp(iel)
       else
         prdtl = prdtl*cp0
       endif
@@ -1661,7 +1676,7 @@ do ifac = 1, nfabor
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (ifccp.ge.0) then
-          cpscv = cp(iel)
+          cpscv = cpro_cp(iel)
         else
           cpscv = cp0
         endif
@@ -1680,7 +1695,7 @@ do ifac = 1, nfabor
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (ifccp.ge.0) then
-          cpscv = cp(iel)
+          cpscv = cpro_cp(iel)
         else
           cpscv = cp0
         endif
@@ -1841,7 +1856,7 @@ do ifac = 1, nfabor
       !         iscsth(ii).eq.2 : hconv(ifac) = hint*cpr
       !         avec
       !            if (ifccp.ge.0) then
-      !              cpr = cp(iel)
+      !              cpr = cpro_cp(iel)
       !            else
       !              cpr = cp0
       !            endif
@@ -1867,7 +1882,7 @@ do ifac = 1, nfabor
         if (itherm.eq.2) then
           ! If Cp is variable
           if (ifccp.ge.0) then
-            bhconv(ifac) = hflui*cp(iel)
+            bhconv(ifac) = hflui*cpro_cp(iel)
           else
             bhconv(ifac) = hflui*cp0
           endif

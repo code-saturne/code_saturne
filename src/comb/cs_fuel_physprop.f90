@@ -24,7 +24,7 @@ subroutine cs_fuel_physprop &
 !==========================
 
  ( mbrom  , izfppp ,                                              &
-   rtp    , rtpa   , propce )
+   rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -40,7 +40,7 @@ subroutine cs_fuel_physprop &
 !   (nphmx   )     !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
@@ -82,7 +82,7 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

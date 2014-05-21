@@ -25,7 +25,7 @@ subroutine cfdttv &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , propce ,                                              &
    ckupdc , smacel ,                                              &
    wcf    ,                                                       &
    wflmas , wflmab , viscb  )
@@ -50,8 +50,6 @@ subroutine cfdttv &
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
@@ -99,7 +97,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
@@ -116,6 +114,7 @@ double precision, allocatable, dimension(:) :: w1, c2
 
 double precision, dimension(:,:), pointer :: vela
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
 
@@ -135,6 +134,8 @@ allocate(w1(ncelet))
 
 call field_get_val_s(icrom, crom)
 
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+
 !===============================================================================
 ! 1. COMPUTATION OF THE CFL CONDITION ASSOCIATED TO THE PRESSURE EQUATION
 !===============================================================================
@@ -153,7 +154,7 @@ call cfmsfp                                                       &
 !==========
  ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , vela   ,                            &
+   dt     , propce , vela   ,                                     &
    ckupdc , smacel ,                                              &
    wflmas , wflmab )
 
@@ -182,14 +183,14 @@ call matrdt &
 
 allocate(c2(ncelet))
 
-call cf_thermo_c_square( rtp(1,ipr), crom, c2, ncel)
+call cf_thermo_c_square( cvar_pr, crom, c2, ncel)
 !======================
 
 ! Compute the coefficient CFL/dt
 
 do iel = 1, ncel
   wcf(iel) = w1(iel) * c2(iel) * crom(iel)                        &
-             / (rtp(iel,ipr) * volume(iel))
+             / (cvar_pr(iel) * volume(iel))
 enddo
 
 ! Free memory

@@ -90,7 +90,7 @@ double precision gradt(ncelet,3)
 integer          iel
 integer          ii, ivar
 integer          ipput, ippvt, ippwt
-integer          ipcvis, ipcvst, iflmas, iflmab
+integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -129,6 +129,10 @@ double precision, dimension(:,:), pointer :: coefav, cofafv, visten
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: cvar_ep
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
 
@@ -150,8 +154,17 @@ if ((itytur.eq.2).or.(itytur.eq.5).or.(iturb.eq.60)) then
 endif
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
+
+call field_get_val_s(ivarfl(iep), cvar_ep)
+
+call field_get_val_s(ivarfl(ir11), cvar_r11)
+call field_get_val_s(ivarfl(ir22), cvar_r22)
+call field_get_val_s(ivarfl(ir33), cvar_r33)
+call field_get_val_s(ivarfl(ir12), cvar_r12)
+call field_get_val_s(ivarfl(ir13), cvar_r13)
+call field_get_val_s(ivarfl(ir23), cvar_r23)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -243,16 +256,16 @@ enddo
 !===============================================================================
 
 do iel = 1, ncel
-  trrij  = d1s2*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
+  trrij  = d1s2*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
   ! --- calcul de l echelle de temps de Durbin
-  xttke  = trrij/rtp(iel,iep)
+  xttke  = trrij/cvar_ep(iel)
 
-  xrij(1,1) = rtp(iel,ir11)
-  xrij(2,2) = rtp(iel,ir22)
-  xrij(3,3) = rtp(iel,ir33)
-  xrij(1,2) = rtp(iel,ir12)
-  xrij(1,3) = rtp(iel,ir13)
-  xrij(2,3) = rtp(iel,ir23)
+  xrij(1,1) = cvar_r11(iel)
+  xrij(2,2) = cvar_r22(iel)
+  xrij(3,3) = cvar_r33(iel)
+  xrij(1,2) = cvar_r12(iel)
+  xrij(1,3) = cvar_r13(iel)
+  xrij(2,3) = cvar_r23(iel)
   xrij(2,1) = xrij(1,2)
   xrij(3,1) = xrij(1,3)
   xrij(3,2) = xrij(2,3)
@@ -308,14 +321,14 @@ enddo
 
 do iel = 1, ncel
   if (ipcvsl.gt.0) then
-    prdtl = propce(iel,ipcvis)*xcpp(iel)/propce(iel,ipproc(ivisls(iscal)))
+    prdtl = viscl(iel)*xcpp(iel)/propce(iel,ipproc(ivisls(iscal)))
   else
-    prdtl = propce(iel,ipcvis)*xcpp(iel)/visls0(iscal)
+    prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
   endif
 
   do isou = 1, 6
     if (isou.le.3) then
-      viscce(isou,iel) = d1s2*(propce(iel,ipcvis)*(1.d0+1.d0/prdtl))    &
+      viscce(isou,iel) = d1s2*(viscl(iel)*(1.d0+1.d0/prdtl))    &
                        + ctheta(iscal)*visten(isou,iel)/csrij
     else
       viscce(isou,iel) = ctheta(iscal)*visten(isou,iel)/csrij

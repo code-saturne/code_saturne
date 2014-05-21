@@ -110,11 +110,29 @@ double precision, allocatable, dimension(:) :: trav5, trav6, trav7, trav8
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_pr, cvar_k, cvar_ep, cvar_phi, cvar_fb, cvar_omg
 
 !===============================================================================
 
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
+
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+
+if (itytur.eq.2) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+else if (itytur.eq.3) then
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+else if (iturb.eq.50) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+  call field_get_val_s(ivarfl(iphi), cvar_phi)
+  call field_get_val_s(ivarfl(ifb), cvar_fb)
+else if (iturb.eq.60) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iomg), cvar_omg)
+endif
 
 !=========================================================================
 ! 1.  INITIALISATIONS
@@ -221,7 +239,7 @@ if (ifaccp.eq.1) then
     yjjp = djppts(2,ipt)
     zjjp = djppts(3,ipt)
 
-    rvdis(ipt,ipos) = rtp(iel,ipr) &
+    rvdis(ipt,ipos) = cvar_pr(iel) &
          + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     ! On prend en compte le potentiel centrifuge en repère relatif
@@ -404,7 +422,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav1(ipt) = rtp(iel,ik)                         &
+      trav1(ipt) = cvar_k(iel)                         &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -421,7 +439,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav1(ipt) = rtp(iel,ik)                         &
+      trav1(ipt) = cvar_k(iel)                         &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -446,7 +464,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav2(ipt) = rtp(iel,iep)                        &
+      trav2(ipt) = cvar_ep(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -463,7 +481,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav2(ipt) = rtp(iel,iep)                        &
+      trav2(ipt) = cvar_ep(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -717,7 +735,7 @@ elseif (itytur.eq.3) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav7(ipt) = rtp(iel,iep)                        &
+      trav7(ipt) = cvar_ep(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -734,7 +752,7 @@ elseif (itytur.eq.3) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav7(ipt) = rtp(iel,iep)                        &
+      trav7(ipt) = cvar_ep(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -871,7 +889,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav1(ipt) = rtp(iel,ik)                         &
+      trav1(ipt) = cvar_k(iel)                         &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -888,7 +906,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav1(ipt) = rtp(iel,ik)                         &
+      trav1(ipt) = cvar_k(iel)                         &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -913,7 +931,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav2(ipt) = rtp(iel,iep)                        &
+      trav2(ipt) = cvar_ep(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -930,7 +948,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav2(ipt) = rtp(iel,iep)                        &
+      trav2(ipt) = cvar_ep(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -951,7 +969,7 @@ elseif (iturb.eq.50) then
     yjjp = djppts(2,ipt)
     zjjp = djppts(3,ipt)
 
-    trav3(ipt) = rtp(iel,iphi)                        &
+    trav3(ipt) = cvar_phi(iel)                        &
          + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
   enddo
@@ -974,7 +992,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav4(ipt) = rtp(iel,ifb)                        &
+      trav4(ipt) = cvar_fb(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -991,7 +1009,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav4(ipt) = rtp(iel,ifb)                        &
+      trav4(ipt) = cvar_fb(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -1073,7 +1091,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav1(ipt) = rtp(iel,ik)                         &
+      trav1(ipt) = cvar_k(iel)                         &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -1090,7 +1108,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav1(ipt) = rtp(iel,ik)                         &
+      trav1(ipt) = cvar_k(iel)                         &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -1115,7 +1133,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav2(ipt) = rtp(iel,iomg)                        &
+      trav2(ipt) = cvar_omg(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo
@@ -1132,7 +1150,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      trav2(ipt) = rtp(iel,iomg)                        &
+      trav2(ipt) = cvar_omg(iel)                        &
            + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
     enddo

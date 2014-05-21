@@ -23,11 +23,11 @@
 subroutine cou1do &
 !================
 
- ( nvar   , nscal  , ncp    , nfpt1d ,                            &
+ ( nvar   , nscal  , nfpt1d ,                                     &
    ientha , ifpt1d , iclt1d ,                                     &
    tppt1d , tept1d , hept1d , fept1d ,                            &
-   xlmbt1 , rcpt1d , dtpt1d , dt     , rtpa   ,                   &
-   cpcst  , cp     , hbord  , tbord  )
+   xlmbt1 , rcpt1d , dtpt1d , dt     ,                            &
+   hbord  , tbord  )
 
 !===============================================================================
 ! FONCTION :
@@ -42,7 +42,6 @@ subroutine cou1do &
 !__________________!____!_____!________________________________________________!
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncp              ! e  ! <-- ! dimension de cp (ncelet ou 1)                  !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -51,8 +50,6 @@ subroutine cou1do &
 ! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
 !                  !    !     ! thermique en paroi                             !
 ! iclt1d           ! te ! <-- ! type de condition limite                       !
-! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
-! cp(ncp)          ! tr ! <-- ! chaleur specifique si variable                 !
 ! hbord            ! tr ! <-- ! coefficients d'echange aux bords               !
 ! (nfabor)         !    !     !                                                !
 ! tbord            ! tr ! <-- ! temperatures aux bords                         !
@@ -82,6 +79,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
+use field
 use parall
 use period
 use pointe, only: izft1d
@@ -93,14 +91,13 @@ implicit none
 
 ! Arguments
 integer          nfpt1d
-integer          nvar   , nscal  , ncp
+integer          nvar   , nscal
 
 integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ientha
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision hbord(nfabor),tbord(nfabor)
-double precision cpcst, cp(ncp)
 double precision tppt1d(nfpt1d)
 double precision tept1d(nfpt1d), hept1d(nfpt1d), fept1d(nfpt1d)
 double precision xlmbt1(nfpt1d), rcpt1d(nfpt1d), dtpt1d(nfpt1d)
@@ -116,9 +113,13 @@ integer          ivoid(1)
 double precision enthal, temper
 
 double precision rvoid(1)
+double precision, dimension(:), pointer :: cpro_cp
 
 !===============================================================================
 
+if(icp.gt.0) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+endif
 
 !     SI ENTHALPIE, ON TRANSFORME EN TEMPERATURE
 !     Il est necessaire de transmettre a SYRTHES des Temperatures
@@ -144,10 +145,10 @@ if(ientha.eq.1) then
       call usthht (mode   , enthal , temper  )
       !==========
       tbord(ifac) = temper
-      if(ncp.eq.ncelet) then
-         hbord(ifac) = hbord(ifac)*cp(iel)
+      if(icp.gt.0) then
+         hbord(ifac) = hbord(ifac)*cpro_cp(iel)
       else
-         hbord(ifac) = hbord(ifac)*cpcst
+         hbord(ifac) = hbord(ifac)*cp0
       endif
    enddo
 endif

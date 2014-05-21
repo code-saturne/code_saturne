@@ -24,7 +24,6 @@ subroutine cttssc &
 !================
 
  ( iscal  ,                                                       &
-   rtp    ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -38,8 +37,6 @@ subroutine cttssc &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -77,7 +74,6 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables

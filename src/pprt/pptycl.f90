@@ -243,7 +243,7 @@ nozapm = izonem
 
 if (ippmod(icod3p).ge.0) then
 
-  call d3ptcl(itypfb, izfppp, propce, rcodcl)
+  call d3ptcl(itypfb, izfppp, rcodcl)
   !==========
 
 ! ---> Combustion gaz USEBUC
@@ -251,7 +251,7 @@ if (ippmod(icod3p).ge.0) then
 
 elseif (ippmod(icoebu).ge.0) then
 
-  call ebutcl(itypfb, izfppp, propce, rcodcl)
+  call ebutcl(itypfb, izfppp, rcodcl)
   !==========
 
 ! ---> Combustion gaz USLWCC
@@ -259,28 +259,28 @@ elseif (ippmod(icoebu).ge.0) then
 
 elseif (ippmod(icolwc).ge.0) then
 
-  call lwctcl(itypfb, izfppp, propce, rcodcl)
+  call lwctcl(itypfb, izfppp, rcodcl)
   !==========
 
 ! ---> Combustion charbon pulverise USCPCL
 
 elseif ( ippmod(iccoal).ge.0 ) then
 
-  call cs_coal_bcond(itypfb, izfppp, propce, rcodcl)
+  call cs_coal_bcond(itypfb, izfppp, rcodcl)
   !=================
 
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC
 
 elseif (ippmod(icpl3c).ge.0) then
 
-  call cpltcl(itypfb, izfppp, propce, rcodcl)
+  call cpltcl(itypfb, izfppp, rcodcl)
   !==========
 
 ! ---> Combustion fuel USFUCL
 
 elseif (ippmod(icfuel).ge.0) then
 
-  call cs_fuel_bcond(itypfb, izfppp, propce, rcodcl)
+  call cs_fuel_bcond(itypfb, izfppp, rcodcl)
   !=================
 
 ! ---> Compressible USCFCL
@@ -298,7 +298,7 @@ elseif (ippmod(icompf).ge.0) then
 
 elseif (ippmod(iatmos).ge.0) then
 
-  call attycl(itypfb, izfppp, propce, rcodcl)
+  call attycl(itypfb, izfppp, rcodcl)
   !==========
 
 ! ---> Ecoulements electrique

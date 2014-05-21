@@ -145,6 +145,9 @@ double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer :: val_vp
 
+double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cpro_cp
+
 !===============================================================================
 !     A noter :
 !        Lorsque qu'il est necessaire d'utiliser un ordre implicite
@@ -667,8 +670,8 @@ if (iecaux.eq.1) then
       itysup = 1
       nbval  = 1
       irtyp  = 2
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,ipproc(iviscl)))
+      call field_get_val_s(iprpfl(iviscl), viscl)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,viscl)
     endif
 
     if (iviext.gt.0) then
@@ -677,8 +680,8 @@ if (iecaux.eq.1) then
       itysup = 1
       nbval  = 1
       irtyp  = 2
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  propce(1,ipproc(ivisct)))
+      call field_get_val_s(iprpfl(ivisct), visct)
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,visct)
     endif
   endif
 
@@ -689,8 +692,8 @@ if (iecaux.eq.1) then
     itysup = 1
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propce(1,ipproc(icp)))
+    call field_get_val_s(iprpfl(icp), cpro_cp)
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,cpro_cp)
   endif
 
 !     Si on a des scalaires, on ecrit leur model de flux et

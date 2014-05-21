@@ -274,7 +274,7 @@ do ifac = 1, nfabor
 !         (Pbord = COEFB*Pi)
 !       Si on détend trop : Dirichlet homogene
 
-      call cf_thermo_wall_bc(rtp, wbfb, ifac)
+      call cf_thermo_wall_bc(wbfb, ifac)
       !===================
 
 !       En outre, il faut appliquer une pre-correction pour compenser

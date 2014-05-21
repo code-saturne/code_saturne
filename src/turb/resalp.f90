@@ -24,7 +24,7 @@ subroutine resalp &
 !================
 
  ( nvar   ,                                                       &
-   rtp    , rtpa   , propce )
+   rtp    , rtpa   )
 
 !===============================================================================
 ! Function :
@@ -42,8 +42,6 @@ subroutine resalp &
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -78,12 +76,11 @@ implicit none
 integer          nvar
 
 double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          ivar  , iel
-integer          ipcvis, ipcvlo, ipcvst
+integer          ipcvlo
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, ipp
 integer          iconvp, idiffp, ndircp, ireslp
@@ -108,6 +105,9 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: cvara_ep, cvara_al
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
 
@@ -120,8 +120,15 @@ allocate(viscf(nfac), viscb(nfabor))
 allocate(dpvar(ncelet))
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
+
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+call field_get_val_prev_s(ivarfl(ial), cvara_al)
+
+call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -156,7 +163,7 @@ endif
 
 thetv  = thetav(ivar)
 
-ipcvlo = ipcvis
+ipcvlo = ipproc(iviscl)
 if(isto2t.gt.0) then
   if(iviext.gt.0) then
     ipcvlo = ipproc(ivisla)
@@ -188,14 +195,14 @@ endif
 !FIXME the source term extrapolation is not well done!!!!
 do iel=1,ncel
 
-  xk = d1s2*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
-  xnu  = propce(iel,ipcvis)/crom(iel)
+  xk = d1s2*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
+  xnu  = viscl(iel)/crom(iel)
 
   ! Echelle de longueur integrale
-  xllke = xk**d3s2/rtpa(iel,iep)
+  xllke = xk**d3s2/cvara_ep(iel)
 
   ! Echelle de longueur de Kolmogorov
-  xllkmg = xceta*(xnu**3/rtpa(iel,iep))**d1s4
+  xllkmg = xceta*(xnu**3/cvara_ep(iel))**d1s4
 
   ! Echelle de longueur de Durbin
   xlldrb = xcl*max(xllke,xllkmg)
@@ -203,7 +210,7 @@ do iel=1,ncel
   l2      = xlldrb**2
 
 ! Terme explicite
-  smbr(iel) = volume(iel)*(1.d0 -rtpa(iel,ial)) / l2
+  smbr(iel) = volume(iel)*(1.d0 -cvara_al(iel)) / l2
 
 ! Terme implicite
   rovsdt(iel) = (rovsdt(iel) + volume(iel)*thetap) / l2

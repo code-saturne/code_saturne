@@ -143,6 +143,7 @@ double precision, allocatable, dimension(:) :: c2
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: rhopre, crom
+double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
 !===============================================================================
@@ -175,6 +176,8 @@ call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_s(icrom, crom)
 call field_get_val_prev_s(icrom, rhopre)
+
+call field_get_val_s(ivarfl(ipr), cvar_pr)
 
 call field_get_label(ivarfl(ivar), chaine)
 
@@ -230,7 +233,7 @@ endif
 
 allocate(c2(ncelet))
 
-call cf_thermo_c_square( rtp(1,ipr), crom, c2, ncel)
+call cf_thermo_c_square( cvar_pr, crom, c2, ncel)
 !======================
 
 do iel = 1, ncel
@@ -249,7 +252,7 @@ call cfmsfp                                                                     
 !==========
 ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                  &
   icepdc , icetsm , itypsm ,                                                    &
-  dt     , rtpa   , propce , vela   ,                                           &
+  dt     , propce , vela   ,                                                    &
   ckupdc , smacel ,                                                             &
   wflmas , wflmab )
 
@@ -356,7 +359,7 @@ call codits                                                                     
 ! --- User intervention for a finer management of the bounds and possible
 !       corrective treatement.
 
-call cf_check_pressure(rtp(1,ipr), ncel)
+call cf_check_pressure(cvar_pr, ncel)
 !=====================
 
 ! --- Explicit balance (see codits : the increment is withdrawn)

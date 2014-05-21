@@ -61,8 +61,6 @@
 !> \param[in]     isostd        indicator of standard outlet and index
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     coefa_dp      boundary conditions for the pressure increment
 !> \param[in]     coefb_dp      boundary conditions for the pressure increment
@@ -86,7 +84,7 @@
 subroutine resopv &
  ( nvar   , ncesmp ,                                              &
    icetsm , isostd ,                                              &
-   dt     , rtp    , rtpa   , vel    ,                            &
+   dt     , vel    ,                                              &
    propce ,                                                       &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
    smacel ,                                                       &
@@ -134,7 +132,6 @@ integer          ncesmp
 integer          icetsm(ncesmp)
 integer          isostd(nfabor+1)
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision, dimension (1:ncelet), target :: dt
 double precision propce(ncelet,*)
 double precision smacel(ncesmp,nvar)
@@ -217,6 +214,7 @@ double precision, dimension(:,:), pointer :: vitenp
 double precision, allocatable, dimension(:,:) :: gradni
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 
 !===============================================================================
 
@@ -264,6 +262,9 @@ if (icalhy.eq.1.or.idilat.gt.1) then
   call field_get_val_prev_s(icrom, croma)
 endif
 call field_get_val_s(ibrom, brom)
+
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_key_int(ivarfl(ipr), kimasf, iflmas)
 call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
@@ -477,7 +478,7 @@ do ifac = 1, nfabor
 enddo
 
 ! Compute a pseudo hydrostatic pressure increment stored temporarly
-! in rtp(., ipr) with Homogeneous Neumann BCs everywhere
+! in cvar_pr(.) with Homogeneous Neumann BCs everywhere
 if (iphydr.eq.1.and.icalhy.eq.1) then
 
   ifcsor = isostd(nfabor+1)
@@ -584,7 +585,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     !==========
     ( indhyd ,                                &
       frchy  , dfrchy ,                       &
-      rtp(1,ipr)   , iflux , bflux ,          &
+      cvar_pr    , iflux , bflux ,                &
       coefap , coefbp ,                       &
       cofafp , cofbfp ,                       &
       viscf  , viscb  ,                       &
@@ -617,7 +618,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
       phydr0 = 0.d0
     else
       iel0 = ifabor(ifac0)
-      phydr0 = rtp(iel0,ipr)                                 &
+      phydr0 = cvar_pr(iel0)                                     &
            +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
            +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
            +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
@@ -636,7 +637,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         iel=ifabor(ifac)
 
         if (indhyd.eq.1) then
-          coefa_dp(ifac) =  rtp(iel, ipr)                                 &
+          coefa_dp(ifac) =  cvar_pr(iel)                                    &
                        + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
                        + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
                        + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
@@ -714,7 +715,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
             cfl = -(bmasfl(ifac)/surfbn(ifac)*dt(iel))    &
                 / (2.d0*rho*distb(ifac))*(1.d0 + kpdc)
 
-            pimp = - rtp(iel, ipr)                                              &
+            pimp = - cvar_pr(iel)                                              &
                  - 0.5d0*(1.d0 + kpdc)*bmasfl(ifac)*bpmasf/surfbn(ifac)**2
 
             call set_convective_outlet_scalar &
@@ -852,7 +853,7 @@ else
 
   call grdpre (ipr, imrgra, inc, iccocg, nswrgp, imligp,  &
                iwarnp, epsrgp, climgp, extrap,            &
-               rtp(:,ipr), xunsro, coefa_p , coefb_p,     &
+               cvar_pr, xunsro, coefa_p , coefb_p,        &
                gradni )
 
   do iel = 1, ncelet
@@ -1066,7 +1067,7 @@ if (arak.gt.0.d0) then
    iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
-   rtpa(1,ipr)  ,                                                 &
+   cvara_pr   ,                                                       &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    viscap , viscap , viscap ,                                     &
@@ -1136,7 +1137,7 @@ if (arak.gt.0.d0) then
    iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
-   rtpa(1,ipr)  ,                                                 &
+   cvara_pr   ,                                                       &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    vitenp ,                                                       &
@@ -1270,11 +1271,11 @@ endif
 nswmpr = nswrsm(ipr)
 
 ! --- Variables are set to 0
-!       rtp(.,IPR) is the increment of the pressure
+!       cvar_pr        is the increment of the pressure
 !       drtp       is the increment of the increment between sweeps
 !       divu       is the initial divergence of the predicted mass flux
 do iel = 1, ncel
-  rtp(iel,ipr) = 0.d0
+  cvar_pr(iel) = 0.d0
   drtp(iel) = 0.d0
   presa(iel) = 0.d0
 enddo
@@ -1395,7 +1396,7 @@ enddo
 !     to strengthen the diagonal for the low-Mach algo.
 if (idilat.eq.3) then
   do iel = 1, ncel
-    rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
+    rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*cvar_pr(iel)
   enddo
 endif
 
@@ -1632,25 +1633,25 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   if (iswdyp.eq.0) then
     if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) then
       do iel = 1, ncel
-        presa(iel) = rtp(iel,ipr)
-        rtp(iel,ipr) = presa(iel) + relaxv(ipr)*drtp(iel)
+        presa(iel) = cvar_pr(iel)
+        cvar_pr(iel) = presa(iel) + relaxv(ipr)*drtp(iel)
       enddo
     ! If it is the last sweep, update with the total increment
     else
       do iel = 1, ncel
-        presa(iel) = rtp(iel,ipr)
-        rtp(iel,ipr) = presa(iel) + drtp(iel)
+        presa(iel) = cvar_pr(iel)
+        cvar_pr(iel) = presa(iel) + drtp(iel)
       enddo
     endif
   elseif (iswdyp.eq.1) then
      do iel = 1, ncel
-      presa(iel) = rtp(iel,ipr)
-      rtp(iel,ipr) = presa(iel) + alph*drtp(iel)
+      presa(iel) = cvar_pr(iel)
+      cvar_pr(iel) = presa(iel) + alph*drtp(iel)
     enddo
   elseif (iswdyp.ge.2) then
     do iel = 1, ncel
-      presa(iel) = rtp(iel,ipr)
-      rtp(iel,ipr) = presa(iel) + alph*drtp(iel) + beta*dpvarm1(iel)
+      presa(iel) = cvar_pr(iel)
+      cvar_pr(iel) = presa(iel) + alph*drtp(iel) + beta*dpvarm1(iel)
     enddo
   endif
 
@@ -1677,7 +1678,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
-   rtp(1,ipr)      ,                                              &
+   cvar_pr    ,                                                       &
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
@@ -1692,7 +1693,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
-   rtp(1,ipr)      ,                                              &
+   cvar_pr    ,                                                       &
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
@@ -1710,15 +1711,15 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   !     to strengthen the diagonal for the low-Mach algo.
   if (idilat.eq.3) then
     do iel = 1, ncel
-      rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
+      rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*cvar_pr(iel)
     enddo
   endif
 
   ! Add the implicit part of the cavitation source
   if (icavit.gt.0.and.itscvi.eq.1) then
     do iel = 1, ncel
-      rhs(iel) = rhs(iel) + volume(iel)*rtp(iel,ipr) &
-           *dgdpca(iel)*(1.d0/rov - 1.d0/rol)
+      rhs(iel) = rhs(iel) + volume(iel)*cvar_pr(iel) &
+                *dgdpca(iel)*(1.d0/rov - 1.d0/rol)
     enddo
   endif
 
@@ -2068,7 +2069,7 @@ if (idilat.eq.4) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   rtp(1,ipr)      , rtp(1,ipr)      ,                            &
+   cvar_pr    , cvar_pr    ,                                              &
    coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
    velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
@@ -2139,7 +2140,7 @@ if (idilat.eq.4) then
   ! --- Update the increment of Pressure
 
   do iel = 1, ncel
-    rtp(iel,ipr) = rtp(iel,ipr) + drtp(iel)
+    cvar_pr(iel) = cvar_pr(iel) + drtp(iel)
     ! Remove the last increment
     drtp(iel) = drtp(iel) - dpvar(iel)
   enddo
@@ -2237,11 +2238,11 @@ endif
 
 if (idtvar.lt.0) then
   do iel = 1, ncel
-    rtp(iel,ipr) = rtpa(iel,ipr) + relaxv(ipr)*rtp(iel,ipr)
+    cvar_pr(iel) = cvara_pr(iel) + relaxv(ipr)*cvar_pr(iel)
   enddo
 else
   do iel = 1, ncel
-    rtp(iel,ipr) = rtpa(iel,ipr) + rtp(iel,ipr)
+    cvar_pr(iel) = cvara_pr(iel) + cvar_pr(iel)
   enddo
 endif
 

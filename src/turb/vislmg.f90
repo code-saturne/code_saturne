@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vislmg &
-!================
-
- ( rtpa   , propce )
+subroutine vislmg
 
 !===============================================================================
 ! FONCTION :
@@ -43,9 +40,6 @@ subroutine vislmg &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -74,9 +68,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel, inc
@@ -88,6 +79,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: visct
 
 !===============================================================================
 
@@ -101,8 +93,7 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet))
 
-! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
 !===============================================================================
@@ -117,7 +108,7 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
                            gradv)
 
 do iel = 1, ncel
-  propce(iel,ipcvst) = &
+  visct(iel) = &
       gradv(1, 1, iel)**2 + gradv(2, 2, iel)**2 + gradv(3, 3, iel)**2  &
     + 0.5d0*( (gradv(2, 1, iel) + gradv(1, 2, iel))**2                 &
             + (gradv(3, 1, iel) + gradv(1, 3, iel))**2                 &
@@ -135,7 +126,7 @@ deux = 2.d0
 coef = (xkappa*xlomlg)**2 * sqrt(deux)
 
 do iel = 1, ncel
-  propce(iel,ipcvst) = crom(iel) * coef * sqrt(propce(iel,ipcvst))
+  visct(iel) = crom(iel) * coef * sqrt(visct(iel))
 enddo
 
 !----

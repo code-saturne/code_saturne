@@ -23,7 +23,7 @@
 subroutine ctphyv &
 !================
 
- ( rtp    , propce )
+ ( rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -90,7 +90,6 @@ subroutine ctphyv &
 !__________________!____!_____!________________________________________________!
 ! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current time step)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -122,18 +121,17 @@ implicit none
 ! Arguments
 
 double precision rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel
-integer          ipccp
 integer          ivart
 
 double precision rho   , r     , cpa   , cpe , cpv , del
 double precision hv0 , hvti , rhoj , tti , xxi,  xsati , dxsati
 double precision rho0 , t00 , p00 , t1
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: cpro_cp
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -221,22 +219,14 @@ enddo
 
 ivart = isca(itemp4)
 
-! --- Rang de la chaleur specifique
-!     dans PROPCE, prop. physiques au centre des elements       : IPCCP
-
-if(icp.gt.0) then
-  ipccp  = ipproc(icp   )
-else
-  ipccp  = 0
-endif
-
 ! --- Stop si CP n'est pas variable
 
-if(ipccp.le.0) then
+if(icp.le.0) then
   write(nfecra,1000) icp
   call csexit (1)
 endif
 
+call field_get_val_s(iprpfl(icp), cpro_cp)
 
 ! --- Coefficients des lois choisis et imposes par l'utilisateur
 !       Les valeurs donnees ici sont fictives
@@ -261,13 +251,12 @@ if (ippmod(iaeros).eq.1) then
     !==========
 
     if (xxi .le. xsati) then
-      propce(iel,ipccp) = cpa + xxi*cpv
+      cpro_cp(iel) = cpa + xxi*cpv
     else
       hvti = (cpv-cpe)*tti + hv0
       call dxsath(tti,dxsati)
       !==========
-      propce(iel,ipccp) = cpa + xsati*cpv +                     &
-           (xxi-xsati)*cpe + dxsati*hvti
+      cpro_cp(iel) = cpa + xsati*cpv + (xxi-xsati)*cpe + dxsati*hvti
     endif
 
   enddo
@@ -286,7 +275,7 @@ elseif (ippmod(iaeros).eq.2) then
     call dxsath(tti,dxsati)
     !==========
 
-    propce(iel,ipccp) = cpa + xsati*cpv + dxsati*hvti
+    cpro_cp(iel) = cpa + xsati*cpv + dxsati*hvti
 
   enddo
 

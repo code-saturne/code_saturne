@@ -48,7 +48,7 @@ module cstphy
   double precision :: tkelvn
   parameter(tkelvn = -273.15d0)
 
-  !> Calories (1 cal = xcal2j J)
+  !> Calories (1 cvar_al = xcal2j J)
   double precision :: xcal2j
   parameter(xcal2j = 4.1855d0)
 

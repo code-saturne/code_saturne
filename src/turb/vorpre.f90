@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vorpre &
-!================
-
- ( propce )
+subroutine vorpre
 
 !===============================================================================
 ! FONCTION :
@@ -36,7 +33,6 @@ subroutine vorpre &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -67,12 +63,10 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          ifac, iel, ii
-integer          ient, ipcvis
+integer          ient
 integer          isurf(nentmx)
 
 double precision xx, yy, zz
@@ -80,6 +74,8 @@ double precision xxv, yyv, zzv
 
 double precision, allocatable, dimension(:,:) :: w1x, w1y, w1z, w1v
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: viscl
+
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
@@ -138,7 +134,7 @@ enddo
 ! Chaque processeur stocke dans les tableaux 'w1x', ...
 ! les coordonnees des faces ou il doit ensuite utiliser des vortex
 
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(icrom, crom)
 do ifac = 1, nfabor
   ient = irepvo(ifac)
@@ -148,7 +144,7 @@ do ifac = 1, nfabor
     w1x(icvor2(ient),ient)= cdgfbo(1,ifac)
     w1y(icvor2(ient),ient)= cdgfbo(2,ifac)
     w1z(icvor2(ient),ient)= cdgfbo(3,ifac)
-    w1v(icvor2(ient),ient) = propce(iel,ipcvis)/crom(iel)
+    w1v(icvor2(ient),ient) = viscl(iel)/crom(iel)
     xsurfv(ient) = xsurfv(ient) + sqrt(surfbo(1,ifac)**2          &
       + surfbo(2,ifac)**2 + surfbo(3,ifac)**2)
 !         Vecteur surface d'une face de l'entree

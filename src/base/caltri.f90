@@ -308,8 +308,8 @@ call uspt1d &
    ivoid  , izft1d , ivoid  , ivoid  ,                            &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  , rvoid  ,                                              &
-   rvoid  , rvoid  )
+   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  )
 
 nfpt1t = nfpt1d
 if (irangp.ge.0) then
@@ -746,7 +746,7 @@ if (ivrtex.eq.1) then
   call init_vortex
   !===============
 
-  call vorpre(propce)
+  call vorpre
   !==========
 
 endif
@@ -1119,7 +1119,7 @@ if (modntl.eq.0) then
   call ecrlis                                                     &
   !==========
   ( nvar   , ncelet , ncel   ,                                    &
-    rtp    , rtpa   , dt     , volume )
+    dt     , volume )
 
   call log_iteration
 

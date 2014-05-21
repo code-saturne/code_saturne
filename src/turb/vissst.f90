@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vissst &
-!================
-
- ( rtpa   , propce )
+subroutine vissst
 
 !===============================================================================
 ! FONCTION :
@@ -50,9 +47,6 @@ subroutine vissst &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -83,9 +77,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel, inc
@@ -102,6 +93,8 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cka, cvara_omg
 
 !===============================================================================
 
@@ -112,10 +105,11 @@ double precision, dimension(:), pointer :: crom
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
-! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
+call field_get_val_prev_s(ivarfl(ik), cka)
+call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 
 d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
@@ -192,17 +186,17 @@ endif
 
 do iel = 1, ncel
 
-  xk = rtpa(iel,ik)
-  xw = rtpa(iel,iomg)
+  xk = cka(iel)
+  xw = cvara_omg(iel)
   rom = crom(iel)
-  xmu = propce(iel,ipcvis)
+  xmu = viscl(iel)
   xdist = w1(iel)
   xarg2 = max (                                                   &
        2.d0*sqrt(xk)/cmu/xw/xdist,                                &
        500.d0*xmu/rom/xw/xdist**2 )
   xf2 = tanh(xarg2**2)
 
-  propce(iel,ipcvst) = rom*ckwa1*xk                               &
+  visct(iel) = rom*ckwa1*xk                               &
        /max( ckwa1*xw , sqrt(s2kw(iel))*xf2 )
 
 enddo

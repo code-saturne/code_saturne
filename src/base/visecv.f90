@@ -86,6 +86,7 @@ double precision d2s3m
 
 double precision, allocatable, dimension(:) :: secvis
 double precision, dimension(:), pointer :: porosi
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
 
@@ -96,8 +97,8 @@ double precision, dimension(:), pointer :: porosi
 ! Allocate temporary arrays
 allocate(secvis(ncelet))
 
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 if(ippmod(icompf).ge.0) then
   if(iviscv.gt.0) then
@@ -127,9 +128,15 @@ endif
 d2s3m = -2.d0/3.d0
 
 ! Laminar viscosity
-do iel = 1, ncel
-  secvis(iel) = d2s3m*propce(iel,ipcvis)
-enddo
+if(isno2t.gt.0 .and. iviext.gt.0) then
+  do iel = 1, ncel
+    secvis(iel) = d2s3m*propce(iel,ipcvis)
+  enddo
+else
+  do iel = 1, ncel
+    secvis(iel) = d2s3m*viscl(iel)
+  enddo
+endif
 
 ! Volume viscosity if present
 if (ipcvsv.gt.0) then
@@ -144,9 +151,15 @@ endif
 
 ! Turbulent viscosity (if not in Rij or LES)
 if (itytur.ne.3 .and. itytur.ne.4) then
-  do iel = 1, ncel
-    secvis(iel) = secvis(iel) + d2s3m*propce(iel,ipcvst)
-  enddo
+  if(isno2t.gt.0 .and. iviext.gt.0) then
+    do iel = 1, ncel
+      secvis(iel) = secvis(iel) + d2s3m*propce(iel,ipcvst)
+    enddo
+  else
+    do iel = 1, ncel
+      secvis(iel) = secvis(iel) + d2s3m*visct(iel)
+    enddo
+  endif
 endif
 
 ! With porosity

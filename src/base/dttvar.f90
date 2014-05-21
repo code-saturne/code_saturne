@@ -26,7 +26,7 @@ subroutine dttvar &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , propce ,                                              &
    ckupdc , smacel )
 
 !===============================================================================
@@ -56,8 +56,6 @@ subroutine dttvar &
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
@@ -104,7 +102,7 @@ integer          iwarnp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
@@ -114,7 +112,6 @@ character*8      cnom
 
 integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym, flid
 integer          modntl
-integer          ipcvis, ipcvst
 integer          iflmas, iflmab
 integer          icou, ifou , icoucf
 integer          inc, iccocg
@@ -140,6 +137,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
 
 !===============================================================================
 
@@ -166,10 +164,12 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
-ipcvis  = ipproc(iviscl)
-ipcvst  = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
+call field_get_val_s(iprpfl(icour), cpro_cour)
+call field_get_val_s(iprpfl(ifour), cpro_four)
 ipccou  = ipproc(icour)
 ipcfou  = ipproc(ifour)
 
@@ -211,7 +211,7 @@ if (ippmod(icompf).ge.0) then
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                          &
    icepdc , icetsm , itypsm ,                                   &
-   dt     , rtp    , rtpa   , propce ,                          &
+   dt     , propce ,                                            &
    ckupdc , smacel ,                                            &
    wcf    ,                                                     &
    viscf  , viscb  , cofbft )
@@ -228,7 +228,7 @@ endif
 
 if (idiff(iu).ge. 1) then
   do iel = 1, ncel
-    w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+    w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
   enddo
   call viscfa(imvisf, w1, viscf, viscb)
   !==========
@@ -251,8 +251,8 @@ if (idtvar.ge.0) then
 
     if (bmasfl(ifac).lt.0.d0) then
       iel = ifabor(ifac)
-      hint = idiff(iu)*(  propce(iel,ipcvis)                         &
-                        + idifft(iu)*propce(iel,ipcvst))/distb(ifac)
+      hint = idiff(iu)*(  viscl(iel)                         &
+                        + idifft(iu)*visct(iel))/distb(ifac)
       coefbt(ifac) = 0.d0
       cofbft(ifac) = hint
     else
@@ -685,18 +685,18 @@ if (idtvar.ge.0) then
     icfmin= 1
 
     do iel = 1, ncel
-      propce(iel,ipccou) = w1(iel)*dt(iel)
+      cpro_cour(iel) = w1(iel)*dt(iel)
     enddo
 
     if (iwarnp.ge.2) then
 
       do iel = 1, ncel
-        if (propce(iel,ipccou).le.cfmin) then
-          cfmin  = propce(iel,ipccou)
+        if (cpro_cour(iel).le.cfmin) then
+          cfmin  = cpro_cour(iel)
           icfmin = iel
         endif
-        if (propce(iel,ipccou).ge.cfmax) then
-          cfmax  = propce(iel,ipccou)
+        if (cpro_cour(iel).ge.cfmax) then
+          cfmax  = cpro_cour(iel)
           icfmax = iel
         endif
       enddo
@@ -756,18 +756,18 @@ if (idtvar.ge.0) then
     icfmin = 0
 
     do iel = 1, ncel
-      propce(iel,ipcfou) = w1(iel)*dt(iel)
+      cpro_four(iel) = w1(iel)*dt(iel)
     enddo
 
     if (iwarnp.ge.2) then
 
       do iel = 1, ncel
-        if (propce(iel,ipcfou).le.cfmin) then
-          cfmin  = propce(iel,ipcfou)
+        if (cpro_four(iel).le.cfmin) then
+          cfmin  = cpro_four(iel)
           icfmin = iel
         endif
-        if (propce(iel,ipcfou).ge.cfmax) then
-          cfmax  = propce(iel,ipcfou)
+        if (cpro_four(iel).ge.cfmax) then
+          cfmax  = cpro_four(iel)
           icfmax = iel
         endif
       enddo

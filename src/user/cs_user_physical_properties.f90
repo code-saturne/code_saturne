@@ -335,8 +335,7 @@ if (.false.) then
 
   do iel = 1, ncel
     xrtp = cvar_scalt(iel)
-    cpro_viscl(iel) =                                        &
-         xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+    cpro_viscl(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
   enddo
 
 endif ! --- Test on .false.
@@ -506,8 +505,7 @@ if (.false.) then
 
     do iel = 1, ncel
       xrtp = cvar_scalt(iel)
-      cpro_vscalt(iel) =                                                &
-           (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+      cpro_vscalt(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
     enddo
 
   endif
@@ -594,8 +592,7 @@ if (.false.) then
 
       do iel = 1, ncel
         xrtp = cvar_scalt(iel)
-        cpro_vscalt(iel) =                                              &
-             (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+        cpro_vscalt(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
       enddo
 
     endif ! --- Tests on 'ith' and 'iscavr'
@@ -1650,8 +1647,7 @@ if (ippmod(ieljou).ge.1) then
   call field_get_val_s(iprpfl(itemp), cpro_temp)
 
   do iel = 1, ncel
-    call usthht (mode,                                            &
-         cvar_scalt(iel),cpro_temp(iel))
+    call usthht (mode,cvar_scalt(iel),cpro_temp(iel))
   enddo
 
 

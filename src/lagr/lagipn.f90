@@ -25,9 +25,8 @@ subroutine lagipn &
 
  ( nbpmax ,                                                       &
    npar1  , npar2  ,                                              &
-   rtp    ,                                                       &
-   vagaus ,                                                       &
-   propce )
+   iprev  ,                                                       &
+   vagaus )
 
 !===============================================================================
 ! FONCTION :
@@ -47,11 +46,11 @@ subroutine lagipn &
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! npar1 ,npar2     ! e  ! <-- ! borne min et max des particules                !
 !                  !    !     !    a initialiser                               !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
+! iprev            ! e  ! <-- ! time step indicator for fields                 !
+!                  !    !     !   0: use fields at current time step           !
+!                  !    !     !   1: use fields at previous time step          !
 ! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -88,9 +87,8 @@ implicit none
 
 integer          nbpmax
 integer          npar1 , npar2
+integer          iprev
 
-double precision rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision vagaus(nbpmax,*)
 
 ! Local variables
@@ -107,11 +105,37 @@ double precision  unif1(1)
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_k
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
+if (iprev.eq.0) then
+  call field_get_val_v(ivarfl(iu), vel)
+
+  if (itytur.eq.2 .or. iturb.eq.50                              &
+       .or. iturb.eq.60) call field_get_val_s(ivarfl(ik), cvar_k)
+  if (itytur.eq.3) then
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+  endif
+
+else if (iprev.eq.1) then
+  call field_get_val_prev_v(ivarfl(iu), vel)
+
+  if (itytur.eq.2 .or. iturb.eq.50                              &
+       .or. iturb.eq.60) call field_get_val_prev_s(ivarfl(ik), cvar_k)
+  if (itytur.eq.3) then
+    call field_get_val_prev_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_prev_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_prev_s(ivarfl(ir33), cvar_r33)
+  endif
+endif
+
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -129,16 +153,16 @@ allocate(w1(ncelet))
 
 if (idistu.eq.1) then
 
-  if (itytur.eq.2 .or. iturb.eq.50                  &
+  if (itytur.eq.2 .or. iturb.eq.50                     &
        .or. iturb.eq.60) then
     do iel = 1,ncel
-      w1(iel) = rtp(iel,ik)
+      w1(iel) = cvar_k(iel)
     enddo
   else if (itytur.eq.3) then
     do iel = 1,ncel
-      w1(iel) = 0.5d0 * ( rtp(iel,ir11)                    &
-                        + rtp(iel,ir22)                    &
-                        + rtp(iel,ir33) )
+      w1(iel) = 0.5d0 * ( cvar_r11(iel)                    &
+                        + cvar_r22(iel)                    &
+                        + cvar_r33(iel) )
     enddo
   else
     write(nfecra,9000) iilagr, idistu, iturb
@@ -220,7 +244,7 @@ if (idepst.eq.1) then
           endif
 
           romf = cromf(iel)
-          visccf = propce(iel,ipproc(iviscl)) / romf
+          visccf = viscl(iel) / romf
 
           ustar = uetbor(ifac)
           lvisq = visccf / ustar

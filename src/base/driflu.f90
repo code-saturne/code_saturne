@@ -37,8 +37,6 @@
 !______________________________________________________________________________!
 !> \param[in]     iflid         index of the current drift scalar field
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at previous time step)
 !> \param[in]     propce        physical properties at cell centers
@@ -50,7 +48,7 @@
 
 subroutine driflu &
 ( iflid  ,                                                       &
-  dt     , rtp    , rtpa   , propce ,                            &
+  dt     , rtpa   , propce ,                                     &
   imasfl , bmasfl ,                                              &
   rovsdt , smbrs  )
 
@@ -81,7 +79,7 @@ implicit none
 
 integer          iflid
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision imasfl(nfac), bmasfl(ndimfb)
 double precision rovsdt(ncelet), smbrs(ncelet)
@@ -91,7 +89,7 @@ double precision rovsdt(ncelet), smbrs(ncelet)
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg
-integer          ipcvst, ipcvsl, iflmas, iflmab
+integer          ipcvsl, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp
 integer          ircflp, ischcp, isstpp
@@ -129,6 +127,9 @@ double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl_mix, bmasfl_mix
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: vel, vela
+double precision, dimension(:), pointer :: cvar_k
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: visct
 
 !===============================================================================
 
@@ -163,7 +164,15 @@ ivar = isca(iscal)
 ! --- Physical properties
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), visct)
+
+if (itytur.eq.3) then
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
+elseif (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+endif
 
 ! --- Brownian diffusivity
 if (ivisls(iscal).gt.0) then
@@ -239,9 +248,9 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
       omega = taup(iel)/taufpt(iel)
       ! FIXME: use idifft or not?
       viscce(iel) = 1.d0/3.d0                               &
-                  * taup(iel)/(1.d0+omega)*( rtp(iel,ir11)  &
-                                           + rtp(iel,ir22)  &
-                                           + rtp(iel,ir33) )
+                  * taup(iel)/(1.d0+omega)*( cvar_r11(iel)      &
+                                           + cvar_r22(iel)      &
+                                           + cvar_r33(iel) )
     enddo
 
   elseif (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
@@ -251,7 +260,7 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
       ! Correction by Omega
       omega = taup(iel)/taufpt(iel)
 
-      viscce(iel) = 2.d0*taup(iel)/(1.d0+omega)*rtp(iel,ik)
+      viscce(iel) = 2.d0*taup(iel)/(1.d0+omega)*cvar_k(iel)
     enddo
 
   else

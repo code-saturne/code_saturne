@@ -135,6 +135,7 @@ double precision vislen(nfabor)
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vela
+double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 
@@ -166,6 +167,8 @@ else
   call field_get_val_s(icrom, cromf)
 endif
 
+call field_get_val_s(iprpfl(iviscl), viscl)
+
 !===============================================================================
 ! 2. loop on the particles
 !===============================================================================
@@ -176,7 +179,7 @@ endif
 
       iel = itepa(ip,jisor)
       romf = cromf(iel)
-      visccf = propce(iel,ipproc(iviscl)) / romf
+      visccf = viscl(iel) / romf
 
     ! Fluid temperature computation depending on the type of flow
 
@@ -393,7 +396,6 @@ endif
             !==========
             ( itepa(ip,jdfac) , ip     ,                                   &
               nbpmax ,                                                     &
-              rtpa   , propce ,                                            &
               taup   , piil   ,                                            &
               vagaus , gradpr , romp   ,                                   &
               tempf  , romf   , ustar  , lvisq  ,tvisq   , depint )

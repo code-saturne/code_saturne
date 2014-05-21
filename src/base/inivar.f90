@@ -103,6 +103,11 @@ double precision, allocatable, dimension(:) :: w1, w2
 
 double precision, dimension(:), pointer :: field_s_v
 double precision, dimension(:,:), pointer :: field_v_v
+double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
+double precision, dimension(:), pointer :: cvar_phi, cvar_omg, cvar_nusa
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cpro_prtot
 
 !===============================================================================
 
@@ -237,19 +242,20 @@ endif
 ! En compressible, Ptot n'est pas defini (correspond directement a RTP(.,IPR)
 
 if  (ippmod(icompf).lt.0) then
-  iiptot = ipproc(iprtot)
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
   do iel = 1, ncel
-    if (propce(iel,iiptot).gt.-0.5d0*rinfin) then
-      rtp(iel,ipr) = propce(iel,iiptot)                      &
+    if (cpro_prtot(iel).gt.-0.5d0*rinfin) then
+      cvar_pr(iel) = cpro_prtot(iel)                                  &
            - ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
            + gy*(xyzcen(2,iel)-xyp0)                         &
            + gz*(xyzcen(3,iel)-xzp0) )                       &
            + pred0 - p0
     else
-      propce(iel,iiptot) = rtp(iel,ipr)                      &
+      cpro_prtot(iel) = cvar_pr(iel)                                  &
            + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
            + gy*(xyzcen(2,iel)-xyp0)                         &
            + gz*(xyzcen(3,iel)-xzp0) )                       &
@@ -299,11 +305,14 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   if(itytur.eq.2 .or. itytur.eq.5) then
 
-    xekmin = rtp(1,ik)
-    xepmin = rtp(1,iep)
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
+    xekmin = cvar_k(1)
+    xepmin = cvar_ep(1)
     do iel = 1, ncel
-      xekmin = min(xekmin,rtp(iel,ik) )
-      xepmin = min(xepmin,rtp(iel,iep))
+      xekmin = min(xekmin,cvar_k(iel) )
+      xepmin = min(xepmin,cvar_ep(iel))
     enddo
     if (irangp.ge.0) then
       call parmin (xekmin)
@@ -317,7 +326,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       call clipke( ncelet , ncel   , nvar   ,          &
       !==========
                    iclip  , iwarni(ik) ,            &
-                   propce , rtp    )
+                   rtp    )
     else
       write(nfecra,3020) xekmin,xepmin
       iok = iok + 1
@@ -327,11 +336,13 @@ if(iusini.eq.1.or.isuite.eq.1) then
     !     compris entre 0 et 2
     if (itytur.eq.5) then
 
-      xphmin = rtp(1,iphi)
-      xphmax = rtp(1,iphi)
+      call field_get_val_s(ivarfl(iphi), cvar_phi)
+
+      xphmin = cvar_phi(1)
+      xphmax = cvar_phi(1)
       do iel = 1, ncel
-        xphmin = min(xphmin,rtp(iel,iphi) )
-        xphmax = max(xphmax,rtp(iel,iphi) )
+        xphmin = min(xphmin,cvar_phi(iel) )
+        xphmax = max(xphmax,cvar_phi(iel) )
       enddo
       if (irangp.ge.0) then
         call parmin (xphmin)
@@ -350,11 +361,12 @@ if(iusini.eq.1.or.isuite.eq.1) then
       !     En v2-f, BL-v2/k, on verifie aussi que alpha est
       !     compris entre 0 et 1
       if (iturb.eq.51) then
-        xalmin = rtp(1,ial)
-        xalmax = rtp(1,ial)
+        call field_get_val_s(ivarfl(ial), cvar_al)
+        xalmin = cvar_al(1)
+        xalmax = cvar_al(1)
         do iel = 1, ncel
-          xalmin = min(xalmin,rtp(iel,ial) )
-          xalmax = max(xalmax,rtp(iel,ial) )
+          xalmin = min(xalmin,cvar_al(iel) )
+          xalmax = max(xalmax,cvar_al(iel) )
         enddo
         if (irangp.ge.0) then
           call parmin (xalmin)
@@ -374,15 +386,21 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   elseif(itytur.eq.3) then
 
-    x11min = rtp(1,ir11)
-    x22min = rtp(1,ir22)
-    x33min = rtp(1,ir33)
-    xepmin = rtp(1,iep)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+
+    x11min = cvar_r11(1)
+    x22min = cvar_r22(1)
+    x33min = cvar_r33(1)
+    xepmin = cvar_ep(1)
     do iel = 1, ncel
-      x11min = min(x11min,rtp(iel,ir11))
-      x22min = min(x22min,rtp(iel,ir22))
-      x33min = min(x33min,rtp(iel,ir33))
-      xepmin = min(xepmin,rtp(iel,iep) )
+      x11min = min(x11min,cvar_r11(iel))
+      x22min = min(x22min,cvar_r22(iel))
+      x33min = min(x33min,cvar_r33(iel))
+      xepmin = min(xepmin,cvar_ep(iel) )
     enddo
     if (irangp.ge.0) then
       call parmin (x11min)
@@ -406,11 +424,12 @@ if(iusini.eq.1.or.isuite.eq.1) then
       iok = iok + 1
     endif
     if (iturb.eq.32) then
-      xalmin = rtp(1,ial)
-      xalmax = rtp(1,ial)
+      call field_get_val_s(ivarfl(ial), cvar_al)
+      xalmin = cvar_al(1)
+      xalmax = cvar_al(1)
       do iel = 1, ncel
-        xalmin = min(xalmin, rtp(iel,ial))
-        xalmax = max(xalmax, rtp(iel,ial))
+        xalmin = min(xalmin, cvar_al(iel))
+        xalmax = max(xalmax, cvar_al(iel))
       enddo
       if (irangp.ge.0) then
         call parmin (xalmin)
@@ -426,11 +445,14 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   elseif(iturb.eq.60) then
 
-    xekmin = rtp(1,ik )
-    xomgmn = rtp(1,iomg)
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
+
+    xekmin = cvar_k(1)
+    xomgmn = cvar_omg(1)
     do iel = 1, ncel
-      xekmin = min(xekmin,rtp(iel,ik ))
-      xomgmn = min(xomgmn,rtp(iel,iomg))
+      xekmin = min(xekmin,cvar_k(iel))
+      xomgmn = min(xomgmn,cvar_omg(iel))
     enddo
     if (irangp.ge.0) then
       call parmin (xekmin)
@@ -447,9 +469,11 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   elseif(iturb.eq.70) then
 
-    xnumin = rtp(1,inusa)
+    call field_get_val_s(ivarfl(inusa), cvar_nusa)
+
+    xnumin = cvar_nusa(1)
     do iel = 1, ncel
-      xnumin = min(xnumin,rtp(iel,inusa))
+      xnumin = min(xnumin,cvar_nusa(iel))
     enddo
     if (irangp.ge.0) then
       call parmin (xnumin)

@@ -25,7 +25,7 @@ subroutine clipke &
 
  ( ncelet , ncel   , nvar   ,                                     &
    iclip  , iwarnk ,                                              &
-   propce , rtp    )
+   rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -45,8 +45,6 @@ subroutine clipke &
 ! iclip            ! e  ! <-- ! indicateur = 0 on utilise viscl0               !
 !                  !    !     !            sinon on utilise viscl              !
 ! iwarnk           ! e  ! <-- ! niveau d'impression                            !
-! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
-!(ncelet,*         !    !     !                                                !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet     )    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -69,6 +67,7 @@ use entsor
 use optcal
 use parall
 use cs_c_bindings
+use field
 
 !===============================================================================
 
@@ -78,24 +77,27 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iclip, iwarnk
-double precision propce(ncelet,*)
 double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
 integer          iclpke,iel,iclpk2,iclpe2
-integer          ivar,ipp,ii,iivisc
+integer          ivar,ipp,ii
 integer          iclpmn(2)
 double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
 double precision vmin(2), vmax(2)
 
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvar_k, cvar_ep
+double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 
 call field_get_val_s(icrom, crom)
+call field_get_val_s(ivarfl(ik), cvar_k)
+call field_get_val_s(ivarfl(iep), cvar_ep)
 
-iivisc = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 ! Initialization to avoid compiler warnings
 
@@ -145,14 +147,14 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
     xepm = 46656.d0*cmu/almax**4
     iclpke = 0
     do iel=1,ncel
-      xk = rtp(iel,ik)
-      xe = rtp(iel,iep)
-      xkmin = xkm * (propce(iel,iivisc) / crom(iel))**2
-      xepmin = xepm * (propce(iel,iivisc) / crom(iel))**3
+      xk = cvar_k(iel)
+      xe = cvar_ep(iel)
+      xkmin = xkm * (viscl(iel) / crom(iel))**2
+      xepmin = xepm * (viscl(iel) / crom(iel))**3
       if (xk.le.xkmin.or.xe.le.xepmin) then
         if(iclkep.eq.1) then
-          rtp(iel,ik)  = xkmin
-          rtp(iel,iep) = xepmin
+          cvar_k(iel)  = xkmin
+          cvar_ep(iel) = xepmin
         endif
         iclpke = iclpke + 1
       endif
@@ -164,12 +166,12 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
     xepmin = 46656.d0 * cmu/almax**4 * (viscl0/ro0)**3
     iclpke = 0
     do iel=1,ncel
-      xk = rtp(iel,ik)
-      xe = rtp(iel,iep)
+      xk = cvar_k(iel)
+      xe = cvar_ep(iel)
       if (xk.le.xkmin.or.xe.le.xepmin) then
         if (iclkep.eq.1) then
-          rtp(iel,ik)  = xkmin
-          rtp(iel,iep) = xepmin
+          cvar_k(iel)  = xkmin
+          cvar_ep(iel) = xepmin
         endif
         iclpke = iclpke + 1
       endif
@@ -207,21 +209,21 @@ if (iclkep.eq.0) then
   iclpk2 = 0
   iclpe2 = 0
   do iel = 1, ncel
-    xk = rtp(iel,ik)
-    xe = rtp(iel,iep)
+    xk = cvar_k(iel)
+    xe = cvar_ep(iel)
     if (abs(xk).le.epz2) then
       iclpk2 = iclpk2 + 1
-      rtp(iel,ik) = max(rtp(iel,ik),epz2)
+      cvar_k(iel) = max(cvar_k(iel),epz2)
     elseif(xk.le.0.d0) then
       iclpk2 = iclpk2 + 1
-      rtp(iel,ik) = -xk
+      cvar_k(iel) = -xk
     endif
     if (abs(xe).le.epz2) then
       iclpe2 = iclpe2 + 1
-      rtp(iel,iep) = max(rtp(iel,iep),epz2)
+      cvar_ep(iel) = max(cvar_ep(iel),epz2)
     elseif(xe.le.0.d0) then
       iclpe2 = iclpe2 + 1
-      rtp(iel,iep) = -xe
+      cvar_ep(iel) = -xe
     endif
   enddo
 

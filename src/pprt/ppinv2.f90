@@ -24,7 +24,7 @@ subroutine ppinv2 &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -60,7 +60,6 @@ subroutine ppinv2 &
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -93,7 +92,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -117,7 +116,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
   call d3pini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
   endif
 
 ! ---> Combustion gaz
@@ -127,7 +126,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
   call ebuini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 endif
 
 ! ---> Combustion gaz
@@ -137,7 +136,7 @@ endif
   call lwcini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 endif
 
 

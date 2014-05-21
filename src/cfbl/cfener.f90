@@ -119,7 +119,7 @@ character*80     chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
-integer          ipcvst, ipcvsl, iflmas, iflmab
+integer          ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , icvflb
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
@@ -154,6 +154,9 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:,:), pointer :: vel
 
+double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: visct, cpro_cp
+
 !===============================================================================
 
 ! Map field arrays
@@ -182,7 +185,9 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_prev_s(icrom, cromo)
 
-ipcvst = ipproc(ivisct)
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+
+call field_get_val_s(iprpfl(ivisct), visct)
 
 call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
 call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
@@ -270,7 +275,7 @@ enddo
 if (idiff(iu).ge. 1) then
   call cfdivs                                                     &
   !==========
- ( rtpa   , propce ,                                              &
+ ( propce ,                                                       &
    smbrs  , vel )
 endif
 
@@ -287,7 +292,7 @@ enddo
 !   Calcul du gradient de P/RHO
 
 !      do iel = 1, ncel
-!        w7(iel) = rtp(iel,ipr)/w9(iel)
+!        w7(iel) = cvar_pr(iel)/w9(iel)
 !      enddo
 
 ! Rq : A defaut de connaitre les parametres pour P/RHO on prend ceux de P
@@ -367,9 +372,9 @@ endif
 do ifac = 1, nfac
   iel1 = ifacel(1,ifac)
   iel2 = ifacel(2,ifac)
-  viscf(ifac) =                                                                &
-     - rtp(iel1,ipr)/w9(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))        &
-     - rtp(iel2,ipr)/w9(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
+  viscf(ifac) =                                                                 &
+     - cvar_pr(iel1)/w9(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))             &
+     - cvar_pr(iel2)/w9(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
 enddo
 
 ! Boundary faces: for the faces where a flux (Rusanov or analytical) has been
@@ -381,8 +386,8 @@ call field_get_coefb_s(ivarfl(ipr), coefb_p)
 do ifac = 1, nfabor
   if (icvfli(ifac).eq.0) then
     iel = ifabor(ifac)
-    viscb(ifac) = - bmasfl(ifac)                                               &
-                    * (coefa_p(ifac) + coefb_p(ifac)*rtp(iel,ipr))             &
+    viscb(ifac) = - bmasfl(ifac)                                                &
+                    * (coefa_p(ifac) + coefb_p(ifac)*cvar_pr(iel))                  &
                     / brom(ifac)
   else
     viscb(ifac) = 0.d0
@@ -412,12 +417,13 @@ if( idiff(ivar).ge. 1 ) then
 
 !     MUT/SIGMAS
   do iel = 1, ncel
-    w1(iel) = propce(iel,ipcvst)/sigmas(iscal)
+    w1(iel) = visct(iel)/sigmas(iscal)
   enddo
 !     CP*MUT/SIGMAS
   if(icp.gt.0) then
+    call field_get_val_s(iprpfl(icp), cpro_cp)
     do iel = 1, ncel
-      w1(iel) = w1(iel)*propce(iel,ipproc(icp))
+      w1(iel) = w1(iel)*cpro_cp(iel)
     enddo
   else
     do iel = 1, ncel
@@ -695,7 +701,7 @@ endif
 ! The state equation is used P   =P(RHO   ,H   )
 
 ! Computation of P and T at cell centers
-call cf_thermo_pt_from_de(crom, rtp(1,isca(ienerg)), rtp(1,ipr),         &
+call cf_thermo_pt_from_de(crom, rtp(1,isca(ienerg)), cvar_pr,                &
                           rtp(1,isca(itempk)),                           &
                           vel, ncel)
 
@@ -704,7 +710,7 @@ call cf_thermo_pt_from_de(crom, rtp(1,isca(ienerg)), rtp(1,ipr),         &
 !===============================================================================
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(1,ipr))
+  call synsca(cvar_pr)
   !==========
   call synsca(rtp(1,ivar))
   !==========

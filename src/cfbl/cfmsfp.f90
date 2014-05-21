@@ -25,7 +25,7 @@ subroutine cfmsfp &
 
  ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , vela   ,                            &
+   dt     , propce , vela   ,                                     &
    ckupdc , smacel ,                                              &
    flumas , flumab )
 
@@ -50,8 +50,6 @@ subroutine cfmsfp &
 ! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time steps)                      !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! vela             ! ra ! <-- ! variable value at time step beginning          !
 ! ckupdc           ! tr ! <-- ! work array for the head loss                   !
@@ -100,7 +98,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
@@ -108,7 +106,7 @@ double precision vela  (3  ,ncelet)
 
 ! Local variables
 
-integer          ivar, ipcvst, ipcvis
+integer          ivar
 integer          ifac  , iel, ischcp, idftnp, ircflp
 integer          init  , inc   , iccocg, ippu, isstpp
 integer          nswrgp, imligp, iwarnp, iconvp, idiffp
@@ -123,6 +121,7 @@ double precision rom
 double precision, allocatable, dimension(:) :: w1, w8, w9
 double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), allocatable :: tsexp, gavinj
 double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:,:), target :: viscf
@@ -270,16 +269,16 @@ if (itsqdm.ne.0) then
   idiffp = idiff(iu)
   if (idiffp.ge. 1) then
 
-     ipcvis = ipproc(iviscl)
-     ipcvst = ipproc(ivisct)
+     call field_get_val_s(iprpfl(iviscl), viscl)
+     call field_get_val_s(iprpfl(ivisct), visct)
 
      if (itytur.eq.3) then
         do iel = 1, ncel
-           w1(iel) = propce(iel,ipcvis)
+           w1(iel) = viscl(iel)
         enddo
      else
         do iel = 1, ncel
-           w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+           w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
         enddo
      endif
 

@@ -24,7 +24,6 @@ subroutine attycl &
 !================
 
  ( itypfb , izfppp ,                                              &
-   propce ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -40,7 +39,6 @@ subroutine attycl &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -91,13 +89,12 @@ implicit none
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
 integer          ifac, izone
-integer          icke, iel, ipcvis
+integer          icke, iel
 integer          ii
 integer jsp, isc
 double precision d2s3, zent, vs, xuent, xvent
@@ -131,7 +128,6 @@ xeent = 0.d0
 tpent = 0.d0
 
 call field_get_val_s(ibrom, brom)
-ipcvis = ipproc(iviscl)
 
 !===============================================================================
 ! 2.  SI IPROFM = 1 : CHOIX ENTREE/SORTIE SUIVANT LE PROFIL METEO SI

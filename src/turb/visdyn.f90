@@ -25,8 +25,8 @@ subroutine visdyn &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
-   ckupdc , smacel ,                            &
+   dt     ,                                                       &
+   ckupdc , smacel ,                                              &
    smagor )
 
 !===============================================================================
@@ -38,7 +38,7 @@ subroutine visdyn &
 
 ! SMAGO = LijMij/MijMij
 
-! PROPCE(1,IVISCT) = ROM * SMAGO  * L**2 * SQRT ( 2 * Sij.Sij )
+! VISCT = ROM * SMAGO  * L**2 * SQRT ( 2 * Sij.Sij )
 !       Sij = (DUi/Dxj + DUj/Dxi)/2
 
 ! On dispose des types de faces de bord au pas de temps
@@ -58,9 +58,6 @@ subroutine visdyn &
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -105,8 +102,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet)
 
@@ -136,6 +132,7 @@ double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: visct
 
 !===============================================================================
 
@@ -156,8 +153,7 @@ allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet), w0(ncelet))
 allocate(xmij(ncelet,6))
 
-! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
 ! --- Pour le calcul de la viscosite de sous-maille
@@ -173,9 +169,6 @@ xsmgmx = smagmx
 ! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE
 !       S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
 !===============================================================================
-
-!     Les RTPA ont ete echange pour les calculs en parallele,
-!       au debut du pas de temps (donc pas utile de le refaire ici)
 
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet), gradvf(ncelet,3,3))
@@ -226,7 +219,7 @@ do iel = 1, ncel
   xmij(iel,5) = 0.5d0*(dudz+dwdx)
   xmij(iel,6) = 0.5d0*(dvdz+dwdy)
 
-  propce(iel,ipcvst) = radeux*sqrt(                               &
+  visct(iel) = radeux*sqrt(                                       &
                        s11**2 + s22**2 + s33**2                   &
                      + 0.5d0*( (dudy+dvdx)**2                     &
                              + (dudz+dwdx)**2                     &
@@ -243,7 +236,7 @@ enddo
 deallocate(gradv, gradvf)
 
 !     Ici XMIJ contient Sij
-!         PROPCE(IEL,IPCVST) contient ||S||
+!         VISCT contient ||S||
 !            SQRT(2)*SQRT(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
 !         W9                 contient ||SF||
 !            SQRT(2)*SQRT(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2))
@@ -264,7 +257,7 @@ do ii = 1, 6
 
   do iel = 1, ncel
     delta = w7(iel)
-    w2(iel) = -deux*delta**2*propce(iel,ipcvst)*xmij(iel,ii)
+    w2(iel) = -deux*delta**2*visct(iel)*xmij(iel,ii)
   enddo
 
   call cfiltr &
@@ -445,8 +438,8 @@ enddo
 do iel = 1, ncel
   coef = smagor(iel)
   delta  = xfil * (xa*volume(iel))**xb
-  propce(iel,ipcvst) = crom(iel)                         &
-       * coef * delta**2 * propce(iel,ipcvst)
+  visct(iel) = crom(iel)                         &
+       * coef * delta**2 * visct(iel)
 enddo
 
 !     Quelques impressions

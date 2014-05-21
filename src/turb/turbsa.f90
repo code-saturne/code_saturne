@@ -110,7 +110,7 @@ integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          ipcvst, ipcvis, iflmas, iflmab
+integer          iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcvto, ipcvlo
@@ -142,6 +142,8 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: csab1r, rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
+double precision, dimension(:), pointer :: cvara_nusa
+double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
 !===============================================================================
@@ -163,9 +165,10 @@ allocate(tsexp(ncelet))
 allocate(dpvar(ncelet))
 
 call field_get_val_s(icrom, crom)
-ipcvst = ipproc(ivisct)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(ivisct), cvisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(ibrom, brom)
+call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -176,8 +179,8 @@ ivar   = inusa
 thetv  = thetav(ivar)
 
 call field_get_val_s(icrom, cromo)
-ipcvto = ipcvst
-ipcvlo = ipcvis
+ipcvto = ipproc(ivisct)
+ipcvlo = ipproc(iviscl)
 
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
@@ -307,7 +310,7 @@ if (irccor.eq.1) then
   allocate(rotfct(ncel))
 
   ! Compute the rotation function (w1 array not used)
-  call rotcor(dt, rtpa, rotfct, w1)
+  call rotcor(dt, rotfct, w1)
   !==========
 
   do iel = 1, ncel
@@ -327,14 +330,18 @@ endif
 !                                 visct is visct^n
 do iel = 1, ncel
 
-  visct = propce(iel,ipcvto)
+  if(isto2t.gt.0 .and. iviext.gt.0) then
+    visct = propce(iel,ipcvto)
+  else
+    visct = cvisct(iel)
+  endif
   rom   = cromo(iel)
   ! Kinematic viscosity
-  nu0   = propce(iel,ipcvis)/rom
+  nu0   = viscl(iel)/rom
   ! We have to know if there is any rough wall
   distbf= dispar(iel)
   ! viscosity of SA
-  nusa  = rtpa(iel,inusa)
+  nusa  = cvara_nusa(iel)
   chi   = nusa/nu0
   ! If we have a rough wall
   if(ipatrg.ne.0) then
@@ -422,7 +429,7 @@ if (isto2t.gt.0) then
     ! --- Extrapolated explicit source terms
     rhssa(iel) = - thetst*tuexpn
 
-    rhssa(iel) = tsimp(iel)*rtpa(iel,inusa) + rhssa(iel)
+    rhssa(iel) = tsimp(iel)*cvara_nusa(iel) + rhssa(iel)
 
     ! --- Implicit user source terms
     ! Here it is assumed that -tsimp > 0. That is why it is implicited
@@ -433,7 +440,7 @@ if (isto2t.gt.0) then
 ! If source terms are not extrapolated, then they are directly added to the RHS
 else
   do iel = 1, ncel
-    rhssa(iel) = rhssa(iel) + tsimp(iel)*rtpa(iel,inusa) + tsexp(iel)
+    rhssa(iel) = rhssa(iel) + tsimp(iel)*cvara_nusa(iel) + tsexp(iel)
 
     ! --- Implicit user source terms
     tinssa(iel) = tinssa(iel) + max(-tsimp(iel),zero)
@@ -524,8 +531,8 @@ if (idiff(ivar).ge.1) then
     rom = crom(iel)
 
     ! diffusibility: 1/sigma*(mu_laminaire+ rho*nusa)
-    w1(iel) = dsigma *( propce(iel,ipcvis)                        &
-                        + idifft(ivar)*rtpa(iel,inusa)*rom )
+    w1(iel) = dsigma *( viscl(iel)                                &
+                        + idifft(ivar)*cvara_nusa(iel)*rom )
   enddo
 
   call viscfa                                                     &
@@ -545,7 +552,7 @@ if (idiff(ivar).ge.1) then
 
     ! Smooth wall
     if (itypfb(ifac).eq.iparoi) then
-      viscb(ifac) = dsigma * propce(iel,ipcvis)*surfn/distb(ifac)
+      viscb(ifac) = dsigma * viscl(iel)*surfn/distb(ifac)
 
     ! Rough wall
     elseif (itypfb(ifac).eq.iparug) then
@@ -560,8 +567,8 @@ if (idiff(ivar).ge.1) then
       hssa   = exp(8.5d0*xkappa)*dsa0
 
       ! For rough walls: nusa_F*(IprF/d0+1) = nusa_Ipr
-      viscb(ifac) = dsigma * ( propce(iel,ipcvis)                    &
-                   + idifft(ivar)*rtpa(iel,inusa)*rom                &
+      viscb(ifac) = dsigma * ( viscl(iel)                            &
+                   + idifft(ivar)*cvara_nusa(iel)*rom                    &
                    * dsa0/(distb(ifac)+dsa0)            )*surfn/distb(ifac)
 
     endif
@@ -632,7 +639,7 @@ call codits &
 ! 10. Clipping
 !===============================================================================
 
-call clipsa(ncelet, ncel, nvar, rtp)
+call clipsa(ncelet, ncel, nvar)
 !==========
 
 ! Free memory

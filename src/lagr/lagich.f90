@@ -134,6 +134,7 @@ double precision skp1(nlayer) , skp2(nlayer) , skglob, gamhet, deltah
 double precision precis, lv, tebl, tlimit, tmini
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:), pointer :: viscl
 
 precis = 1.d-15                   ! Petit nombre (pour la precision numerique)
 lv = 2.263d+6                     ! Chaleur Latente en J/kg
@@ -185,6 +186,8 @@ else
   call field_get_val_s(icrom, cromf)
 endif
 
+call field_get_val_s(iprpfl(iviscl), viscl)
+
 !===============================================================================
 ! 3. Boucle principale sur l'ensemble des particules
 !===============================================================================
@@ -203,7 +206,7 @@ do npt = 1,nbpart
                  ( ettp(npt,jvf) -ettp(npt,jvp) )                              &
                + ( ettp(npt,jwf) -ettp(npt,jwp) )*                             &
                  ( ettp(npt,jwf) -ettp(npt,jwp) )  )
-    xnul = propce(iel,ipproc(iviscl)) / cromf(iel)
+    xnul = viscl(iel) / cromf(iel)
     rep  = aux1 * ettp(npt,jdp) / xnul
 
     ! Calcul du Prandtl et du Sherwood

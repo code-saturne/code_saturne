@@ -110,19 +110,19 @@ double precision, pointer, dimension(:) :: prhyd
 ! Local variables
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
-integer          ncp   , ncv   , iok   , ifld
+integer          ncv   , iok   , ifld
 integer          iiptot
 integer          nbccou
 integer          ntrela
 
 integer          isvhb
-integer          ii    , jj    , ippcp , ientha, ippcv
+integer          ii    , jj    , ientha, ippcv
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
 integer          ielpdc
 
-double precision cpcst , tditot, tdist2, tdist1, cvcst
+double precision tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision cosdto, sindto, omgnrm, rrotgb(3,3)
@@ -152,6 +152,14 @@ double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpav
 double precision, dimension(:,:), pointer :: vel
+
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_ep, cvara_ep
+double precision, dimension(:), pointer :: cvar_omg, cvara_omg
+double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cpro_prtot
 
 !===============================================================================
 ! Interfaces
@@ -238,6 +246,8 @@ if(ipass.eq.1.and.ineedy.eq.1.and.abs(icdpar).eq.1.and.           &
   enddo
 endif
 
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 !===============================================================================
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
@@ -258,13 +268,13 @@ if( ntcabs.le.2 .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
   if(iwarni(ipr).ge.2) then
     write(nfecra,2000) ntcabs
   endif
-  iiptot = ipproc(iprtot)
+  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
   do iel = 1, ncel
-    rtp(iel,ipr) = pred0
-    propce(iel,iiptot) = p0                                &
+    cvar_pr(iel) = pred0
+    cpro_prtot(iel) = p0                                        &
          + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
          +       gy*(xyzcen(2,iel)-xyp0)                   &
          +       gz*(xyzcen(3,iel)-xzp0) )
@@ -330,11 +340,19 @@ if (iperio.eq.1) then
   !  -- Reynolds stress tensor
 
   if (itytur.eq.3) then
+
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+
     call perrte &
     !==========
-  ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),           &
-    rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),           &
-    rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
+  ( cvar_r11, cvar_r12, cvar_r13,           &
+    cvar_r12, cvar_r22, cvar_r23,           &
+    cvar_r13, cvar_r23, cvar_r33 )
   endif
 
   !  -- Note for v2f:
@@ -505,7 +523,7 @@ if (iwarni(iu).ge.1) then
   write(nfecra,1010)
 endif
 
-call phyvar(nvar, nscal, dt, rtp, rtpa, propce)
+call phyvar(nvar, nscal, dt, rtp, propce)
 !==========
 
 if (itrale.gt.0) then
@@ -584,7 +602,7 @@ call dttvar &
  ( nvar   , nscal  , ncepdc , ncetsm ,                            &
    iwarni(iu)   ,                                                 &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , propce ,                                              &
    ckupdc , smacel )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
@@ -793,7 +811,6 @@ do while (iterns.le.nterup)
     ( nbzfmx , nozfmx ,                                              &
       iqimp  , icalke , qimp   , dh , xintur,                        &
       itypfb , izfppp , ilzfbr ,                                     &
-      propce ,                                                       &
       rcodcl , qcalc  )
 
       ! Free memory
@@ -859,7 +876,7 @@ do while (iterns.le.nterup)
   ( nvar   , nscal  ,                                              &
     iu     , iv     , iw     ,                                     &
     ttcabs ,                                                       &
-    dt     , rtpa   , rtp    , propce ,                            &
+    dt     , rtpa   , rtp    ,                                     &
     rcodcl )
 
   ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
@@ -919,7 +936,6 @@ do while (iterns.le.nterup)
       !==========
     ( itrale , italim , ineefl ,                                     &
       impale ,                                                       &
-      rtpa   ,                                                       &
       flmalf , flmalb , xprale , cofale , depale )
 
     endif
@@ -938,7 +954,7 @@ do while (iterns.le.nterup)
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call cpvosy(iscalt, dt, rtp, rtpa, propce)
+    call cpvosy(iscalt, dt, rtp)
     !==========
 
     call coupbi(nfabor, nscal, icodcl, rcodcl)
@@ -983,7 +999,7 @@ do while (iterns.le.nterup)
     call field_get_val_s(icrom, crom)
     call solvar(rtp(:,isca(iscalt)),rtp(:,isca(itotwt)), &
                 crom   , dt ,                            &
-                rcodcl , rtp)
+                rcodcl )
   endif
 
   !     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
@@ -1009,19 +1025,8 @@ do while (iterns.le.nterup)
     endif
   endif
 
-  ! On recupere le Cp de la phase couplee
-  if(icp.gt.0) then
-    ippcp = ipproc(icp)
-    ncp   = ncelet
-    cpcst = 0.d0
-  else
-    ippcp = 1
-    ncp   = 1
-    cpcst = cp0
-  endif
-
   ! En compressible et si on couple ave l'energie
-  ! on recupere de Cv de la phase couplee
+  ! on recupere le Cv de la phase couplee
 
   if ( ippmod(icompf).ge.0 .and. ientha .eq. 2 ) then
 
@@ -1046,19 +1051,18 @@ do while (iterns.le.nterup)
 
     call coupbo &
     !==========
-  ( ncp    , ncv    , ientha ,                                     &
-    rtp    ,                                                       &
-    cpcst  , propce(:,ippcp) , cvcst  , propce(:,ippcv),           &
+  ( ncv    , ientha ,                                              &
+    cvcst  , propce(:,ippcv),                                      &
     hbord  , theipb )
 
     if (nfpt1t.gt.0) then
       call cou1do &
       !==========
-    ( nvar   , nscal  , ncp    , nfpt1d ,                          &
+    ( nvar   , nscal  , nfpt1d ,                                   &
       ientha , ifpt1d , iclt1d ,                                   &
       tppt1d , tept1d , hept1d , fept1d ,                          &
-      xlmbt1 , rcpt1d , dtpt1d , dt     , rtpa   ,                 &
-      cpcst  , propce(:,ippcp) , hbord  , theipb )
+      xlmbt1 , rcpt1d , dtpt1d , dt     ,                          &
+      hbord  , theipb )
     endif
   endif
 
@@ -1149,7 +1153,7 @@ do while (iterns.le.nterup)
       !     On doit conserver la memoire de memcli a cause de 'uetbor'
       !       dans DISTYP
 
-      call distyp(itypfb, dispar, propce, yplpar)
+      call distyp(itypfb, dispar, yplpar)
       !==========
 
     endif
@@ -1164,8 +1168,7 @@ do while (iterns.le.nterup)
       !==========
     ( ndim   , ncelet , ncel   , nfabor ,                          &
       itypfb , ifabor , ifapat,                                    &
-      xyzcen , cdgfbo , visvdr , yplpar ,                          &
-      propce )
+      xyzcen , cdgfbo , visvdr , yplpar )
     endif
 
   endif
@@ -1242,7 +1245,7 @@ do while (iterns.le.nterup)
     !     En parallele, l'echange est fait au debut de navstv.
     if(nterup.gt.1) then
       do iel = 1, ncel
-        rtpa(iel,ipr) = rtp(iel,ipr)
+        cvara_pr(iel) = cvar_pr(iel)
       enddo
     endif
 
@@ -1385,13 +1388,18 @@ if (iccvfg.eq.0) then
 
     endif
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_prev_s(ivarfl(ik), cvara_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+    call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
     !  RELAXATION DE K ET EPSILON SI IKECOU=0 EN INSTATIONNAIRE
     if (ikecou.eq.0 .and. idtvar.ge.0) then
       relaxk = relaxv(ik)
       relaxe = relaxv(iep)
       do iel = 1,ncel
-        rtp(iel,ik) = relaxk*rtp(iel,ik) + (1.d0-relaxk)*rtpa(iel,ik)
-        rtp(iel,iep) = relaxe*rtp(iel,iep) + (1.d0-relaxe)*rtpa(iel,iep)
+        cvar_k(iel) = relaxk*cvar_k(iel) + (1.d0-relaxk)*cvara_k(iel)
+        cvar_ep(iel) = relaxe*cvar_ep(iel) + (1.d0-relaxe)*cvara_ep(iel)
       enddo
     endif
 
@@ -1400,7 +1408,7 @@ if (iccvfg.eq.0) then
     ! Calcul de Alpha pour l'EBRSM
     if (iturb.eq.32) then
 
-      call resalp(nvar, rtp, rtpa, propce)
+      call resalp(nvar, rtp, rtpa)
       !==========
 
     endif
@@ -1425,13 +1433,18 @@ if (iccvfg.eq.0) then
     tslagr ,                                                       &
     ckupdc , smacel )
 
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_prev_s(ivarfl(ik), cvara_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
+    call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
+
     !  RELAXATION DE K ET OMEGA SI IKECOU=0
     if (ikecou.eq.0 .and. idtvar.ge.0) then
       relaxk = relaxv(ik )
       relaxw = relaxv(iomg)
       do iel = 1,ncel
-        rtp(iel,ik)   = relaxk*rtp(iel,ik)   + (1.d0-relaxk)*rtpa(iel,ik)
-        rtp(iel,iomg) = relaxw*rtp(iel,iomg) + (1.d0-relaxw)*rtpa(iel,iomg)
+        cvar_k(iel)   = relaxk*cvar_k(iel)   + (1.d0-relaxk)*cvara_k(iel)
+        cvar_omg(iel) = relaxw*cvar_omg(iel) + (1.d0-relaxw)*cvara_omg(iel)
       enddo
     endif
 
@@ -1446,11 +1459,14 @@ if (iccvfg.eq.0) then
     ckupdc , smacel ,                                              &
     itypfb )
 
+    call field_get_val_s(ivarfl(inusa), cvar_nusa)
+    call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)
+
     !  RELAXATION DE NUSA
     if (idtvar.ge.0) then
       relaxn = relaxv(inusa)
       do iel = 1,ncel
-        rtp(iel,inusa) = relaxn*rtp(iel,inusa)+(1.d0-relaxn)*rtpa(iel,inusa)
+        cvar_nusa(iel) = relaxn*cvar_nusa(iel)+(1.d0-relaxn)*cvara_nusa(iel)
       enddo
     endif
 

@@ -214,6 +214,9 @@ double precision, dimension(:), pointer :: cofadp, cofbdp
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: crom
 
+double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cpro_cp
+
 !===============================================================================
 
 !===============================================================================
@@ -312,7 +315,7 @@ call typecl &
 !==========
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   rtpa   , propce , rcodcl , frcxt  )
+   rcodcl , frcxt  )
 
 !===============================================================================
 ! 3. Check the consistency of the BCs
@@ -398,13 +401,8 @@ xyp0   = xyzp0(2)
 xzp0   = xyzp0(3)
 
 ! --- Physical quantities
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
-if (icp.gt.0) then
-  ipccp  = ipproc(icp)
-else
-  ipccp = 0
-endif
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 ! --- Compressible
 if (ippmod(icompf).ge.0) then
@@ -650,7 +648,7 @@ if (ipatur.ne.0) then
   call clptur &
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , rcodcl ,                                              &
+   rcodcl ,                                                       &
    velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
@@ -704,8 +702,8 @@ do ifac = 1, nfabor
 
     ! --- Physical Properties
     iel = ifabor(ifac)
-    visclc = propce(iel,ipcvis)
-    visctc = propce(iel,ipcvst)
+    visclc = viscl(iel)
+    visctc = visct(iel)
 
     ! --- Geometrical quantities
     distbf = distb(ifac)
@@ -782,8 +780,8 @@ do ifac = 1, nfabor
   iel = ifabor(ifac)
 
   ! --- Physical Propreties
-  visclc = propce(iel,ipcvis)
-  visctc = propce(iel,ipcvst)
+  visclc = viscl(iel)
+  visctc = visct(iel)
 
   ! --- Geometrical quantities
   distbf = distb(ifac)
@@ -1130,8 +1128,8 @@ if (itytur.eq.2.or.iturb.eq.60) then
       iel = ifabor(ifac)
 
       ! --- Physical Propreties
-      visclc = propce(iel,ipcvis)
-      visctc = propce(iel,ipcvst)
+      visclc = viscl(iel)
+      visctc = visct(iel)
 
       ! --- Geometrical quantities
       distbf = distb(ifac)
@@ -1222,7 +1220,7 @@ elseif (itytur.eq.3) then
       iel = ifabor(ifac)
 
       ! --- Physical Propreties
-      visclc = propce(iel,ipcvis)
+      visclc = viscl(iel)
 
       ! --- Geometrical quantities
       distbf = distb(ifac)
@@ -1351,8 +1349,8 @@ elseif (itytur.eq.3) then
     iel = ifabor(ifac)
 
     ! --- Physical Propreties
-    visclc = propce(iel,ipcvis)
-    visctc = propce(iel,ipcvst)
+    visclc = viscl(iel)
+    visctc = visct(iel)
 
     ! --- Geometrical quantities
     distbf = distb(ifac)
@@ -1549,8 +1547,8 @@ elseif (itytur.eq.5) then
       iel = ifabor(ifac)
 
       ! --- Physical Propreties
-      visclc = propce(iel,ipcvis)
-      visctc = propce(iel,ipcvst)
+      visclc = viscl(iel)
+      visctc = visct(iel)
 
       ! --- Geometrical quantities
       distbf = distb(ifac)
@@ -1760,7 +1758,7 @@ elseif (iturb.eq.70) then
     iel = ifabor(ifac)
 
     ! --- Physical Propreties
-    visclc = propce(iel,ipcvis)
+    visclc = viscl(iel)
 
     ! --- Geometrical quantities
     distbf = distb(ifac)
@@ -1823,6 +1821,10 @@ endif
 
 if (nscal.ge.1) then
 
+  if(icp.gt.0) then
+    call field_get_val_s(iprpfl(icp), cpro_cp)
+  endif
+
   do ii = 1, nscal
 
     ivar   = isca(ii)
@@ -1852,7 +1854,7 @@ if (nscal.ge.1) then
     endif
 
     if (iscacp(iscal).eq.1) then
-      if(ipccp.gt.0) then
+      if(icp.gt.0) then
         ihcp = 2
       else
         ihcp = 1
@@ -1873,7 +1875,7 @@ if (nscal.ge.1) then
       iel = ifabor(ifac)
 
       ! --- Physical Properties
-      visctc = propce(iel,ipcvst)
+      visctc = visct(iel)
 
       ! --- Geometrical quantities
       distbf = distb(ifac)
@@ -1885,7 +1887,7 @@ if (nscal.ge.1) then
       if (ihcp.eq.0) then
         cpp = 1.d0
       elseif (ihcp.eq.2) then
-        cpp = propce(iel,ipccp)
+        cpp = cpro_cp(iel)
       elseif (ihcp.eq.1) then
         cpp = cp0
       endif
@@ -1992,8 +1994,8 @@ if (nscal.ge.1) then
         !       lorsque la variable transportee est l'enthalpie
         !         ISCSTH(II).EQ.2 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT*CPR
         !         avec
-        !            IF(IPCCP.GT.0) THEN
-        !              CPR = PROPCE(IEL,IPCCP )
+        !            IF(ICP.GT.0) THEN
+        !              CPR = CPRO_CP(IEL)
         !            ELSE
         !              CPR = CP0
         !            ENDIF
@@ -2018,8 +2020,8 @@ if (nscal.ge.1) then
           ! Enthalpy
           if (itherm.eq.2) then
             ! If Cp is variable
-            if (ipccp.gt.0) then
-              bhconv(ifac) = hint*propce(iel,ipccp )
+            if (icp.gt.0) then
+              bhconv(ifac) = hint*cpro_cp(iel)
             else
               bhconv(ifac) = hint*cp0
             endif
@@ -2070,8 +2072,8 @@ if (nscal.ge.1) then
           ! Enthalpy
           if (itherm.eq.2) then
             ! If Cp is variable
-            if (ipccp.gt.0) then
-              bhconv(ifac) = hint*propce(iel, ipccp)
+            if (icp.gt.0) then
+              bhconv(ifac) = hint*cpro_cp(iel)
             else
               bhconv(ifac) = hint*cp0
             endif
@@ -2128,7 +2130,7 @@ if (nscal.ge.1) then
         call field_get_coefbd_v(f_id,cofbrut)
 
         ! --- Physical Propreties
-        visclc = propce(iel,ipcvis)
+        visclc = viscl(iel)
 
         ! --- Geometrical quantities
         distbf = distb(ifac)
@@ -2334,8 +2336,8 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
   ! Coupled solving of the velocity components
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    visclc = propce(iel,ipproc(iviscl))
-    visctc = propce(iel,ipproc(ivisct))
+    visclc = viscl(iel)
+    visctc = visct(iel)
     if (itytur.eq.3) then
       vistot = visclc
     else

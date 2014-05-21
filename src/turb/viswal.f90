@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine viswal &
-!================
-
- ( rtpa   , propce )
+subroutine viswal
 
 !===============================================================================
 ! FONCTION :
@@ -32,7 +29,7 @@ subroutine viswal &
 ! CALCUL DE LA VISCOSITE "TURBULENTE" POUR
 !          UN MODELE LES WALE
 
-! PROPCE(1,IVISCT) = ROM * (CWALE*L)**2 *
+! VISCT = ROM * (CWALE*L)**2 *
 !   [(Sijd.Sijd)**(3/2)] / [(Sij.Sij)**(5/2) + (Sijd.Sijd)**(5/4)]
 !
 ! avec
@@ -48,9 +45,6 @@ subroutine viswal &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -80,9 +74,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel, inc
@@ -98,6 +89,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
 
@@ -108,9 +100,8 @@ double precision, dimension(:), pointer :: crom
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
-! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
 ! --- Pour le calcul de la viscosite de sous-maille
@@ -209,7 +200,7 @@ do iel = 1, ncel
   delta = xfil* (xa*volume(iel))**xb
   delta = coef * delta**2
 
-  propce(iel,ipcvst) = crom(iel) * delta * con
+  visct(iel) = crom(iel) * delta * con
 
 enddo
 

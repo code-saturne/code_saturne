@@ -25,7 +25,6 @@ subroutine strpre &
 
  ( itrale , italim , ineefl ,                                     &
    impale ,                                                       &
-   rtpa   ,                                                       &
    flmalf , flmalb , xprale , cofale , depale )
 
 !===============================================================================
@@ -44,8 +43,6 @@ subroutine strpre &
 ! ineedf           ! e  ! <-- ! indicateur de sauvegarde des flux              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !
 ! flmalb(nfabor    ! tr ! --> ! sauvegarde du flux de masse faces brd          !
 ! cofale           ! tr ! --> ! sauvegarde des cl de p et u                    !
@@ -89,7 +86,6 @@ integer          itrale , italim , ineefl
 
 integer          impale(nnod)
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,11)
 double precision depale(3,nnod)
@@ -105,12 +101,16 @@ double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp
 
+double precision, dimension(:), pointer :: cvara_pr
+
 !===============================================================================
 
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -271,7 +271,7 @@ if (italim.eq.1) then
     enddo
     if (nterup.gt.1) then
       do iel = 1, ncelet
-        xprale(iel) = rtpa(iel,ipr)
+        xprale(iel) = cvara_pr(iel)
       enddo
     endif
   endif

@@ -25,7 +25,7 @@ subroutine cpltsv &
 
  ( iscal  , iscala ,                                              &
    itypfb ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   rtpa   , rtp    ,                                              &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -55,7 +55,6 @@ subroutine cpltsv &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -98,14 +97,12 @@ integer          iscal  , iscala
 integer          itypfb(nfabor)
 
 double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 integer          ivar   , ivarsc , ivarut, ivar0
 integer          iel, ifac
-integer          ipcvst
 integer          icha
 integer          inc , iccocg , nswrgp , imligp , iwarnp
 
@@ -116,7 +113,11 @@ double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w7
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: visct
+double precision, dimension(:), pointer :: cka, cvara_ep, cvara_omg
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+
 !===============================================================================
 
 !===============================================================================
@@ -146,8 +147,20 @@ endif
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), visct)
 
+if ( itytur.eq.2 .or. iturb.eq.50 ) then
+  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+elseif ( itytur.eq.3 ) then
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+elseif ( iturb.eq.60 ) then
+  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
+endif
 
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES DE PRODUCTION PAR LES GRADIENTS
@@ -243,21 +256,21 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
 
   do iel = 1, ncel
     if ( itytur.eq.2 .or. iturb.eq.50 ) then
-      xk = rtpa(iel,ik)
-      xe = rtpa(iel,iep)
+      xk = cka(iel)
+      xe = cvara_ep(iel)
     elseif ( itytur.eq.3 ) then
-      xk = 0.5d0*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
-      xe = rtpa(iel,iep)
+      xk = 0.5d0*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
+      xe = cvara_ep(iel)
     elseif ( iturb.eq.60 ) then
-      xk = rtpa(iel,ik)
-      xe = cmu*xk*rtpa(iel,iomg)
+      xk = cka(iel)
+      xe = cmu*xk*cvara_omg(iel)
     endif
 
-    rhovst = crom(iel)*xe/                               &
+    rhovst = crom(iel)*xe/                                           &
              (xk * rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel) +                                        &
-                2.d0*propce(iel,ipcvst)*volume(iel)/sigmas(iscal)    &
+                2.d0*visct(iel)*volume(iel)/sigmas(iscal)            &
                 * (grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2) &
                 - rhovst*rtpa(iel,ivar)
   enddo

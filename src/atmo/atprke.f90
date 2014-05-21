@@ -105,6 +105,8 @@ double precision dum
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: cromo
 
+double precision, dimension(:), pointer :: cka, cvara_ep
+
 !===============================================================================
 
 !===============================================================================
@@ -124,6 +126,11 @@ if(isto2t.gt.0) then
   if(iviext.gt.0) then
     ipcvto = ipproc(ivista)
   endif
+endif
+
+if ((ippmod(iatmos).eq.1.and.itytur.eq.2).or.ippmod(iatmos).eq.2) then
+  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 endif
 
 !===============================================================================
@@ -185,8 +192,8 @@ if (itytur.eq.2) then
   do iel = 1, ncel
     rho   = cromo(iel)
     visct = propce(iel,ipcvto)
-    xeps = rtpa(iel,iep )
-    xk   = rtpa(iel,ik )
+    xeps = cvara_ep(iel)
+    xk   = cka(iel)
     ttke = xk / xeps
 
     gravke = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
@@ -322,8 +329,8 @@ endif
 do iel = 1, ncel
   rho   = cromo(iel)
   visct = propce(iel,ipcvto)
-  xeps = rtpa(iel,iep)
-  xk   = rtpa(iel,ik)
+  xeps = cvara_ep(iel)
+  xk   = cka(iel)
   ttke = xk / xeps
 
   gravke = gravke_theta(iel) + gravke_qw(iel)

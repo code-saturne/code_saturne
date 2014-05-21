@@ -79,13 +79,15 @@ double precision propce(ncelet,*)
 
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
-integer          ipcvis , ipcvst
 integer          ipcvsa , ipcvta , ipcvsl
-integer          iicp   , iicpa
+integer          iicpa
 double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
 double precision, dimension(:), pointer :: brom, crom, broma, croma
+double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cpro_cp
+
 !===============================================================================
 
 !===============================================================================
@@ -146,21 +148,21 @@ if (iappel.eq.1) then
     call field_current_to_previous(ibrom)
   endif
   if (iviext.gt.0) then
-    ipcvis = ipproc(iviscl)
-    ipcvst = ipproc(ivisct)
+    call field_get_val_s(iprpfl(iviscl), viscl)
+    call field_get_val_s(iprpfl(ivisct), visct)
     ipcvsa = ipproc(ivisla)
     ipcvta = ipproc(ivista)
     do iel = 1, ncel
-      propce(iel,ipcvsa) = propce(iel,ipcvis)
-      propce(iel,ipcvta) = propce(iel,ipcvst)
+      propce(iel,ipcvsa) = viscl(iel)
+      propce(iel,ipcvta) = visct(iel)
     enddo
   endif
   if (icpext.gt.0) then
-    if (icp   .gt.0) then
-      iicp   = ipproc(icp   )
+    if (icp.gt.0) then
+      call field_get_val_s(iprpfl(icp), cpro_cp)
       iicpa  = ipproc(icpa  )
       do iel = 1, ncel
-        propce(iel,iicpa ) = propce(iel,iicp  )
+        propce(iel,iicpa ) = cpro_cp(iel)
       enddo
     endif
   endif
@@ -211,13 +213,13 @@ elseif (iappel.eq.2) then
   if (initvi.ne.1) then
     initvi = 1
     if (iviext.gt.0) then
-      ipcvis = ipproc(iviscl)
-      ipcvst = ipproc(ivisct)
+      call field_get_val_s(iprpfl(iviscl), viscl)
+      call field_get_val_s(iprpfl(ivisct), visct)
       ipcvsa = ipproc(ivisla)
       ipcvta = ipproc(ivista)
       do iel = 1, ncel
-        propce(iel,ipcvsa) = propce(iel,ipcvis)
-        propce(iel,ipcvta) = propce(iel,ipcvst)
+        propce(iel,ipcvsa) = viscl(iel)
+        propce(iel,ipcvta) = visct(iel)
       enddo
     endif
   endif
@@ -225,10 +227,10 @@ elseif (iappel.eq.2) then
     initcp = 1
     if (icpext.gt.0) then
       if (icp   .gt.0) then
-        iicp   = ipproc(icp   )
-        iicpa  = ipproc(icpa  )
+        call field_get_val_s(iprpfl(icp), cpro_cp)
+        iicpa  = ipproc(icpa)
         do iel = 1, ncel
-          propce(iel,iicpa ) = propce(iel,iicp  )
+          propce(iel,iicpa) = cpro_cp(iel)
         enddo
       endif
     endif
@@ -284,31 +286,31 @@ elseif (iappel.eq.2) then
     enddo
   endif
   if (iviext.gt.0) then
-    ipcvis = ipproc(iviscl)
-    ipcvst = ipproc(ivisct)
+    call field_get_val_s(iprpfl(iviscl), viscl)
+    call field_get_val_s(iprpfl(ivisct), visct)
     ipcvsa = ipproc(ivisla)
     ipcvta = ipproc(ivista)
     theta  = thetvi
     do iel = 1, ncel
-      viscos = propce(iel,ipcvis)
-      propce(iel,ipcvis) = (1.d0+theta) * propce(iel,ipcvis)    &
+      viscos = viscl(iel)
+      viscl(iel) = (1.d0+theta) * viscl(iel)    &
            -       theta  * propce(iel,ipcvsa)
       propce(iel,ipcvsa) = viscos
-      viscos = propce(iel,ipcvst)
-      propce(iel,ipcvst) = (1.d0+theta) * propce(iel,ipcvst)    &
+      viscos = visct(iel)
+      visct(iel) = (1.d0+theta) * visct(iel)    &
            -       theta  * propce(iel,ipcvta)
       propce(iel,ipcvta) = viscos
     enddo
   endif
   if (icpext.gt.0) then
     if (icp.gt.0) then
-      iicp   = ipproc(icp   )
-      iicpa  = ipproc(icpa  )
+      call field_get_val_s(iprpfl(icp), cpro_cp)
+      iicpa  = ipproc(icpa)
       theta  = thetcp
       do iel = 1, ncel
-        varcp  = propce(iel,iicp  )
-        propce(iel,iicp  ) = (1.d0+theta) * propce(iel,iicp  )  &
-             -       theta  * propce(iel,iicpa )
+        varcp  = cpro_cp(iel)
+        cpro_cp(iel) = (1.d0+theta) * cpro_cp(iel)      &
+                      -      theta  * propce(iel,iicpa)
         propce(iel,iicpa ) = varcp
       enddo
     endif
@@ -500,21 +502,21 @@ elseif (iappel.eq.5) then
     enddo
   endif
   if (iviext.gt.0) then
-    ipcvis = ipproc(iviscl)
-    ipcvst = ipproc(ivisct)
+    call field_get_val_s(iprpfl(iviscl), viscl)
+    call field_get_val_s(iprpfl(ivisct), visct)
     ipcvsa = ipproc(ivisla)
     ipcvta = ipproc(ivista)
     do iel = 1, ncel
-      propce(iel,ipcvis) = propce(iel,ipcvsa)
-      propce(iel,ipcvst) = propce(iel,ipcvta)
+      viscl(iel) = propce(iel,ipcvsa)
+      visct(iel) = propce(iel,ipcvta)
     enddo
   endif
   if (icpext.gt.0) then
     if (icp.gt.0) then
-      iicp   = ipproc(icp   )
-      iicpa  = ipproc(icpa  )
+      call field_get_val_s(iprpfl(icp), cpro_cp)
+      iicpa  = ipproc(icpa)
       do iel = 1, ncel
-        propce(iel,iicp  ) = propce(iel,iicpa )
+        cpro_cp(iel) = propce(iel,iicpa)
       enddo
     endif
   endif

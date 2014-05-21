@@ -23,7 +23,7 @@
 subroutine tsepls &
 !================
 
- ( rtpa   , w1     )
+ ( w1     )
 
 !===============================================================================
 ! FONCTION :
@@ -36,8 +36,6 @@ subroutine tsepls &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! w1(ncelet)       ! ra ! --> ! work array to store the E-term                 !
 !__________________!____!_____!________________________________________________!
 
@@ -67,7 +65,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision w1(ncelet)
 
 ! Local variables

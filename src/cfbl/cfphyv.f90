@@ -24,7 +24,7 @@ subroutine cfphyv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -42,8 +42,6 @@ subroutine cfphyv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -76,7 +74,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables

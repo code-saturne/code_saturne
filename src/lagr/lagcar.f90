@@ -25,9 +25,9 @@ subroutine lagcar &
 
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   nvlsta ,                                                       &
+   nvlsta , iprev  ,                                              &
    itepa  ,                                                       &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
    piil   , bx     , tempct , statis ,                            &
    gradpr , gradvf , energi , dissip , romp   )
@@ -54,12 +54,12 @@ subroutine lagcar &
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
+! iprev            ! e  ! <-- ! time step indicator for fields                 !
+!                  !    !     !   0: use fields at current time step           !
+!                  !    !     !   1: use fields at previous time step          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -117,9 +117,9 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          nvlsta
 integer          itepa(nbpmax,nivep)
+integer          iprev
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3)
@@ -145,11 +145,48 @@ double precision xnul , rom , prt , fnus , xrkl , xcp
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: viscl, visls, cpro_cp
 
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
+if (iprev.eq.0) then
+  call field_get_val_v(ivarfl(iu), vel)
+
+  if (itytur.eq.2 .or. iturb.eq.50) then
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+  else if (itytur.eq.3) then
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+  else if (iturb.eq.60) then
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
+  endif
+
+else if (iprev.eq.1) then
+  call field_get_val_prev_v(ivarfl(iu), vel)
+
+  if (itytur.eq.2 .or. iturb.eq.50) then
+    call field_get_val_prev_s(ivarfl(ik), cvar_k)
+    call field_get_val_prev_s(ivarfl(iep), cvar_ep)
+  else if (itytur.eq.3) then
+    call field_get_val_prev_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_prev_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_prev_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_prev_s(ivarfl(iep), cvar_ep)
+  else if (iturb.eq.60) then
+    call field_get_val_prev_s(ivarfl(ik), cvar_k)
+    call field_get_val_prev_s(ivarfl(iomg), cvar_omg)
+  endif
+endif
+
+call field_get_val_s(iprpfl(iviscl), viscl)
+if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
@@ -206,7 +243,7 @@ do ip = 1,nbpart
     iel = itepa(ip,jisor)
 
     rom  = cromf(iel)
-    xnul = propce(iel,ipproc(iviscl)) / rom
+    xnul = viscl(iel) / rom
 
     uvwr = sqrt( ( ettp(ip,juf) -ettp(ip,jup) )*                  &
                  ( ettp(ip,juf) -ettp(ip,jup) )                   &
@@ -252,7 +289,7 @@ do ip = 1,nbpart
 !     CP fluide
 
       if (icp.gt.0) then
-        xcp = propce( 1,ipproc(icp) )
+        xcp = cpro_cp(1)
       else
         xcp = cp0
       endif
@@ -266,7 +303,8 @@ do ip = 1,nbpart
       if (ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2) then
         xrkl = diftl0 / rom
       else if (ivisls(iscath).ge.1) then
-        xrkl = propce(iel,ipproc(ivisls(iscath))) / rom
+        call field_get_val_s(iprpfl(ivisls(iscath)), visls)
+        xrkl = visls(iel) / rom
       else
         xrkl = visls0(iscath) / rom
       endif
@@ -313,20 +351,20 @@ if (idistu.eq.1) then
 
   if (itytur.eq.2 .or. iturb.eq.50) then
     do iel = 1,ncel
-      energi(iel) = rtp(iel,ik)
-      dissip(iel) = rtp(iel,iep)
+      energi(iel) = cvar_k(iel)
+      dissip(iel) = cvar_ep(iel)
     enddo
   else if (itytur.eq.3) then
     do iel = 1,ncel
-      energi(iel) = 0.5d0*( rtp(iel,ir11)                  &
-                           +rtp(iel,ir22)                  &
-                           +rtp(iel,ir33) )
-      dissip(iel) = rtp(iel,iep)
+      energi(iel) = 0.5d0*( cvar_r11(iel)                  &
+                           +cvar_r22(iel)                  &
+                           +cvar_r33(iel) )
+      dissip(iel) = cvar_ep(iel)
     enddo
   else if (iturb.eq.60) then
     do iel = 1,ncel
-      energi(iel) = rtp(iel,ik)
-      dissip(iel) = cmu*energi(iel)*rtp(iel,iomg)
+      energi(iel) = cvar_k(iel)
+      dissip(iel) = cmu*energi(iel)*cvar_omg(iel)
     enddo
   else
     write(nfecra,2000) iilagr, idistu, iturb
@@ -405,9 +443,9 @@ if (idistu.eq.1) then
         endif
 
         if (itytur.eq.3) then
-          r11 = rtp(iel,ir11)
-          r22 = rtp(iel,ir22)
-          r33 = rtp(iel,ir33)
+          r11 = cvar_r11(iel)
+          r22 = cvar_r22(iel)
+          r33 = cvar_r33(iel)
           ktil = 3.d0 * ( r11*bb1 + r22*bb2 + r33*bb3  )          &
                / (2.d0 * (bb1+bb2+bb3) )
         else if (itytur.eq.2 .or. iturb.eq.50       &

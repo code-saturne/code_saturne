@@ -170,6 +170,9 @@ double precision, dimension(:), pointer :: ivoifl, bvoifl
 double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
 
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cpro_prtot
+
 !===============================================================================
 
 !===============================================================================
@@ -230,6 +233,9 @@ if (idtten.ge.0) then
 else
   dttens => rvoid2
 endif
+
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 ! Allocate work arrays
 allocate(w1(ncelet))
@@ -292,7 +298,7 @@ if (nterup.gt.1) then
     if (irangp.ge.0.or.iperio.eq.1) then
       call synvin(uvwk(1,1))
       !==========
-      call synsca(rtpa(1,ipr))
+      call synsca(cvara_pr)
       !==========
     endif
   endif
@@ -392,7 +398,7 @@ call predvv &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtpa   , vel    , vela   ,                            &
+  dt     , vel    , vela   ,                                     &
   propce ,                                                       &
   imasfl , bmasfl ,                                              &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
@@ -755,7 +761,7 @@ if (ippmod(icompf).lt.0) then
   !==========
 ( nvar   , ncetsm ,                                              &
   icetsm , isostd ,                                              &
-  dt     , rtp    , rtpa   , vel    ,                            &
+  dt     , vel    ,                                              &
   propce ,                                                       &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel ,                                                       &
@@ -808,12 +814,12 @@ if (ippmod(icompf).lt.0) then
     if (idtvar.lt.0) then
       !$omp parallel do
       do iel = 1, ncel
-        drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr)) / relaxv(ipr)
+        drtp(iel) = (cvar_pr(iel) -cvara_pr(iel)) / relaxv(ipr)
       enddo
     else
       !$omp parallel do
       do iel = 1, ncel
-        drtp(iel) = rtp(iel,ipr) -rtpa(iel,ipr)
+        drtp(iel) = cvar_pr(iel) -cvara_pr(iel)
       enddo
     endif
 
@@ -1199,7 +1205,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   if (iescal(iestot).gt.0) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ipr))
+      call synsca(cvar_pr)
       !==========
     endif
 
@@ -1276,7 +1282,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
       enddo
     enddo
 
-    !   APPEL A PREDUV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
+    !   APPEL A PREDVV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
     !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
     call predvv &
@@ -1284,7 +1290,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
  ( iappel ,                                                       &
    nvar   , nscal  , iterns , ncepdc , ncetsm ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , vel    , vel    ,                            &
+   dt     , vel    , vel    ,                                     &
    propce ,                                                       &
    esflum , esflub ,                                              &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
@@ -1347,18 +1353,19 @@ endif
 if (ndircp.le.0) then
   call prmoy0 &
   !==========
-( ncelet , ncel   , volume , rtp(:,ipr) )
+( ncelet , ncel   , volume , cvar_pr )
 endif
 
 ! Calcul de la pression totale IPRTOT : (definie comme propriete )
 ! En compressible, la pression resolue est deja la pression totale
 
 if (ippmod(icompf).lt.0) then
+  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
   do iel=1,ncel
-    propce(iel,ipproc(iprtot))= rtp(iel,ipr)           &
+    cpro_prtot(iel)= cvar_pr(iel)               &
          + ro0*( gx*(xyzcen(1,iel)-xxp0)               &
          + gy*(xyzcen(2,iel)-xyp0)                     &
          + gz*(xyzcen(3,iel)-xzp0) )                   &
@@ -1376,7 +1383,7 @@ if (iwarni(iu).ge.1) then
 
   rnorm = -1.d0
   do iel = 1, ncel
-    rnorm  = max(rnorm,abs(rtp(iel,ipr)))
+    rnorm  = max(rnorm,abs(cvar_pr(iel)))
   enddo
   if (irangp.ge.0) call parmax (rnorm)
                    !==========

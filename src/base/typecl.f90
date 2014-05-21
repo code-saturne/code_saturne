@@ -50,9 +50,6 @@
 !>                                    Neumann for the diffusion operator
 !> \param[out]    isostd        standard output indicator
 !>                              + reference face number
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                              (at previous time step)
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -73,7 +70,7 @@
 subroutine typecl &
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   rtpa   , propce , rcodcl , frcxt  )
+   rcodcl , frcxt  )
 
 !===============================================================================
 ! Module files
@@ -107,8 +104,6 @@ integer          icodcl(ndimfb,nvarcl)
 integer          itypfb(ndimfb) , itrifb(ndimfb)
 integer          isostd(ndimfb+1)
 
-double precision rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision rcodcl(ndimfb,nvarcl,3)
 double precision frcxt(3,ncelet)
 
@@ -119,7 +114,7 @@ integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
 integer          ityp, ii, jj, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          irangd, iiptot
+integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
 double precision pref, epsrgp, climgp, extrap, pipb
@@ -132,6 +127,9 @@ double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp
+
+double precision, dimension(:), pointer :: cvara_pr
+double precision, dimension(:), pointer :: cpro_prtot
 
 integer          ipass
 data             ipass /0/
@@ -153,6 +151,8 @@ pref = 0.d0
 
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 !===============================================================================
 ! 2.  Check consistency of types given in cs_user_boundary_conditions
@@ -610,7 +610,7 @@ if (itbslb.gt.0) then
      ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
        iwarnp , epsrgp , climgp , extrap ,                            &
        frcxt  ,                                                       &
-       rtpa(1,ipr) , coefap , coefbp ,                                &
+       cvara_pr   , coefap , coefbp ,                                     &
        grad   )
 
 
@@ -623,7 +623,7 @@ if (itbslb.gt.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      pripb(ifac) = rtpa(ii,ipr)                                      &
+      pripb(ifac) = cvara_pr(ii)                                          &
            + diipbx*grad(ii,1)+ diipby*grad(ii,2) + diipbz*grad(ii,3) &
            + ro0*( gx*(cdgfbo(1,ifac)-xxp0)                           &
            + gy*(cdgfbo(2,ifac)-xyp0)                                 &
@@ -633,7 +633,7 @@ if (itbslb.gt.0) then
   else
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      pripb(ifac) = rtpa(ii,ipr)                                &
+      pripb(ifac) = cvara_pr(ii)                                    &
            + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(ii,1)           &
            + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(ii,2)           &
            + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(ii,3)           &
@@ -806,10 +806,9 @@ if (ixyzp0.eq.2) then
   xyzp0(2) = xyzref(2)
   xyzp0(3) = xyzref(3)
   if (ippmod(icompf).lt.0) then
-    iiptot = ipproc(iprtot)
+    call field_get_val_s(iprpfl(iprtot), cpro_prtot)
     do iel = 1, ncelet
-      propce(iel,iiptot) = propce(iel,iiptot)       &
-           - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+      cpro_prtot(iel) = cpro_prtot(iel) - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
     enddo
   endif
   if (itbslb.gt.0) then

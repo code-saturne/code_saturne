@@ -67,6 +67,7 @@ use numvar
 use cstnum
 use parall
 use cs_c_bindings
+use field
 
 !===============================================================================
 
@@ -85,6 +86,8 @@ integer          iel, ivar, ivar1, ivar2, isou
 integer          iclrij(7)
 double precision vmin(7), vmax(7), var, rijmin, varrel, und0, epz2
 
+double precision, dimension(:), pointer :: cvar_ep, cvara_ep
+
 !===============================================================================
 
 ! Initialization to avoid compiler warnings
@@ -96,6 +99,9 @@ ivar2 = 0
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
 epz2 = epzero**2
+
+call field_get_val_s(ivarfl(iep), cvar_ep)
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
@@ -148,12 +154,12 @@ if (iclip.eq.1) then
   enddo
 
   do iel = 1, ncel
-    if (abs(rtp(iel,iep)).le.epz2) then
+    if (abs(cvar_ep(iel)).le.epz2) then
       iclrij(7) = iclrij(7) + 1
-      rtp(iel,iep) = max(rtp(iel,iep),epz2)
-    elseif(rtp(iel,iep).le.0.d0) then
+      cvar_ep(iel) = max(cvar_ep(iel),epz2)
+    elseif(cvar_ep(iel).le.0.d0) then
       iclrij(7) = iclrij(7) + 1
-      rtp(iel,iep) = abs(rtp(iel,iep))
+      cvar_ep(iel) = abs(cvar_ep(iel))
     endif
   enddo
 
@@ -181,12 +187,12 @@ else
 
   iclrij(7) = 0
   do iel = 1, ncel
-    if (abs(rtp(iel,iep)).lt.epz2) then
+    if (abs(cvar_ep(iel)).lt.epz2) then
       iclrij(7) = iclrij(7) + 1
-      rtp(iel,iep) = max(rtp(iel,iep),epz2)
-    elseif(rtp(iel,iep).le.0.d0) then
+      cvar_ep(iel) = max(cvar_ep(iel),epz2)
+    elseif(cvar_ep(iel).le.0.d0) then
       iclrij(7) = iclrij(7) + 1
-      rtp(iel,iep) = min(abs(rtp(iel,iep )), varrel*abs(rtpa(iel,iep )))
+      cvar_ep(iel) = min(abs(cvar_ep(iel)), varrel*abs(cvara_ep(iel)))
     endif
   enddo
 

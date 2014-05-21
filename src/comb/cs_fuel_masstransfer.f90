@@ -81,7 +81,7 @@ double precision rtpa(ncelet,nflown:nvar), propce(ncelet,*)
 integer          iel    , icla
 integer          ipcte1 , ipcte2 , ipcro2 , ipcdia
 integer          ipcgev , ipcght , ipcyox
-integer          ipcvst,ipcvsl,ipccp,ipchgl
+integer          ipcvsl , ipchgl
 
 double precision xng,xnuss
 double precision pparo2 , xdffli , xdfext , xdftot0 , xdftot1
@@ -92,7 +92,9 @@ double precision  pref
 
 double precision dhet1, dhet2
 double precision deva1, deva2
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cpro_cp
+
 !===============================================================================
 ! 1. INITIALISATIONS ET CALCULS PRELIMINAIRES
 !===============================================================================
@@ -114,7 +116,6 @@ enddo
 call field_get_val_s(icrom, crom)
 ipcte1 = ipproc(itemp1)
 ipcyox = ipproc(iym1(io2))
-ipcvst = ipproc(ivisct)
 !
   pref = 1.013d0
 !===============================================================================
@@ -134,19 +135,20 @@ do icla = 1, nclafu
   ipchgl = ipproc(ih1hlf(icla))
 
   xnuss = 2.d0
+
+  if ( icp.gt.0 ) call field_get_val_s(iprpfl(icp), cpro_cp)
+
   do iel = 1, ncel
     if ( ivisls(iscalt).gt.0 ) then
       ipcvsl = ipproc(ivisls(iscalt))
       if ( icp.gt.0 ) then
-        ipccp   = ipproc(icp)
-        lambda = propce(iel,ipcvsl) * propce(iel,ipccp)
+        lambda = propce(iel,ipcvsl) * cpro_cp(iel)
       else
         lambda = propce(iel,ipcvsl) * cp0
       endif
     else
       if ( icp.gt.0 ) then
-        ipccp  = ipproc(icp)
-        lambda = visls0(iscalt) * propce(iel,ipccp)
+        lambda = visls0(iscalt) * cpro_cp(iel)
       else
         lambda = visls0(iscalt) * cp0
       endif

@@ -124,8 +124,8 @@ integer          numcla , numcha , icla
 integer          ipcgch , ipcgd1 , ipcgd2 , ipcght , ipcsec
 integer          ipghco2 , ipghh2o
 integer          ixchcl , ixckcl
-integer          ipcro2 , ipcte1 , ipcte2 , ipcvsl , ipccp
-integer          ipcdia , ipcvst
+integer          ipcro2 , ipcte1 , ipcte2 , ipcvsl
+integer          ipcdia
 integer          mode, ige
 integer          ipcx2c , icha , ii, jj
 integer          itermx,nbpauv,nbrich,nbepau,nberic,ipghc2
@@ -167,6 +167,8 @@ double precision, dimension(:), pointer :: gamvlei, gamvloi, xchcpi, gaheto2i, x
 double precision, dimension(:), pointer :: gaseci, frmcpi, agei, gahetco2i
 double precision, dimension(:), pointer :: gaheth2oi, xwtcpi, xacpip
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cka, cvara_ep
 
 !LOCAL VARIABLES
 !===============
@@ -211,8 +213,11 @@ call field_get_label(ivarfl(ivar), chaine)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
-ipcvst = ipproc(ivisct)
+if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 ipcte1 = ipproc(itemp1)
+
+call field_get_val_prev_s(ivarfl(ik), cka)
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 ! Key id of the coal scalar class
 call field_get_key_id("scalar_class", keyccl)
@@ -707,16 +712,14 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
   do iel = 1, ncel
     if ( ivisls(iscalt).gt.0 ) then
       ipcvsl = ipproc(ivisls(iscalt))
-      if ( icp.gt.0 ) then
-        ipccp   = ipproc(icp)
-        w1(iel) = propce(iel,ipcvsl) * propce(iel,ipccp)
+      if (icp.gt.0) then
+        w1(iel) = propce(iel,ipcvsl) * cpro_cp(iel)
       else
         w1(iel) = propce(iel,ipcvsl) * cp0
       endif
     else
-      if ( icp.gt.0 ) then
-        ipccp   = ipproc(icp)
-        w1(iel) = visls0(iscalt) * propce(iel,ipccp)
+      if (icp.gt.0) then
+        w1(iel) = visls0(iscalt) * cpro_cp(iel)
       else
         w1(iel) = visls0(iscalt) * cp0
       endif
@@ -1511,7 +1514,7 @@ if ( ieqco2 .eq. 1 ) then
      if ( xden .ne. 0.d0 ) then
 
        tauchi = 1.d0/xden
-       tautur = rtpa(iel,ik)/rtpa(iel,iep)
+       tautur = cka(iel)/cvara_ep(iel)
 
        x2 = 0.d0
        do icla = 1, nclacp

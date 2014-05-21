@@ -453,9 +453,9 @@ subroutine uslain &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nptnew ,                                                       &
+   nptnew , iprev  ,                                              &
    itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
-   dt     , rtpa   , propce ,                                     &
+   dt     ,                                                       &
    ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
    ncmax  , nzmax  , iusloc )
 
@@ -493,6 +493,9 @@ subroutine uslain &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! nptnew           ! i  ! <-- ! total number of new particles for all the      !
 !                  !    !     ! injection zones                                !
+! iprev            ! i  ! <-- ! time step indicator for fields                 !
+!                  !    !     !   0: use fields at current time step           !
+!                  !    !     !   1: use fields at previous time step          !
 ! itrifb(nfabor)   ! ia ! <-- ! indirection for the sorting of the boundary    !
 ! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
 ! ifrlag(nfabor)   ! ia ! --> ! type of the Lagrangian boundary faces          !
@@ -500,10 +503,6 @@ subroutine uslain &
 ! (nbpmax,nivep    !    !     !                                                !
 ! injfac(npbmax)   ! ia ! <-- ! number of the injection boundary face          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! transported variables at the previous timestep !
-! (ncelet,*)       !    !     !                                                !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -555,14 +554,14 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nptnew
+integer          iprev
 integer          lndnod
 
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          injfac(nbpmax)
 
-double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 integer          icocel(lndnod) ,  itycel(ncelet+1)
@@ -696,8 +695,8 @@ if ( 1.eq.0 ) then
   !==========
   ( nbpmax ,                                                      &
     npar1  , npar2  ,                                             &
-    rtpa   ,                                                      &
-    vagaus , propce )
+    iprev  ,                                                      &
+    vagaus )
 
 endif
 

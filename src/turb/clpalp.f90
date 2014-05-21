@@ -65,6 +65,7 @@ use numvar
 use cstnum
 use parall
 use cs_c_bindings
+use field
 
 !===============================================================================
 
@@ -81,11 +82,15 @@ integer          iel, ivar, ipp
 integer          iclpmn, iclpmx
 double precision vmin(1), vmax(1), var
 
+double precision, dimension(:), pointer :: cvar_al
+
 !===============================================================================
 
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
 !===============================================================================
+
+call field_get_val_s(ivarfl(ial), cvar_al)
 
 ivar = ial
 ipp = ipprtp(ivar)
@@ -103,12 +108,12 @@ enddo
 iclpmn = 0
 iclpmx = 0
 do iel = 1, ncel
-  if (rtp(iel,ial).lt.0.d0) then
+  if (cvar_al(iel).lt.0.d0) then
     iclpmn = iclpmn + 1
-    rtp(iel,ial) = 0.d0
-  elseif(rtp(iel,ial).gt.1.d0) then
+    cvar_al(iel) = 0.d0
+  elseif(cvar_al(iel).gt.1.d0) then
     iclpmx = iclpmx + 1
-    rtp(iel,ial) = 1.d0
+    cvar_al(iel) = 1.d0
   endif
 enddo
 

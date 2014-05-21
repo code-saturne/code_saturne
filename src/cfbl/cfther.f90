@@ -131,6 +131,7 @@ integer          ifac0, l_size, iel, ifac, itk, ien
 
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
 
@@ -149,6 +150,8 @@ if (iccfth.ge.0) then
   ien = isca(ienerg)
 endif
 
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+
 ! For calculation of values at the cell faces,
 ! ifac0 is the number of the current face
 ifac0 = imodif
@@ -158,8 +161,7 @@ if (iccfth.eq.60000) then
 
   call cf_check_density(crom, ncel)
 
-  call cf_thermo_te_from_dp(rtp(1,ipr), crom, output1, output2, &
-                            vel, ncel)
+  call cf_thermo_te_from_dp(cvar_pr, crom, output1, output2, vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -175,8 +177,7 @@ elseif (iccfth.eq.100000) then
 
   call cf_check_temperature(rtp(1,itk), ncel)
 
-  call cf_thermo_de_from_pt(rtp(1,ipr), rtp(1,itk), output1, output2, &
-                            vel, ncel)
+  call cf_thermo_de_from_pt(cvar_pr, rtp(1,itk), output1, output2, vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -189,8 +190,7 @@ elseif (iccfth.eq.100000) then
 ! Calculation of density and temperature from pressure and energy
 elseif (iccfth.eq.140000) then
 
-  call cf_thermo_dt_from_pe(rtp(1,ipr), rtp(1,ien), output1, output2, &
-                            vel, ncel)
+  call cf_thermo_dt_from_pe(cvar_pr, rtp(1,ien), output1, output2, vel, ncel)
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
@@ -204,13 +204,12 @@ elseif (iccfth.eq.140000) then
 ! Calculation of pressure and energy from density and temperature
 elseif (iccfth.eq.150000) then
 
-  call cf_thermo_pe_from_dt(crom, rtp(1,itk), rtp(1,ipr), rtp(1,ien), &
-                            vel, ncel )
+  call cf_thermo_pe_from_dt(crom, rtp(1,itk), cvar_pr, rtp(1,ien), vel, ncel )
 
   ! Transfer to the array rtp
   if (imodif.gt.0) then
     do iel = 1, ncel
-      rtp(iel,ipr) = output1(iel)
+      cvar_pr(iel) = output1(iel)
       rtp(iel,ien) = output2(iel)
     enddo
   endif
@@ -224,7 +223,7 @@ elseif (iccfth.eq.210000) then
   ! Transfer to the array rtp
   if (imodif.gt.0) then
     do iel = 1, ncel
-      rtp(iel,ipr) = output1(iel)
+      cvar_pr(iel) = output1(iel)
       rtp(iel,itk) = output2(iel)
     enddo
   endif
@@ -1762,13 +1761,11 @@ end subroutine cf_thermo_s_from_dp
 !-------------------------------------------------------------------------------
 !> \brief Compute wall boundary conditions.
 
-!> \param[in]     rtp     calculated variables at cell centers
-!>                        (at current time step)
 !> \param[in,out] wbfb    output work array
 !> \param[in]     ifac    boundary face indice
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_wall_bc(rtp, wbfb, ifac)
+subroutine cf_thermo_wall_bc(wbfb, ifac)
 
 !===============================================================================
 
@@ -1795,7 +1792,6 @@ implicit none
 
 integer ifac
 
-double precision rtp(ncelet,nflown:nvar)
 double precision wbfb(nfabor)
 
 ! Local variables
@@ -1806,6 +1802,7 @@ double precision gamagp, xmach
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
 
@@ -1818,6 +1815,9 @@ if (ieos.eq.1) then
   ! Map field arrays
   call field_get_val_v(ivarfl(iu), vel)
   call field_get_val_s(icrom, crom)
+
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+
   iel = ifabor(ifac)
 
   ! Calculation of the Mach number at the boundary face, using the
@@ -1825,7 +1825,7 @@ if (ieos.eq.1) then
   xmach = ( vel(1,iel)*surfbo(1,ifac)                          &
           + vel(2,iel)*surfbo(2,ifac)                          &
           + vel(3,iel)*surfbo(3,ifac) ) / surfbn(ifac)         &
-         / sqrt( gamagp * rtp(iel,ipr) / crom(iel) )
+         / sqrt( gamagp * cvar_pr(iel) / crom(iel) )
 
   ! Pressure
 
@@ -1914,6 +1914,7 @@ double precision ci, c1, mi, a, b, sigma1, pinf
 
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
 
@@ -1932,10 +1933,13 @@ if (ieos.eq.1) then
 
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ibrom, brom)
+
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+
   iel = ifabor(ifac)
 
   pinf = bval(ifac,ipr)
-  pri  = rtp(iel,ipr)
+  pri  = cvar_pr(iel)
   roi  = crom(iel)
 
   ci   = sqrt(gamagp * pri / roi)
@@ -2162,6 +2166,7 @@ double precision dir(3)
 
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
 
@@ -2178,12 +2183,15 @@ if (ieos.eq.1) then
 
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ibrom, brom)
+
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+
   iel  = ifabor(ifac)
 
   niter = 0
 
   roi  = crom(iel)
-  pri  = rtp(iel,ipr)
+  pri  = cvar_pr(iel)
 
   ! Normalize the direction vector given by the user
   norm = sqrt(bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2)

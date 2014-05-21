@@ -23,8 +23,7 @@
 subroutine clipsa &
 !================
 
- ( ncelet , ncel   , nvar   ,                                     &
-   rtp    )
+ ( ncelet , ncel   , nvar   )
 
 !===============================================================================
 ! Purpose:
@@ -41,8 +40,6 @@ subroutine clipsa &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 !(ncelet,*         !    !     !                                                !
-! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
-! (ncelet     )    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -59,6 +56,7 @@ use numvar
 use cstphy
 use cstnum
 use entsor
+use field
 use optcal
 use parall
 use cs_c_bindings
@@ -70,7 +68,6 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel
-double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -78,7 +75,11 @@ integer          iclpnu,iel
 double precision xnu, var, epz2
 double precision vmin(1), vmax(1)
 
+double precision, dimension(:), pointer :: cvar_nusa
+
 !===============================================================================
+
+call field_get_val_s(ivarfl(inusa), cvar_nusa)
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
@@ -91,7 +92,7 @@ epz2 = epzero**2
 vmin(1) =  grand
 vmax(1) = -grand
 do iel = 1, ncel
-  var = rtp(iel,inusa)
+  var = cvar_nusa(iel)
   vmin(1) = min(vmin(1),var)
   vmax(1) = max(vmax(1),var)
 enddo
@@ -102,10 +103,10 @@ enddo
 
 iclpnu = 0
 do iel = 1, ncel
-  xnu = rtp(iel,inusa)
+  xnu = cvar_nusa(iel)
   if (xnu.lt.0.d0) then
     iclpnu = iclpnu + 1
-    rtp(iel,inusa) = 0.d0
+    cvar_nusa(iel) = 0.d0
   endif
 enddo
 

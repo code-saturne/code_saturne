@@ -24,8 +24,7 @@ subroutine clpv2f &
 !================
 
  ( ncelet , ncel   , nvar   ,                                     &
-   iwaphi ,                                                       &
-   rtp    )
+   iwaphi )
 
 !===============================================================================
 ! FONCTION :
@@ -43,8 +42,6 @@ subroutine clpv2f &
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! iwaphi           ! e  ! <-- ! niveau d'impression                            !
-! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
-! (ncelet,nvar)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -64,6 +61,7 @@ use cstnum
 use parall
 use optcal
 use cs_c_bindings
+use field
 
 !===============================================================================
 
@@ -73,7 +71,6 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iwaphi
-double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -81,7 +78,12 @@ integer          iel, ipp
 integer          nclpmx, nclpmn
 double precision xphi, xal, vmin(1), vmax(1), var
 
+double precision, dimension(:), pointer :: cvar_al, cvar_phi
+
 !===============================================================================
+
+call field_get_val_s(ivarfl(iphi), cvar_phi)
+if (iturb.eq.51) call field_get_val_s(ivarfl(ial), cvar_al)
 
 !===============================================================================
 !  1. Pour le phi-fbar et BL-v2/k model, reperage des valeurs de phi
@@ -98,7 +100,7 @@ ipp = ipprtp(iphi)
 vmin(1) =  grand
 vmax(1) = -grand
 do iel = 1, ncel
-  var = rtp(iel,iphi)
+  var = cvar_phi(iel)
   vmin(1) = min(vmin(1),var)
   vmax(1) = max(vmax(1),var)
 enddo
@@ -110,7 +112,7 @@ enddo
 if (iwaphi.ge.2) then
   nclpmx = 0
   do iel = 1, ncel
-    if (rtp(iel,iphi).gt.2.d0) nclpmx = nclpmx+1
+    if (cvar_phi(iel).gt.2.d0) nclpmx = nclpmx+1
   enddo
   if(irangp.ge.0) call parcpt(nclpmx)
                   !==========
@@ -123,9 +125,9 @@ endif
 
 nclpmn = 0
 do iel = 1, ncel
-  xphi = rtp(iel,iphi)
+  xphi = cvar_phi(iel)
   if (xphi.lt.0.d0) then
-    rtp(iel,iphi) = -xphi
+    cvar_phi(iel) = -xphi
     nclpmn = nclpmn + 1
   endif
 enddo
@@ -148,7 +150,7 @@ if (iturb.eq.51) then
   vmin(1) =  grand
   vmax(1) = -grand
   do iel = 1, ncel
-    var = rtp(iel,ial)
+    var = cvar_al(iel)
     vmin(1) = min(vmin(1),var)
     vmax(1) = max(vmax(1),var)
   enddo
@@ -161,13 +163,13 @@ if (iturb.eq.51) then
   nclpmn = 0
   nclpmx = 0
   do iel = 1, ncel
-    xal = rtp(iel,ial)
+    xal = cvar_al(iel)
     if (xal.lt.0.d0) then
-      rtp(iel,ial) = 0.d0
+      cvar_al(iel) = 0.d0
       nclpmn = nclpmn + 1
     endif
     if (xal.gt.1.d0) then
-      rtp(iel,ial) = 1.d0
+      cvar_al(iel) = 1.d0
       nclpmx = nclpmx + 1
     endif
   enddo

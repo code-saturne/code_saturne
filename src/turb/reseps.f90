@@ -123,7 +123,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 integer          iel
 integer          iiun
-integer          ipcvis, ipcvst, iflmas, iflmab
+integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -151,6 +151,10 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer ::  crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:), pointer :: cvara_ep, cvar_al
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
+double precision, dimension(:), pointer :: viscl, visct
 
 character(len=80) :: label
 
@@ -174,8 +178,19 @@ if(iwarni(ivar).ge.1) then
 endif
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
+
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+if (iturb.eq.32) call field_get_val_s(ivarfl(ial), cvar_al)
+
+call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
@@ -263,12 +278,12 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
                      + tslagr(iel,itsr22)                        &
                      + tslagr(iel,itsr33) )
     ! rapport k/eps
-    kseps = 0.5d0 * ( rtpa(iel,ir11)                           &
-                    + rtpa(iel,ir22)                           &
-                    + rtpa(iel,ir33) )                         &
-                    / rtpa(iel,iep)
+    kseps = 0.5d0 * ( cvara_r11(iel)                           &
+                    + cvara_r22(iel)                           &
+                    + cvara_r33(iel) )                         &
+                    / cvara_ep(iel)
 
-    smbr(iel)   = smbr(iel) + ce4 *tseps *rtpa(iel,iep) /kseps
+    smbr(iel)   = smbr(iel) + ce4 *tseps *cvara_ep(iel) /kseps
     rovsdt(iel) = rovsdt(iel) + max( (-ce4*tseps/kseps) , zero)
   enddo
 
@@ -334,15 +349,15 @@ if (iturb.eq.30) then
   enddo
 else
   do iel = 1, ncel
-    w9(iel) = -( rtpa(iel,ir11)*gradv(1, 1, iel) +               &
-                 rtpa(iel,ir12)*gradv(2, 1, iel) +               &
-                 rtpa(iel,ir13)*gradv(3, 1, iel) +               &
-                 rtpa(iel,ir12)*gradv(1, 2, iel) +               &
-                 rtpa(iel,ir22)*gradv(2, 2, iel) +               &
-                 rtpa(iel,ir23)*gradv(3, 2, iel) +               &
-                 rtpa(iel,ir13)*gradv(1, 3, iel) +               &
-                 rtpa(iel,ir23)*gradv(2, 3, iel) +               &
-                 rtpa(iel,ir33)*gradv(3, 3, iel) )
+    w9(iel) = -( cvara_r11(iel)*gradv(1, 1, iel) +               &
+                 cvara_r12(iel)*gradv(2, 1, iel) +               &
+                 cvara_r13(iel)*gradv(3, 1, iel) +               &
+                 cvara_r12(iel)*gradv(1, 2, iel) +               &
+                 cvara_r22(iel)*gradv(2, 2, iel) +               &
+                 cvara_r23(iel)*gradv(3, 2, iel) +               &
+                 cvara_r13(iel)*gradv(1, 3, iel) +               &
+                 cvara_r23(iel)*gradv(2, 3, iel) +               &
+                 cvara_r33(iel)*gradv(3, 3, iel) )
   enddo
 endif
 
@@ -353,25 +368,24 @@ if (iturb.eq.32) then
   do iel = 1, ncel
     ! Demi-traces
     trprod = w9(iel)
-    trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
     ! Calcul de l echelle de temps de Durbin
-    xttke  = trrij/rtpa(iel,iep)
-    xttkmg = xct*sqrt(propce(iel,ipcvis)/crom(iel)           &
-                                        /rtpa(iel,iep))
+    xttke  = trrij/cvara_ep(iel)
+    xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvara_ep(iel))
     xttdrb = max(xttke,xttkmg)
 
-    prdeps = trprod/rtpa(iel,iep)
-    alpha3 = rtp(iel,ial)**3
+    prdeps = trprod/cvara_ep(iel)
+    alpha3 = cvar_al(iel)**3
 
     ! Production (explicit)
     ! Compute of C_eps_1'
-    w1(iel) = cromo(iel)*volume(iel)*                         &
+    w1(iel) = cromo(iel)*volume(iel)*                                 &
               ce1*(1.d0+xa1*(1.d0-alpha3)*prdeps)*trprod/xttdrb
 
 
     ! Dissipation (implicit)
-    smbr(iel) = smbr(iel) - crom(iel)*volume(iel)*           &
-                             ceps2*rtpa(iel,iep)/xttdrb
+    smbr(iel) = smbr(iel) - crom(iel)*volume(iel)*                    &
+                             ceps2*cvara_ep(iel)/xttdrb
 
     rovsdt(iel) = rovsdt(iel)                                         &
                 + ceps2*crom(iel)*volume(iel)*thetap/xttdrb
@@ -383,14 +397,14 @@ else
   do iel = 1, ncel
     ! Demi-traces
     trprod = w9(iel)
-    trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
-    xttke  = trrij/rtpa(iel,iep)
+    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    xttke  = trrij/cvara_ep(iel)
     ! Production (explicit)
     w1(iel) = cromo(iel)*volume(iel)*ce1/xttke*trprod
 
     ! Dissipation (implicit)
-    smbr(iel) = smbr(iel)                              &
-              - crom(iel)*volume(iel)*ceps2*rtpa(iel,iep)**2/trrij
+    smbr(iel) = smbr(iel)                                            &
+              - crom(iel)*volume(iel)*ceps2*cvara_ep(iel)**2/trrij
     rovsdt(iel) = rovsdt(iel)                                        &
                 + ceps2*crom(iel)*volume(iel)/xttke*thetap
   enddo
@@ -421,7 +435,7 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe(nscal, ivar, rtpa, gradro, w7)
+  call rijthe(nscal, ivar, gradro, w7)
   !==========
 
   ! Extrapolation of source terms (2nd order in time)
@@ -450,9 +464,9 @@ if (idften(ivar).eq.6) then
   call field_get_val_v(ivsten, visten)
 
   do iel = 1, ncel
-    viscce(1,iel) = visten(1,iel)/sigmae + propce(iel,ipcvis)
-    viscce(2,iel) = visten(2,iel)/sigmae + propce(iel,ipcvis)
-    viscce(3,iel) = visten(3,iel)/sigmae + propce(iel,ipcvis)
+    viscce(1,iel) = visten(1,iel)/sigmae + viscl(iel)
+    viscce(2,iel) = visten(2,iel)/sigmae + viscl(iel)
+    viscce(3,iel) = visten(3,iel)/sigmae + viscl(iel)
     viscce(4,iel) = visten(4,iel)/sigmae
     viscce(5,iel) = visten(5,iel)/sigmae
     viscce(6,iel) = visten(6,iel)/sigmae
@@ -470,7 +484,7 @@ if (idften(ivar).eq.6) then
 else
 
   do iel = 1, ncel
-    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*propce(iel,ipcvst)/sigmae
+    w1(iel) = viscl(iel) + idifft(ivar)*visct(iel)/sigmae
   enddo
 
   call viscfa                    &

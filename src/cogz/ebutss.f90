@@ -116,6 +116,9 @@ integer          ivar, iel
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: cka, cvara_ep, cvara_omg
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+
 !===============================================================================
 !===============================================================================
 ! 1. INITIALISATION
@@ -136,6 +139,18 @@ call field_get_label(ivarfl(ivar), chaine)
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
 call field_get_val_s(icrom, crom)
 
+if (itytur.eq.2.or.iturb.eq.50) then
+  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+elseif (itytur.eq.3) then
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+elseif (iturb.eq.60) then
+  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
+endif
 
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES
@@ -154,31 +169,31 @@ if ( ivar.eq.isca(iygfm) ) then
   if (itytur.eq.2) then
 
     do iel = 1, ncel
-      w1(iel) = rtpa(iel,ik)
-      w2(iel) = rtpa(iel,iep)
+      w1(iel) = cka(iel)
+      w2(iel) = cvara_ep(iel)
     enddo
 
   elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      w1(iel) = 0.5d0 *( rtpa(iel,ir11)                    &
-                        +rtpa(iel,ir22)                    &
-                        +rtpa(iel,ir33) )
-      w2(iel) = rtpa(iel,iep)
+      w1(iel) = 0.5d0 *( cvara_r11(iel)                    &
+                        +cvara_r22(iel)                    &
+                        +cvara_r33(iel) )
+      w2(iel) = cvara_ep(iel)
     enddo
 
   elseif (iturb.eq.50) then
 
     do iel = 1, ncel
-      w1(iel) = rtpa(iel,ik)
-      w2(iel) = rtpa(iel,iep)
+      w1(iel) = cka(iel)
+      w2(iel) = cvara_ep(iel)
     enddo
 
   elseif (iturb.eq.60) then
 
     do iel = 1, ncel
-      w1(iel) = rtpa(iel,ik)
-      w2(iel) = cmu*rtpa(iel,ik)*rtpa(iel,iomg)
+      w1(iel) = cka(iel)
+      w2(iel) = cmu*cka(iel)*cvara_omg(iel)
     enddo
 
   endif

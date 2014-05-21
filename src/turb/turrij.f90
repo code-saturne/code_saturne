@@ -125,6 +125,8 @@ double precision, pointer, dimension(:) :: tslage, tslagi
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 
 !===============================================================================
 
@@ -150,6 +152,15 @@ endif
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
+
+if (iturb.eq.30) then
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+  call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+  call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+endif
 
 if(iwarni(iep).ge.1) then
   if (iturb.eq.30) then
@@ -188,53 +199,53 @@ if (iturb.eq.30) then
     ! grad u
 
     produc(1,iel) = produc(1,iel)                                  &
-                  - 2.0d0*(rtpa(iel,ir11)*gradv(1, 1, iel) +       &
-                           rtpa(iel,ir12)*gradv(2, 1, iel) +       &
-                           rtpa(iel,ir13)*gradv(3, 1, iel) )
+                  - 2.0d0*(cvara_r11(iel)*gradv(1, 1, iel) +           &
+                           cvara_r12(iel)*gradv(2, 1, iel) +           &
+                           cvara_r13(iel)*gradv(3, 1, iel) )
 
     produc(4,iel) = produc(4,iel)                                  &
-                  - (rtpa(iel,ir12)*gradv(1, 1, iel) +             &
-                     rtpa(iel,ir22)*gradv(2, 1, iel) +             &
-                     rtpa(iel,ir23)*gradv(3, 1, iel) )
+                  - (cvara_r12(iel)*gradv(1, 1, iel) +                 &
+                     cvara_r22(iel)*gradv(2, 1, iel) +                 &
+                     cvara_r23(iel)*gradv(3, 1, iel) )
 
     produc(5,iel) = produc(5,iel)                                  &
-                  - (rtpa(iel,ir13)*gradv(1, 1, iel) +             &
-                     rtpa(iel,ir23)*gradv(2, 1, iel) +             &
-                     rtpa(iel,ir33)*gradv(3, 1, iel) )
+                  - (cvara_r13(iel)*gradv(1, 1, iel) +                 &
+                     cvara_r23(iel)*gradv(2, 1, iel) +                 &
+                     cvara_r33(iel)*gradv(3, 1, iel) )
 
     ! grad v
 
     produc(2,iel) = produc(2,iel)                                  &
-                  - 2.0d0*(rtpa(iel,ir12)*gradv(1, 2, iel) +       &
-                           rtpa(iel,ir22)*gradv(2, 2, iel) +       &
-                           rtpa(iel,ir23)*gradv(3, 2, iel) )
+                  - 2.0d0*(cvara_r12(iel)*gradv(1, 2, iel) +           &
+                           cvara_r22(iel)*gradv(2, 2, iel) +           &
+                           cvara_r23(iel)*gradv(3, 2, iel) )
 
     produc(4,iel) = produc(4,iel)                                  &
-                  - (rtpa(iel,ir11)*gradv(1, 2, iel) +             &
-                     rtpa(iel,ir12)*gradv(2, 2, iel) +             &
-                     rtpa(iel,ir13)*gradv(3, 2, iel) )
+                  - (cvara_r11(iel)*gradv(1, 2, iel) +                 &
+                     cvara_r12(iel)*gradv(2, 2, iel) +                 &
+                     cvara_r13(iel)*gradv(3, 2, iel) )
 
     produc(6,iel) = produc(6,iel)                                  &
-                  - (rtpa(iel,ir13)*gradv(1, 2, iel) +             &
-                     rtpa(iel,ir23)*gradv(2, 2, iel) +             &
-                     rtpa(iel,ir33)*gradv(3, 2, iel) )
+                  - (cvara_r13(iel)*gradv(1, 2, iel) +                 &
+                     cvara_r23(iel)*gradv(2, 2, iel) +                 &
+                     cvara_r33(iel)*gradv(3, 2, iel) )
 
     ! grad w
 
     produc(3,iel) = produc(3,iel)                                  &
-                  - 2.0d0*(rtpa(iel,ir13)*gradv(1, 3, iel) +       &
-                           rtpa(iel,ir23)*gradv(2, 3, iel) +       &
-                           rtpa(iel,ir33)*gradv(3, 3, iel) )
+                  - 2.0d0*(cvara_r13(iel)*gradv(1, 3, iel) +           &
+                           cvara_r23(iel)*gradv(2, 3, iel) +           &
+                           cvara_r33(iel)*gradv(3, 3, iel) )
 
     produc(5,iel) = produc(5,iel)                                  &
-                  - (rtpa(iel,ir11)*gradv(1, 3, iel) +             &
-                     rtpa(iel,ir12)*gradv(2, 3, iel) +             &
-                     rtpa(iel,ir13)*gradv(3, 3, iel) )
+                  - (cvara_r11(iel)*gradv(1, 3, iel) +                 &
+                     cvara_r12(iel)*gradv(2, 3, iel) +                 &
+                     cvara_r13(iel)*gradv(3, 3, iel) )
 
     produc(6,iel) = produc(6,iel)                                  &
-                  - (rtpa(iel,ir12)*gradv(1, 3, iel) +             &
-                     rtpa(iel,ir22)*gradv(2, 3, iel) +             &
-                     rtpa(iel,ir23)*gradv(3, 3, iel) )
+                  - (cvara_r12(iel)*gradv(1, 3, iel) +                 &
+                     cvara_r22(iel)*gradv(2, 3, iel) +                 &
+                     cvara_r23(iel)*gradv(3, 3, iel) )
 
   enddo
 

@@ -133,7 +133,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 integer          iel
 integer          ii    , jj    , kk    , iiun
-integer          ipcvis, iflmas, iflmab
+integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -166,6 +166,9 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:), pointer :: cvara_ep
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 
@@ -187,11 +190,17 @@ if (iwarni(ivar).ge.1) then
 endif
 
 call field_get_val_s(icrom, crom)
-ipcvis = ipproc(iviscl)
+call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -331,7 +340,7 @@ enddo
 ! ---> Calcul de k pour la suite du sous-programme
 !       on utilise un tableau de travail puisqu'il y en a...
 do iel = 1, ncel
-  w8(iel) = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+  w8(iel) = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
 enddo
 
 ! ---> Terme source
@@ -374,18 +383,18 @@ if (isto2t.gt.0) then
                           + cromo(iel) * volume(iel)              &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
-            +(crij1-1.d0)* rtpa(iel,iep)  )                     &
+            +(crij1-1.d0)* cvara_ep(iel)  )                           &
          +(1.0d0-crij2)*produc(isou,iel)               )
 !       Dans SMBR
 !       =       -C1rho eps/k(Rij         )
 !       = rho{                                     -C1eps/kRij}
-    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)      &
-      *( -crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar)  )
+    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)               &
+      *( -crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar)  )
 
 !     Calcul de la partie implicite issue de Phi1
 !       = C1rho eps/k(1        )
-    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)  &
-                            *crij1*rtpa(iel,iep)/trrij*thetv
+    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)           &
+                            *crij1*cvara_ep(iel)/trrij*thetv
 
   enddo
 
@@ -400,16 +409,16 @@ if (isto2t.gt.0) then
 !       =       -C1rho eps/k(   -1/3Rij dij)
       propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1)       &
                           - cromo(iel) * volume(iel)              &
-      *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar))
+      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar))
 !    On ajoute a SMBR (avec CROM)
 !       =       -C1rho eps/k(   -1/3Rij dij)
       smbr(iel)                 = smbr(iel)                       &
-                          + crom(iel) * volume(iel)      &
-      *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar))
+                          + crom(iel) * volume(iel)               &
+      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar))
 !    On ajoute a ROVSDT (avec CROM)
 !       =        C1rho eps/k(   -1/3    dij)
-      rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)&
-      *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij                 )
+      rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)         &
+      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij                 )
     enddo
 
   endif
@@ -426,17 +435,17 @@ else
 !     Calcul de Prod+Phi1+Phi2-Eps
 !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
 !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij-C1eps/kRij}
-    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)      &
+    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)               &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
-            +(crij1-1.d0)* rtpa(iel,iep)  )                     &
+            +(crij1-1.d0)* cvara_ep(iel)  )                           &
          +(1.0d0-crij2)*produc(isou,iel)                          &
-         -crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar)  )
+         -crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar)  )
 
 !     Calcul de la partie implicite issue de Phi1
 !       = C1rho eps/k(1-1/3 dij)
-    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)  &
-         *(1.d0-d1s3*deltij)*crij1*rtpa(iel,iep)/trrij
+    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)           &
+         *(1.d0-d1s3*deltij)*crij1*cvara_ep(iel)/trrij
   enddo
 
 endif
@@ -561,7 +570,7 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe(nscal, ivar, rtpa, gradro, w7)
+  call rijthe(nscal, ivar, gradro, w7)
   !==========
 
   ! If source terms are extrapolated
@@ -588,9 +597,9 @@ if (idften(ivar).eq.6) then
   call field_get_val_v(ivsten, visten)
 
   do iel = 1, ncel
-    viscce(1,iel) = visten(1,iel) + propce(iel,ipcvis)
-    viscce(2,iel) = visten(2,iel) + propce(iel,ipcvis)
-    viscce(3,iel) = visten(3,iel) + propce(iel,ipcvis)
+    viscce(1,iel) = visten(1,iel) + viscl(iel)
+    viscce(2,iel) = visten(2,iel) + viscl(iel)
+    viscce(3,iel) = visten(3,iel) + viscl(iel)
     viscce(4,iel) = visten(4,iel)
     viscce(5,iel) = visten(5,iel)
     viscce(6,iel) = visten(6,iel)
@@ -608,9 +617,9 @@ if (idften(ivar).eq.6) then
 else
 
   do iel = 1, ncel
-    trrij = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
-    rctse = crom(iel) * csrij * trrij**2 / rtpa(iel,iep)
-    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse
+    trrij = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
+    w1(iel) = viscl(iel) + idifft(ivar)*rctse
   enddo
 
   call viscfa                    &

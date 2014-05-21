@@ -27,7 +27,7 @@ subroutine lagesp &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     , rtpa   , propce ,                                     &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
@@ -66,8 +66,8 @@ subroutine lagesp &
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
@@ -132,7 +132,7 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
@@ -253,7 +253,7 @@ else
   !==========
    ( nbpmax , nvp    , nvep   , nivep  ,                          &
      itepa  ,                                                     &
-     rtpa   , rtp    , propce ,                                   &
+     rtpa   , propce ,                                            &
      ettp   , ettpa  , tepa   ,                                   &
      taup   , tlag   , piil   ,                                   &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &

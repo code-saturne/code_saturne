@@ -84,7 +84,6 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          ivar  , iel   , ifac  , iscal
-integer          ipcvst
 integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
@@ -105,6 +104,7 @@ double precision, allocatable, dimension(:) :: whsad
 double precision, allocatable, dimension(:) :: xcpp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: visct, cpro_cp
 
 !===============================================================================
 
@@ -112,6 +112,8 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 allocate(vistot(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(xcpp(ncelet))
+
+if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
 do iscal = 1, nscal
 
@@ -136,7 +138,7 @@ do iscal = 1, nscal
   elseif (imucpp.eq.1) then
     if (icp.gt.0) then
       do iel = 1, ncel
-        xcpp(iel) = propce(iel,ipproc(icp))
+        xcpp(iel) = cpro_cp(iel)
       enddo
    else
       do iel = 1, ncel
@@ -184,7 +186,7 @@ do iscal = 1, nscal
   endif
 
   ! Index for turbulent diffusivity
-  ipcvst = ipproc(ivisct)
+  call field_get_val_s(iprpfl(ivisct), visct)
 
   if (idiff(ivar).ge.1) then
 
@@ -196,12 +198,12 @@ do iscal = 1, nscal
     if(ipcvsl.eq.0)then
       do iel = 1, ncel
         vistot(iel) = visls0(iscal)                                     &
-           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifft(ivar)*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     else
       do iel = 1, ncel
         vistot(iel) = propce(iel,ipcvsl)                                &
-           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifft(ivar)*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     endif
 

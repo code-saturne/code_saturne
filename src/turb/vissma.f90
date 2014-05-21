@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vissma &
-!================
-
- ( rtpa   , propce )
+subroutine vissma
 
 !===============================================================================
 ! FONCTION :
@@ -32,7 +29,7 @@ subroutine vissma &
 ! CALCUL DE LA VISCOSITE "TURBULENTE" POUR
 !          UN MODELE LES SMAGORINSKI
 
-! PROPCE(1,IVISCT) = ROM * (SMAGO  * L) **2 * SQRT ( 2 * Sij.Sij )
+! VISCT = ROM * (SMAGO  * L) **2 * SQRT ( 2 * Sij.Sij )
 !       Sij = (DUi/Dxj + DUj/Dxi)/2
 
 ! On dispose des types de faces de bord au pas de temps
@@ -43,11 +40,6 @@ subroutine vissma &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -76,9 +68,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel, inc
@@ -93,6 +82,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: visct
 
 !===============================================================================
 
@@ -106,8 +96,7 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet))
 
-! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvst = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
 ! --- Pour le calcul de la viscosite de sous-maille
@@ -140,7 +129,7 @@ do iel = 1, ncel
   dvdz = gradv(3, 2, iel)
   dwdy = gradv(2, 3, iel)
 
-  propce(iel,ipcvst) = s11**2 + s22**2 + s33**2       &
+  visct(iel) = s11**2 + s22**2 + s33**2               &
                      + 0.5d0*((dudy+dvdx)**2          &
                      +        (dudz+dwdx)**2          &
                      +        (dvdz+dwdy)**2)
@@ -158,8 +147,8 @@ coef = csmago**2 * radeux
 do iel = 1, ncel
   delta  = xfil* (xa*volume(iel))**xb
   delta  = coef * delta**2
-  propce(iel,ipcvst) =                                            &
-    crom(iel) * delta * sqrt(propce(iel,ipcvst))
+  visct(iel) =                                            &
+    crom(iel) * delta * sqrt(visct(iel))
 enddo
 
 !----

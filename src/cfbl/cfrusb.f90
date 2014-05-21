@@ -101,6 +101,7 @@ double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
 
@@ -115,6 +116,8 @@ ien = isca(ienerg)
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
+
+call field_get_val_s(ivarfl(ipr), cvar_pr)
 
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
@@ -137,7 +140,7 @@ uni   = (vel(1,iel)*surfbo(1,ifac)                            &
 rund  = brom(ifac)*und
 runi  = crom(iel)     *uni
 cd    = sqrt(gammag*bval(ifac,ipr)/brom(ifac))
-ci    = sqrt(gammag*rtp(iel,ipr)/crom(iel))
+ci    = sqrt(gammag*cvar_pr(iel)/crom(iel))
 rrus  = max(abs(und)+cd,abs(uni)+ci)
 
 runb  = 0.5d0*(brom(ifac)*und+crom(iel)*uni)          &
@@ -173,12 +176,12 @@ cofacv(3,ifac) = surfbn(ifac)*                                                  
                          -crom(iel)*vel(3,iel)) )
 
 ! BC for the pressure gradient in the momentum balance
-bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + rtp(iel,ipr))
+bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + cvar_pr(iel))
 
 ! Total energy flux
 coface(ifac) = surfbn(ifac)*                                                    &
                0.5d0*( rund*bval(ifac,ien) + runi*rtp(iel,ien)                  &
-                       +und*bval(ifac,ipr) + uni*rtp(iel,ipr)                   &
+                       +und*bval(ifac,ipr) + uni*cvar_pr(iel)                       &
                        -rrus*(brom(ifac)*bval(ifac,ien)                         &
                        -crom(iel)*rtp(iel,ien)) )
 

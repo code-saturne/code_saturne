@@ -23,7 +23,7 @@
 subroutine solvar &
 !================
    ( temp , qv , rom , dt ,                                                  &
-     rcodcl , rtp )
+     rcodcl )
 
 
 !==============================================================================
@@ -93,7 +93,7 @@ parameter ( idim2 = 26 )
 
 
 !double precision rcodcl(nfabor,nvar,3),velipb(nfabor,3)
-double precision rcodcl(nfabor,nvarcl,3),rtp(ncelet,nflown:nvar)
+double precision rcodcl(nfabor,nvarcl,3)
 
 double precision temp(ncelet)
 double precision qv(ncelet)

@@ -25,7 +25,6 @@ subroutine lagesd &
 
  ( ifac   , ip     ,                                              &
    nbpmax ,                                                       &
-   rtpa   , propce ,                                              &
    taup   , piil   ,                                              &
    vagaus , gradpr , romp,                                        &
    tempf  , romf   , ustar  , lvisq  ,tvisq   ,  depint )
@@ -58,10 +57,6 @@ subroutine lagesd &
 ! ifac             ! e  ! <-- !                                                !
 ! ip               ! e  ! <-- !                                                !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
@@ -111,8 +106,6 @@ implicit none
 integer          ifac   , ip
 integer          nbpmax
 
-double precision rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision taup(nbpmax)
 double precision piil(nbpmax,3)
 double precision vagaus(nbpmax,*)
@@ -154,11 +147,22 @@ double precision kk, kkk
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vela
+double precision, dimension(:), pointer :: cka
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 
 ! Map field arrays
 call field_get_val_prev_v(ivarfl(iu), vela)
+
+if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+  call field_get_val_prev_s(ivarfl(ik), cka)
+else if (itytur.eq.3) then
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+endif
 
 !===============================================================================
 ! 0.  Memory management and Initialization
@@ -187,8 +191,10 @@ else
   call field_get_val_s(icrom, cromf)
 endif
 
+call field_get_val_s(iprpfl(iviscl), viscl)
+
 romf = cromf(iel)
-visccf = propce(iel,ipproc(iviscl)) / romf
+visccf = viscl(iel) / romf
 
 norm=sqrt(vela(1,iel)**2 + vela(2,iel)**2 + vela(3,iel)**2)
 
@@ -319,11 +325,11 @@ bxp = sqrt(c0*dissip)
 !  Retrieve of the turbulent kinetic energy
 
 if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
-  enertur = rtpa(iel,ik)
+  enertur = cka(iel)
 else if (itytur.eq.3) then
-  enertur = 0.5d0*( rtpa(iel,ir11)                         &
-                  + rtpa(iel,ir22)                         &
-                  + rtpa(iel,ir33) )
+  enertur = 0.5d0*( cvara_r11(iel)                         &
+                  + cvara_r22(iel)                         &
+                  + cvara_r33(iel) )
 endif
 
 call lagcli                                                       &

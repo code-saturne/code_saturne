@@ -51,8 +51,6 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (at the previous time step)
 !> \param[out]    rotfct        rotation function of Spalart-Shur correction
 !>                               at cell center
 !> \param[out]    ce2rc         modified ce2 coeficient of Cazalbou correction
@@ -60,7 +58,7 @@
 !_______________________________________________________________________________
 
 subroutine rotcor &
- ( dt     , rtpa   , rotfct , ce2rc  )
+ ( dt     , rotfct , ce2rc  )
 
 !===============================================================================
 ! Module files
@@ -86,7 +84,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision rotfct(ncel), ce2rc(ncel)
 
 ! Local variables
@@ -110,6 +108,8 @@ double precision, allocatable, dimension(:) :: brtild, eta1, eta2
 
 double precision, dimension(:,:), pointer :: vela
 
+double precision, dimension(:), pointer :: cka, cvara_ep, cvara_omg
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -131,6 +131,13 @@ endif
 
 ! Map field arrays
 call field_get_val_prev_v(ivarfl(iu), vela)
+
+if (itycor.eq.1) then
+  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+else if (itycor.eq.2) then
+  if (iturb.eq.60) call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
+endif
 
 !===============================================================================
 ! 1. Preliminary calculations
@@ -364,8 +371,8 @@ if (itycor.eq.1) then
     stilde = max(sqrt(eta1(iel)*2.d0),1.d-15)
     wtilde = max(sqrt(eta2(iel)/2.d0),1.d-15)
 
-    xk = max(rtpa(iel, ik),1.d-15)
-    xe = max(rtpa(iel,iep),1.d-15)
+    xk = max(cka(iel),1.d-15)
+    xe = max(cvara_ep(iel),1.d-15)
     rotild = xe/wtilde/xk
     brtild(iel) = -brtild(iel)*xk/xe/stilde**3
 
@@ -394,7 +401,7 @@ elseif (itycor.eq.2) then
     echtm1 = sqrt(0.5d0*(stilde + wtilde))
 
     ! Lower bound in case of k-w SST (see Smirnov & Menter, ASME, 2009)
-    if (iturb.eq.60)  echtm1 = max(echtm1,sqrt(cmu)*rtpa(iel,iomg))
+    if (iturb.eq.60)  echtm1 = max(echtm1,sqrt(cmu)*cvara_omg(iel))
 
     brtild(iel) = brtild(iel)/(echtm1**4)
 

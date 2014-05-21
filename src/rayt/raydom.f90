@@ -126,6 +126,8 @@ double precision, allocatable, dimension(:) :: flurds, flurdb
 double precision, dimension(:), pointer :: tparo, bqinci
 double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
 
+double precision, dimension(:), pointer :: cpro_cp
+
 integer    ipadom
 data       ipadom /0/
 save       ipadom
@@ -856,8 +858,9 @@ if (idverl.ge.0) then
 
   !--> 1/Cp is stored in dcp
   if (icp.gt.0) then
+    call field_get_val_s(iprpfl(icp), cpro_cp)
     do iel = 1,ncel
-      dcp(iel) = 1.d0/propce(iel,ipproc(icp))
+      dcp(iel) = 1.d0/cpro_cp(iel)
     enddo
   else
     do iel = 1,ncel

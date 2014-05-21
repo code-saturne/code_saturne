@@ -109,6 +109,7 @@ integer          ip     , npt    , iok
 integer          iel    , ivf    , ivar, ifld
 integer          npar1  , npar2
 integer          modntl
+integer          iprev
 
 integer          ifac
 
@@ -141,6 +142,7 @@ double precision, allocatable, dimension(:):: energt
 double precision, allocatable, dimension(:):: tempp
 
 double precision, dimension(:), pointer :: cromf
+double precision, dimension(:), pointer :: viscl
 
 integer ii
 integer nbpartall, nbpper
@@ -291,6 +293,8 @@ if (iplar.eq.1) then
        call field_get_val_s(icrom, cromf)
      endif
 
+     call field_get_val_s(iprpfl(iviscl), viscl)
+
      ! Average friction velocity calculation
      do ifac = 1, nfabor
 
@@ -305,7 +309,7 @@ if (iplar.eq.1) then
            ! the density pointer according to the flow location
 
            romf = cromf(iel)
-           visccf = propce(iel,ipproc(iviscl)) / romf
+           visccf = viscl(iel) / romf
 
            if ( uetbor(ifac).gt.1.d-15) then
 
@@ -401,31 +405,23 @@ endif
 ! non RTPA car RTPA = initialisation
 
 if ( ntcabs.eq.1 ) then
-
-  call lagent                                                     &
-  !==========
- ( lndnod ,                                                       &
-   nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itycel , icocel , dlgeo  ,                                     &
-   itypfb , itrifb , ifrlag , itepa  ,                            &
-   dt     , rtp    , propce ,                                     &
-   ettp   , tepa   , vagaus )
-
+  ! Use fields at current time step
+  iprev = 0
 else
-
-  call lagent                                                     &
-  !==========
- ( lndnod ,                                                       &
-   nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itycel , icocel , dlgeo  ,                                     &
-   itypfb , itrifb , ifrlag , itepa  ,                            &
-   dt     , rtpa   , propce ,                                     &
-   ettp   , tepa   , vagaus )
+  ! Use fields at previous time step
+  iprev = 1
 endif
+
+call lagent                                                      &
+!==========
+( lndnod ,                                                       &
+  nvar   , nscal  ,                                              &
+  nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+  ntersl , nvlsta , nvisbr , iprev  ,                            &
+  itycel , icocel , dlgeo  ,                                     &
+  itypfb , itrifb , ifrlag , itepa  ,                            &
+  dt     ,                                                       &
+  ettp   , tepa   , vagaus )
 
 !===============================================================================
 ! 2.1 CALCUL DE LA FONCTION D'IMPORTANCE POUR LA ROULETTE RUSSE
@@ -568,36 +564,23 @@ endif
 !-----> CALCUL DES CARACTERISTIQUES DES PARTICULES
 
 if (nor.eq.1) then
-
-!      sous pas de temps n (avec RTPA)
-
-  call lagcar                                                     &
-  !==========
-   ( nvar   , nscal  ,                                            &
-     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     nvlsta ,                                                     &
-     itepa  ,                                                     &
-     dt     , rtpa   , propce ,                                   &
-     ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
-     piil   , bx     , tempct , statis ,                          &
-     gradpr , gradvf , w1     , w2     , auxl(1,1) )
-
+  ! Use fields at previous time step
+  iprev = 1
 else
-
-!     sous pas de temps n+1 (avec RTP)
-
-  call lagcar                                                     &
-  !==========
-   ( nvar   , nscal  ,                                            &
-     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     nvlsta ,                                                     &
-     itepa  ,                                                     &
-     dt     , rtp    , propce ,                                   &
-     ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
-     piil   , bx     , tempct , statis ,                          &
-     gradpr , gradvf , w1     , w2     , auxl(1,1) )
-
+  ! Use fields at current time step
+  iprev = 0
 endif
+
+call lagcar                                                     &
+!==========
+ ( nvar   , nscal  ,                                            &
+   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
+   nvlsta , iprev  ,                                            &
+   itepa  ,                                                     &
+   dt     ,                                                     &
+   ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
+   piil   , bx     , tempct , statis ,                          &
+   gradpr , gradvf , w1     , w2     , auxl(1,1) )
 
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
@@ -609,7 +592,7 @@ call lagesp                                                       &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  ,                                                     &
-     dt     , rtpa   , rtp    , propce ,                          &
+     dt     , rtpa   , propce ,                                   &
      ettp   , ettpa  , tepa   ,                                   &
      statis , stativ , taup   , tlag   , piil   ,                 &
      tsuf   , tsup   , bx     , tsfext ,                          &
@@ -656,7 +639,7 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
   !==========
    ( nbpmax ,                                                     &
      ntersl ,                                                     &
-     rtp    , propce ,                                            &
+     propce ,                                                     &
      taup   , tempct , tsfext ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
      tslag  , w1     , w2   ,                                     &
@@ -813,7 +796,10 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
     npar1 = nbpart - npclon + 1
     npar2 = nbpart
 
-    call lagipn(nbpmax, npar1, npar2, rtp, vagaus, propce)
+    ! Use fields at current time step
+    iprev = 0
+
+    call lagipn(nbpmax, npar1, npar2, iprev, vagaus)
     !==========
 
   endif

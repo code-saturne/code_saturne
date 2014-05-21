@@ -25,7 +25,6 @@ subroutine rijthe &
 
  ( nscal  ,                                                       &
    ivar   ,                                                       &
-   rtpa   ,                                                       &
    gradro , smbr   )
 
 !===============================================================================
@@ -43,8 +42,6 @@ subroutine rijthe &
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
 !__________________!____!_____!________________________________________________!
@@ -66,6 +63,7 @@ use optcal
 use dimens, only: nvar
 use cstphy
 use mesh
+use field
 
 !===============================================================================
 
@@ -76,7 +74,6 @@ implicit none
 integer          nscal
 integer          ivar
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision gradro(ncelet,3)
 double precision smbr(ncelet)
 
@@ -91,6 +88,9 @@ double precision g11p, g22p, g33p
 double precision phit11, phit22, phit33, phit12, phit13, phit23
 double precision aa, bb
 
+double precision, dimension(:), pointer :: cvara_ep
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 
 !===============================================================================
 
@@ -114,6 +114,15 @@ endif
 const = -1.5d0*cmu/prdtur
 uns3  = 1.d0/3.d0
 
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+
 !===============================================================================
 ! 2. TERMES POUR RIJ :
 !      ROM*VOLUME*dRij/dt =
@@ -127,18 +136,18 @@ if     (ivar.eq.ir11) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
-        + rtpa(iel,ir12)*gradro(iel,2)                            &
-        + rtpa(iel,ir13)*gradro(iel,3)
-    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
-        + rtpa(iel,ir22)*gradro(iel,2)                            &
-        + rtpa(iel,ir23)*gradro(iel,3)
-    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
-        + rtpa(iel,ir23)*gradro(iel,2)                            &
-        + rtpa(iel,ir33)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(iel,1)                            &
+        + cvara_r12(iel)*gradro(iel,2)                            &
+        + cvara_r13(iel)*gradro(iel,3)
+    r2t = cvara_r12(iel)*gradro(iel,1)                            &
+        + cvara_r22(iel)*gradro(iel,2)                            &
+        + cvara_r23(iel)*gradro(iel,3)
+    r3t = cvara_r13(iel)*gradro(iel,1)                            &
+        + cvara_r23(iel)*gradro(iel,2)                            &
+        + cvara_r33(iel)*gradro(iel,3)
 
-    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
-           /(2.d0*rtpa(iel,iep))
+    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+           /(2.d0*cvara_ep(iel))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
     g22 = const*kseps*2.d0*(r2t*gy       )
@@ -155,18 +164,18 @@ elseif (ivar.eq.ir22) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
-        + rtpa(iel,ir12)*gradro(iel,2)                            &
-        + rtpa(iel,ir13)*gradro(iel,3)
-    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
-        + rtpa(iel,ir22)*gradro(iel,2)                            &
-        + rtpa(iel,ir23)*gradro(iel,3)
-    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
-        + rtpa(iel,ir23)*gradro(iel,2)                            &
-        + rtpa(iel,ir33)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(iel,1)                            &
+        + cvara_r12(iel)*gradro(iel,2)                            &
+        + cvara_r13(iel)*gradro(iel,3)
+    r2t = cvara_r12(iel)*gradro(iel,1)                            &
+        + cvara_r22(iel)*gradro(iel,2)                            &
+        + cvara_r23(iel)*gradro(iel,3)
+    r3t = cvara_r13(iel)*gradro(iel,1)                            &
+        + cvara_r23(iel)*gradro(iel,2)                            &
+        + cvara_r33(iel)*gradro(iel,3)
 
-    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
-           /(2.d0*rtpa(iel,iep))
+    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+           /(2.d0*cvara_ep(iel))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
     g22 = const*kseps*2.d0*(r2t*gy       )
@@ -183,18 +192,18 @@ elseif (ivar.eq.ir33) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
-        + rtpa(iel,ir12)*gradro(iel,2)                            &
-        + rtpa(iel,ir13)*gradro(iel,3)
-    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
-        + rtpa(iel,ir22)*gradro(iel,2)                            &
-        + rtpa(iel,ir23)*gradro(iel,3)
-    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
-        + rtpa(iel,ir23)*gradro(iel,2)                            &
-        + rtpa(iel,ir33)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(iel,1)                            &
+        + cvara_r12(iel)*gradro(iel,2)                            &
+        + cvara_r13(iel)*gradro(iel,3)
+    r2t = cvara_r12(iel)*gradro(iel,1)                            &
+        + cvara_r22(iel)*gradro(iel,2)                            &
+        + cvara_r23(iel)*gradro(iel,3)
+    r3t = cvara_r13(iel)*gradro(iel,1)                            &
+        + cvara_r23(iel)*gradro(iel,2)                            &
+        + cvara_r33(iel)*gradro(iel,3)
 
-    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
-           /(2.d0*rtpa(iel,iep))
+    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+           /(2.d0*cvara_ep(iel))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
     g22 = const*kseps*2.d0*(r2t*gy       )
@@ -211,15 +220,15 @@ elseif (ivar.eq.ir12) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
-        + rtpa(iel,ir12)*gradro(iel,2)                            &
-        + rtpa(iel,ir13)*gradro(iel,3)
-    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
-        + rtpa(iel,ir22)*gradro(iel,2)                            &
-        + rtpa(iel,ir23)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(iel,1)                            &
+        + cvara_r12(iel)*gradro(iel,2)                            &
+        + cvara_r13(iel)*gradro(iel,3)
+    r2t = cvara_r12(iel)*gradro(iel,1)                            &
+        + cvara_r22(iel)*gradro(iel,2)                            &
+        + cvara_r23(iel)*gradro(iel,3)
 
-    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
-           /(2.d0*rtpa(iel,iep))
+    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+           /(2.d0*cvara_ep(iel))
 
     g12 = const*kseps*     (r1t*gy+r2t*gx)
 
@@ -233,15 +242,15 @@ elseif (ivar.eq.ir13) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
-        + rtpa(iel,ir12)*gradro(iel,2)                            &
-        + rtpa(iel,ir13)*gradro(iel,3)
-    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
-        + rtpa(iel,ir23)*gradro(iel,2)                            &
-        + rtpa(iel,ir33)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(iel,1)                            &
+        + cvara_r12(iel)*gradro(iel,2)                            &
+        + cvara_r13(iel)*gradro(iel,3)
+    r3t = cvara_r13(iel)*gradro(iel,1)                            &
+        + cvara_r23(iel)*gradro(iel,2)                            &
+        + cvara_r33(iel)*gradro(iel,3)
 
-    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
-           /(2.d0*rtpa(iel,iep))
+    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+           /(2.d0*cvara_ep(iel))
 
     g13 = const*kseps*     (r1t*gz+r3t*gx)
 
@@ -255,15 +264,15 @@ elseif (ivar.eq.ir23) then
 
   do iel = 1, ncel
 
-    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
-        + rtpa(iel,ir22)*gradro(iel,2)                            &
-        + rtpa(iel,ir23)*gradro(iel,3)
-    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
-        + rtpa(iel,ir23)*gradro(iel,2)                            &
-        + rtpa(iel,ir33)*gradro(iel,3)
+    r2t = cvara_r12(iel)*gradro(iel,1)                            &
+        + cvara_r22(iel)*gradro(iel,2)                            &
+        + cvara_r23(iel)*gradro(iel,3)
+    r3t = cvara_r13(iel)*gradro(iel,1)                            &
+        + cvara_r23(iel)*gradro(iel,2)                            &
+        + cvara_r33(iel)*gradro(iel,3)
 
-    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
-           /(2.d0*rtpa(iel,iep))
+    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+           /(2.d0*cvara_ep(iel))
 
     g23 = const*kseps*(r2t*gz+r3t*gy)
 
@@ -290,15 +299,15 @@ elseif (ivar.eq.iep ) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
-        + rtpa(iel,ir12)*gradro(iel,2)                            &
-        + rtpa(iel,ir13)*gradro(iel,3)
-    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
-        + rtpa(iel,ir22)*gradro(iel,2)                            &
-        + rtpa(iel,ir23)*gradro(iel,3)
-    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
-        + rtpa(iel,ir23)*gradro(iel,2)                            &
-        + rtpa(iel,ir33)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(iel,1)                            &
+        + cvara_r12(iel)*gradro(iel,2)                            &
+        + cvara_r13(iel)*gradro(iel,3)
+    r2t = cvara_r12(iel)*gradro(iel,1)                            &
+        + cvara_r22(iel)*gradro(iel,2)                            &
+        + cvara_r23(iel)*gradro(iel,3)
+    r3t = cvara_r13(iel)*gradro(iel,1)                            &
+        + cvara_r23(iel)*gradro(iel,2)                            &
+        + cvara_r33(iel)*gradro(iel,3)
 
     g11p = const*2.d0*(r1t*gx)
     g22p = const*2.d0*(r2t*gy)

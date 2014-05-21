@@ -139,6 +139,8 @@ double precision, dimension(:), pointer :: coefb_r13, coefbf_r13, coefbd_r13
 double precision, dimension(:), pointer :: coefa_r23, coefaf_r23, coefad_r23
 double precision, dimension(:), pointer :: coefb_r23, coefbf_r23, coefbd_r23
 
+double precision, dimension(:), pointer :: viscl, visct
+
 !===============================================================================
 
 !===============================================================================
@@ -148,6 +150,9 @@ double precision, dimension(:), pointer :: coefb_r23, coefbf_r23, coefbd_r23
 cpp = 0.d0
 
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
+
+call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iprpfl(ivisct), visct)
 
 ! Boundary Conditions
 
@@ -394,8 +399,8 @@ do ifac = 1, nfabor
 
     iel = ifabor(ifac)
     ! --- Physical properties
-    visclc = propce(iel,ipproc(iviscl))
-    visctc = propce(iel,ipproc(ivisct))
+    visclc = viscl(iel)
+    visctc = visct(iel)
 
     ! --- Geometrical quantity
     distbf = distb(ifac)
@@ -774,7 +779,7 @@ double precision propce(ncelet,*)
 
 integer          ivar, f_id
 integer          ifac, iel, isou, jsou
-integer          ipccp, ipccv
+integer          ipccv
 
 double precision cpp, rkl, visclc
 double precision distbf, srfbnf
@@ -788,6 +793,8 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
+double precision, dimension(:), pointer :: viscl, cpro_cp
+
 !===============================================================================
 
 if (ityturt(iscal).ne.3) return
@@ -796,8 +803,8 @@ ivar = isca(iscal)
 f_id = ivarfl(ivar)
 
 call field_get_val_s(ivarfl(ivar), val_s)
-
 call field_get_val_v(ivsten, visten)
+call field_get_val_s(iprpfl(iviscl), viscl)
 
 call field_get_coefa_s(f_id, coefap)
 call field_get_coefb_s(f_id, coefbp)
@@ -805,10 +812,9 @@ call field_get_coefaf_s(f_id, cofafp)
 call field_get_coefbf_s(f_id, cofbfp)
 
 call field_get_val_s(icrom, crom)
+
 if (icp.gt.0) then
-  ipccp  = ipproc(icp)
-else
-  ipccp = 0
+  call field_get_val_s(iprpfl(icp), cpro_cp)
 endif
 
 ipccv = 0
@@ -845,16 +851,11 @@ do ifac = 1, nfabor
 
     iel = ifabor(ifac)
     ! --- Physical Propreties
-    visclc = propce(iel,ipproc(iviscl))
-    if (icp.gt.0) then
-      ipccp  = ipproc(icp)
-    else
-      ipccp = 0
-    endif
+    visclc = viscl(iel)
     cpp = 1.d0
     if (iscacp(iscal).eq.1) then
-      if (ipccp.gt.0) then
-        cpp = propce(iel,ipccp)
+      if (icp.gt.0) then
+        cpp = cpro_cp(iel)
       else
         cpp = cp0
       endif

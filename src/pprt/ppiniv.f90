@@ -117,14 +117,14 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
   call d3pini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
   endif
 
 ! ---> Combustion gaz
 !      Flamme de premelange : modele EBU
 
  if (ippmod(icoebu).ge.0) then
-  call ebuini(nvar, nscal, dt, rtp, propce)
+  call ebuini(nvar, nscal, dt, rtp)
   !==========
 endif
 
@@ -132,14 +132,14 @@ endif
 !      Flamme de premelange : modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  call lwcini(nvar, nscal, dt, rtp, propce)
+  call lwcini(nvar, nscal, dt, rtp)
   !==========
 endif
 
 ! ---> Combustion charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
-  call cs_coal_varini(nvar, nscal, dt, rtp, propce)
+  call cs_coal_varini(nvar, nscal, dt, rtp)
   !==================
 endif
 
@@ -153,7 +153,7 @@ endif
 ! ---> Combustion fuel
 
 if  (ippmod(icfuel).ge.0) then
-  call cs_fuel_varini(nvar, nscal, dt, rtp, propce)
+  call cs_fuel_varini(nvar, nscal, dt, rtp)
   !==================
 endif
 
@@ -163,7 +163,7 @@ if ( ippmod(icompf).ge.0 ) then
   call cfiniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 endif
 
 ! ---> Version electrique
@@ -186,7 +186,7 @@ if ( ippmod(iatmos).ge.0 ) then
   call atiniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 
 endif
 
@@ -194,7 +194,7 @@ endif
 
 if ( ippmod(iaeros).ge.0 ) then
 
-  call ctiniv(nvar, nscal, dt, rtp, propce)
+  call ctiniv(nvar, nscal, dt)
   !==========
 
 endif
