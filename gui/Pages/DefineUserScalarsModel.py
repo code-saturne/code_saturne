@@ -375,6 +375,18 @@ class DefineUserScalarsModel(Variables, Model):
             node.xmlSetTextNode(f)
 
 
+    @Variables.undoGlobal
+    def setTurbulentFluxGlobalModel(self, TurbulenceModel):
+        """Put turbulent flux model of an additional_scalar with label scalar_label"""
+        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
+
+        if TurbulenceModel not in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+            mdl = self.defaultScalarValues()['GGDH']
+            for var in lst:
+                n = self.case.xmlGetNode('variable', label=var)
+                n.xmlSetData('turbulent_flux_model', mdl)
+
+
     @Variables.noUndo
     def getTurbulentFluxModel(self, l):
         """

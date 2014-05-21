@@ -45,6 +45,7 @@ import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
 from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 #-------------------------------------------------------------------------------
 # Turbulence model class
@@ -275,6 +276,8 @@ class TurbulenceModel(Variables, Model):
             model_turb = 'off'
             self.node_turb.xmlRemoveChild('variable')
             self.node_turb.xmlRemoveChild('property')
+
+        DefineUserScalarsModel(self.case).setTurbulentFluxGlobalModel(model_turb)
 
 
     def __updateInletsForTurbulence(self):
