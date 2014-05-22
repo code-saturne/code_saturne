@@ -324,9 +324,9 @@ module pointe
   double precision, pointer, dimension(:,:) :: ettpa => null()
   !> \anchor tepa
   double precision, pointer, dimension(:,:) :: tepa => null()
-  !> \anchor statis 
+  !> \anchor statis
   double precision, pointer, dimension(:,:) :: statis => null()
-  !> \anchor parbor 
+  !> \anchor parbor
   double precision, pointer, dimension(:,:) :: parbor => null()
   !> \anchor tslagr
   double precision, pointer, dimension(:,:) :: tslagr => null()
