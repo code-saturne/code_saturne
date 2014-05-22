@@ -177,7 +177,7 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: porosi
-double precision, dimension(:), pointer :: cka, cvara_ep, cvara_omg
+double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: visct, cpro_cp
 
@@ -624,7 +624,7 @@ if (itspdv.eq.1) then
     endif
 
     if (itytur.eq.2 .or. itytur.eq.5) then
-      call field_get_val_prev_s(ivarfl(ik), cka)
+      call field_get_val_prev_s(ivarfl(ik), cvara_k)
       call field_get_val_prev_s(ivarfl(iep), cvara_ep)
     elseif (itytur.eq.3) then
       call field_get_val_prev_s(ivarfl(iep), cvara_ep)
@@ -632,19 +632,19 @@ if (itspdv.eq.1) then
       call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
       call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
     elseif(iturb.eq.60) then
-      call field_get_val_prev_s(ivarfl(ik), cka)
+      call field_get_val_prev_s(ivarfl(ik), cvara_k)
       call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
     endif
 
     do iel = 1, ncel
       if (itytur.eq.2 .or. itytur.eq.5) then
-        xk = cka(iel)
+        xk = cvara_k(iel)
         xe = cvara_ep(iel)
       elseif (itytur.eq.3) then
         xk = 0.5d0*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
         xe = cvara_ep(iel)
       elseif(iturb.eq.60) then
-        xk = cka(iel)
+        xk = cvara_k(iel)
         xe = cmu*xk*cvara_omg(iel)
       endif
       rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &

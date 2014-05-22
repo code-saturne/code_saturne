@@ -147,7 +147,7 @@ double precision kk, kkk
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vela
-double precision, dimension(:), pointer :: cka
+double precision, dimension(:), pointer :: cvara_k
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: viscl
 
@@ -157,7 +157,7 @@ double precision, dimension(:), pointer :: viscl
 call field_get_val_prev_v(ivarfl(iu), vela)
 
 if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
-  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(ik), cvara_k)
 else if (itytur.eq.3) then
   call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
   call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
@@ -325,7 +325,7 @@ bxp = sqrt(c0*dissip)
 !  Retrieve of the turbulent kinetic energy
 
 if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
-  enertur = cka(iel)
+  enertur = cvara_k(iel)
 else if (itytur.eq.3) then
   enertur = 0.5d0*( cvara_r11(iel)                         &
                   + cvara_r22(iel)                         &

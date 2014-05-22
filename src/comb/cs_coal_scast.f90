@@ -168,7 +168,7 @@ double precision, dimension(:), pointer :: gaseci, frmcpi, agei, gahetco2i
 double precision, dimension(:), pointer :: gaheth2oi, xwtcpi, xacpip
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cpro_cp
-double precision, dimension(:), pointer :: cka, cvara_ep
+double precision, dimension(:), pointer :: cvara_k, cvara_ep
 
 !LOCAL VARIABLES
 !===============
@@ -216,7 +216,7 @@ call field_get_val_s(icrom, crom)
 if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 ipcte1 = ipproc(itemp1)
 
-call field_get_val_prev_s(ivarfl(ik), cka)
+call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 ! Key id of the coal scalar class
@@ -1514,7 +1514,7 @@ if ( ieqco2 .eq. 1 ) then
      if ( xden .ne. 0.d0 ) then
 
        tauchi = 1.d0/xden
-       tautur = cka(iel)/cvara_ep(iel)
+       tautur = cvara_k(iel)/cvara_ep(iel)
 
        x2 = 0.d0
        do icla = 1, nclacp

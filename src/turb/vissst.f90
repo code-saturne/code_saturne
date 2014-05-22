@@ -94,7 +94,7 @@ double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cka, cvara_omg
+double precision, dimension(:), pointer :: cvara_k, cvara_omg
 
 !===============================================================================
 
@@ -108,7 +108,7 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
-call field_get_val_prev_s(ivarfl(ik), cka)
+call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 
 d1s3 = 1.d0/3.d0
@@ -186,7 +186,7 @@ endif
 
 do iel = 1, ncel
 
-  xk = cka(iel)
+  xk = cvara_k(iel)
   xw = cvara_omg(iel)
   rom = crom(iel)
   xmu = viscl(iel)

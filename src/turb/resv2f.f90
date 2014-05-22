@@ -141,7 +141,7 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvar_fb
-double precision, dimension(:), pointer :: cka, cvara_ep, cvara_al, cvara_phi, cvara_fb
+double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_al, cvara_phi, cvara_fb
 double precision, dimension(:), pointer :: viscl, visct
 
 !===============================================================================
@@ -167,7 +167,7 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-call field_get_val_prev_s(ivarfl(ik), cka)
+call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
 if(iturb.eq.50) then
@@ -372,7 +372,7 @@ call itrgrp &
 !      Dans le cas de l'ordre 2 en temps, T est calcule en n
 !      (il sera extrapole) et L^2 en n+theta (meme si k et eps restent en n)
 do iel=1,ncel
-  xk = cka(iel)
+  xk = cvara_k(iel)
   xe = cvara_ep(iel)
   xnu  = propce(iel,ipcvlo)/cromo(iel)
   ttke = xk / xe
@@ -401,7 +401,7 @@ enddo
 do iel = 1, ncel
     xrom = cromo(iel)
     xnu  = propce(iel,ipcvlo)/xrom
-    xk = cka(iel)
+    xk = cvara_k(iel)
     xe = cvara_ep(iel)
     if(iturb.eq.50) then
       w5(iel) = - volume(iel)*                                    &
@@ -625,7 +625,7 @@ enddo
 !     Terme explicite, stocke temporairement dans W2
 
 do iel = 1, ncel
-  xk = cka(iel)
+  xk = cvara_k(iel)
   xe = cvara_ep(iel)
   xrom = cromo(iel)
   xnu  = propce(iel,ipcvlo)/xrom
@@ -669,12 +669,12 @@ do iel = 1, ncel
   xrom = cromo(iel)
   if(iturb.eq.50) then
     smbr(iel) = smbr(iel)                                         &
-         - volume(iel)*prdv2f(iel)*cvara_phi(iel)/cka(iel)
+         - volume(iel)*prdv2f(iel)*cvara_phi(iel)/cvara_k(iel)
   elseif(iturb.eq.51) then
     smbr(iel) = smbr(iel)                                         &
          - volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
                                     *(1.d0-cvara_al(iel)**3))         &
-         *cvara_phi(iel)/cka(iel)
+         *cvara_phi(iel)/cvara_k(iel)
   endif
 enddo
 
@@ -689,12 +689,12 @@ do iel = 1, ncel
   xrom = cromo(iel)
   if(iturb.eq.50) then
     rovsdt(iel) = rovsdt(iel)                                     &
-         + volume(iel)*prdv2f(iel)/cka(iel)*thetap
+         + volume(iel)*prdv2f(iel)/cvara_k(iel)*thetap
   elseif(iturb.eq.51) then
     rovsdt(iel) = rovsdt(iel)                                     &
          + volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
                                     *(1.d0-cvara_al(iel)**3))         &
-           /cka(iel)*thetap
+           /cvara_k(iel)*thetap
   endif
 enddo
 

@@ -220,7 +220,7 @@ double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, dimension(:,:), allocatable :: divt
 double precision, dimension(:,:), pointer :: forbr
-double precision, dimension(:), pointer :: cvara_pr, cka
+double precision, dimension(:), pointer :: cvara_pr, cvara_k
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
 double precision, dimension(:), pointer :: viscl, visct
@@ -256,7 +256,7 @@ if (iappel.eq.2) then
   if (ineedf.eq.1 .and. iterns.eq.1) then
     call field_get_val_s(ivarfl(ipr), cvara_pr)
     if((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
-      call field_get_val_s(ivarfl(ik), cka)
+      call field_get_val_s(ivarfl(ik), cvara_k)
     endif
   endif
   if (itytur.eq.3.and.iterns.eq.1) then
@@ -271,7 +271,7 @@ else
   if (ineedf.eq.1 .and. iterns.eq.1) then
     call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
     if((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
-      call field_get_val_prev_s(ivarfl(ik), cka)
+      call field_get_val_prev_s(ivarfl(ik), cvara_k)
     endif
   endif
   if (itytur.eq.3.and.iterns.eq.1) then
@@ -885,7 +885,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      xkb = cka(iel) + diipbx*grad(1,iel)                      &
+      xkb = cvara_k(iel) + diipbx*grad(1,iel)                      &
            + diipby*grad(2,iel) + diipbz*grad(3,iel)
       xkb = coefa_k(ifac)+coefb_k(ifac)*xkb
       xkb = d2s3*crom(iel)*xkb

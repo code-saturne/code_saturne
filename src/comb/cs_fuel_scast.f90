@@ -146,7 +146,7 @@ double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ,xden
 double precision, dimension(:), pointer ::  crom
-double precision, dimension(:), pointer :: cka, cvara_ep
+double precision, dimension(:), pointer :: cvara_k, cvara_ep
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -163,7 +163,7 @@ call field_get_label(ivarfl(ivar), chaine)
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
 call field_get_val_s(icrom, crom)
 
-call field_get_val_prev_s(ivarfl(ik), cka)
+call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 ! --- Temperature phase gaz
@@ -541,7 +541,7 @@ if ( ieqco2 .ge. 1 ) then
      if ( xden .ne. 0.d0 ) then
 
        tauchi = 1.d0/xden
-       tautur = cka(iel)/cvara_ep(iel)
+       tautur = cvara_k(iel)/cvara_ep(iel)
 
        x2 = 0.d0
        do icla = 1, nclafu

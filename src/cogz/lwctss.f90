@@ -130,7 +130,7 @@ double precision, allocatable, dimension(:,:) :: gradf, grady
 double precision, allocatable, dimension(:) :: w10, w11
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: visct
-double precision, dimension(:), pointer :: cka, cvara_ep, cvara_omg
+double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 
 !===============================================================================
@@ -151,7 +151,7 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(ivisct), visct)
 
 if (itytur.eq.2.or.iturb.eq.50) then
-  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(ik), cvara_k)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif (itytur.eq.3) then
   call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
@@ -159,7 +159,7 @@ elseif (itytur.eq.3) then
   call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif (iturb.eq.60) then
-  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(ik), cvara_k)
   call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 endif
 
@@ -270,7 +270,7 @@ if (ivar.eq.isca(icoyfp)) then
   if (itytur.eq.2) then
 
     do iel = 1, ncel
-      w10(iel) = cka(iel)
+      w10(iel) = cvara_k(iel)
       w11(iel) = cvara_ep(iel)
     enddo
 
@@ -286,15 +286,15 @@ if (ivar.eq.isca(icoyfp)) then
   elseif (iturb.eq.50) then
 
     do iel = 1, ncel
-      w10(iel) = cka(iel)
+      w10(iel) = cvara_k(iel)
       w11(iel) = cvara_ep(iel)
     enddo
 
   elseif (iturb.eq.60) then
 
     do iel = 1, ncel
-      w10(iel) = cka(iel)
-      w11(iel) = cmu*cka(iel)*cvara_omg(iel)
+      w10(iel) = cvara_k(iel)
+      w11(iel) = cmu*cvara_k(iel)*cvara_omg(iel)
     enddo
 
   endif

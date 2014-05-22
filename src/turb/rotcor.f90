@@ -108,7 +108,7 @@ double precision, allocatable, dimension(:) :: brtild, eta1, eta2
 
 double precision, dimension(:,:), pointer :: vela
 
-double precision, dimension(:), pointer :: cka, cvara_ep, cvara_omg
+double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 
 integer          ipass
 data             ipass /0/
@@ -133,7 +133,7 @@ endif
 call field_get_val_prev_v(ivarfl(iu), vela)
 
 if (itycor.eq.1) then
-  call field_get_val_prev_s(ivarfl(ik), cka)
+  call field_get_val_prev_s(ivarfl(ik), cvara_k)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 else if (itycor.eq.2) then
   if (iturb.eq.60) call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
@@ -371,7 +371,7 @@ if (itycor.eq.1) then
     stilde = max(sqrt(eta1(iel)*2.d0),1.d-15)
     wtilde = max(sqrt(eta2(iel)/2.d0),1.d-15)
 
-    xk = max(cka(iel),1.d-15)
+    xk = max(cvara_k(iel),1.d-15)
     xe = max(cvara_ep(iel),1.d-15)
     rotild = xe/wtilde/xk
     brtild(iel) = -brtild(iel)*xk/xe/stilde**3
