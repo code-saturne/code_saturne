@@ -4772,6 +4772,7 @@ cs_matrix_get_fill_type(bool        symmetric,
     else
       fill_type = CS_MATRIX_SCALAR;
   }
+  return fill_type;
 }
 
 /*----------------------------------------------------------------------------

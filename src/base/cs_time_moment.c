@@ -2610,7 +2610,6 @@ cs_time_moment_log_iteration(void)
       cs_time_moment_wa_t *mwa = _moment_wa + i;
       if (mwa->nt_start <= ts->nt_cur && mwa->location_id == 0) {
         int nt_acc = ts->nt_cur - mwa->nt_start + 1;
-        tmp_s[5][0] = '\0';
         cs_log_printf(CS_LOG_DEFAULT, "   %-4d %-8d %14.5g\n",
                       i, nt_acc, mwa->val0);
       }
