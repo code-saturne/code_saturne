@@ -250,6 +250,8 @@ cs_system_info(void)
     sysinfo(&info);
     ram = info.totalram / (size_t)(1024*1024);
   }
+#else
+  ram = 0; /* TODO: complete for Windows systems */
 #endif
 
   if (ram > 0)

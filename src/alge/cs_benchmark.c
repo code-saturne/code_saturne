@@ -81,6 +81,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_matrix.h"
+#include "cs_matrix_tuning.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
