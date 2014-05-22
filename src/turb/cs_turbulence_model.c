@@ -228,8 +228,27 @@ const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;
 
 /* RANS turbulence model structure and associated pointer */
 
-static cs_turb_rans_model_t  _turb_rans_model = {0, -999, 0, 0, 1, 1, -999, 0, 0,
-                                                 0, 1, 1, 0, -999, -1e13, -1e13};
+static cs_turb_rans_model_t
+_turb_rans_model =
+{
+     0,     /* irccor */
+  -999,     /* itycor */
+     1,     /* idirsm */
+     0,     /* iclkep */
+     0,     /* igrhok */
+     1,     /* igrake */
+     1,     /* igrari */
+  -999,     /* ikecou */
+     0,     /* irijnu */
+     0,     /* irijrb */
+     0,     /* irijec */
+     1,     /* idifre */
+     1,     /* iclsyr */
+     0,     /* iclptr */
+  -999,     /* almax  */
+ -1e13,     /* uref   */
+ -1e13      /* xlomg  */
+};
 
 const cs_turb_rans_model_t  *cs_glob_turb_rans_model = &_turb_rans_model;
 
