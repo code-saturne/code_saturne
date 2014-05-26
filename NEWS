@@ -1,4 +1,16 @@
 
+Release 3.3.1 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Fix in transient rotor/stator due to innapropriate use of cs_fields API and
+  field structure upgrade (n_time_vals > 2).
+
+- Fix bug in cavitation switch, which could affect all computations with variable
+  density.
+
 Release 3.3.0 (16 May 2014)
 ===========================
 

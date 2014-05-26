@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-04-18 13:57+0200\n"
+"POT-Creation-Date: 2014-05-16 19:07+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2934,6 +2934,10 @@ msgstr ""
 "\n"
 "Optimisation des matrices symétriques\n"
 "=====================================\n"
+
+msgid ""
+"Backward differentiation in time for scalar variablesis not available yet."
+msgstr ""
 
 #, c-format
 msgid " %s: Convection in centered blending with %f percent of upwind\n"
@@ -8405,10 +8409,6 @@ msgid "Invalid xpath: %s\n"
 msgstr ""
 
 #, c-format
-msgid "Invalid thermal model: %s\n"
-msgstr ""
-
-#, c-format
 msgid "Error: can not use evaluate property: %s\n"
 msgstr ""
 
@@ -8447,10 +8447,6 @@ msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
 #, c-format
-msgid "number of properties is not correct: %i instead of: %i\n"
-msgstr ""
-
-#, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
 "criteria:\n"
@@ -8472,6 +8468,10 @@ msgstr ""
 
 #, c-format
 msgid "Unable to open the file: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid thermal model: %s\n"
 msgstr ""
 
 #, c-format
@@ -8784,10 +8784,6 @@ msgstr ""
 #, c-format
 msgid " Boundary condition %d not recognized.\n"
 msgstr "La condition limite %d n'est pas reconnue.\n"
-
-#, c-format
-msgid " Incoherent value for move_particle = %d. Value must be 0 or 1.  \n"
-msgstr ""
 
 msgid " Cannot find the relative distant rank.\n"
 msgstr ""
