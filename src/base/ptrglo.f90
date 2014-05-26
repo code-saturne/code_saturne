@@ -303,7 +303,6 @@ contains
 
     logical f_is_owner
 
-    double precision, pointer, dimension(:)   :: val_s
     double precision, allocatable, dimension(:) :: dt0
     double precision, allocatable, dimension(:,:) :: rtp0, rtpa0, proce0
 
@@ -366,6 +365,8 @@ contains
     enddo
 
     ! Update new main real array : "ghost" cells
+    ! Note that the cs_field API cannot be used at this stage
+    ! because the mapping fldtri is not done yet
 
     if (irangp.ge.0 .or. iperio.eq.1) then
 
@@ -401,10 +402,9 @@ contains
         ivar = ivar + 1
       enddo
 
-      if (icrom.ge.0) then
-        call field_get_val_s(icrom, val_s)
-        call synsca(val_s)
-      endif
+      do iprop = 1, nproce
+        if (iprop.eq.ipproc(irom)) call synsca (propce(1,iprop))
+      enddo
 
     endif
 
