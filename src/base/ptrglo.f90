@@ -303,16 +303,8 @@ contains
 
     logical f_is_owner
 
-    double precision, pointer, dimension(:)   :: val_s
     double precision, allocatable, dimension(:) :: dt0
     double precision, allocatable, dimension(:,:) :: rtp0, rtpa0, proce0
-
-    double precision, dimension(:), pointer :: cvar_pr, cvara_pr
-
-    double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-    double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
-    double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-    double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 
     ! Buffering array
 
@@ -373,6 +365,8 @@ contains
     enddo
 
     ! Update new main real array : "ghost" cells
+    ! Note that the cs_field API cannot be used at this stage
+    ! because the mapping fldtri is not done yet
 
     if (irangp.ge.0 .or. iperio.eq.1) then
 
@@ -381,37 +375,23 @@ contains
       ivar = 1
       do while (ivar.le.nvar)
         if (ivar.eq.ipr) then
-          call field_get_val_s(ivarfl(ipr), cvar_pr)
-          call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
-          call synsca (cvar_pr)
-          call synsca (cvara_pr)
+          call synsca (rtp (1,ipr))
+          call synsca (rtpa(1,ipr))
         elseif (ivar.eq.iu) then
           ! Velocity is a owner field
           ivar = ivar + 2
           goto 100
         elseif (itytur.eq.3.and.ivar.eq.ir11) then
-          call field_get_val_s(ivarfl(ir11), cvar_r11)
-          call field_get_val_s(ivarfl(ir22), cvar_r22)
-          call field_get_val_s(ivarfl(ir33), cvar_r33)
-          call field_get_val_s(ivarfl(ir12), cvar_r12)
-          call field_get_val_s(ivarfl(ir13), cvar_r13)
-          call field_get_val_s(ivarfl(ir23), cvar_r23)
-          call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-          call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-          call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-          call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-          call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-          call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
           call synten &
           !==========
-        ( cvar_r11, cvar_r12, cvar_r13,  &
-          cvar_r12, cvar_r22, cvar_r23,  &
-          cvar_r13, cvar_r23, cvar_r33 )
+        ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),  &
+          rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),  &
+          rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
           call synten &
           !==========
-        ( cvara_r11, cvara_r12, cvara_r13,  &
-          cvara_r12, cvara_r22, cvara_r23,  &
-          cvara_r13, cvara_r23, cvara_r33 )
+        ( rtpa(1,ir11), rtpa(1,ir12), rtpa(1,ir13),  &
+          rtpa(1,ir12), rtpa(1,ir22), rtpa(1,ir23),  &
+          rtpa(1,ir13), rtpa(1,ir23), rtpa(1,ir33) )
           ivar = ivar + 5
           goto 100
         else
@@ -422,10 +402,9 @@ contains
         ivar = ivar + 1
       enddo
 
-      if (icrom.ge.0) then
-        call field_get_val_s(icrom, val_s)
-        call synsca(val_s)
-      endif
+      do iprop = 1, nproce
+        if (iprop.eq.ipproc(irom)) call synsca (propce(1,iprop))
+      enddo
 
     endif
 

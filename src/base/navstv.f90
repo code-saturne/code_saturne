@@ -587,7 +587,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
     allocate(viscf(3, 3, nfac))
   endif
 
-  if (allocated(wvisfi)) then ! TODO verifier
+  if (allocated(wvisfi)) then
     deallocate(viscfi)
 
     if (idften(iu).eq.1) then
@@ -617,6 +617,10 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
   call turbomachinery_reinit_i_face_fields
 
+  ! Update local pointers on "internal faces" fields
+
+  call field_get_val_s(iflmas, imasfl)
+
   if (irangp.ge.0 .or. iperio.eq.1) then
 
     ! Scratch and resize work arrays
@@ -643,17 +647,14 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
     call turbomachinery_update
     !=========================
 
-    ! Update field mappings ("owner" fields handled by update_turbomachinery)
+    ! Update field mappings ("owner" fields handled by turbomachinery_update)
 
     call fldtri(nproce, dt, rtpa, rtp, propce)
     !==========
 
     ! Resize other arrays related to the velocity-pressure resolution
 
-    call resize_vec_real_array(vel)
-    call resize_vec_real_array(vela)
     call resize_vec_real_array(trav)
-
     call resize_vec_real_array(dfrcxt)
 
     ! Resize other arrays, depending on user options
@@ -674,15 +675,22 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       call resize_tens_real_array(ximpa)
     endif
 
+    ! Update local pointers on "cells" fields
+
+    call field_get_val_s(icrom, crom)
+
+    call field_get_val_s(iprpfl(iviscl), viscl)
+    call field_get_val_s(iprpfl(ivisct), visct)
+
+    call field_get_val_v(ivarfl(iu), vel)
+    call field_get_val_prev_v(ivarfl(iu), vela)
+
+    call field_get_val_s(ivarfl(ipr), cvar_pr)
+    call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+
+    if (idtten.ge.0) call field_get_val_v(idtten, dttens)
+
   endif
-
-  ! Update local pointers
-
-  call field_get_val_s(iflmas, imasfl)
-  call field_get_val_s(iflmab, bmasfl)
-
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
 
   ! Update the Dirichlet wall boundary conditions for velocity (based on the
   ! solid body rotation on the new mesh).

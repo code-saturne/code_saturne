@@ -1209,35 +1209,27 @@ cs_turbomachinery_resize_cell_fields(void)
       /* Ghost cell sizes may change, but the number of main cells
          is unchanged, so a simple reallocation will do */
 
-      BFT_REALLOC(f->val, _n_cells*f->dim, cs_real_t);
-      if (f->n_time_vals > 1)
-        BFT_REALLOC(f->val_pre, _n_cells*f->dim, cs_real_t);
+      for (int kk = 0; kk < f->n_time_vals; kk++) {
 
-      if (halo != NULL) {
+	BFT_REALLOC(f->vals[kk], _n_cells*f->dim, cs_real_t);
 
-        cs_halo_sync_untyped(halo,
-                             CS_HALO_EXTENDED,
-                             f->dim*sizeof(cs_real_t),
-                             f->val);
-        if (f->dim == 3)
-          cs_halo_perio_sync_var_vect(halo,
-                                      CS_HALO_EXTENDED,
-                                      f->val,
-                                      f->dim);
+	if (halo != NULL) {
 
-        if (f->n_time_vals > 1) {
-          cs_halo_sync_untyped(halo,
-                               CS_HALO_EXTENDED,
+	  cs_halo_sync_untyped(halo,
+			       CS_HALO_EXTENDED,
                                f->dim*sizeof(cs_real_t),
-                               f->val_pre);
-        if (f->dim == 3)
+                               f->vals[kk]);
+          if (f->dim == 3)
             cs_halo_perio_sync_var_vect(halo,
                                         CS_HALO_EXTENDED,
-                                        f->val_pre,
+                                        f->vals[kk],
                                         f->dim);
         }
-
       }
+
+      f->val = f->vals[0];
+      if (f->n_time_vals > 1) f->val_pre = f->vals[1];
+
     }
 
   }
