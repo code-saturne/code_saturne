@@ -843,7 +843,7 @@ if (ippmod(icompf).lt.0) then
     !Allocation
     allocate(gradp(ncelet,3))
 
-    if (icavit.ge.0) then
+    if (icavit.lt.0) then
       call grdpot &
       !==========
       ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &

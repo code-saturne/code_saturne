@@ -405,7 +405,7 @@ endif
 !  si on extrapole aussi les termes sources de l equation sur le taux
 !  de vide pour le modele de cavitation.
 if (isno2t.gt.0) then
-  if (icavit.ge.0) then
+  if (icavit.lt.0) then
     call add_property_field_nd('navier_stokes_st_prev', '', 3, itsnsa)
   else
     call add_property_field_nd('navier_stokes_st_prev', '', 4, itsnsa)

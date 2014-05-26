@@ -394,14 +394,14 @@ else
   iprev = 1
 endif
 
-if (icavit.ge.0) then
+if (icavit.lt.0) then
   call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
                                 iccocg, iphydr,                     &
                                 frcxt, grad)
 
 else
 
-  ! Cavitating flows: consitency of the gradient with the diffusive flux scheme
+  ! Cavitating flows: consistency of the gradient with the diffusive flux scheme
   ! of the correction step
 
   call field_get_coefa_s (ivarfl(ipr), coefa_p)
@@ -510,7 +510,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   itypfl = 1
   ! Cavitation algorithm: the pressure step corresponds to the
   ! correction of the volumetric flux, not the mass flux
-  if (icavit.eq.1)  itypfl = 0
+  if (icavit.ge.0)  itypfl = 0
   init   = 1
   inc    = 0
   iflmb0 = 1

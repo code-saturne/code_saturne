@@ -2255,7 +2255,7 @@ deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy)
-if (icavit.ge.1) then
+if (icavit.ge.0) then
   deallocate(xdtsro)
   if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)
