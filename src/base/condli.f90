@@ -901,7 +901,7 @@ do ifac = 1, nfabor
   ! If a flux dt.grad P (W/m2) is set in cs_user_boundary
   if (idften(ipr).eq.1) then
     hint = dt(iel)/distbf
-    if (icavit.ge..0)  hint = hint/crom(iel)
+    if (icavit.ge.0)  hint = hint/crom(iel)
   else if (idften(ipr).eq.3) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
