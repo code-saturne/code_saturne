@@ -253,11 +253,12 @@ if (iroext.gt.0.or.idilat.gt.1) then
 endif
 
 if (iappel.eq.2) then
-  if (ineedf.eq.1 .and. iterns.eq.1) then
+  if (ineedf.eq.1 .and. iterns.eq.1 .or. icavit.ge.0) then
     call field_get_val_s(ivarfl(ipr), cvara_pr)
-    if((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
-      call field_get_val_s(ivarfl(ik), cvara_k)
-    endif
+  endif
+  if(ineedf.eq.1 .and. iterns.eq.1                                          &
+     .and. (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
+    call field_get_val_s(ivarfl(ik), cvara_k)
   endif
   if (itytur.eq.3.and.iterns.eq.1) then
     call field_get_val_s(ivarfl(ir11), cvara_r11)
@@ -268,11 +269,12 @@ if (iappel.eq.2) then
     call field_get_val_s(ivarfl(ir13), cvara_r13)
   endif
 else
-  if (ineedf.eq.1 .and. iterns.eq.1) then
+  if (ineedf.eq.1 .and. iterns.eq.1 .or. icavit.ge.0) then
     call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
-    if((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
+  endif
+  if(ineedf.eq.1 .and. iterns.eq.1                                          &
+     .and. (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
       call field_get_val_prev_s(ivarfl(ik), cvara_k)
-    endif
   endif
   if (itytur.eq.3.and.iterns.eq.1) then
     call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
