@@ -11,6 +11,8 @@ Bug fixes:
 - Fix bug in cavitation switch, which could affect all computations with variable
   density.
 
+- Fix: with no GUI, missing initialization of thermal diffusivity.
+
 Release 3.3.0 (16 May 2014)
 ===========================
 
