@@ -1022,6 +1022,16 @@ enddo
 ! Elles sont prises egales aux valeurs correspondantes pour le
 ! scalaire associe.
 
+if (iscalt.gt.0) then
+  if (visls0(iscalt).lt.-grand) then
+    if (itherm .eq. 1) then
+      visls0(iscalt) = viscl0
+    else if (itherm .eq. 2) then
+      visls0(iscalt) = viscl0 / cp0
+    endif
+  endif
+endif
+
 if (nscaus.gt.0) then
   do jj = 1, nscaus
     if (iscavr(jj).le.0 .and. visls0(jj).lt.-grand) then

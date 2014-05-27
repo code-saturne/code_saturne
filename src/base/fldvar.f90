@@ -271,6 +271,7 @@ if (nmodpp.eq.0) then
     call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
     iscalt = ihm
   endif
+  ivisls(iscalt) = 0
 
   if (itherm.ne.0 .and. iihmpr.eq.1) then
     call uithsc(iscalt)
