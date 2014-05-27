@@ -26,7 +26,7 @@
 
 /*!
   \mainpage Code_Saturne documentation
- 
+
   \section intro Introduction
 
   Code_Saturne is EDF's general purpose Computational Fluid Dynamics (CFD)
@@ -52,13 +52,13 @@
 
   \section user_sources User sources, functions, and subroutines
 
-  Many user examples are available in the Related pages 
-    - Boundary condition definitions examples \ref cs_user_boundary_conditions_examples, 
-    - Extra user operations examples \ref cs_user_extra_operations_examples,
-    - Examples of physical fields initialization \ref cs_user_initialization,
-  and so on ...
+  Many user examples are available in the \ref cs_user_examples "user examples tab":
+    - \ref cs_user_boundary_conditions_examples "User boundary conditions definitions",
+    - \ref cs_user_extra_operations_examples "User extra operations",
+    - \ref cs_user_initialization "Physical fields user initialization",
+    - and so on ...
 
-  \page BFT
+  \page BFT BFT
 
   \section BFT
 
@@ -74,12 +74,12 @@
   \c HPUX_SOURCE, ...). On certain systems, largefile support also requires
   additionnal preprocessor symbols such as \c _FILE_OFFSET_BITS or
   \c _LARGEFILE_SOURCE, and \c fseek/ftell replaced with \c fseeko/ftello.
- 
+
   Authors of scientific code seeking portability should not have to worry
   about these issues unless they deliberately choose to use low-level functions.
   BFT tries to hide such portability issues while maintaining an API similar
   to that of the standard \c libc where applicable.
- 
+
   \subsection intro_retcode_error Return codes and error handling
 
   In most scientific codes destined to run in a batch environment, errors are
@@ -121,7 +121,7 @@
   The user should thus check for the return values of such functions,
   but the API is guaranteed.
 
-  \page FVM
+  \page FVM FVM
 
   \section FVM
 

@@ -33,10 +33,10 @@
   This page provides several examples of code blocks that may be used
   to initialize variables in \ref cs_user_initialization.
 
-  Theese subroutines are called at beginning of the computation
+  These subroutines are called at beginning of the computation
   (restart or not) before the loop time step.
 
-  Theese subroutines enable to initialize or modify (for restart)
+  These subroutines enable to initialize or modify (for restart)
   unkown variables and time step values.
 
   rom and viscl values are equal to ro0 and viscl0 or initialize
@@ -47,7 +47,7 @@
   Physical quantities are defined in the following arrays:
    - propce (physical quantities defined at cell center),
    - propfb (physical quantities defined at border face center).
- 
+
   Examples:
    - propce(iel, ipproc(irom  )) means rom  (iel)
    - propce(iel, ipproc(iviscl)) means viscl(iel)
@@ -66,7 +66,7 @@
   \ref cs_user_boundary_conditions subroutine,
   but a more thorough description can be found in the user guide.
 
-  \section cs_user_bc_examples Initialization examples
+  \section cs_user_init_examples Initialization examples
   Here is the list of examples dedicated to different physics:
 
    - \subpage base
@@ -135,7 +135,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -199,7 +199,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -230,12 +230,12 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
 
-  Some controls are made during initialization:   
+  Some controls are made during initialization:
 
   \snippet cs_user_initialization-electric_arcs.f90 init1
 
@@ -265,12 +265,12 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -300,7 +300,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -331,7 +331,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -362,7 +362,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -393,7 +393,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -424,7 +424,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
@@ -458,7 +458,7 @@
 
   \subsection alloc Allocation
 
-  Before user initialization, work arrays lstelt must be allocated, 
+  Before user initialization, work arrays lstelt must be allocated,
   like in basic example.
 
   \subsection s_init Initialization
