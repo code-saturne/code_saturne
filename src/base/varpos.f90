@@ -247,6 +247,7 @@ if (ipass.eq.1) then
 
     if (itherm.ne.0 .and. nmodpp.eq.0) then
       iscalt = iscapp(1)
+      ivisls(iscalt) = 0
     endif
 
     call ppvarp(nmodpp)

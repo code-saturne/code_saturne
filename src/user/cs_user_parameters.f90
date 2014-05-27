@@ -1625,13 +1625,12 @@ endif
 !       Indeed the diffusivity of the variance of a scalar is assumed
 !       identical to that scalar's diffusivity.
 
-!     When no specific physics has been activated
-!       (coal, combustion, electric arcs) and if a user scalar represents:
-!       - the temperature:
-!       visls0(iscalt) = Lambda
-!        because the Cp is outside of the diffusion term in the temperature equation
-!       - the enthalpy:
-!       visls0(iscalt) = Lambda/Cp
+!     For user scalars jj behaving as a temperature (iscacp(jj) = 1),
+!       Cp is outside of the diffusion term in the temperature equation, so:
+!       visls0(jj) = Lambda
+
+!     For user scalars jj NOT behaving as a temperature (iscacp(jj) = 0),
+!       visls0(jj) = Lambda/Cp
 
 !     Here, as an example, we assign to viscl0 the viscosity of the fluid
 !       phase, which is fitting for passive tracers which follow the fluid
