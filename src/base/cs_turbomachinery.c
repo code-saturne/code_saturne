@@ -1211,12 +1211,12 @@ cs_turbomachinery_resize_cell_fields(void)
 
       for (int kk = 0; kk < f->n_time_vals; kk++) {
 
-	BFT_REALLOC(f->vals[kk], _n_cells*f->dim, cs_real_t);
+        BFT_REALLOC(f->vals[kk], _n_cells*f->dim, cs_real_t);
 
-	if (halo != NULL) {
+        if (halo != NULL) {
 
-	  cs_halo_sync_untyped(halo,
-			       CS_HALO_EXTENDED,
+          cs_halo_sync_untyped(halo,
+                               CS_HALO_EXTENDED,
                                f->dim*sizeof(cs_real_t),
                                f->vals[kk]);
           if (f->dim == 3)
