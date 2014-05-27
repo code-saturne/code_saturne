@@ -66,9 +66,39 @@ BEGIN_C_DECLS
         Field pointers and ids for standard and model fields.
 */
 
+/*! \fn CS_ENUMF_(e)
+ * \brief Macro used for scoping of field pointer enums.
+ *
+ * This macro replaces CS_ENUMF_ by CS_FIELD_POINTER_ and allows
+ * to rebuild a full enumerated field pointer id.
+ *
+ * \param [in] e suffix of enumerated field pointer id.
+ */
+
+/*! \fn CS_F_(e)
+ * \brief Macro used to return a field pointer by its enumerated value.
+ *
+ * This macro replaces CS_F_ by an access to the global array of field pointers
+ * \ref cs_glob_field_pointers using a rebuilt enumerated field pointer id.
+ *
+ * \param [in] e suffix of enumerated field pointer id.
+ */
+
+/*! \fn CS_FI_(e, i)
+ * \brief Macro used to return a field pointer by its enumerated value.
+ *
+ * This macro replaces CS_FI_ by an access to the global array of field pointers
+ * \ref cs_glob_field_pointers using a rebuilt enumerated field pointer id and
+ * its field sublist index.
+ *
+ * \param [in] e suffix of enumerated field pointer id.
+ * \param [in] i field enumerator value.
+ */
+
 /*=============================================================================
  * Local macro definitions
  *============================================================================*/
+
 
 /*============================================================================
  * Type definitions

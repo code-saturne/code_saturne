@@ -45,7 +45,7 @@ BEGIN_C_DECLS
 
 #define CS_ENUMF_(e) CS_FIELD_POINTER_ ## e
 
-/* Macro used to return field a field pointer by its enumerated value */
+/* Macro used to return a field pointer by its enumerated value */
 
 #define CS_F_(e) cs_glob_field_pointers[CS_FIELD_POINTER_ ## e].f
 
