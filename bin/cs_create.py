@@ -50,6 +50,7 @@ except Exception:
     import configparser  # Python3
 
 import cs_exec_environment
+import cs_runcase
 
 #-------------------------------------------------------------------------------
 # Process the passed command line arguments
@@ -623,6 +624,22 @@ domains = [
         fd.close()
 
         make_executable(batch_file)
+
+        # Add info from parent in case of copy
+        # TODO: complete this for n_procs and batch info
+
+        if self.copy is not None:
+            ref_runcase_path = os.path.join(self.copy, 'SCRIPTS', 'runcase')
+            if sys.platform.startswith('win'):
+                ref_runcase_path += '.bat'
+            try:
+                ref_runcase = cs_runcase.runcase(ref_runcase_path)
+                params = ref_runcase.get_parameters()
+                runcase = cs_runcase.runcase(batch_file)
+                runcase.set_parameters(params)
+                runcase.save()
+            except Exception:
+                pass
 
 
     def dump(self):

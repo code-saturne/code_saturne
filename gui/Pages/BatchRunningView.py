@@ -56,6 +56,7 @@ from PyQt4.QtGui  import *
 
 import cs_case
 import cs_exec_environment
+import cs_runcase
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -492,10 +493,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         # Check if the script file name is already defined
 
         if self.case['scripts_path']:
-            if not self.case['batch']:
+            if not self.case['runcase']:
                 if self.case['package'].runcase in os.listdir(self.case['scripts_path']):
-                    self.case['batch'] = self.case['package'].runcase
-
+                    runcase_path = os.path.join(self.case['scripts_path'],
+                                                self.case['package'].runcase)
+                    self.case['runcase'] = cs_runcase.runcase(runcase_path)
 
         # Get batch type
 
@@ -594,14 +596,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Check if the script file name is already defined
 
-        name = self.case['batch']
-        if name:
+        if self.case['runcase']:
+            name = os.path.basename(self.case['runcase'].path)
             self.labelBatchName.setText(str(name))
             setGreenColor(self.toolButtonSearchBatch, False)
         else:
             setGreenColor(self.toolButtonSearchBatch, True)
 
-        if self.case['batch_type'] != None and self.case['batch']:
+        if self.case['batch_type'] != None and self.case['runcase']:
             self.displayBatchInfo()
 
         # Script info is based on the XML model
@@ -759,7 +761,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         key = self.case['batch_type']
 
-        batch = os.path.join('.', self.case['batch'])
+        batch = os.path.relpath(self.case['runcase'].path)
 
         if key == None:
             run_id, run_title = self.__suggest_run_id()
@@ -817,40 +819,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Update the command line in the launcher C{runcase}.
         """
-        runcase = self.case['batch']
+        runcase = self.case['runcase']
 
-        try:
-            run_ref_f = file(runcase, mode='r')
-        except IOError:
-            print("Error: can not open %s" % runcase)
-            sys.exit(1)
-        lines = run_ref_f.readlines()
-        run_ref_f.close()
-
-        if sys.platform.startswith('win'):
-            pattern = r'^' + self.case['package'].name
-        else:
-            pattern = r'^\\' + self.case['package'].name
-
-        for i in range(len(lines)):
-            if re.search(pattern, lines[i]):
-                l = lines[i].split()
-                if run_id != None:
-                    if "--id" in l:
-                        l[l.index("--id") + 1] = run_id
-                    else:
-                        l.append("--id")
-                        l.append(run_id)
-                else:
-                    if "--id" in l:
-                        id = l.index("--id")
-                        l.pop(id)
-                        l.pop(id)
-                lines[i] = string.join(l)
-
-        run_new_f = file(runcase, mode='w')
-        run_new_f.writelines(lines)
-        run_new_f.close()
+        runcase.set_run_id(run_id=run_id)
+        runcase.save()
 
 
     def getCommandOutput(self, cmd):
@@ -1122,7 +1094,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             setGreenColor(self.toolButtonSearchBatch, False)
 
             if self.case['scripts_path'] == os.path.dirname(file_name):
-                self.case['batch'] = launcher
+                self.case['runcase'] = cs_runcase.runcase(launcher)
                 self.labelBatchName.setText(str(launcher))
                 self.jmdl.readBatchFile()
                 self.hideBatchInfo()

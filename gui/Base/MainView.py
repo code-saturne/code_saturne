@@ -63,6 +63,7 @@ from PyQt4.QtGui  import *
 import cs_info
 from cs_exec_environment import \
     separate_args, update_command_single_value, assemble_args, enquote_arg
+import cs_runcase
 
 try:
     from Base.MainForm import Ui_MainForm
@@ -1044,38 +1045,11 @@ class MainView(object):
         self.IdPthMdl.setPathI('mesh_path',
                                os.path.join(os.path.abspath(os.path.split(file_dir)[0],
                                                             'MESH')))
-        self.case['batch'] =  self.batch_file
+        self.case['runcase'] = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
+                                                               self.batch_file))
         del IdentityAndPathesModel
 
         self.updateStudyId()
-
-
-
-    def batchFileUpdate(self):
-        """
-        Update the run command
-        """
-
-        cmd_name = self.case['package'].name
-        parameters = os.path.basename(self.case['xmlfile'])
-        batch_lines = self.batch_lines
-
-        for i in range(len(batch_lines)):
-            if batch_lines[i][0:1] != '#':
-                index = string.find(batch_lines[i], cmd_name)
-                if index < 0:
-                    continue
-                line = batch_lines[i]
-                if line[index + len(cmd_name):].strip()[0:3] != 'run':
-                    continue
-
-                args = update_command_single_value(separate_args(line.rstrip()),
-                                                   ('--param', '--param=', '-p'),
-                                                   enquote_arg(parameters))
-                batch_lines[i] = assemble_args(args) + '\n'
-                break
-
-        self.batch_lines = batch_lines
 
 
     @pyqtSignature("")
@@ -1090,14 +1064,12 @@ class MainView(object):
         if not hasattr(self, 'case'):
             return
 
-        if self.case['batch'] and self.batch_lines:
+        if self.case['runcase']:
 
-            self.batchFileUpdate()
+            parameters = os.path.basename(self.case['xmlfile'])
 
-            batch = os.path.join(self.case['scripts_path'], self.case['batch'])
-            f = open(batch, 'w')
-            f.writelines(self.batch_lines)
-            f.close()
+            self.case['runcase'].set_parameters(parameters)
+            self.case['runcase'].save()
 
         else:
 
@@ -1281,9 +1253,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.cmd_case    = cmd_case
         self.salome      = cmd_salome
         self.batch_type  = cs_batch_type
-        self.batch       = None
+        self.batch       = False
         self.batch_file  = cmd_package.runcase
-        self.batch_lines = []
         self.package     = cmd_package
 
         self.XML_DOC_VERSION = XML_DOC_VERSION

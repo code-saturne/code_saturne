@@ -60,8 +60,8 @@ class BatchRunningModel(Model):
         self.parent = parent
         self.case = case
 
-        if not self.case['batch']:
-            self.case['batch'] = ""
+        if not self.case['runcase']:
+            self.case['runcase'] = None
 
         self.dictValues = {}
 
@@ -79,13 +79,8 @@ class BatchRunningModel(Model):
 
         # Is a batch file present ?
 
-        self.batch = os.path.join(self.case['scripts_path'], self.case['batch'])
-
-        if os.path.isfile(self.batch):
-            if self.parent.batch_lines:
-                self.parseBatchFile()
-            else:
-                self.readBatchFile()
+        if self.case['runcase']:
+            self.parseBatchFile()
 
 
     def preParse(self, s):
@@ -103,59 +98,26 @@ class BatchRunningModel(Model):
 
     def parseBatchRunOptions(self):
         """
-        Update the run command
+        Get info from the run command
         """
-        cmd_name = self.case['package'].name
-        batch_lines = self.parent.batch_lines
 
-        for i in range(len(batch_lines)):
-            if batch_lines[i][0:1] != '#':
-                index = string.find(batch_lines[i], cmd_name)
-                if index < 0:
-                    continue
-                line = batch_lines[i]
-                if line[index + len(cmd_name):].strip()[0:3] != 'run':
-                    continue
-
-                args = cs_exec_environment.separate_args(line.rstrip())
-                self.dictValues['run_nprocs'] \
-                    = cs_exec_environment.get_command_single_value(args,
-                                                                   ('--nprocs',
-                                                                    '--nprocs=',
-                                                                    '-n'))
+        self.dictValues['run_nprocs'] = self.case['runcase'].get_nprocs()
 
 
     def updateBatchRunOptions(self, keyword=None):
         """
         Update the run command
         """
-        cmd_name = self.case['package'].name
-        batch_lines = self.parent.batch_lines
 
-        for i in range(len(batch_lines)):
-            if batch_lines[i][0:1] != '#':
-                index = string.find(batch_lines[i], cmd_name)
-                if index < 0:
-                    continue
-                line = batch_lines[i]
-                if line[index + len(cmd_name):].strip()[0:3] != 'run':
-                    continue
-
-                args = cs_exec_environment.separate_args(line.rstrip())
-
-                if keyword == 'run_nprocs' or not keyword:
-                    args = cs_exec_environment.update_command_single_value \
-                        (args, ('--nprocs', '--nprocs=', '-n'),
-                         self.dictValues['run_nprocs'])
-
-                batch_lines[i] = cs_exec_environment.assemble_args(args) + '\n'
+        if keyword == 'run_nprocs' or not keyword:
+            self.case['runcase'].set_nprocs(self.dictValues['run_nprocs'])
 
 
     def parseBatchCCC(self):
         """
         Parse Platform LSF batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#MSUB':
@@ -181,7 +143,7 @@ class BatchRunningModel(Model):
         """
         Update the Platform LSF batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#MSUB':
@@ -202,14 +164,14 @@ class BatchRunningModel(Model):
                     val = self.dictValues['job_class']
                 else:
                     continue
-                batch_lines[i] = '#MSUB ' + kw + ' ' + str(val) + '\n'
+                batch_lines[i] = '#MSUB ' + kw + ' ' + str(val)
 
 
     def parseBatchLOADL(self):
         """
         Parse LoadLeveler batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0] == '#':
@@ -250,7 +212,7 @@ class BatchRunningModel(Model):
         Update the LoadLeveler batch file from dictionary self.dictValues.
         """
 
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0] == '#':
@@ -279,7 +241,7 @@ class BatchRunningModel(Model):
                             val = self.dictValues['job_group']
                         else:
                             continue
-                        batch_lines[i] = '# @ ' + kw + ' = ' + str(val) + '\n'
+                        batch_lines[i] = '# @ ' + kw + ' = ' + str(val)
                 except Exception:
                     pass
 
@@ -288,7 +250,7 @@ class BatchRunningModel(Model):
         """
         Parse Platform LSF batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#BSUB':
@@ -315,7 +277,7 @@ class BatchRunningModel(Model):
         """
         Update the Platform LSF batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#BSUB':
@@ -333,14 +295,14 @@ class BatchRunningModel(Model):
                     val = self.dictValues['job_class']
                 else:
                     continue
-                batch_lines[i] = '#BSUB ' + kw + ' ' + str(val) + '\n'
+                batch_lines[i] = '#BSUB ' + kw + ' ' + str(val)
 
 
     def parseBatchPBS(self):
         """
         Parse PBS batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         # TODO: specialize for PBS Professional and TORQUE (OpenPBS has not been
         # maintained since 2004, so we do not support it).
@@ -398,11 +360,11 @@ class BatchRunningModel(Model):
         """
         Update the PBS batch file from dictionary self.dictValues.
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:4] == '#PBS':
-                ch = '\n'
+                ch = ''
                 batch_args = ' ' + self.preParse(batch_lines[i][4:])
                 index = string.rfind(batch_args, ' -')
                 while index > -1:
@@ -420,9 +382,6 @@ class BatchRunningModel(Model):
                                        + 'ppn=' + self.dictValues['job_ppn']
                             else:
                                 ch1 += ':' + s
-                        j = ch1.find('\n')
-                        if (j > -1):
-                            ch1 = ch1[0:j]
                         ch = ch1 + ch
                     elif arg[0:10] == '-l select=':
                         arg_tmp = arg[10:].split(':')
@@ -434,9 +393,6 @@ class BatchRunningModel(Model):
                                        + 'ncpus=' + self.dictValues['job_ppn']
                             else:
                                 ch1 += ':' + s
-                        j = ch1.find('\n')
-                        if (j > -1):
-                            ch1 = ch1[0:j]
                         ch = ch1 + ch
                     elif arg[0:12] == '-l walltime=':
                         wt = self.dictValues['job_walltime']
@@ -457,7 +413,7 @@ class BatchRunningModel(Model):
         """
         Parse Sun Grid Engine batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:2] == '#$':
@@ -493,11 +449,11 @@ class BatchRunningModel(Model):
         """
         Update the Sun Grid Engine batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:2] == '#$':
-                ch = '\n'
+                ch = ''
                 batch_args = ' ' + self.preParse(batch_lines[i][2:])
                 index = string.rfind(batch_args, ' -')
                 while index > -1:
@@ -531,7 +487,7 @@ class BatchRunningModel(Model):
         """
         Parse SLURM batch file lines
         """
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:7] == '#SBATCH':
@@ -588,9 +544,7 @@ class BatchRunningModel(Model):
         """
         Update the SLURM batch file from dictionary self.dictValues.
         """
-        batch_lines = self.parent.batch_lines
-
-        batch_lines = self.parent.batch_lines
+        batch_lines = self.case['runcase'].lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:7] == '#SBATCH':
@@ -627,37 +581,7 @@ class BatchRunningModel(Model):
                     val = self.dictValues['job_class']
                 else:
                     continue
-                batch_lines[i] = '#SBATCH ' + kw + str(val) + '\n'
-
-
-    def readBatchFile(self):
-        """
-        Fill self.dictValues reading the batch file.
-        """
-
-        if not self.case['batch']:
-            return
-
-        self.batch = os.path.join(self.case['scripts_path'], self.case['batch'])
-        if not os.path.isfile(self.batch):
-            return
-
-        # Read the batch file line by line.
-        # All lines are stored in a list called "self.batch_lines".
-
-        f = open(self.batch, 'r')
-        batch_lines = f.readlines()
-        f.close()
-
-        for i in range(len(batch_lines)):
-            batch_lines[i] = batch_lines[i].rstrip(' \t')
-
-        self.parent.batch_lines = batch_lines
-
-
-        # Parse lines depending on batch type
-
-        self.parseBatchFile()
+                batch_lines[i] = '#SBATCH ' + kw + str(val)
 
 
     def parseBatchFile(self):
@@ -737,7 +661,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
         self.case['batch_type'] = None
         self.case['scripts_path'] = os.getcwd()
-        self.case['batch'] = 'runcase'
+        self.case['runcase'] = cs_runcase.runcase('runcase')
 
         lance_PBS = '# test \n'\
         '#\n'\
@@ -768,9 +692,8 @@ class BatchRunningModelTestCase(unittest.TestCase):
         """
         This method is executed after all 'check' methods.
         """
-        f = self.case['batch']
+        f = self.case['runcase'].path
         if os.path.isfile(f): os.remove(f)
-        if os.path.isfile(f+"~"): os.remove(f+"~")
 
 
     def checkReadBatchPBS(self):

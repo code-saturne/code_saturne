@@ -34,37 +34,7 @@ import sys
 from cs_case_domain import *
 from cs_case import *
 import cs_exec_environment
-
-#-------------------------------------------------------------------------------
-# Extract a parameters file name from a shell run sript
-#-------------------------------------------------------------------------------
-
-def get_param(path):
-    """
-    Extract a parameters file name from a shell run sript
-    """
-    f = open(path, 'r')
-    lines = f.readlines()
-    f.close()
-
-    param = None
-
-    for line in lines:
-        if line[0] == '#':
-            continue
-        i = line.find('#')
-        if i > -1:
-            line = line[0:i]
-        line = line.strip()
-        if len(line) == 0:
-            continue
-        args = cs_exec_environment.separate_args(line)
-        if args.count('run') > 0:
-            if args.index('run') > 0: # "<package.name> run"
-                param = cs_exec_environment.get_command_single_value \
-                    (args, ('--param=', '--param', '-p'))
-
-    return param
+import cs_runcase
 
 #===============================================================================
 # Main function for code coupling execution
@@ -108,11 +78,11 @@ def coupling(package,
         if (d.get('solver') == 'Code_Saturne' or d.get('solver') == 'Saturne'):
 
             try:
-                runcase = os.path.join(os.getcwd(),
-                                       d.get('domain'),
-                                       'SCRIPTS',
-                                       d.get('script'))
-                param = get_param(runcase)
+                runcase = cs_runcase.runcase(os.path.join(os.getcwd(),
+                                                          d.get('domain'),
+                                                          'SCRIPTS',
+                                                          d.get('script')))
+                param = runcase.get_parameters()
 
             except Exception:
                 err_str = 'Cannot read Code_Saturne script: ' + runcase
@@ -153,11 +123,11 @@ def coupling(package,
         elif (d.get('solver') == 'NEPTUNE_CFD'):
 
             try:
-                runcase = os.path.join(os.getcwd(),
-                                       d.get('domain'),
-                                       'SCRIPTS',
-                                       d.get('script'))
-                param = get_param(runcase)
+                runcase = cs_runcase.runcase(os.path.join(os.getcwd(),
+                                                          d.get('domain'),
+                                                          'SCRIPTS',
+                                                          d.get('script')))
+                param = runcase.get_parameters()
 
             except Exception:
                 err_str = 'Cannot read NEPTUNE_CFD script: ' + runcase

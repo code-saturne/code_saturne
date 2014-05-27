@@ -50,6 +50,7 @@ try:
 except Exception:
     pass
 from autovnv.Command import run_autovnv_command
+import cs_runcase
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -109,35 +110,18 @@ class Case(object):
 
         # Read the runcase script from the Repository
 
-        try:
-            f = file(run_ref, mode = 'r')
-        except IOError:
-            print("Error: can not open %s\n" % run_ref)
-            sys.exit(1)
+        runcase = cs_runcase.runcase(run_ref)
 
-        lines = f.readlines()
-        f.close()
-
-        exe    = ""
-        for name in ('code_saturne', 'neptune_cfd'):
-            for line in lines:
-                if re.search(r'^\\' + name, line):
-                    exe = name
-
-        if not exe:
-            print("Error: name of the executable for the case %s not found. Stop." % self.label)
-            sys.exit(1)
-
-        if exe == "code_saturne":
+        if runcase.cmd_name == "code_saturne":
             from Base.XMLinitialize import XMLinit
             from cs_package import package
             pkg = package()
-        elif exe == "neptune_cfd":
+        elif runcase.cmd_name == "neptune_cfd":
             from core.XMLinitialize import XMLinit
             from nc_package import package
             pkg = package()
 
-        return exe, pkg
+        return runcase.cmd_name, pkg
 
 
     def update(self, xmlonly=False):

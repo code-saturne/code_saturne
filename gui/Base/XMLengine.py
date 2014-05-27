@@ -123,7 +123,7 @@ class Dico:
         self.data['scripts_path']     = ""
         self.data['relevant_subdir']  = "no"
         self.data['case_path']        = ""
-        self.data['batch']            = ""
+        self.data['runcase']          = False
         self.data['batch_type']       = ""
         self.data['no_boundary_conditions'] = False
         self.data['salome']           = False
