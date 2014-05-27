@@ -2207,7 +2207,7 @@ endif
 '@    =========',                                               /,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS',                    /,&
 '@',                                                            /,&
-'@   SCALAIRE', i10,' ISSO2T = ', i10,                          /,&
+'@   SCALAIRE ', i10,' ISSO2T = ', i10,                         /,&
 '@     EST DIFFERENT DE ISNO2T',                                /,&
 '@     ISNO2T = ', i10,                                         /,&
 '@',                                                            /,&
@@ -2226,7 +2226,7 @@ endif
 '@    =========',                                               /,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS',                    /,&
 '@',                                                            /,&
-'@   SCALAIRE', i10,' IVSEXT = ', i10,                          /,&
+'@   SCALAIRE ', i10,' IVSEXT = ', i10,                         /,&
 '@     EST DIFFERENT DE IVIEXT',                                /,&
 '@     IVIEXT = ', i10,                                         /,&
 '@',                                                            /,&
@@ -2534,7 +2534,7 @@ endif
 '@    dans la version courante malgre le choix utilisateur',    /,&
 '@    suivant :',                                               /,&
 '@',                                                            /,&
-'@       Pour le scalaire', i10,                                /,&
+'@       Pour le scalaire ', i10,                               /,&
 '@       THETSS    ISSO2T',                                     /,&
 '@',      e12.4,      i10,                                      /,&
 '@',                                                            /,&
@@ -3432,7 +3432,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@',    a6,'(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
@@ -3498,9 +3498,9 @@ endif
 '@  Un couplage avec SYRTHES a ete defini.',                    /,&
 '@  Si le code est couple a SYRTHES, le scalaire couple doit',  /,&
 '@    etre la temperature.',                                    /,&
-'@  Le scalaire couple est ici le scalaire', i10,               /,&
+'@  Le scalaire couple est ici le scalaire ', i10,              /,&
 '@    Ce n''est pas une temperature car',                       /,&
-'@                    ISCCACP(',i10,   ') = ', i10,              /,&
+'@                    ISCCACP(',i10,   ') = ', i10,             /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -3522,7 +3522,7 @@ endif
 '@  Un couplage avec SYRTHES a ete defini.',                    /,&
 '@  En compressible, si le code est couple a SYRTHES, le',      /,&
 '@    scalaire couple doit etre l''energie.',                   /,&
-'@  Le scalaire couple est ici le scalaire', i10,               /,&
+'@  Le scalaire couple est ici le scalaire ', i10,              /,&
 '@    Ce n''est pas l''energie car',                            /,&
 '@                    ISCALT = ', i10,                          /,&
 '@',                                                            /,&
@@ -3830,8 +3830,8 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    LE SCALAIRE', a16, 'EST DEFINI COMME LA FLUCTUATION',     /,&
-'@    DU SCALAIRE', a16,                                        /,&
+'@    LE SCALAIRE ', a16, 'EST DEFINI COMME LA FLUCTUATION',    /,&
+'@    DU SCALAIRE ', a16,                                       /,&
 '@    (ISCAVR(',i10,   ') = ', i10,   '),',                     /,&
 '@    QUI EST LUI-MEME DEFINI COMME UNE FLUCTUATION',           /,&
 '@    (ISCAVR(',i10,   ') = ', i10,   ').',                     /,&
@@ -3853,7 +3853,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    ICLVFL(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0, 1 OU 2', /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
@@ -3872,7 +3872,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    ICLVFL(',i10,   ') N EST UTILISE QUE POUR LES VARIANCES', /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@    ALORS QUE LE SCALAIRE N EST PAS UNE VARIANCE.',           /,&
@@ -3895,7 +3895,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    VISLS0(',i10,   ') DOIT ETRE UN REEL POSITIF',            /,&
 '@      QUAND IVISLS(',i10,   ') = ', i10,                      /,&
 '@    IL VAUT ICI', e14.5,                                      /,&
@@ -3917,7 +3917,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    SIGMAS(',i10,   ') DOIT ETRE UN REEL POSITIF',            /,&
 '@    IL VAUT ICI', e14.5,                                      /,&
 '@',                                                            /,&
@@ -3936,7 +3936,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    SCAMIN(',i10,   ') VAUT ICI', e14.5,                      /,&
 '@      AVEC ICLVFL(',i10,   ') = ', i10,                       /,&
 '@',                                                            /,&
@@ -3962,7 +3962,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    SCAMAX(',i10,   ') VAUT ICI', e14.5,                      /,&
 '@      AVEC ICLVFL(',i10,   ') = ', i10,                       /,&
 '@',                                                            /,&
@@ -3988,7 +3988,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    SCAMAX(',i10,   ') DOIT ETRE UN REEL STRICTEMENT POSITIF',/,&
 '@    IL VAUT ICI', e14.5,                                      /,&
 '@',                                                            /,&
@@ -4009,7 +4009,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAIRE ', a16,                                          /,&
 '@    RVARFL(',i10,   ') DOIT ETRE UN REEL STRICTEMENT POSITIF',/,&
 '@    IL VAUT ICI', e14.5,                                      /,&
 '@',                                                            /,&
@@ -4828,7 +4828,7 @@ endif
 '@    =========',                                               /,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
 '@',                                                            /,&
-'@   SCALAR',   i10,' ISSO2T = ', i10,                          /,&
+'@   SCALAR ',   i10,' ISSO2T = ', i10,                         /,&
 '@       IS DIFFERENT FROM ISNO2T',                             /,&
 '@     ISNO2T = ', i10,                                         /,&
 '@',                                                            /,&
@@ -4848,7 +4848,7 @@ endif
 '@    =========',                                               /,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
 '@',                                                            /,&
-'@   SCALAIRE', i10,' IVSEXT = ', i10,                          /,&
+'@   SCALAIRE ', i10,' IVSEXT = ', i10,                         /,&
 '@       IS DIFFERENT FROM IVIEXT',                             /,&
 '@     IVIEXT = ', i10,                                         /,&
 '@',                                                            /,&
@@ -5151,7 +5151,7 @@ endif
 '@    will not be computed as second order',                    /,&
 '@    in this version, despite user settings chosen below',     /,&
 '@',                                                            /,&
-'@       For scalar',       i10,                                /,&
+'@       For scalar ',       i10,                               /,&
 '@       THETSS    ISSO2T',                                     /,&
 '@',      e12.4,      i10,                                      /,&
 '@',                                                            /,&
@@ -6050,7 +6050,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAR',   a16,                                           /,&
+'@    SCALAR ',   a16,                                          /,&
 '@',    a6,'(',i10,   ') MUST BE AN INTEGER EQUAL  0  OR 1',    /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
@@ -6139,7 +6139,7 @@ endif
 '@',                                                            /,&
 '@  For compressible and SYRTHES coupling',                     /,&
 '@    the coupled scalar must be energy.',                      /,&
-'@  here it is scalar',                      i10,               /,&
+'@  here it is scalar ',                      i10,              /,&
 '@    which is not the energy  here since',                     /,&
 '@                    ISCALT = ', i10,                          /,&
 '@',                                                            /,&
@@ -6448,8 +6448,8 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    THE SCALAR', a16, 'IS DEFINED AS        FLUCTUATION',     /,&
-'@    OF SCALAR', a16,                                          /,&
+'@    THE SCALAR ', a16, 'IS DEFINED AS        FLUCTUATION',    /,&
+'@    OF SCALAR ', a16,                                         /,&
 '@    (ISCAVR(',i10,   ') = ', i10,   '),',                     /,&
 '@    WHICH ITSELF IS DEFINED AS A FLUCTUATION',                /,&
 '@    (ISCAVR(',i10,   ') = ', i10,   ').',                     /,&
@@ -6471,7 +6471,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    ICLVFL(',i10,   ') MUST BE AN INTEGER  EGAL A 0, 1 or 2', /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
@@ -6490,7 +6490,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    ICLVFL(',i10,   ') is only used for  VARIANCES',          /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@    BUT THE SCALAR IS NOT A VARIANCE',                        /,&
@@ -6513,7 +6513,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    VISLS0(',i10,   ') MUST BE   A  REAL POSITIVE',           /,&
 '@      WHILE IVISLS(',i10,   ') = ', i10,                      /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
@@ -6536,7 +6536,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    SIGMAS(',i10,   ') MUST BE   A  REAL POSITIVE',           /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
@@ -6555,7 +6555,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    SCAMIN(',i10,   ') IS EQUAL', e14.5,                      /,&
 '@      AVEC ICLVFL(',i10,   ') = ', i10,                       /,&
 '@',                                                            /,&
@@ -6581,7 +6581,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    SCAMAX(',i10,   ') IS EQUAL', e14.5,                      /,&
 '@      AVEC ICLVFL(',i10,   ') = ', i10,                       /,&
 '@',                                                            /,&
@@ -6607,7 +6607,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    SCAMAX(',i10,   ') MUST BE A STRICTLY POSITIVE REAL',     /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
@@ -6628,7 +6628,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAIRE', a16,                                           /,&
+'@    SCALAR ', a16,                                            /,&
 '@    RVARFL(', i10,  ') MUST BE A STRICTLY POSITIVE REAL',     /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
