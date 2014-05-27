@@ -1,5 +1,11 @@
+
 Release 3.2.4 (unreleased)
 ==========================
+
+Bug fixes:
+----------
+
+- Fix: with no GUI, missing initialization of thermal diffusivity.
 
 Release 3.2.3 (May 16 2014)
 ===========================
