@@ -1615,6 +1615,7 @@ INCLUDE_FILE_PATTERNS  = *.h
 
 PREDEFINED             = HAVE_CONFIG_H=1 \
                          CS_PROCF(x,y)=x \
+                         CS_ENUMF_(e)=e \
                          DOXYGEN_SHOULD_SKIP_THIS=1 \
                          BEGIN_C_DECLS=extern \
                          "C" \

@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! Enumerated field pointer ids */
+/*! Suffixes of enumerated field pointer ids, arguments of the macro CS_F_(). */
 
 typedef enum {
 
@@ -78,10 +78,10 @@ typedef enum {
 
   CS_ENUMF_(phi),          /*!< \f$ \phi \f$ for \f$ \phi-f_b \f$ model */
   CS_ENUMF_(f_bar),        /*!< \f$ f_b \f$ for \f$ \phi-f_b \f$ model */
-  CS_ENUMF_(alpha),        /*!< \f$ alpha \f$ for \f$ Bl-v^2-k \f$
+  CS_ENUMF_(alpha),        /*!< \f$ \alpha \f$ for \f$ Bl-v^2-k \f$
                              or EBRSM model */
 
-  CS_ENUMF_(omg),          /*!< \f$ omega \f$ for \f$ k-\omega \f$ SST model */
+  CS_ENUMF_(omg),          /*!< \f$ \omega \f$ for \f$ k-\omega \f$ SST model */
   CS_ENUMF_(nusa),         /*!< \widetilde{\nu}_T \f$ for Spalart Allmaras */
 
   CS_ENUMF_(mesh_u),       /*!< mesh velocity */
