@@ -1464,7 +1464,7 @@ static char
 }
 
 /*==========================
- * FOR VOLUMICS ZONES
+ * FOR VOLUMIC ZONES
  *==========================*/
 
 /*-----------------------------------------------------------------------------
@@ -1474,7 +1474,8 @@ static char
  *   ith_zone        <--  id of volumic zone
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_volumic_zone_id(const int ith_zone)
+static char
+*cs_gui_volumic_zone_id(int ith_zone)
 {
   char *path = NULL;
   char *name = NULL;
@@ -1499,7 +1500,8 @@ static char *cs_gui_volumic_zone_id(const int ith_zone)
  *   zone_id      <--  volumic zone id
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_volumic_zone_localization(const char *zone_id)
+static char *
+_volumic_zone_localization(const char *zone_id)
 {
   char *path = NULL;
   char *description = NULL;
@@ -1529,9 +1531,10 @@ static char *cs_gui_volumic_zone_localization(const char *zone_id)
 
 #if (_XML_DEBUG_ > 0)
 
-static void cs_gui_variable_initial_value(const char   *variable_name,
-                                          const char   *zone_id,
-                                                double *initial_value)
+static void
+_variable_initial_value(const char  *variable_name,
+                        const char  *zone_id,
+                        double      *initial_value)
 {
   char *path = NULL;
   double result;
@@ -1553,6 +1556,82 @@ static void cs_gui_variable_initial_value(const char   *variable_name,
 
 #endif /* (_XML_DEBUG_ > 0) */
 
+/*-----------------------------------------------------------------------------
+ * Return the list of cells describing a given zone.
+ *
+ * parameters:
+ *   zone_id             <--  volume zone id
+ *   n_cells_with_ghosts <--  number of cells with halo
+ *   cells               -->  number of selected cells
+ *----------------------------------------------------------------------------*/
+
+static int*
+_get_cells_list(const char  *zone_id,
+                int          n_cells_with_ghosts,
+                int         *cells )
+{
+  int  c_id         = 0;
+  int  *cells_list  = NULL;
+  char *description = NULL;
+
+  description = _volumic_zone_localization(zone_id);
+
+  /* build list of cells */
+  BFT_MALLOC(cells_list, n_cells_with_ghosts, cs_lnum_t);
+
+  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                               description,
+                               cells,
+                               cells_list);
+
+  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
+    const char *missing
+      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                 "criteria:\n"
+                 "\"%s\"\n"
+                 " does not correspond to any cell.\n"),
+                 missing, description);
+  }
+  BFT_FREE(description);
+  return cells_list;
+}
+
+/*-----------------------------------------------------------------------------
+ * Initialize mei tree and check for symbols existence
+ *
+ * parameters:
+ *   formula        <--  mei formula
+ *   symbols        <--  array of symbol to check
+ *   symbol_size    <--  number of symbol in symbols
+ *----------------------------------------------------------------------------*/
+
+static mei_tree_t
+*_init_mei_tree(const char *formula,
+                const char *symbols)
+{
+
+  /* return an empty interpreter */
+  mei_tree_t *tree = mei_tree_new(formula);
+
+  /* add commun variables */
+  mei_tree_insert(tree, "x",    0.0);
+  mei_tree_insert(tree, "y",    0.0);
+  mei_tree_insert(tree, "z",    0.0);
+
+  /* try to build the interpreter */
+  if (mei_tree_builder(tree))
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: can not interpret expression: %s\n"), tree->string);
+  /* check for symbols */
+  if (mei_tree_find_symbol(tree, symbols))
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: can not find the required symbol: %s\n"), symbols);
+
+  return tree;
+}
+
 /*----------------------------------------------------------------------------
  * Get label of 1D profile file name
  *
@@ -1560,7 +1639,9 @@ static void cs_gui_variable_initial_value(const char   *variable_name,
  *   id           <--  number of order in list of 1D profile
  *----------------------------------------------------------------------------*/
 
-static char *_get_profile(const char *kw, const int id)
+static char
+*_get_profile(const char  *kw,
+              int          id)
 {
   char *path = NULL;
   char *label = NULL;
@@ -1581,11 +1662,13 @@ static char *_get_profile(const char *kw, const int id)
  * Return the component of variables or properties or scalar for 1D profile
  *
  * parameters:
- *   id           -->  number of 1D profile
- *   nm           -->  number of the variable name of the idst 1D profile
+ *   id           <--  number of 1D profile
+ *   nm           <--  number of the variable name of the idst 1D profile
  *----------------------------------------------------------------------------*/
 
-static int _get_profile_component(const int id, const int nm)
+static int
+_get_profile_component(int  id,
+                       int  nm)
 {
   char *path = NULL;
   char *comp = NULL;
@@ -1616,7 +1699,8 @@ static int _get_profile_component(const int id, const int nm)
  *   id           <--  number of 1D profile
  *----------------------------------------------------------------------------*/
 
-static int _get_profile_names_number(const int id)
+static int
+_get_profile_names_number(int id)
 {
   char *path = NULL;
   int   number = 0;
@@ -1640,7 +1724,9 @@ static int _get_profile_names_number(const int id)
  *   nm           <--  number of the variable name of the idst 1D profile
  *----------------------------------------------------------------------------*/
 
-static char *_get_profile_name(const int id, const int nm)
+static char
+*_get_profile_name(int id,
+                   int nm)
 {
   char *path = NULL;
   char *name = NULL;
@@ -1668,7 +1754,9 @@ static char *_get_profile_name(const int id, const int nm)
  *   nm           <--  number of the variable name of the idst 1D profile
  *----------------------------------------------------------------------------*/
 
-static char *_get_profile_label_name(const int id, const int nm)
+static char
+*_get_profile_label_name(int  id,
+                         int  nm)
 {
   char *path = NULL;
   char *name = NULL;
@@ -1746,7 +1834,9 @@ static char *_get_profile_label_name(const int id, const int nm)
  *                     or the output frequency
  *----------------------------------------------------------------------------*/
 
-static double _get_profile_coordinate(const int id, const char *x)
+static double
+_get_profile_coordinate(int          id,
+                        const char  *x)
 {
   char *path = NULL;
   double coordinate = 0.0;
@@ -1772,24 +1862,25 @@ static double _get_profile_coordinate(const int id, const char *x)
  *   id           <--  number of average
  *----------------------------------------------------------------------------*/
 
-static char *_get_profile_output_type(const int id)
+static char *
+_get_profile_output_type(int  id)
 {
-    char *path = NULL;
-    char *name = NULL;
+  char *path = NULL;
+  char *name = NULL;
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-    cs_xpath_add_element_num(&path, "profile", id + 1);
-    cs_xpath_add_element(&path, "output_type");
-    cs_xpath_add_function_text(&path);
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+  cs_xpath_add_element_num(&path, "profile", id + 1);
+  cs_xpath_add_element(&path, "output_type");
+  cs_xpath_add_function_text(&path);
 
-    name = cs_gui_get_text_value(path);
-    if (name == NULL)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid xpath: %s\n name not found"), path);
-    BFT_FREE(path);
+  name = cs_gui_get_text_value(path);
+  if (name == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Invalid xpath: %s\n name not found"), path);
+  BFT_FREE(path);
 
-    return name;
+  return name;
 }
 
 /*----------------------------------------------------------------------------
@@ -1799,7 +1890,8 @@ static char *_get_profile_output_type(const int id)
  *   id           <--  number of 1D profile
  *----------------------------------------------------------------------------*/
 
-static int _get_profile_format(const int id)
+static int
+_get_profile_format(int id)
 {
   char *path = NULL, *format_s = NULL;
   int   format = 0;
@@ -1825,6 +1917,176 @@ static int _get_profile_format(const int id)
   BFT_FREE(path);
 
   return format;
+}
+
+/*-----------------------------------------------------------------------------
+ * Change the head losses matrix from the local frame to the global frame.
+ *
+ * parameters:
+ *   a_ij     <--  change matrix from the local frame to the global frame
+ *   in_ij    <--  head losses matrix in the local frame
+ *   out_ij   <--  head losses matrix in the global frame
+ *----------------------------------------------------------------------------*/
+
+static void
+_matrix_base_conversion(double  a11,   double  a12,   double  a13,
+                        double  a21,   double  a22,   double  a23,
+                        double  a31,   double  a32,   double  a33,
+                        double  in11,  double  in12,  double  in13,
+                        double  in21,  double  in22,  double  in23,
+                        double  in31,  double  in32,  double  in33,
+                        double *out11, double *out12, double *out13,
+                        double *out21, double *out22, double *out23,
+                        double *out31, double *out32, double *out33)
+{
+  int     i, j, k;
+  double  tensorP[3][3], tensorA[3][3], tensorB[3][3], tensorC[3][3], tensorD[3][3];
+
+  tensorA[0][0] = in11;
+  tensorA[0][1] = in12;
+  tensorA[0][2] = in13;
+  tensorA[1][0] = in21;
+  tensorA[1][1] = in22;
+  tensorA[1][2] = in23;
+  tensorA[2][0] = in31;
+  tensorA[2][1] = in32;
+  tensorA[2][2] = in33;
+
+  tensorP[0][0] = a11;
+  tensorP[0][1] = a12;
+  tensorP[0][2] = a13;
+  tensorP[1][0] = a21;
+  tensorP[1][1] = a22;
+  tensorP[1][2] = a23;
+  tensorP[2][0] = a31;
+  tensorP[2][1] = a32;
+  tensorP[2][2] = a33;
+
+  for (i = 0; i < 3; i++)
+  {
+    for (j = 0; j < 3; j++)
+    {
+      tensorB[i][j] = 0.;
+      for (k = 0; k < 3; k++)
+        tensorB[i][j] += tensorP[i][k] * tensorA[k][j];
+    }
+  }
+
+  /* Inversion of a 3x3 matrix */
+
+  tensorC[0][0] = a11;
+  tensorC[0][1] = a21;
+  tensorC[0][2] = a31;
+  tensorC[1][0] = a12;
+  tensorC[1][1] = a22;
+  tensorC[1][2] = a32;
+  tensorC[2][0] = a13;
+  tensorC[2][1] = a23;
+  tensorC[2][2] = a33;
+
+  for (i = 0; i < 3; i++)
+  {
+    for (j = 0; j < 3; j++)
+    {
+      tensorD[i][j] = 0.;
+      for (k = 0; k < 3; k++)
+        tensorD[i][j] += tensorB[i][k] * tensorC[k][j];
+    }
+  }
+
+  *out11 = tensorD[0][0];
+  *out22 = tensorD[1][1];
+  *out33 = tensorD[2][2];
+  *out12 = tensorD[0][1];
+  *out13 = tensorD[0][2];
+  *out21 = tensorD[1][0];
+  *out23 = tensorD[1][2];
+  *out31 = tensorD[2][0];
+  *out32 = tensorD[2][1];
+}
+
+/*-----------------------------------------------------------------------------
+ * Return value of coefficient associated to the head losses definition.
+ *
+ * parameters:
+ *   zone_id   <--  id of the volume zone
+ *   c         <--  name of the coefficient
+ *----------------------------------------------------------------------------*/
+
+static double
+_c_head_losses(const char* zone_id, const char* c)
+{
+  char* path;
+  double result = 0.0;
+  double value  = 0.0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models", "heads_losses", "head_loss");
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+  cs_xpath_add_element(&path, c);
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &result))
+    value = result;
+  else
+    value= 0.0;
+  BFT_FREE(path);
+  return value;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the value of the choice attribute for rotor (turbomachinery)
+ *
+ * parameters:
+ *   rotor_id    <--  id of the rotor
+ *   name        <--  name of the property
+ *----------------------------------------------------------------------------*/
+
+static int
+_rotor_option(const char  *rotor_id,
+              const char  *name)
+{
+  double value = 0.;
+  char *path   = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "turbomachinery",
+                        "rotor");
+  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
+  cs_xpath_add_element(&path, "rotation");
+  cs_xpath_add_element(&path, name);
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_double(path, &value);
+  BFT_FREE(path);
+
+  return value;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the value to a face joining markup for turbomachinery
+ *
+ * parameters:
+ *   keyword <-- label of the markup
+ *   number  <-- joining number
+ *----------------------------------------------------------------------------*/
+
+static char *
+_get_rotor_face_joining(const char  *keyword,
+                        int          number)
+{
+  char* value = NULL;
+  char *path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "turbomachinery",
+                                  "joining");
+  cs_xpath_add_element_num(&path, "face_joining", number);
+  cs_xpath_add_element(&path, keyword);
+  cs_xpath_add_function_text(&path);
+  value = cs_gui_get_text_value(path);
+  BFT_FREE(path);
+  return value;
 }
 
 /*============================================================================
@@ -3003,49 +3265,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *ndgmox,
 #endif
 }
 
-/*-----------------------------------------------------------------------------
- * Return the list of cells describing a given zone.
- *
- * parameters:
- *   zone_id   <--  volume zone id
- *   ncelet    <--  number of cells with halo
- *   faces     -->  number of selected cells
- *----------------------------------------------------------------------------*/
-
-static int*
-cs_gui_get_cells_list(const char *zone_id,
-                      const int   ncelet,
-                            int  *cells )
-{
-  int  c_id         = 0;
-  int  *cells_list  = NULL;
-  char *description = NULL;
-
-  description = cs_gui_volumic_zone_localization(zone_id);
-
-  /* build list of cells */
-  BFT_MALLOC(cells_list, ncelet, int);
-
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                               description,
-                               cells,
-                               cells_list);
-
-  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
-  {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"
-                 "\"%s\"\n"
-                 " does not correspond to any cell.\n"),
-                 missing, description);
-  }
-  BFT_FREE(description);
-  return cells_list;
-}
-
 /*----------------------------------------------------------------------------
  * User momentum source terms.
  *
@@ -3106,7 +3325,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 1, "thermophysical_models");
@@ -3269,7 +3488,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3377,7 +3596,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3426,40 +3645,6 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
     }
     BFT_FREE(status);
   }
-}
-
-/*-----------------------------------------------------------------------------
- * Initialize mei tree and check for symbols existence
- *
- * parameters:
- *   formula        <--  mei formula
- *   symbols        <--  array of symbol to check
- *   symbol_size    <--  number of symbol in symbols
- *----------------------------------------------------------------------------*/
-
-static mei_tree_t
-*_init_mei_tree(const char *formula,
-                const char *symbols)
-{
-
-  /* return an empty interpreter */
-  mei_tree_t *tree = mei_tree_new(formula);
-
-  /* add commun variables */
-  mei_tree_insert(tree, "x",    0.0);
-  mei_tree_insert(tree, "y",    0.0);
-  mei_tree_insert(tree, "z",    0.0);
-
-  /* try to build the interpreter */
-  if (mei_tree_builder(tree))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not interpret expression: %s\n"), tree->string);
-  /* check for symbols */
-  if (mei_tree_find_symbol(tree, symbols))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not find the required symbol: %s\n"), symbols);
-
-  return tree;
 }
 
 /*----------------------------------------------------------------------------
@@ -3526,7 +3711,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
     if (cs_gui_strcmp(status, "on")) {
 
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+      cells_list = _get_cells_list(zone_id, *ncelet, &cells);
 
       if (*isuite == 0) {
         char *path_velocity = cs_xpath_init_path();
@@ -4084,121 +4269,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
   } /* zones+1 */
 }
 
-/*-----------------------------------------------------------------------------
- * Change the head losses matrix from the local frame to the global frame.
- *
- * parameters:
- *   a_ij     <--  change matrix from the local frame to the global frame
- *   in_ij    <--  head losses matrix in the local frame
- *   out_ij   <--  head losses matrix in the global frame
- *----------------------------------------------------------------------------*/
-
-static void
-_matrix_base_conversion(double  a11,   double  a12,   double  a13,
-                        double  a21,   double  a22,   double  a23,
-                        double  a31,   double  a32,   double  a33,
-                        double  in11,  double  in12,  double  in13,
-                        double  in21,  double  in22,  double  in23,
-                        double  in31,  double  in32,  double  in33,
-                        double *out11, double *out12, double *out13,
-                        double *out21, double *out22, double *out23,
-                        double *out31, double *out32, double *out33)
-{
-  int     i, j, k;
-  double  tensorP[3][3], tensorA[3][3], tensorB[3][3], tensorC[3][3], tensorD[3][3];
-
-  tensorA[0][0] = in11;
-  tensorA[0][1] = in12;
-  tensorA[0][2] = in13;
-  tensorA[1][0] = in21;
-  tensorA[1][1] = in22;
-  tensorA[1][2] = in23;
-  tensorA[2][0] = in31;
-  tensorA[2][1] = in32;
-  tensorA[2][2] = in33;
-
-  tensorP[0][0] = a11;
-  tensorP[0][1] = a12;
-  tensorP[0][2] = a13;
-  tensorP[1][0] = a21;
-  tensorP[1][1] = a22;
-  tensorP[1][2] = a23;
-  tensorP[2][0] = a31;
-  tensorP[2][1] = a32;
-  tensorP[2][2] = a33;
-
-  for (i = 0; i < 3; i++)
-  {
-    for (j = 0; j < 3; j++)
-    {
-      tensorB[i][j] = 0.;
-      for (k = 0; k < 3; k++)
-        tensorB[i][j] += tensorP[i][k] * tensorA[k][j];
-    }
-  }
-
-  /* Inversion of a 3x3 matrix */
-
-  tensorC[0][0] = a11;
-  tensorC[0][1] = a21;
-  tensorC[0][2] = a31;
-  tensorC[1][0] = a12;
-  tensorC[1][1] = a22;
-  tensorC[1][2] = a32;
-  tensorC[2][0] = a13;
-  tensorC[2][1] = a23;
-  tensorC[2][2] = a33;
-
-  for (i = 0; i < 3; i++)
-  {
-    for (j = 0; j < 3; j++)
-    {
-      tensorD[i][j] = 0.;
-      for (k = 0; k < 3; k++)
-        tensorD[i][j] += tensorB[i][k] * tensorC[k][j];
-    }
-  }
-
-  *out11 = tensorD[0][0];
-  *out22 = tensorD[1][1];
-  *out33 = tensorD[2][2];
-  *out12 = tensorD[0][1];
-  *out13 = tensorD[0][2];
-  *out21 = tensorD[1][0];
-  *out23 = tensorD[1][2];
-  *out31 = tensorD[2][0];
-  *out32 = tensorD[2][1];
-}
-
-/*-----------------------------------------------------------------------------
- * Return value of coefficient associated to the head losses definition.
- *
- * parameters:
- *   zone_id   <--  id of the volume zone
- *   c         <--  name of the coefficient
- *----------------------------------------------------------------------------*/
-
-static double
-_c_head_losses(const char* zone_id, const char* c)
-{
-  char* path;
-  double result = 0.0;
-  double value  = 0.0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
-                        "thermophysical_models", "heads_losses", "head_loss");
-  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-  cs_xpath_add_element(&path, c);
-  cs_xpath_add_function_text(&path);
-  if (cs_gui_get_double(path, &result))
-    value = result;
-  else
-    value= 0.0;
-  BFT_FREE(path);
-  return value;
-}
-
 /*----------------------------------------------------------------------------
  * Head losses definition
  *
@@ -4254,7 +4324,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on"))
       {
         zone_id = cs_gui_volumic_zone_id(i);
-        cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
 
         for (j=0; j < cells; j++)
         {
@@ -4294,7 +4364,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on")) {
 
         zone_id = cs_gui_volumic_zone_id(i);
-        cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
 
         k11 = _c_head_losses(zone_id, "kxx");
         k22 = _c_head_losses(zone_id, "kyy");
@@ -5128,61 +5198,6 @@ cs_gui_turbomachinery(void)
 
 }
 
-/*----------------------------------------------------------------------------
- * Return the value of the choice attribute for rotor (turbomachinery)
- *
- * parameters:
- *   rotor_id    <--  id of the rotor
- *   name        <--  name of the property
- *----------------------------------------------------------------------------*/
-
-static int
-_rotor_option(const char *const rotor_id,
-              const char *const name)
-{
-  double value = 0.;
-  char *path   = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
-                        "thermophysical_models",
-                        "turbomachinery",
-                        "rotor");
-  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
-  cs_xpath_add_element(&path, "rotation");
-  cs_xpath_add_element(&path, name);
-  cs_xpath_add_function_text(&path);
-  cs_gui_get_double(path, &value);
-  BFT_FREE(path);
-
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Return the value to a face joining markup for turbomachinery
- *
- * parameters:
- *   keyword <-- label of the markup
- *   number  <-- joining number
- *----------------------------------------------------------------------------*/
-
-static char *
-_get_rotor_face_joining(const char  *keyword,
-                        int          number)
-{
-  char* value = NULL;
-  char *path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "thermophysical_models",
-                                  "turbomachinery",
-                                  "joining");
-  cs_xpath_add_element_num(&path, "face_joining", number);
-  cs_xpath_add_element(&path, keyword);
-  cs_xpath_add_function_text(&path);
-  value = cs_gui_get_text_value(path);
-  BFT_FREE(path);
-  return value;
-}
-
 /*-----------------------------------------------------------------------------
  * Set turbomachinery options.
  *----------------------------------------------------------------------------*/
@@ -5241,10 +5256,10 @@ cs_gui_turbomachinery_rotor(void)
                               rotation_invariant);
 
   int n_join = 0;
-  n_join = cs_gui_get_tag_number("/thermophysical_models/turbomachinery/joining/face_joining", 1);
+  n_join = cs_gui_get_tag_number
+             ("/thermophysical_models/turbomachinery/joining/face_joining", 1);
 
-  if (n_join != 0)
-  {
+  if (n_join != 0) {
     for (int join_id = 0; join_id < n_join; join_id++) {
 
       char *selector_s  =  _get_rotor_face_joining("selector", join_id+1);
@@ -5259,11 +5274,11 @@ cs_gui_turbomachinery_rotor(void)
       int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
 
 
-      int join_num = cs_turbomachinery_join_add(selector_s,
-                                                fraction,
-                                                plane,
-                                                verbosity,
-                                                visualization);
+      (void) cs_turbomachinery_join_add(selector_s,
+                                        fraction,
+                                        plane,
+                                        verbosity,
+                                        visualization);
     }
   }
 }
