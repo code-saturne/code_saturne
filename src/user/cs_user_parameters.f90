@@ -698,124 +698,13 @@ endif
 return
 end subroutine usipph
 
-
-!===============================================================================
-
-
-subroutine usinsc &
-!================
-
- ( ixmlpu, nfecra , nscaus )
-
-
-!===============================================================================
-! Purpose:
-! -------
-
-! User subroutine for input of the number of user scalars.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
-!                  !    !     ! used (1: yes, 0: no)                           !
-! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
-! nscaus           ! i  ! <-> ! number of user scalars                         !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-
-! No module should appear here
-
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer ixmlpu, nfecra
-integer nscaus
-
-! Local variables
-
-
-!===============================================================================
-
-!     In this subroutine, only the parameters which already appear may
-
-!       be set, to the exclusion of any other.
-!               ================
-
-
-!     If we are not using the Code_Saturne GUI:
-
-!       All the parameters which appear in this subroutine must be set.
-!       ===
-
-
-!     If we are using the Code_Saturne GUI:
-
-!       we will find in the user subroutines commented examples
-!       on the model of the present section.
-
-!       If necessary, the user may uncomment them and adapt them to
-!       his needs.
-
-!===============================================================================
-
-! --- Number of USER scalars (thermal or not).
-!       These scalars come in addition to the following "basic" scalars
-!       (which are naturally included in the model):
-!        - pressure
-!        - turbulent variables
-!        - nscapp scalars introduced by an active combustion, coal,
-!          or electric arc module.
-
-!     Thus, for a calculation with no specific physics, the user scalars
-!       may for example be:
-!        - temperature or enthalpy,
-!        - mass fractions of transported scalars
-!        - the variance of another user scalar
-
-!     The maximum number of scalars is defined by 'nscamx' in paramx;
-!       it is the maximum admissible value for: nscaus + nscapp.
-
-
-!     Set nscaus = 0 if there is no user scalar.
-
-if (ixmlpu.eq.0) then
-
-  nscaus = 0
-
-endif
-
-!----
-! Formats
-!----
-
-
-return
-end subroutine usinsc
-
-
 !===============================================================================
 
 
 subroutine usipsc &
 !================
 
- ( nscmax, nscaus, ixmlpu, nfecra, iscavr, ivisls )
+ ( nscmax, nscaus, ixmlpu, nfecra, ivisls )
 
 
 !===============================================================================
@@ -835,7 +724,6 @@ subroutine usipsc &
 ! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
-! iscavr(nscmax)   ! ia ! <-- ! associated scalar number for variance scalars  !
 ! ivisls(nscmax)   ! ia ! <-> ! uniform scalar diffusivity flag                !
 !__________________!____!_____!________________________________________________!
 
@@ -858,7 +746,7 @@ implicit none
 ! Arguments
 
 integer nscmax, nscaus, ixmlpu, nfecra
-integer iscavr(nscmax), ivisls(nscmax)
+integer ivisls(nscmax)
 
 ! Local variables
 
@@ -888,41 +776,13 @@ integer iscal
 
 !===============================================================================
 
-! --- Variance of a USER scalar:
-!     If we wish a user scalar j to represent the variance of a
-!       user scalar k, we set
-!       iscavr(j) = k.
-!     The values taken by iscavr are thus naturally greater or equal to 1
-!       and less than or equal to the total number of scalars.
-!       So, if we set iscavr(j) = k, we must have
-!       0 < j < nscaus+1, 0< k < nscaus+1 and j different from k.
-
-!     For example for user scalar 3 to be the variance of user scalar 2,
-!       we set:
-!       iscavr(3) = 2
-!       with nscaus at least equal to 3.
-
-!     Do not intervene if you do not wish to explicitly include the
-!       variance of a user scalar in the simulation.
-
-!     For non-user scalars relative to specific physics (coal, combustion,
-!       electric arcs: see usppmo) implicitly defined in the model,
-!       the corresponding information is given automatically, and
-!       iscavr should not be modified.
-
-if (.false.) then
-  iscavr(3) = 2
-endif
-
 ! --- Variable diffusivity (ivisls=1) or constant diffusivity (ivisls=0) for
-!       each USER scalar, EXCEPT those which represent the variance
-!       of another.
+!       the thermal scalar and USER scalars.
 
 !     For user scalars iscal which represent the variance of another user
-!       scalar, we do not set ivisls(iscal) here.
-!       This is the purpose of the test on iscavr(ISCAL) in the example below.
-!       Indeed, the diffusivity of the variance of a scalar is assumed to
-!       have the same behavior as the diffusivity of this scalar.
+!       scalar, the diffusivity of the variance of a scalar is assumed to
+!       have the same behavior as the diffusivity of this scalar,
+!       so values set here will be ignored.
 
 !     For non-user scalars relative to specific physics (coal, combustion,
 !       electric arcs: see usppmo) implicitly defined in the model,
@@ -935,14 +795,7 @@ endif
 if (.false.) then
 
   do iscal = 1, nscaus
-
-    ! For user scalars which do not represent the variance of another scalar
-    if (iscavr(iscal).le.0) then
-
-      ivisls(iscal) = 0
-
-    endif
-
+    ivisls(iscal) = 0
   enddo
 
 endif

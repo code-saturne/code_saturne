@@ -91,8 +91,8 @@ integer          kscmin, kscmax, keypp, keyvar
 integer          c_id, f_id, f_dim, n_fields
 double precision scmaxp, scminp
 
-character*3, dimension(3) :: nomext3
-character*4, dimension(3) :: nomext63
+character(len=3), dimension(3) :: nomext3
+character(len=4), dimension(3) :: nomext63
 
 !===============================================================================
 
@@ -2177,7 +2177,7 @@ if (nscal.ge.1) then
   do ii = 1, nscal
     f_id = ivarfl(isca(ii))
     call field_get_label(f_id, chaine)
-    write(nfecra,6022) chaine(1:16),ii,iscavr(ii), rvarfl(ii)
+    write(nfecra,6022) chaine(1:16),ii, rvarfl(ii)
   enddo
   write(nfecra,6032)
   write(nfecra,6013)
@@ -2220,11 +2220,11 @@ endif
  6031 format( &
 '---------------------------------------------------------------------',/)
  6012 format( &
-'------------------------------------------',                  /,&
-' Variable         Numero ISCAVR     RVARFL',                  /,&
-'------------------------------------------'                     )
+'------------------------------------',                         /,&
+' Variable         Number      RVARFL',                         /,&
+'------------------------------------' )
  6022 format( &
- 1x,    a16,           i7,    i7,    e12.4 )
+ 1x,    a16,           i7,    e12.4 )
  6032 format(                                                     &
 '-------------------------------------------',                   /)
  6013 format(                                                     &
@@ -2248,7 +2248,6 @@ endif
 '       IVISLS = 0 ou >0        (Viscosite constante ou non  )',/,&
 '       VISLS0 = >0             (Viscosite de reference      )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
-'       ISCAVR = 0 ou >0        (Scalaire associe si variance)',/,&
 '       RVARFL = >0             (Rf, cf dissipation variance )',/,&
 '       ICLVFL = 0, 1 ou 2      (Mode de clipping variance   )',/,&
 '       SCAMIN =                (Valeur min autorisee        )',/,&
@@ -2290,11 +2289,11 @@ endif
  6031 format( &
 '---------------------------------------------------------------------',/)
  6012 format( &
-'-------------------------------------------',                  /,&
-' Variable         Number ISCAVR      RVARFL',                  /,&
-'-------------------------------------------' )
+'------------------------------------',                         /,&
+' Variable         Number      RVARFL',                         /,&
+'------------------------------------' )
  6022 format( &
- 1x,    a16,           i7,    i7,  e12.4 )
+ 1x,    a16,           i7,    e12.4 )
  6032 format(                                                     &
 '-------------------------------------------',                   /)
  6013 format(                                                     &
@@ -2318,7 +2317,6 @@ endif
 '       IVISLS = 0 or >0        (Viscosity: constant or not  )',/,&
 '       VISLS0 = >0             (Reference viscosity         )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
-'       ISCAVR = 0 or >0        (Associat. scalar if variance)',/,&
 '       RVARFL = >0             (Rf, cf variance dissipation )',/,&
 '       ICLVFL = 0, 1 or 2      (Variance clipping mode      )',/,&
 '       SCAMIN =                (Min authorized value        )',/,&

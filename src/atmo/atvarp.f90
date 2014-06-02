@@ -481,15 +481,6 @@ endif
 ! 5. General field and physical properties
 !===============================================================================
 
-do isc = 1, nscapp
-
-  if (iscavr(iscapp(isc)).le.0) then
-    ! Reference dynamic viscosity relative to this scalar
-    ivisls(iscapp(isc)) = 0
-  endif
-
-enddo
-
 ! Cp is constant
 icp = 0
 

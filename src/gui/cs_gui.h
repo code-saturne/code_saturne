@@ -87,11 +87,11 @@ void CS_PROCF (csther, CSTHER) (int  *itherm,
  * DOUBLE PRECISION XLOMLG  -->   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csturb, CSTURB) (int    *const iturb,
-                                int    *const ideuch,
-                                int    *const igrake,
-                                int    *const igrari,
-                                double *const xlomlg);
+void CS_PROCF (csturb, CSTURB) (int    *iturb,
+                                int    *ideuch,
+                                int    *igrake,
+                                int    *igrari,
+                                double *xlomlg);
 
 /*----------------------------------------------------------------------------
  * Specific heat variable or constant indicator.
@@ -104,7 +104,7 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
  * INTEGER          ICP     -->   Specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscpva, CSCPVA) (int *const icp);
+void CS_PROCF (cscpva, CSCPVA) (int *icp);
 
 /*----------------------------------------------------------------------------
  * Volumic viscosity variable or constant indicator.
@@ -117,31 +117,7 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp);
  * INTEGER          IVISCV     -->   specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
-
-/*----------------------------------------------------------------------------
- * User scalars number.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSNSCA
- * *****************
- *
- * INTEGER          NSCAUS     -->   user scalars number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
-
-/*----------------------------------------------------------------------------
- * User scalars labels
- *
- * Fortran Interface:
- *
- * SUBROUTINE UISCAU
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiscau, UISCAU) (void);
+void CS_PROCF (csvvva, CSVVVA) (int *iviscv);
 
 /*----------------------------------------------------------------------------
  * User thermal scalar.
@@ -154,58 +130,26 @@ void CS_PROCF (uiscau, UISCAU) (void);
  * INTEGER          ISCALT     -->   thermal scalars number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uithsc, UITHSC) (int *const iscalt);
-
-/*----------------------------------------------------------------------------
- * User scalars which are variance.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSISCA (ISCAVR)
- * *****************
- *
- * INTEGER          ISCAVR     -->   user scalars variance array
- * integer          itherm     <--  type of thermal model
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csisca, CSISCA) (int        *iscavr,
-                                const int  *itherm);
+void CS_PROCF (uithsc, UITHSC) (int *iscalt);
 
 /*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSIVIS
+ * subroutine csivis (ivisls, iscalt, itherm, itempk)
  * *****************
  *
- * INTEGER          ISCAVR  <->  number of the related variance if any
- * INTEGER          IVISLS  -->  indicator for the user scalar viscosity
- * INTEGER          ISCALT  <->  number of the user thermal scalar if any
- * INTEGER          ISCSTH  <->  type of the user thermal scalar
- * INTEGER          ITEMPK  -->  rtp index for temperature (in K)
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
- * Constant or variable indicator for the user scalar laminar viscosity.
- *
- * Fortran Interface:
- *
- * subroutine csivis (iscavr, ivisls, iscalt, itherm, itempk)
- * *****************
- *
- * integer          iscavr  <-->  number of the related variance if any
  * integer          ivisls  <--   indicator for the user scalar viscosity
  * integer          iscalt  <-->  number of the user thermal scalar if any
  * integer          itherm  <-->  type of thermal model
  * integer          itempk   -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
-                                int *const ivisls,
-                                int *const iscalt,
-                                int *const itherm,
-                                int *const itempk);
+void CS_PROCF (csivis, CSIVIS) (int *ivisls,
+                                int *iscalt,
+                                int *itherm,
+                                int *itempk);
 
 /*----------------------------------------------------------------------------
  * Time passing parameter.
@@ -218,7 +162,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
  * INTEGER          IDTVAR  -->   fixed or variable time step
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(csidtv, CSIDTV) (int *const idtvar);
+void CS_PROCF(csidtv, CSIDTV) (int *idtvar);
 
 /*----------------------------------------------------------------------------
  * Hydrostatic pressure parameter.
@@ -231,7 +175,7 @@ void CS_PROCF(csidtv, CSIDTV) (int *const idtvar);
  * INTEGER          IPHYDR  -->   hydrostatic pressure
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
+void CS_PROCF (csiphy, CSIPHY) (int *iphydr);
 
 /*----------------------------------------------------------------------------
  * Hydrostatic equilibrium parameter.
@@ -244,7 +188,7 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
  * INTEGER          ICFGRP  -->   hydrostatic equilibrium
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscfgp, CSCFGP) (int *const icfgrp);
+void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp);
 
 /*----------------------------------------------------------------------------
  * Restart parameters.
@@ -260,9 +204,9 @@ void CS_PROCF (cscfgp, CSCFGP) (int *const icfgrp);
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (csisui, CSISUI) (int *const ntsuit,
-                                int *const ileaux,
-                                int *const iccvfg);
+void CS_PROCF (csisui, CSISUI) (int *ntsuit,
+                                int *ileaux,
+                                int *iccvfg);
 
 /*----------------------------------------------------------------------------
  * Time passing parameters.
@@ -285,17 +229,17 @@ void CS_PROCF (csisui, CSISUI) (int *const ntsuit,
  * DOUBLE PRECISION RELXST  -->   relaxation coefficient if idtvar = -1
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
-                                int    *const iptlro,
-                                int    *const ntmabs,
-                                int    *const idtvar,
-                                double *const dtref,
-                                double *const dtmin,
-                                double *const dtmax,
-                                double *const coumax,
-                                double *const foumax,
-                                double *const varrdt,
-                                double *const relxst);
+void CS_PROCF (cstime, CSTIME) (int    *inpdt0,
+                                int    *iptlro,
+                                int    *ntmabs,
+                                int    *idtvar,
+                                double *dtref,
+                                double *dtmin,
+                                double *dtmax,
+                                double *coumax,
+                                double *foumax,
+                                double *varrdt,
+                                double *relxst);
 
 /*----------------------------------------------------------------------------
  *
@@ -306,16 +250,16 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uinum1, UINUM1) (double *const blencv,
-                                   int *const ischcv,
-                                   int *const isstpc,
-                                   int *const ircflu,
-                                double *const cdtvar,
-                                   int *const nitmax,
-                                double *const epsilo,
-                                   int *const iresol,
-                                   int *const imgrpr,
-                                   int *const nswrsm);
+void CS_PROCF (uinum1, UINUM1) (double *blencv,
+                                   int *ischcv,
+                                   int *isstpc,
+                                   int *ircflu,
+                                double *cdtvar,
+                                   int *nitmax,
+                                double *epsilo,
+                                   int *iresol,
+                                   int *imgrpr,
+                                   int *nswrsm);
 
 /*----------------------------------------------------------------------------
  * Global numerical parameters.
@@ -333,34 +277,34 @@ void CS_PROCF (uinum1, UINUM1) (double *const blencv,
  * INTEGER          NTERUP  -->   piso sweep number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnum2, CSNUM2) (   int *const ivisse,
-                                double *const relaxp,
-                                   int *const ipucou,
-                                double *const extrag,
-                                   int *const imrgra,
-                                   int *const nterup);
+void CS_PROCF (csnum2, CSNUM2) (   int *ivisse,
+                                double *relaxp,
+                                   int *ipucou,
+                                double *extrag,
+                                   int *imrgra,
+                                   int *nterup);
 
-void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
-                                         int *const irovar,
-                                         int *const ivivar,
-                                         int *const icorio,
-                                      double *const gx,
-                                      double *const gy,
-                                      double *const gz,
-                                      double *const omegax,
-                                      double *const omegay,
-                                      double *const omegaz,
-                                      double *const ro0,
-                                      double *const viscl0,
-                                      double *const viscv0,
-                                      double *const visls0,
-                                      double *const cp0,
-                                      double *const t0,
-                                      double *const p0,
-                                      double *const xmasmr,
-                                         int *const itempk,
-                                         int *const itherm,
-                                         int *const itpscl);
+void CS_PROCF (csphys, CSPHYS) (const    int *nmodpp,
+                                         int *irovar,
+                                         int *ivivar,
+                                         int *icorio,
+                                      double *gx,
+                                      double *gy,
+                                      double *gz,
+                                      double *omegax,
+                                      double *omegay,
+                                      double *omegaz,
+                                      double *ro0,
+                                      double *viscl0,
+                                      double *viscv0,
+                                      double *visls0,
+                                      double *cp0,
+                                      double *t0,
+                                      double *p0,
+                                      double *xmasmr,
+                                         int *itempk,
+                                         int *itherm,
+                                         int *itpscl);
 
 /*----------------------------------------------------------------------------
  * User scalar min and max values for clipping.
@@ -370,41 +314,37 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
  * subroutine cssca2
  * *****************
  *
- * integer          iscavr   <--  number of the related variance if any
  * integer          iturb    <--  turbulence model
  * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
-                                const    int *const iturb,
-                                         int *const iturt);
+void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
+                                int        *iturt);
 
-void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
-                                const    int *const iscalt,
-                                const    int *const iscavr,
-                                double *const visls0,
-                                double *const t0,
-                                double *const p0,
-                                double *const cp0);
+void CS_PROCF (cssca3, CSSCA3) (const int  *itherm,
+                                const int  *iscalt,
+                                double     *visls0,
+                                double     *t0,
+                                double     *p0,
+                                double     *cp0);
 
 /*----------------------------------------------------------------------------
  * Array of properties used in the calculation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprop, UIPROP) (const int *const ivisls,
-                                const int *const ismago,
-                                const int *const iale,
-                                const int *const icp,
-                                const int *const iscavr);
+void CS_PROCF (uiprop, UIPROP) (const int  *ivisls,
+                                const int  *ismago,
+                                const int  *iale,
+                                const int  *icp);
 
 /*----------------------------------------------------------------------------
  * Temporal averaging treatment
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
-                                      int *const ntdmom,
-                                      int *const imoold,
-                                      int *const idfmom);
+void CS_PROCF (uimoyt, UIMOYT) (const int  *ndgmox,
+                                int        *ntdmom,
+                                int        *imoold,
+                                int        *idfmom);
 
 /*----------------------------------------------------------------------------
  * Turbulence initialization parameters.
@@ -418,8 +358,8 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
  * INTEGER          ALMAX  -->   reference length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cstini, CSTINI) (double *const uref,
-                                double *const almax);
+void CS_PROCF (cstini, CSTINI) (double  *uref,
+                                double  *almax);
 
 /*----------------------------------------------------------------------------
  * User momentum source terms.
@@ -506,33 +446,33 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                               const cs_real_t    *viscl0,
                               const cs_real_t    *uref,
                               const cs_real_t    *almax,
-                              const double *const xyzcen);
+                              const double       *xyzcen);
 
 /*----------------------------------------------------------------------------
  * User law for material Properties
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIPHYV (NCELET, ISCA, RTP)
+ * subroutine uiphyv
  * *****************
  *
- * INTEGER          NCEL     <--  number of cells whithout halo
- * INTEGER          NCELET   <--  number of cells whith halo
- * INTEGER          ICP      <--  pointer for predifined heat Cp
- * INTEGER          IVISLS   <--  pointer for Lambda/Cp
- * INTEGER          IROVAR   <--  =1 if rho variable, =0 if rho constant
- * INTEGER          IVIVAR   <--  =1 if mu variable, =0 if mu constant
- * INTEGER          ISCALT   <--  pointer for the thermal scalar in ISCA
- * INTEGER          ISCAVR   <--  scalars that are variance
- * INTEGER          IVISCV   <--  pointer for volumic viscosity viscv
- * INTEGER          ITEMPK   <--  pointer for temperature (in K)
- * DOUBLE PRECISION P0       <--  pressure reference value
- * DOUBLE PRECISION T0       <--  temperature reference value
- * DOUBLE PRECISION RO0      <--  density reference value
- * DOUBLE PRECISION CP0      <--  specific heat reference value
- * DOUBLE PRECISION VISCL0   <--  dynamic viscosity reference value
- * DOUBLE PRECISION VISLS0   <--  diffusion coefficient of the scalars
- * DOUBLE PRECISION VISCV0   <--  volumic viscosity
+ * integer          ncel     <--  number of cells whithout halo
+ * integer          ncelet   <--  number of cells whith halo
+ * integer          irom     <--  pointer for density rho
+ * integer          icp      <--  pointer for specific heat Cp
+ * integer          ivisls   <--  pointer for Lambda/Cp
+ * integer          irovar   <--  =1 if rho variable, =0 if rho constant
+ * integer          ivivar   <--  =1 if mu variable, =0 if mu constant
+ * integer          iscalt   <--  pointer for the thermal scalar in ISCA
+ * integer          iviscv   <--  pointer for volumic viscosity viscv
+ * integer          itempk   <--  pointer for temperature (in K)
+ * double precision p0       <--  pressure reference value
+ * double precision t0       <--  temperature reference value
+ * double precision ro0      <--  density reference value
+ * double precision cp0      <--  specific heat reference value
+ * double precision viscl0   <--  dynamic viscosity reference value
+ * double precision visls0   <--  diffusion coefficient of the scalars
+ * double precision viscv0   <--  volumic viscosity
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
@@ -543,7 +483,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_int_t  *irovar,
                               const cs_int_t  *ivivar,
                               const cs_int_t  *iscalt,
-                              const cs_int_t   iscavr[],
                               const cs_int_t  *iviscv,
                               const cs_int_t  *itempk,
                               const cs_real_t *p0,
@@ -593,14 +532,14 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
-                               const int    *const ncel,
-                               const int    *const ntmabs,
-                               const int    *const ntcabs,
-                               const double *const ttcabs,
-                               const double *const ttmabs,
-                               const double *const ttpabs,
-                               const double *const xyzcen);
+void CS_PROCF (uiprof, UIPROF)(const int    *ncelet,
+                               const int    *ncel,
+                               const int    *ntmabs,
+                               const int    *ntcabs,
+                               const double *ttcabs,
+                               const double *ttmabs,
+                               const double *ttpabs,
+                               const double *xyzcen);
 
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.
@@ -613,7 +552,7 @@ void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
  * INTEGER          NCHARB  <-- number of coal
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);
+void CS_PROCF (memui1, MEMUI1) (const int *ncharb);
 
 /*=============================================================================
  * Public function prototypes
@@ -628,6 +567,13 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);
 
 int
 gui_thermal_model(void);
+
+/*----------------------------------------------------------------------------
+ * Define user variables through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_user_variables(void);
 
 /*-----------------------------------------------------------------------------
  * Get initial value from property markup.

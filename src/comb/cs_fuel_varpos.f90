@@ -22,6 +22,7 @@
 
 subroutine cs_fuel_varpos
 !========================
+
 !===============================================================================
 !  FONCTION  :
 !  ---------
@@ -66,10 +67,8 @@ use field
 
 implicit none
 
-integer        isc, icla
-
-integer          keyccl, kscmin, kscmax, f_id
-character*80     f_label, f_name
+integer           :: icla, keyccl, kscmin, kscmax, f_id
+character(len=80) :: f_label, f_name
 
 !===============================================================================
 ! 0. Definitions for fields
@@ -230,22 +229,9 @@ endif
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!    - PROPRES AUX SCALAIRES   : IVISLS, ISCAVR
 !      Rq : pas de variance associee a un scalaire dans notre cas
 !    - PROPRES A LA SUSPENSION : ICP
 !===============================================================================
-
-do isc = 1, nscapp
-
-  if ( iscavr(iscapp(isc)) .le. 0 ) then
-
-! ---- Viscosite dynamique de reference relative au scalaire
-!      ISCAPP(ISC)
-    ivisls(iscapp(isc)) = 0
-
-  endif
-
-enddo
 
 ! ---- Bien que l on soit en enthalpie on conserve un CP constant
 

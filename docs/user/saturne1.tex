@@ -443,11 +443,9 @@ compulsory.
 
         \item {\em  very useful without Graphical User Interface:}
         \begin{list}{-}{}
-            \item \texttt{usinsc} (in \texttt{cs\_user\_parameters.f90}) to
+            \item \texttt{\texttt{cs\_user\_model.c}}
+              (in \texttt{cs\_user\_parameters.c}) to
               define user scalars (species)
-
-            \item \texttt{usipsc} (in \texttt{cs\_user\_parameters.f90}) to
-              define parameters depending on the number of user scalars.
 
             \item \texttt{usipgl} (in \texttt{cs\_user\_parameters.f90}) to
               define some global parameters (error indicators, \texttt{idilat}
@@ -2147,7 +2145,7 @@ $k-\omega$ SST modelling.
 
 Concerning the solved scalar variables (apart from the variables
 pressure, $k$, $\varepsilon$, $R_{ij}$, $\omega$, $\varphi$,
-$\overline{f}$, $\alpha$, $\nu_t$), the following are highly important:
+$\overline{f}$, $\alpha$, $\nu_t$), the following is very important:
 \begin{list}{-}{}
 \item The designation ``scalar'' refers to scalar variables which are
       solution of an advection equation, apart from the variables of the
@@ -2180,22 +2178,19 @@ $\overline{f}$, $\alpha$, $\nu_t$), the following are highly important:
       and its value in the cell \texttt{iel} is
       \texttt{rtp(iel,isca(iscalt))}. if there is no thermal scalar,
       \texttt{iscalt} is equal to -1.
-\item A ``user'' scalar number \texttt{j} may represent the average of the
+\item A ``user'' scalar number \texttt{j} may represent the mean of the
       square of the fluctuations of a scalar \texttt{k} ({\em i.e.} the average
       $\overline{\varphi^\prime\varphi^\prime}$ for a fluctuating scalar
       $\varphi$ ). This can be made either {\em via} the
-      interface or by indicating \texttt{iscavr(j)=k}\index{\texttt{iscavr}} in
-      \texttt{cs\_user\_parameters.f90} (if the scalar in question is not a ``user''
+      interface or by declaring that scalar using
+      \texttt{cs\_parameters\_add\_variable\_variance} in
+      \texttt{cs\_user\_parameters.c} (if the scalar in question is not a ``user''
       scalar, the selection is made automatically). For instance, if \texttt{j}
       and \texttt{k} are ``user'' scalars, the variable $\varphi$ corresponding
-      to \texttt{k} is the variable number \texttt{isca(k)=isca(iscavr(j))},
-      and its value in the cell \texttt{iel} is \texttt{rtp(iel,isca(k))=rtp(iel,isca(iscavr(j)))}. \\
-The variable corresponding to the mean value of the square of the
-      fluctuations\footnote{it is really
+      to \texttt{k} is the variable number
+      \texttt{isca(k)=isca(iscavr(j))}.\footnote{it is really
       $\overline{\varphi^\prime\varphi^\prime}$, and not
-      $\displaystyle\sqrt{\overline{\varphi^\prime\varphi^\prime}}$} is
-      the variable number \texttt{isca(j)} and its value in the cell \texttt{iel}
-      is \texttt{rtp(iel,isca(j))}.
+      $\displaystyle\sqrt{\overline{\varphi^\prime\varphi^\prime}}$}.
 \end{list}
 
 \bigskip
@@ -4165,8 +4160,7 @@ It is called only during the calculation initialisation.
 For more details about the different parameters, please refer to the key
 word list (\S\ref{sec:prg_motscles}).
 
-\texttt{cs\_user\_parameters.f90} is in fact constituted of 6 separate subroutines:  \texttt{usipph},
- \texttt{usinsc}, \texttt{usipsc}, \texttt{usipgl},
+\texttt{cs\_user\_parameters.f90} is in fact constituted of 4 separate subroutines:  \texttt{usipph}, \texttt{usipgl},
 \texttt{usipsu} and \texttt{usipes}. Each one controls various
  specific parameters. The keywords which are not featured in the supplied example
 can be provided by the user in \texttt{SRC/REFERENCE/base}; in this case,
@@ -4177,10 +4171,6 @@ has been well defined. The modifiable parameters in each of the subroutines of
 
 \begin{list}{$\bullet$}{}
 \item \texttt{usipph}: \texttt{iturb}, \texttt{icp} and \texttt{irccor} (don't modify these
-      parameters anywhere else)
-\item \texttt{usinsc}: \texttt{nscaus} (don't modify this parameter anywhere
-      else)
-\item \texttt{usipsc}: \texttt{iscavr} and \texttt{ivisls} (don't modify these
       parameters anywhere else)
 \item \texttt{usipgl}: \texttt{idtvar}, \texttt{ipucou}, \texttt{iphydr}, \texttt{idilat} and the
       parameters related to the error estimators (don't modify these parameters
@@ -4195,13 +4185,6 @@ has been well defined. The modifiable parameters in each of the subroutines of
 For more details on the different parameters, see the list of keywords
 (\S~\ref{sec:prg_motscles}).
  The names of the keywords can also be seen in the help sections of the interface.
-
-\minititre{Notes}
-$\bullet\ $ The table \texttt{iscavr} is filled with the user scalars which represent the mean square fluctuations of another scalar amongst the list of the \texttt{nscaus} scalars. For the other scalars, \texttt{iscavr} does not need to be completed (by default,
-\texttt{iscavr(ii)}$\leqslant$0). For instance, if the scalar \texttt{jj}
-represents the average of the square of the fluctuations of the scalar \texttt{kk},
-the user must indicate \texttt{iscavr(jj)=kk}
-(1$\leqslant$\texttt{kk}$\leqslant$\texttt{nscaus}).
 
 \noindent
 $\bullet\ $ When using the interface, only the

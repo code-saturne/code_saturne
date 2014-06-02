@@ -164,32 +164,32 @@ endif
 
 ! --> Cp et visls (iscalt) variables
 if(icp.le.0) then
-  WRITE(NFECRA,2012)'       ICP',    ICP,               &
-                    '       ICP','la chaleur massique     ',   &
-                    '       ICP'
+  write(nfecra,2012)'       icp',    icp,               &
+                    '       icp','la chaleur massique     ',   &
+                    '       icp'
   iok = iok + 1
 endif
 if(ivisls(iscalt).le.0) then
-  WRITE(NFECRA,2012)'  IVISLS(ISCALT)',   IVISLS(ISCALT),               &
-                    '  IVISLS(ISCALT)','la propriete lambda/Cp  ',   &
-                    '  IVISLS(ISCALT)'
+  write(nfecra,2012)'  ivisls(iscalt)',   ivisls(iscalt),               &
+                    '  ivisls(iscalt)','la propriete lambda/Cp  ',   &
+                    '  ivisls(iscalt)'
   iok = iok + 1
 endif
 
 ! --> Conductivites electriques variables
 !     Pour le potentiel reel
 if(ivisls(ipotr).le.0) then
-  WRITE(NFECRA,2012)'IVISLS(IPOTR)', IVISLS(IPOTR),               &
-                    'IVISLS(IPOTR)','la cond. elec. reelle   ',   &
-                    'IVISLS(IPOTR)'
+  write(nfecra,2012)'ivisls(ipotr)', ivisls(ipotr),               &
+                    'ivisls(ipotr)','la cond. elec. reelle   ',   &
+                    'ivisls(ipotr)'
   iok = iok + 1
 endif
 !     Pour le potentiel imaginaire (Joule)
 if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
   if(ivisls(ipoti).le.0) then
-  WRITE(NFECRA,2012)'IVISLS(IPOTI)', IVISLS(IPOTI),               &
-                    'IVISLS(IPOTI)','la cond. elec. imag.    ',   &
-                    'IVISLS(IPOTI)'
+  write(nfecra,2012)'ivisls(ipoti)', ivisls(ipoti),               &
+                    'ivisls(ipoti)','la cond. elec. imag.    ',   &
+                    'ivisls(ipoti)'
     iok = iok + 1
   endif
 endif

@@ -150,52 +150,37 @@ endif
 iihmpu = iihmpr
 call usipph(iihmpu , nfecra , iturb , irccor , idirsm , itherm, icp, icavit)
 
-! --- ALE parameters
+! ALE parameters
+!---------------
 
-!   - Code_Saturne GUI
-!     ================
+! GUI
 
 if (iihmpr.eq.1) then
   call uialin (iale, nalinf, nalimx, epalim, iortvm)
 endif
 
-!   - User sub-routines
-!     =================
+! User sub-routines
 
 call usalin
 
+! Other model parameters, including user-defined scalars
+!-------------------------------------------------------
 
-!===============================================================================
-! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
-!===============================================================================
-
-! --- Nombre de scalaires utilisateurs
-
-!   - Interface Code_Saturne
-!     ======================
+! GUI
 
 if (iihmpr.eq.1) then
-
-  call csnsca(nscaus)
-  !==========
-
+  call cs_gui_user_variables
 endif
 
-!   - Sous-programme utilisateur
-!     ==========================
+! User sub-routines
 
-iihmpu = iihmpr
-call usinsc(iihmpu , nfecra , nscaus)
-!==========
+call cs_user_model
 
+!===============================================================================
+! 2. Initialize parameters for specific physics
+!===============================================================================
 
-! --- Dans le cas de physiques particulieres definies par des modules
-!        specifiques du code tels que charbon, combustion, electrique
-!        le sous-programme USPPMO doit etre complete imperativement
-!        par l'utilisateur
-
-!   - Interface Code_Saturne
-!     ======================
+! GUI
 
 if (iihmpr.eq.1) then
 
@@ -211,8 +196,7 @@ if (iihmpr.eq.1) then
 
 endif
 
-!   - Sous-programme utilisateur
-!     ==========================
+! User subroutine
 
 ! Initialize specific physics modules not available at the moment
 
@@ -229,7 +213,7 @@ call usppmo(iihmpu)
 ! --- Activation du module transferts radiatifs
 
 !     Il est necessaire de connaitre l'activation du module transferts
-!     radiatifs tres tot de maniere a pouvoir reserver less variables
+!     radiatifs tres tot de maniere a pouvoir reserver les variables
 !     necessaires dans certaines physiques particuliere
 
 !   - Interface Code_Saturne
@@ -248,62 +232,45 @@ endif
 call usray1
 !==========
 
-!     Define fields for variables, check and build iscapp
+! Define fields for variables, check and build iscapp
 
 call fldvar(nmodpp)
 !==========
 
 if (ippmod(icompf).ge.0) then
 
-!     For compressible model, call to uscfx1 to get ieos.
-!     With GUI, ieos has been read below in the call to uippmo.
+  ! For compressible model, call to uscfx1 to get ieos.
+  ! With GUI, ieos has been read below in the call to uippmo.
   call uscfx1
   !==========
 
 endif
 
-! --- Parametres dependant du nombre de scalaires utilisateurs
-
-!     Moyenne du carre des fluctuations d'un scalaire UTILISATEUR
-!     Diffusivite variable ou non
-
-
-!   - Interface Code_Saturne
-!     ======================
-
 if (iihmpr.eq.1) then
-
-  call csisca(iscavr, itherm)
+  call csivis(ivisls, iscalt, itherm, itempk)
   !==========
-
-  call csivis(iscavr, ivisls, iscalt, itherm, itempk)
-  !==========
-
 endif
-
-!   - Sous-programme utilisateur
-!     ==========================
 
 nscmax = nscamx
 nscusi = nscaus
 iihmpu = iihmpr
-call usipsc(nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls)
+call usipsc(nscmax , nscusi , iihmpu , nfecra , ivisls)
 !==========
 
 if (ippmod(icompf).ge.0) then
-!     For compressible model, call to uscfx1 to get ivisls(itempk) et iviscv.
-!     With GUI, iviscv has been read below in the first call to varpos (csvvva)
-!     and ivisl(itempk) below in the call to csivis.
+  ! For compressible model, call to uscfx1 to get ivisls(itempk) et iviscv.
+  ! With GUI, iviscv has been read below in the first call to varpos (csvvva).
 
   call uscfx1
   !==========
-!     Dynamic viscosity of reference of the scalar total energy (ienerg).
+  ! Dynamic viscosity of reference of the scalar total energy (ienerg).
   if(ivisls(itempk).gt.0 .or. icv.gt.0) then
     ivisls(ienerg) = 1
   else
     ivisls(ienerg) = 0
   endif
 endif
+
 !===============================================================================
 ! 3. INITIALISATION DE PARAMETRES "GLOBAUX"
 !===============================================================================
@@ -420,11 +387,11 @@ if (iihmpr.eq.1) then
               p0, xmasmr, itempk, itherm, itpscl)
 
 !     Scamin, scamax, turbulent flux model
-  call cssca2(iscavr, itytur, iturt)
+  call cssca2(itytur, iturt)
   !==========
 
   ! Diffusivites
-  call cssca3(itherm, iscalt, iscavr, visls0, t0, p0, cp0)
+  call cssca3(itherm, iscalt, visls0, t0, p0, cp0)
   !==========
 
 !     Init turb (uref, almax) si necessaire (modele RANS)
@@ -437,7 +404,7 @@ if (iihmpr.eq.1) then
 
   iappel = 0
 
-  call uiprop (ivisls, ismago, iale, icp, iscavr)
+  call uiprop (ivisls, ismago, iale, icp)
   !==========
 
   call uimoyt (ndgmox, ntdmom, imoold, idfmom)
@@ -491,7 +458,7 @@ if (iihmpr.eq.1) then
 
   iappel = 1
 
-  call uiprop (ivisls, ismago, iale, icp, iscavr)
+  call uiprop (ivisls, ismago, iale, icp)
   !==========
 
   call csenso                                                   &

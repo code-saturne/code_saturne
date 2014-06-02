@@ -176,14 +176,6 @@ do ii = 1, nscal
 
 enddo
 
-do ii = 1, nscal
-  ! If it is a variance, store the id of the parent scalar
-  if (iscavr(ii).gt.0) then
-    iflid = ivarfl(isca(iscavr(ii)))
-    call field_set_key_int(ivarfl(ivar), kscavr, iflid)
-  endif
-enddo
-
 do ivar = 1, nvar
   ! Key word: tensorial diffusivity
   call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))

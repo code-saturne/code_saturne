@@ -294,7 +294,7 @@ enddo
 '@                                                            ',/,&
 '@    Pour le scalaire ',I10                                   ,/,&
 '@      usipsc indique que la diffusivite est uniforme        ',/,&
-'@        IVISLS(',I10   ,') = ',I10   ,' alors que           ',/,&
+'@        ivisls(',i10   ,') = ',i10   ,' alors que           ',/,&
 '@      usphyv impose une diffusivite variable.               ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
@@ -338,7 +338,7 @@ enddo
 '@',/,                                                            &
 '@    For scalar', i10,/,                                         &
 '@      usipsu specifies that the diffusivity is uniform',/,      &
-'@        ivislc(',i10   ,') = ',i10   ,' while',/,               &
+'@        ivisls(',i10   ,') = ',i10   ,' while',/,               &
 '@      usphyv prescribes a variable diffusivity.',/,             &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &

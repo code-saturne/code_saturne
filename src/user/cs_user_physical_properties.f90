@@ -637,7 +637,7 @@ endif ! --- Test on .false.
 '@                                                            ',/,&
 '@    Pour le scalaire ',I10                                   ,/,&
 '@      usipsc indique que la diffusivite est uniforme        ',/,&
-'@        IVISLS(',I10   ,') = ',I10   ,' alors que           ',/,&
+'@        ivisls(',i10   ,') = ',i10   ,' alors que           ',/,&
 '@      usphyv impose une diffusivite variable.               ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
@@ -699,7 +699,7 @@ endif ! --- Test on .false.
 '@',/,                                                            &
 '@    For scalar', i10,/,                                         &
 '@      usipsu specifies that the diffusivity is uniform',/,      &
-'@        ivislc(',i10   ,') = ',i10   ,' while',/,               &
+'@        ivisls(',i10   ,') = ',i10   ,' while',/,               &
 '@      usphyv prescribes a variable diffusivity.',/,             &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
@@ -1616,12 +1616,12 @@ if (ippmod(ieljou).ge.1) then
 
 !       On n'utilisera donc PAS les variables
 !          =====================
-!                                CP0, VISLS0(ISCALT)
-!                                VISLS0(IPOTR) et VISLS0(IPOTI)
+!                                cp0, visls0(iscalt)
+!                                visls0(ipotr) et visls0(ipoti)
 
 !       Informatiquement, ceci se traduit par le fait que
-!                                ICP>0, IVISLS(ISCALT)>0,
-!                                IVISLS(IPOTR)>0 et IVISLS(IPOTI)>0
+!                                icp > 0, ivisls(iscalt) > 0,
+!                                ivisls(ipotr) > 0 et ivisls(ipoti) > 0
 
 
 

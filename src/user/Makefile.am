@@ -78,6 +78,7 @@ cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
 cs_user_les_inflow.f90 \
 cs_user_mesh.c \
+cs_user_parameters.c \
 cs_user_particle_tracking.f90 \
 cs_user_performance_tuning.c \
 cs_user_physical_properties.f90 \

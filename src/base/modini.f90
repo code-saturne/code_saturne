@@ -1013,7 +1013,7 @@ do iscal = 1, nscal
 enddo
 
 
-! ---> VISLS0 (IVISLS ont ete verifies dans varpos)
+! ---> VISLS0 (ivisls ont ete verifies dans fldvar et fldprp)
 
 ! For scalars which are not variances, define the default diffusivity
 
@@ -1349,7 +1349,7 @@ endif
 '@',                                                            /,&
 '@  Le scalaire ',i10,   ' represente la variance des,'         /,&
 '@    fluctuations du scalaire ',i10,                           /,&
-'@                             (ISCAVR(',i10,   ') = ',i10,     /,&
+'@                             (iscavr(',i10,   ') = ',i10,     /,&
 '@  La diffusivite VISLS0(',i10,   ') du scalaire ',i10,        /,&
 '@    ne doit pas etre renseignee :,'                           /,&
 '@    elle sera automatiquement prise egale a la diffusivite,'  /,&
@@ -1540,7 +1540,7 @@ endif
 '@',                                                            /,&
 '@  The scalar ',i10,   ' is the fluctuations variance',        /,&
 '@    of the scalar ',i10,                                      /,&
-'@                             (ISCAVR(',i10,   ') = ',i10,     /,&
+'@                             (iscavr(',i10,   ') = ',i10,     /,&
 '@  The diffusivity VISLS0(',i10,   ') of the scalar ',i10,     /,&
 '@    must not be set:',                                        /,&
 '@    it will be automatically set equal to the scalar',        /,&

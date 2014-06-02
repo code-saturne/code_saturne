@@ -159,7 +159,7 @@ if (iihmpr.eq.1) then
   call uiphyv &
   !===========
 ( ncel   , ncelet , itherm , icp    , ivisls , irovar , ivivar ,          &
-  iscalt , iscavr , iviscv , itempk ,                                     &
+  iscalt , iviscv , itempk ,                                              &
   p0     , t0     , ro0    , cp0    , viscl0 , visls0 , viscv0 )
 endif
 

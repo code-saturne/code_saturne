@@ -70,7 +70,8 @@ typedef enum {
   CS_FIELD_INVALID_KEY_NAME,
   CS_FIELD_INVALID_KEY_ID,
   CS_FIELD_INVALID_CATEGORY,
-  CS_FIELD_INVALID_TYPE
+  CS_FIELD_INVALID_TYPE,
+  CS_FIELD_LOCKED
 
 } cs_field_error_type_t;
 
@@ -562,7 +563,7 @@ cs_field_key_flag(int key_id);
  * compatible, a fatal error is provoked.
  *
  * parameters:
- *   f             <-- pointer to field structure
+ *   f      <-- pointer to field structure
  *   key_id <-- id of associated key
  *
  * returns:
@@ -574,12 +575,51 @@ cs_field_is_key_set(const cs_field_t  *f,
                     int                key_id);
 
 /*----------------------------------------------------------------------------
+ * Query if a given key has been locked for a field.
+ *
+ * If the key id is not valid, or the field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * parameters:
+ *   f      <-- pointer to field structure
+ *   key_id <-- id of associated key
+ *
+ * returns:
+ *   true if the key has been locked for this field, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_field_is_key_locked(const cs_field_t  *f,
+                       int                key_id);
+
+/*----------------------------------------------------------------------------
+ * Lock a field relative to a given key.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ *
+ * parameters:
+ *   f      <-- pointer to field structure
+ *   key_id <-- id of associated key
+ *   value  <-- value associated with key
+ *
+ * returns:
+ *   0 in case of success, > 1 in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_field_lock_key(cs_field_t  *f,
+                  int          key_id);
+
+/*----------------------------------------------------------------------------
  * Assign a integer value for a given key to a field.
  *
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
  * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
  *
  * parameters:
  *   f      <-- pointer to field structure
@@ -620,6 +660,7 @@ cs_field_get_key_int(const cs_field_t  *f,
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
  * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
  *
  * parameters:
  *   f      <-- pointer to field structure
@@ -660,6 +701,7 @@ cs_field_get_key_double(const cs_field_t  *f,
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
  * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
  *
  * parameters:
  *   f      <-- pointer to field structure
@@ -700,6 +742,7 @@ cs_field_get_key_str(const cs_field_t  *f,
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
  *
  * parameters:
  *   f      <-- pointer to field structure

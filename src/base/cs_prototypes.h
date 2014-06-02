@@ -362,6 +362,15 @@ void
 cs_user_mesh_warping(void);
 
 /*----------------------------------------------------------------------------
+ * Select physical model options, including user fields.
+ *
+ * This function is called at the earliest stages of the data setup.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_model(void);
+
+/*----------------------------------------------------------------------------
  * Define advanced mesh numbering options.
  *----------------------------------------------------------------------------*/
 

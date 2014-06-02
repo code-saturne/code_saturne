@@ -64,7 +64,7 @@ use field
 
 implicit none
 
-integer          icla,  icha, isc, f_id
+integer          icla,  icha, f_id
 integer          keyccl, keydri, kscmin, kscmax
 integer          iscdri
 integer(c_int) :: n_coals, n_classes
@@ -637,19 +637,8 @@ endif
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!    - PROPRES AUX SCALAIRES   : IVISLS, ISCAVR
-!      Rq : pas de variance associee a un scalaire dans notre cas
 !    - PROPRES A LA SUSPENSION : ICP
 !===============================================================================
-
-do isc = 1, nscapp
-
-  if (iscavr(iscapp(isc)).le.0) then
-    ! Reference dynamic viscosity relative to this scalar
-    ivisls(iscapp(isc)) = 0
-  endif
-
-enddo
 
 ! Although we are in enthalpy formulation, we keep Cp constant
 

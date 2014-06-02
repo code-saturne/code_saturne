@@ -54,13 +54,13 @@ subroutine elphyv &
 !  (une routine specifique est dediee a cela : usvist)
 
 
-!  Il FAUT AVOIR PRECISE ICP = 1
+!  Il FAUT AVOIR PRECISE icp = 1
 !     ==================
 !    si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).
 
 
-!  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
+!  Il FAUT AVOIR PRECISE ivisls(Numero de scalaire) = 1
 !     ==================
 !     si on souhaite une diffusivite VISCLS variable
 !     pour le scalaire considere (sinon: ecrasement memoire).
@@ -172,7 +172,6 @@ data             ipass /0/
 save             ipass
 
 !===============================================================================
-!===============================================================================
 ! 0 - INITIALISATIONS A CONSERVER
 !===============================================================================
 
@@ -184,11 +183,10 @@ ipcray = 0
 
 ! --- Initialisation memoire
 
-
 ipass = ipass + 1
 
 !     Sous relaxation de la masse volumique (pas au premier pas de temps)
-if(ntcabs.gt.1.and.srrom.gt.0.d0) then
+if (ntcabs.gt.1.and.srrom.gt.0.d0) then
   isrrom = 1
 else
   isrrom = 0
@@ -201,46 +199,46 @@ endif
 !  -- Les lois doivent etre imposees par l'utilisateur
 !       donc on ne fait rien.
 
-!      IF ( IPPMOD(IELJOU).GE.1 ) THEN
+!      if ( ippmod(ieljou).ge.1 ) then
 
 
 !  -- Attention, dans les modules electriques, la chaleur massique, la
 !       conductivite thermique et la conductivite electriques sont
-!       toujours dans le tableau PROPCE
+!       toujours dans le tableau propce
 !       qu'elles soient physiquement variables ou non.
 
 !       On n'utilisera donc PAS les variables
 !          =====================
-!                                CP0, VISLS0(ISCALT)
-!                                VISLS0(IPOTR) et VISLS0(IPOTI)
+!                                cp0, visls0(iscalt)
+!                                visls0(ipotr) et visls0(ipoti)
 
 !       Informatiquement, ceci se traduit par le fait que
-!                                ICP>0, IVISLS(ISCALT)>0,
-!                                IVISLS(IPOTR)>0 et IVISLS(IPOTI)>0
+!                                icp>0, ivisls(iscalt)>0,
+!                                ivisls(ipotr)>0 et ivisls(ipoti)>0
 
 !       Les verifications ont ete faites dans elveri
 
 !  -- Si la conductivite electrique est toujours la meme pour
 !       le potentiel reel et le potentiel imaginaire, on pourrait
 !       n'en avoir qu'une seule (modif dans varpos pour definir
-!       IVISLS(IPOTI) = IVISLS(IPOTR)) et economiser NCEL reels .
+!       ivisls(ipoti) = ivisls(ipotr)) et economiser ncel reels .
 
 !      call field_get_val_s(icrom, crom)
 !      call field_get_val_s(iprpfl(iviscl), viscl)
 !      call field_get_val_s(iprpfl(icp), cpro_cp)
-!      IPCVSL = IPPROC(IVISLS(ISCALT))
-!      IPCSIR = IPPROC(IVISLS(IPOTR))
-!      IPCSII = IPPROC(IVISLS(IPOTI))
+!      ipcvsl = ipproc(ivisls(iscalt))
+!      ipcsir = ipproc(ivisls(ipotr))
+!      ipcsii = ipproc(ivisls(ipoti))
 
-!      PROPCE(IEL,IPPROC(ITEMP)) =
+!      propce(iel,ipproc(itemp)) =
 !      crom(iel) =
 !      viscl(iel) =
 !      cpro_cp(iel) =
-!      PROPCE(IEL,IPCVSL) =
-!      PROPCE(IEL,IPCSIR) =
-!      PROPCE(IEL,IPCSII) =
+!      propce(iel,ipcvsl) =
+!      propce(iel,ipcsir) =
+!      propce(iel,ipcsii) =
 
-!      ENDIF
+!      endif
 
 !===============================================================================
 ! 2 - ARC ELECTRIQUE

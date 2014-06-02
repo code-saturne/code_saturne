@@ -184,6 +184,88 @@ cs_parameters_define_field_keys(void);
 void
 cs_parameters_read_restart_info(void);
 
+/*----------------------------------------------------------------------------
+ * Define a user variable.
+ *
+ * Solved variables are always defined on cells.
+ *
+ * parameters:
+ *   name <-- name of variable and associated field
+ *   dim  <-- variable dimension
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parameters_add_variable(const char  *name,
+                           int          dim);
+
+/*----------------------------------------------------------------------------
+ * Define a user variable which is a variance of another variable.
+ *
+ * Only variances of thermal or user-defined variables are currently handled.
+ *
+ * parameters:
+ *   name          <-- name of variance and associated field
+ *   variable_name <-- name of associated variable
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parameters_add_variable_variance(const char  *name,
+                                    const char  *variable_name);
+
+/*----------------------------------------------------------------------------
+ * Define a user property.
+ *
+ * parameters:
+ *   name        <-- name of property and associated field
+ *   dim         <-- property dimension
+ *   location_id <-- id of associated mesh location
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parameters_add_property(const char  *name,
+                           int          dim,
+                           int          location_id);
+
+/*----------------------------------------------------------------------------
+ * Return the number of defined user variables not added yet.
+ *
+ * This number is reset to 0 when cs_parameters_create_added_variables()
+ * is called.
+ *
+ * returns:
+ *   number of defined user variables
+ *----------------------------------------------------------------------------*/
+
+int
+cs_parameters_n_added_variables(void);
+
+/*----------------------------------------------------------------------------
+ * Return the number of defined user properties not added yet.
+ *
+ * This number is reset to 0 when cs_parameters_create_added_properties()
+ * is called.
+ *
+ * returns:
+ *   number of defined user properties
+ *----------------------------------------------------------------------------*/
+
+int
+cs_parameters_n_added_properties(void);
+
+/*----------------------------------------------------------------------------
+ * Create previously added user variables.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parameters_create_added_variables(void);
+
+/*----------------------------------------------------------------------------
+ * Create previously added user properties.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parameters_create_added_properties(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -44,13 +44,13 @@ subroutine ppphyv &
 !  (une routine specifique ppvist devra etre creee)
 
 
-!  Il FAUT AVOIR PRECISE ICP = 1
+!  Il FAUT AVOIR PRECISE icp = 1
 !     ==================
 !    si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).
 
 
-!  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
+!  Il FAUT AVOIR PRECISE ivisls(Numero de scalaire) = 1
 !     ==================
 !     i on souhaite une diffusivite VISCLS variable
 !     pour le scalaire considere (sinon: ecrasement memoire).

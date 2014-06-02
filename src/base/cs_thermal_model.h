@@ -45,6 +45,27 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Thermal model type
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_THERMAL_MODEL_NONE,
+  CS_THERMAL_MODEL_TEMPERATURE,
+  CS_THERMAL_MODEL_ENTHALPY,
+  CS_THERMAL_MODEL_TOTAL_ENERGY
+
+} cs_thermal_model_variable_t;
+
+typedef enum {
+
+  CS_TEMPERATURE_SCALE_NONE,
+  CS_TEMPERATURE_SCALE_KELVIN,
+  CS_TEMPERATURE_SCALE_CELSIUS
+
+} cs_temperature_scale_t;
+
 /* thermal model descriptor */
 /*--------------------------*/
 

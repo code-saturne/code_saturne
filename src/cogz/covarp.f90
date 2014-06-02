@@ -70,8 +70,8 @@ implicit none
 
 ! Local variables
 
-integer        isc, f_id
-integer        kscmin, kscmax
+integer        f_id
+integer        kscmin, kscmax, kscavr
 
 !===============================================================================
 
@@ -102,6 +102,7 @@ end interface
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+call field_get_key_id("first_moment_id", kscavr)
 
 !===============================================================================
 ! 1. Define variable fields
@@ -115,12 +116,13 @@ if (ippmod(icod3p).ge.0) then
   ! Mixture fraction and its variance
 
   call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
-  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
-  iscavr(ifp2m) = ifm
-
   f_id = ivarfl(isca(ifm))
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
+
+  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
+  f_id = ivarfl(isca(ifp2m))
+  call field_set_key_int(f_id, kscavr, ivarfl(isca(ifm)))
 
   ! Enthalpy
 
@@ -194,7 +196,9 @@ if (ippmod(icolwc).ge.0 ) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
-  iscavr(ifp2m) = ifm
+  f_id = ivarfl(isca(ifp2m))
+  call field_set_key_int(f_id, kscavr, ivarfl(isca(ifm)))
+
 
   call add_model_scalar_field('mass_fraction', 'Fra_Mas', iyfm)
   f_id = ivarfl(isca(iyfm))
@@ -202,7 +206,8 @@ if (ippmod(icolwc).ge.0 ) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   call add_model_scalar_field('mass_fraction_variance', 'Var_FMa', iyfp2m)
-  iscavr(iyfp2m)= iyfm
+  f_id = ivarfl(isca(iyfp2m))
+  call field_set_key_int(f_id, kscavr, ivarfl(isca(iyfm)))
 
   if (ippmod(icolwc).ge.2 ) then
     call add_model_scalar_field('mass_fraction_covariance', 'COYF_PP4', icoyfp)
@@ -232,17 +237,8 @@ endif
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!      IVISLS, ICP
+!      ICP
 !===============================================================================
-
-do isc = 1, nscapp
-
-  if (iscavr(iscapp(isc)).le.0) then
-    ! Reference dynamic viscosity relative to this scalar
-    ivisls(iscapp(isc)) = 0
-  endif
-
-enddo
 
 if (ippmod(icod3p).eq.1 .or.   &
     ippmod(icoebu).eq.1 .or.   &

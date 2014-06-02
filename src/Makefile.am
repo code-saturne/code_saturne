@@ -103,7 +103,7 @@ $(top_srcdir)/src/base/cs_field_operator.f90: paramx.lo dimens.lo mesh.lo optcal
 $(top_srcdir)/src/base/entsor.f90: paramx.lo
 $(top_srcdir)/src/base/mltgrd.f90: paramx.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
-$(top_srcdir)/src/base/optcal.f90: paramx.lo
+$(top_srcdir)/src/base/optcal.f90: paramx.lo field.lo numvar.lo
 $(top_srcdir)/src/base/pointe.f90: paramx.lo numvar.lo mesh.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo cstnum.lo
 $(top_srcdir)/src/base/ptrglo.f90: paramx.lo dimens.lo mesh.lo numvar.lo optcal.lo parall.lo period.lo
 $(top_srcdir)/src/base/turbomachinery.f90:  mesh.lo cstphy.lo cplsat.lo

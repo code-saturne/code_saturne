@@ -72,9 +72,9 @@ use field
 
 implicit none
 
-integer        icha, isc, f_id
-integer        kscmin, kscmax
-character*80   f_label, f_name
+integer           :: icha, isc, f_id
+integer           :: kscmin, kscmax
+character(len=80) :: f_label, f_name
 
 !===============================================================================
 
@@ -143,9 +143,9 @@ call field_set_key_double(f_id, kscmax, 0.25d0)
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!    - PROPRES AUX SCALAIRES   : IVISLS, ISCAVR
+!    - PROPRES AUX SCALAIRES   : ivisls
 !      Rq : pas de variance associee a un scalaire dans notre cas
-!    - PROPRES A LA SUSPENSION : ICP
+!    - PROPRES A LA SUSPENSION : icp
 !===============================================================================
 
 do isc = 1, nscapp

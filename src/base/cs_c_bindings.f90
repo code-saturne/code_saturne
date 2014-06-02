@@ -130,8 +130,8 @@ module cs_c_bindings
       bind(C, name='cs_f_time_moment_field_id')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer, intent(in)  :: m_id
-      integer, intent(out) :: f_id
+      integer(c_int), intent(in)  :: m_id
+      integer(c_int), intent(out) :: f_id
     end subroutine time_moment_field_id
 
     !---------------------------------------------------------------------------
@@ -192,6 +192,16 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_gradient_perio_finalize
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Define user variables through the GUI.
+
+    subroutine cs_gui_user_variables()  &
+      bind(C, name='cs_gui_user_variables')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_user_variables
 
     !---------------------------------------------------------------------------
 
@@ -403,6 +413,16 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_user_extra_operations
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C user function for physical model options
+
+    subroutine cs_user_model()  &
+      bind(C, name='cs_user_model')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_user_model
 
     !---------------------------------------------------------------------------
 

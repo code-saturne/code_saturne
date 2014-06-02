@@ -71,6 +71,7 @@ BEGIN_C_DECLS
   \file cs_parameters.c
         General parameters and options management.
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_space_disc_t
@@ -101,6 +102,7 @@ BEGIN_C_DECLS
         - 1: based on cell center mesh velocity
         - 0: based on nodes displacement
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_piso_t
@@ -131,6 +133,27 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/* Definition of user variable */
+
+typedef struct {
+
+  char     *name;               /* Variable name */
+  char     *ref_name;           /* Name of variable referred to */
+  int       dim;                /* Variable dimension */
+  bool      is_variance;        /* True if the variable is a variance */
+
+} cs_user_variable_def_t;
+
+/* Definition of user property */
+
+typedef struct {
+
+  char     *name;               /* Property name */
+  int       dim;                /* Property dimension */
+  int       location_id;        /* Propert location id */
+
+} cs_user_property_def_t;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -175,6 +198,13 @@ const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
 static cs_piso_t  _piso = {1, 1e-5, 0, 0};
 
 const cs_piso_t  *cs_glob_piso = &_piso;
+
+/* Definition of user variables and properties */
+
+int                      _n_user_variables = 0;
+int                      _n_user_properties = 0;
+cs_user_variable_def_t  *_user_variable_defs = NULL;
+cs_user_property_def_t  *_user_property_defs = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -344,6 +374,251 @@ cs_parameters_read_restart_info(void)
     cs_restart_read_time_step_info(r);
     r = cs_restart_destroy(r);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a user variable.
+ *
+ * Solved variables are always defined on cells.
+ *
+ * \param[in]  name  name of variable and associated field
+ * \param[in]  dim   variable dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_add_variable(const char  *name,
+                           int          dim)
+{
+  BFT_REALLOC(_user_variable_defs,
+              _n_user_variables + 1,
+              cs_user_variable_def_t);
+
+  BFT_MALLOC((_user_variable_defs + _n_user_variables)->name,
+             strlen(name) + 1,
+             char);
+  strcpy((_user_variable_defs + _n_user_variables)->name, name);
+
+  (_user_variable_defs + _n_user_variables)->dim = dim;
+  (_user_variable_defs + _n_user_variables)->is_variance = 0;
+
+  if (dim != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Only user variables of dimension 1 are currently handled,\n"
+                "but %s is defined with dimension %d."),
+              name, dim);
+
+  _n_user_variables++;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a user variable which is a variance of another variable.
+ *
+ * Only variances of thermal or user-defined variables are currently handled.
+ *
+ * \param[in]  name           name of variance and associated field
+ * \param[in]  variable_name  name of associated variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_add_variable_variance(const char  *name,
+                                    const char  *variable_name)
+{
+  BFT_REALLOC(_user_variable_defs,
+              _n_user_variables + 1,
+              cs_user_variable_def_t);
+  BFT_MALLOC((_user_variable_defs + _n_user_variables)->name,
+             strlen(name) + 1,
+             char);
+  BFT_MALLOC((_user_variable_defs + _n_user_variables)->ref_name,
+             strlen(variable_name) + 1,
+             char);
+
+  strcpy((_user_variable_defs + _n_user_variables)->name, name);
+  strcpy((_user_variable_defs + _n_user_variables)->ref_name, variable_name);
+  (_user_variable_defs + _n_user_variables)->dim = -1;
+  (_user_variable_defs + _n_user_variables)->is_variance = true;
+
+  _n_user_variables++;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a user property.
+ *
+ * \param[in]  name         name of property and associated field
+ * \param[in]  dim          property dimension
+ * \param[in]  location_id  id of associated mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_add_property(const char  *name,
+                           int          dim,
+                           int          location_id)
+{
+  BFT_REALLOC(_user_property_defs,
+              _n_user_properties + 1,
+              cs_user_property_def_t);
+  BFT_MALLOC((_user_property_defs + _n_user_properties)->name,
+             strlen(name) + 1,
+             char);
+
+  strcpy((_user_property_defs + _n_user_properties)->name, name);
+  (_user_property_defs + _n_user_properties)->dim = dim;
+  (_user_property_defs + _n_user_properties)->location_id = location_id;
+
+  _n_user_properties++;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of defined user variables not added yet.
+ *
+ * This number is reset to 0 when \ref cs_parameters_create_added_variables
+ * is called.
+ *
+ * \return number of defined user variables
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_parameters_n_added_variables(void)
+{
+  return _n_user_variables;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of defined user properties not added yet.
+ *
+ * \return number of defined user properties
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_parameters_n_added_properties(void)
+{
+  return _n_user_properties;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create previously added user variables.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_create_added_variables(void)
+{
+  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_USER;
+
+  for (int i = 0; i < _n_user_variables; i++) {
+
+    cs_field_t *f;
+
+    const char *name = (_user_variable_defs + i)->name;
+
+    int cmp_id = cs_field_id_by_name(name);
+
+    if (cmp_id > -1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error defining user variable \"%s\";\n"
+                  "this name is already reserved for field with id %d."),
+                name, cmp_id);
+
+    /* Case where we define a variance */
+
+    if ((_user_variable_defs + i)->is_variance) {
+
+      const char *ref_name = (_user_variable_defs + i)->ref_name;
+      const cs_field_t *f_ref = cs_field_by_name_try(ref_name);
+
+      if (f_ref == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error defining user variance \"%s\";\n"
+                    "which refers to yet undefined variable \"%s\"."),
+                  name, ref_name);
+
+      f = cs_field_create(name,
+                          field_type,
+                          CS_MESH_LOCATION_CELLS,
+                          f_ref->dim,
+                          true,
+                          true);
+      int k_var = cs_field_key_id("first_moment_id");
+      cs_field_set_key_int(f, k_var, f_ref->id);
+      cs_field_lock_key(f, k_var);
+      BFT_FREE((_user_variable_defs + i)->ref_name);
+
+    }
+
+    /* General case */
+
+    else {
+
+      f = cs_field_create(name,
+                          field_type,
+                          CS_MESH_LOCATION_CELLS,
+                          (_user_variable_defs + i)->dim,
+                          true,
+                          true);
+
+    }
+
+    BFT_FREE((_user_variable_defs + i)->name);
+
+    cs_field_set_key_int(f, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(f, cs_field_key_id("post_vis"), 1);
+
+  }
+
+  BFT_FREE(_user_variable_defs);
+  _n_user_variables = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create previously added user properties.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_create_added_properties(void)
+{
+  /* Define variable diffusivities for the temperature or
+     user-defined variables */
+
+  /* Define regular user properties */
+
+  for (int i = 0; i < _n_user_properties; i++) {
+
+    const char *name = (_user_property_defs + i)->name;
+
+    int cmp_id = cs_field_id_by_name(name);
+
+    if (cmp_id > -1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error defining user property \"%s\";\n"
+                  "this name is already reserved for field with id %d."),
+                name, cmp_id);
+
+    (void) cs_field_create(name,
+                           CS_FIELD_PROPERTY | CS_FIELD_USER,
+                           (_user_property_defs + i)->location_id,
+                           (_user_property_defs + i)->dim,
+                           false,
+                           false);
+
+    BFT_FREE((_user_property_defs + i)->name);
+
+  }
+
+  BFT_FREE(_user_property_defs);
+  _n_user_properties = 0;
 }
 
 /*----------------------------------------------------------------------------*/

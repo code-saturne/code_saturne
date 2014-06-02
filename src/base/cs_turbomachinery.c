@@ -798,7 +798,6 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
                             const double   rotation_invariant[3])
 {
   static int n_calls = 0;
-  const double   invariant_point[3] = {0., 0., 0.};
 
   if (n_calls > 0)
     bft_error(__FILE__, __LINE__, 0,

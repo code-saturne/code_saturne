@@ -95,11 +95,12 @@ double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
-character        rubriq*64,rubrik*64,car4*4
-character        cindfp*2
-character        cphase*2
-character        ficsui*32
-character*80     fname
+character(len=64) :: rubriq, rubrik
+character(len=4)  :: car4
+character(len=2)  :: cindfp*2
+character(len=2)  :: cphase
+character(len=32) :: ficsui
+character(len=80) :: fname
 
 integer          iel
 integer          ivar  , iscal , ii    ,  ivers

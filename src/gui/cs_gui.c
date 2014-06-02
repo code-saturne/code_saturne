@@ -156,8 +156,8 @@ _scalar_label(const int id)
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_advanced_options_turbulence(const char *const param,
-                                         int  *const keyword)
+cs_gui_advanced_options_turbulence(const char *param,
+                                         int  *keyword)
 {
   char *path = NULL;
   int  result;
@@ -187,7 +187,7 @@ cs_gui_advanced_options_turbulence(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static char *
-cs_gui_scalar_variance(const char *const name)
+_scalar_variance(const char *name)
 {
   char *path = NULL;
   char *variance = NULL;
@@ -195,7 +195,9 @@ cs_gui_scalar_variance(const char *const name)
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "additional_scalars");
   cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  /* TODO use name, not label; requires fix in GUI first */
+  /* cs_xpath_add_test_attribute(&path, "name", name); */
+  cs_xpath_add_test_attribute(&path, "label", name);
   cs_xpath_add_element(&path, "variance");
   cs_xpath_add_function_text(&path);
 
@@ -214,7 +216,7 @@ cs_gui_scalar_variance(const char *const name)
  *----------------------------------------------------------------------------*/
 
 static char*
-_thermal_table_choice(const char *const name)
+_thermal_table_choice(const char *name)
 {
   char *path   = NULL;
   char *choice = NULL;
@@ -236,7 +238,7 @@ _thermal_table_choice(const char *const name)
  *----------------------------------------------------------------------------*/
 
 static char*
-_properties_choice(const char *const property_name)
+_properties_choice(const char *property_name)
 {
   char *path   = NULL;
   char *choice = NULL;
@@ -258,7 +260,7 @@ _properties_choice(const char *const property_name)
  *----------------------------------------------------------------------------*/
 
 static int
-_thermal_table_needed(const char *const name)
+_thermal_table_needed(const char *name)
 {
   int choice = 0;
 
@@ -273,8 +275,8 @@ _thermal_table_needed(const char *const name)
  * use MEI for physical property
  *----------------------------------------------------------------------------*/
 static void
-_physical_property(const char *const param,
-                   const char *const symbol,
+_physical_property(const char *param,
+                   const char *symbol,
                    const cs_int_t  *ncel,
                    const cs_int_t  *ncelet,
                    const cs_int_t  *itherm,
@@ -460,7 +462,7 @@ _physical_property(const char *const param,
 
       cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
 
-      for (i = 0; i < 3; i++)
+      for (i = 0; i < 3; i++) {
         if (_th_f[i]) {
           if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
             int k = cs_field_key_id("scalar_diffusivity_id");
@@ -470,6 +472,7 @@ _physical_property(const char *const param,
             break;
           }
         }
+      }
     }
     else {
       bft_error(__FILE__, __LINE__, 0,
@@ -505,16 +508,16 @@ _physical_property(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-_compressible_physical_property(const char *const param,
-                                     const char *const symbol,
-                                     const cs_int_t   idx,
-                                     const cs_int_t  *ncel,
-                                     const cs_int_t  *itempk,
-                                     const cs_real_t *p0,
-                                     const cs_real_t *t0,
-                                     const cs_real_t *ro0,
-                                     const cs_real_t *visls0,
-                                     const cs_real_t *viscv0)
+_compressible_physical_property(const char *param,
+                                const char *symbol,
+                                const cs_int_t   idx,
+                                const cs_int_t  *ncel,
+                                const cs_int_t  *itempk,
+                                const cs_real_t *p0,
+                                const cs_real_t *t0,
+                                const cs_real_t *ro0,
+                                const cs_real_t *visls0,
+                                const cs_real_t *viscv0)
 {
   int variable = 0;
   char *law = NULL;
@@ -637,12 +640,13 @@ _compressible_physical_property(const char *const param,
  * Return the value of choice for user scalar's property
  *
  * parameters:
- *   scalar_num     <-- number of scalar
- *   choice         <-- choice for property
+ *   scalar_num <-- number of scalar
+ *   choice     <-> choice for property
  *----------------------------------------------------------------------------*/
 
 static int
-cs_gui_scalar_properties_choice(const int scalar_num, int *const choice)
+_scalar_properties_choice(int  scalar_num,
+                          int *choice)
 {
   char *path = NULL;
   char *buff = NULL;
@@ -687,8 +691,8 @@ cs_gui_scalar_properties_choice(const int scalar_num, int *const choice)
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_scalar_diffusion_value(const int           num_sca,
-                                    double *const value)
+cs_gui_scalar_diffusion_value(int      num_sca,
+                              double  *value)
 {
   char  *path = NULL;
   double result;
@@ -714,7 +718,7 @@ cs_gui_scalar_diffusion_value(const int           num_sca,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_get_steady_status(int *const keyword)
+cs_gui_get_steady_status(int *keyword)
 {
   char *path = NULL;
   int   result;
@@ -762,8 +766,8 @@ static char *cs_gui_velocity_pressure_algo_choice(void)
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_steady_parameters(const char   *const param,
-                               double *const keyword)
+cs_gui_steady_parameters(const char   *param,
+                               double *keyword)
 {
   char   *path   = NULL;
   double  result = 0.0;
@@ -793,8 +797,8 @@ cs_gui_steady_parameters(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_time_parameters(const char   *const param,
-                             double *const keyword)
+cs_gui_time_parameters(const char   *param,
+                             double *keyword)
 {
   char   *path   = NULL;
   double  result = 0.0;
@@ -827,7 +831,7 @@ cs_gui_time_parameters(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_restart_parameters_status(const char *param, int *const keyword)
+cs_gui_restart_parameters_status(const char *param, int *keyword)
 {
   int   result;
   char *path = NULL;
@@ -860,9 +864,9 @@ cs_gui_restart_parameters_status(const char *param, int *const keyword)
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_variable_value(const char   *const variable_name,
-                      const char   *const value_type,
-                            double *const value)
+cs_gui_variable_value(const char   *variable_name,
+                      const char   *value_type,
+                            double *value)
 {
   char  *path = NULL;
   double result;
@@ -926,8 +930,8 @@ cs_gui_variable_turbulent_flux_model(const char   *const variable_name,
 
 static void
 _attribute_value(      char *      path,
-                 const char *const child,
-                       int  *const keyword)
+                 const char *child,
+                       int  *keyword)
 {
   char *choice = NULL;
   int   result;
@@ -975,9 +979,9 @@ _attribute_value(      char *      path,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_variable_attribute(const char *const name,
-                          const char *const child,
-                                int  *const keyword)
+cs_gui_variable_attribute(const char *name,
+                          const char *child,
+                                int  *keyword)
 {
   char *path = NULL;
 
@@ -997,8 +1001,8 @@ cs_gui_variable_attribute(const char *const name,
  *   child         <--  child markup
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_variable_choice(const char *const name,
-                                    const char *const child)
+static char *cs_gui_variable_choice(const char *name,
+                                    const char *child)
 {
   char *path = NULL;
   char *choice;
@@ -1020,13 +1024,13 @@ static char *cs_gui_variable_choice(const char *const name,
  * Modify double numerical parameters.
  *
  * parameters:
- *   param               <--  label of the numerical parameter
- *   keyword            <<--  value of the numerical parameter
+ *   param              <--  label of the numerical parameter
+ *   keyword            <--  value of the numerical parameter
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_numerical_double_parameters(const char   *const param,
-                                         double *const keyword)
+cs_gui_numerical_double_parameters(const char  *param,
+                                   double      *keyword)
 {
   char  *path = NULL;
   double result;
@@ -1046,13 +1050,13 @@ cs_gui_numerical_double_parameters(const char   *const param,
  * Modify integer numerical parameters.
  *
  * parameters:
- *   param               <--  label of the numerical parameter
- *   keyword            <<--  value of the numerical parameter
+ *   param              <--  label of the numerical parameter
+ *   keyword            <--  value of the numerical parameter
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_numerical_int_parameters(const char *const param,
-                                      int  *const keyword)
+cs_gui_numerical_int_parameters(const char  *param,
+                                int         *keyword)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -1097,8 +1101,8 @@ cs_gui_numerical_int_parameters(const char *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_gravity_value(const char   *const param,
-                           double *const value)
+cs_gui_gravity_value(const char   *param,
+                           double *value)
 {
   char   *path = NULL;
   double  result;
@@ -1122,8 +1126,8 @@ cs_gui_gravity_value(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_coriolis_value(const char   *const param,
-                            double *const value)
+cs_gui_coriolis_value(const char   *param,
+                            double *value)
 {
   char   *path = NULL;
   double  result;
@@ -1148,7 +1152,7 @@ cs_gui_coriolis_value(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static int
-cs_gui_properties_choice(const char *const property_name, int *choice)
+cs_gui_properties_choice(const char *property_name, int *choice)
 {
   char *buff = NULL;
   int   iok = 0;
@@ -1176,8 +1180,8 @@ cs_gui_properties_choice(const char *const property_name, int *choice)
  *   keyword             -->   turbulence model parameter
  *----------------------------------------------------------------------------*/
 
-static void _option_turbulence_double(const char *const param,
-                                          double *const keyword)
+static void _option_turbulence_double(const char *param,
+                                          double *keyword)
 {
   char *path = NULL;
   double  result;
@@ -1311,9 +1315,10 @@ static int _get_time_average_component(const int id, const int nm)
  *   data           -->   value of the parameter
  *----------------------------------------------------------------------------*/
 
-static void _get_time_average_data(const int         id,
-                                   const char *const param,
-                                         int  *const data)
+static void
+_get_time_average_data(int          id,
+                       const char  *param,
+                       int         *data)
 {
   char *path = NULL;
   int   result = 0;
@@ -1338,7 +1343,9 @@ static void _get_time_average_data(const int         id,
  *   nb           <--  variable or property number
  *----------------------------------------------------------------------------*/
 
-static char *_get_time_average_variable_name(const int id, const int nb)
+static char
+*_get_time_average_variable_name(int id,
+                                 int nb)
 {
   char *path = NULL;
   char *name = NULL;
@@ -1362,7 +1369,8 @@ static char *_get_time_average_variable_name(const int id, const int nb)
  *   variable   <-- name of variable
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_variable_label (const char *const variable)
+static char *
+_variable_label(const char *variable)
 {
   char *path = NULL;
   char *label = NULL;
@@ -1386,7 +1394,7 @@ static char *cs_gui_variable_label (const char *const variable)
  *   property_name        <--  name of the property
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_properties_label(const char *const property_name)
+static char *cs_gui_properties_label(const char *property_name)
 {
   char *path = NULL;
   char *label = NULL;
@@ -1435,7 +1443,8 @@ static char *_scalar_name_label(const char *kw, const int scalar_num)
  *   kw                   <--  scalar name
  *----------------------------------------------------------------------------*/
 
-static char *_thermal_scalar_name_label(const char *kw)
+static char
+*_thermal_scalar_name_label(const char *kw)
 {
   char *path = NULL;
   char *str  = NULL;
@@ -1490,7 +1499,7 @@ static char *cs_gui_volumic_zone_id(const int ith_zone)
  *   zone_id      <--  volumic zone id
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_volumic_zone_localization(const char *const zone_id)
+static char *cs_gui_volumic_zone_localization(const char *zone_id)
 {
   char *path = NULL;
   char *description = NULL;
@@ -1520,9 +1529,9 @@ static char *cs_gui_volumic_zone_localization(const char *const zone_id)
 
 #if (_XML_DEBUG_ > 0)
 
-static void cs_gui_variable_initial_value(const char   *const variable_name,
-                                          const char   *const zone_id,
-                                                double *const initial_value)
+static void cs_gui_variable_initial_value(const char   *variable_name,
+                                          const char   *zone_id,
+                                                double *initial_value)
 {
   char *path = NULL;
   double result;
@@ -1673,7 +1682,7 @@ static char *_get_profile_label_name(const int id, const int nm)
     if (cs_gui_strcmp(name,  f->name)) {
       if (f->type & CS_FIELD_VARIABLE)
       {
-        label = cs_gui_variable_label(name);
+        label = _variable_label(name);
         if (f->dim > 1)
         {
           int len = strlen(label) + 4;
@@ -1737,7 +1746,7 @@ static char *_get_profile_label_name(const int id, const int nm)
  *                     or the output frequency
  *----------------------------------------------------------------------------*/
 
-static double _get_profile_coordinate(const int id, const char *const x)
+static double _get_profile_coordinate(const int id, const char *x)
 {
   char *path = NULL;
   double coordinate = 0.0;
@@ -1911,11 +1920,11 @@ void CS_PROCF (csther, CSTHER) (int  *itherm,
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (csturb, CSTURB) (int    *const iturb,
-                                int    *const ideuch,
-                                int    *const igrake,
-                                int    *const igrari,
-                                double *const xlomlg)
+void CS_PROCF (csturb, CSTURB) (int    *iturb,
+                                int    *ideuch,
+                                int    *igrake,
+                                int    *igrari,
+                                double *xlomlg)
 {
   char *model = NULL;
   char *flux_model = NULL;
@@ -1998,7 +2007,7 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
  * INTEGER          ICP     -->   specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscpva, CSCPVA) (int *const icp)
+void CS_PROCF (cscpva, CSCPVA) (int *icp)
 {
   int choice;
 
@@ -2022,7 +2031,7 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp)
  * INTEGER          IVISCV     -->   specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csvvva, CSVVVA) (int *const iviscv)
+void CS_PROCF (csvvva, CSVVVA) (int *iviscv)
 {
   int choice;
 
@@ -2036,63 +2045,6 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv)
 }
 
 /*----------------------------------------------------------------------------
- * User scalars number.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSNSCA (NSCAUS)
- * *****************
- *
- * INTEGER          NSCAUS     -->   user scalars number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
-{
-  *nscaus = cs_gui_get_tag_number("/additional_scalars/variable", 1);
-
-#if _XML_DEBUG_
-  bft_printf("==>CSNSCA\n");
-  bft_printf("--number of user scalars: %i\n", *nscaus);
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * User scalars labels
- *
- * Fortran Interface:
- *
- * SUBROUTINE UISCAU
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiscau, UISCAU) (void)
-{
-  int   i     = 0;
-  char *label = NULL;
-
-  const int n_fields = cs_field_n_fields();
-  const int keysca = cs_field_key_id("scalar_id");
-  const int keylbl = cs_field_key_id("label");
-
-#if _XML_DEBUG_
-  bft_printf("==>UISCAU\n");
-#endif
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    i = cs_field_get_key_int(f, keysca) - 1;
-    if (f->type & CS_FIELD_USER) {
-      label = _scalar_name_label("label", i+1);
-      cs_field_set_key_str(f, keylbl, label);
-#if _XML_DEBUG_
-      bft_printf("--label of scalar[%i]: %s\n", i, label);
-#endif
-      BFT_FREE(label);
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * User thermal scalar.
  *
  * Fortran Interface:
@@ -2103,7 +2055,7 @@ void CS_PROCF (uiscau, UISCAU) (void)
  * INTEGER          ISCALT     -->   thermal scalars number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uithsc, UITHSC) (int *const iscalt)
+void CS_PROCF (uithsc, UITHSC) (int *iscalt)
 {
   cs_var_t  *vars = cs_glob_var;
   char *label = NULL;
@@ -2133,93 +2085,23 @@ void CS_PROCF (uithsc, UITHSC) (int *const iscalt)
 }
 
 /*----------------------------------------------------------------------------
- * User scalars which are variance.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSISCA (ISCAVR)
- * *****************
- *
- * INTEGER          ISCAVR  -->  user scalars variance array
- * integer          itherm  <--  type of thermal model
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csisca, CSISCA) (int        *iscavr,
-                                const int  *itherm)
-{
-  char *variance = NULL;
-
-  const int keysca = cs_field_key_id("scalar_id");
-
-#if _XML_DEBUG_
-  bft_printf("==>CSISCA\n");
-#endif
-
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_USER) {
-      variance = cs_gui_scalar_variance(f->name);
-
-      if (variance != NULL) {
-        int i = cs_field_get_key_int(f, keysca) - 1;
-        for (int f_id2 = 0; f_id2 < cs_field_n_fields(); f_id2++) {
-          cs_field_t  *f2 = cs_field_by_id(f_id2);
-
-          if (f2->type & CS_FIELD_USER) {
-            if (cs_gui_strcmp(variance, _scalar_label(f2->id))) {
-              if (f_id == f_id2)
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Scalar: %s and its variance: %s are the same.\n"),
-                          f->name, f2->name);
-              int j = cs_field_get_key_int(f2, keysca);
-              iscavr[i] = j;
-            }
-          }
-        }
-
-        if (*itherm && iscavr[i] == 0) {
-          for (int f_id2 = 0; f_id2 < cs_field_n_fields(); f_id2++) {
-            cs_field_t  *f2 = cs_field_by_id(f_id2);
-            if (f2->type & CS_FIELD_VARIABLE && !(f2->type & CS_FIELD_USER)) {
-              if (cs_gui_strcmp(variance, _scalar_label(f2->id))) {
-                int j = cs_field_get_key_int(f2, keysca);
-                iscavr[i] = j;
-              }
-            }
-          }
-        }
-      }
-      BFT_FREE(variance);
-
-#if _XML_DEBUG_
-      bft_printf("--iscavr[%i] = %i \n", f_id, iscavr[f_id]);
-#endif
-    }
-  }
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
  *
  * Fortran Interface:
  *
- * subroutine csivis (iscavr, ivisls, iscalt, itherm, itempk)
+ * subroutine csivis (ivisls, iscalt, itherm, itempk)
  * *****************
  *
- * integer          iscavr  <-->  number of the related variance if any
  * integer          ivisls  <--   indicator for the user scalar viscosity
  * integer          iscalt  <-->  number of the user thermal scalar if any
  * integer          itherm  <-->  type of thermal model
  * integer          itempk   -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
-                                int *const ivisls,
-                                int *const iscalt,
-                                int *const itherm,
-                                int *const itempk)
+void CS_PROCF (csivis, CSIVIS) (int *ivisls,
+                                int *iscalt,
+                                int *itherm,
+                                int *itempk)
 {
   int choice1, choice2;
   int test1, test2;
@@ -2227,6 +2109,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
   cs_var_t  *vars = cs_glob_var;
 
   const int keysca = cs_field_key_id("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
 
 #if _XML_DEBUG_
   bft_printf("==>CSIVIS\n");
@@ -2251,12 +2134,15 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_USER) {
+    if (   (f->type & CS_FIELD_VARIABLE)
+        && (f->type & CS_FIELD_USER)) {
       int i = cs_field_get_key_int(f, keysca) - 1;
-      if (iscavr[i] <= 0 ) {
-        if (cs_gui_scalar_properties_choice(i+1, &choice1))
-          if (*iscalt != i+1)
-            ivisls[i] = choice1;
+      if (i > -1) {
+        if (cs_field_get_key_int(f, kscavr) < 0) {
+          if (_scalar_properties_choice(i+1, &choice1))
+            if (*iscalt != i+1)
+              ivisls[i] = choice1;
+        }
       }
 #if _XML_DEBUG_
     bft_printf("--ivisls[%i] = %i\n", i, ivisls[i]);
@@ -2286,7 +2172,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
  * INTEGER          IDTVAR  -->   fixed or variable time step
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csidtv, CSIDTV) (int *const idtvar)
+void CS_PROCF (csidtv, CSIDTV) (int *idtvar)
 {
   double param;
   int steady = 0;
@@ -2322,7 +2208,7 @@ void CS_PROCF (csidtv, CSIDTV) (int *const idtvar)
  * INTEGER          IPHYDR  -->   hydrostatic pressure
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
+void CS_PROCF (csiphy, CSIPHY) (int *iphydr)
 {
   char *path = NULL;
   int   result;
@@ -2354,7 +2240,7 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
  * INTEGER          icfgrp  -->   hydrostatic equilibrium
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscfgp, CSCFGP) (int *const icfgrp)
+void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp)
 {
   char *path = NULL;
   int   result;
@@ -2387,9 +2273,9 @@ void CS_PROCF (cscfgp, CSCFGP) (int *const icfgrp)
  * INTEGER          ICCFVG  -->   restart with frozen field
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csisui, CSISUI) (int *const ntsuit,
-                                int *const ileaux,
-                                int *const iccvfg)
+void CS_PROCF (csisui, CSISUI) (int *ntsuit,
+                                int *ileaux,
+                                int *iccvfg)
 {
   cs_gui_restart_parameters_status("restart_rescue",         ntsuit);
   cs_gui_restart_parameters_status("restart_with_auxiliary", ileaux);
@@ -2424,17 +2310,17 @@ void CS_PROCF (csisui, CSISUI) (int *const ntsuit,
  * DOUBLE PRECISION RELXST  -->   relaxation coefficient id idtvar = -1
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
-                                int    *const iptlro,
-                                int    *const ntmabs,
-                                int    *const idtvar,
-                                double *const dtref,
-                                double *const dtmin,
-                                double *const dtmax,
-                                double *const coumax,
-                                double *const foumax,
-                                double *const varrdt,
-                                double *const relxst)
+void CS_PROCF (cstime, CSTIME) (int    *inpdt0,
+                                int    *iptlro,
+                                int    *ntmabs,
+                                int    *idtvar,
+                                double *dtref,
+                                double *dtmin,
+                                double *dtmax,
+                                double *coumax,
+                                double *foumax,
+                                double *varrdt,
+                                double *relxst)
 {
   double value;
   /* Default values for time step factor */
@@ -2503,16 +2389,16 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
  *     BLENCV, ISCHCV, ISSTPC, IRCFLU, CDTVAR, NITMAX, EPSILO
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uinum1, UINUM1) (double *const blencv,
-                                   int *const ischcv,
-                                   int *const isstpc,
-                                   int *const ircflu,
-                                double *const cdtvar,
-                                   int *const nitmax,
-                                double *const epsilo,
-                                   int *const iresol,
-                                   int *const imgr,
-                                   int *const nswrsm)
+void CS_PROCF (uinum1, UINUM1) (double *blencv,
+                                   int *ischcv,
+                                   int *isstpc,
+                                   int *ircflu,
+                                double *cdtvar,
+                                   int *nitmax,
+                                double *epsilo,
+                                   int *iresol,
+                                   int *imgr,
+                                   int *nswrsm)
 {
   double tmp;
   char* algo_choice = NULL;
@@ -2653,12 +2539,12 @@ void CS_PROCF (uinum1, UINUM1) (double *const blencv,
  * INTEGER          NTERUP  -->   piso sweep number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
-                               double *const relaxp,
-                                  int *const ipucou,
-                               double *const extrag,
-                                  int *const imrgra,
-                                  int *const nterup)
+void CS_PROCF (csnum2, CSNUM2)(   int *ivisse,
+                               double *relaxp,
+                                  int *ipucou,
+                               double *extrag,
+                                  int *imrgra,
+                                  int *nterup)
 {
   cs_gui_numerical_int_parameters("gradient_transposed", ivisse);
   cs_gui_numerical_int_parameters("velocity_pressure_coupling", ipucou);
@@ -2683,29 +2569,27 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
  * Initialize reference pressure and temperature if present
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csphys, CSPHYS)
-  (
-    const    int *const nmodpp,
-             int *const irovar,
-             int *const ivivar,
-             int *const icorio,
-          double *const gx,
-          double *const gy,
-          double *const gz,
-          double *const omegax,
-          double *const omegay,
-          double *const omegaz,
-          double *const ro0,
-          double *const viscl0,
-          double *const viscv0,
-          double *const visls0,
-          double *const cp0,
-          double *const t0,
-          double *const p0,
-          double *const xmasmr,
-             int *const itempk,
-             int *const itherm,
-             int *const itpscl)
+void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
+                                int        *irovar,
+                                int        *ivivar,
+                                int        *icorio,
+                                double     *gx,
+                                double     *gy,
+                                double     *gz,
+                                double     *omegax,
+                                double     *omegay,
+                                double     *omegaz,
+                                double     *ro0,
+                                double     *viscl0,
+                                double     *viscv0,
+                                double     *visls0,
+                                double     *cp0,
+                                double     *t0,
+                                double     *p0,
+                                double     *xmasmr,
+                                int        *itempk,
+                                int        *itherm,
+                                int        *itpscl)
 
 {
   int choice;
@@ -2829,17 +2713,15 @@ void CS_PROCF (csphys, CSPHYS)
  *
  * Fortran Interface:
  *
- * subroutine cssca2 (iscavr, iturt)
+ * subroutine cssca2 (iturb, iturt)
  * *****************
  *
- * integer          iscavr   <--  number of the related variance if any
  * integer          iturb    <--  turbulence model
  * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const int *const iscavr,
-                                const int *const iturb,
-                                      int *const iturt)
+void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
+                                int        *iturt)
 {
 #if _XML_DEBUG_
   bft_printf("==>CSSCA2\n");
@@ -2852,30 +2734,32 @@ void CS_PROCF (cssca2, CSSCA2) (const int *const iscavr,
 
   /* Specific physics: the min max of the model scalar are not given */
   const int keysca = cs_field_key_id("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_USER) {
+    if (   (f->type & CS_FIELD_VARIABLE)
+        && (f->type & CS_FIELD_USER)) {
       int i = cs_field_get_key_int(f, keysca) - 1;
+      if (i > -1) {
+        if (cs_field_get_key_int(f, kscavr) < 0) {
+          double scal_min = cs_field_get_key_double(f, kscmin);
+          double scal_max = cs_field_get_key_double(f, kscmax);
+          cs_gui_variable_value(f->name, "min_value", &scal_min);
+          cs_gui_variable_value(f->name, "max_value", &scal_max);
+          cs_field_set_key_double(f, kscmin, scal_min);
+          cs_field_set_key_double(f, kscmax, scal_max);
 
-      if (iscavr[i] <= 0 ) {
-        double scal_min = cs_field_get_key_double(f, kscmin);
-        double scal_max = cs_field_get_key_double(f, kscmax);
-        cs_gui_variable_value(f->name, "min_value", &scal_min);
-        cs_gui_variable_value(f->name, "max_value", &scal_max);
-        cs_field_set_key_double(f, kscmin, scal_min);
-        cs_field_set_key_double(f, kscmax, scal_max);
-
-        if (*iturb == 3)
-        {
-          int turb_mdl;
-          cs_gui_variable_turbulent_flux_model(f->name, &turb_mdl);
-          iturt[i] = turb_mdl;
-        }
+          if (*iturb == 3) {
+            int turb_mdl;
+            cs_gui_variable_turbulent_flux_model(f->name, &turb_mdl);
+            iturt[i] = turb_mdl;
+          }
 #if _XML_DEBUG_
-        bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
-        bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
+          bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
+          bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
 #endif
+        }
       }
     }
   }
@@ -2918,19 +2802,19 @@ void CS_PROCF (cssca2, CSSCA2) (const int *const iscavr,
  * Read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
-                                const    int *const iscalt,
-                                const    int *const iscavr,
-                                      double *const visls0,
-                                      double *const t0,
-                                      double *const p0,
-                                      double *const cp0)
+void CS_PROCF (cssca3, CSSCA3) (const int  *itherm,
+                                const int  *iscalt,
+                                double     *visls0,
+                                double     *t0,
+                                double     *p0,
+                                double     *cp0)
 {
   double result, coeff, density;
 
   cs_var_t  *vars = cs_glob_var;
 
   const int keysca = cs_field_key_id("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
 
   if (vars->model != NULL) {
 
@@ -2957,9 +2841,10 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_USER) {
+    if (   (f->type & CS_FIELD_VARIABLE)
+        && (f->type & CS_FIELD_USER)) {
       int i = cs_field_get_key_int(f, keysca) - 1;
-      if (iscavr[i] <= 0) {
+      if (cs_field_get_key_int(f, kscavr) < 0) {
 
         if (cs_gui_strcmp(vars->model, "solid_fuels")) {
           /* Air molar mass */
@@ -3000,8 +2885,8 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
  * INTEGER          ALMAX  -->   reference length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cstini, CSTINI) (double *const uref,
-                                double *const almax)
+void CS_PROCF (cstini, CSTINI) (double *uref,
+                                double *almax)
 {
   char* length_choice = NULL;
 
@@ -3025,16 +2910,16 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
  * Properties array used in the calculation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprop, UIPROP) (const int *const ivisls,
-                                const int *const ismago,
-                                const int *const iale,
-                                const int *const icp,
-                                const int *const iscavr)
+void CS_PROCF (uiprop, UIPROP) (const int *ivisls,
+                                const int *ismago,
+                                const int *iale,
+                                const int *icp)
 {
   int itype = 0;
   int nbp = 5;
 
   const int keysca = cs_field_key_id("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
 
   if (*ismago>0) nbp++;
 
@@ -3043,9 +2928,11 @@ void CS_PROCF (uiprop, UIPROP) (const int *const ivisls,
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_USER) {
+    if (   (f->type & CS_FIELD_VARIABLE)
+        && (f->type & CS_FIELD_USER)) {
       int i = cs_field_get_key_int(f, keysca) - 1;
-      if (ivisls[i] > 0 && iscavr[i] <= 0)
+      if (   ivisls[i] > 0
+          && cs_field_get_key_int(f, kscavr) < 0)
         nbp++;
     }
   }
@@ -3071,10 +2958,10 @@ void CS_PROCF (uiprop, UIPROP) (const int *const ivisls,
  * Temporal averaging treatment
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
-                                      int *const ntdmom,
-                                      int *const imoold,
-                                      int *const idfmom)
+void CS_PROCF (uimoyt, UIMOYT) (const int *ndgmox,
+                                      int *ntdmom,
+                                      int *imoold,
+                                      int *idfmom)
 {
   int imom = 0;
   int isuite = 0;
@@ -3193,9 +3080,9 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
   char *status = NULL;
   char *zone_id = NULL;
   char *formula = NULL;
-  char *labelU = NULL;
-  char *labelV = NULL;
-  char *labelW = NULL;
+  char *label_u = NULL;
+  char *label_v = NULL;
+  char *label_w = NULL;
   char *label  = NULL;
 
   mei_tree_t *ev_formula  = NULL;
@@ -3234,19 +3121,19 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
         mei_tree_insert(ev_formula,"x",0.0);
         mei_tree_insert(ev_formula,"y",0.0);
         mei_tree_insert(ev_formula,"z",0.0);
-        label = cs_gui_variable_label("velocity");
-        BFT_MALLOC(labelU, strlen(label) + 6, char);
-        strcpy(labelU, label);
-        strcat(labelU, "[0]");
-        mei_tree_insert(ev_formula, labelU, 0.0);
-        BFT_MALLOC(labelV, strlen(label) + 6, char);
-        strcpy(labelV, label);
-        strcat(labelV, "[1]");
-        mei_tree_insert(ev_formula, labelV, 0.0);
-        BFT_MALLOC(labelW, strlen(label) + 6, char);
-        strcpy(labelW, label);
-        strcat(labelW, "[2]");
-        mei_tree_insert(ev_formula, labelW, 0.0);
+        label = _variable_label("velocity");
+        BFT_MALLOC(label_u, strlen(label) + 6, char);
+        strcpy(label_u, label);
+        strcat(label_u, "[0]");
+        mei_tree_insert(ev_formula, label_u, 0.0);
+        BFT_MALLOC(label_v, strlen(label) + 6, char);
+        strcpy(label_v, label);
+        strcat(label_v, "[1]");
+        mei_tree_insert(ev_formula, label_v, 0.0);
+        BFT_MALLOC(label_w, strlen(label) + 6, char);
+        strcpy(label_w, label);
+        strcat(label_w, "[2]");
+        mei_tree_insert(ev_formula, label_w, 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3268,9 +3155,9 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, labelU, vel[iel][0]);
-          mei_tree_insert(ev_formula, labelV, vel[iel][1]);
-          mei_tree_insert(ev_formula, labelW, vel[iel][2]);
+          mei_tree_insert(ev_formula, label_u, vel[iel][0]);
+          mei_tree_insert(ev_formula, label_v, vel[iel][1]);
+          mei_tree_insert(ev_formula, label_w, vel[iel][2]);
           mei_evaluate(ev_formula);
 
           dSudu = mei_tree_lookup(ev_formula,"dSudu");
@@ -3314,9 +3201,9 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
         }
         mei_tree_destroy(ev_formula);
         BFT_FREE(label);
-        BFT_FREE(labelU);
-        BFT_FREE(labelV);
-        BFT_FREE(labelW);
+        BFT_FREE(label_u);
+        BFT_FREE(label_v);
+        BFT_FREE(label_w);
       }
       BFT_FREE(cells_list);
       BFT_FREE(zone_id);
@@ -3550,8 +3437,9 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
  *   symbol_size    <--  number of symbol in symbols
  *----------------------------------------------------------------------------*/
 
-static mei_tree_t *_init_mei_tree(const char *formula,
-        const char *symbols)
+static mei_tree_t
+*_init_mei_tree(const char *formula,
+                const char *symbols)
 {
 
   /* return an empty interpreter */
@@ -3584,7 +3472,7 @@ static mei_tree_t *_init_mei_tree(const char *formula,
  *
  * integer          ncelet   <--  number of cells with halo
  * integer          isuite   <--  restart indicator
- * integer          iccfth   <--  type of initialisation(compressible model)
+ * integer          iccfth   -->  type of initialisation(compressible model)
  * double precision ro0      <--  value of density if IROVAR=0
  * double precision cp0      <--  value of specific heat if ICP=0
  * double precision viscl0   <--  value of viscosity if IVIVAR=0
@@ -3595,13 +3483,13 @@ static mei_tree_t *_init_mei_tree(const char *formula,
 
 void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                               const int          *isuite,
-                                    int          *iccfth,
+                              int                *iccfth,
                               const cs_real_t    *ro0,
                               const cs_real_t    *cp0,
                               const cs_real_t    *viscl0,
                               const cs_real_t    *uref,
                               const cs_real_t    *almax,
-                              const double *const xyzcen)
+                              const cs_real_t    *xyzcen)
 {
   /* Coal combustion: the initialization of the model scalar are not given */
 
@@ -3795,7 +3683,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
             }
 
             else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-              const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23", "epsilon", "alpha"};
+              const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23",
+                                       "epsilon", "alpha"};
               if (mei_tree_find_symbols(ev_formula_turb, 8, symbols))
                 bft_error(__FILE__, __LINE__, 0,
                           _("Error: can not find the required symbol: %s\n"),
@@ -3830,7 +3719,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
             else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
               const char *symbols[] = {"k", "epsilon", "phi", "alpha"};
               if (mei_tree_find_symbols(ev_formula_turb, 4, symbols))
-                bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"),
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n"),
                           "k, epsilon, phi of al");
 
               cs_field_t *c_k   = cs_field_by_name("k");
@@ -4289,14 +4179,15 @@ _matrix_base_conversion(double  a11,   double  a12,   double  a13,
  *----------------------------------------------------------------------------*/
 
 static double
-_c_heads_losses(const char* zone_id, const char* c)
+_c_head_losses(const char* zone_id, const char* c)
 {
   char* path;
   double result = 0.0;
   double value  = 0.0;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "thermophysical_models", "heads_losses", "head_loss");
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models", "heads_losses", "head_loss");
   cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
   cs_xpath_add_element(&path, c);
   cs_xpath_add_function_text(&path);
@@ -4380,18 +4271,19 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       *ncepdp = ielpdc;
   }
 
-  if (*iappel == 3)
-  {
-    for (ikpdc = 0; ikpdc < 6; ikpdc++)
+  if (*iappel == 3) {
+
+    for (ikpdc = 0; ikpdc < 6; ikpdc++) {
       for (ielpdc = 0; ielpdc < *ncepdp; ielpdc++)
         ckupdc[ikpdc * (*ncepdp) + ielpdc] = 0.0;
+    }
 
     ielpdc = 0;
 
     cs_field_t *c_vel = cs_field_by_name("velocity");
 
-    for (i=1; i < zones+1; i++)
-    {
+    for (i=1; i < zones+1; i++) {
+
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
       cs_xpath_add_element_num(&path, "zone", i);
@@ -4399,50 +4291,50 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       status = cs_gui_get_attribute_value(path);
       BFT_FREE(path);
 
-      if (cs_gui_strcmp(status, "on"))
-      {
+      if (cs_gui_strcmp(status, "on")) {
+
         zone_id = cs_gui_volumic_zone_id(i);
         cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
 
-        k11 = _c_heads_losses(zone_id, "kxx");
-        k22 = _c_heads_losses(zone_id, "kyy");
-        k33 = _c_heads_losses(zone_id, "kzz");
+        k11 = _c_head_losses(zone_id, "kxx");
+        k22 = _c_head_losses(zone_id, "kyy");
+        k33 = _c_head_losses(zone_id, "kzz");
 
-        a11 = _c_heads_losses(zone_id, "a11");
-        a12 = _c_heads_losses(zone_id, "a12");
-        a13 = _c_heads_losses(zone_id, "a13");
-        a21 = _c_heads_losses(zone_id, "a21");
-        a22 = _c_heads_losses(zone_id, "a22");
-        a23 = _c_heads_losses(zone_id, "a23");
-        a31 = _c_heads_losses(zone_id, "a31");
-        a32 = _c_heads_losses(zone_id, "a32");
-        a33 = _c_heads_losses(zone_id, "a33");
+        a11 = _c_head_losses(zone_id, "a11");
+        a12 = _c_head_losses(zone_id, "a12");
+        a13 = _c_head_losses(zone_id, "a13");
+        a21 = _c_head_losses(zone_id, "a21");
+        a22 = _c_head_losses(zone_id, "a22");
+        a23 = _c_head_losses(zone_id, "a23");
+        a31 = _c_head_losses(zone_id, "a31");
+        a32 = _c_head_losses(zone_id, "a32");
+        a33 = _c_head_losses(zone_id, "a33");
 
         if (   cs_gui_is_equal_real(a12, 0.0)
             && cs_gui_is_equal_real(a13, 0.0)
-            && cs_gui_is_equal_real(a23, 0.0))
-        {
+            && cs_gui_is_equal_real(a23, 0.0)) {
+
           c11 = k11;
           c22 = k22;
           c33 = k33;
           c12 = 0.0;
           c13 = 0.0;
           c23 = 0.0;
+
         }
         else
-        {
           _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
                                   k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
-                                 &c11, &c12, &c13, &c21, &c22, &c23, &c31, &c32, &c33);
-        }
+                                  &c11, &c12, &c13,
+                                  &c21, &c22, &c23,
+                                  &c31, &c32, &c33);
 
-        for (j = 0; j < cells; j++)
-        {
+        for (j = 0; j < cells; j++) {
           iel = cells_list[j] - 1;
           if (c_vel->interleaved) {
-            vit = c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ] +
-                  c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1] +
-                  c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
+            vit =   c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ]
+                  + c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1]
+                  + c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
           }
           else {
             vit = c_vel->val_pre[                iel] * c_vel->val_pre[                iel] +
@@ -4479,27 +4371,26 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIPHYV
+ * subroutine uiphyv
  * *****************
  *
- * INTEGER          NCEL     <--  number of cells whithout halo
- * INTEGER          NCELET   <--  number of cells whith halo
- * INTEGER          IROM     <--  pointer for density rho
- * INTEGER          ICP      <--  pointer for specific heat Cp
- * INTEGER          IVISLS   <--  pointer for Lambda/Cp
- * INTEGER          IROVAR   <--  =1 if rho variable, =0 if rho constant
- * INTEGER          IVIVAR   <--  =1 if mu variable, =0 if mu constant
- * INTEGER          ISCALT   <--  pointer for the thermal scalar in ISCA
- * INTEGER          ISCAVR   <--  scalars that are variance
- * INTEGER          IVISCV   <--  pointer for volumic viscosity viscv
- * INTEGER          ITEMPK   <--  pointer for temperature (in K)
- * DOUBLE PRECISION P0       <--  pressure reference value
- * DOUBLE PRECISION T0       <--  temperature reference value
- * DOUBLE PRECISION RO0      <--  density reference value
- * DOUBLE PRECISION CP0      <--  specific heat reference value
- * DOUBLE PRECISION VISCL0   <--  dynamic viscosity reference value
- * DOUBLE PRECISION VISLS0   <--  diffusion coefficient of the scalars
- * DOUBLE PRECISION VISCV0   <--  volumic viscosity
+ * integer          ncel     <--  number of cells whithout halo
+ * integer          ncelet   <--  number of cells whith halo
+ * integer          irom     <--  pointer for density rho
+ * integer          icp      <--  pointer for specific heat Cp
+ * integer          ivisls   <--  pointer for Lambda/Cp
+ * integer          irovar   <--  =1 if rho variable, =0 if rho constant
+ * integer          ivivar   <--  =1 if mu variable, =0 if mu constant
+ * integer          iscalt   <--  pointer for the thermal scalar in ISCA
+ * integer          iviscv   <--  pointer for volumic viscosity viscv
+ * integer          itempk   <--  pointer for temperature (in K)
+ * double precision p0       <--  pressure reference value
+ * double precision t0       <--  temperature reference value
+ * double precision ro0      <--  density reference value
+ * double precision cp0      <--  specific heat reference value
+ * double precision viscl0   <--  dynamic viscosity reference value
+ * double precision visls0   <--  diffusion coefficient of the scalars
+ * double precision viscv0   <--  volumic viscosity
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
@@ -4510,7 +4401,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_int_t  *irovar,
                               const cs_int_t  *ivivar,
                               const cs_int_t  *iscalt,
-                              const cs_int_t   iscavr[],
                               const cs_int_t  *iviscv,
                               const cs_int_t  *itempk,
                               const cs_real_t *p0,
@@ -4563,15 +4453,12 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   if (*iscalt > 0)
     if (ivisls[*iscalt -1] > 0) {
       cs_field_t  *cond_dif = NULL;
-      bool         th_f_use_cp = false;
 
       cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
-      bool _th_f_use_cp[] = {true, false, false};
 
       for (i = 0; i < 3; i++)
         if (_th_f[i]) {
           if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
-            th_f_use_cp = _th_f_use_cp[i];
             int k = cs_field_key_id("scalar_diffusivity_id");
             int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
             if (cond_diff_id > -1)
@@ -4601,14 +4488,18 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   /* law for scalar diffusivity */
   int user_id = -1;
   int n_fields = cs_field_n_fields();
+  const int kscavr = cs_field_key_id("first_moment_id");
+
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_USER) {
+    if (   (f->type & CS_FIELD_VARIABLE)
+        && (f->type & CS_FIELD_USER)) {
       user_id++;
 
       int user_law = 0;
 
-      if (iscavr[user_id] <= 0 && ivisls[user_id] > 0) {
+      if (   cs_field_get_key_int(f, kscavr) < 0
+          && ivisls[user_id] > 0) {
         char *prop_choice = _properties_choice("name");
         if (cs_gui_strcmp(prop_choice, "variable"))
           user_law = 1;
@@ -4695,11 +4586,14 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
 #if _XML_DEBUG_
   bft_printf("==>UIPHYV\n");
   user_id = -1;
+  const int kscavr = cs_field_key_id("first_moment_id");
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_USER) {
+    if (   (f->type & CS_FIELD_VARIABLE)
+        && (f->type & CS_FIELD_USER)) {
       user_id++;
-      if (iscavr[user_id] <= 0 && ivisls[user_id] > 0) {
+      if (   cs_field_get_key_int(f, kscavr) < 0
+          && ivisls[user_id] > 0) {
         path = cs_xpath_init_path();
         cs_xpath_add_element(&path, "additional_scalars");
         cs_xpath_add_element_num(&path, "variable", user_id +1);
@@ -4714,6 +4608,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
         BFT_FREE(law_Ds);
       }
     }
+  }
 #endif
 }
 
@@ -4735,14 +4630,14 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
  * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
-                                const int    *const ncel,
-                                const int    *const ntmabs,
-                                const int    *const ntcabs,
-                                const double *const ttcabs,
-                                const double *const ttmabs,
-                                const double *const ttpabs,
-                                const double *const xyzcen)
+void CS_PROCF (uiprof, UIPROF) (const int    *ncelet,
+                                const int    *ncel,
+                                const int    *ntmabs,
+                                const int    *ntcabs,
+                                const double *ttcabs,
+                                const double *ttmabs,
+                                const double *ttpabs,
+                                const double *xyzcen)
 {
   FILE *file = NULL;
   char *filename = NULL;
@@ -5025,7 +4920,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
  * INTEGER          NCHARB  <-- number of coal
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
+void CS_PROCF (memui1, MEMUI1) (const int *ncharb)
 {
   cs_gui_boundary_conditions_free_memory(ncharb);
   cs_gui_clean_memory();
@@ -5073,6 +4968,75 @@ gui_thermal_model(void)
   BFT_FREE(model_name);
 
   return test;
+}
+
+/*----------------------------------------------------------------------------
+ * Define user variables through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_user_variables(void)
+{
+  int n_user_scalars = cs_gui_get_tag_number("/additional_scalars/variable", 1);
+
+  const int var_start_id = (gui_thermal_model() != 0) ? 0 : 1;
+  const int var_end_id = n_user_scalars+1;
+
+#if _XML_DEBUG_
+  bft_printf("==> cs_gui_user_variables\n");
+  bft_printf("--number of user scalars: %i\n", n_user_scalars);
+#endif
+
+  for (int i = 0; i < n_user_scalars; i++) {
+
+    /* Names are equivalent to labels for initial definition of user fields */
+
+    char *name = _scalar_name_label("label", i+1);
+
+#if _XML_DEBUG_
+    bft_printf("--label of scalar[%i]: %s\n", i, label);
+#endif
+
+    char *variance_label = _scalar_variance(name);
+
+    /* In case of variance, search for matching field */
+
+    if (variance_label != NULL) {
+
+      /* Search in thermal and user scalars */
+
+      for (int j = var_start_id; j < var_end_id; j++) {
+        char *cmp_label;
+        if (j == 0)
+          cmp_label = _thermal_scalar_name_label("label");
+        else
+          cmp_label = _scalar_name_label("label", j);
+        if (strcmp(cmp_label, variance_label) == 0) {
+          char *variance_name;
+          if (j == 0)
+            variance_name = _thermal_scalar_name_label("name");
+          else
+            variance_name = _scalar_name_label("label", j); /* TODO use name */
+          cs_parameters_add_variable_variance(name, variance_name);
+          BFT_FREE(variance_name);
+          BFT_FREE(cmp_label);
+          BFT_FREE(variance_label);
+          break;
+        }
+        else
+          BFT_FREE(cmp_label);
+      }
+
+    }
+
+    /* If not a variance, we have a regular variable */
+
+    else
+      cs_parameters_add_variable(name, 1);
+
+    BFT_FREE(name);
+
+  }
 }
 
 /*-----------------------------------------------------------------------------

@@ -91,8 +91,8 @@ integer          iresop, ipolop, kscmin, kscmax
 integer          keyvar, keysca
 double precision arakfr, scmaxp, scminp
 
-character*3, dimension(3) :: nomext3
-character*4, dimension(3) :: nomext63
+character(len=3), dimension(3) :: nomext3
+character(len=4), dimension(3) :: nomext63
 
 !===============================================================================
 
@@ -3808,17 +3808,17 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
 '@    SCALAIRE ', a16,                                          /,&
-'@    ISCAVR(',i10,   ') DOIT ETRE UN ENTIER',                  /,&
+'@    iscavr(',i10,   ') DOIT ETRE UN ENTIER',                  /,&
 '@      POSITIF OU NUL ET',                                     /,&
 '@      INFERIEUR OU EGAL A NSCAL = ', i10,                     /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Si ISCAVR(I) est nul, le scalaire I n est pas une variance',/,&
-'@  Si ISCAVR(I) est positif, le scalaire I est une variance :',/,&
+'@  Si iscavr(I) est nul, le scalaire I n est pas une variance',/,&
+'@  Si iscavr(I) est positif, le scalaire I est une variance :',/,&
 '@    il s agit de la variance des fluctuations du scalaire J', /,&
-'@    dont le numero est ISCAVR(I)',                            /,&
+'@    dont le numero est iscavr(I)',                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -3832,16 +3832,16 @@ endif
 '@    =========',                                               /,&
 '@    LE SCALAIRE ', a16, 'EST DEFINI COMME LA FLUCTUATION',    /,&
 '@    DU SCALAIRE ', a16,                                       /,&
-'@    (ISCAVR(',i10,   ') = ', i10,   '),',                     /,&
+'@    (iscavr(',i10,   ') = ', i10,   '),',                     /,&
 '@    QUI EST LUI-MEME DEFINI COMME UNE FLUCTUATION',           /,&
-'@    (ISCAVR(',i10,   ') = ', i10,   ').',                     /,&
+'@    (iscavr(',i10,   ') = ', i10,   ').',                     /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Si ISCAVR(I) est positif, le scalaire I est une variance :',/,&
+'@  Si iscavr(I) est positif, le scalaire I est une variance :',/,&
 '@    il s agit de la variance des fluctuations du scalaire J', /,&
-'@    dont le numero est ISCAVR(I) et on a donc forcement',     /,&
-'@    ISCAVR(J) = 0',                                           /,&
+'@    dont le numero est iscavr(I) et on a donc forcement',     /,&
+'@    iscavr(J) = 0',                                           /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -3944,7 +3944,7 @@ endif
 '@',                                                            /,&
 '@  SCAMIN(I) est la valeur minimale acceptee pour le',         /,&
 '@    scalaire I. Lorsque le scalaire est une variance',        /,&
-'@    (ISCAVR(I) > 0) la valeur de SCAMIN n est prise en',      /,&
+'@    (iscavr(I) > 0) la valeur de SCAMIN n est prise en',      /,&
 '@    compte que si ICLVFL(I) = 2',                             /,&
 '@  Si l utilisateur souhaite effectivement que le',            /,&
 '@    scalaire I (en fait, une variance) soit limite a SCAMIN', /,&
@@ -3970,7 +3970,7 @@ endif
 '@',                                                            /,&
 '@  SCAMAX(I) est la valeur maximale acceptee pour le',         /,&
 '@    scalaire I. Lorsque le scalaire est une variance',        /,&
-'@    (ISCAVR(I) > 0) la valeur de SCAMAX n est prise en',      /,&
+'@    (iscavr(I) > 0) la valeur de SCAMAX n est prise en',      /,&
 '@    compte que si ICLVFL(I) = 2',                             /,&
 '@  Si l utilisateur souhaite effectivement que le',            /,&
 '@    scalaire I (en fait, une variance) soit limite a SCAMAX', /,&
@@ -6426,17 +6426,17 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SCALAR ', a16,                                            /,&
-'@    ISCAVR(',i10,   ') MUST BE AN INTEGER',                   /,&
+'@    iscavr(',i10,   ') MUST BE AN INTEGER',                   /,&
 '@      POSITIVE or NUL AND',                                   /,&
 '@      LESS THAN or EGAL A NSCAL = ', i10,                     /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  If ISCAVR(I) =0,  le scalare  I is not a  variance',        /,&
-'@  If ISCAVR(I) is POSITIVE, scalare I is a variance :',       /,&
+'@  If iscavr(I) =0,  le scalare  I is not a  variance',        /,&
+'@  If iscavr(I) is POSITIVE, scalare I is a variance :',       /,&
 '@    it is the variance of fluctuations of scalaire J',        /,&
-'@    who''s number is   ISCAVR(I)',                            /,&
+'@    who''s number is   iscavr(I)',                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
@@ -6450,16 +6450,16 @@ endif
 '@    =========',                                               /,&
 '@    THE SCALAR ', a16, 'IS DEFINED AS        FLUCTUATION',    /,&
 '@    OF SCALAR ', a16,                                         /,&
-'@    (ISCAVR(',i10,   ') = ', i10,   '),',                     /,&
+'@    (iscavr(',i10,   ') = ', i10,   '),',                     /,&
 '@    WHICH ITSELF IS DEFINED AS A FLUCTUATION',                /,&
-'@    (ISCAVR(',i10,   ') = ', i10,   ').',                     /,&
+'@    (iscavr(',i10,   ') = ', i10,   ').',                     /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  If ISCAVR(I) is POSITIVE, scalar  I is a  variance :',      /,&
+'@  If iscavr(I) is POSITIVE, scalar  I is a  variance :',      /,&
 '@    variance of fluctuations of scalar J',                    /,&
-'@    who''s number is ISCAVR(I),  so we must have',            /,&
-'@    ISCAVR(J) = 0',                                           /,&
+'@    who''s number is iscavr(I),  so we must have',            /,&
+'@    iscavr(J) = 0',                                           /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
@@ -6563,7 +6563,7 @@ endif
 '@',                                                            /,&
 '@  SCAMIN(I) is the  minimale acceptable value for',           /,&
 '@    scalaire I. When this scalar is a variance',              /,&
-'@    (ISCAVR(I) > 0) value of SCAMIN is only used if',         /,&
+'@    (iscavr(I) > 0) value of SCAMIN is only used if',         /,&
 '@                  ICLVFL(I) = 2',                             /,&
 '@',                                                            /,&
 '@',                                                            /,&
@@ -6589,7 +6589,7 @@ endif
 '@',                                                            /,&
 '@  SCAMAX(I) is the maximum acceptable value for',             /,&
 '@    scalar  I. When this is a variance',                      /,&
-'@    (ISCAVR(I) > 0) the value of SCAMAX is only used',        /,&
+'@    (iscavr(I) > 0) the value of SCAMAX is only used',        /,&
 '@               if ICLVFL(I) = 2',                             /,&
 '@',                                                            /,&
 '@',                                                            /,&

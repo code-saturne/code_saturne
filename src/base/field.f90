@@ -377,6 +377,31 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function querying if key value was locked
+
+    function cs_field_is_key_locked(f, k_id) result(is_locked) &
+      bind(C, name='cs_field_is_key_locked')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value    :: f
+      integer(c_int), value :: k_id
+      logical(c_bool)       :: is_locked
+    end function cs_field_is_key_locked
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function locking a key value
+
+    subroutine cs_field_lock_key(f, k_id) &
+      bind(C, name='cs_field_locked_key')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value    :: f
+      integer(c_int), value :: k_id
+    end subroutine cs_field_lock_key
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function assigning a character string for a given key
     ! to a field.
 

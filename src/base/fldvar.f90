@@ -73,8 +73,25 @@ integer       nmodpp
 
 ! Local variables
 
-integer       ipp
+integer       ipp   , ii
 integer       iok   , ippok,  keycpl
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  ! Interface to C function returning number of user-defined variables
+
+  function cs_parameters_n_added_variables() result(n) &
+    bind(C, name='cs_parameters_n_added_variables')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int)                                           :: n
+  end function cs_parameters_n_added_variables
+
+end interface
 
 !===============================================================================
 ! 0. INITIALISATIONS
@@ -92,7 +109,7 @@ call field_get_key_id('coupled', keycpl)
 ! CALCUL DE NSCAL
 
 !  A la sortie de cette section, NSCAL, NSCAUS et NSCAPP sont connus.
-!  On renseignera egalement ici les valeurs de ISCAVR, IVISLS
+!  On renseignera egalement ici les valeurs de ivisls
 !    pour les scalaires physiques particulieres en question.
 !  On en profite aussi pour remplir ITYTUR et ITYTURT puisque ITURB et ITURT
 !    viennent d'etre definis.
@@ -251,6 +268,10 @@ if (iale.eq.1) then
 
 endif
 
+! Number of user variables
+
+nscaus = cs_parameters_n_added_variables()
+
 ! ---> Lecture donnees thermochimie
 
 call pplecd
@@ -271,12 +292,21 @@ if (nmodpp.eq.0) then
     call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
     iscalt = ihm
   endif
-  ivisls(iscalt) = 0
 
   if (itherm.ne.0 .and. iihmpr.eq.1) then
     call uithsc(iscalt)
   endif
 
+endif
+
+! Initialise ivisls for specific physics fields other than variances
+
+if (nscapp.gt.0) then
+  do ii = 1, nscapp
+    if (iscavr(iscapp(ii)).le.0 .and. ivisls(iscapp(ii)).lt.0) then
+      ivisls(ii) = 0
+    endif
+  enddo
 endif
 
 call add_user_scalar_fields
@@ -693,7 +723,6 @@ use dimens
 use entsor
 use numvar
 use field
-use ihmpre, only: iihmpr
 
 !===============================================================================
 
@@ -703,47 +732,52 @@ implicit none
 
 ! Local variables
 
-integer  iscal
+integer  iscal, nfld1, nfld2
 integer  dim, id
-integer  type_flag, location_id
-logical  interleaved, has_previous
+logical  interleaved
 
-character(len=80) :: f_name
 integer :: keyvar, keysca
 
-type_flag = FIELD_INTENSIVE + FIELD_VARIABLE + FIELD_USER
-dim = 1
-location_id = 1 ! variables defined on cells
-interleaved = .true.
-has_previous = .true.
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  ! Interface to C function building user-defined variables
+
+  subroutine cs_parameters_create_added_variables() &
+    bind(C, name='cs_parameters_create_added_variables')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_parameters_create_added_variables
+
+end interface
+
+!===============================================================================
+
+! Create fields
+
+call field_get_n_fields(nfld1)
+
+call cs_parameters_create_added_variables
+
+call field_get_n_fields(nfld2)
+
+! Now map those fields
+
+iscal = 0
 
 call field_get_key_id("scalar_id", keysca)
 call field_get_key_id("variable_id", keyvar)
 
-do iscal = 1, nscaus
+do id = nfld1, nfld2 - 1
 
-  if (iscal.le.10) then
-    write(f_name,'(a5,i1)') 'user_', iscal
-  else if (iscal.le.99) then
-    write(f_name,'(a5,i2)') 'user_', iscal
-  else
-    write(f_name,'(a5,i3)') 'user_', iscal
-  endif
+  call field_get_dim(id, dim, interleaved)
 
-  ! Test if the field has already been defined
-  call field_get_id_try(trim(f_name), id)
-  if (id .ge. 0) then
-    write(nfecra,1000) trim(f_name)
-    call csexit (1)
-  endif
+  if (dim.ne.1) cycle ! fields of dimension > 1 may not be handled as scalars
 
-  ! Create field
-
-  call field_create(f_name, type_flag, location_id, dim, interleaved,  &
-                    has_previous, id)
-
-  call field_set_key_int(id, keyvis, 1)
-  call field_set_key_int(id, keylog, 1)
+  iscal = iscal + 1
 
   nvar = nvar + 1
   nscal = nscal + 1
@@ -762,39 +796,11 @@ do iscal = 1, nscaus
 
 enddo
 
-if (iihmpr.eq.1) then
-  call uiscau
-endif
-
 return
 
 !---
 ! Formats
 !---
-
-#if defined(_CS_LANG_FR)
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    ========                                                ',/,&
-'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#else
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#endif
 
 end subroutine add_user_scalar_fields
 

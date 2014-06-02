@@ -1257,16 +1257,16 @@ uref    = -grand*10.d0
 !       On remplira plus tard, selon les modifs utilisateur,
 !         ISCSTH
 !       On modifiera eventuellement plus tard, selon modifs utilisateur,
-!         IVISLS, ce dernier a ete initialise plus haut
+!         ivisls, ce dernier a ete initialise plus haut
 !       On donne la valeur par defaut pour les autres
-!       En particulier, on suppose qu'on n'a pas de variance (ISCAVR=0)
+!       En particulier, on suppose qu'on n'a pas de variance
+!         (field first_moment_id < 0)
 !         qu'on clippe les variances a zero seulement,
 !         qu'on ne clippe pas les scalaires (sauf a +/-GRAND)
 
 do iscal = 1, nscamx
   iscacp(iscal) =-10
   iclvfl(iscal) = -1
-  iscavr(iscal) = 0
   visls0(iscal) =-grand*10.d0
   sigmas(iscal) = 1.0d0
   wmolsp(iscal) = 0.0d0

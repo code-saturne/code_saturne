@@ -586,37 +586,8 @@ be modified by the user}
 \subsubsection{Scalar unknowns}
 %==================================
 
-
-\motcleb{iscold}{ia}{-999, 1$\leqslant$ integer $\leqslant$ {\tt jscal}}{-999}{O}{L1}
-{correspondence table of the scalars in the case of a calculation
-restart. For a calculation restart with {\tt nscal} scalars, {\tt iscold(iscal)}
-gives, for every scalar {\tt iscal} of the current calculation
-(1$\leqslant${\tt iscal}$\leqslant${\tt nscal}), the index-number of the
-corresponding scalar in the previous calculation (in which {\tt jscal} scalars were
-taken into account).\\
-\hspace*{1.3cm} {\tt iscold(iscal)} = -999: the code automatically determines the
-correspondence. By default, the following rules are applied:\\
-\hspace*{2.cm} - the user scalar {\tt ii} of the current calculation is
-initialised by the the user scalar {\tt ii} of the previous calculation, if
-this scalar existed already (otherwise, {\tt ii} is a new scalar).\\
-\hspace*{2.cm} - the particular physics scalar {\tt jj} is initialised by
-the particular physics scalar {\tt jj} of the previous calculation if this
-scalar existed already (otherwise, {\tt jj} is a new scalar).\\
-\hspace*{1.3cm} {\tt iscold(iscal) = kk}: the scalar {\tt iscal} (user or particular
-physics scalar) is initialised by the scalar {\tt kk=iscold(iscal)} of the
-previous calculation.\\
-always useful. Allows to add or remove some scalars, to change the
-solving order, to change the physics, ...}
-
 \motcleb{nscaus}{i}{0$\leqslant$ integer $\leqslant$ {\tt nscmax}}{0}{O}{L1}
 {number of user scalars solutions of an advection equation\\
-always useful}
-
-\motcleb{iscavr}{ia}{0, 1 $\leqslant$ integer $\leqslant$ {\tt nscal}}{0}{O}{L1}
-{if the scalar {\tt iscal} is the average of the square of the fluctuations of a
-scalar {\tt kk}, then \mbox{{\tt iscavr(iscal)=kk}}.
-Otherwise {\tt iscavr(iscal)}=0. For {\tt iscal} and {\tt kk}, the user
-can only use index-numbers referring to user scalars ($\leqslant$ {\tt nscaus}). \\
 always useful}
 
 \motcleb{iscalt}{ia}{-1 or integer $>$ 0}{-1}{O}{L1}

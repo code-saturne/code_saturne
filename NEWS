@@ -2,6 +2,21 @@
 Trunk (unreleased)
 ==================
 
+Changes:
+--------
+
+- User scalars are not declared in usinsc (in cs_user_parameters.f90) anymore,
+  but in cs_user_model (in cs_user_parameters.c). They are not named based
+  on their number, but both their name and label is determined by the user.
+  This should make it easier to combine data setups.
+
+Architectural changes
+---------------------
+
+- Some arrays for which there is a field keyword equivalent, such as ivarpr,
+  are replaced by functions, which allow similar read-only access, but not
+  modification, which must be done through the field API.
+
 Release 3.3.0 (16 May 2014)
 ===========================
 

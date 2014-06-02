@@ -49,14 +49,6 @@ subroutine d3pini &
 !     definies) que si elles ont pu etre relues dans un fichier
 !     suite de calcul
 
-! Les proprietes physiques sont accessibles dans le tableau
-!     PROPCE (prop au centre)
-!     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
-!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
-!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
-!      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
-
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
 !     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
 !     ET PAS ICI
@@ -108,9 +100,9 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
-character*80     chaine
-integer          iel, igg, mode
-integer          iscal, ivar, ii
+character(len=80) :: chaine
+integer           iel, igg, mode
+integer           iscal, ivar, ii
 double precision coefg(ngazgm), hair, tinitk
 double precision valmax, valmin
 
@@ -286,7 +278,7 @@ endif
 
 
 !----
-! FIN
+! Fin
 !----
 
 return

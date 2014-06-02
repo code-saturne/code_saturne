@@ -180,7 +180,9 @@ typedef struct {
 
   union _key_val_t   val;          /* Value container (int, double,
                                       or pointer) */
-  bool               is_set;       /* Has this key been set for the
+  char               is_set;       /* Has this key been set for the
+                                      present field ? */
+  char               is_locked;    /* Has this key been locked for the
                                       present field ? */
 
 } cs_field_key_val_t;
@@ -473,7 +475,8 @@ _field_create(const char   *name,
     memset(&((_key_vals + (f->id*_n_keys_max + key_id))->val),
            0,
            sizeof(union _key_val_t));
-    (_key_vals + (f->id*_n_keys_max + key_id))->is_set = false;
+    (_key_vals + (f->id*_n_keys_max + key_id))->is_set = 0;
+    (_key_vals + (f->id*_n_keys_max + key_id))->is_locked = 0;
   }
 
   return f;
@@ -570,7 +573,8 @@ _find_or_add_key(const char  *name)
       memset((&(_key_vals + (field_id*_n_keys_max + key_id))->val),
              0,
              sizeof(union _key_val_t));
-      (_key_vals + (field_id*_n_keys_max + key_id))->is_set = false;
+      (_key_vals + (field_id*_n_keys_max + key_id))->is_set = 0;
+      (_key_vals + (field_id*_n_keys_max + key_id))->is_locked = 0;
     }
   }
 
@@ -648,6 +652,53 @@ _cs_field_free_struct(void)
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Check if a key may be used with a given field.
+ *
+ * If the key id is not valid, or the field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * parameters:
+ *   f      <-- pointer to field structure
+ *   key_id <-- id of associated key
+ *
+ * returns:
+ *   associated error code
+ *----------------------------------------------------------------------------*/
+
+static int
+_check_key(const cs_field_t  *f,
+           int                key_id)
+{
+  int errcode = CS_FIELD_OK;
+
+  assert(f->id >= 0 && f->id < _n_fields);
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                f->name, f->type, key_id, key);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return errcode;
 }
 
 /*============================================================================
@@ -2381,40 +2432,87 @@ bool
 cs_field_is_key_set(const cs_field_t  *f,
                     int                key_id)
 {
-  int errcode = CS_FIELD_OK;
+  int errcode = _check_key(f, key_id);
 
-  assert(f->id >= 0 && f->id < _n_fields);
-
-  if (key_id > -1 && key_id < _n_keys) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      errcode = CS_FIELD_INVALID_CATEGORY;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      bool retval = false;
-      if (kv->is_set)
-        retval = true;
-      return retval;
-    }
-  }
-  else
-    errcode = CS_FIELD_INVALID_KEY_ID;
-
-  if (errcode != CS_FIELD_OK) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
-    if (errcode == CS_FIELD_INVALID_CATEGORY)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" with type flag %d\n"
-                  "has no value associated with key %d (\"%s\")."),
-                f->name, f->type, key_id, key);
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field keyword with id %d is not defined."),
-                key_id);
+  if (errcode == CS_FIELD_OK) {
+    cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+    bool retval = false;
+    if (kv->is_set)
+      retval = true;
+    return retval;
   }
 
   return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query if a given key has been locked for a field.
+ *
+ * If the key id is not valid, or the field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ *
+ * \return  true if the key has been locked for this field, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_field_is_key_locked(const cs_field_t  *f,
+                       int                key_id)
+{
+  int errcode = _check_key(f, key_id);
+
+  if (errcode == CS_FIELD_OK) {
+    cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+    bool retval = false;
+    if (kv->is_locked)
+      retval = true;
+    return retval;
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Lock a field relative to a given key.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_lock_key(cs_field_t  *f,
+                  int          key_id)
+{
+  int retval = CS_FIELD_OK;
+
+  assert(f->id >= 0 && f->id < _n_fields);
+
+  if (key_id > -1) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
+      retval = CS_FIELD_INVALID_CATEGORY;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+      kv->is_locked = 1;
+    }
+  }
+  else
+    retval = CS_FIELD_INVALID_KEY_ID;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2425,6 +2523,7 @@ cs_field_is_key_set(const cs_field_t  *f,
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
  * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
  *
  * \param[in]  f       pointer to field structure
  * \param[in]  key_id  id of associated key
@@ -2452,8 +2551,12 @@ cs_field_set_key_int(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      kv->val.v_int = value;
-      kv->is_set = true;
+      if (kv->is_locked)
+        retval = CS_FIELD_LOCKED;
+      else {
+        kv->val.v_int = value;
+        kv->is_set = 1;
+      }
     }
   }
   else
@@ -2561,8 +2664,12 @@ cs_field_set_key_double(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      kv->val.v_double = value;
-      kv->is_set = true;
+      if (kv->is_locked)
+        retval = CS_FIELD_LOCKED;
+      else {
+        kv->val.v_double = value;
+        kv->is_set = 1;
+      }
     }
   }
   else
@@ -2670,11 +2777,15 @@ cs_field_set_key_str(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      if (kv->is_set == false)
-        kv->val.v_p = NULL;
-      BFT_REALLOC(kv->val.v_p, strlen(str) + 1, char);
-      strcpy(kv->val.v_p, str);
-      kv->is_set = true;
+      if (kv->is_locked)
+        retval = CS_FIELD_LOCKED;
+      else {
+        if (kv->is_set == false)
+          kv->val.v_p = NULL;
+        BFT_REALLOC(kv->val.v_p, strlen(str) + 1, char);
+        strcpy(kv->val.v_p, str);
+        kv->is_set = 1;
+      }
     }
   }
   else
@@ -2783,10 +2894,14 @@ cs_field_set_key_struct(cs_field_t  *f,
       retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      if (kv->is_set == false)
-        BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
-      memcpy(kv->val.v_p, s, kd->type_size);
-      kv->is_set = true;
+      if (kv->is_locked)
+        retval = CS_FIELD_LOCKED;
+      else {
+        if (kv->is_set == false)
+          BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
+        memcpy(kv->val.v_p, s, kd->type_size);
+        kv->is_set = 1;
+      }
     }
   }
   else
@@ -3079,7 +3194,7 @@ cs_field_log_info(const cs_field_t  *f,
       const char *key = cs_map_name_to_id_key(_key_map, i);
       if (kd->type_flag == 0 || (kd->type_flag & f->type)) {
         if (kd->type_id == 'i') {
-          if (kv->is_set == true)
+          if (kv->is_set)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10d\n"),
                           key, kv->val.v_int);
           else if (log_keywords > 1)
@@ -3087,7 +3202,7 @@ cs_field_log_info(const cs_field_t  *f,
                           key, kd->def_val.v_int);
         }
         else if (kd->type_id == 'd') {
-          if (kv->is_set == true)
+          if (kv->is_set)
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10.3g\n"),
                           key, kv->val.v_double);
           else if (log_keywords > 1)
@@ -3096,7 +3211,7 @@ cs_field_log_info(const cs_field_t  *f,
         }
         else if (kd->type_id == 's') {
           const char *s;
-          if (kv->is_set == true) {
+          if (kv->is_set) {
             s = kv->val.v_p;
             if (s == NULL)
               s = null_str;
@@ -3112,7 +3227,7 @@ cs_field_log_info(const cs_field_t  *f,
         }
         else if (kd->type_id == 't') {
           const void *t;
-          if (kv->is_set == true) {
+          if (kv->is_set) {
             t = kv->val.v_p;
             if (kd->log_func != NULL) {
               cs_log_printf(CS_LOG_SETUP, _("      %-24s:\n"), key);
@@ -3388,7 +3503,7 @@ cs_field_log_key_vals(int   key_id,
 
         if (kd->type_flag == 0 || (kd->type_flag & f->type)) {
           if (kd->type_id == 'i') {
-            if (kv->is_set == true)
+            if (kv->is_set)
               cs_log_printf(CS_LOG_SETUP, "    %s %d\n",
                             name_s, kv->val.v_int);
             else if (log_defaults)
@@ -3396,7 +3511,7 @@ cs_field_log_key_vals(int   key_id,
                             name_s, kd->def_val.v_int);
           }
           else if (kd->type_id == 'd') {
-            if (kv->is_set == true)
+            if (kv->is_set)
               cs_log_printf(CS_LOG_SETUP, _("    %s %-10.3g\n"),
                           name_s, kv->val.v_double);
             else if (log_defaults)
@@ -3405,7 +3520,7 @@ cs_field_log_key_vals(int   key_id,
           }
           else if (kd->type_id == 's') {
             const char *s;
-            if (kv->is_set == true) {
+            if (kv->is_set) {
               s = kv->val.v_p;
               if (s == NULL)
                 s = null_str;
@@ -3420,7 +3535,7 @@ cs_field_log_key_vals(int   key_id,
             }
           }
           else if (kd->type_id == 't') {
-            if (kv->is_set == true) {
+            if (kv->is_set) {
               cs_log_printf(CS_LOG_SETUP, _("    %s\n"), name_s);
               if (kd->log_func != NULL)
                 kd->log_func(kv->val.v_p);

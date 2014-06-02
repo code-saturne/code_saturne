@@ -986,10 +986,6 @@ module optcal
   !>          2 : clipping des variances a max(zero,scamin) et scamax
   integer, save ::          iclvfl(nscamx)
 
-  !> iscavr : numero du scalaire associe a la variance ou zero
-  !>          si le scalaire n'est pas une variance
-  integer, save ::          iscavr(nscamx)
-
   !> iscasp : 0 : le scalaire associe n est pas une espece
   !>          1 : le scalaire associe est une espece
   integer, save ::          iscasp(nscamx)
@@ -1185,6 +1181,43 @@ module optcal
 contains
 
   !=============================================================================
+
+  !> \brief If scalar iscal representns the mean of the square of a scalar
+  !> k, return k; otherwise, return 0.
+
+  function iscavr(iscal) result(iscvr)
+
+    use field
+    use numvar
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: iscal
+    integer             :: iscvr
+
+    ! Local arguments
+
+    integer :: f_id
+    integer :: kscavr = -1
+    integer :: keysca = -1
+
+    ! Function body
+
+    iscvr = 0
+
+    if (kscavr .lt. 0) then
+      call field_get_key_id("first_moment_id", kscavr)
+      call field_get_key_id("scalar_id", keysca)
+    endif
+
+    if (kscavr.ge.0) then
+      call field_get_key_int(ivarfl(isca(iscal)), kscavr, f_id)
+      if (f_id.ge.0) call field_get_key_int(f_id, keysca, iscvr)
+    endif
+
+  end function iscavr
 
   !> \brief Initialize Fortran time step API.
   !> This maps Fortran pointers to global C structure members.
