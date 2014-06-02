@@ -280,19 +280,15 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            if index.column() == 0:
-                return to_qvariant(self.tr("Code_Saturne keyword: NOMVAR"))
-            elif index.column() == 1:
-                return to_qvariant(self.tr("Code_Saturne key word: ILISVR"))
-            elif index.column() == 2:
-                return to_qvariant(self.tr("Code_Saturne key word: ICHRVR"))
-            elif index.column() == 3:
+            if index.column() == 3:
                 return to_qvariant(self.tr("Code_Saturne key word: IHISVR"))
+            else:
+                return to_qvariant()
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("Variable/Scalar name =< 32 characters"))
+                return to_qvariant(self.tr("Variable/Scalar name"))
             elif index.column() == 1:
                 return to_qvariant(self.tr("Print in listing"))
             elif index.column() == 2:
