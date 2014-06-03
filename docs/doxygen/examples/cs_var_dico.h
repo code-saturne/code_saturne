@@ -168,7 +168,7 @@
   ------------------------------- | ---------------------------- | ------------
   <tt> dt                         | CS_F_(dt)->val[cell_id]      | Local time step
   rtp(iel,\ref ipr)               | CS_F_(p)->val[cell_id]       | Pressure
-  rtp(iel,\ref iu) \n rtp(iel, \ref iv) \n rtp(iel, \ref iw) | CS_F_(u)->val[cell_id][0] \n CS_F_(u)->val[cell_id][1] \n CS_F_(u)->val[cell_id][2] | Velocity
+  <EM>(WARNING: deprecated)</EM> \n rtp(iel,\ref iu) \n rtp(iel,\ref iv) \n rtp(iel,\ref iw) | \n CS_F_(u)->val[3*cell_id] \n CS_F_(u)->val[3*cell_id+1] \n CS_F_(u)->val[3*cell_id+2] | Velocity
   rtp(iel,\ref ivoidf)            | <em>not yet implemented</em> | Void fraction for cavitation modelling
   rtp(iel,\ref ik)                | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
   rtp(iel,\ref iep)               | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
@@ -183,7 +183,7 @@
   rtp(iel,\ref ial)               | CS_F_(alpha)->val[cell_id]   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
   rtp(iel,\ref iomg)              | CS_F_(omg)->val[cell_id]     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
   rtp(iel,\ref inusa)             | CS_F_(nusa)->val[cell_id]    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
-  rtp(iel,\ref iuma) \n rtp(iel,\ref ivma) \n rtp(iel,\ref iwma) | CS_F_(mesh_u)->val[cell_id][0] \n CS_F_(mesh_u)->val[cell_id][1] \n CS_F_(mesh_u)->val[cell_id][2] | Mesh velocity
+  rtp(iel,\ref iuma) \n rtp(iel,\ref ivma) \n rtp(iel,\ref iwma) | CS_F_(mesh_u)->val[3*cell_id] \n CS_F_(mesh_u)->val[3*cell_id+1] \n CS_F_(mesh_u)->val[3*cell_id+2] | Mesh velocity
   rtp(iel,\ref isca(\ref ihm))    | CS_F_(h)->val[cell_id]       | Enthalpy
   rtp(iel,\ref isca(\ref iscalt)) | CS_F_(t)->val[cell_id]       | Temperature </tt>
 
