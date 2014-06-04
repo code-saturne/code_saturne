@@ -604,7 +604,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         lst.reverse()
 
         for row in lst:
-            label = self.modelScalars.getItem(row)
+            label = self.modelScalars.getItem(row)[0]
             if self.mdl.getScalarType(label) == 'user':
                 self.mdl.deleteScalar(label)
                 self.modelScalars.deleteItem(row)
