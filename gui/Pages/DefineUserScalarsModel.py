@@ -345,6 +345,9 @@ class DefineUserScalarsModel(Variables, Model):
             self.scalar_node.xmlInitNode('variable', 'name', type="user", label=l)
             if self.getScalarLabelsList() != None:
                 self.setScalarVariance(l, self.defaultScalarValues()['variance'])
+
+        self.__updateScalarNameAndDiffusivityName()
+
         return l
 
 
