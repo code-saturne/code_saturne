@@ -101,8 +101,10 @@ class runcase(object):
                 if args.index('run') == 1: # "<package_name> run"
                     for name in ('code_saturne', 'neptune_cfd'):
                         if not sys.platform.startswith('win'):
-                            name = '\\' + name
-                        if args[0].find(name) == 0:
+                            test_name = '\\' + name
+                        else:
+                            test_name = name
+                        if args[0].find(test_name) == 0:
                             self.cmd_name = name
                             self.run_cmd_line_id = i
                             return
