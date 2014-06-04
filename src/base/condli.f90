@@ -178,7 +178,7 @@ integer          iok   , iok1
 integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
-integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
+integer          ipcvsl, ipccv
 integer          itplus, itstar
 integer          f_id  ,  iut  , ivt   , iwt, iflmab
 
@@ -1273,7 +1273,7 @@ elseif (itytur.eq.3) then
 
       ! Scalar diffusivity
       else
-        visctc = propce(iel,ipcvst)
+        visctc = visct(iel)
         hint = (visclc+visctc*csrij/cmu)/distbf
       endif
 
