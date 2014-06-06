@@ -165,7 +165,7 @@ def update_command_single_value(args, options, value):
     value argument.
     Options and values may be defined as separate (successive) arguments,
     or be separated by a '=' character when the matching option
-    ands with '='. To allow both syntaxes, a given option may be pased
+    ends with '='. To allow both syntaxes, a given option may be passed
     both with and without that separator; for example:
     options = ('--param=', '--param', '-p').
 

@@ -177,9 +177,9 @@ class runcase(object):
 
         args = separate_args(self.lines[self.run_cmd_line_id])
 
-        run_id = get_command_single_value(args, ('--id'))
-        run_id_prefix = get_command_single_value(args, ('--id-prefix'))
-        run_id_suffix = get_command_single_value(args, ('--id-suffix'))
+        run_id = get_command_single_value(args, ('--id',))
+        run_id_prefix = get_command_single_value(args, ('--id-prefix',))
+        run_id_suffix = get_command_single_value(args, ('--id-suffix',))
 
         return run_id, run_id_prefix, run_id_suffix
 
@@ -195,15 +195,15 @@ class runcase(object):
         args = separate_args(line)
         if run_id:
             args = update_command_single_value(args,
-                                               ('--id'),
+                                               ('--id',),
                                                enquote_arg(run_id))
         if run_id_prefix:
             args = update_command_single_value(args,
-                                               ('--id-prefix'),
+                                               ('--id-prefix',),
                                                enquote_arg(run_id_prefix))
         if run_id_suffix:
             args = update_command_single_value(args,
-                                               ('--id-suffix'),
+                                               ('--id-suffix',),
                                                enquote_arg(run_id_suffix))
 
         self.lines[self.run_cmd_line_id] = assemble_args(args)
