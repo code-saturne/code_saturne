@@ -304,7 +304,7 @@ endif
 if (nscapp.gt.0) then
   do ii = 1, nscapp
     if (iscavr(iscapp(ii)).le.0 .and. ivisls(iscapp(ii)).lt.0) then
-      ivisls(ii) = 0
+      ivisls(iscapp(ii)) = 0
     endif
   enddo
 endif
