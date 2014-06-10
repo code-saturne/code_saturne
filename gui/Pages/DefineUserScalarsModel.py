@@ -179,8 +179,6 @@ class DefineUserScalarsModel(Variables, Model):
         n = 0
         for node in self.scalar_node.xmlGetNodeList('variable'):
             n = n + 1
-            if node['type'] == 'user':
-                node['name'] = 'user_' + str(n)
             nprop = node.xmlGetChildNode('property')
             if nprop:
                 old_name = nprop['name']
@@ -325,7 +323,7 @@ class DefineUserScalarsModel(Variables, Model):
         l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
 
         if l not in self.getScalarLabelsList() and l not in self.getThermalScalarLabelsList():
-            self.scalar_node.xmlInitNode('variable', 'name', type="user", label=l)
+            self.scalar_node.xmlInitNode('variable', name=l, type="user", label=l)
 
             self.__setScalarDiffusivity(l, c)
             self.setScalarBoundaries()
@@ -342,7 +340,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         l= self.__defaultVarianceName(label)
         if l not in self.getScalarsVarianceList():
-            self.scalar_node.xmlInitNode('variable', 'name', type="user", label=l)
+            self.scalar_node.xmlInitNode('variable', name=l, type="user", label=l)
             if self.getScalarLabelsList() != None:
                 self.setScalarVariance(l, self.defaultScalarValues()['variance'])
 
@@ -363,6 +361,7 @@ class DefineUserScalarsModel(Variables, Model):
             for node in self.scalar_node.xmlGetNodeList('variable'):
                 if node['label'] == old_label:
                     node['label'] = label
+                    node['name']  = label
 
                 if node.xmlGetString('variance') == old_label:
                     node.xmlSetData('variance', label)
@@ -372,6 +371,7 @@ class DefineUserScalarsModel(Variables, Model):
                 for n in node.xmlGetChildNodeList('variable'):
                     if n['label'] == old_label:
                         n['label'] = new_label
+                        n['name']  = new_label
 
         for node in self.case.xmlGetNodeList('formula'):
             f = node.xmlGetTextNode().replace(old_label, new_label)

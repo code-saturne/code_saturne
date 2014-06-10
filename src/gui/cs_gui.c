@@ -195,8 +195,6 @@ _scalar_variance(const char *name)
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "additional_scalars");
   cs_xpath_add_element(&path, "variable");
-  /* TODO use name, not label; requires fix in GUI first */
-  /* cs_xpath_add_test_attribute(&path, "name", name); */
   cs_xpath_add_test_attribute(&path, "label", name);
   cs_xpath_add_element(&path, "variance");
   cs_xpath_add_function_text(&path);
@@ -5086,7 +5084,7 @@ cs_gui_user_variables(void)
           if (j == 0)
             variance_name = _thermal_scalar_name_label("name");
           else
-            variance_name = _scalar_name_label("label", j); /* TODO use name */
+            variance_name = _scalar_name_label("name", j);
           cs_parameters_add_variable_variance(name, variance_name);
           BFT_FREE(variance_name);
           BFT_FREE(cmp_label);

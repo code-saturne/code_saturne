@@ -671,6 +671,32 @@ class XMLinit(Variables):
                     f = f.replace("viscv =", "volume_viscosity =")
                     n.xmlSetTextNode(f)
 
+        XMLAnaControl = self.case.xmlGetNode('analysis_control')
+        self.scalar_node = self.case.xmlGetNode('additional_scalars')
+        for node in self.scalar_node.xmlGetNodeList('variable'):
+            name = node['name']
+            label = node['label']
+            if label != None:
+                node['name'] = label
+            else:
+                node['label'] = name
+            for n in XMLAnaControl.xmlGetNodeList('var_prop'):
+                if n['name'] == name:
+                    n['name'] = label
+            for n in node.xmlGetNodeList('formula'):
+            	if n:
+                    content = n.xmlGetTextNode()
+                    content = content.replace(name, label)
+                    n.xmlSetTextNode(content)
+                
+        for node in XMLBoundaryNode.xmlGetNodeList('scalar'):
+            name = node['name']
+            label = node['label']
+            if label != None:
+                node['name'] = label
+            else:
+                node['label'] = name
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------

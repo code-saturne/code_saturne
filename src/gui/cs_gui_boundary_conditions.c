@@ -414,9 +414,8 @@ _boundary_scalar(const char  *nature,
     cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
     cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
     cs_xpath_add_element(&path, "scalar");
-    /* cs_xpath_add_test_attribute(&path, "name", f->name); */
-    cs_xpath_add_test_attribute(&path, "label",
-                                cs_field_get_label(f)); /* TODO revert to name */
+    cs_xpath_add_test_attribute(&path, "name",
+                                cs_field_get_label(f));
 
     if (dim > 1)
       cs_xpath_add_element_num(&path, "component", i);
