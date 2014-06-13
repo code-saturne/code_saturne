@@ -5,6 +5,8 @@ Release 3.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fixed icorrect sum in test for reduction for code/code coupling with nterup > 1.
+
 - Fix in transient rotor/stator due to innapropriate use of cs_fields API and
   field structure upgrade (n_time_vals > 2).
 

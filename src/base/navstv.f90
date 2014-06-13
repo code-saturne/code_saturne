@@ -1319,7 +1319,7 @@ if (nterup.gt.1) then
     xdu = vel(1,iel) - uvwk(1,iel)
     xdv = vel(2,iel) - uvwk(2,iel)
     xdw = vel(3,iel) - uvwk(3,iel)
-    xnrtmp = xnrmu +(xdu**2 + xdv**2 + xdw**2) * volume(iel)
+    xnrtmp = xnrtmp +(xdu**2 + xdv**2 + xdw**2) * volume(iel)
   enddo
   xnrmu = xnrtmp
   ! --->    TRAITEMENT DU PARALLELISME
