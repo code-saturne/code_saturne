@@ -4817,8 +4817,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   char var_name[32];
 
-  int face_id,ii,jj,n_upwind,cell_id, g_id, t_id,i;
-  int isou;
+  cs_lnum_t face_id, ii, jj, cell_id;
+  int isou, n_upwind, g_id, t_id;
   double pfacd,flux,fluxi,fluxj;
   double pi, pj, pia, pja;
   double pir,pjr,pippr,pjppr;
@@ -4997,7 +4997,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           fikdvi = weighf[face_id][0];
 
           /* II" = IF + FI" */
-          for (i = 0; i < 3; i++) {
+          for (int i = 0; i < 3; i++) {
             diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
                       - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
                                + visci[1][i]*i_face_normal[face_id][1]
@@ -5018,7 +5018,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           fjkdvi = weighf[face_id][1];
 
           /* JJ" = JF + FJ" */
-          for (i = 0; i < 3; i++) {
+          for (int i = 0; i < 3; i++) {
             djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
                       + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
                                + viscj[1][i]*i_face_normal[face_id][1]
@@ -5096,7 +5096,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           fikdvi = weighf[face_id][0];
 
           /* II" = IF + FI" */
-          for (i = 0; i < 3; i++) {
+          for (int i = 0; i < 3; i++) {
             diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
                       - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
                                + visci[1][i]*i_face_normal[face_id][1]
@@ -5117,7 +5117,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           fjkdvi = weighf[face_id][1];
 
           /* JJ" = JF + FJ" */
-          for (i = 0; i < 3; i++) {
+          for (int i = 0; i < 3; i++) {
             djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
                       + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
                                + viscj[1][i]*i_face_normal[face_id][1]
@@ -5182,7 +5182,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           fikdvi = weighb[face_id];
 
           /* II" = IF + FI" */
-          for (i = 0; i < 3; i++) {
+          for (int i = 0; i < 3; i++) {
             diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
                       - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
                                + visci[1][i]*b_face_normal[face_id][1]
@@ -5207,7 +5207,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, visci, fikdvi, \
-                                      pipp, pfacd, flux, pi)      \
+                                      diippf, pipp, pfacd, flux, pi)      \
                  if(m->n_b_faces > THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -5235,17 +5235,16 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           fikdvi = weighb[face_id];
 
           /* II" = IF + FI" */
-          for (i = 0; i < 3; i++) {
+          for (int i = 0; i < 3; i++) {
             diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
                       - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
                                + visci[1][i]*b_face_normal[face_id][1]
-                               + visci[2][i]*b_face_normal[face_id][2] );
+                               + visci[2][i]*b_face_normal[face_id][2]);
           }
 
           pipp = pi + ircflp*( grad[ii][0]*diippf[0]
                              + grad[ii][1]*diippf[1]
                              + grad[ii][2]*diippf[2]);
-
 
           pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
 
