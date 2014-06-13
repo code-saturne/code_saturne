@@ -60,6 +60,7 @@
 #include "cs_gradient_perio.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -697,8 +698,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -731,8 +732,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   char var_name[32];
 
-  int face_id, ii, jj, n_upwind, n_g_upwind;
-  int cell_id, iupwin;
+  cs_gnum_t n_upwind;
+  cs_lnum_t cell_id, face_id, ii, jj;
+  int iupwin;
   int g_id, t_id;
   int tr_dim = 0;
 
@@ -1667,23 +1669,12 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   if (iwarnp >= 2) {
 
-#if defined(HAVE_MPI)
-  /* Sum number of clippings */
-  if (m->n_domains > 1) {
+    /* Sum number of clippings */
+    cs_parall_counter(&n_upwind, 1);
 
-    assert(sizeof(cs_real_t) == sizeof(double));
-
-    MPI_Allreduce(&n_upwind, &n_g_upwind, 1, CS_MPI_GNUM,
-                  MPI_SUM, cs_glob_mpi_comm);
-
-    n_upwind = n_g_upwind;
-
-  }
-#endif
-
-    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
-               var_name, (unsigned long long)n_upwind,
-               (unsigned long long)m->n_g_i_faces);
+  bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
+             var_name, (unsigned long long)n_upwind,
+             (unsigned long long)m->n_g_i_faces);
   }
 
   /* ======================================================================
@@ -2025,8 +2016,8 @@ cs_convection_diffusion_vector(int                         idtvar,
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -2059,7 +2050,9 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   char var_name[32];
 
-  int face_id, ii, jj, n_upwind, cell_id, iupwin, g_id, t_id, n_g_upwind;
+  cs_gnum_t n_upwind;
+  cs_lnum_t face_id, ii, jj, cell_id;
+  int iupwin, g_id, t_id;
   int isou, jsou, ityp;
   double pfac,pfacd,flui,fluj,flux,fluxi,fluxj;
   double vfac[3];
@@ -3074,19 +3067,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   if (iwarnp >= 2) {
 
-#if defined(HAVE_MPI)
     /* Sum number of clippings */
-    if (m->n_domains > 1) {
-
-      assert(sizeof(cs_real_t) == sizeof(double));
-
-      MPI_Allreduce(&n_upwind, &n_g_upwind, 1, CS_MPI_GNUM,
-                    MPI_SUM, cs_glob_mpi_comm);
-
-      n_upwind = n_g_upwind;
-
-    }
-#endif
+    cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
@@ -3597,8 +3579,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -3631,7 +3613,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   char var_name[32];
 
-  int face_id,ii,jj,n_upwind,cell_id,iupwin, g_id, t_id, n_g_upwind;
+  cs_gnum_t n_upwind;
+  cs_lnum_t face_id, ii, jj, cell_id;
+  int iupwin, g_id, t_id;
   int tr_dim = 0;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -4586,19 +4570,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   if (iwarnp >= 2) {
 
-#if defined(HAVE_MPI)
     /* Sum number of clippings */
-    if (m->n_domains > 1) {
-
-      assert(sizeof(cs_real_t) == sizeof(double));
-
-      MPI_Allreduce(&n_upwind, &n_g_upwind, 1, CS_MPI_GNUM,
-                    MPI_SUM, cs_glob_mpi_comm);
-
-      n_upwind = n_g_upwind;
-
-    }
-#endif
+    cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
@@ -4789,8 +4762,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -5344,8 +5317,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -5373,7 +5346,9 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
   char var_name[32];
 
-  int face_id, ii, jj, n_upwind, cell_id, g_id, t_id, isou, jsou;
+  cs_gnum_t n_upwind;
+  cs_lnum_t face_id, ii, jj, cell_id;
+  int g_id, t_id, isou, jsou;
   int ityp;
   int i, j, k;
   double pfacd, flux, fluxi, fluxj, pnd;
@@ -5882,7 +5857,7 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
 {
   const cs_halo_t  *halo = m->halo;
 
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -6217,8 +6192,8 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 {
   const cs_halo_t  *halo = m->halo;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -6608,8 +6583,8 @@ cs_diffusion_potential(const cs_mesh_t          *m,
 {
   const cs_halo_t  *halo = m->halo;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -6951,8 +6926,8 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 {
   const cs_halo_t  *halo = m->halo;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;

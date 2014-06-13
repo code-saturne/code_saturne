@@ -991,8 +991,8 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
                                 cs_real_3_t        *restrict grad,
                                 cs_real_4_t        *restrict rhsv)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -1288,8 +1288,8 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                                cs_real_3_t        *restrict grad,
                                cs_real_4_t        *restrict rhsv)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -1748,8 +1748,8 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
                          cs_real_3_t        *restrict grad,
                          cs_real_4_t        *restrict rhsv)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -3121,8 +3121,8 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
                      const cs_real_3_t   *restrict pvar,
                      cs_real_33_t        *restrict gradv)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -3338,7 +3338,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                             const cs_real_t              c_weight[],
                             cs_real_3_t        *restrict grad)
 {
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -3659,8 +3659,8 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                            const cs_real_t              pvar[],
                            cs_real_3_t        *restrict grad)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -4039,8 +4039,8 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                      cs_real_3_t        *restrict grad,
                      cs_real_4_t        *restrict rhsv)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;

@@ -403,8 +403,8 @@ cs_mass_flux(const cs_mesh_t          *m,
 {
   const cs_halo_t  *halo = m->halo;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -935,8 +935,8 @@ cs_divergence(const cs_mesh_t          *m,
               const cs_real_t           b_massflux[],
               cs_real_t       *restrict diverg)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -1036,8 +1036,8 @@ cs_tensor_divergence(const cs_mesh_t            *m,
                      const cs_real_3_t           b_massflux[],
                      cs_real_3_t       *restrict diverg)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -1630,7 +1630,7 @@ cs_tensor_flux(const cs_mesh_t          *m,
                cs_real_3_t     *restrict i_massflux,
                cs_real_3_t     *restrict b_massflux)
 {
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   /* Local variables */
 

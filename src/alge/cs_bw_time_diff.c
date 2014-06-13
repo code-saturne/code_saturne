@@ -108,7 +108,7 @@ cs_backward_differentiation_in_time(const int     field_id,
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const int n_cells = m->n_cells;
+  const cs_lnum_t n_cells = m->n_cells;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *rho = CS_F_(rho)->val;
