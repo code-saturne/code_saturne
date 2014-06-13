@@ -25,6 +25,12 @@
 
 import sys
 
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
+
 from cs_exec_environment import separate_args, assemble_args, enquote_arg, \
     get_command_single_value, update_command_single_value
 
@@ -34,20 +40,29 @@ from cs_exec_environment import separate_args, assemble_args, enquote_arg, \
 
 class runcase(object):
 
-    def __init__(self, path):
+    def __init__(self,
+                 path,
+                 package=None,
+                 create_if_missing=True,
+                 study_name=None,
+                 case_name=None):
         """
         Initialize runcase info object.
         """
+
         self.path = path
 
         try:
             f = open(self.path, mode = 'r')
-        except IOError:
-            print("Error: can not open %s\n" % self.path)
-            sys.exit(1)
+            self.lines = f.readlines()
+            f.close()
 
-        self.lines = f.readlines()
-        f.close()
+        except IOError:
+            if create_if_missing:
+                self.build_template(package, study_name, case_name)
+            else:
+                print("Error: can not open or read %s\n" % self.path)
+                sys.exit(1)
 
         for i in range(len(self.lines)):
             self.lines[i] = self.lines[i].rstrip()
@@ -90,7 +105,7 @@ class runcase(object):
 
             if len(line) == 0:
                 continue
-            if line[0] == '#':
+            if line[0] == '#' or line[0:4] == 'rem ':
                 continue
             j = line.find('#')
             if j > -1:
@@ -113,6 +128,131 @@ class runcase(object):
 
         err_str = "Error: unable to determine the name of the script for " + self.path
         raise ValueError(err_str)
+
+    #---------------------------------------------------------------------------
+
+    def build_template(self, package=None, study_name=None, case_name=None):
+        """
+        Build batch file template
+        """
+
+        import os, stat
+        from cs_exec_environment import append_shell_shebang, \
+            append_script_comment, prepend_path_command
+
+        if not package:
+            import cs_package
+            package = cs_package.package()
+
+        self.lines = []
+
+        append_shell_shebang(self.lines)
+
+        # Add batch system info if necessary
+
+        batch_template = None
+        config = configparser.ConfigParser()
+        config.read(package.get_configfiles())
+
+        if config.has_option('install', 'batch'):
+
+            batch_template = config.get('install', 'batch')
+
+            if not os.path.isabs(batch_template):
+                batch_template = os.path.join(package.get_batchdir(),
+                                             'batch.' + batch_template)
+
+            fdt = open(batch_template, 'r')
+
+            import re, string
+            kwd1 = re.compile('nameandcase')
+
+            # Determine or build default names if required
+
+            if not case_name or not study_name:
+
+                topdir, scriptdir = os.path.split(os.path.split(self.path)[0])
+                if scriptdir == 'SCRIPTS':
+                    studydir, casedir = os.path.split(topdir)
+                    studydir = os.path.split(studydir)[1]
+                else:
+                    casedir = ''
+                    studydir = scriptdir
+
+                if not case_name:
+                    if casedir:
+                        case_name = casedir
+                    else:
+                        case_name = ''
+                if not study_name:
+                    study_name = studydir
+
+            studycasename = string.lower(study_name) + string.lower(case_name)
+
+            # For some systems, names are limited to 15 caracters
+            studycasename = studycasename[:15]
+
+            for line in fdt:
+                line = line.rstrip()
+                line = re.sub(kwd1, studycasename, line)
+                self.lines.append(line)
+
+            fdt.close()
+
+        # Add command to execute.
+
+        append_script_comment(self.lines, 'Ensure the correct command is found:')
+
+        self.lines.append(prepend_path_command('PATH',
+                                               package.get_dir("bindir")))
+        self.lines.append('')
+        append_script_comment(self.lines, 'Run command:\n')
+        # On Linux systems, add a backslash to prevent aliases
+        if sys.platform.startswith('win'):
+            run_cmd = ''
+        else:
+            run_cmd = '\\'
+        run_cmd += package.name + ' run'
+        self.run_cmd_line_id = len(self.lines)
+        self.lines.append(run_cmd)
+
+        self.save()
+
+        # Give executable permission to the file, if no
+        # batch template is used;
+        # Equivalent to `chmod +x` shell function.
+
+        if not batch_template:
+            st   = os.stat(self.path)
+            mode = st[stat.ST_MODE]
+            os.chmod(self.path, mode | stat.S_IEXEC)
+
+    #---------------------------------------------------------------------------
+
+    def get_coupling(self):
+        """
+        Get the coupling option in the run command
+        """
+
+        args = separate_args(self.lines[self.run_cmd_line_id])
+
+        return get_command_single_value(args,
+                                        ('--coupling',))
+
+    #---------------------------------------------------------------------------
+
+    def set_coupling(self, coupling):
+        """
+        Set the coupling option in the run command
+        """
+
+        line = self.lines[self.run_cmd_line_id]
+
+        args = update_command_single_value(separate_args(line),
+                                           ('--coupling',),
+                                           enquote_arg(coupling))
+
+        self.lines[self.run_cmd_line_id] = assemble_args(args)
 
     #---------------------------------------------------------------------------
 

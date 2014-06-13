@@ -299,6 +299,20 @@ def get_shell_type():
 
 #-------------------------------------------------------------------------------
 
+def append_shell_shebang(l):
+    """
+    Append lines for shell shebang or '@echo off' for a Windows COMMAND.
+    """
+
+    if sys.platform.startswith('win'):
+        l.append('@echo off')
+    else:
+        user_shell = get_shell_type()
+        l.append('#!' + user_shell + '\n\n')
+    l.append('')
+
+#-------------------------------------------------------------------------------
+
 def write_shell_shebang(fd):
     """
     Write the shell shebang or '@echo off' for a Windows COMMAND.
@@ -309,6 +323,19 @@ def write_shell_shebang(fd):
     else:
         user_shell = get_shell_type()
         fd.write('#!' + user_shell + '\n\n')
+
+#-------------------------------------------------------------------------------
+
+def append_script_comment(l, comment):
+    """
+    Add a comment in a script buffer list in the correct form.
+    (starting with a '#' for Linux shells and 'rem' for Windows COMMAND).
+    """
+
+    if sys.platform.startswith('win'):
+        l.append('rem ' + comment)
+    else:
+        l.append('# ' + comment)
 
 #-------------------------------------------------------------------------------
 
@@ -343,13 +370,13 @@ def write_export_env(fd, var, value):
 
 #-------------------------------------------------------------------------------
 
-def write_prepend_path(fd, var, user_path):
+def prepend_path_command(var, user_path):
     """
-    Write the correct command so as to export PATH-type variables.
+    Determine the correct command so as to export PATH-type variables.
     """
 
     # Caution: Windows PATH must NOT must double-quoted to account for blanks
-    # =======  in paths,contrary to UNIX systems
+    # =======  in paths, contrary to UNIX systems
     if sys.platform.startswith('win'):
         export_cmd = 'set ' + var + '=' + user_path + ';%' + var + '%'
     else:
@@ -357,7 +384,16 @@ def write_prepend_path(fd, var, user_path):
             export_cmd = 'setenv ' + var + ' "' + user_path + '":$' + var
         else:                              # handle Bourne-type shells
             export_cmd = 'export ' + var + '="' + user_path + '":$' + var
-    export_cmd = export_cmd + '\n'
+    return export_cmd
+
+#-------------------------------------------------------------------------------
+
+def write_prepend_path(fd, var, user_path):
+    """
+    Write the correct command so as to export PATH-type variables.
+    """
+
+    export_cmd = prepend_path_command(var, user_path) + '\n'
     fd.write(export_cmd)
 
 #-------------------------------------------------------------------------------

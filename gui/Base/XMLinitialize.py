@@ -684,11 +684,11 @@ class XMLinit(Variables):
                 if n['name'] == name:
                     n['name'] = label
             for n in node.xmlGetNodeList('formula'):
-            	if n:
+                    if n:
                     content = n.xmlGetTextNode()
                     content = content.replace(name, label)
                     n.xmlSetTextNode(content)
-                
+
         for node in XMLBoundaryNode.xmlGetNodeList('scalar'):
             name = node['name']
             label = node['label']

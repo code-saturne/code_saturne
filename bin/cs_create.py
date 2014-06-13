@@ -575,55 +575,14 @@ domains = [
         if sys.platform.startswith('win'):
             batch_file = batch_file + '.bat'
 
-        fd = open(batch_file, 'w')
-        cs_exec_environment.write_shell_shebang(fd)
+        runcase = cs_runcase.runcase(batch_file,
+                                     package=self.package,
+                                     create_if_missing=True,
+                                     study_name=self.name,
+                                     case_name=casename)
 
-        # Add batch system info if necessary
-
-        config = configparser.ConfigParser()
-        config.read(self.package.get_configfiles())
-
-        if config.has_option('install', 'batch'):
-
-            template = config.get('install', 'batch')
-
-            if not os.path.isabs(template):
-                template = os.path.join(self.package.get_batchdir(),
-                                        'batch.' + template)
-
-            fdt = open(template, 'r')
-
-            kwd1 = re.compile('nameandcase')
-
-            studycasename = string.lower(self.name) + string.lower(casename)
-
-            # For some systems, names are limited to 15 caracters
-            studycasename = studycasename[:15]
-
-            for line in fdt:
-                line = re.sub(kwd1, studycasename, line)
-                fd.write(line)
-
-            fdt.close()
-
-        # Add command to execute.
-
-        cs_exec_environment.write_script_comment(fd,
-                                                 'Ensure the correct command is found:\n')
-        cs_exec_environment.write_prepend_path(fd, 'PATH',
-                                               self.package.get_dir("bindir"))
-        fd.write('\n')
-        cs_exec_environment.write_script_comment(fd, 'Run command:\n')
-        # On Linux systems, add a backslash to prevent aliases
-        if sys.platform.startswith('linux'): fd.write('\\')
-        fd.write(self.package.name + ' run')
         if coupling:
-            fd.write(' --coupling ' + coupling)
-        fd.write('\n')
-
-        fd.close()
-
-        make_executable(batch_file)
+            runcase.set_coupling(coupling)
 
         # Add info from parent in case of copy
         # TODO: complete this for n_procs and batch info
@@ -635,12 +594,11 @@ domains = [
             try:
                 ref_runcase = cs_runcase.runcase(ref_runcase_path)
                 params = ref_runcase.get_parameters()
-                runcase = cs_runcase.runcase(batch_file)
                 runcase.set_parameters(params)
-                runcase.save()
             except Exception:
                 pass
 
+        runcase.save()
 
     def dump(self):
         """
