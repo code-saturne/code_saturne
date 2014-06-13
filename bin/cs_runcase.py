@@ -49,7 +49,7 @@ class runcase(object):
         self.lines = f.readlines()
         f.close()
 
-        for i in xrange(len(self.lines)):
+        for i in range(len(self.lines)):
             self.lines[i] = self.lines[i].rstrip()
 
         self.get_run_command()
@@ -82,7 +82,7 @@ class runcase(object):
         self.cmd_name = None
         self.run_cmd_line_id = -1
 
-        for i in xrange(len(self.lines) - 1, -1, -1):
+        for i in range(len(self.lines) - 1, -1, -1):
 
             line = self.lines[i]
 
