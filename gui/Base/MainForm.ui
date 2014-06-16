@@ -87,6 +87,7 @@
     <addaction name="separator"/>
     <addaction name="backgroundColorAction"/>
     <addaction name="actionFont"/>
+    <addaction name="RestoreStyleDefaults"/>
    </widget>
    <widget class="QMenu" name="menu_File">
     <property name="title">
@@ -506,6 +507,11 @@
    </property>
    <property name="statusTip">
     <string>Open a new case.</string>
+   </property>
+  </action>
+  <action name="RestoreStyleDefaults">
+   <property name="text">
+    <string>Restore Defaults</string>
    </property>
   </action>
  </widget>

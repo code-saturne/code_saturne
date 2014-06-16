@@ -31,7 +31,7 @@ This module defines the following classes:
 - NewCaseDialogView
 - MainView
 
-    @copyright: 1998-2013 EDF S.A., France
+    @copyright: 1998-2014 EDF S.A., France
     @author: U{EDF R&D<mailto:saturne-support@edf.fr>}
     @license: GNU GPL v2, see COPYING for details.
 """
@@ -377,8 +377,9 @@ class MainView(object):
         self.connect(self.displayAboutAction,    SIGNAL("triggered()"), self.displayAbout)
         self.connect(self.backgroundColorAction, SIGNAL("triggered()"), self.setColor)
         self.connect(self.actionFont,            SIGNAL("triggered()"), self.setFontSize)
+        self.connect(self.RestoreStyleDefaults,  SIGNAL("triggered()"), self.restoreStyleDefaults)
 
-        self.connect(self.displayLicenceAction,   SIGNAL("triggered()"), self.displayLicence)
+        self.connect(self.displayLicenceAction,  SIGNAL("triggered()"), self.displayLicence)
 
         # connection for page layout
 
@@ -415,23 +416,30 @@ class MainView(object):
             self.restoreGeometry(settings.value("MainWindow/Geometry").toByteArray())
             self.restoreState(settings.value("MainWindow/State").toByteArray())
 
-        color = settings.value("MainWindow/Color",
-                  self.palette().color(QPalette.Window).name())
-        color = QColor(color)
+        app = QCoreApplication.instance()
 
-        if color.isValid():
-            self.setPalette(QPalette(color))
-            app = QCoreApplication.instance()
-            app.setPalette(QPalette(color))
+        self.palette_default = None
+        self.font_default = None
 
-        f = settings.value("MainWindow/Font", str(self.font()))
+        if settings.contains("MainWindow/Color"):
+            color = settings.value("MainWindow/Color",
+                                   self.palette().color(QPalette.Window).name())
+            color = QColor(color)
+            if color.isValid():
+                if not self.palette_default:
+                    self.palette_default = QPalette().resolve(self.palette())
+                self.setPalette(QPalette(color))
+                app.setPalette(QPalette(color))
 
-        if f:
-            font = QFont()
-            if (font.fromString(from_qvariant(f, to_text_string))):
-                self.setFont(font)
-                app = QCoreApplication.instance()
-                app.setFont(font)
+        if settings.contains("MainWindow/Font"):
+            f = settings.value("MainWindow/Font", str(self.font()))
+            if f:
+                if not self.font_default:
+                    self.font_default = self.font()
+                font = QFont()
+                if (font.fromString(from_qvariant(f, to_text_string))):
+                    self.setFont(font)
+                    app.setFont(font)
 
         self.updateRecentFileMenu()
         QTimer.singleShot(0, self.loadInitialFile)
@@ -577,10 +585,6 @@ class MainView(object):
                               self.saveGeometry())
             settings.setValue("MainWindow/State",
                               self.saveState())
-            settings.setValue("MainWindow/Color",
-                              self.palette().color(QPalette.Window).name())
-            settings.setValue("MainWindow/Font",
-                              self.font().toString())
 
             event.accept()
             log.debug("closeEvent -> accept")
@@ -1178,9 +1182,13 @@ class MainView(object):
         c = self.palette().color(QPalette.Window)
         color = QColorDialog.getColor(c, self)
         if color.isValid():
-            self.setPalette(QPalette(color))
             app = QCoreApplication.instance()
+            if not self.palette_default:
+                self.palette_default = QPalette().resolve(self.palette())
             app.setPalette(QPalette(color))
+            settings = QSettings()
+            settings.setValue("MainWindow/Color",
+                              self.palette().color(QPalette.Window).name())
 
 
     @pyqtSignature("")
@@ -1193,9 +1201,39 @@ class MainView(object):
         font, ok = QFontDialog.getFont(self)
         log.debug("setFont -> %s" % ok)
         if ok:
+            if not self.font_default:
+                self.font_default = self.font()
             self.setFont(font)
             app = QCoreApplication.instance()
             app.setFont(font)
+            settings = QSettings()
+            settings.setValue("MainWindow/Font",
+                              self.font().toString())
+
+
+    @pyqtSignature("")
+    def restoreStyleDefaults(self):
+        """
+        public slot
+
+        Restore default style.
+        """
+
+        reply = QMessageBox.question(self, "Restore defaults",
+                                     "Restore default color and font ?",
+                                     QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            app = QCoreApplication.instance()
+            if self.palette_default:
+                app.setPalette(self.palette_default)
+            if self.font_default:
+                print self.font_default
+                print self.font()
+                self.setFont(self.font_default)
+                app.setFont(self.font_default)
+            settings = QSettings()
+            settings.remove("MainWindow/Color")
+            settings.remove("MainWindow/Font")
 
 
     def tr(self, text):
