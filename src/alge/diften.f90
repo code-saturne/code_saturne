@@ -490,7 +490,7 @@ if (idtvar.lt.0) then
 else
 
   do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, visci, fikdvi,                          &
+    !$omp parallel do private(ifac, ii, i, visci, fikdvi,                       &
     !$omp                     diippf, pipp, pfacd, flux, pi)                    &
     !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
