@@ -1234,21 +1234,5 @@ installation to a test directory, and once it is tested,
 re-configure the build for installation to the final production
 directory, and rebuild and install.
 
-\subsubsection{Known issues with some packages}
-
-On quite a few clusters, some issues have been encountered
-when using versions of Open MPI built with the Intel compiler
-suite. Typically, crashes in the MPI-IO layers are almost
-guaranteed, but issues may also arise later, apparently  with some
-collectives, so disabling MPI-IO is not enough.
-
-Using Intel compilers for \CS itself and a build of Open MPI
-using the GNU compilers usually works fine, and the performance
-difference should be minimal (it can be higher using
-the GNU compilers also for \CS itself), so the issue is not
-in \CS itself, but it requires further investigation.
-In any case, avoiding this buggy combination may avoid you
-many wasted hours.
-
 \end{document}
 

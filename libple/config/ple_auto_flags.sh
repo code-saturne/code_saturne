@@ -79,6 +79,8 @@ if test "x$GCC" = "xyes"; then
   # Intel compiler passes as GCC but may be recognized by version string
   if test -n "`$CC --version | grep icc`" ; then
     ple_gcc=icc
+  elif test -n "`$CC --version | grep clang`" ; then
+    ple_gcc=clang
   elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
     ple_gcc=pathcc
   elif test -n "`$CC --version 2>&1 | grep Open64`" ; then
@@ -179,6 +181,26 @@ elif test "x$ple_gcc" = "xicc"; then
 
   # Version strings for logging purposes and known compiler flag
   $CC -V conftest.c > $outfile 2>&1
+  ple_ac_cc_version=`$CC --version 2>&1 | head -1`
+  ple_compiler_known=yes
+
+  # Default compiler flags
+  cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
+  cflags_default_opt="-O2"
+  cflags_default_prf="-p"
+
+# Otherwise, are we using clang ?
+#--------------------------------
+
+elif test "x$ple_gcc" = "xclang"; then
+
+  ple_cc_version=`echo $CC --version | grep clang | cut -f 3 -d ' '`
+
+  echo "compiler '$CC' is clang"
+
+  # Version strings for logging purposes and known compiler flag
+  $CC -v > $outfile 2>&1
   ple_ac_cc_version=`$CC --version 2>&1 | head -1`
   ple_compiler_known=yes
 

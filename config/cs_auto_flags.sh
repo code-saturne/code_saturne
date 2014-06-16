@@ -142,6 +142,8 @@ if test "x$GCC" = "xyes"; then
 
   if test -n "`$CC --version | grep icc`" ; then
     cs_gcc=icc
+  elif test -n "`$CC --version | grep clang`" ; then
+    ple_gcc=clang
   elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
     cs_gcc=pathcc
   elif test -n "`$CC --version 2>&1 | grep Open64`" ; then
@@ -265,6 +267,29 @@ elif test "x$cs_gcc" = "xicc"; then
       cflags_default_ext="-fp-model extended"
       ;;
   esac
+
+# Otherwise, are we using clang ?
+#--------------------------------
+
+elif test "x$cs_gcc" = "xclang"; then
+
+  cs_cc_version=`echo $CC --version | grep clang | cut -f 3 -d ' '`
+
+  echo "compiler '$CC' is clang"
+
+  # Version strings for logging purposes and known compiler flag
+  $CC -v > $outfile 2>&1
+  cs_ac_cc_version=`$CC --version 2>&1 | head -1`
+  cs_cc_compiler_known=yes
+
+  # Default compiler flags
+  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
+  cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
+  cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
+  cflags_default_opt="-O2"
+  cflags_default_hot="-O3"
+  cflags_default_prf="-p"
+  cflags_default_omp="-openmp"
 
 # Otherwise, are we using pathcc ?
 #---------------------------------
@@ -589,6 +614,8 @@ if test "x$GXX" = "xyes"; then
 
   if test -n "`$CXX --version | grep icc`" ; then
     cs_gxx=icc
+  elif test -n "`$CXX --version | grep clang`" ; then
+    cs_gxx=clang
   elif test -n "`$CXX --version 2>&1 | grep PathScale`" ; then
     cs_gxx=pathCC
   else
@@ -689,6 +716,29 @@ elif test "x$cs_gxx" = "xicc"; then
       cxxflags_default_opt="-O2 -mcpu=itanium2-p9000"
       ;;
   esac
+
+# Otherwise, are we using clang ?
+#--------------------------------
+
+elif test "x$cs_gxx" = "xclang"; then
+
+  cs_cc_version=`echo $CXX --version | grep clang | cut -f 3 -d ' '`
+
+  echo "compiler '$CXX' is clang"
+
+  # Version strings for logging purposes and known compiler flag
+  $CXX -v > $outfile 2>&1
+  cs_ac_cxx_version=`$CXX --version 2>&1 | head -1`
+  cs_cxx_compiler_known=yes
+
+  # Default compiler flags
+  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
+  cflags_default="-strict-ansi -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
+  cxxflags_default_opt="-O2"
+  cxxflags_default_hot="-O3"
+  cxxflags_default_prf="-p"
+  cxxflags_default_omp="-openmp"
 
 # Otherwise, are we using pgcc ?
 #-------------------------------
