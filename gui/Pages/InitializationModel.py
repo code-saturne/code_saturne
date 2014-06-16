@@ -116,13 +116,13 @@ velocity[2] = 0.;"""
     def getDefaultThermalFormula(self):
         name = ''
         formula = ''
-        if self.therm.getThermalScalarModel() == 'enthalpy':
+        if self.therm.getThermalScalarModel() == "enthalpy":
             name = 'enthalpy'
-            formula = """cp = 1017.24""" + name + """ = 300. * cp;"""
-        if self.therm.getThermalScalarModel() == 'total_energy':
+            formula = """cp = 1017.24;\n""" + name + """ = 300. * cp;"""
+        elif self.therm.getThermalScalarModel() == "total_energy":
             name = 'total_energy'
             formula = name + """ = 0.;"""
-        elif self.therm.getThermalScalarModel() != 'off':
+        elif self.therm.getThermalScalarModel() != "off":
             name = 'temperature'
             formula = name + """ = 300.;"""
         return formula
