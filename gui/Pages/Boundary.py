@@ -163,8 +163,6 @@ class Boundary(object) :
             else :
                 if self.sca_model.getScalarType(label) == 'thermal':
                     Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
-                elif self.sca_model.getScalarType(label) == 'user':
-                    Model().isInList(self.sca_model.getScalarName(label)[:5], ('user_'))
                 scalarNode['name'] = self.sca_model.getScalarName(label)
                 scalarNode['type'] = self.sca_model.getScalarType(label)
         elif self.sca_model.getElectricalScalarsList() != None:
@@ -174,15 +172,11 @@ class Boundary(object) :
             else :
                 if self.sca_model.getScalarType(label) == 'thermal':
                     Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
-                elif self.sca_model.getScalarType(label) == 'user':
-                    Model().isInList(self.sca_model.getScalarName(label)[:5], ('user_'))
                 scalarNode['name'] = self.sca_model.getScalarName(label)
                 scalarNode['type'] = self.sca_model.getScalarType(label)
         else:
             if self.sca_model.getScalarType(label) == 'thermal':
                 Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
-            elif self.sca_model.getScalarType(label) == 'user':
-                Model().isInList(self.sca_model.getScalarName(label)[:5], ('user_'))
             scalarNode['name'] = self.sca_model.getScalarName(label)
             scalarNode['type'] = self.sca_model.getScalarType(label)
 
@@ -3296,10 +3290,10 @@ class InletBoundaryTestCase(ModelTest):
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
                         </turbulence>
-                        <scalar choice="dirichlet" label="sca1" name="user_1" type="user">
+                        <scalar choice="dirichlet" label="sca1" name="sca1" type="user">
                             <dirichlet>11</dirichlet>
                         </scalar>
-                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="sca1" type="user">
                             <dirichlet>22</dirichlet>
                         </scalar>
                     </inlet>
@@ -3610,7 +3604,7 @@ class WallBoundaryTestCase(ModelTest):
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
-                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="sca2" type="user">
                             <dirichlet>0.0</dirichlet>
                         </scalar>
                     </wall>
@@ -3629,11 +3623,11 @@ class WallBoundaryTestCase(ModelTest):
         doc1 = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
-                        <scalar choice="exchange_coefficient" label="sca1" name="user_1" type="user">
+                        <scalar choice="exchange_coefficient" label="sca1" name="sca1" type="user">
                             <dirichlet>0.0</dirichlet>
                             <exchange_coefficient>0.0</exchange_coefficient>
                         </scalar>
-                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="sca2" type="user">
                             <dirichlet>0.0</dirichlet>
                         </scalar>
                     </wall>
@@ -3661,11 +3655,11 @@ class WallBoundaryTestCase(ModelTest):
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
-                        <scalar choice="exchange_coefficient" label="sca1" name="user_1" type="user">
+                        <scalar choice="exchange_coefficient" label="sca1" name="sca1" type="user">
                             <dirichlet>130.0</dirichlet>
                             <exchange_coefficient>0.130</exchange_coefficient>
                         </scalar>
-                        <scalar choice="dirichlet" label="sca2" name="user_2" type="user">
+                        <scalar choice="dirichlet" label="sca2" name="sca2" type="user">
                             <dirichlet>55.</dirichlet>
                         </scalar>
                     </wall>
@@ -4027,10 +4021,10 @@ class OutletBoundaryTestCase(ModelTest):
 
         doc = '''<boundary_conditions>
                     <outlet label="sortie">
-                        <scalar choice="dirichlet" label="sca1" name="user_1" type="user">
+                        <scalar choice="dirichlet" label="sca1" name="sca1" type="user">
                             <dirichlet>10.1</dirichlet>
                         </scalar>
-                        <scalar choice="neumann" label="sca2" name="user_2" type="user">
+                        <scalar choice="neumann" label="sca2" name="sca2" type="user">
                             <neumann>0</neumann>
                         </scalar>
                     </outlet>
