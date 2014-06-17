@@ -195,7 +195,7 @@ _scalar_variance(const char *name)
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "additional_scalars");
   cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "label", name);
+  cs_xpath_add_test_attribute(&path, "name", name);
   cs_xpath_add_element(&path, "variance");
   cs_xpath_add_function_text(&path);
 
@@ -3165,6 +3165,209 @@ void CS_PROCF (cstini, CSTINI) (double *uref,
   bft_printf("--uref  = %f\n", *uref);
 #endif
 }
+
+/*----------------------------------------------------------------------------
+ * Solver taking a scalar porosity into account
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIIPSU
+ * *****************
+ *
+ * INTEGER          IPOROS     -->   porosity
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
+{
+  char *path = NULL;
+  char *status = NULL;
+
+  /* number of volumic zone */
+  int zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
+
+  for (int i = 1; i < zones+1; i++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "porosity");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      char *zone_id = cs_gui_volumic_zone_id(i);
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "porosities",
+                            "porosity");
+      cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      cs_xpath_add_attribute(&path, "model");
+      char *mdl = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
+      if (cs_gui_strcmp(mdl, "anisotropic"))
+        *iporos = 2;
+      else
+        *iporos = CS_MAX(1, *iporos);
+
+      BFT_FREE(mdl);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Define porosity.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIPORO
+ * *****************
+ *
+ * integer          ncelet   <--  number of cells with halo
+ * integer          iporos   <--  porosity model
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
+                                const int *iporos)
+{
+  const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
+  char *path = NULL;
+  char *status = NULL;
+  char *formula = NULL;
+  int *cells_list = NULL;
+  int cells = 0;
+
+  mei_tree_t *ev_formula  = NULL;
+
+  assert(*iporos == 1 || *iporos == 2);
+
+  /* number of volumic zone */
+  int zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
+
+  /* Porosity fields */
+  cs_field_t *fporo = CS_F_(poro);
+  cs_field_t *ftporo = CS_F_(t_poro);
+
+  cs_real_t   *porosi = NULL;
+  cs_real_6_t *porosf = NULL;
+
+  if (fporo != NULL) {
+    porosi = fporo->val;
+    if (ftporo != NULL) {
+      porosf = (cs_real_6_t *)ftporo->val;
+    }
+  }
+
+  for (int iel = 0; iel < *ncelet; iel++)
+  {
+    porosi[iel] = 1.;
+    if (ftporo != NULL) {
+      porosf[iel][0] = 1.;
+      porosf[iel][1] = 1.;
+      porosf[iel][2] = 1.;
+      porosf[iel][3] = 0.;
+      porosf[iel][4] = 0.;
+      porosf[iel][5] = 0.;
+    }
+  }
+
+  for (int i = 1; i < zones+1; i++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "porosity");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      char *zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "porosities",
+                            "porosity");
+      cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      cs_xpath_add_attribute(&path, "model");
+      char *mdl = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
+
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "porosities",
+                            "porosity");
+
+      cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+      cs_xpath_add_element(&path, "formula");
+      cs_xpath_add_function_text(&path);
+      formula = cs_gui_get_text_value(path);
+      BFT_FREE(path);
+
+      if (formula != NULL) {
+        ev_formula = mei_tree_new(formula);
+        mei_tree_insert(ev_formula,"x",0.0);
+        mei_tree_insert(ev_formula,"y",0.0);
+        mei_tree_insert(ev_formula,"z",0.0);
+
+        /* try to build the interpreter */
+        if (mei_tree_builder(ev_formula))
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error: can not interpret expression: %s\n %i"),
+                    ev_formula->string, mei_tree_builder(ev_formula));
+
+        if (cs_gui_strcmp(mdl, "anisotropic")) {
+          const char *symbols[] = {"porosity",
+                                   "porosity[XX]",
+                                   "porosity[YY]",
+                                   "porosity[ZZ]",
+                                   "porosity[XY]",
+                                   "porosity[XZ]",
+                                   "porosity[YZ]"};
+          if (mei_tree_find_symbols(ev_formula, 7, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n %s\n"),
+                      "porosity, porosity[XX], porosity[YY], porosity[ZZ]",
+                      "          porosity[XY], porosity[XZ] or porosity[YZ]");
+        }
+        else {
+          const char *symbols[] = {"porosity"};
+          if (mei_tree_find_symbols(ev_formula, 1, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"),
+                      "porosity");
+        }
+
+        for (int icel = 0; icel < cells; icel++) {
+          int iel = cells_list[icel]-1;
+          mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+          mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+          mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
+          mei_evaluate(ev_formula);
+
+          porosi[iel] = mei_tree_lookup(ev_formula,"porosity");
+          if (cs_gui_strcmp(mdl, "anisotropic")) {
+              porosf[iel][0] = mei_tree_lookup(ev_formula,"porosity[XX]");
+              porosf[iel][1] = mei_tree_lookup(ev_formula,"porosity[YY]");
+              porosf[iel][2] = mei_tree_lookup(ev_formula,"porosity[ZZ]");
+              porosf[iel][3] = mei_tree_lookup(ev_formula,"porosity[XY]");
+              porosf[iel][4] = mei_tree_lookup(ev_formula,"porosity[XZ]");
+              porosf[iel][5] = mei_tree_lookup(ev_formula,"porosity[YZ]");
+          }
+        }
+
+        mei_tree_destroy(ev_formula);
+      }
+      BFT_FREE(cells_list);
+      BFT_FREE(zone_id);
+      BFT_FREE(mdl);
+    }
+  }
+}
+
 
 /*----------------------------------------------------------------------------
  * Properties array used in the calculation

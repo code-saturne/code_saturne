@@ -410,6 +410,9 @@ if (iihmpr.eq.1) then
   call uimoyt (ndgmox, ntdmom, imoold, idfmom)
   !==========
 
+  call uiipsu(iporos)
+  !==========
+
 endif
 
 !   - Sous-programme utilisateur

@@ -137,6 +137,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.HeadLossesView as Page
         thisPage = Page.HeadLossesView(root, case)
 
+    elif page_name == tr("Porosity"):
+        import Pages.PorosityView as Page
+        thisPage = Page.PorosityView(root, case)
+
     elif page_name == tr("Source terms"):
         import Pages.SourceTermsView as Page
         thisPage = Page.SourceTermsView(root, case, stbar)

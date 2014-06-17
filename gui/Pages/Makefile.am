@@ -94,6 +94,8 @@ OutputVolumicVariablesView.py \
 PreProcessingInformationsView.py \
 PerformanceTuningModel.py \
 PerformanceTuningView.py \
+PorosityModel.py \
+PorosityView.py \
 ProfilesModel.py \
 ProfilesView.py \
 QMeiEditorView.py \
@@ -176,6 +178,7 @@ OutputControlForm.ui \
 OutputSurfacicVariablesForm.ui \
 OutputVolumicVariablesForm.ui \
 PerformanceTuningForm.ui \
+PorosityForm.ui \
 ProfilesForm.ui \
 QMeiEditorForm.ui \
 ReferenceValuesForm.ui \

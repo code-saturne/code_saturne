@@ -362,6 +362,33 @@ void CS_PROCF (cstini, CSTINI) (double  *uref,
                                 double  *almax);
 
 /*----------------------------------------------------------------------------
+ * Solver taking a scalar porosity into account
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIIPSU
+ * *****************
+ *
+ * INTEGER          IPOROS     -->   porosity
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiipsu, UIIPSU) (int *iporos);
+
+/*----------------------------------------------------------------------------
+ * Define porosity.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIPORO
+ * *****************
+ *
+ * INTEGER          IPOROS     <--   porosity
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
+                                const int *iporos);
+
+/*----------------------------------------------------------------------------
  * User momentum source terms.
  *
  * Fortran Interface:

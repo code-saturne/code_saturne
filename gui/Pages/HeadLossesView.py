@@ -63,30 +63,6 @@ log = logging.getLogger("HeadLossesView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Line edit delegate with a Double validator (positive value)
-#-------------------------------------------------------------------------------
-
-class ValueDelegate(QItemDelegate):
-    def __init__(self, parent=None):
-        super(ValueDelegate, self).__init__(parent)
-        self.parent = parent
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        validator = DoubleValidator(editor, min=0.)
-        editor.setValidator(validator)
-        return editor
-
-    def setEditorData(self, editor, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(value)
-
-    def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
-            value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
-
-#-------------------------------------------------------------------------------
 # StandarItemModel class to display Head Losses Zones in a QTreeView
 #-------------------------------------------------------------------------------
 

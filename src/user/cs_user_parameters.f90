@@ -1133,7 +1133,7 @@ if (.false.) then
 
 endif
 
-! --- Solver taking a pscalar porosity into account:
+! --- Solver taking a scalar porosity into account:
 !       0 No porosity taken into account (Standard)
 !       1 Porosity taken into account
 !
