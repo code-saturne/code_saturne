@@ -4265,6 +4265,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
           cs_xpath_add_elements(&path_sca, 2,
                                 "additional_scalars",
                                 "variable");
+          cs_xpath_add_test_attribute(&path_sca, "name", f->name);
           cs_xpath_add_element(&path_sca, "formula");
           cs_xpath_add_test_attribute(&path_sca, "zone_id", zone_id);
           cs_xpath_add_function_text(&path_sca);
