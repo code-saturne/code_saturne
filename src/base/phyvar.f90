@@ -91,7 +91,7 @@ double precision propce(ncelet,*)
 
 character*80     chaine
 integer          ivar  , iel   , ifac  , iscal
-integer          ii    , iok   , iok1  , iok2  , iisct
+integer          ii    , iok   , iok1  , iok2  , iisct, idfm
 integer          nn
 integer          mbrom , ipcvst
 integer          ipccp , ipcvis, ipcvma
@@ -376,20 +376,15 @@ elseif (iturb.eq.70) then
 endif
 
 !===============================================================================
-! 6. Symmetric tensor diffusivity
+! 6. Anisotropic turbulent viscosity (symmetric)
 !===============================================================================
-iok = 0
-do ivar = 1, nvar
-  if (ivar.ne.ipr) then
-    if (idften(ivar).eq.6) iok = 1
-  endif
-enddo
+idfm = 0
 
 do iscal = 1, nscal
-  if (ityturt(iscal).eq.3) iok = 1
+  if (ityturt(iscal).eq.3) idfm = 1
 enddo
 
-if (iok.eq.1) then
+if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 
   call field_get_val_v(ivsten, visten)
 

@@ -5,6 +5,11 @@ Release 3.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix test conditioning the initialization of the anisotropic turbulent viscosity
+  (visten).
+
+- Fix indices of B.C. coefficients in case of face porosity in mass flux computation.
+
 - Fix missing private attribute in OpenMP loops in tensorial diffusivity computation.
 
 - Fixed icorrect sum in test for reduction for code/code coupling with nterup > 1.
