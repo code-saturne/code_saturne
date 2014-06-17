@@ -598,17 +598,17 @@ cs_mass_flux(const cs_mesh_t          *m,
 #     pragma omp parallel for if(m->n_b_faces > THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id] - 1;
-        coefaq[face_id][0] = ( porosf[cell_id][0]*coefav[face_id][1]
-                             + porosf[cell_id][3]*coefav[face_id][2]
-                             + porosf[cell_id][5]*coefav[face_id][3] )
+        coefaq[face_id][0] = ( porosf[cell_id][0]*coefav[face_id][0]
+                             + porosf[cell_id][3]*coefav[face_id][1]
+                             + porosf[cell_id][5]*coefav[face_id][2] )
                            * romb[face_id];
-        coefaq[face_id][1] = ( porosf[cell_id][3]*coefav[face_id][1]
-                             + porosf[cell_id][1]*coefav[face_id][2]
-                             + porosf[cell_id][4]*coefav[face_id][3] )
+        coefaq[face_id][1] = ( porosf[cell_id][3]*coefav[face_id][0]
+                             + porosf[cell_id][1]*coefav[face_id][1]
+                             + porosf[cell_id][4]*coefav[face_id][2] )
                            * romb[face_id];
-        coefaq[face_id][2] = ( porosf[cell_id][5]*coefav[face_id][1]
-                             + porosf[cell_id][4]*coefav[face_id][2]
-                             + porosf[cell_id][2]*coefav[face_id][3] )
+        coefaq[face_id][2] = ( porosf[cell_id][5]*coefav[face_id][0]
+                             + porosf[cell_id][4]*coefav[face_id][1]
+                             + porosf[cell_id][2]*coefav[face_id][2] )
                            * romb[face_id];
       }
     }
@@ -638,15 +638,15 @@ cs_mass_flux(const cs_mesh_t          *m,
 #     pragma omp parallel for if(m->n_b_faces > THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id] - 1;
-        coefaq[face_id][0] = porosf[cell_id][0]*coefav[face_id][1]
-                           + porosf[cell_id][3]*coefav[face_id][2]
-                           + porosf[cell_id][5]*coefav[face_id][3];
-        coefaq[face_id][1] = porosf[cell_id][3]*coefav[face_id][1]
-                           + porosf[cell_id][1]*coefav[face_id][2]
-                           + porosf[cell_id][4]*coefav[face_id][3];
-        coefaq[face_id][2] = porosf[cell_id][5]*coefav[face_id][1]
-                           + porosf[cell_id][4]*coefav[face_id][2]
-                           + porosf[cell_id][2]*coefav[face_id][3];
+        coefaq[face_id][0] = porosf[cell_id][0]*coefav[face_id][0]
+                           + porosf[cell_id][3]*coefav[face_id][1]
+                           + porosf[cell_id][5]*coefav[face_id][2];
+        coefaq[face_id][1] = porosf[cell_id][3]*coefav[face_id][0]
+                           + porosf[cell_id][1]*coefav[face_id][1]
+                           + porosf[cell_id][4]*coefav[face_id][2];
+        coefaq[face_id][2] = porosf[cell_id][5]*coefav[face_id][0]
+                           + porosf[cell_id][4]*coefav[face_id][1]
+                           + porosf[cell_id][2]*coefav[face_id][2];
       }
     }
 
