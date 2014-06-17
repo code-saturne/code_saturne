@@ -108,7 +108,7 @@ double precision vx(*)
 ! Local variables
 
 integer          lnom
-integer          iresds, iresas, nitmds, nitmas, ilved
+integer          iresds, iresas, nitmds, nitmas
 
 !===============================================================================
 

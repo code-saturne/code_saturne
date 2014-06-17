@@ -3041,7 +3041,7 @@ subroutine user_fuel_ini1
 !  Purpose:
 !  --------
 
-!  User routine for allocate computation parameters dealing with fuel
+!  User routine for definition of computation parameters dealing with fuel
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -3164,9 +3164,7 @@ implicit none
 
 integer iihmpu
 
-integer          ipp, iesp , idimve
-integer          ilelt, nlelt, izone, iel
-integer, allocatable, dimension(:) :: lstelt
+! Local variables
 
 !===============================================================================
 
@@ -3202,9 +3200,6 @@ endif
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
-! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
 
 !===============================================================================
 ! 1. Calculation options
@@ -3246,9 +3241,6 @@ crit_reca(2) = 0.
 crit_reca(3) = 1.
 crit_reca(4) = -3.
 crit_reca(5) = 0.0002
-
-! Deallocate the temporary array
-deallocate(lstelt)
 
 !----
 ! End
