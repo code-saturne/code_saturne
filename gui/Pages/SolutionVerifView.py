@@ -368,9 +368,10 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.case2['xmlfile'] = 'cs_cmd'
         self.case2['salome'] = self.case['salome']
 
-        faces_cutting = self.case.xmlGetNode('faces_cutting')
-        joining = self.case.xmlGetNode('joining')
-        periodicity = self.case.xmlGetNode('periodicity')
+        self.node_domain  = self.case.xmlGetNode('solution_domain')
+        faces_cutting = self.node_domain.xmlGetNode('faces_cutting')
+        joining = self.node_domain.xmlGetNode('joining')
+        periodicity = self.node_domain.xmlGetNode('periodicity')
 
         sd_node = self.case2.xmlGetNode('solution_domain')
         if faces_cutting != None:
