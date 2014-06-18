@@ -207,12 +207,14 @@ class VolumicZone(Zone):
 
         if self.case['package'].name == 'code_saturne':
             self._natureList.append('head_losses')
+            self._natureList.append('porosity')
             self._natureList.append('momentum_source_term')
 
         self._natureDict = {}
         self._natureDict['initialization']       = self.tr("Initialization")
         if self.case['package'].name == 'code_saturne':
             self._natureDict['head_losses']          = self.tr("Head losses")
+            self._natureDict['porosity']             = self.tr("Porosity")
             self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
 
         from Pages.ThermalScalarModel import ThermalScalarModel
@@ -234,6 +236,7 @@ class VolumicZone(Zone):
         dico['nature'] = {}
         dico['nature']['initialization']       = "on"
         dico['nature']['head_losses']          = "off"
+        dico['nature']['porosity']             = "off"
         dico['nature']['momentum_source_term'] = "off"
         dico['nature']['mass_source_term']     = "off"
         dico['nature']['thermal_source_term']  = "off"
@@ -971,7 +974,7 @@ class LocalizationVolumicTestCase(ModelTest):
         node = self.case.xmlGetNode('volumic_conditions')
 
         doc = '''<volumic_conditions>
-                    <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
                     </zone>
                  </volumic_conditions>'''
@@ -992,19 +995,19 @@ class LocalizationVolumicTestCase(ModelTest):
         model.addZone()
 
         doc = '''<volumic_conditions>
-                    <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
                     </zone>
-                    <zone head_losses="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
                             not(all[])
                     </zone>
-                    <zone head_losses="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
                             1 or door
                     </zone>
-                    <zone head_losses="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
                             12 and window or door
                     </zone>
-                    <zone head_losses="off" initialization="on" label="Zone_2" mass_source_term="off" momentum_source_term="off" name="5" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_2" mass_source_term="off" momentum_source_term="off" name="5" thermal_source_term="off">
                             not(all[];not(all[]);1 or door;12 and window or door)
                     </zone>
                 </volumic_conditions>'''
@@ -1016,13 +1019,13 @@ class LocalizationVolumicTestCase(ModelTest):
         model.deleteZone(label="Zone_2")
 
         doc = '''<volumic_conditions>
-                    <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
                     </zone>
-                    <zone head_losses="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
                             not(all[])
                     </zone>
-                    <zone head_losses="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
                             12 and window or door
                     </zone>
                 </volumic_conditions>'''
@@ -1047,16 +1050,16 @@ class LocalizationVolumicTestCase(ModelTest):
         model.replaceZone(zone1, new_zone)
 
         doc = '''<volumic_conditions>
-                    <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
                     </zone>
-                    <zone head_losses="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
                             not(all[])
                     </zone>
-                    <zone head_losses="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
                             1 or door
                     </zone>
-                    <zone head_losses="off" initialization="on" label="window" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="window" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
                             12 or window or door
                     </zone>
                 </volumic_conditions>'''
@@ -1077,16 +1080,16 @@ class LocalizationVolumicTestCase(ModelTest):
 
         model.setLocalization("Zone_1", "1 and 2 and 3 or group1")
         doc = '''<volumic_conditions>
-                    <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
                     </zone>
-                    <zone head_losses="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
                             1 and 2 and 3 or group1
                     </zone>
-                    <zone head_losses="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
                             1 or door
                     </zone>
-                    <zone head_losses="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
                             12 and window or door
                     </zone>
                 </volumic_conditions>'''
@@ -1108,16 +1111,16 @@ class LocalizationVolumicTestCase(ModelTest):
         model.setNature('porte', "head_losses,thermal_source_term")
 
         doc = '''<volumic_conditions>
-                    <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
                     </zone>
-                    <zone head_losses="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
                             not(all[])
                     </zone>
-                    <zone head_losses="on" initialization="off" label="porte" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="on">
+                    <zone head_losses="on" porosity="off" initialization="off" label="porte" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="on">
                             1 or door
                     </zone>
-                    <zone head_losses="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
+                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
                             12 and window or door
                     </zone>
                 </volumic_conditions>'''

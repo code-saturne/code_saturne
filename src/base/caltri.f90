@@ -478,6 +478,9 @@ call iniva0 &
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then
+  if (iihmpr.eq.1) then
+    call uiporo(ncelet, iporos)
+  endif
   call usporo
 endif
 

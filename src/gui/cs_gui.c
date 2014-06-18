@@ -1781,6 +1781,49 @@ static int _get_profile_format(const int id)
   return format;
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the list of cells describing a given zone.
+ *
+ * parameters:
+ *   zone_id   <--  volume zone id
+ *   ncelet    <--  number of cells with halo
+ *   faces     -->  number of selected cells
+ *----------------------------------------------------------------------------*/
+
+static int*
+_get_cells_list(const char *zone_id,
+                const int   ncelet,
+                      int  *cells )
+{
+  int  c_id         = 0;
+  int  *cells_list  = NULL;
+  char *description = NULL;
+
+  description = cs_gui_volumic_zone_localization(zone_id);
+
+  /* build list of cells */
+  BFT_MALLOC(cells_list, ncelet, int);
+
+  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                               description,
+                               cells,
+                               cells_list);
+
+  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
+  {
+    const char *missing
+      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                 "criteria:\n"
+                 "\"%s\"\n"
+                 " does not correspond to any cell.\n"),
+                 missing, description);
+  }
+  BFT_FREE(description);
+  return cells_list;
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -2974,6 +3017,209 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
 }
 
 /*----------------------------------------------------------------------------
+ * Solver taking a scalar porosity into account
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIIPSU
+ * *****************
+ *
+ * INTEGER          IPOROS     -->   porosity
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
+{
+  char *path = NULL;
+  char *status = NULL;
+
+  /* number of volumic zone */
+  int zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
+
+  for (int i = 1; i < zones+1; i++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "porosity");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      char *zone_id = cs_gui_volumic_zone_id(i);
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "porosities",
+                            "porosity");
+      cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      cs_xpath_add_attribute(&path, "model");
+      char *mdl = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
+      if (cs_gui_strcmp(mdl, "anisotropic"))
+        *iporos = 2;
+      else
+        *iporos = CS_MAX(1, *iporos);
+
+      BFT_FREE(mdl);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Define porosity.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIPORO
+ * *****************
+ *
+ * integer          ncelet   <--  number of cells with halo
+ * integer          iporos   <--  porosity model
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
+                                const int *iporos)
+{
+  const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
+  char *path = NULL;
+  char *status = NULL;
+  char *formula = NULL;
+  int *cells_list = NULL;
+  int cells = 0;
+
+  mei_tree_t *ev_formula  = NULL;
+
+  assert(*iporos == 1 || *iporos == 2);
+
+  /* number of volumic zone */
+  int zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
+
+  /* Porosity fields */
+  cs_field_t *fporo = CS_F_(poro);
+  cs_field_t *ftporo = CS_F_(t_poro);
+
+  cs_real_t   *porosi = NULL;
+  cs_real_6_t *porosf = NULL;
+
+  if (fporo != NULL) {
+    porosi = fporo->val;
+    if (ftporo != NULL) {
+      porosf = (cs_real_6_t *)ftporo->val;
+    }
+  }
+
+  for (int iel = 0; iel < *ncelet; iel++)
+  {
+    porosi[iel] = 1.;
+    if (ftporo != NULL) {
+      porosf[iel][0] = 1.;
+      porosf[iel][1] = 1.;
+      porosf[iel][2] = 1.;
+      porosf[iel][3] = 0.;
+      porosf[iel][4] = 0.;
+      porosf[iel][5] = 0.;
+    }
+  }
+
+  for (int i = 1; i < zones+1; i++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "porosity");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      char *zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "porosities",
+                            "porosity");
+      cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      cs_xpath_add_attribute(&path, "model");
+      char *mdl = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
+
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "porosities",
+                            "porosity");
+
+      cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
+      cs_xpath_add_element(&path, "formula");
+      cs_xpath_add_function_text(&path);
+      formula = cs_gui_get_text_value(path);
+      BFT_FREE(path);
+
+      if (formula != NULL) {
+        ev_formula = mei_tree_new(formula);
+        mei_tree_insert(ev_formula,"x",0.0);
+        mei_tree_insert(ev_formula,"y",0.0);
+        mei_tree_insert(ev_formula,"z",0.0);
+
+        /* try to build the interpreter */
+        if (mei_tree_builder(ev_formula))
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error: can not interpret expression: %s\n %i"),
+                    ev_formula->string, mei_tree_builder(ev_formula));
+
+        if (cs_gui_strcmp(mdl, "anisotropic")) {
+          const char *symbols[] = {"porosity",
+                                   "porosity[XX]",
+                                   "porosity[YY]",
+                                   "porosity[ZZ]",
+                                   "porosity[XY]",
+                                   "porosity[XZ]",
+                                   "porosity[YZ]"};
+          if (mei_tree_find_symbols(ev_formula, 7, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n %s\n"),
+                      "porosity, porosity[XX], porosity[YY], porosity[ZZ]",
+                      "          porosity[XY], porosity[XZ] or porosity[YZ]");
+        }
+        else {
+          const char *symbols[] = {"porosity"};
+          if (mei_tree_find_symbols(ev_formula, 1, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"),
+                      "porosity");
+        }
+
+        for (int icel = 0; icel < cells; icel++) {
+          int iel = cells_list[icel]-1;
+          mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+          mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+          mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
+          mei_evaluate(ev_formula);
+
+          porosi[iel] = mei_tree_lookup(ev_formula,"porosity");
+          if (cs_gui_strcmp(mdl, "anisotropic")) {
+              porosf[iel][0] = mei_tree_lookup(ev_formula,"porosity[XX]");
+              porosf[iel][1] = mei_tree_lookup(ev_formula,"porosity[YY]");
+              porosf[iel][2] = mei_tree_lookup(ev_formula,"porosity[ZZ]");
+              porosf[iel][3] = mei_tree_lookup(ev_formula,"porosity[XY]");
+              porosf[iel][4] = mei_tree_lookup(ev_formula,"porosity[XZ]");
+              porosf[iel][5] = mei_tree_lookup(ev_formula,"porosity[YZ]");
+          }
+        }
+
+        mei_tree_destroy(ev_formula);
+      }
+      BFT_FREE(cells_list);
+      BFT_FREE(zone_id);
+      BFT_FREE(mdl);
+    }
+  }
+}
+
+
+/*----------------------------------------------------------------------------
  * Properties array used in the calculation
  *----------------------------------------------------------------------------*/
 
@@ -3068,49 +3314,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 #endif
 }
 
-/*-----------------------------------------------------------------------------
- * Return the list of cells describing a given zone.
- *
- * parameters:
- *   zone_id   <--  volume zone id
- *   ncelet    <--  number of cells with halo
- *   faces     -->  number of selected cells
- *----------------------------------------------------------------------------*/
-
-static int*
-cs_gui_get_cells_list(const char *zone_id,
-                      const int   ncelet,
-                            int  *cells )
-{
-  int  c_id         = 0;
-  int  *cells_list  = NULL;
-  char *description = NULL;
-
-  description = cs_gui_volumic_zone_localization(zone_id);
-
-  /* build list of cells */
-  BFT_MALLOC(cells_list, ncelet, int);
-
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                               description,
-                               cells,
-                               cells_list);
-
-  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
-  {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"
-                 "\"%s\"\n"
-                 " does not correspond to any cell.\n"),
-                 missing, description);
-  }
-  BFT_FREE(description);
-  return cells_list;
-}
-
 /*----------------------------------------------------------------------------
  * User momentum source terms.
  *
@@ -3171,7 +3374,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 1, "thermophysical_models");
@@ -3334,7 +3537,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3442,7 +3645,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3590,7 +3793,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
     if (cs_gui_strcmp(status, "on")) {
 
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+      cells_list = _get_cells_list(zone_id, *ncelet, &cells);
 
       if (*isuite == 0) {
         char *path_velocity = cs_xpath_init_path();
@@ -4315,7 +4518,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on"))
       {
         zone_id = cs_gui_volumic_zone_id(i);
-        cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
 
         for (j=0; j < cells; j++)
         {
@@ -4354,7 +4557,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on"))
       {
         zone_id = cs_gui_volumic_zone_id(i);
-        cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
 
         k11 = _c_heads_losses(zone_id, "kxx");
         k22 = _c_heads_losses(zone_id, "kyy");

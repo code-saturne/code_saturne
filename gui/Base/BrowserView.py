@@ -422,6 +422,7 @@ Volume conditions
     Volume regions definition
     Initialization
     Head losses
+    Porosity
     Source terms
     Coriolis Source Terms
 Particles and droplets tracking
@@ -660,6 +661,7 @@ Calculation management
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Source terms'))
         self.setRowClose(self.tr('Head losses'))
+        self.setRowClose(self.tr('Porosity'))
         self.setRowClose(self.tr('Lagrangian solution control'))
 
         # Steady flow management
@@ -783,6 +785,7 @@ Calculation management
         node_vol = node_domain.xmlGetNode('volumic_conditions')
         nb_zone = 0
         nb_zone_losses = 0
+        nb_zone_porosity = 0
 
         for node in node_vol.xmlGetChildNodeList('zone'):
             if node['momentum_source_term'] == 'on':
@@ -795,11 +798,15 @@ Calculation management
                 nb_zone = nb_zone + 1
             if node['head_losses'] == 'on':
                 nb_zone_losses = nb_zone_losses + 1
+            if node['porosity'] == 'on':
+                nb_zone_porosity = nb_zone_porosity + 1
 
         if nb_zone > 0:
             self.setRowOpen(self.tr('Source terms'))
         if nb_zone_losses > 0:
             self.setRowOpen(self.tr('Head losses'))
+        if nb_zone_porosity > 0:
+            self.setRowOpen(self.tr('Porosity'))
 
         self.__hideRow()
 
