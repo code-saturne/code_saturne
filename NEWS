@@ -5,6 +5,9 @@ Release 3.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Improve handling of user or administrator-defined mpiexec syntax options;
+  less user setting cases should be ignored now.
+
 - Allow use of single-reduction conjugate gradient with multigrid solver.
 
 - Fix possible crash due to memory overwrite when no thermal model is active.
