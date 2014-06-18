@@ -1757,8 +1757,10 @@ cs_f_time_moment_define_by_field_ids(const char                *name,
   }
   else if (restart_id == -1)
     restart_mode = CS_TIME_MOMENT_RESTART_RESET;
-  else
+  else {
     restart_name = cs_time_moment_restart_name(restart_id);
+    restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
+  }
 
   return cs_time_moment_define_by_field_ids(name,
                                             n_fields,
