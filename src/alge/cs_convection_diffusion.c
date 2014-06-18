@@ -7266,10 +7266,10 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 
     /* Free memory */
     BFT_FREE(grad);
+    BFT_FREE(w2);
 
   }
 
-  BFT_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/

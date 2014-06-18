@@ -670,6 +670,9 @@ _get_PCI_type(const int icha)
             ichoice = 2;
           else
             bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
+
+          BFT_FREE(path2);
+          BFT_FREE(buff2);
         }
       }
     else if (cs_gui_strcmp(buff, "HHV"))
@@ -692,17 +695,19 @@ _get_PCI_type(const int icha)
             ichoice = 5;
           else
             bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
+
+          BFT_FREE(path2);
+          BFT_FREE(buff2);
         }
       }
     else if (cs_gui_strcmp(buff, "IGT_correlation"))
       ichoice = 6;
     else
       bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+    BFT_FREE(buff);
   }
   BFT_FREE(path);
-  BFT_FREE(path2);
-  BFT_FREE(buff);
-  BFT_FREE(buff2);
   return ichoice;
 }
 
