@@ -1522,16 +1522,16 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
           = (const cs_lnum_2_t *)mesh->i_face_cells;
         if (elt_list == NULL) {
           for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
-            cs_lnum_t c_id_0 = i_face_cells[f_id][0] - 1;
-            cs_lnum_t c_id_1 = i_face_cells[f_id][1] - 1;
+            cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+            cs_lnum_t c_id_1 = i_face_cells[f_id][1];
             w[f_id] *= (dt[c_id_0] + dt[c_id_1]) * 0.5;
           }
         }
         else {
           for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
             cs_lnum_t f_id = elt_list[i];
-            cs_lnum_t c_id_0 = i_face_cells[f_id][0] - 1;
-            cs_lnum_t c_id_1 = i_face_cells[f_id][1] - 1;
+            cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+            cs_lnum_t c_id_1 = i_face_cells[f_id][1];
             w[i] *= (dt[c_id_0] + dt[c_id_1]) * 0.5;
           }
         }
@@ -1542,14 +1542,14 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
         const cs_lnum_t *b_face_cells = (const cs_lnum_t *)mesh->b_face_cells;
         if (elt_list == NULL) {
           for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
-            cs_lnum_t c_id = b_face_cells[f_id] - 1;
+            cs_lnum_t c_id = b_face_cells[f_id];
             w[c_id] *= dt[c_id];
           }
         }
         else {
           for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
             cs_lnum_t f_id = elt_list[i];
-            cs_lnum_t c_id = b_face_cells[f_id] - 1;
+            cs_lnum_t c_id = b_face_cells[f_id];
             w[i] *= dt[c_id];
           }
         }

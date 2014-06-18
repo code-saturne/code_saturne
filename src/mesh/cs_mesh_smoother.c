@@ -314,7 +314,7 @@ _int_face_histogram(const cs_mesh_t      *mesh,
 
     for (i = 0; i < mesh->n_i_faces; i++) {
 
-      if (mesh->i_face_cells[i*2] > mesh->n_cells)
+      if (mesh->i_face_cells[i][0] >= mesh->n_cells)
         continue;
 
       /* Associated subdivision */
@@ -711,7 +711,7 @@ _unwarping_mvt(cs_mesh_t            *mesh,
 
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    if (mesh->i_face_cells[2*face_id] <= mesh->n_cells) {
+    if (mesh->i_face_cells[face_id][0] < mesh->n_cells) {
       start_id = mesh->i_face_vtx_idx[face_id] -1;
       end_id = mesh->i_face_vtx_idx[face_id + 1] -1;
       for (i = start_id; i < end_id; i++) {

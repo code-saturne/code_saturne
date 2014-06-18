@@ -116,7 +116,7 @@ void CS_PROCF(clmlgo, CLMLGO)
  *   symmetric             <-- True if xam is symmetric, false otherwise
  *   diag_block_size       <-- Block sizes for diagonal, or NULL
  *   extra_diag_block_size <-- Block sizes for extra diagonal, or NULL
- *   face_cell             <-- Face -> cells connectivity (1 to n)
+ *   face_cell             <-- Face -> cells connectivity
  *   halo                  <-- Halo structure associated with this level,
  *                             or NULL.
  *   numbering             <-- vectorization or thread-related numbering info,
@@ -139,7 +139,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            bool                   symmetric,
                            const int             *diag_block_size,
                            const int             *extra_diag_block_size,
-                           const cs_lnum_t       *face_cell,
+                           const cs_lnum_2_t     *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
                            const cs_real_t       *cell_cen,

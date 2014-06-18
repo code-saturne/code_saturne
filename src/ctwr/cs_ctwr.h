@@ -460,28 +460,24 @@ void CS_PROCF (lecctw, LECCTW)
 
 void cs_ctwr_definit
 (
-  const cs_int_t   idimct,           /* Dimemsion du probleme 2:2D  3:3D */
-  const char      *ze_crit,          /* Critere de selection */
-  const cs_int_t   imctch,           /* 1: Modele de Poppe
-                                        2: Merkel
-                                        0: Rien */
-  const cs_int_t   ntypct,           /* 1: Contre courant
-                                        2: Courant croises
-                                        3: Zone de pluie */
-  const cs_int_t   nelect,          /* Nombre d'elements sur chaque ligne
-                                       du maillage eau pour la zone de
-                                       noeuds par segment eau */
-  const cs_real_t  deltat,          /* Ecart de temperature impose en entree
-                                       de la zone d'echange */
-  const cs_real_t  teau_cl,         /* Teau en entree de la zone d'echange */
-  const cs_real_t  fem_cl,          /* debit en entree de la zone d'echange */
-  const cs_real_t  xap,             /* coefficient lambda de la loi d'echange */
-  const cs_real_t  xnp,              /* exposant n de la loi d'echange */
-
-  const cs_real_t  surface,           /* Surface arrivee d eau de la ct */
-
-  const cs_real_t   dgout             /* Diametre de goutte pour les zones
-                                         de pluie */
+  const int        idimct,    /* Dimemsion du probleme 2:2D  3:3D */
+  const char      *ze_name,   /* Nom de la zone aero */
+  const int        imctch,    /* 1: Modele de Poppe
+                                 2: Merkel
+                                 0: Rien */
+  const int        ntypct,    /* 1: Contre courant
+                                 2: Courant croises
+                                 3: Zone de pluie */
+  const cs_lnum_t  nelect,    /* Nombre d'elements sur chaque ligne du maillage
+                                 eau pour la zone de noeuds par segment eau */
+  const cs_real_t  deltat,    /* Ecart de temperature impose en entree de la
+                                 zone d'echange */
+  const cs_real_t  teau_cl,   /* Teau en entree de la zone d'echange */
+  const cs_real_t  fem_cl,    /* debit en entree de la zone d'echange */
+  const cs_real_t  xap,       /* coefficient lambda de la loi d'echange */
+  const cs_real_t  xnp,       /* exposant n de la loi d'echange */
+  const cs_real_t  surface,   /* Surface totale arrive d eau de la ct */
+  const cs_real_t  dgout      /* Diametre de goutte pour les zones de pluie */
 );
 
 /*----------------------------------------------------------------------------
@@ -511,7 +507,7 @@ void cs_ctwr_aeteau
 
 void cs_ctwr_aetssc
 (
-  const cs_int_t    iscal,       /*   */
+  int         iscal,               /*   */
 
   cs_real_t   temp[],             /* Temperature air */
   cs_real_t   xa[],               /* humidite air */
@@ -529,7 +525,7 @@ void cs_ctwr_aetssc
 
 void cs_ctwr_aetsvi
 (
-  const cs_int_t    idim,
+  const int         idim,
   const cs_real_t   rho[],       /* masse volumique air */
   const cs_real_t   vitx[],      /* vitesse air suivant x */
   const cs_real_t   vity[],      /* vitesse air suivant y */
@@ -580,8 +576,8 @@ void cs_ctwr_bilanct
  *----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_post_init(cs_int_t  ct_id,
-                  cs_int_t  writer_id);
+cs_ctwr_post_init(int  ct_id,
+                  int  writer_id);
 
 /*----------------------------------------------------------------------------
  * Get pointer to exchange area.
@@ -594,7 +590,7 @@ cs_ctwr_post_init(cs_int_t  ct_id,
  *----------------------------------------------------------------------------*/
 
 cs_ctwr_zone_t *
-cs_ctwr_by_id(cs_int_t ct_id);
+cs_ctwr_by_id(int ct_id);
 
 /*----------------------------------------------------------------------------*/
 

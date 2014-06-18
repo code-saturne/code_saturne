@@ -131,13 +131,13 @@ _sync_cell_fam(cs_mesh_t   *const mesh)
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_local_minmax(cs_int_t        n_vals,
-                      const cs_int_t  var[],
-                      cs_int_t       *min,
-                      cs_int_t       *max)
+_compute_local_minmax(cs_lnum_t        n_vals,
+                      const cs_lnum_t  var[],
+                      cs_lnum_t       *min,
+                      cs_lnum_t       *max)
 {
-  cs_int_t  i;
-  cs_int_t  _min = var[0], _max = var[0];
+  cs_lnum_t  i;
+  cs_lnum_t  _min = var[0], _max = var[0];
 
   for (i = 1; i < n_vals; i++) {
     _min = CS_MIN(_min, var[i]);
@@ -157,14 +157,14 @@ _compute_local_minmax(cs_int_t        n_vals,
  *----------------------------------------------------------------------------*/
 
 static void
-_display_histograms(cs_int_t        n_vals,
-                    const cs_int_t  var[])
+_display_histograms(cs_lnum_t        n_vals,
+                    const cs_lnum_t  var[])
 {
-  cs_int_t  i, j, k, val_max, val_min;
+  cs_lnum_t  i, j, k, val_max, val_min;
   double step;
 
-  cs_int_t count[CS_MESH_N_SUBS];
-  cs_int_t n_steps = CS_MESH_N_SUBS;
+  cs_lnum_t count[CS_MESH_N_SUBS];
+  cs_lnum_t n_steps = CS_MESH_N_SUBS;
 
   /* Compute local min and max */
 
@@ -282,7 +282,7 @@ _print_halo_info(const cs_mesh_t  *mesh,
 static void
 _print_cell_neighbor_info(const cs_mesh_t  *mesh)
 {
-  cs_int_t i, j, k;
+  cs_lnum_t i, j, k;
   float step;
 
   int n_steps = CS_MESH_N_SUBS;
@@ -301,8 +301,8 @@ _print_cell_neighbor_info(const cs_mesh_t  *mesh)
     n_cell_neighbors[i] = 0;
 
   for (i = 0; i < mesh->n_i_faces; i++) {
-    cs_int_t c_id_0 = mesh->i_face_cells[i*2] - 1;
-    cs_int_t c_id_1 = mesh->i_face_cells[i*2 + 1] - 1;
+    cs_lnum_t c_id_0 = mesh->i_face_cells[i][0];
+    cs_lnum_t c_id_1 = mesh->i_face_cells[i][1];
     n_cell_neighbors[c_id_0] += 1;
     n_cell_neighbors[c_id_1] += 1;
   }
@@ -850,8 +850,8 @@ _build_cell_face_perio_match(const cs_mesh_t    *mesh,
     _cell_face_count[i] = 0;
 
   for (i = 0; i < mesh->n_i_faces; i++) {
-    const cs_lnum_t c_id0 = mesh->i_face_cells[i*2] - 1;
-    const cs_lnum_t c_id1 = mesh->i_face_cells[i*2+1] - 1;
+    const cs_lnum_t c_id0 = mesh->i_face_cells[i][0];
+    const cs_lnum_t c_id1 = mesh->i_face_cells[i][1];
     if (c_id0 < mesh->n_cells && c_id1 >= mesh->n_cells) {
       if (halo_perio_num[c_id1 - mesh->n_cells] < 0)
         _cell_face_count[c_id0] += 1;
@@ -871,8 +871,8 @@ _build_cell_face_perio_match(const cs_mesh_t    *mesh,
   BFT_MALLOC(_cell_face, _cell_face_idx[mesh->n_cells_with_ghosts], cs_lnum_t);
 
   for (i = 0; i < mesh->n_i_faces; i++) {
-    const cs_lnum_t c_id0 = mesh->i_face_cells[i*2] - 1;
-    const cs_lnum_t c_id1 = mesh->i_face_cells[i*2+1] - 1;
+    const cs_lnum_t c_id0 = mesh->i_face_cells[i][0];
+    const cs_lnum_t c_id1 = mesh->i_face_cells[i][1];
     if (c_id0 < mesh->n_cells && c_id1 >= mesh->n_cells) {
       if (halo_perio_num[c_id1 - mesh->n_cells] < 0) {
         _cell_face[_cell_face_idx[c_id0] + _cell_face_count[c_id0]] = i;
@@ -982,8 +982,8 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
   }
 
   for (j = 0; j < mesh->n_i_faces; j++) {
-    const cs_lnum_t h_id0 = mesh->i_face_cells[j*2] - mesh->n_cells - 1;
-    const cs_lnum_t h_id1 = mesh->i_face_cells[j*2+1] - mesh->n_cells - 1;
+    const cs_lnum_t h_id0 = mesh->i_face_cells[j][0] - mesh->n_cells;
+    const cs_lnum_t h_id1 = mesh->i_face_cells[j][1] - mesh->n_cells;
     if (h_id0 >= 0) {
       perio_num = halo_perio_num[h_id0];
       if (perio_num > 0)
@@ -1018,8 +1018,8 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
 
   for (j = 0; j < mesh->n_i_faces; j++) {
 
-    const cs_lnum_t c_id0 = mesh->i_face_cells[j*2] - 1;
-    const cs_lnum_t c_id1 = mesh->i_face_cells[j*2+1] - 1;
+    const cs_lnum_t c_id0 = mesh->i_face_cells[j][0];
+    const cs_lnum_t c_id1 = mesh->i_face_cells[j][1];
 
     dest_c_id = -1;
     if (c_id0 >= mesh->n_cells) {
@@ -1142,13 +1142,13 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
 
       if (l > -1) {
         cs_lnum_t loc_c_num, dist_c_id;
-        if (mesh->i_face_cells[l*2] < mesh->i_face_cells[l*2+1]) {
-          loc_c_num = mesh->i_face_cells[l*2];
-          dist_c_id = mesh->i_face_cells[l*2+1] - 1;
+        if (mesh->i_face_cells[l][0] < mesh->i_face_cells[l][1]) {
+          loc_c_num = mesh->i_face_cells[l][0] + 1;
+          dist_c_id = mesh->i_face_cells[l][1];
         }
         else {
-          loc_c_num = mesh->i_face_cells[l*2+1];
-          dist_c_id = mesh->i_face_cells[l*2] - 1;
+          loc_c_num = mesh->i_face_cells[l][1] + 1;
+          dist_c_id = mesh->i_face_cells[l][0];
         }
         assert(loc_c_num <= mesh->n_cells && dist_c_id >= mesh->n_cells);
 
@@ -1251,8 +1251,8 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
   /* Now compute number of periodic couples */
 
   for (j = 0; j < mesh->n_i_faces; j++) {
-    const cs_lnum_t h_id0 = mesh->i_face_cells[j*2] - mesh->n_cells - 1;
-    const cs_lnum_t h_id1 = mesh->i_face_cells[j*2+1] - mesh->n_cells - 1;
+    const cs_lnum_t h_id0 = mesh->i_face_cells[j][0] - mesh->n_cells;
+    const cs_lnum_t h_id1 = mesh->i_face_cells[j][1] - mesh->n_cells;
     if (h_id0 >= 0) {
       if (halo_perio_num[h_id0] > 0)
         _n_perio_face_couples[halo_perio_num[h_id0] - 1] += 1;
@@ -1287,8 +1287,8 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 
   for (j = 0; j < mesh->n_i_faces; j++) {
 
-    const cs_lnum_t c_id0 = mesh->i_face_cells[j*2] - 1;
-    const cs_lnum_t c_id1 = mesh->i_face_cells[j*2+1] - 1;
+    const cs_lnum_t c_id0 = mesh->i_face_cells[j][0];
+    const cs_lnum_t c_id1 = mesh->i_face_cells[j][1];
 
     dest_c_id = -1;
     if (c_id0 >= mesh->n_cells) {
@@ -1316,13 +1316,13 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 
         if (l > -1) {
           cs_lnum_t loc_c_num, dist_c_id;
-          if (mesh->i_face_cells[l*2] < mesh->i_face_cells[l*2+1]) {
-            loc_c_num = mesh->i_face_cells[l*2];
-            dist_c_id = mesh->i_face_cells[l*2+1] - 1;
+          if (mesh->i_face_cells[l][0] < mesh->i_face_cells[l][1]) {
+            loc_c_num = mesh->i_face_cells[l][0] + 1;
+            dist_c_id = mesh->i_face_cells[l][1];
           }
           else {
-            loc_c_num = mesh->i_face_cells[l*2+1];
-            dist_c_id = mesh->i_face_cells[l*2] - 1;
+            loc_c_num = mesh->i_face_cells[l][1] + 1;
+            dist_c_id = mesh->i_face_cells[l][0];
           }
           assert(loc_c_num <= mesh->n_cells && dist_c_id >= mesh->n_cells);
 
@@ -1518,7 +1518,7 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
     }
 
     for (i = 0; i < mesh->n_i_faces; i++) {
-      cs_lnum_t c_num_0 = mesh->i_face_cells[i*2];
+      cs_lnum_t c_num_0 = mesh->i_face_cells[i][0] + 1;
       if (i_face_flag[i] == 0 && c_num_0 > mesh->n_cells)
         i_face_flag[i] = -1;
     }
@@ -1560,7 +1560,7 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
 
   if (mesh->n_b_faces > 0) {
     for (i = 0; i < mesh->n_b_faces; i++) {
-      int col = (mesh->b_face_cells[i] > 0) ? 2 : 3;
+      int col = (mesh->b_face_cells[i] > -1) ? 2 : 3;
       f_count[(mesh->b_face_family[i] - 1) * 4 + col] += 1;
     }
   }
@@ -1674,13 +1674,13 @@ _print_mesh_info(cs_mesh_t  *mesh)
 {
   cs_halo_t  *halo = mesh->halo;
 
-  cs_int_t  *rank_buffer = NULL;
+  cs_lnum_t  *rank_buffer = NULL;
 
   /* Summary of cell and ghost cell distribution */
 
   if (mesh->n_domains > 1) {
 
-    BFT_MALLOC(rank_buffer, mesh->n_domains, cs_int_t);
+    BFT_MALLOC(rank_buffer, mesh->n_domains, cs_lnum_t);
 
 #if defined(HAVE_MPI)
     MPI_Allgather(&(mesh->n_cells), 1, CS_MPI_INT,
@@ -1725,11 +1725,11 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   if (halo != NULL) {
 
-    cs_int_t  n_std_ghost_cells = halo->n_elts[CS_HALO_STANDARD];
+    cs_lnum_t  n_std_ghost_cells = halo->n_elts[CS_HALO_STANDARD];
 
     if (mesh->n_domains > 1) {
 
-      cs_int_t  n_gcells = mesh->n_ghost_cells;
+      cs_lnum_t  n_gcells = mesh->n_ghost_cells;
 
 #if defined(HAVE_MPI)
       MPI_Allgather(&n_gcells  , 1, CS_MPI_INT,
@@ -1825,7 +1825,7 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   if (mesh->n_domains > 1) {
 
-    cs_int_t  n_c_domains = halo->n_c_domains;
+    cs_lnum_t  n_c_domains = halo->n_c_domains;
 
     MPI_Allgather(&n_c_domains, 1, CS_MPI_INT,
                   rank_buffer , 1, CS_MPI_INT, cs_glob_mpi_comm);
@@ -2343,7 +2343,7 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
 
   for (i = 0; i < mesh->n_b_faces; i++) {
 
-    if (mesh->b_face_cells[i] > 0) {
+    if (mesh->b_face_cells[i] > -1) {
 
       mesh->b_face_cells[j] = mesh->b_face_cells[i];
       mesh->b_face_family[j] = mesh->b_face_family[i];
@@ -2367,10 +2367,10 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
 
   if (j < i) {
 
-    BFT_REALLOC(mesh->b_face_cells, j, cs_int_t);
-    BFT_REALLOC(mesh->b_face_family, j, cs_int_t);
-    BFT_REALLOC(mesh->b_face_vtx_idx, j+1, cs_int_t);
-    BFT_REALLOC(mesh->b_face_vtx_lst, k, cs_int_t);
+    BFT_REALLOC(mesh->b_face_cells, j, cs_lnum_t);
+    BFT_REALLOC(mesh->b_face_family, j, int);
+    BFT_REALLOC(mesh->b_face_vtx_idx, j+1, cs_lnum_t);
+    BFT_REALLOC(mesh->b_face_vtx_lst, k, cs_lnum_t);
     if (mesh->global_b_face_num != NULL) {
       BFT_REALLOC(mesh->global_b_face_num, j, cs_gnum_t);
     }
@@ -2451,7 +2451,7 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
 
     if (mesh->n_init_perio == 0) {
       for (i = 0; i < mesh->n_i_faces; i++) {
-        if (mesh->i_face_cells[i*2] <= mesh->n_cells)
+        if (mesh->i_face_cells[i][0] < mesh->n_cells)
           _l_face_vertices_size[0] += (  mesh->i_face_vtx_idx[i+1]
                                        - mesh->i_face_vtx_idx[i]);
       }
@@ -2467,7 +2467,7 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
       int *perio_flag = NULL;
 
       const cs_halo_t *halo = mesh->halo;
-      const cs_int_t  n_transforms = halo->n_transforms;
+      const cs_lnum_t  n_transforms = halo->n_transforms;
 
       BFT_MALLOC(perio_flag, mesh->n_ghost_cells, int);
       for (i = 0; i < mesh->n_ghost_cells; i++)
@@ -2485,8 +2485,8 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
 
       for (i = 0; i < mesh->n_i_faces; i++) {
         int count_face = 1;
-        if (mesh->i_face_cells[i*2] > mesh->n_cells) {
-          if (perio_flag[mesh->i_face_cells[i*2] - mesh->n_cells - 1] == 0)
+        if (mesh->i_face_cells[i][0] >= mesh->n_cells) {
+          if (perio_flag[mesh->i_face_cells[i][0] - mesh->n_cells] == 0)
             count_face = 0;
         }
         if (count_face)
@@ -2592,8 +2592,8 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
       flag[i] = false;
 
     for (i = 0; i < mesh->n_b_faces; i++) {
-      if (mesh->b_face_cells[i] > 0)
-        flag[mesh->b_face_cells[i] - 1] = true;
+      if (mesh->b_face_cells[i] > -1)
+        flag[mesh->b_face_cells[i]] = true;
     }
 
     for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
@@ -2746,7 +2746,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
 #if 0 /* For debugging purposes */
       for (i = 0; i < mesh->n_init_perio; i++) {
-        cs_int_t  j;
+        cs_lnum_t  j;
         bft_printf("\n\n  Periodicity number: %d\n", perio_num[i]);
         bft_printf("  Number of couples : %d\n", n_periodic_couples[i]);
         for (j = 0; j < n_periodic_couples[i]; j++)
@@ -2878,10 +2878,10 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
  *   global number of ghost cells
  *---------------------------------------------------------------------------*/
 
-cs_int_t
+cs_lnum_t
 cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
 {
-  cs_int_t  n_g_ghost_cells = 0;
+  cs_lnum_t  n_g_ghost_cells = 0;
 
   if (cs_glob_n_ranks == 1)
     n_g_ghost_cells = mesh->n_ghost_cells;
@@ -2970,7 +2970,7 @@ cs_mesh_clean_families(cs_mesh_t  *mesh)
   /* Update definitions */
 
   mesh->n_families = gc_count;
-  BFT_REALLOC(mesh->family_item, gc_count*n_gc_vals, cs_int_t);
+  BFT_REALLOC(mesh->family_item, gc_count*n_gc_vals, cs_lnum_t);
 
   for (i = 0; i < n_gc; i++) {
     gc_id = renum[i];
@@ -3490,8 +3490,8 @@ cs_mesh_get_cell_gnum(const cs_mesh_t  *mesh,
       cs_lnum_t  rank_id, t_id, shift;
       cs_lnum_t  start = 0, end = 0;
 
-      const cs_int_t  n_transforms = halo->n_transforms;
-      const cs_int_t  n_elts = halo->n_local_elts;
+      const cs_lnum_t  n_transforms = halo->n_transforms;
+      const cs_lnum_t  n_elts = halo->n_local_elts;
 
       for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -3553,8 +3553,8 @@ cs_mesh_get_face_perio_num(const cs_mesh_t  *mesh,
     _get_halo_perio_num(mesh, halo_perio_num, NULL);
 
     for (i = 0; i < mesh->n_i_faces; i++) {
-      const cs_lnum_t h_id0 = mesh->i_face_cells[i*2] - mesh->n_cells - 1;
-      const cs_lnum_t h_id1 = mesh->i_face_cells[i*2+1] - mesh->n_cells - 1;
+      const cs_lnum_t h_id0 = mesh->i_face_cells[i][0] - mesh->n_cells;
+      const cs_lnum_t h_id1 = mesh->i_face_cells[i][1] - mesh->n_cells;
       if (h_id0 >= 0) {
         if (halo_perio_num[h_id0] != 0)
           perio_num[i] = halo_perio_num[h_id0];
@@ -3583,8 +3583,8 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
 {
   if (mesh->n_g_vertices > 0) {
 
-    cs_int_t  i, vtx_id;
-    cs_int_t  dim = mesh->dim;
+    cs_lnum_t  i, vtx_id;
+    cs_lnum_t  dim = mesh->dim;
     cs_real_t  min_xyz[3] = { 1.e127,  1.e127,  1.e127};
     cs_real_t  max_xyz[3] = {-1.e127, -1.e127, -1.e127};
 
@@ -3705,7 +3705,7 @@ cs_mesh_selector_stats(cs_mesh_t  *mesh)
 void
 cs_mesh_dump(const cs_mesh_t  *mesh)
 {
-  cs_int_t  i, j;
+  cs_lnum_t  i, j;
 
   bft_printf("\n\nDUMP OF THE MESH STRUCTURE: %p\n\n", (const void *)mesh);
 
@@ -3758,7 +3758,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   bft_printf("\nInternal faces -> Cells connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++)
     bft_printf("   < %7d >  %7d  <---->  %7d\n", i+1,
-               mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
+               mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
 
   bft_printf("\nInternal faces -> vertices connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++) {
@@ -3842,8 +3842,8 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     if (mesh->n_init_perio > 0 && halo->perio_lst != NULL) {
 
-      const cs_int_t  n_c_domains = halo->n_c_domains;
-      const cs_int_t  n_transforms = mesh->n_transforms;
+      const cs_lnum_t  n_c_domains = halo->n_c_domains;
+      const cs_lnum_t  n_transforms = mesh->n_transforms;
 
       bft_printf("\n\nHalo's data in case of periodicity:\n");
       bft_printf("n_transforms:                %d\n",mesh->n_transforms);

@@ -79,13 +79,11 @@ module mesh
   !> Number of referenced families of entities (boundary faces, elements, ...)
   integer, save :: nfml
 
-  !> \anchor ifacel
-  !> Index-numbers of the two (only) neighbouring cells for each internal face
-  integer, dimension(:,:), pointer :: ifacel
+  ! pointer to C array used by ifacel (0 to n-1 numbering)
+  integer, dimension(:,:), pointer :: ifacel_0
 
-  !> \anchor ifabor
-  !> index-number of the (unique) neighbouring cell for each boundary face
-  integer, dimension(:), pointer :: ifabor
+  ! pointer to C array used by ifabor (0 to n-1 numbering)
+  integer, dimension(:), pointer :: ifabor_0
 
   !> \anchor ipnfac
   !> position of the first node of the each internal face in the array nodfac
@@ -212,6 +210,50 @@ module mesh
   !> point between the face and the straight line joining the centres
   !> of the two neighbouring cells. F is the face center
   double precision, dimension(:,:), pointer :: dofij
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \anchor ifacel
+  !> Index-numbers of the two (only) neighbouring cells for each internal face
+
+  elemental pure function ifacel(iside, ifac) result(icel)
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: iside, ifac
+    integer             :: icel
+
+    ! Function body
+
+    icel = ifacel_0(iside, ifac) + 1
+
+  end function ifacel
+
+  !=============================================================================
+
+  !> \anchor ifabor
+  !> index-number of the (unique) neighbouring cell for each boundary face
+
+  elemental pure function ifabor(ifac) result(icel)
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: ifac
+    integer             :: icel
+
+    ! Function body
+
+    icel = ifabor_0(ifac) + 1
+
+  end function ifabor
 
   !=============================================================================
 

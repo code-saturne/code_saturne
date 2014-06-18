@@ -104,7 +104,7 @@ enum {X, Y, Z};
 
 static double _epsilon_denom = 1.e-14; /* Minimum denominator */
 
-static cs_int_t            cs_ctwr_nmaxvoi  = 50;
+static cs_lnum_t            cs_ctwr_nmaxvoi  = 50;
 
 #if defined(HAVE_MPI)
 MPI_Status status;
@@ -202,18 +202,18 @@ _inverse_3x3(double  m[3][3],
  *----------------------------------------------------------------------------*/
 
 static int
-_is_coplanar(const cs_real_t *coord,
-             const cs_int_t   nvoi[cs_ctwr_nmaxvoi],
-             const cs_int_t   nbvoi,
-             cs_real_t        mat[4][4],
-             cs_real_t        vectBase[3][3],
-             const cs_int_t   decF,
-             const cs_real_t  dh)
+_is_coplanar(const cs_real_t  *coord,
+             const cs_lnum_t   nvoi[cs_ctwr_nmaxvoi],
+             const cs_lnum_t   nbvoi,
+             cs_real_t         mat[4][4],
+             cs_real_t         vectBase[3][3],
+             const cs_lnum_t   decF,
+             const cs_real_t   dh)
 {
   cs_real_t det,norme1, norme2, min;
   cs_real_t tmpRes[3];
-  cs_int_t  i,ii,iii,ind,i0,i1,i2;
-  cs_int_t numi, numii, numiii;
+  cs_lnum_t  i,ii,iii,ind,i0,i1,i2;
+  cs_lnum_t numi, numii, numiii;
 
   det = 0.0;
   i0 = 0;
@@ -303,10 +303,10 @@ _is_coplanar(const cs_real_t *coord,
 static int
 _invmat(cs_real_t mat[4][4],
         cs_real_t matInv[4][4],
-        cs_int_t  idim)
+        int       idim)
 {
   cs_real_t aux;
-  cs_int_t i,j,k,err;
+  int i, j, k, err;
 
   err=1;
 
@@ -361,7 +361,7 @@ _weighting(const cs_real_t  dx,
            const cs_real_t  dy,
            const cs_real_t  dz,
            const cs_real_t  ouv,
-           const cs_int_t   lf,
+           const cs_lnum_t  lf,
            const cs_real_t  epgauss,
            const cs_real_t  cx,
            const cs_real_t  cy,
@@ -398,14 +398,14 @@ _weighting(const cs_real_t  dx,
  *----------------------------------------------------------------------------*/
 
 static cs_real_t
-_dot_product_ng(const cs_int_t   ifac,
-                const cs_int_t   dim,
+_dot_product_ng(const cs_lnum_t  ifac,
+                const int        dim,
                 const cs_real_t *surf_f,
                 const cs_real_t  gravite[3],
                 const cs_real_t  direction)
 {
   cs_real_t n_sortant[3], g_uni[3];
-  cs_int_t idim;
+  int idim;
   cs_real_t aux1,aux2;
 
   n_sortant[2] = 0.0;
@@ -440,7 +440,7 @@ _search_height(cs_ctwr_zone_t   *ct,
                cs_real_t        *hmin,
                cs_real_t        *hmax)
 {
-  cs_int_t    i, ifac, nb,nb_dist, axe, idx, ii, jj;
+  cs_lnum_t    i, ifac, nb,nb_dist, axe, idx, ii, jj;
   cs_real_t   *lst_xyz_sup; /* coord des sommets de la face Sup */
   cs_real_t   *lst_xyz_inf; /* coord des sommets de la face Inf*/
   cs_real_t   *lst_xyz_fi;  /* coord des sommets proj de la face Inf*/
@@ -451,8 +451,8 @@ _search_height(cs_ctwr_zone_t   *ct,
   cs_real_t   aux;
   const cs_lnum_t  *location_fac = NULL;
 
-  cs_int_t  *faces_vtx_idx   = NULL;
-  cs_int_t  *faces_vtx_lst   = NULL;
+  cs_lnum_t  *faces_vtx_idx   = NULL;
+  cs_lnum_t  *faces_vtx_lst   = NULL;
 
   const double tolerance = 0.1;
   fvm_nodal_t *fs_tmp_mesh = NULL;
@@ -475,13 +475,13 @@ _search_height(cs_ctwr_zone_t   *ct,
 
   ple_locator_t   *locator = NULL;
 
-  nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
+  nb = (cs_lnum_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
   BFT_MALLOC(lst_xyz_sup, nb*3, cs_coord_t);
   fvm_nodal_get_vertex_coords(ct->face_sup_mesh,
                               CS_INTERLACE,
                               lst_xyz_sup);
 
-  nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_inf_mesh, 0);
+  nb = (cs_lnum_t) fvm_nodal_get_n_entities(ct->face_inf_mesh, 0);
   BFT_MALLOC(lst_xyz_inf, nb*3, cs_coord_t);
   fvm_nodal_get_vertex_coords(ct->face_inf_mesh,
                               CS_INTERLACE,
@@ -514,14 +514,14 @@ _search_height(cs_ctwr_zone_t   *ct,
   fvm_nodal_project_coords(fs_tmp_mesh, matrice);
   fvm_nodal_project_coords(fi_tmp_mesh, matrice);
 
-  nb = (cs_int_t) fvm_nodal_get_n_entities(fs_tmp_mesh, 0);
+  nb = (cs_lnum_t) fvm_nodal_get_n_entities(fs_tmp_mesh, 0);
 
   BFT_MALLOC(lst_xyz_fs, nb*2, cs_coord_t);
 
   fvm_nodal_get_vertex_coords(fs_tmp_mesh, CS_INTERLACE, lst_xyz_fs);
 
 
-  nb = (cs_int_t) fvm_nodal_get_n_entities(fi_tmp_mesh, 0);
+  nb = (cs_lnum_t) fvm_nodal_get_n_entities(fi_tmp_mesh, 0);
 
   BFT_MALLOC(lst_xyz_fi, nb*2, cs_coord_t);
 
@@ -538,7 +538,7 @@ _search_height(cs_ctwr_zone_t   *ct,
   locator = ple_locator_create(tolerance);
 #endif
 
-  nb = (cs_int_t) fvm_nodal_get_n_entities(fs_tmp_mesh, 0);
+  nb = (cs_lnum_t) fvm_nodal_get_n_entities(fs_tmp_mesh, 0);
 
 
   ple_locator_set_mesh(locator,
@@ -689,9 +689,9 @@ _search_height(cs_ctwr_zone_t   *ct,
 void cs_ctwr_maille(const cs_mesh_t             *mesh,
                     const cs_mesh_quantities_t  *mesh_quantities)
 {
-  cs_int_t   icel_1, icel_2, ii, length, nb, rank,
+  cs_lnum_t   icel_1, icel_2, ii, length, nb, rank,
              dist_rank, res_loc, res_dist;
-  cs_int_t   ifac, ict, icpt, icpti, icptla, icptfac,
+  cs_lnum_t   ifac, ict, icpt, icpti, icptla, icptfac,
              iaux, i, j;
   cs_real_t  aux, gravite[3], v_aux[3], alpha;
   cs_coord_t *extrusion_vectors, *lst_xyz_cel, *lst_xyz;
@@ -706,24 +706,23 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
   cs_lnum_t   n_vertices;
 
-  cs_int_t   *face_sup;      /* liste des faces internes superieures de la ct
-                                de taille  (nbfac_sct) */
-  cs_int_t   *fbr_sup;       /* liste des faces de bord superieures de la ct
-                                de taille  (nbfbr_sct) */
-  cs_int_t   *face_inf;      /* liste des faces internes inferieures de la ct
-                                de taille  (nbfac_ict) */
-  cs_int_t   *fbr_inf;       /* liste des faces de bord  inferieures de la ct
-                                de taille  (nbfac_ict) */
-  cs_int_t   *face_lat;      /* liste des faces internes laterales de la ct
-                                de taille  (nbfac_lct) */
-  cs_int_t   *fbr_lat;       /* liste des faces de bord laterales de la ct
-                                de taille  (nbfbr_lct) */
-  cs_int_t   *face_ct;       /* liste des faces interne de la ct
-                                de taille  (nbfac_ct) */
+  cs_lnum_t   *face_sup;      /* liste des faces internes superieures de la ct
+                                 de taille  (nbfac_sct) */
+  cs_lnum_t   *fbr_sup;       /* liste des faces de bord superieures de la ct
+                                 de taille  (nbfbr_sct) */
+  cs_lnum_t   *face_inf;      /* liste des faces internes inferieures de la ct
+                                 de taille  (nbfac_ict) */
+  cs_lnum_t   *fbr_inf;       /* liste des faces de bord  inferieures de la ct
+                                 de taille  (nbfac_ict) */
+  cs_lnum_t   *face_lat;      /* liste des faces internes laterales de la ct
+                                 de taille  (nbfac_lct) */
+  cs_lnum_t   *fbr_lat;       /* liste des faces de bord laterales de la ct
+                                 de taille  (nbfbr_lct) */
+  cs_lnum_t   *face_ct;       /* liste des faces interne de la ct
+                                 de taille  (nbfac_ct) */
 
-
-  const cs_int_t  *i_face_cells  = mesh->i_face_cells;
-  const cs_int_t  *b_face_cells  = mesh->b_face_cells;
+  const cs_lnum_2_t  *i_face_cells  = mesh->i_face_cells;
+  const cs_lnum_t *b_face_cells  = mesh->b_face_cells;
   const cs_real_t *i_face_normal = mesh_quantities->i_face_normal;
   const cs_real_t *b_face_normal = mesh_quantities->b_face_normal;
 
@@ -757,7 +756,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
                                                    ct->nbevct,
                                                    ct->ze_cell_list);
 
-    BFT_MALLOC(ct->mark_ze,mesh->n_cells, cs_int_t);
+    BFT_MALLOC(ct->mark_ze,mesh->n_cells, cs_lnum_t);
 
     /*----------------------------------------------------------*
      * Begin identification of air nodes for each Exchange Area *
@@ -788,8 +787,8 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     /* Contribution faces internes */
     for (ifac = 0; ifac < mesh->n_i_faces; ifac++) {
       assert((ifac * 2 + 1) < (2*mesh->n_i_faces));
-      icel_1 = i_face_cells[ifac * 2]     - 1;/* indice de la cellule 1 */
-      icel_2 = i_face_cells[ifac * 2 + 1] - 1;/* indice  de la cellule 2 */
+      icel_1 = i_face_cells[ifac][0];
+      icel_2 = i_face_cells[ifac][1];
       /* Comparaison  des couleurs des cellules 1 et 2 */
       if ((ct->mark_ze[icel_1] == 1) ||
           (ct->mark_ze[icel_2] == 1)) {
@@ -820,7 +819,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     /* Contribution faces externes */
     for (ifac = 0; ifac < mesh->n_b_faces; ifac++) {
-      icel_1 = b_face_cells[ifac] - 1; /* indice de la cellule  */
+      icel_1 = b_face_cells[ifac]; /* indice de la cellule  */
       if (ct->mark_ze[icel_1] == 1) {
 
         aux = _dot_product_ng(ifac,ct->idimct, b_face_normal, gravite, 1);
@@ -841,13 +840,13 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     /* allocation memoire pour la liste des faces superieures et inferieures
     * des ct */
-    BFT_MALLOC(face_sup,ct->nbfac_sct, cs_int_t);
-    BFT_MALLOC(face_inf,ct->nbfac_ict, cs_int_t);
-    BFT_MALLOC(face_lat,ct->nbfac_lct, cs_int_t);
-    BFT_MALLOC(fbr_sup, ct->nbfbr_sct, cs_int_t);
-    BFT_MALLOC(fbr_inf, ct->nbfbr_ict, cs_int_t);
-    BFT_MALLOC(fbr_lat, ct->nbfbr_lct, cs_int_t);
-    BFT_MALLOC(face_ct, ct->nbfac_ct, cs_int_t);
+    BFT_MALLOC(face_sup,ct->nbfac_sct, cs_lnum_t);
+    BFT_MALLOC(face_inf,ct->nbfac_ict, cs_lnum_t);
+    BFT_MALLOC(face_lat,ct->nbfac_lct, cs_lnum_t);
+    BFT_MALLOC(fbr_sup, ct->nbfbr_sct, cs_lnum_t);
+    BFT_MALLOC(fbr_inf, ct->nbfbr_ict, cs_lnum_t);
+    BFT_MALLOC(fbr_lat, ct->nbfbr_lct, cs_lnum_t);
+    BFT_MALLOC(face_ct, ct->nbfac_ct, cs_lnum_t);
 
 
   /* --------------------------------------------------------*
@@ -869,8 +868,8 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     icptfac  = 0; /*indice tableau des noeuds sup ct */
     /* Boucle sur les faces internes du domaine */
     for (ifac = 0; ifac < mesh->n_i_faces; ifac++) {
-      icel_1 = i_face_cells[ifac * 2]     - 1; /* indice de la cellule 1 */
-      icel_2 = i_face_cells[ifac * 2 + 1] - 1; /* indice  de la cellule 2 */
+      icel_1 = i_face_cells[ifac][0];
+      icel_2 = i_face_cells[ifac][1];
       /* Comparaison  couleur de la ct et couleur des cellules 1 et 2 */
       if ((ct->mark_ze[icel_1] == 1) ||
           (ct->mark_ze[icel_2] ==1)) {
@@ -915,7 +914,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     for (ifac = 0; ifac < mesh->n_b_faces; ifac++) {
 
-      icel_1 = b_face_cells[ifac] - 1;/* indice de la cellule  */
+      icel_1 = b_face_cells[ifac];/* indice de la cellule  */
       if (ct->mark_ze[icel_1]== 1) {
 
         aux = _dot_product_ng(ifac, ct->idimct, b_face_normal, gravite, 1);
@@ -1028,7 +1027,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
       nb   = cs_glob_n_ranks;
       rank = cs_glob_rank_id;
-      BFT_MALLOC(ct->cs_array_rank, nb, cs_int_t);
+      BFT_MALLOC(ct->cs_array_rank, nb, cs_lnum_t);
 
 
       ct->cs_array_rank[rank] = res_loc = ct->nbevct;
@@ -1055,7 +1054,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     *--------------------------------------------------------------*/
 
     /* loop on the superior faces for hmax */
-    nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
+    nb = (cs_lnum_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
 
 
     BFT_MALLOC(hmax_vect, nb, cs_coord_t);
@@ -1323,11 +1322,11 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     ct = cs_glob_ct_tab[ict];
     /* Liste des voisins eau des cellules air */
     nb = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
-    BFT_MALLOC(ct->voiseau,(nb * cs_ctwr_nmaxvoi), cs_int_t);
+    BFT_MALLOC(ct->voiseau,(nb * cs_ctwr_nmaxvoi), cs_lnum_t);
     /* Coefficients d interpolation eau pour l air*/
     BFT_MALLOC(ct->coefeau, (nb * cs_ctwr_nmaxvoi), cs_real_t);
     /* Positions dans la liste des voisins eau */
-    BFT_MALLOC(ct->pvoiseau, (nb + 1), cs_int_t);
+    BFT_MALLOC(ct->pvoiseau, (nb + 1), cs_lnum_t);
     /* Liste des voisins air des noeuds eau */
 
     ct->pvoiseau[0] = 0;
@@ -1338,9 +1337,9 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     nb = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
 
-    BFT_MALLOC(ct->voisair,(nb * cs_ctwr_nmaxvoi), cs_int_t);
+    BFT_MALLOC(ct->voisair,(nb * cs_ctwr_nmaxvoi), cs_lnum_t);
     /* Positions dans la liste voisins air */
-    BFT_MALLOC(ct->pvoisair, (nb + 1), cs_int_t);
+    BFT_MALLOC(ct->pvoisair, (nb + 1), cs_lnum_t);
     /* Coefficients d interpolation air pour l eau */
     BFT_MALLOC(ct->coefair,(nb * cs_ctwr_nmaxvoi), cs_real_t);
 
@@ -1368,16 +1367,16 @@ void cs_ctwr_adeau
 {
   /* Coordonnees des centres des cellules  */
   const cs_real_t *coo_cel        = mesh_quantities->cell_cen;
-  const cs_int_t  *i_face_cells   = mesh->i_face_cells;
+  const cs_lnum_2_t  *i_face_cells   = mesh->i_face_cells;
 #if 0 /* Is it no more needed? */
-  const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
-  const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
-  const cs_int_t  *cell_family    = mesh->cell_family;
+  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_lnum_t  *cell_family    = mesh->cell_family;
 #endif
 
-  cs_int_t   ict, iwat,nb_node_water, ii, jj, iair, nbvois,
+  cs_lnum_t   ict, iwat,nb_node_water, ii, jj, iair, nbvois,
              nbn, ifac, icel_1, icel_2, lf, indice, dim;
-  cs_int_t   nvois[cs_ctwr_nmaxvoi];
+  cs_lnum_t   nvois[cs_ctwr_nmaxvoi];
   cs_real_t  dhi;
   cs_real_t  xwat, ywat, zwat, dx, dy, dz, dxx, dyy, dzz, ouv, aux;
   cs_real_t  coeff[cs_ctwr_nmaxvoi];
@@ -1488,8 +1487,8 @@ void cs_ctwr_adeau
       nvois[0] = iair;
 
       for (ifac = 0; ifac < ct->nbfac_ct; ifac++) {
-        icel_1 = i_face_cells[(lst_par_fac[ifac]- mesh->n_b_faces - 1) * 2    ]-1;
-        icel_2 = i_face_cells[(lst_par_fac[ifac]- mesh->n_b_faces - 1) * 2 + 1]-1;
+        icel_1 = i_face_cells[lst_par_fac[ifac]- mesh->n_b_faces - 1][0];
+        icel_2 = i_face_cells[lst_par_fac[ifac]- mesh->n_b_faces - 1][1];
         if (icel_1==iair) {
           nvois[nbvois]=icel_2;
           nbvois += 1;
@@ -1727,9 +1726,9 @@ void cs_ctwr_adair (void)
   const cs_coord_t  *lst_xyz_cel   = NULL;
   cs_coord_t  *lst_xyz_water = NULL;
   const cs_lnum_t  *location_cel  = NULL;
-  cs_int_t   ict,icol, ilig,ieau,ii,jj,iair,nbvois,nbn,lf,indice;
-  cs_int_t   nvois[cs_ctwr_nmaxvoi];
-  cs_int_t   dim, nb_air_node;
+  cs_lnum_t   ict,icol, ilig,ieau,ii,jj,iair,nbvois,nbn,lf,indice;
+  cs_lnum_t   nvois[cs_ctwr_nmaxvoi];
+  cs_lnum_t   dim, nb_air_node;
   cs_real_t  dhi,dmin,dist,ouv,aux;
   cs_real_t  coeff[cs_ctwr_nmaxvoi];
   cs_real_t  dx,dy,dz,dxx,dyy,dzz;
@@ -2083,8 +2082,8 @@ void cs_ctwr_adair (void)
 void
 cs_ctwr_stacking(void)
 {
-  cs_int_t i, j, rank, dist_rank, nb, nb_ct, itmp, ict, ict_uw;
-  cs_int_t * aux;
+  cs_lnum_t i, j, rank, dist_rank, nb, nb_ct, itmp, ict, ict_uw;
+  cs_lnum_t * aux;
   cs_ctwr_zone_t  *ct, *ct_upw;
   cs_real_t tmp;
   cs_real_t gravite[3];
@@ -2094,8 +2093,8 @@ cs_ctwr_stacking(void)
 
   nb = cs_glob_ct_nbr  * cs_glob_ct_nbr;
 
-  BFT_MALLOC(cs_stack_ct, nb, cs_int_t);
-  BFT_MALLOC(cs_chain_ct, cs_glob_ct_nbr, cs_int_t);
+  BFT_MALLOC(cs_stack_ct, nb, cs_lnum_t);
+  BFT_MALLOC(cs_chain_ct, cs_glob_ct_nbr, cs_lnum_t);
 
   gravite[0]= ct_prop->gravx;
   gravite[1]= ct_prop->gravy;
@@ -2114,7 +2113,7 @@ cs_ctwr_stacking(void)
 
   if (cs_glob_n_ranks > 1) {
 
-    BFT_MALLOC(aux, nb, cs_int_t);
+    BFT_MALLOC(aux, nb, cs_lnum_t);
     rank = cs_glob_rank_id;
 
     for (dist_rank = 0; dist_rank < cs_glob_n_ranks; dist_rank++)

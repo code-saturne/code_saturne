@@ -427,10 +427,10 @@ _copy_mesh(const cs_mesh_t  *mesh,
          mesh->vtx_coord,
          3*mesh->n_vertices*sizeof(cs_real_t));
 
-  BFT_MALLOC(mesh_copy->i_face_cells, (2*mesh->n_i_faces), cs_lnum_t);
+  BFT_MALLOC(mesh_copy->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
   memcpy(mesh_copy->i_face_cells,
          mesh->i_face_cells,
-         2*mesh->n_i_faces*sizeof(cs_lnum_t));
+         mesh->n_i_faces*sizeof(cs_lnum_2_t));
 
   if (mesh->n_b_faces > 0) {
     BFT_MALLOC(mesh_copy->b_face_cells, mesh->n_b_faces, cs_lnum_t);
@@ -593,8 +593,8 @@ _update_rotor_vertices(cs_turbomachinery_t *tbm)
   /* Mark from interior faces */
 
   for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
-    cs_lnum_t c_id_0 = mesh->i_face_cells[f_id*2] - 1;
-    cs_lnum_t c_id_1 = mesh->i_face_cells[f_id*2 + 1] - 1;
+    cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+    cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
     if (cell_flag[c_id_0] || cell_flag[c_id_1]) {
       for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id]-1;
            i < mesh->i_face_vtx_idx[f_id+1]-1;
@@ -606,7 +606,7 @@ _update_rotor_vertices(cs_turbomachinery_t *tbm)
   /* Mark from boundary faces */
 
   for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
-    cs_lnum_t c_id = mesh->b_face_cells[f_id] - 1;
+    cs_lnum_t c_id = mesh->b_face_cells[f_id];
     if (cell_flag[c_id]) {
       for (cs_lnum_t i = mesh->b_face_vtx_idx[f_id]-1;
            i < mesh->b_face_vtx_idx[f_id+1]-1;

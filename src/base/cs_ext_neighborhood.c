@@ -86,27 +86,27 @@ BEGIN_C_DECLS
  * Extract a mesh's "cell -> internal faces" connectivity.
  *
  * parameters:
- *   mesh               --> pointer to a cs_mesh_t structure
- *   p_cell_i_faces_idx <-- pointer to the "cell -> faces" connectivity index
+ *   mesh               <-- pointer to a cs_mesh_t structure
+ *   p_cell_i_faces_idx --> pointer to the "cell -> faces" connectivity index
  *                          (1 to n numbering)
- *   p_cell_i_faces_lst <-- pointer to the "cell -> faces" connectivity list
+ *   p_cell_i_faces_lst --> pointer to the "cell -> faces" connectivity list
  *----------------------------------------------------------------------------*/
 
 static void
 _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
-                               cs_int_t         * *const p_cell_i_faces_idx,
-                               cs_int_t         * *const p_cell_i_faces_lst)
+                               cs_lnum_t         **const p_cell_i_faces_idx,
+                               cs_lnum_t         **const p_cell_i_faces_lst)
 {
 
-  cs_int_t  i, j, j1, j2;
+  cs_lnum_t  i, j, j1, j2;
 
-  cs_int_t  *cell_faces_count = NULL;
-  cs_int_t  *cell_faces_idx = NULL;
-  cs_int_t  *cell_faces_lst = NULL;
+  cs_lnum_t  *cell_faces_count = NULL;
+  cs_lnum_t  *cell_faces_idx = NULL;
+  cs_lnum_t  *cell_faces_lst = NULL;
 
   /* Allocate and initialize index */
 
-  BFT_MALLOC(cell_faces_idx, mesh->n_cells + 1, cs_int_t);
+  BFT_MALLOC(cell_faces_idx, mesh->n_cells + 1, cs_lnum_t);
 
   for (i = 0 ; i < mesh->n_cells + 1 ; i++)
     cell_faces_idx[i] = 0;
@@ -119,8 +119,8 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
      parallel and/or periodic ghost cells */
 
   for (i = 0 ; i < mesh->n_i_faces ; i++) {
-    j1 = mesh->i_face_cells[i*2    ] - 1;
-    j2 = mesh->i_face_cells[i*2 + 1] - 1;
+    j1 = mesh->i_face_cells[i][0];
+    j2 = mesh->i_face_cells[i][1];
     if (j1 < mesh->n_cells)
       cell_faces_idx[j1 + 1] += 1;
     if (j2 < mesh->n_cells)
@@ -135,15 +135,15 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
 
   /* Build array of values */
 
-  BFT_MALLOC(cell_faces_lst, cell_faces_idx[mesh->n_cells] - 1, cs_int_t);
-  BFT_MALLOC(cell_faces_count, mesh->n_cells, cs_int_t);
+  BFT_MALLOC(cell_faces_lst, cell_faces_idx[mesh->n_cells] - 1, cs_lnum_t);
+  BFT_MALLOC(cell_faces_count, mesh->n_cells, cs_lnum_t);
 
   for (i = 0 ; i < mesh->n_cells ; i++)
     cell_faces_count[i] = 0;
 
   for (i = 0 ; i < mesh->n_i_faces ; i++) {
-    j1 = mesh->i_face_cells[i*2    ] - 1;
-    j2 = mesh->i_face_cells[i*2 + 1] - 1;
+    j1 = mesh->i_face_cells[i][0];
+    j2 = mesh->i_face_cells[i][1];
     if (j1 < mesh->n_cells) {
       cell_faces_lst[cell_faces_idx[j1] + cell_faces_count[j1] - 1] = i + 1;
       cell_faces_count[j1] += 1;
@@ -167,36 +167,36 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
  * Create a "vertex -> cells" connectivity.
  *
  * parameters:
- *   mesh            --> pointer to a cs_mesh_t structure
- *   p_vtx_cells_idx <-- pointer to the "vtx -> cells" connectivity index
- *   p_vtx_cells_lst <-- pointer to the "vtx -> cells" connectivity list
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   p_vtx_cells_idx --> pointer to the "vtx -> cells" connectivity index
+ *   p_vtx_cells_lst --> pointer to the "vtx -> cells" connectivity list
  *----------------------------------------------------------------------------*/
 
 static void
 _create_vtx_cells_connect(cs_mesh_t  *mesh,
-                          cs_int_t   *p_vtx_cells_idx[],
-                          cs_int_t   *p_vtx_cells_lst[])
+                          cs_lnum_t  *p_vtx_cells_idx[],
+                          cs_lnum_t  *p_vtx_cells_lst[])
 {
-  cs_int_t  i, j, idx;
-  cs_int_t  vtx_id, face_id, cell_num;
+  cs_lnum_t  i, j, idx;
+  cs_lnum_t  vtx_id, face_id, cell_num;
 
   bool      already_seen;
 
-  cs_int_t  vtx_cells_connect_size = 0;
+  cs_lnum_t  vtx_cells_connect_size = 0;
 
-  cs_int_t  *vtx_faces_idx = NULL, *vtx_faces_lst = NULL;
-  cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
+  cs_lnum_t  *vtx_faces_idx = NULL, *vtx_faces_lst = NULL;
+  cs_lnum_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
 
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  n_faces = mesh->n_i_faces;
-  const cs_int_t  *face_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *face_vtx_lst = mesh->i_face_vtx_lst;
-  const cs_int_t  *face_cells = mesh->i_face_cells;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+  const cs_lnum_t  n_faces = mesh->n_i_faces;
+  const cs_lnum_t  *face_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t  *face_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
 
-  cs_int_t  vtx_cells_estimated_connect_size = 3 * n_vertices;
+  cs_lnum_t  vtx_cells_estimated_connect_size = 3 * n_vertices;
 
-  BFT_MALLOC(vtx_cells_idx, n_vertices + 1, cs_int_t);
-  BFT_MALLOC(vtx_faces_idx, n_vertices + 1, cs_int_t);
+  BFT_MALLOC(vtx_cells_idx, n_vertices + 1, cs_lnum_t);
+  BFT_MALLOC(vtx_faces_idx, n_vertices + 1, cs_lnum_t);
 
   for (vtx_id = 0; vtx_id < n_vertices + 1; vtx_id++) {
     vtx_cells_idx[vtx_id] = 0;
@@ -220,7 +220,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   /* Allocation and definiton of "vtx -> faces" connectivity list */
 
-  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices] - 1, cs_int_t);
+  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices] - 1, cs_lnum_t);
 
   for (face_id = 0; face_id < n_faces; face_id++) {
 
@@ -241,7 +241,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
   /* Define "vertex -> cells" connectivity.
      Use "vertex -> faces" connectivity and "face -> cells" connectivity */
 
-  BFT_MALLOC(vtx_cells_lst, vtx_cells_estimated_connect_size, cs_int_t);
+  BFT_MALLOC(vtx_cells_lst, vtx_cells_estimated_connect_size, cs_lnum_t);
 
   vtx_cells_idx[0] = 1;
 
@@ -253,7 +253,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
       for (j = 0; j < 2; j++) { /* For the cells sharing this face */
 
-        cell_num = face_cells[2*face_id + j];
+        cell_num = face_cells[face_id][j] + 1;
 
         already_seen = false;
         idx = vtx_cells_idx[vtx_id] - 1;
@@ -269,7 +269,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
           if (vtx_cells_connect_size + 1 > vtx_cells_estimated_connect_size) {
             vtx_cells_estimated_connect_size *= 2;
             BFT_REALLOC(vtx_cells_lst,
-                        vtx_cells_estimated_connect_size, cs_int_t);
+                        vtx_cells_estimated_connect_size, cs_lnum_t);
           }
 
           vtx_cells_lst[vtx_cells_connect_size] = cell_num;
@@ -285,7 +285,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   } /* End of loop on vertices */
 
-  BFT_REALLOC(vtx_cells_lst, vtx_cells_connect_size, cs_int_t);
+  BFT_REALLOC(vtx_cells_lst, vtx_cells_connect_size, cs_lnum_t);
 
   /* Free memory */
 
@@ -301,33 +301,33 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
  * Create a "vertex -> cells" connectivity.
  *
  * parameters:
- *   face_id        --> identification number for the face
- *   cell_id        --> identification number for the cell sharing this face
- *   mesh           --> pointer to a cs_mesh_t structure
- *   vtx_cells_idx  <-- pointer to the "vtx -> cells" connectivity index
- *   vtx_cells_lst  <-- pointer to the "vtx -> cells" connectivity list
- *   vtx_gcells_idx <-- pointer to the "vtx -> gcells" connectivity index
- *   vtx_gcells_lst <-- pointer to the "vtx -> gcells" connectivity list
+ *   face_id        <-- identification number for the face
+ *   cell_id        <-- identification number for the cell sharing this face
+ *   mesh           <-- pointer to a cs_mesh_t structure
+ *   vtx_cells_idx  --> pointer to the "vtx -> cells" connectivity index
+ *   vtx_cells_lst  --> pointer to the "vtx -> cells" connectivity list
+ *   vtx_gcells_idx --> pointer to the "vtx -> gcells" connectivity index
+ *   vtx_gcells_lst --> pointer to the "vtx -> gcells" connectivity list
  *----------------------------------------------------------------------------*/
 
 static void
-_tag_cells(cs_int_t    face_id,
-           cs_int_t    cell_id,
-           cs_mesh_t  *mesh,
-           cs_int_t    vtx_cells_idx[],
-           cs_int_t    vtx_cells_lst[],
-           cs_int_t    vtx_gcells_idx[],
-           cs_int_t    vtx_gcells_lst[])
+_tag_cells(cs_lnum_t    face_id,
+           cs_lnum_t    cell_id,
+           cs_mesh_t   *mesh,
+           cs_lnum_t    vtx_cells_idx[],
+           cs_lnum_t    vtx_cells_lst[],
+           cs_lnum_t    vtx_gcells_idx[],
+           cs_lnum_t    vtx_gcells_lst[])
 {
-  cs_int_t  i, j, k;
-  cs_int_t  vtx_id, ext_cell_num, cell_num;
+  cs_lnum_t  i, j, k;
+  cs_lnum_t  vtx_id, ext_cell_num, cell_num;
 
-  cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
-  cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
+  cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
+  cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
 
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  *face_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *face_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  *face_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t  *face_vtx_lst = mesh->i_face_vtx_lst;
 
   if (cell_id < n_cells) {
 
@@ -398,24 +398,24 @@ _tag_cells(cs_int_t    face_id,
  * Build the connectivity index.
  *
  * parameters:
- *   halo            --> pointer to a cs_halo_t structure
- *   rank_id         --> rank number to work with
+ *   halo            <-- pointer to a cs_halo_t structure
+ *   rank_id         <-- rank number to work with
  *   checker         <-> temporary array to check vertices
- *   gcell_vtx_idx   --> "ghost cell -> vertices" connectivity index
- *   gcell_vtx_lst   --> "ghost cell -> vertices" connectivity list
+ *   gcell_vtx_idx   <-- "ghost cell -> vertices" connectivity index
+ *   gcell_vtx_lst   <-- "ghost cell -> vertices" connectivity list
  *   vtx_gcells_idx  <-> "vertex -> ghost cells" connectivity index
  *---------------------------------------------------------------------------*/
 
 static void
-_reverse_connectivity_idx(cs_halo_t  *halo,
-                          cs_int_t    n_vertices,
-                          cs_int_t    rank_id,
-                          cs_int_t   *checker,
-                          cs_int_t   *gcell_vtx_idx,
-                          cs_int_t   *gcell_vtx_lst,
-                          cs_int_t   *vtx_gcells_idx)
+_reverse_connectivity_idx(cs_halo_t   *halo,
+                          cs_lnum_t    n_vertices,
+                          cs_lnum_t    rank_id,
+                          cs_lnum_t   *checker,
+                          cs_lnum_t   *gcell_vtx_idx,
+                          cs_lnum_t   *gcell_vtx_lst,
+                          cs_lnum_t   *vtx_gcells_idx)
 {
-  cs_int_t  i, j, id, vtx_id, start_idx, end_idx;
+  cs_lnum_t  i, j, id, vtx_id, start_idx, end_idx;
 
   /* Initialize index */
 
@@ -462,29 +462,29 @@ _reverse_connectivity_idx(cs_halo_t  *halo,
  * Build the connectivity list.
  *
  * parameters:
- *   halo            --> pointer to a cs_halo_t structure
- *   n_vertices      --> number of vertices
- *   rank_id         --> rank number to work with
+ *   halo            <-- pointer to a cs_halo_t structure
+ *   n_vertices      <-- number of vertices
+ *   rank_id         <-- rank number to work with
  *   counter         <-> temporary array to count vertices
  *   checker         <-> temporary array to check vertices
- *   gcell_vtx_idx   --> "ghost cell -> vertices" connectivity index
- *   gcell_vtx_lst   --> "ghost cell -> vertices" connectivity list
- *   vtx_gcells_idx  --> "vertex -> ghost cells" connectivity index
+ *   gcell_vtx_idx   <-- "ghost cell -> vertices" connectivity index
+ *   gcell_vtx_lst   <-- "ghost cell -> vertices" connectivity list
+ *   vtx_gcells_idx  <-- "vertex -> ghost cells" connectivity index
  *   vtx_gcells_lst  <-> "vertex -> ghost cells" connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
-_reverse_connectivity_lst(cs_halo_t  *halo,
-                          cs_int_t    n_vertices,
-                          cs_int_t    rank_id,
-                          cs_int_t   *counter,
-                          cs_int_t   *checker,
-                          cs_int_t   *gcell_vtx_idx,
-                          cs_int_t   *gcell_vtx_lst,
-                          cs_int_t   *vtx_gcells_idx,
-                          cs_int_t   *vtx_gcells_lst)
+_reverse_connectivity_lst(cs_halo_t   *halo,
+                          cs_lnum_t    n_vertices,
+                          cs_lnum_t    rank_id,
+                          cs_lnum_t   *counter,
+                          cs_lnum_t   *checker,
+                          cs_lnum_t   *gcell_vtx_idx,
+                          cs_lnum_t   *gcell_vtx_lst,
+                          cs_lnum_t   *vtx_gcells_idx,
+                          cs_lnum_t   *vtx_gcells_lst)
 {
-  cs_int_t  i, j, id, shift, vtx_id, start_idx, end_idx;
+  cs_lnum_t  i, j, id, shift, vtx_id, start_idx, end_idx;
 
   /* Initialize buffers */
 
@@ -531,30 +531,30 @@ _reverse_connectivity_lst(cs_halo_t  *halo,
  * the local cell numbering.
  *
  * parameters:
- *   halo              --> pointer to a cs_halo_t structure
- *   n_vertices        --> number of vertices
- *   gcell_vtx_idx     --> "ghost cell -> vertices" connectivity index
- *   gcell_vtx_lst     --> "ghost cell -> vertices" connectivity list
- *   p_vtx_gcells_idx  <-- pointer to "vertex -> ghost cells" index
- *   p_vtx_gcells_lst  <-- pointer to "vertex -> ghost cells" list
+ *   halo              <-- pointer to a cs_halo_t structure
+ *   n_vertices        <-- number of vertices
+ *   gcell_vtx_idx     <-- "ghost cell -> vertices" connectivity index
+ *   gcell_vtx_lst     <-- "ghost cell -> vertices" connectivity list
+ *   p_vtx_gcells_idx  --> pointer to "vertex -> ghost cells" index
+ *   p_vtx_gcells_lst  --> pointer to "vertex -> ghost cells" list
  *---------------------------------------------------------------------------*/
 
 static void
-_create_vtx_gcells_connect(cs_halo_t   *halo,
-                           cs_int_t     n_vertices,
-                           cs_int_t    *gcells_vtx_idx,
-                           cs_int_t    *gcells_vtx_lst,
-                           cs_int_t    *p_vtx_gcells_idx[],
-                           cs_int_t    *p_vtx_gcells_lst[])
+_create_vtx_gcells_connect(cs_halo_t    *halo,
+                           cs_lnum_t     n_vertices,
+                           cs_lnum_t    *gcells_vtx_idx,
+                           cs_lnum_t    *gcells_vtx_lst,
+                           cs_lnum_t    *p_vtx_gcells_idx[],
+                           cs_lnum_t    *p_vtx_gcells_lst[])
 {
-  cs_int_t  *vtx_buffer = NULL, *vtx_counter = NULL, *vtx_checker = NULL;
-  cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
+  cs_lnum_t  *vtx_buffer = NULL, *vtx_counter = NULL, *vtx_checker = NULL;
+  cs_lnum_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
 
-  BFT_MALLOC(vtx_buffer, 2*n_vertices, cs_int_t);
+  BFT_MALLOC(vtx_buffer, 2*n_vertices, cs_lnum_t);
   vtx_counter = &(vtx_buffer[0]);
   vtx_checker = &(vtx_buffer[n_vertices]);
 
-  BFT_MALLOC(vtx_gcells_idx, n_vertices + 1, cs_int_t);
+  BFT_MALLOC(vtx_gcells_idx, n_vertices + 1, cs_lnum_t);
 
   /* Create a vertex -> ghost cells connectivity */
 
@@ -566,7 +566,7 @@ _create_vtx_gcells_connect(cs_halo_t   *halo,
                             gcells_vtx_lst,
                             vtx_gcells_idx);
 
-  BFT_MALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices], cs_lnum_t);
 
   _reverse_connectivity_lst(halo,
                             n_vertices,
@@ -591,35 +591,35 @@ _create_vtx_gcells_connect(cs_halo_t   *halo,
  * Create a "vertex -> cells" connectivity.
  *
  * parameters:
- *   mesh              --> pointer to cs_mesh_t structure
- *   cell_i_faces_idx  --> "cell -> internal faces" connectivity index
- *   cell_i_faces_lst  --> "cell -> internal faces" connectivity list
- *   p_vtx_cells_idx   <-- pointer to "vertex -> cells" connectivity index
- *   p_vtx_cells_lst   <-- pointer to "vertex -> cells" connectivity list
+ *   mesh              <-- pointer to cs_mesh_t structure
+ *   cell_i_faces_idx  <-- "cell -> internal faces" connectivity index
+ *   cell_i_faces_lst  <-- "cell -> internal faces" connectivity list
+ *   p_vtx_cells_idx   --> pointer to "vertex -> cells" connectivity index
+ *   p_vtx_cells_lst   --> pointer to "vertex -> cells" connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
 _create_vtx_cells_connect2(cs_mesh_t   *mesh,
-                           cs_int_t    *cell_i_faces_idx,
-                           cs_int_t    *cell_i_faces_lst,
-                           cs_int_t    *p_vtx_cells_idx[],
-                           cs_int_t    *p_vtx_cells_lst[])
+                           cs_lnum_t   *cell_i_faces_idx,
+                           cs_lnum_t   *cell_i_faces_lst,
+                           cs_lnum_t   *p_vtx_cells_idx[],
+                           cs_lnum_t   *p_vtx_cells_lst[])
 {
-  cs_int_t  i, cell_id, fac_id, i_vtx;
-  cs_int_t  shift, vtx_id;
+  cs_lnum_t  i, cell_id, fac_id, i_vtx;
+  cs_lnum_t  shift, vtx_id;
 
-  cs_int_t  *vtx_buffer = NULL, *vtx_count = NULL, *vtx_tag = NULL;
-  cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
+  cs_lnum_t  *vtx_buffer = NULL, *vtx_count = NULL, *vtx_tag = NULL;
+  cs_lnum_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
 
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+  const cs_lnum_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
 
   /* Initialize buffers */
 
-  BFT_MALLOC(vtx_buffer, 2*n_vertices, cs_int_t);
-  BFT_MALLOC(vtx_cells_idx, n_vertices + 1, cs_int_t);
+  BFT_MALLOC(vtx_buffer, 2*n_vertices, cs_lnum_t);
+  BFT_MALLOC(vtx_cells_idx, n_vertices + 1, cs_lnum_t);
 
   vtx_count = &(vtx_buffer[0]);
   vtx_tag = &(vtx_buffer[n_vertices]);
@@ -666,7 +666,7 @@ _create_vtx_cells_connect2(cs_mesh_t   *mesh,
 
   }
 
-  BFT_MALLOC(vtx_cells_lst, vtx_cells_idx[n_vertices], cs_int_t);
+  BFT_MALLOC(vtx_cells_lst, vtx_cells_idx[n_vertices], cs_lnum_t);
 
   /* Fill list */
 
@@ -707,44 +707,44 @@ _create_vtx_cells_connect2(cs_mesh_t   *mesh,
  * Create a "cell -> cells" connectivity.
  *
  * parameters:
- *   mesh              --> pointer to cs_mesh_t structure
- *   cell_i_faces_idx  --> "cell -> faces" connectivity index
- *   cell_i_faces_lst  --> "cell -> faces" connectivity list
- *   vtx_gcells_idx    <-- "vertex -> ghost cells" connectivity index
- *   vtx_gcells_lst    <-- "vertex -> ghost cells" connectivity list
- *   vtx_cells_idx     <-- "vertex -> cells" connectivity index
- *   vtx_cells_lst     <-- "vertex -> cells" connectivity list
- *   p_cell_cells_idx  <-- pointer to "cell -> cells" connectivity index
- *   p_cell_cells_lst  <-- pointer to "cell -> cells" connectivity list
+ *   mesh              <-- pointer to cs_mesh_t structure
+ *   cell_i_faces_idx  <-- "cell -> faces" connectivity index
+ *   cell_i_faces_lst  <-- "cell -> faces" connectivity list
+ *   vtx_gcells_idx    --> "vertex -> ghost cells" connectivity index
+ *   vtx_gcells_lst    --> "vertex -> ghost cells" connectivity list
+ *   vtx_cells_idx     --> "vertex -> cells" connectivity index
+ *   vtx_cells_lst     --> "vertex -> cells" connectivity list
+ *   p_cell_cells_idx  --> pointer to "cell -> cells" connectivity index
+ *   p_cell_cells_lst  --> pointer to "cell -> cells" connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
-_create_cell_cells_connect(cs_mesh_t   *mesh,
-                           cs_int_t    *cell_i_faces_idx,
-                           cs_int_t    *cell_i_faces_lst,
-                           cs_int_t    *vtx_gcells_idx,
-                           cs_int_t    *vtx_gcells_lst,
-                           cs_int_t    *vtx_cells_idx,
-                           cs_int_t    *vtx_cells_lst,
-                           cs_int_t    *p_cell_cells_idx[],
-                           cs_int_t    *p_cell_cells_lst[])
+_create_cell_cells_connect(cs_mesh_t  *mesh,
+                           cs_lnum_t    *cell_i_faces_idx,
+                           cs_lnum_t    *cell_i_faces_lst,
+                           cs_lnum_t    *vtx_gcells_idx,
+                           cs_lnum_t    *vtx_gcells_lst,
+                           cs_lnum_t    *vtx_cells_idx,
+                           cs_lnum_t    *vtx_cells_lst,
+                           cs_lnum_t    *p_cell_cells_idx[],
+                           cs_lnum_t    *p_cell_cells_lst[])
 {
-  cs_int_t  i, j, i_cel, fac_id, i_vtx;
-  cs_int_t  cell_id, vtx_id, shift;
+  cs_lnum_t  i, j, i_cel, fac_id, i_vtx;
+  cs_lnum_t  cell_id, vtx_id, shift;
 
-  cs_int_t  *cell_buffer = NULL, *cell_tag = NULL, *cell_count = NULL;
-  cs_int_t  *cell_cells_idx = NULL, *cell_cells_lst = NULL;
+  cs_lnum_t  *cell_buffer = NULL, *cell_tag = NULL, *cell_count = NULL;
+  cs_lnum_t  *cell_cells_idx = NULL, *cell_cells_lst = NULL;
 
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
-  const cs_int_t  *face_cells = mesh->i_face_cells;
-  const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
+  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
+  const cs_lnum_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
 
   /* Allocate and initialize buffers */
 
-  BFT_MALLOC(cell_cells_idx, n_cells + 1, cs_int_t);
-  BFT_MALLOC(cell_buffer, n_cells_wghosts + n_cells, cs_int_t);
+  BFT_MALLOC(cell_cells_idx, n_cells + 1, cs_lnum_t);
+  BFT_MALLOC(cell_buffer, n_cells_wghosts + n_cells, cs_lnum_t);
 
   cell_tag = &(cell_buffer[0]);
   cell_count = &(cell_buffer[n_cells_wghosts]);
@@ -768,8 +768,8 @@ _create_cell_cells_connect(cs_mesh_t   *mesh,
 
       fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
 
-      cell_tag[face_cells[2*fac_id] - 1] = i_cel;
-      cell_tag[face_cells[2*fac_id+1] - 1] = i_cel;
+      cell_tag[face_cells[fac_id][0]] = i_cel;
+      cell_tag[face_cells[fac_id][1]] = i_cel;
 
     } /* End of loop on cell's faces */
 
@@ -828,7 +828,7 @@ _create_cell_cells_connect(cs_mesh_t   *mesh,
   for (i = 0; i < n_cells_wghosts; i++)
     cell_tag[i] = -1;
 
-  BFT_MALLOC(cell_cells_lst, cell_cells_idx[n_cells] - 1, cs_int_t);
+  BFT_MALLOC(cell_cells_lst, cell_cells_idx[n_cells] - 1, cs_lnum_t);
 
   /* Fill list */
 
@@ -840,8 +840,8 @@ _create_cell_cells_connect(cs_mesh_t   *mesh,
 
       fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
 
-      cell_tag[face_cells[2*fac_id] - 1] = i_cel;
-      cell_tag[face_cells[2*fac_id+1] - 1] = i_cel;
+      cell_tag[face_cells[fac_id][0]] = i_cel;
+      cell_tag[face_cells[fac_id][1]] = i_cel;
 
     } /* End of loop on cell's faces */
 
@@ -927,7 +927,7 @@ _create_cell_cells_connect(cs_mesh_t   *mesh,
  *    & ( ANOMAX )
  *
  * parameters:
- *   anomax  -->  non-orthogonality angle (rad) above which cells
+ *   anomax  <--  non-orthogonality angle (rad) above which cells
  *                are selected for the extended neighborhood
  *----------------------------------------------------------------------------*/
 
@@ -962,7 +962,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
                            cs_mesh_quantities_t  *mesh_quantities,
                            double                 non_ortho_max)
 {
-  cs_int_t  i, face_id, cell_id, cell_i, cell_j;
+  cs_lnum_t  i, face_id, cell_id, cell_i, cell_j;
   cs_gnum_t  init_cell_cells_connect_size;
 
   cs_real_t  v_ij[3];
@@ -972,16 +972,16 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
   double     ratio;
 
   cs_gnum_t  n_deleted_cells = 0;
-  cs_int_t  previous_idx = 0, new_idx = -1;
+  cs_lnum_t  previous_idx = 0, new_idx = -1;
 
-  cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
-  cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
-  cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
-  cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
+  cs_lnum_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
+  cs_lnum_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
+  cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+  cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
 
-  const cs_int_t  n_faces = mesh->n_i_faces;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  *face_cells = mesh->i_face_cells;
+  const cs_lnum_t  n_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
 
   const cs_real_t  cos_ij_fn_min = cos(non_ortho_max);
   const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
@@ -990,7 +990,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
      with multiple calls (as we re-build a new cell -> cells connectivity
      instead of just filtering the one we already have) */
 
-  static  cs_int_t _first_call = 0;
+  static  cs_lnum_t _first_call = 0;
 
   enum {X, Y, Z};
 
@@ -1060,8 +1060,8 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
         /* Vector IJ and normal of the face */
 
-        cell_i = face_cells[2*face_id] - 1;
-        cell_j = face_cells[2*face_id + 1] - 1;
+        cell_i = face_cells[face_id][0];
+        cell_j = face_cells[face_id][1];
         dprod = 0;
 
         for (i = 0; i < 3; i++) {
@@ -1143,7 +1143,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
       /* Reallocation of cell_cells_lst */
 
-      BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells]-1, cs_int_t);
+      BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells]-1, cs_lnum_t);
 
       /* Output for listing */
 
@@ -1183,7 +1183,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
 #if 0 /* For debugging purpose */
       for (i = 0; i < mesh->n_cells ; i++) {
-        cs_int_t  j;
+        cs_lnum_t  j;
         bft_printf(" cell %d :: ", i+1);
         for (j = mesh->cell_cells_idx[i]-1;
              j < mesh->cell_cells_idx[i+1]-1;
@@ -1210,10 +1210,10 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 void
 cs_ext_neighborhood_define(cs_mesh_t  *mesh)
 {
-  cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
-  cs_int_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
-  cs_int_t  *cell_i_faces_idx = NULL, *cell_i_faces_lst = NULL;
-  cs_int_t  *cell_cells_idx = NULL, *cell_cells_lst = NULL;
+  cs_lnum_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
+  cs_lnum_t  *vtx_cells_idx = NULL, *vtx_cells_lst = NULL;
+  cs_lnum_t  *cell_i_faces_idx = NULL, *cell_i_faces_lst = NULL;
+  cs_lnum_t  *cell_cells_idx = NULL, *cell_cells_lst = NULL;
 
   cs_halo_t  *halo = mesh->halo;
 

@@ -140,8 +140,8 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
 
-    cell1 = mesh->i_face_cells[2 * face_id] - 1;
-    cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
+    cell1 = mesh->i_face_cells[face_id][0];
+    cell2 = mesh->i_face_cells[face_id][1];
 
     /* Get information on mesh quantities */
 
@@ -176,7 +176,7 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
   for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
 
-    cell1 = mesh->b_face_cells[face_id] - 1;
+    cell1 = mesh->b_face_cells[face_id];
 
     /* Get information on mesh quantities */
 
@@ -239,8 +239,8 @@ _compute_offsetting(const cs_mesh_t             *mesh,
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
 
-    cell1 = mesh->i_face_cells[2 * face_id] - 1;
-    cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
+    cell1 = mesh->i_face_cells[face_id][0];
+    cell2 = mesh->i_face_cells[face_id][1];
 
     /* Compute center offsetting coefficient,
        in a manner consistent with iterative gradient reconstruction */
@@ -312,8 +312,8 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
 
-    cell1 = mesh->i_face_cells[2 * face_id] - 1;
-    cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
+    cell1 = mesh->i_face_cells[face_id][0];
+    cell2 = mesh->i_face_cells[face_id][1];
 
     /* Center of gravity for each cell */
 
@@ -348,7 +348,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   /*------------------------*/
 
   for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-    cell1 = mesh->b_face_cells[face_id] - 1;
+    cell1 = mesh->b_face_cells[face_id];
 
     surfn = _MODULE_3D(b_face_normal[face_id]);
 
@@ -483,8 +483,8 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
 
-    cell1 = mesh->i_face_cells[2 * face_id] - 1;
-    cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
+    cell1 = mesh->i_face_cells[face_id][0];
+    cell2 = mesh->i_face_cells[face_id][1];
 
     vol_ratio = fmin(volume[cell1] / volume[cell2],
                      volume[cell2] / volume[cell1]);
@@ -906,8 +906,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
     /* Loop on interior faces */
     for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-      cell1 = mesh->i_face_cells[2 * face_id] - 1;
-      cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
+      cell1 = mesh->i_face_cells[face_id][0];
+      cell2 = mesh->i_face_cells[face_id][1];
 
       if (bad_cell_flag[cell2] != 0)
         bad_guilt_cells[cell1]++;

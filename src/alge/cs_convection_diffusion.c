@@ -864,8 +864,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           difx = i_face_cog[face_id][0] - cell_cen[ii][0];
           dify = i_face_cog[face_id][1] - cell_cen[ii][1];
@@ -904,7 +904,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           diipbx = diipb[face_id][0];
           diipby = diipb[face_id][1];
@@ -977,8 +977,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind++;
@@ -1056,8 +1056,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind++;
@@ -1132,8 +1132,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -1249,8 +1249,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -1363,8 +1363,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -1536,8 +1536,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -1697,7 +1697,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             pi = pvar[ii];
             pia = pvara[ii];
@@ -1744,7 +1744,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             pi = pvar[ii];
 
@@ -1805,7 +1805,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             pi = pvar[ii];
             pia = pvara[ii];
@@ -1860,7 +1860,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             pi = pvar[ii];
 
@@ -2182,8 +2182,8 @@ cs_convection_diffusion_vector(int                         idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           for (jsou = 0; jsou < 3; jsou++) {
             difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
@@ -2226,7 +2226,7 @@ cs_convection_diffusion_vector(int                         idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           for (jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
@@ -2303,8 +2303,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
@@ -2389,8 +2389,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
@@ -2468,8 +2468,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             for (jsou = 0; jsou < 3; jsou++)
               dijpfv[jsou] = dijpf[face_id][jsou];
@@ -2605,8 +2605,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             for (jsou = 0; jsou < 3; jsou++) {
               dijpfv[jsou] = dijpf[face_id][jsou];
@@ -2730,8 +2730,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             for (jsou = 0; jsou < 3; jsou++) {
               dijpfv[jsou] = dijpf[face_id][jsou];
@@ -2918,8 +2918,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             for (jsou = 0; jsou < 3; jsou++) {
               dijpfv[jsou] = dijpf[face_id][jsou];
@@ -3095,7 +3095,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             for (jsou = 0; jsou < 3; jsou++)
               diipbv[jsou] = diipb[face_id][jsou];
@@ -3155,7 +3155,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             for (jsou = 0; jsou < 3; jsou++) {
               diipbv[jsou] = diipb[face_id][jsou];
@@ -3225,7 +3225,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             for (jsou = 0; jsou < 3; jsou++) {
               diipbv[jsou] = diipb[face_id][jsou];
@@ -3321,7 +3321,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             for (jsou = 0; jsou < 3; jsou++) {
               diipbv[jsou] = diipb[face_id][jsou];
@@ -3423,7 +3423,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
           || (ifaccp == 1 && ityp == CS_COUPLED))
-        bndcel[b_face_cells[face_id] - 1] = 0.;
+        bndcel[b_face_cells[face_id]] = 0.;
     }
 
     if (halo != NULL)
@@ -3439,8 +3439,8 @@ cs_convection_diffusion_vector(int                         idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           pnd = weight[face_id];
           secvis = secvif[face_id];
@@ -3747,8 +3747,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           difx = i_face_cog[face_id][0] - cell_cen[ii][0];
           dify = i_face_cog[face_id][1] - cell_cen[ii][1];
@@ -3787,7 +3787,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
           diipbx = diipb[face_id][0];
           diipby = diipb[face_id][1];
           diipbz = diipb[face_id][2];
@@ -3854,8 +3854,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind = n_upwind+1;
@@ -3935,8 +3935,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind = n_upwind+1;
@@ -4020,8 +4020,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -4139,8 +4139,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -4254,8 +4254,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -4430,8 +4430,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             dijpfx = dijpf[face_id][0];
             dijpfy = dijpf[face_id][1];
@@ -4595,7 +4595,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           pi = pvar[ii];
           pia = pvara[ii];
@@ -4640,7 +4640,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           pi = pvar[ii];
 
@@ -4941,8 +4941,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
@@ -5042,8 +5042,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
@@ -5131,7 +5131,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           pi = pvar[ii];
           pia = pvara[ii];
@@ -5187,7 +5187,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           pi = pvar[ii];
 
@@ -5445,8 +5445,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
@@ -5531,8 +5531,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
@@ -5606,7 +5606,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           for (jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
@@ -5648,7 +5648,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           for (jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
@@ -5700,7 +5700,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
           || (ifaccp == 1 && ityp == CS_COUPLED)) {
-        bndcel[b_face_cells[face_id] - 1] = 0.;
+        bndcel[b_face_cells[face_id]] = 0.;
       }
     }
 
@@ -5717,8 +5717,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           pnd = weight[face_id];
           secvis = secvif[face_id];
@@ -5954,8 +5954,8 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           i_massflux[face_id] += i_visc[face_id]*(pvar[ii] -pvar[jj]);
 
@@ -5972,7 +5972,7 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
           double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
           b_massflux[face_id] += b_visc[face_id]*pfac;
@@ -6032,8 +6032,8 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double dpxf = 0.5*(  visel[ii][0]*grad[ii][0]
                              + visel[jj][0]*grad[jj][0]);
@@ -6069,7 +6069,7 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
 
           double diipbx = diipb[face_id][0];
           double diipby = diipb[face_id][1];
@@ -6289,8 +6289,8 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
       i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
 
@@ -6300,7 +6300,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id];
       double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
       b_massflux[face_id] += b_visc[face_id]*pfac;
@@ -6381,8 +6381,8 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
       double pi = pvar[ii];
       double pj = pvar[jj];
@@ -6448,7 +6448,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id];
 
       double pi = pvar[ii];
 
@@ -6681,8 +6681,8 @@ cs_diffusion_potential(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double i_massflux = i_visc[face_id]*(pvar[ii] -pvar[jj]);
           diverg[ii] += i_massflux;
@@ -6701,7 +6701,7 @@ cs_diffusion_potential(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
           double pfac = inc*cofafp[face_id] +cofbfp[face_id]*pvar[ii];
 
           double b_massflux = b_visc[face_id]*pfac;
@@ -6763,8 +6763,8 @@ cs_diffusion_potential(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double dijpfx = dijpf[face_id][0];
           double dijpfy = dijpf[face_id][1];
@@ -6802,7 +6802,7 @@ cs_diffusion_potential(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
 
           double diipbx = diipb[face_id][0];
           double diipby = diipb[face_id][1];
@@ -7036,8 +7036,8 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double flux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
           diverg[ii] += flux;
@@ -7056,7 +7056,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
           double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
           double flux = b_visc[face_id]*pfac;
@@ -7145,8 +7145,8 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double pi = pvar[ii];
           double pj = pvar[jj];
@@ -7222,7 +7222,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
 
           double pi = pvar[ii];
 

@@ -2345,12 +2345,12 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
 
         if (compact_fgnum % 2 == 0) { /* Periodic face */
           fid = join_select->faces[(compact_fgnum - loc_rank_s)/2 - 1] - 1;
-          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
           recv_gbuf[i*2+1] = 0;
         }
         else { /* Original face */
           fid = join_select->faces[(compact_fgnum - loc_rank_s)/2] - 1;
-          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
           recv_gbuf[i*2+1] = mesh->b_face_family[fid];
         }
 
@@ -2371,7 +2371,7 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
         assert(compact_fgnum <= loc_rank_e);
 
         fid = join_select->faces[compact_fgnum - 1 - loc_rank_s] - 1;
-        recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+        recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
         recv_gbuf[i*2+1] = mesh->b_face_family[fid];
 
       }
@@ -2468,18 +2468,18 @@ _get_linked_cell_gnum_and_family(const cs_join_select_t  *join_select,
             fid = join_select->faces[compact_fgnum/2 - 1] - 1;
             if (mesh->global_cell_num != NULL)
               cell_gnum[j]
-                = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+                = mesh->global_cell_num[mesh->b_face_cells[fid]];
             else
-              cell_gnum[j] = mesh->b_face_cells[fid];
+              cell_gnum[j] = mesh->b_face_cells[fid] + 1;
             face_family[j] = 0;
           }
           else { /* Original face */
             fid = join_select->faces[compact_fgnum/2] - 1;
             if (mesh->global_cell_num != NULL)
               cell_gnum[j]
-                = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+                = mesh->global_cell_num[mesh->b_face_cells[fid]];
             else
-              cell_gnum[j] = mesh->b_face_cells[fid];
+              cell_gnum[j] = mesh->b_face_cells[fid] + 1;
             face_family[j] = mesh->b_face_family[fid];
           }
 
@@ -2497,7 +2497,7 @@ _get_linked_cell_gnum_and_family(const cs_join_select_t  *join_select,
             compact_fgnum = n2o_face_hist->g_list[j];
             fid = join_select->faces[compact_fgnum - 1] - 1;
             cell_gnum[j]
-              = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+              = mesh->global_cell_num[mesh->b_face_cells[fid]];
             face_family[j] = mesh->b_face_family[fid];
           }
         } /* End of loop on n2o_face_hist elements */
@@ -2509,7 +2509,7 @@ _get_linked_cell_gnum_and_family(const cs_join_select_t  *join_select,
           for (j = n2o_face_hist->index[i]; j < n2o_face_hist->index[i+1]; j++) {
             compact_fgnum = n2o_face_hist->g_list[j];
             fid = join_select->faces[compact_fgnum - 1] - 1;
-            cell_gnum[j] = mesh->b_face_cells[fid];
+            cell_gnum[j] = mesh->b_face_cells[fid] + 1;
             face_family[j] = mesh->b_face_family[fid];
           }
         } /* End of loop on n2o_face_hist elements */
@@ -3928,7 +3928,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   cs_lnum_t  *new_f2v_idx = mesh->i_face_vtx_idx;
   cs_lnum_t  *new_f2v_lst = mesh->i_face_vtx_lst;
   cs_lnum_t   *_new_face_family = mesh->i_face_family;
-  cs_lnum_t  *new_face_cells = mesh->i_face_cells;
+  cs_lnum_2_t  *new_face_cells = mesh->i_face_cells;
   cs_gnum_t  n_g_ii_faces = mesh->n_g_i_faces;
   cs_gnum_t  *new_fgnum = mesh->global_i_face_num;
 
@@ -3944,7 +3944,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   mesh->n_g_i_faces = n_fi_faces;
 
   BFT_REALLOC(new_f2v_idx, n_fi_faces + 1, cs_lnum_t);
-  BFT_REALLOC(new_face_cells, 2*n_fi_faces, cs_lnum_t);
+  BFT_REALLOC(new_face_cells, n_fi_faces, cs_lnum_2_t);
   BFT_REALLOC(_new_face_family, n_fi_faces, cs_lnum_t);
 
   max_size = 0;
@@ -4008,31 +4008,31 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
                                     forces the orientation */
 
         if (fnum[0] > 0)
-          new_face_cells[2*n_fi_faces] = mesh->b_face_cells[fnum[0]-1];
+          new_face_cells[n_fi_faces][0] = mesh->b_face_cells[fnum[0]-1];
         else
-          new_face_cells[2*n_fi_faces] = 0; /* Cell is on a distant rank
-                                               or periodic */
+          new_face_cells[n_fi_faces][0] = -1; /* Cell is on a distant rank
+                                                 or periodic */
 
         if (fnum[1] > 0)
-          new_face_cells[2*n_fi_faces+1] = mesh->b_face_cells[fnum[1]-1];
+          new_face_cells[n_fi_faces][1] = mesh->b_face_cells[fnum[1]-1];
         else
-          new_face_cells[2*n_fi_faces+1] = 0; /* Cell is on a distant rank
+          new_face_cells[n_fi_faces][1] = -1; /* Cell is on a distant rank
                                                  or periodic */
 
       }
       else { /* cgnum[1] < cgnum[0] and fnum[1] forces the orientation  */
 
         if (fnum[0] > 0)
-          new_face_cells[2*n_fi_faces+1] = mesh->b_face_cells[fnum[0]-1];
+          new_face_cells[n_fi_faces][1] = mesh->b_face_cells[fnum[0]-1];
         else
-          new_face_cells[2*n_fi_faces+1] = 0; /* Cell is on a distant rank
+          new_face_cells[n_fi_faces][1] = -1; /* Cell is on a distant rank
                                                  or periodic */
 
         if (fnum[1] > 0)
-          new_face_cells[2*n_fi_faces] = mesh->b_face_cells[fnum[1]-1];
+          new_face_cells[n_fi_faces][0] = mesh->b_face_cells[fnum[1]-1];
         else
-          new_face_cells[2*n_fi_faces] = 0; /* Cell is on a distant rank
-                                               or periodic */
+          new_face_cells[n_fi_faces][0] = -1; /* Cell is on a distant rank
+                                                 or periodic */
 
       }
 
@@ -4098,9 +4098,10 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
     BFT_REALLOC(new_fgnum, mesh->n_i_faces, cs_gnum_t);
 
     n_fi_faces = n_ii_faces;
-    for (i = 0; i < jmesh->n_faces; i++)
+    for (i = 0; i < jmesh->n_faces; i++) {
       if (new_face_type[i] == CS_JOIN_FACE_INTERIOR)
         new_fgnum[n_fi_faces++] = jmesh->face_gnum[i] + n_g_ii_faces;
+    }
 
     new_io_num = fvm_io_num_create(NULL, new_fgnum, n_fi_faces, 0);
     new_io_gnum = fvm_io_num_get_global_num(new_io_num);

@@ -740,8 +740,8 @@ _test_loop_continues(cs_mesh_t   *mesh,
 
       cs_lnum_t fac_id = face_num - mesh->n_b_faces - 1;
 
-      if (   mesh->i_face_cells[2*fac_id] < 1
-          || mesh->i_face_cells[2*fac_id+1] < 1 )
+      if (   mesh->i_face_cells[fac_id][0] < 0
+          || mesh->i_face_cells[fac_id][1] < 0)
         choice = true;
       else
         choice = false;
@@ -2152,40 +2152,40 @@ _check_i_face_cells(cs_mesh_t  *mesh)
 
   for (i = 0; i < mesh->n_i_faces; i++) {
 
-    if (mesh->i_face_cells[2*i] < 1) {
+    if (mesh->i_face_cells[i][0] < 0) {
       if (n_c_domains > 1)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
                   " Face %d (%llu) has an incomplete connectivity.\n"
                   " Cell1: %d - Cell2: %d (%llu)",
                   i+1, (unsigned long long)(mesh->global_i_face_num[i]),
-                  mesh->i_face_cells[2*i],
-                  mesh->i_face_cells[2*i+1],
-                  (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[2*i+1]-1]));
+                  mesh->i_face_cells[i][0],
+                  mesh->i_face_cells[i][1],
+                  (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[i][1]]));
       else /* Serial run */
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
                   " Face %d has an incomplete connectivity.\n"
                   " Cell1: %d - Cell2: %d",
-                  i+1, mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
+                  i+1, mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
     }
 
-    if (mesh->i_face_cells[2*i+1] < 1) {
+    if (mesh->i_face_cells[i][1] < 0) {
       if (n_c_domains > 1)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
                   " Face %d (%llu) has an incomplete connectivity.\n"
                   " Cell1: %d (%llu) - Cell2: %d",
                   i+1, (unsigned long long)(mesh->global_i_face_num[i]),
-                  mesh->i_face_cells[2*i],
-                  (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[2*i]-1]),
-                  mesh->i_face_cells[2*i+1]);
+                  mesh->i_face_cells[i][0],
+                  (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[i][0]]),
+                  mesh->i_face_cells[i][1]);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
                   " Face %d has an incomplete connectivity.\n"
                   " Cell1: %d - Cell2: %d",
-                  i+1, mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
+                  i+1, mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
     }
 
   }
@@ -2654,10 +2654,10 @@ _update_i_face_cells(cs_mesh_t           *mesh,
            in the same halo. So we can have a face->cell connect up-to-date
            when it is not the first pass */
 
-        if (mesh->i_face_cells[2*face_id] == 0)
-          mesh->i_face_cells[2*face_id] = mesh->n_cells + i + 1;
-        else if (mesh->i_face_cells[2*face_id+1] == 0)
-          mesh->i_face_cells[2*face_id+1] = mesh->n_cells + i + 1;
+        if (mesh->i_face_cells[face_id][0] == -1)
+          mesh->i_face_cells[face_id][0] = mesh->n_cells + i;
+        else if (mesh->i_face_cells[face_id][1] == -1)
+          mesh->i_face_cells[face_id][1] = mesh->n_cells + i;
 
       } /* End of loop on related faces */
 
@@ -2812,7 +2812,7 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t n_cells = mesh->n_cells;
-  const cs_lnum_t *face_cells = mesh->i_face_cells;
+  const cs_lnum_2_t *face_cells = mesh->i_face_cells;
   const cs_lnum_t *fac_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t *fac_vtx_lst = mesh->i_face_vtx_lst;
 
@@ -2847,8 +2847,8 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
 
       if (vtx_tag[vtx_id] == 1) {
 
-        id1 = face_cells[2*fac_id] - 1;
-        id2 = face_cells[2*fac_id + 1] - 1;
+        id1 = face_cells[fac_id][0];
+        id2 = face_cells[fac_id][1];
 
         if (id1 < 0) {
           if (cell_tag[id2] != fac_id) {
@@ -2905,8 +2905,8 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
 
       if (vtx_tag[vtx_id] == 1) {
 
-        id1 = face_cells[2*fac_id] - 1;
-        id2 = face_cells[2*fac_id + 1] - 1;
+        id1 = face_cells[fac_id][0];
+        id2 = face_cells[fac_id][1];
 
         if (id1 < 0) {
           if (cell_tag[id2] != fac_id) {

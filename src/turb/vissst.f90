@@ -64,7 +64,6 @@ use cstnum
 use pointe, only: s2kw, divukw, ifapat, dispar
 use numvar
 use optcal
-use dimens, only: nvar
 use cstphy
 use entsor
 use mesh
@@ -80,12 +79,9 @@ implicit none
 ! Local variables
 
 integer          iel, inc
-integer          ipcvis, ipcvst
-integer          nswrgp, imligp, iwarnp
 integer          ifacpt, iprev
 
 double precision d1s3, d2s3
-double precision epsrgp, climgp, extrap
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
 double precision, allocatable, dimension(:) :: w1

@@ -63,61 +63,9 @@ CS_PROCF (algrma, ALGRMA)(void);
  *
  * Fortran Interface
  *
- * SUBROUTINE ALDEPL
- * *****************
- *
- * INTEGER         IFACEL(2,NFAC)  : --> : Interior faces -> cells connectivity
- * INTEGER         IFABOR(NFABOR)  : --> : Border faces -> cells connectivity
- * INTEGER         IPNFAC(NFAC+1)  : --> : Interior faces -> vertices index
- * INTEGER         NODFAC(LNDFAC)  : --> : Interior faces -> vertices list
- * INTEGER         IPNFBR(NFABOR+1): --> : Border faces -> vertices index
- * INTEGER         NODFBR(LNDFBR)  : --> : Border faces -> vertices list
- * DOUBLE PRECISION UMA(NCELET)    : --> : Mesh velocity along X
- * DOUBLE PRECISION VMA(NCELET)    : --> : Mesh velocity along Y
- * DOUBLE PRECISION WMA(NCELET)    : --> : Mesh velocity along Z
- * DOUBLE PRECISION COEFAU(NCELET) : --> : Boundary condition A for UMA
- * DOUBLE PRECISION COEFAV(NCELET) : --> : Boundary condition A pour VMA
- * DOUBLE PRECISION COEFAW(NCELET) : --> : Boundary condition A pour WMA
- * DOUBLE PRECISION COEFBU(NCELET) : --> : Boundary condition B pour UMA
- * DOUBLE PRECISION COEFBV(NCELET) : --> : Boundary condition B pour VMA
- * DOUBLE PRECISION COEFBW(NCELET) : --> : Boundary condition B pour WMA
- * DOUBLE PRECISION DT(NCELET)     : --> : Time step
- * DOUBLE PRECISION DEPROJ(NNOD,3)): <-- : Displacement projected on vertices
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
-                          const cs_int_t    b_face_cells[],
-                          const cs_int_t    i_face_vtx_idx[],
-                          const cs_int_t    i_face_vtx_lst[],
-                          const cs_int_t    b_face_vtx_idx[],
-                          const cs_int_t    b_face_vtx_lst[],
-                          cs_real_t        *uma,
-                          cs_real_t        *vma,
-                          cs_real_t        *wma,
-                          cs_real_t        *coefau,
-                          cs_real_t        *coefav,
-                          cs_real_t        *coefaw,
-                          cs_real_t        *coefbu,
-                          cs_real_t        *coefbv,
-                          cs_real_t        *coefbw,
-                          cs_real_t        *dt,
-                          cs_real_t        *disp_proj);
-
-/*----------------------------------------------------------------------------
- * Projection on mesh vertices of the displacement (computed on cell center)
- *
- * Fortran Interface
- *
  * subroutine aledis
  * *****************
  *
- * ifacel            : <-- : Interior faces -> cells connectivity
- * ifabor            : <-- : Border faces -> cells connectivity
- * ipnfac            : <-- : Interior faces -> vertices index
- * nodfac            : <-- : Interior faces -> vertices list
- * ipnfbr            : <-- : Border faces -> vertices index
- * nodfbr            : <-- : Border faces -> vertices list
  * ialtyb            : <-- : Type of boundary for ALE
  * meshv             : <-- : Mesh velocity
  * gradm             : <-- : Mesh velocity gradient (du_i/dx_j : gradv[][i][j])
@@ -128,13 +76,7 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
-                          const cs_int_t      b_face_cells[],
-                          const cs_int_t      i_face_vtx_idx[],
-                          const cs_int_t      i_face_vtx_lst[],
-                          const cs_int_t      b_face_vtx_idx[],
-                          const cs_int_t      b_face_vtx_lst[],
-                          const cs_int_t      ialtyb[],
+CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
                           const cs_real_t    *meshv,
                           const cs_real_33_t  gradm[],
                           const cs_real_t    *claale,

@@ -67,7 +67,6 @@ use paramx
 use cstnum
 use numvar
 use optcal
-use dimens, only: nvar
 use entsor
 use cstphy
 use pointe

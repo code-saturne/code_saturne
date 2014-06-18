@@ -192,8 +192,8 @@ call init_fortran_omp(nfac, nfabor, &
 ! 4. Define pointers on mesh structure
 !===============================================================================
 
-ifacel => iface2(1:2,1:nfac)
-ifabor => ifabo2(1:nfabor)
+ifacel_0 => iface2(1:2,1:nfac)
+ifabor_0 => ifabo2(1:nfabor)
 
 ifmfbr => ifmfb2(1:nfabor)
 ifmcel => ifmce2(1:ncelet)

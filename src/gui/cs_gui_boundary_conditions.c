@@ -1659,7 +1659,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
   int *faces_list = NULL;
 
   cs_var_t  *vars = cs_glob_var;
-  int *ifabor = cs_glob_mesh->b_face_cells;
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
   zones = cs_gui_boundary_zones_number();
 
@@ -1849,7 +1849,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       if (boundaries->type_code[fp1->id][izone] == NEUMANN_IMPLICIT)
         for (int ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac]- 1;
-          int iel = ifabor[ifbr] - 1;
+          int iel = b_face_cells[ifbr];
           icodcl[ivar1 *(*nfabor) + ifbr] = 5;
           icodcl[ivar2 *(*nfabor) + ifbr] = 5;
           icodcl[ivar3 *(*nfabor) + ifbr] = 5;

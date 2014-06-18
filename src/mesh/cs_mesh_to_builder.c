@@ -371,11 +371,11 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
   BFT_MALLOC(face_cell_g, n_faces*2, cs_gnum_t);
 
   for (i = 0; i < n_i_faces; i++) {
-    face_cell_g[i*2] = cell_gnum[mesh->i_face_cells[i*2] - 1];
-    face_cell_g[i*2 + 1] = cell_gnum[mesh->i_face_cells[i*2 + 1] - 1];
+    face_cell_g[i*2]     = cell_gnum[mesh->i_face_cells[i][0]];
+    face_cell_g[i*2 + 1] = cell_gnum[mesh->i_face_cells[i][1]];
   }
   for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++) {
-    face_cell_g[j*2] = cell_gnum[mesh->b_face_cells[i] - 1];
+    face_cell_g[j*2] = cell_gnum[mesh->b_face_cells[i]];
     face_cell_g[j*2 + 1] = 0;
   }
 
@@ -649,8 +649,8 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
 
     for (i = 0; i < n_i_faces; i++) {
       k = i_order[i];
-      cell_id_0 = mesh->i_face_cells[k*2] - 1;
-      cell_id_1 = mesh->i_face_cells[k*2 + 1] - 1;
+      cell_id_0 = mesh->i_face_cells[k][0];
+      cell_id_1 = mesh->i_face_cells[k][1];
       if (cell_id_0 < mesh->n_cells)
         mb->face_cells[i*2] = mesh->global_cell_num[cell_id_0];
       else
@@ -662,7 +662,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     }
     for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++) {
       k = b_order[i];
-      mb->face_cells[j*2] = mesh->global_cell_num[mesh->b_face_cells[k] - 1];
+      mb->face_cells[j*2] = mesh->global_cell_num[mesh->b_face_cells[k]];
       mb->face_cells[j*2 + 1] = 0;
     }
 
@@ -674,8 +674,8 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
 
     for (i = 0; i < n_i_faces; i++) {
       k = i_order[i];
-      cell_id_0 = mesh->i_face_cells[k*2] - 1;
-      cell_id_1 = mesh->i_face_cells[k*2 + 1] - 1;
+      cell_id_0 = mesh->i_face_cells[k][0];
+      cell_id_1 = mesh->i_face_cells[k][1];
       if (cell_id_0 < mesh->n_cells)
         mb->face_cells[i*2] = cell_id_0 + 1;
       else
@@ -687,7 +687,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     }
     for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++) {
       k = b_order[i];
-      mb->face_cells[j*2] = mesh->b_face_cells[k];
+      mb->face_cells[j*2] = mesh->b_face_cells[k] + 1;
       mb->face_cells[j*2 + 1] = 0;
     }
 

@@ -55,7 +55,6 @@ subroutine vissma
 use paramx
 use numvar
 use optcal
-use dimens, only: nvar
 use cstphy
 use entsor
 use mesh
@@ -71,7 +70,7 @@ implicit none
 ! Local variables
 
 integer          iel, inc
-integer          ipcvst, iprev
+integer          iprev
 
 double precision coef, deux, delta
 double precision s11, s22, s33

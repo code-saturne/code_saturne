@@ -279,7 +279,7 @@ call pplecd
 
 ! ---> Definition des variables
 
-call ppvarp(nmodpp)
+call ppvarp
 !==========
 
 ! Thermal model with no specific physics

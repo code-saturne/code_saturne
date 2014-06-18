@@ -298,7 +298,7 @@ typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
 
 /* Vector or array block types */
 
-typedef cs_lnum_t  cs_lnum_2_t[2];      /* Vector of 2 local numbers */
+typedef int        cs_lnum_2_t[2];      /* Vector of 2 local numbers */
 
 typedef double     cs_coord_3_t[3];     /* Vector of 3 real (coordinate)
                                            values */

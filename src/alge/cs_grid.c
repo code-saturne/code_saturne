@@ -133,8 +133,8 @@ struct _cs_grid_t {
 
   /* Connectivity information */
 
-  const cs_lnum_t    *face_cell;    /* Face -> cells connectivity (1 to n) */
-  cs_lnum_t          *_face_cell;   /* Face -> cells connectivity
+  const cs_lnum_2_t  *face_cell;    /* Face -> cells connectivity (1 to n) */
+  cs_lnum_2_t        *_face_cell;   /* Face -> cells connectivity
                                        (private array) */
 
   /* Restriction from parent to current level */
@@ -392,8 +392,8 @@ _coarse_init(const cs_grid_t *f)
  *                        > 0 orientation same as parent
  *                        < 0 orientation opposite as parent);
  *                        size: fine->n_faces
- *   coarse_face_cell --> coarse face -> cell connectivity (1 to n numbering)
- *                        size: n_coarse_facees * 2
+ *   coarse_face_cell --> coarse face -> cell connectivity
+ *                        size: n_coarse_faces
  *----------------------------------------------------------------------------*/
 
 static void
@@ -402,7 +402,7 @@ _coarsen_faces(const cs_grid_t    *fine,
                cs_lnum_t           n_coarse_cells,
                cs_lnum_t          *n_coarse_faces,
                cs_lnum_t         **coarse_face,
-               cs_lnum_t         **coarse_face_cell)
+               cs_lnum_2_t       **coarse_face_cell)
 {
   cs_lnum_t  ii, jj, face_id, connect_size;
 
@@ -411,20 +411,20 @@ _coarsen_faces(const cs_grid_t    *fine,
   cs_lnum_t  *restrict c_cell_cell_id = NULL;
   cs_lnum_t  *restrict c_cell_cell_face = NULL;
 
-  cs_lnum_t  *restrict _coarse_face = NULL;
-  cs_lnum_t  *restrict _c_face_cell = NULL;
+  cs_lnum_t    *restrict _coarse_face = NULL;
+  cs_lnum_2_t  *restrict _c_face_cell = NULL;
 
   cs_lnum_t   c_n_faces = 0;
 
   const cs_lnum_t c_n_cells = n_coarse_cells;
   const cs_lnum_t f_n_faces = fine->n_faces;
-  const cs_lnum_t *restrict f_face_cell = fine->face_cell;
+  const cs_lnum_2_t *restrict f_face_cell = fine->face_cell;
 
   /* Pre-allocate return values
      (coarse face->cell connectivity is over-allocated) */
 
   BFT_MALLOC(_coarse_face, f_n_faces, cs_lnum_t);
-  BFT_MALLOC(_c_face_cell, f_n_faces*2, cs_lnum_t);
+  BFT_MALLOC(_c_face_cell, f_n_faces, cs_lnum_2_t);
 
 # pragma omp parallel for if(f_n_faces > THR_MIN)
   for (face_id = 0; face_id < f_n_faces; face_id++)
@@ -440,8 +440,8 @@ _coarsen_faces(const cs_grid_t    *fine,
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
 
-    ii = coarse_cell[f_face_cell[face_id*2]     - 1] - 1;
-    jj = coarse_cell[f_face_cell[face_id*2 + 1] - 1] - 1;
+    ii = coarse_cell[f_face_cell[face_id][0]] - 1;
+    jj = coarse_cell[f_face_cell[face_id][1]] - 1;
 
     if (ii < jj)
       c_cell_cell_idx[ii+1] += 1;
@@ -487,8 +487,8 @@ _coarsen_faces(const cs_grid_t    *fine,
     cs_lnum_t kk, start_id, end_id;
     cs_lnum_t sign = 1;
 
-    ii = coarse_cell[f_face_cell[face_id*2]     - 1] - 1;
-    jj = coarse_cell[f_face_cell[face_id*2 + 1] - 1] - 1;
+    ii = coarse_cell[f_face_cell[face_id][0]] - 1;
+    jj = coarse_cell[f_face_cell[face_id][1]] - 1;
 
     if (ii != jj) {
 
@@ -509,8 +509,8 @@ _coarsen_faces(const cs_grid_t    *fine,
       if (kk == end_id) {
         c_cell_cell_id[kk] = jj;
         c_cell_cell_face[kk] = c_n_faces + 1;
-        _c_face_cell[c_n_faces*2]     = ii + 1;
-        _c_face_cell[c_n_faces*2 + 1] = jj + 1;
+        _c_face_cell[c_n_faces][0] = ii;
+        _c_face_cell[c_n_faces][1] = jj;
         c_n_faces++;
         c_cell_cell_cnt[ii] += 1;
       }
@@ -529,7 +529,7 @@ _coarsen_faces(const cs_grid_t    *fine,
 
   /* Set return values */
 
-  BFT_REALLOC(_c_face_cell, c_n_faces*2, cs_lnum_t);
+  BFT_REALLOC(_c_face_cell, c_n_faces, cs_lnum_2_t);
 
   *n_coarse_faces = c_n_faces;
   *coarse_face = _coarse_face;
@@ -974,14 +974,14 @@ _coarsen(const cs_grid_t   *f,
   cs_lnum_t  c_n_cells = 0;
 
   const cs_lnum_t f_n_faces = f->n_faces;
-  const cs_lnum_t *restrict f_face_cell = f->face_cell;
+  const cs_lnum_2_t *restrict f_face_cell = f->face_cell;
 
   /* Sanity check */
 
 # pragma omp parallel for private(ii, jj) if(f_n_faces > THR_MIN)
   for (face_id = 0; face_id < f_n_faces; face_id++) {
-    ii = f_face_cell[face_id*2]     - 1;
-    jj = f_face_cell[face_id*2 + 1] - 1;
+    ii = f_face_cell[face_id][0];
+    jj = f_face_cell[face_id][1];
     if (ii == jj)
       bft_error(__FILE__, __LINE__, 0,
                 _("Connectivity error:\n"
@@ -2017,7 +2017,7 @@ _append_face_data(cs_grid_t   *g,
     for (rank_id = 0; rank_id < g->merge_sub_size; rank_id++)
       n_faces_tot += recv_count[rank_id];
 
-    BFT_REALLOC(g->_face_cell, n_faces_tot*2, cs_lnum_t);
+    BFT_REALLOC(g->_face_cell, n_faces_tot, cs_lnum_2_t);
 
     BFT_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
 
@@ -2036,7 +2036,7 @@ _append_face_data(cs_grid_t   *g,
       cs_lnum_t n_recv = recv_count[rank_id];
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
-      MPI_Recv(g->_face_cell + g->n_faces*2, n_recv*2,
+      MPI_Recv(g->_face_cell + g->n_faces, n_recv*2,
                CS_MPI_LNUM, dist_rank, tag, comm, &status);
 
       MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
@@ -2069,8 +2069,8 @@ _append_face_data(cs_grid_t   *g,
 
     for (face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t p_face_id = face_list[face_id];
-      g->_face_cell[face_id*2] = g->_face_cell[p_face_id*2];
-      g->_face_cell[face_id*2 + 1] = g->_face_cell[p_face_id*2 + 1];
+      g->_face_cell[face_id][0] = g->_face_cell[p_face_id][0];
+      g->_face_cell[face_id][1] = g->_face_cell[p_face_id][1];
       g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
       g->_face_normal[face_id*3 + 1] = g->_face_normal[p_face_id*3 + 1];
       g->_face_normal[face_id*3 + 2] = g->_face_normal[p_face_id*3 + 2];
@@ -2276,8 +2276,8 @@ _merge_grids(cs_grid_t  *g,
 
     for (face_id = 0; face_id < g->n_faces; face_id++) {
       bool use_face = true;
-      cs_lnum_t ii = g->face_cell[face_id*2] - g->n_cells;
-      cs_lnum_t jj = g->face_cell[face_id*2 + 1] - g->n_cells;
+      cs_lnum_t ii = g->face_cell[face_id][0] - g->n_cells + 1;
+      cs_lnum_t jj = g->face_cell[face_id][1] - g->n_cells + 1;
       if (ii > 0) {
         if (halo_cell_flag[ii - 1] == false)
           use_face = false;
@@ -2300,11 +2300,11 @@ _merge_grids(cs_grid_t  *g,
   /* Update face ->cells connectivity */
 
   for (face_id = 0; face_id < g->n_faces; face_id++) {
-    cs_lnum_t ii = g->face_cell[face_id*2] - 1;
-    cs_lnum_t jj = g->face_cell[face_id*2 + 1] - 1;
+    cs_lnum_t ii = g->face_cell[face_id][0];
+    cs_lnum_t jj = g->face_cell[face_id][1];
     assert(ii != jj && new_cell_num[ii] != new_cell_num[jj]);
-    g->_face_cell[face_id*2] = new_cell_num[ii];
-    g->_face_cell[face_id*2 + 1] = new_cell_num[jj];
+    g->_face_cell[face_id][0] = new_cell_num[ii] - 1;
+    g->_face_cell[face_id][1] = new_cell_num[jj] - 1;
   }
 
   BFT_FREE(new_cell_num);
@@ -2361,8 +2361,8 @@ _order_face_traversal(const cs_grid_t   *g,
                               c_h_code);
 
     for (ii = 0; ii < n_faces; ii++) {
-      double c0 = c_h_code[g->face_cell[ii*2] - 1];
-      double c1 = c_h_code[g->face_cell[ii*2 + 1] - 1];
+      double c0 = c_h_code[g->face_cell[ii][0]];
+      double c1 = c_h_code[g->face_cell[ii][1]];
       if (c0 < c1) {
         f_h_code[ii*2] = c0;
         f_h_code[ii*2+1] = c1;
@@ -2481,7 +2481,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
   cs_real_t *aggr_crit = NULL;
 
   const int *db_size = fine_grid->diag_block_size;
-  const cs_lnum_t *f_face_cells = fine_grid->face_cell;
+  const cs_lnum_2_t *f_face_cells = fine_grid->face_cell;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
 
@@ -2522,8 +2522,8 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
   /* Compute cardinality (number of neighbors for each cell -1) */
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
-    ii = f_face_cells[2*face_id] -1;
-    jj = f_face_cells[2*face_id + 1] -1;
+    ii = f_face_cells[face_id][0];
+    jj = f_face_cells[face_id][1];
 
     c_cardinality[ii] += 1;
     c_cardinality[jj] += 1;
@@ -2572,8 +2572,8 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
       c_face = f_c_face[face_id] -1;
 
-      ii = f_face_cells[2*c_face] -1;
-      jj = f_face_cells[2*c_face + 1] -1;
+      ii = f_face_cells[c_face][0];
+      jj = f_face_cells[c_face][1];
 
       /* Exclude faces on parallel or periodic boundary, so as not to */
       /* coarsen the grid across those boundaries (which would change */
@@ -2609,8 +2609,8 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
       face_f = face_order[face_id];
       c_face = f_c_face[face_f] -1;
-      ii = f_face_cells[2*c_face] -1;
-      jj = f_face_cells[2*c_face + 1] -1;
+      ii = f_face_cells[c_face][0];
+      jj = f_face_cells[c_face][1];
 
       /* Exclude faces on parallel or periodic boundary, so as not to */
       /* coarsen the grid across those boundaries (which would change */
@@ -2882,8 +2882,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   const int *db_size = fine_grid->diag_block_size;
 
-  const cs_lnum_t *f_face_cell = fine_grid->face_cell;
-  const cs_lnum_t *c_face_cell = coarse_grid->face_cell;
+  const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
+  const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
 
   const cs_real_t *f_face_normal = fine_grid->face_normal;
   const cs_real_t *f_xa0 = fine_grid->xa0;
@@ -2966,8 +2966,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     w1[ii] = 0.;
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
-    ii = f_face_cell[2*face_id] -1;
-    jj = f_face_cell[2*face_id + 1] -1;
+    ii = f_face_cell[face_id][0];
+    jj = f_face_cell[face_id][1];
     for (kk = 0; kk < db_size[0]; kk++) {
       w1[ii*db_size[3] + db_size[2]*kk + kk] += f_xa[face_id*isym];
       w1[jj*db_size[3] + db_size[2]*kk + kk] += f_xa[(face_id +1)*isym -1];
@@ -3002,8 +3002,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
     for (c_face = 0; c_face < c_n_faces; c_face++) {
 
-      ic = c_face_cell[2*c_face] -1;
-      jc = c_face_cell[2*c_face + 1] -1;
+      ic = c_face_cell[c_face][0];
+      jc = c_face_cell[c_face][1];
 
       dsigjg =   (  c_cell_cen[3*jc]
                   - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
@@ -3098,8 +3098,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   }
 
   for (c_face = 0; c_face < c_n_faces; c_face++) {
-    ic = c_face_cell[2*c_face] -1;
-    jc = c_face_cell[2*c_face + 1] -1;
+    ic = c_face_cell[c_face][0];
+    jc = c_face_cell[c_face][1];
     for (kk = 0; kk < db_size[0]; kk++) {
       c_da[ic*db_size[3] + db_size[2]*kk + kk] -= c_xa[c_face*isym];
       c_da[jc*db_size[3] + db_size[2]*kk + kk] -= c_xa[(c_face +1)*isym -1];
@@ -3140,8 +3140,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     }
 
     for (face_id = 0; face_id < f_n_faces; face_id++) {
-      ii = f_face_cell[2*face_id] -1;
-      jj = f_face_cell[2*face_id + 1] -1;
+      ii = f_face_cell[face_id][0];
+      jj = f_face_cell[face_id][1];
       w1[ii] = CS_MAX(fabs(f_xa[face_id*isym]), w1[ii]);
       w2[ii] = CS_MIN(fabs(f_xa[face_id*isym]), w2[ii]);
       w1[jj] = CS_MAX(fabs(f_xa[(face_id +1)*isym -1]), w1[jj]);
@@ -3149,8 +3149,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     }
 
     for (c_face = 0; c_face < c_n_faces; c_face++) {
-      ic = c_face_cell[2*c_face] -1;
-      jc = c_face_cell[2*c_face + 1] -1;
+      ic = c_face_cell[c_face][0];
+      jc = c_face_cell[c_face][1];
       w3[ic] = CS_MAX(fabs(c_xa[c_face*isym]), w3[ic]);
       w4[ic] = CS_MIN(fabs(c_xa[c_face*isym]), w4[ic]);
       w3[jc] = CS_MAX(fabs(c_xa[(c_face +1)*isym -1]), w3[jc]);
@@ -3244,8 +3244,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     }
 
     for (face_id = 0; face_id < f_n_faces; face_id++) {
-      ii = f_face_cell[2*face_id] -1;
-      jj = f_face_cell[2*face_id + 1] -1;
+      ii = f_face_cell[face_id][0];
+      jj = f_face_cell[face_id][1];
       for (kk = 0; kk < db_size[0]; kk++) {
         w1[ii*db_size[3] + db_size[2]*kk + kk]
           -= fabs(f_xa[face_id*isym]);
@@ -3255,8 +3255,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     }
 
     for (c_face = 0; c_face < c_n_faces; c_face++) {
-      ic = c_face_cell[2*c_face] -1;
-      jc = c_face_cell[2*c_face + 1] -1;
+      ic = c_face_cell[c_face][0];
+      jc = c_face_cell[c_face][1];
       for (kk = 0; kk < db_size[0]; kk++) {
         w3[ic*db_size[3] + db_size[2]*kk + kk]
           -= fabs(c_xa[c_face*isym]);
@@ -3318,8 +3318,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
       w1[ic] = 0.;
 
     for (c_face = 0; c_face < c_n_faces; c_face++) {
-      ic = c_face_cell[2*c_face] -1;
-      jc = c_face_cell[2*c_face + 1] -1;
+      ic = c_face_cell[c_face][0];
+      jc = c_face_cell[c_face][1];
       w1[ic] -= fabs(c_xa[c_face*isym]);
       w1[jc] -= fabs(c_xa[(c_face +1)*isym -1]);
     }
@@ -3407,7 +3407,7 @@ void CS_PROCF(clmlgo, CLMLGO)
  *   symmetric             <-- True if xam is symmetric, false otherwise
  *   diag_block_size       <-- Block sizes for diagonal, or NULL
  *   extra_diag_block_size <-- Block sizes for diagonal, or NULL
- *   face_cell             <-- Face -> cells connectivity (1 to n)
+ *   face_cell             <-- Face -> cells connectivity
  *   halo                  <-- Halo structure associated with this level,
  *                             or NULL.
  *   numbering             <-- vectorization or thread-related numbering info,
@@ -3430,7 +3430,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            bool                   symmetric,
                            const int             *diag_block_size,
                            const int             *extra_diag_block_size,
-                           const cs_lnum_t       *face_cell,
+                           const cs_lnum_2_t     *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
                            const cs_real_t       *cell_cen,
@@ -3518,8 +3518,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
 # pragma omp parallel for private(ii, jj, kk) if(n_faces > THR_MIN)
   for (face_id = 0; face_id < n_faces; face_id++) {
-    ii = face_cell[face_id*2] - 1;
-    jj = face_cell[face_id*2 + 1] - 1;
+    ii = face_cell[face_id][0];
+    jj = face_cell[face_id][1];
     for (kk = 0; kk < 3; kk++)
       g->xa0ij[face_id*3 + kk] = g->xa0[face_id] * (  cell_cen[jj*3 + kk]
                                                     - cell_cen[ii*3 + kk]);
@@ -4449,7 +4449,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
   {
     const cs_lnum_t n_cells = g->n_cells;
     const cs_lnum_t n_faces = g->n_faces;
-    const cs_lnum_t *face_cel = g->face_cell;
+    const cs_lnum_2_t *face_cel = g->face_cell;
     cs_real_t abs_trace;
 
     /* Diagonal part of matrix.vector product */
@@ -4465,8 +4465,8 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
 
     if (g->symmetric) {
       for (face_id = 0; face_id < n_faces; face_id++) {
-        ii = face_cel[2*face_id] -1;
-        jj = face_cel[2*face_id + 1] -1;
+        ii = face_cel[face_id][0];
+        jj = face_cel[face_id][1];
 
         for (i = 0; i < db_size[0]; i++) {
           dd[ii*db_size[3] + db_size[2]*i + i] -= fabs(g->xa[face_id]);
@@ -4476,8 +4476,8 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
     }
     else {
       for (face_id = 0; face_id < n_faces; face_id++) {
-        ii = face_cel[2*face_id] -1;
-        jj = face_cel[2*face_id + 1] -1;
+        ii = face_cel[face_id][0];
+        jj = face_cel[face_id][1];
 
         for (i = 0; i < db_size[0]; i++) {
           dd[ii*db_size[3] + db_size[2]*i + i] -= fabs(g->xa[face_id*2]);
@@ -4819,7 +4819,7 @@ cs_grid_dump(const cs_grid_t  *g)
                "  face -> cell connectivity;\n");
     for (i = 0; i < g->n_faces; i++)
       bft_printf("    %d : %d, %d\n", (int)(i+1),
-                 (int)(g->face_cell[i*2]), (int)(g->face_cell[i*2+1]));
+                 (int)(g->face_cell[i][0]), (int)(g->face_cell[i][1]));
   }
 
   if (g->coarse_cell != NULL && g->parent != NULL) {

@@ -485,7 +485,7 @@ _synthetic_eddy_method(const cs_int_t    n_points,
   for (point_id = 0; point_id < n_points; point_id++) {
 
     cs_int_t  b_face_id = num_face[point_id] - 1;
-    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id] - 1;
+    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
 
     for (coo_id = 0; coo_id < 3; coo_id++) {
 
@@ -963,7 +963,7 @@ _rescale_flowrate(cs_int_t     n_points,
     double dot_product = 0.;
 
     cs_lnum_t b_face_id = num_face[point_id] - 1;
-    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id] - 1;
+    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
 
     double fluct[3] = { fluctuations[point_id*3],
                         fluctuations[point_id*3 + 1],
@@ -996,7 +996,7 @@ _rescale_flowrate(cs_int_t     n_points,
 
     int coo_id;
     cs_lnum_t b_face_id = num_face[point_id] - 1;
-    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id] - 1;
+    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
 
     cs_lnum_t idx = mesh->b_face_vtx_idx[b_face_id];
     cs_lnum_t vtx_id1 = mesh->b_face_vtx_lst[idx-1] - 1;

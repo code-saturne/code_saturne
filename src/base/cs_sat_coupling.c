@@ -705,7 +705,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   for (ind = 0 ; ind < n_fbr_loc ; ind++) {
 
     ifac = lstfbr[ind] - 1;
-    iel  = mesh->b_face_cells[ifac] - 1;
+    iel  = mesh->b_face_cells[ifac];
 
     surface = 0.;
 
@@ -761,7 +761,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   for (ind = 0 ; ind < n_fbr_loc ; ind++) {
 
     ifac = lstfbr[ind] - 1;
-    iel  = mesh->b_face_cells[ifac] - 1;
+    iel  = mesh->b_face_cells[ifac];
 
     surface = 0.;
 

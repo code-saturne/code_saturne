@@ -106,8 +106,9 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+character(len=80) :: chaine
+
 double precision grav2
-character*80     chaine
 integer          ifac, ivar, icode
 integer          nstoni        , nstvit, nstopp
 integer          nstoke, nstosc, nstovf

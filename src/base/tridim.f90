@@ -111,7 +111,6 @@ double precision, pointer, dimension(:) :: prhyd
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncv   , iok   , ifld
-integer          iiptot
 integer          nbccou
 integer          ntrela
 
@@ -1163,12 +1162,8 @@ do while (iterns.le.nterup)
   if (itytur.eq.4 .and. idries.eq.1) then
 
     !     Pas d'amortissement si pas de paroi
-    if(infpar.gt.0) then
-      call vandri &
-      !==========
-    ( ndim   , ncelet , ncel   , nfabor ,                          &
-      itypfb , ifabor , ifapat,                                    &
-      xyzcen , cdgfbo , visvdr , yplpar )
+    if (infpar.gt.0) then
+      call vandri(itypfb, ifapat, visvdr, yplpar)
     endif
 
   endif

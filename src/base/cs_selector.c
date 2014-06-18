@@ -478,8 +478,8 @@ cs_selector_get_cells_boundary(const char  *criteria,
   /* Now build lists of faces on cell boundaries */
 
   for (ii = 0; ii < mesh->n_i_faces; ii++) {
-    cs_lnum_t c_id_0 = mesh->i_face_cells[ii*2] - 1;
-    cs_lnum_t c_id_1 = mesh->i_face_cells[ii*2 + 1] - 1;
+    cs_lnum_t c_id_0 = mesh->i_face_cells[ii][0];
+    cs_lnum_t c_id_1 = mesh->i_face_cells[ii][1];
     if (cell_flag[c_id_0] != cell_flag[c_id_1]) {
       i_face_list[*n_i_faces] = ii + 1;
       *n_i_faces += 1;
@@ -487,7 +487,7 @@ cs_selector_get_cells_boundary(const char  *criteria,
   }
 
   for (ii = 0; ii < mesh->n_b_faces; ii++) {
-    cs_lnum_t c_id = mesh->b_face_cells[ii] - 1;
+    cs_lnum_t c_id = mesh->b_face_cells[ii];
     if (cell_flag[c_id] == 1) {
       b_face_list[*n_b_faces] = ii + 1;
       *n_b_faces += 1;

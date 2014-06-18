@@ -602,8 +602,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
@@ -669,8 +669,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
@@ -794,8 +794,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           factor1 = 1.0;
           if (denum[ii] > climgp * denom[ii])
@@ -1055,8 +1055,8 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             ktpond =    weight[face_id] * c_weight[ii]
                      / (       weight[face_id] * c_weight[ii]
@@ -1093,8 +1093,8 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             pfac  =        weight[face_id]  * rhsv[ii][3]
                     + (1.0-weight[face_id]) * rhsv[jj][3];
@@ -1127,7 +1127,7 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           pfac = inc*coefap[face_id] + coefbp[face_id]*rhsv[ii][3];
           rhsv[ii][0] += pfac * b_face_normal[face_id][0];
@@ -1158,8 +1158,8 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           pfac
             =   (  weight[face_id]
@@ -1200,7 +1200,7 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           pfac
             =      coefap[face_id] * inc
@@ -1368,7 +1368,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           for (ll = 0; ll < 3; ll++) {
             for (mm = 0; mm < 3; mm++)
@@ -1468,8 +1468,8 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             pfac  =        weight[face_id]  * rhsv[ii][3]
                     + (1.0-weight[face_id]) * rhsv[jj][3]
@@ -1503,7 +1503,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             pip =   rhsv[ii][3]
                   + diipb[face_id][0] * grad[ii][0]
@@ -1549,8 +1549,8 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             fexd[0] = 0.5 * (f_ext[ii][0] - f_ext[jj][0]);
             fexd[1] = 0.5 * (f_ext[ii][1] - f_ext[jj][1]);
@@ -1609,7 +1609,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id] - 1;
+            ii = b_face_cells[face_id];
 
             pip =   rhsv[ii][3]
                   + diipb[face_id][0] * grad[ii][0]
@@ -1853,7 +1853,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           extrab = 1. - isympa[face_id]*extrap*coefbp[face_id];
 
@@ -1939,8 +1939,8 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2002,7 +2002,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           extrab = pow((1. - isympa[face_id]*extrap*coefbp[face_id]), 2.0);
           unddij = 1. / b_dist[face_id];
@@ -2043,8 +2043,8 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2130,7 +2130,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           extrab = pow((1. - isympa[face_id]*extrap*coefbp[face_id]), 2.0);
           unddij = 1. / b_dist[face_id];
@@ -2312,8 +2312,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cell_id1 = i_face_cells[face_id][0] - 1;
-          cell_id2 = i_face_cells[face_id][1] - 1;
+          cell_id1 = i_face_cells[face_id][0];
+          cell_id2 = i_face_cells[face_id][1];
 
           for (i = 0; i < 3; i++)
             dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
@@ -2414,8 +2414,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cell_id1 = i_face_cells[face_id][0] - 1;
-          cell_id2 = i_face_cells[face_id][1] - 1;
+          cell_id1 = i_face_cells[face_id][0];
+          cell_id2 = i_face_cells[face_id][1];
 
           for (i = 0; i < 3; i++)
             dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
@@ -2556,8 +2556,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cell_id1 = i_face_cells[face_id][0] - 1;
-          cell_id2 = i_face_cells[face_id][1] - 1;
+          cell_id1 = i_face_cells[face_id][0];
+          cell_id2 = i_face_cells[face_id][1];
 
           factor1 = 1.0;
           if (denum[cell_id1] > clipp_coef_sq * denom[cell_id1])
@@ -2774,8 +2774,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        cs_lnum_t cell_id1 = i_face_cells[face_id][0] - 1;
-        cs_lnum_t cell_id2 = i_face_cells[face_id][1] - 1;
+        cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+        cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
         pond = weight[face_id];
         cs_real_t dvol1 = 1./cell_vol[cell_id1];
@@ -2815,7 +2815,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+        cs_lnum_t cell_id = b_face_cells[face_id];
 
         cs_real_t dvol = 1./cell_vol[cell_id];
 
@@ -2959,8 +2959,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            cs_lnum_t cell_id1 = i_face_cells[face_id][0] - 1;
-            cs_lnum_t cell_id2 = i_face_cells[face_id][1] - 1;
+            cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+            cs_lnum_t cell_id2 = i_face_cells[face_id][1];
             pond = weight[face_id];
 
             cs_real_t dvol1 = 1./cell_vol[cell_id1];
@@ -3013,7 +3013,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+            cs_lnum_t cell_id = b_face_cells[face_id];
             cs_real_t dvol = 1./cell_vol[cell_id];
 
             for (int i = 0; i < 3; i++) {
@@ -3186,8 +3186,8 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        cell_id1 = i_face_cells[face_id][0] - 1;
-        cell_id2 = i_face_cells[face_id][1] - 1;
+        cell_id1 = i_face_cells[face_id][0];
+        cell_id2 = i_face_cells[face_id][1];
 
         for (i = 0; i < 3; i++)
           dc[i] = cell_cen[cell_id2][i] - cell_cen[cell_id1][i];
@@ -3251,7 +3251,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        cell_id1 = b_face_cells[face_id] - 1;
+        cell_id1 = b_face_cells[face_id];
 
         for (i = 0; i < 3; i++)
           dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i];
@@ -3392,8 +3392,8 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           cs_real_t dvol1 = 1./cell_vol[ii];
           cs_real_t dvol2 = 1./cell_vol[jj];
@@ -3446,7 +3446,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           cs_real_t dvol = 1./cell_vol[ii];
 
@@ -3498,8 +3498,8 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             cs_real_t dvol1 = 1./cell_vol[ii];
             cs_real_t dvol2 = 1./cell_vol[jj];
@@ -3544,8 +3544,8 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0] - 1;
-            jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0];
+            jj = i_face_cells[face_id][1];
 
             cs_real_t dvol1 = 1./cell_vol[ii];
             cs_real_t dvol2 = 1./cell_vol[jj];
@@ -3585,7 +3585,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           cs_real_t dvol = 1./cell_vol[ii];
 
@@ -3751,8 +3751,8 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            cs_lnum_t cell_id1 = i_face_cells[face_id][0] - 1;
-            cs_lnum_t cell_id2 = i_face_cells[face_id][1] - 1;
+            cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+            cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
             cs_real_t dvol1 = 1./cell_vol[cell_id1];
             cs_real_t dvol2 = 1./cell_vol[cell_id2];
@@ -3821,7 +3821,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+            cs_lnum_t cell_id = b_face_cells[face_id];
             cs_real_t dvol = 1./cell_vol[cell_id];
 
             /*
@@ -3870,8 +3870,8 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            cs_lnum_t cell_id1 = i_face_cells[face_id][0] - 1;
-            cs_lnum_t cell_id2 = i_face_cells[face_id][1] - 1;
+            cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+            cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
             cs_real_t dvol1 = 1./cell_vol[cell_id1];
             cs_real_t dvol2 = 1./cell_vol[cell_id2];
@@ -3917,7 +3917,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            cs_lnum_t cell_id = b_face_cells[face_id] - 1;
+            cs_lnum_t cell_id = b_face_cells[face_id];
             cs_real_t dvol = 1./cell_vol[cell_id];
 
             /*
@@ -4102,8 +4102,8 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -4165,7 +4165,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = b_face_cog[face_id][ll] - cell_cen[ii][ll];
@@ -4200,8 +4200,8 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+          ii = i_face_cells[face_id][0];
+          jj = i_face_cells[face_id][1];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -4287,7 +4287,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id] - 1;
+          ii = b_face_cells[face_id];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = b_face_cog[face_id][ll] - cell_cen[ii][ll];

@@ -79,9 +79,9 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static void
-_check_ifacel(void)
+_check_i_face_cells(void)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -89,11 +89,11 @@ _check_ifacel(void)
 
   for (i = 0; i < mesh->n_i_faces; i++) {
 
-    if (mesh->i_face_cells[2*i] == 0 || mesh->i_face_cells[2*i+1] == 0)
+    if (mesh->i_face_cells[i][0] == -1 || mesh->i_face_cells[i][1] == -1)
       bft_error(__FILE__, __LINE__, 0,
                 _("Internal face -> cells connectivity value not initialized\n"
                   "for face: %d (cell_num1 = %d and cell_num2 = %d)\n"),
-                i+1, mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
+                i+1, mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
 
   }
 
@@ -171,18 +171,18 @@ cs_mesh_coherency_check(void)
   cs_real_3_t  *emin = NULL, *emax = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
-  const cs_int_t  *ifacel = mesh->i_face_cells;
-  const cs_int_t  *bfacel = mesh->b_face_cells;
+  const cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
+  const cs_lnum_t  *b_face_cells = mesh->b_face_cells;
   const cs_real_t  *vtx_coord = mesh->vtx_coord;
 
   bft_printf(_("\n Checking the mesh structure coherency:\n"));
 
   /* Check internal face -> cells connectivity coherency */
 
-  _check_ifacel();
+  _check_i_face_cells();
 
   /* allocate and initialize buffers */
 
@@ -224,7 +224,7 @@ cs_mesh_coherency_check(void)
 
     for (j = 0; j < 2; j++) {
 
-      cell_id = ifacel[2*face_id + j] - 1;
+      cell_id = i_face_cells[face_id][j];
 
       for (k = 0; k < 3; k++) {
         emin[cell_id][k] = CS_MIN(emin[cell_id][k], _min[k]);
@@ -255,7 +255,7 @@ cs_mesh_coherency_check(void)
         _max[j] = CS_MAX(_max[j], coord[j]);
       }
 
-      cell_id = bfacel[face_id] - 1;
+      cell_id = b_face_cells[face_id];
 
       for (j = 0; j < 3; j++) {
         emin[cell_id][j] = CS_MIN(emin[cell_id][j], _min[j]);
@@ -346,8 +346,8 @@ cs_mesh_coherency_check(void)
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
 
-    cs_lnum_t  cell_id1 = ifacel[2*face_id] - 1;
-    cs_lnum_t  cell_id2 = ifacel[2*face_id + 1] - 1;
+    cs_lnum_t  cell_id1 = i_face_cells[face_id][0];
+    cs_lnum_t  cell_id2 = i_face_cells[face_id][1];
 
     _check_bounding_boxes(_("standard"),
                           cell_id1,

@@ -316,7 +316,7 @@ _int_face_histogram(const cs_mesh_t  *mesh,
 
     for (i = 0; i < mesh->n_i_faces; i++) {
 
-      if (mesh->i_face_cells[i*2] > mesh->n_cells)
+      if (mesh->i_face_cells[i][0] >= mesh->n_cells)
         continue;
 
       /* Associated subdivision */
@@ -370,8 +370,8 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
 
     /* Get local number of the cells in contact with the face */
 
-    cell1 = mesh->i_face_cells[2 * face_id] - 1;
-    cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
+    cell1 = mesh->i_face_cells[face_id][0];
+    cell2 = mesh->i_face_cells[face_id][1];
 
     /* Get information on mesh quantities */
 
@@ -463,8 +463,8 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
 
     /* Get local number of the cells beside the face */
 
-    cell1 = mesh->i_face_cells[2 * face_id] - 1;
-    cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
+    cell1 = mesh->i_face_cells[face_id][0];
+    cell2 = mesh->i_face_cells[face_id][1];
 
     /* Get information on mesh quantities */
 
@@ -504,7 +504,7 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
 
     /* Get local number of the cell beside the face */
 
-    cell1 = mesh->b_face_cells[face_id] - 1;
+    cell1 = mesh->b_face_cells[face_id];
 
     /* Get information on mesh quantities */
 
@@ -643,7 +643,7 @@ _cell_from_max_face(const cs_mesh_t      *mesh,
     for (i = 0; i < mesh->n_i_faces; i++) {
 
       for (j = 0; j < 2; j++) {
-        cell_id = mesh->i_face_cells[2*i + j] - 1;
+        cell_id = mesh->i_face_cells[i][j];
         if (i_face_val[i] > cell_val[cell_id])
           cell_val[cell_id] = i_face_val[i];
       }
@@ -656,7 +656,7 @@ _cell_from_max_face(const cs_mesh_t      *mesh,
 
     for (i = 0; i < mesh->n_b_faces; i++) {
 
-      cell_id = mesh->b_face_cells[i] - 1;
+      cell_id = mesh->b_face_cells[i];
       if (b_face_val[i] > cell_val[cell_id])
         cell_val[cell_id] = b_face_val[i];
 

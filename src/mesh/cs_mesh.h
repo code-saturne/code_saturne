@@ -67,7 +67,6 @@ typedef struct {
   cs_lnum_t  domain_num;           /* Local domain number */
   cs_lnum_t  n_domains;            /* Number of domains */
 
-
   /* Local dimensions */
 
   cs_lnum_t  n_cells;              /* Number of cells */
@@ -82,16 +81,16 @@ typedef struct {
 
   /* Local structures */
 
-  cs_real_t  *vtx_coord;           /* Vertex coordinates */
+  cs_real_t    *vtx_coord;         /* Vertex coordinates */
 
-  cs_lnum_t  *i_face_cells;        /* Interior faces -> cells connectivity */
-  cs_lnum_t  *b_face_cells;        /* Boundary faces -> cells connectivity */
+  cs_lnum_2_t  *i_face_cells;      /* Interior faces -> cells connectivity */
+  cs_lnum_t    *b_face_cells;      /* Boundary faces -> cells connectivity */
 
-  cs_lnum_t  *i_face_vtx_idx;      /* Interior faces -> vertices index */
-  cs_lnum_t  *i_face_vtx_lst;      /* Interior faces -> vertices connectivity */
+  cs_lnum_t    *i_face_vtx_idx;    /* Interior faces -> vertices index */
+  cs_lnum_t    *i_face_vtx_lst;    /* Interior faces -> vertices connectivity */
 
-  cs_lnum_t  *b_face_vtx_idx;      /* Boundary faces -> vertices index */
-  cs_lnum_t  *b_face_vtx_lst;      /* Boundary faces -> vertices connectivity */
+  cs_lnum_t    *b_face_vtx_idx;    /* Boundary faces -> vertices index */
+  cs_lnum_t    *b_face_vtx_lst;    /* Boundary faces -> vertices connectivity */
 
   /* Global dimension */
 

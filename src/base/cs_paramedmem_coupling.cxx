@@ -394,8 +394,8 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   }
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    c_id1 = mesh->i_face_cells[face_id*2    ] - 1;
-    c_id2 = mesh->i_face_cells[face_id*2 + 1] - 1;
+    c_id1 = mesh->i_face_cells[face_id][0];
+    c_id2 = mesh->i_face_cells[face_id][1];
     c_id1 = (c_id1 < mesh->n_cells) ? cell_id[c_id1] : -1;
     c_id2 = (c_id2 < mesh->n_cells) ? cell_id[c_id2] : -1;
     if (c_id1 > -1 || c_id2 > -1) {

@@ -95,9 +95,9 @@ enum {X, Y, Z};
 
 /* array of exchanges area */
 
-cs_int_t            cs_glob_ct_nbr_max = 0;
+cs_lnum_t            cs_glob_ct_nbr_max = 0;
 
-cs_int_t            cs_glob_ct_nbr     = 0;
+cs_lnum_t            cs_glob_ct_nbr     = 0;
 cs_ctwr_zone_t     ** cs_glob_ct_tab   = NULL;
 
 /* Start and end (negative) numbers associated with
@@ -106,10 +106,10 @@ cs_ctwr_zone_t     ** cs_glob_ct_tab   = NULL;
 static int  cs_glob_ct_post_mesh_ext[2] = {0, 1};
 
 /* array containing the stacking of the exchange area*/
-cs_int_t  *  cs_stack_ct    = NULL;
+cs_lnum_t  *  cs_stack_ct    = NULL;
 
 /* array containing the treatment order of the exchanges areas */
-cs_int_t  *  cs_chain_ct = NULL;
+cs_lnum_t  *  cs_chain_ct = NULL;
 
 /* Restart file */
 
@@ -438,10 +438,10 @@ void CS_PROCF (ecrctw, ECRCTW)
  const cs_int_t   *const lngnom
 )
 {
-  cs_int_t  nbvent;
-  cs_int_t  ict;
+  int  nbvent;
+  int  ict;
 
-  cs_restart_t         *suite;
+  cs_restart_t            *suite;
   cs_mesh_location_type_t  location_id,support;
   cs_restart_val_type_t    typ_val;
 
@@ -671,17 +671,17 @@ void CS_PROCF (lecctw, LECCTW)
     n_g_elements = fvm_nodal_get_n_g_elements(ct->water_mesh, FVM_CELL_HEXA);
     n_elements   = fvm_nodal_get_n_elements  (ct->water_mesh, FVM_CELL_HEXA);
 
-    BFT_MALLOC( g_elt_num , n_g_elements, cs_gnum_t );
+    BFT_MALLOC(g_elt_num , n_g_elements, cs_gnum_t);
 
-    fvm_nodal_get_global_element_num( ct->water_mesh ,
-                                      FVM_CELL_HEXA  ,
-                                      g_elt_num );
+    fvm_nodal_get_global_element_num(ct->water_mesh ,
+                                     FVM_CELL_HEXA  ,
+                                     g_elt_num);
 
-    location_id = cs_restart_add_location( suite,
-                                           location_name,
-                                           n_g_elements,
-                                           n_elements,
-                                           g_elt_num  );
+    location_id = cs_restart_add_location(suite,
+                                          location_name,
+                                          n_g_elements,
+                                          n_elements,
+                                          g_elt_num );
 
 
     {
@@ -713,7 +713,7 @@ void CS_PROCF (lecctw, LECCTW)
 
       /* Coherency checks between the read   and the one from usctdz */
 
-      if (tabvar[ 0 ] != ct->imctch )/* modele*/
+      if (tabvar[ 0 ] != ct->imctch) /* modele*/
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                      "********               cooling tower MODULE\n"
                      "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
@@ -722,7 +722,7 @@ void CS_PROCF (lecctw, LECCTW)
                      "PREVIOUS: %d \n"
                      "CURRENT:  %d \n" ), tabvar[ 0 ], ct->imctch);
 
-      if (tabvar[ 1 ] != ct->ntypct ) /* Type*/
+      if (tabvar[ 1 ] != ct->ntypct) /* Type*/
         bft_error(   __FILE__, __LINE__, 0,
                      _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                        "********               cooling tower MODULE\n"
@@ -732,7 +732,7 @@ void CS_PROCF (lecctw, LECCTW)
                        "PREVIOUS: %d \n"
                        "CURRENT:  %d \n" ), tabvar[ 1 ], ct->ntypct);
 
-      if (tabvar[ 2 ] != ct->nelect ) /* nb of node per segment*/
+      if (tabvar[ 2 ] != ct->nelect) /* nb of node per segment*/
         bft_error(__FILE__, __LINE__, 0,
                   _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                     "********               cooling tower MODULE\n"
@@ -748,7 +748,6 @@ void CS_PROCF (lecctw, LECCTW)
                     "Verify that the restart file corresponds to a\n"
                     "restart file for the cooling tower  module.\n"
                     "Verify usctdz.\n"), tabvar[ 2 ], ct->nelect);
-
 
       BFT_FREE(tabvar);
 
@@ -784,7 +783,7 @@ void CS_PROCF (lecctw, LECCTW)
 
       /* Coherency checks between the read   and the one from usctdz */
 
-      if ( CS_ABS( tabvar[ 0 ] - ct->cl_teau  ) > 1e-10 )
+      if (CS_ABS(tabvar[ 0 ] - ct->cl_teau) > 1e-10)
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                      "********               cooling tower MODULE\n"
                      "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
@@ -793,7 +792,7 @@ void CS_PROCF (lecctw, LECCTW)
                      "PREVIOUS: %f \n"
                      "CURRENT:  %f \n" ), tabvar[ 0 ], ct->cl_teau );
 
-      if ( CS_ABS( tabvar[ 1 ] - ct->cl_fem  ) > 1e-10 )
+      if (CS_ABS( tabvar[ 1 ] - ct->cl_fem) > 1e-10)
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                      "********               cooling tower MODULE\n"
                      "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
@@ -802,7 +801,7 @@ void CS_PROCF (lecctw, LECCTW)
                      "PREVIOUS: %f \n"
                      "CURRENT:  %f \n" ), tabvar[ 1 ], ct->cl_fem);
 
-      if (CS_ABS( tabvar[ 2 ] - ct->xap  ) > 1e-10 )
+      if (CS_ABS(tabvar[ 2 ] - ct->xap) > 1e-10)
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                      "********               cooling tower MODULE\n"
                      "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
@@ -811,7 +810,7 @@ void CS_PROCF (lecctw, LECCTW)
                      "PREVIOUS: %f \n"
                      "CURRENT:  %f \n" ), tabvar[ 2 ], ct->xap);
 
-      if (CS_ABS( tabvar[ 3 ] - ct->xnp  ) > 1e-10 )
+      if (CS_ABS(tabvar[ 3 ] - ct->xnp) > 1e-10)
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                      "********               cooling tower MODULE\n"
                      "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
@@ -824,24 +823,21 @@ void CS_PROCF (lecctw, LECCTW)
     }
 
 
-
-
     { /* Read the wall thickness and check the coherency with USPT1D*/
       char        nomrub[] = "Temperature_eau";
       cs_real_t   *tabvar;
-
 
       BFT_MALLOC(tabvar, n_elements, cs_real_t);
 
       nbvent  = 1;
       typ_val = CS_TYPE_cs_real_t;
 
-      ierror = cs_restart_read_section(suite      ,
-                                       nomrub     ,
+      ierror = cs_restart_read_section(suite,
+                                       nomrub,
                                        location_id,
-                                       nbvent     ,
-                                       typ_val    ,
-                                       tabvar     );
+                                       nbvent,
+                                       typ_val,
+                                       tabvar);
 
       if (ierror < CS_RESTART_SUCCESS)
         bft_error(__FILE__, __LINE__, 0,
@@ -975,15 +971,15 @@ _cs_ctwr_post_function(void                  *ct,
 
 void cs_ctwr_definit
 (
-  const cs_int_t   idimct,    /* Dimemsion du probleme 2:2D  3:3D */
-  const char  *ze_name,   /* Nom de la zone aero */
-  const cs_int_t   imctch,    /* 1: Modele de Poppe
+  const int        idimct,    /* Dimemsion du probleme 2:2D  3:3D */
+  const char      *ze_name,   /* Nom de la zone aero */
+  const int        imctch,    /* 1: Modele de Poppe
                                  2: Merkel
                                  0: Rien */
-  const cs_int_t   ntypct,    /* 1: Contre courant
+  const int        ntypct,    /* 1: Contre courant
                                  2: Courant croises
                                  3: Zone de pluie */
-  const cs_int_t   nelect,    /* Nombre d'elements sur chaque ligne du maillage
+  const cs_lnum_t  nelect,    /* Nombre d'elements sur chaque ligne du maillage
                                  eau pour la zone de noeuds par segment eau */
   const cs_real_t  deltat,    /* Ecart de temperature impose en entree de la
                                  zone d'echange */
@@ -996,7 +992,7 @@ void cs_ctwr_definit
 )
 {
   cs_ctwr_zone_t  *ct;
-  cs_int_t length;
+  int length;
   FILE *f;
   char  *file_name = NULL;
 
@@ -1168,7 +1164,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
 
 )
 {
-  cs_int_t  ict,iseg,iloc,i, ii,j ,ieau, nb_dist_water, nb_dist_upw, ind;
+  cs_lnum_t  ict,iseg,iloc,i, ii,j ,ieau, nb_dist_water, nb_dist_upw, ind;
   cs_real_t dhi,vvai,vhai,norme_g;
   cs_real_t gravite[3];
   cs_real_t faxn,bxan,xsata,xsate,cfen,ff1,ff2,xlew,eta,aux;
@@ -1325,8 +1321,8 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
                   ple_locator_get_dist_locations(ct->locat_cell_ct_upwind[ind]);
 
         for (i=0; i < nb_dist_upw; i++){
-          teau_upw_send[i] =  ct_upw->teau[(cs_int_t) locat_cel_upw[i]-1];
-          fem_upw_send[i]  =  ct_upw->fem[(cs_int_t) locat_cel_upw[i]-1];
+          teau_upw_send[i] =  ct_upw->teau[(cs_lnum_t) locat_cel_upw[i]-1];
+          fem_upw_send[i]  =  ct_upw->fem[(cs_lnum_t) locat_cel_upw[i]-1];
         }
 
         BFT_MALLOC( teau_upw_rec,
@@ -1687,7 +1683,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
 *----------------------------------------------------------------------------*/
 void cs_ctwr_aetssc
 (
-  const cs_int_t    iscal,       /*   */
+  int         iscal,       /*   */
 
   cs_real_t   temp[],      /* Temperature air */
   cs_real_t   xa[],        /* humidite air */
@@ -1699,7 +1695,7 @@ void cs_ctwr_aetssc
   cs_real_t   vitz[]       /* vitesse air suivant z */
 )
 {
-  cs_int_t  ict,iseg,iloc,ieau,iair,i,nb,nb_dist_water,nb_dist_air;
+  cs_lnum_t  ict,iseg,iloc,ieau,iair,i,nb,nb_dist_water,nb_dist_air;
   cs_real_t cd1,ain,bin,dhi,dvga,gravite[3],norme_g;
   cs_real_t fax,fx0,vvai,vhai,tim,tex,xim,xex;
   cs_real_t bxa,xsata,xsate,ff1,xlew,eta;
@@ -2158,16 +2154,16 @@ void cs_ctwr_aetssc
 
 void cs_ctwr_aetsvi
 (
-  const cs_int_t    idim,
+  const int         idim,
   const cs_real_t   rho[],       /* masse volumique air */
   const cs_real_t   vitx[],      /* vitesse air suivant x */
   const cs_real_t   vity[],      /* vitesse air suivant y */
   const cs_real_t   vitz[],      /* vitesse air suivant z */
   const cs_real_t   xair[],      /* humidite de l'air */
-  cs_real_t   utsex[]            /* terme source explicite */
+  cs_real_t         utsex[]      /* terme source explicite */
 )
 {
-  cs_int_t  ict, iloc, iair, i, *lst_par_cel, nb,nb_dist_air;
+  cs_lnum_t  ict, iloc, iair, i, *lst_par_cel, nb,nb_dist_air;
   cs_real_t dgout, visc, rhoe;
   cs_real_t absgrv, vginu,vginv,vginw,dvg,qer,rre,cdd1,cff0;
 
@@ -2300,11 +2296,9 @@ void cs_ctwr_bilanct
 {
   const cs_real_t  *i_face_normal = mesh_quantities->i_face_normal;
   const cs_real_t  *b_face_normal = mesh_quantities->b_face_normal;
-  cs_int_t         icel_1, icel_2, ict, idim, i, j, ieau_Sup, ieau_inf, length;
-  cs_int_t         icel = -1, ifac = -1;
+  cs_lnum_t         icel_1, icel_2, ict, idim, i, j, ieau_Sup, ieau_inf, length;
+  cs_lnum_t         icel = -1, ifac = -1;
   cs_real_t        cpv, cpa, hv0;
-  const cs_int_t   *i_face_cells = mesh->i_face_cells;
-  const cs_int_t   *b_face_cells = mesh->b_face_cells;
   const cs_real_t  *coo_cen  = mesh_quantities->cell_cen;
   cs_real_t        debit,hair,n_sortant[3],vitair[3],aux,
                    surf,surf_e,surf_s;
@@ -2320,7 +2314,7 @@ void cs_ctwr_bilanct
 
   for (ict=0; ict < cs_glob_ct_nbr; ict++) {
 
-    cs_int_t nbr_fbr_air[3][2];
+    cs_lnum_t nbr_fbr_air[3][2];
 
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
     cpa    = ct_prop->cpa;
@@ -2412,7 +2406,6 @@ void cs_ctwr_bilanct
     ct->fem_s  /= ct->surface_out ;
     ct->heau_s *= ct_prop->cpe;
 
-
     /* calcul des valeurs air */
 
     surf_e = 0.;
@@ -2421,20 +2414,20 @@ void cs_ctwr_bilanct
     for (j = 0; j < 3; j++)
     for (i = 0; i < nbr_fbr_air[j][0]; i++) {
       if( i< nbr_fbr_air[j][1] ){
-        if( j==0) ifac = (cs_int_t) face_sup[i]-1;
-        if( j==1) ifac = (cs_int_t) face_inf[i]-1;
-        if( j==2) ifac = (cs_int_t) face_lat[i]-1;
-        icel = b_face_cells[ifac] - 1;
+        if( j==0) ifac = (cs_lnum_t) face_sup[i]-1;
+        if( j==1) ifac = (cs_lnum_t) face_inf[i]-1;
+        if( j==2) ifac = (cs_lnum_t) face_lat[i]-1;
+        icel = mesh->b_face_cells[ifac];
         for (idim = 0; idim<3; idim++ )
           n_sortant[idim] =  mesh_quantities->b_face_normal[ifac*3+idim];
         debit = CS_ABS(flux_masse_fbr[ifac]);
         surf  = CS_LOC_MODULE((b_face_normal + 3*ifac));
       }else{
-        if( j==0) ifac = (cs_int_t) face_sup[i] - mesh->n_b_faces - 1;
-        if( j==1) ifac = (cs_int_t) face_inf[i] - mesh->n_b_faces - 1;
-        if( j==2) ifac = (cs_int_t) face_lat[i] - mesh->n_b_faces - 1;
-        icel_1 = i_face_cells[ifac * 2]     - 1;
-        icel_2 = i_face_cells[ifac * 2 + 1] - 1;
+        if( j==0) ifac = (cs_lnum_t) face_sup[i] - mesh->n_b_faces - 1;
+        if( j==1) ifac = (cs_lnum_t) face_inf[i] - mesh->n_b_faces - 1;
+        if( j==2) ifac = (cs_lnum_t) face_lat[i] - mesh->n_b_faces - 1;
+        icel_1 = mesh->i_face_cells[ifac][0];
+        icel_2 = mesh->i_face_cells[ifac][1];
         if ( ct->mark_ze[icel_1] == 1 ) {
 
           icel = icel_2;
@@ -2582,8 +2575,8 @@ void cs_ctwr_bilanct
  *----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_post_init(cs_int_t  ct_id,
-                  cs_int_t  writer_id)
+cs_ctwr_post_init(int  ct_id,
+                  int  writer_id)
 {
   int  mesh_id = cs_post_get_free_mesh_id();
   int  writer_ids[] = {writer_id};
@@ -2636,7 +2629,7 @@ cs_ctwr_post_init(cs_int_t  ct_id,
  *----------------------------------------------------------------------------*/
 
 cs_ctwr_zone_t *
-cs_ctwr_by_id(cs_int_t ct_id)
+cs_ctwr_by_id(int ct_id)
 {
   cs_ctwr_zone_t  *retval = NULL;
 

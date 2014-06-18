@@ -183,8 +183,8 @@ _compute_cell_cocg_s_it(const cs_mesh_t      *m,
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = i_face_cells[face_id][0] - 1;
-        jj = i_face_cells[face_id][1] - 1;
+        ii = i_face_cells[face_id][0];
+        jj = i_face_cells[face_id][1];
 
         for (ll = 0; ll < 3; ll++) {
           fctb[0] = -dofij[face_id][0] * 0.5 * i_face_normal[face_id][ll];
@@ -336,8 +336,8 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = i_face_cells[face_id][0] - 1;
-        jj = i_face_cells[face_id][1] - 1;
+        ii = i_face_cells[face_id][0];
+        jj = i_face_cells[face_id][1];
 
         for (ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -405,7 +405,7 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = b_face_cells[face_id] - 1;
+        ii = b_face_cells[face_id];
 
         udbfs = 1 / b_face_surf[face_id];
 
@@ -517,8 +517,8 @@ _compute_cell_cocg_it(const cs_mesh_t      *m,
   /* Interior face treatment */
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
-    cell_id1 = i_face_cells[face_id][0] - 1;
-    cell_id2 = i_face_cells[face_id][1] - 1;
+    cell_id1 = i_face_cells[face_id][0];
+    cell_id2 = i_face_cells[face_id][1];
 
     dvol1 = 1./cell_vol[cell_id1];
     dvol2 = 1./cell_vol[cell_id2];
@@ -645,8 +645,8 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        cell_id1 = i_face_cells[face_id][0] - 1;
-        cell_id2 = i_face_cells[face_id][1] - 1;
+        cell_id1 = i_face_cells[face_id][0];
+        cell_id2 = i_face_cells[face_id][1];
 
         for (i = 0; i < 3; i++)
           dc[i] = cell_cen[cell_id2][i] - cell_cen[cell_id1][i];
@@ -706,7 +706,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        cell_id1 = b_face_cells[face_id] - 1;
+        cell_id1 = b_face_cells[face_id];
 
         for (i = 0; i < 3; i++)
           dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i];
@@ -1359,7 +1359,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
   const  cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const  cs_lnum_t  n_cells = mesh->n_cells;
   const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-  const  cs_lnum_t  *i_face_cells = mesh->i_face_cells;
+  const  cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
   const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
 
   /* Return if ther is not enough data (Solcom case except rediative module
@@ -1400,8 +1400,8 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
      * cell_cen and cell_area
      * ---------------------------------------------------------- */
 
-    cell_id1 = i_face_cells[2*fac_id    ] - 1;
-    cell_id2 = i_face_cells[2*fac_id + 1] - 1;
+    cell_id1 = i_face_cells[fac_id][0];
+    cell_id2 = i_face_cells[fac_id][1];
 
     /* Computation of the area of the face */
 
@@ -1433,7 +1433,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
      * of cell_cen and cell_area
      * ------------------------------------------------------------- */
 
-    cell_id1 = b_face_cells[fac_id] - 1;
+    cell_id1 = b_face_cells[fac_id];
 
     /* Computation of the area of the face */
 
@@ -1518,8 +1518,8 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
 
   for (fac_id = 0; fac_id < mesh->n_i_faces; fac_id++) {
 
-    id1 = mesh->i_face_cells[2*fac_id] - 1;
-    id2 = mesh->i_face_cells[2*fac_id + 1] - 1;
+    id1 = mesh->i_face_cells[fac_id][0];
+    id2 = mesh->i_face_cells[fac_id][1];
 
     flux = 0;
     for (i = 0; i < dim; i++)
@@ -1534,7 +1534,7 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
 
   for (fac_id = 0; fac_id < mesh->n_b_faces; fac_id++) {
 
-    id1 = mesh->b_face_cells[fac_id] - 1;
+    id1 = mesh->b_face_cells[fac_id];
 
     flux = 0;
     for (i = 0; i < dim; i++)
@@ -1579,21 +1579,21 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_distances(const cs_lnum_t  dim,
-                        const cs_lnum_t  n_i_faces,
-                        const cs_lnum_t  n_b_faces,
-                        const cs_lnum_t  i_face_cells[],
-                        const cs_lnum_t  b_face_cells[],
-                        const cs_real_t  i_face_normal[],
-                        const cs_real_t  b_face_normal[],
-                        const cs_real_t  i_face_cog[],
-                        const cs_real_t  b_face_cog[],
-                        const cs_real_t  i_face_surf[],
-                        const cs_real_t  b_face_surf[],
-                        const cs_real_t  cell_cen[],
-                        cs_real_t        i_dist[],
-                        cs_real_t        b_dist[],
-                        cs_real_t        weight[])
+_compute_face_distances(int                dim,
+                        const cs_lnum_t    n_i_faces,
+                        const cs_lnum_t    n_b_faces,
+                        const cs_lnum_2_t  i_face_cells[],
+                        const cs_lnum_t    b_face_cells[],
+                        const cs_real_t    i_face_normal[],
+                        const cs_real_t    b_face_normal[],
+                        const cs_real_t    i_face_cog[],
+                        const cs_real_t    b_face_cog[],
+                        const cs_real_t    i_face_surf[],
+                        const cs_real_t    b_face_surf[],
+                        const cs_real_t    cell_cen[],
+                        cs_real_t          i_dist[],
+                        cs_real_t          b_dist[],
+                        cs_real_t          weight[])
 {
   cs_lnum_t face_id;
   cs_lnum_t cell_id, cell_id1, cell_id2;
@@ -1614,8 +1614,8 @@ _compute_face_distances(const cs_lnum_t  dim,
 
     surfn = i_face_surf[face_id];
 
-    cell_id1 = i_face_cells[2*face_id] - 1;
-    cell_id2 = i_face_cells[2*face_id + 1] - 1;
+    cell_id1 = i_face_cells[face_id][0];
+    cell_id2 = i_face_cells[face_id][1];
 
     /* Distance between the face centre of gravity
        and the neighbor cell centre */
@@ -1661,7 +1661,7 @@ _compute_face_distances(const cs_lnum_t  dim,
 
     surfn = b_face_surf[face_id];
 
-    cell_id = b_face_cells[face_id] - 1;
+    cell_id = b_face_cells[face_id];
 
     /* Distance between the face centre of gravity
        and the neighbor cell centre */
@@ -1717,22 +1717,22 @@ _compute_face_distances(const cs_lnum_t  dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_vectors(const cs_lnum_t  dim,
-                      const cs_lnum_t  n_i_faces,
-                      const cs_lnum_t  n_b_faces,
-                      const cs_lnum_t  i_face_cells[],
-                      const cs_lnum_t  b_face_cells[],
-                      const cs_real_t  i_face_normal[],
-                      const cs_real_t  b_face_normal[],
-                      const cs_real_t  i_face_cog[],
-                      const cs_real_t  b_face_cog[],
-                      const cs_real_t  i_face_surf[],
-                      const cs_real_t  b_face_surf[],
-                      const cs_real_t  cell_cen[],
-                      const cs_real_t  weight[],
-                      cs_real_t        dijpf[],
-                      cs_real_t        diipb[],
-                      cs_real_t        dofij[])
+_compute_face_vectors(int                dim,
+                      const cs_lnum_t    n_i_faces,
+                      const cs_lnum_t    n_b_faces,
+                      const cs_lnum_2_t  i_face_cells[],
+                      const cs_lnum_t    b_face_cells[],
+                      const cs_real_t    i_face_normal[],
+                      const cs_real_t    b_face_normal[],
+                      const cs_real_t    i_face_cog[],
+                      const cs_real_t    b_face_cog[],
+                      const cs_real_t    i_face_surf[],
+                      const cs_real_t    b_face_surf[],
+                      const cs_real_t    cell_cen[],
+                      const cs_real_t    weight[],
+                      cs_real_t          dijpf[],
+                      cs_real_t          diipb[],
+                      cs_real_t          dofij[])
 {
   cs_lnum_t face_id;
   cs_lnum_t cell_id, cell_id1, cell_id2;
@@ -1745,8 +1745,8 @@ _compute_face_vectors(const cs_lnum_t  dim,
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cell_id1 = i_face_cells[2*face_id] - 1;
-    cell_id2 = i_face_cells[2*face_id  + 1] - 1;
+    cell_id1 = i_face_cells[face_id][0];
+    cell_id2 = i_face_cells[face_id][1];
 
     /* Normalized normal */
     surfnx = i_face_normal[face_id*dim]     / i_face_surf[face_id];
@@ -1786,7 +1786,7 @@ _compute_face_vectors(const cs_lnum_t  dim,
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cell_id = b_face_cells[face_id] - 1;
+    cell_id = b_face_cells[face_id];
 
     /* Normalized normal */
     surfnx = b_face_normal[face_id*dim]     / b_face_surf[face_id];
@@ -1844,15 +1844,15 @@ _compute_face_vectors(const cs_lnum_t  dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_sup_vectors(const cs_lnum_t  dim,
-                          const cs_lnum_t  n_i_faces,
-                          const cs_lnum_t  i_face_cells[],
-                          const cs_real_t  i_face_normal[],
-                          const cs_real_t  i_face_cog[],
-                          const cs_real_t  i_face_surf[],
-                          const cs_real_t  cell_cen[],
-                          cs_real_t        diipf[],
-                          cs_real_t        djjpf[])
+_compute_face_sup_vectors(int                dim,
+                          const cs_lnum_t    n_i_faces,
+                          const cs_lnum_2_t  i_face_cells[],
+                          const cs_real_t    i_face_normal[],
+                          const cs_real_t    i_face_cog[],
+                          const cs_real_t    i_face_surf[],
+                          const cs_real_t    cell_cen[],
+                          cs_real_t          diipf[],
+                          cs_real_t          djjpf[])
 {
   cs_lnum_t face_id;
   cs_lnum_t cell_id1, cell_id2;
@@ -1865,8 +1865,8 @@ _compute_face_sup_vectors(const cs_lnum_t  dim,
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cell_id1 = i_face_cells[2*face_id] - 1;
-    cell_id2 = i_face_cells[2*face_id  + 1] - 1;
+    cell_id1 = i_face_cells[face_id][0];
+    cell_id2 = i_face_cells[face_id][1];
 
     /* Normalized normal */
     surfnx = i_face_normal[face_id*dim]     / i_face_surf[face_id];
@@ -2712,7 +2712,7 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
   for (fac_id = 0 ; fac_id < mesh->n_b_faces ; fac_id++) {
 
-    cell_id = mesh->b_face_cells[fac_id] - 1;
+    cell_id = mesh->b_face_cells[fac_id];
     pscal = 0;
 
     for (i = 0 ; i < 3 ; i++) {

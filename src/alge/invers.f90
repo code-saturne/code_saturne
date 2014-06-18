@@ -141,12 +141,12 @@ elseif(imgrp.eq.0) then
 
   call reslin &
   !==========
- ( cnom   , lnom   , ncelet , ncel   , nfac   ,                            &
+ ( cnom   , lnom   ,                                                       &
    isym   , ibsize , iesize , ireslp , ipol   , nitmap , iinvpe ,          &
    iwarnp , niterf , epsilp , rnorm  , residu ,                            &
    !        ------                     ------
-   ifacel , dam    , xam    , smbrp  , vx     )
-   !                          -----
+   dam    , xam    , smbrp  , vx     )
+   !                 -----
 
 endif
 

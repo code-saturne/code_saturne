@@ -211,11 +211,8 @@ if (iilagr.gt.0) then
 
   !--> Compute "lndnod" (lagran.f90)
 
-  call lagini                                                     &
+  call lagini(lndnod)
   !==========
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   lndnod ,                                                       &
-   ifacel , ifabor )
 
 endif
 

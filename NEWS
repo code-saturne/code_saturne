@@ -13,6 +13,15 @@ Changes:
 Architectural changes
 ---------------------
 
+- Major indexing change: the mesh->i_face_cell and mesh->b_face_cell arrays
+  now use 0-based indexing. This simplifies expressions in C code, but may
+  break existing C code referencing those arrays. On the Fortran side,
+  ifacel and ifabor are no longer arrays, but elemental functions, which
+  add 1 to the C array values, so as to make this transparent to the user.
+  As most accesses are now in C, and the ifacel and ifabor functions are
+  defined as "elemental pure" in the mesh module, the performance impact
+  should not be significant.
+
 - Some arrays for which there is a field keyword equivalent, such as ivarpr,
   are replaced by functions, which allow similar read-only access, but not
   modification, which must be done through the field API.

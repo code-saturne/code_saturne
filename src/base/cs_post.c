@@ -5517,7 +5517,7 @@ cs_post_add_free_faces(void)
   BFT_MALLOC(f_face_list, mesh->n_b_faces, cs_lnum_t);
 
   for (i = 0; i < mesh->n_b_faces; i++) {
-    if (mesh->b_face_cells[i] < 1)
+    if (mesh->b_face_cells[i] < 0)
       f_face_list[n_f_faces++] = i + 1;
   }
 

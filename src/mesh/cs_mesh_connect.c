@@ -337,7 +337,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
      as to ignore ghost cells */
 
   for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-    cell_id = mesh->b_face_cells[face_id] - 1;
+    cell_id = mesh->b_face_cells[face_id];
     if (extr_cell_id != NULL)
       cell_id = extr_cell_id[cell_id];
     if (cell_id > -1)
@@ -345,8 +345,8 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   }
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    c_id1 = mesh->i_face_cells[face_id*2    ] - 1;
-    c_id2 = mesh->i_face_cells[face_id*2 + 1] - 1;
+    c_id1 = mesh->i_face_cells[face_id][0];
+    c_id2 = mesh->i_face_cells[face_id][1];
     if (extr_cell_id != NULL) {
       if (c_id1 < mesh->n_cells)
         c_id1 = extr_cell_id[c_id1];
@@ -378,7 +378,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
     cell_face_count[cell_id] = 0;
 
   for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-    cell_id = mesh->b_face_cells[face_id] - 1;
+    cell_id = mesh->b_face_cells[face_id];
     if (extr_cell_id != NULL)
       cell_id = extr_cell_id[cell_id];
     if (cell_id > -1) {
@@ -389,8 +389,8 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   }
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    c_id1 = mesh->i_face_cells[face_id*2    ] - 1;
-    c_id2 = mesh->i_face_cells[face_id*2 + 1] - 1;
+    c_id1 = mesh->i_face_cells[face_id][0];
+    c_id2 = mesh->i_face_cells[face_id][1];
     if (extr_cell_id != NULL) {
       if (c_id1 < mesh->n_cells)
         c_id1 = extr_cell_id[c_id1];
@@ -528,8 +528,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
     if (include_families) {
 
       for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-        cs_lnum_t c_id_0 = mesh->i_face_cells[face_id*2] - 1;
-        cs_lnum_t c_id_1 = mesh->i_face_cells[face_id*2 + 1] - 1;
+        cs_lnum_t c_id_0 = mesh->i_face_cells[face_id][0];
+        cs_lnum_t c_id_1 = mesh->i_face_cells[face_id][1];
         if (   (extr_cell_idx[c_id_0] == 1 || extr_cell_idx[c_id_1] == 1)
             && (mesh->i_face_family[face_id] != null_family)) {
           i_face_list[i_face_count++] = face_id + 1;
@@ -538,7 +538,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
       BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
 
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-        cs_lnum_t c_id = mesh->b_face_cells[face_id] - 1;
+        cs_lnum_t c_id = mesh->b_face_cells[face_id];
         if (   (extr_cell_idx[c_id] == 1)
             && (mesh->b_face_family[face_id] != null_family)) {
           b_face_list[b_face_count++] = face_id + 1;
@@ -569,8 +569,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
     if (include_families && extr_cell_count > 0) {
 
       for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-        cs_lnum_t c_id_0 = mesh->i_face_cells[face_id*2] - 1;
-        cs_lnum_t c_id_1 = mesh->i_face_cells[face_id*2 + 1] - 1;
+        cs_lnum_t c_id_0 = mesh->i_face_cells[face_id][0];
+        cs_lnum_t c_id_1 = mesh->i_face_cells[face_id][1];
         if (   (c_id_0 < extr_cell_count || c_id_1 < extr_cell_count)
             && (mesh->i_face_family[face_id] != null_family)) {
           i_face_list[i_face_count++] = face_id + 1;
@@ -579,7 +579,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
       BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
 
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-        cs_lnum_t c_id = mesh->b_face_cells[face_id] - 1;
+        cs_lnum_t c_id = mesh->b_face_cells[face_id];
         if (   (c_id < extr_cell_count)
             && (mesh->b_face_family[face_id] != null_family)) {
           b_face_list[b_face_count++] = face_id + 1;

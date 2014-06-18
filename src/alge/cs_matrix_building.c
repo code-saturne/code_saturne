@@ -435,8 +435,8 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
      face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
      face_id++) {
 
-  cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-  cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+  cs_lnum_t ii = i_face_cells[face_id][0];
+  cs_lnum_t jj = i_face_cells[face_id][1];
 
   da[ii] -= xa[face_id];
   da[jj] -= xa[face_id];
@@ -455,7 +455,7 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
      face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
      face_id++) {
 
-  cs_lnum_t ii = b_face_cells[face_id] - 1;
+  cs_lnum_t ii = b_face_cells[face_id];
 
   da[ii] += thetap*idiffp*b_visc[face_id]*cofbfp[face_id];
 
@@ -606,8 +606,8 @@ cs_matrix_scalar(const cs_mesh_t          *m,
        face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
        face_id++) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
     da[ii] -= xa[face_id][0];
     da[jj] -= xa[face_id][1];
@@ -626,7 +626,7 @@ cs_matrix_scalar(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
 
           double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
 
@@ -648,9 +648,9 @@ cs_matrix_scalar(const cs_mesh_t          *m,
       double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
       double fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
 
-      xa[face_id][0] = thetap*( iconvp*xcpp[i_face_cells[face_id][0] - 1]*flui
+      xa[face_id][0] = thetap*( iconvp*xcpp[i_face_cells[face_id][0]]*flui
                                -idiffp*i_visc[face_id]);
-      xa[face_id][1] = thetap*( iconvp*xcpp[i_face_cells[face_id][1] - 1]*fluj
+      xa[face_id][1] = thetap*( iconvp*xcpp[i_face_cells[face_id][1]]*fluj
                                -idiffp*i_visc[face_id]);
 
     }
@@ -664,8 +664,8 @@ cs_matrix_scalar(const cs_mesh_t          *m,
        face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
        face_id++) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
     da[ii] -= xa[face_id][0];
     da[jj] -= xa[face_id][1];
@@ -684,7 +684,7 @@ cs_matrix_scalar(const cs_mesh_t          *m,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id] - 1;
+          cs_lnum_t ii = b_face_cells[face_id];
           double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
           da[ii] += thetap*(  iconvp*flui*xcpp[ii]*(coefbp[face_id]-1.)
                             + idiffp*b_visc[face_id]*cofbfp[face_id]);
@@ -804,8 +804,8 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
   for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
     for (int isou = 0; isou < 3; isou++) {
       da[ii][isou][isou] -= xa[face_id];
@@ -818,7 +818,7 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
   for (cs_lnum_t face_id = 0; face_id <n_b_faces; face_id++) {
 
-    cs_lnum_t ii = b_face_cells[face_id] - 1;
+    cs_lnum_t ii = b_face_cells[face_id];
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
@@ -964,8 +964,8 @@ cs_matrix_vector(const cs_mesh_t          *m,
 
   for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
     for (int isou = 0; isou < 3; isou++) {
       da[ii][isou][isou] -= xa[face_id][0];
@@ -978,8 +978,8 @@ cs_matrix_vector(const cs_mesh_t          *m,
 
   for (cs_lnum_t face_id = 0; face_id <n_b_faces; face_id++) {
 
-    cs_lnum_t ii = b_face_cells[face_id] - 1;
-    double flui = 0.5*( b_massflux[face_id] -fabs(b_massflux[face_id]) );
+    cs_lnum_t ii = b_face_cells[face_id];
+    double flui = 0.5*(b_massflux[face_id] -fabs(b_massflux[face_id]));
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
@@ -987,7 +987,7 @@ cs_matrix_vector(const cs_mesh_t          *m,
           da[ii][jsou][isou] += thetap*( iconvp*flui
                                          *(coefbu[face_id][jsou][isou]-1.)
                                         +idiffp*b_visc[face_id]
-                                         *cofbfu[face_id][jsou][isou] );
+                                         *cofbfu[face_id][jsou][isou]);
         } else {
           da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
                                         +idiffp*b_visc[face_id]
@@ -1102,8 +1102,8 @@ cs_matrix_time_step(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double fluj =-0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
           double flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
@@ -1126,8 +1126,8 @@ cs_matrix_time_step(const cs_mesh_t          *m,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-          cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
 
@@ -1150,7 +1150,7 @@ cs_matrix_time_step(const cs_mesh_t          *m,
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        cs_lnum_t ii = b_face_cells[face_id] - 1;
+        cs_lnum_t ii = b_face_cells[face_id];
 
         double flui =  0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
         double fluj = -0.5*(b_massflux[face_id] + fabs(b_massflux[face_id]));
@@ -1284,8 +1284,8 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
   for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
 
-    cs_lnum_t ii = i_face_cells[ifac][0] - 1;
-    cs_lnum_t jj = i_face_cells[ifac][1] - 1;
+    cs_lnum_t ii = i_face_cells[ifac][0];
+    cs_lnum_t jj = i_face_cells[ifac][1];
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
@@ -1299,7 +1299,7 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
 
-    cs_lnum_t ii = b_face_cells[ifac] - 1;
+    cs_lnum_t ii = b_face_cells[ifac];
     double flui = 0.5*( b_massflux[ifac] -fabs(b_massflux[ifac]) );
 
     for (int isou = 0; isou < 3; isou++) {
@@ -1437,8 +1437,8 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 
   for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
 
-    cs_lnum_t ii = i_face_cells[ifac][0] - 1;
-    cs_lnum_t jj = i_face_cells[ifac][1] - 1;
+    cs_lnum_t ii = i_face_cells[ifac][0];
+    cs_lnum_t jj = i_face_cells[ifac][1];
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
@@ -1452,7 +1452,7 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
 
-    cs_lnum_t ii = b_face_cells[ifac] - 1;
+    cs_lnum_t ii = b_face_cells[ifac];
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {

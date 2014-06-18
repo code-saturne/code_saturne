@@ -83,9 +83,9 @@ struct _cs_ventil_t {
                                            characteristic curve */
   cs_real_t           couple_axial;     /* Fan axial couple */
 
-  cs_int_t            nbr_cel;          /* Number of cells */
+  cs_lnum_t           nbr_cel;          /* Number of cells */
 
-  cs_int_t           *lst_cel;          /* List of the cells belonging
+  cs_lnum_t          *lst_cel;          /* List of the cells belonging
                                            to the fan */
 
   cs_real_t           debit_entrant;    /* Current inlet flow */
@@ -100,9 +100,9 @@ struct _cs_ventil_t {
 
 /* Fans array */
 
-cs_int_t         cs_glob_ventil_nbr_max = 0;
+cs_lnum_t         cs_glob_ventil_nbr_max = 0;
 
-cs_int_t         cs_glob_ventil_nbr = 0;
+cs_lnum_t         cs_glob_ventil_nbr = 0;
 cs_ventil_t  * * cs_glob_ventil_tab = NULL;
 
 
@@ -139,15 +139,15 @@ enum {X, Y, Z} ;
 
 static void
 cs_loc_ventil_marque_cellules(const cs_mesh_t  *const mesh,
-                              cs_int_t          num_vtl_cel[])
+                              cs_lnum_t         num_vtl_cel[])
 {
-  cs_int_t   icel;
-  cs_int_t   ivtl;
-  cs_int_t   iloc;
+  cs_lnum_t   icel;
+  cs_lnum_t   ivtl;
+  cs_lnum_t   iloc;
 
   cs_ventil_t  *ventil;
 
-  const cs_int_t  nbr_cel_et = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  nbr_cel_et = mesh->n_cells_with_ghosts;
 
   /* Mark the cells */
 
@@ -184,7 +184,7 @@ cs_loc_ventil_marque_cellules(const cs_mesh_t  *const mesh,
 
 void CS_PROCF (tstvtl, TSTVTL)
 (
- cs_int_t  *const nbrvtl
+ cs_lnum_t  *const nbrvtl
 )
 {
   *nbrvtl = cs_glob_ventil_nbr;
@@ -375,8 +375,8 @@ void CS_PROCF (tsvvtl, TSVVTL)
  *----------------------------------------------------------------------------*/
 
 void
-cs_ventil_definit(const cs_int_t   dim_modele,
-                  const cs_int_t   dim_ventil,
+cs_ventil_definit(const int        dim_modele,
+                  const int        dim_ventil,
                   const cs_real_t  coo_axe_amont[3],
                   const cs_real_t  coo_axe_aval[3],
                   const cs_real_t  ray_ventil,
@@ -489,10 +489,10 @@ void
 cs_ventil_cree_listes(const cs_mesh_t              *mesh,
                       const cs_mesh_quantities_t   *mesh_quantities)
 {
-  cs_int_t  icel, icel_1, icel_2;
-  cs_int_t  ifac;
-  cs_int_t  ivtl;
-  cs_int_t  idim;
+  cs_lnum_t  icel, icel_1, icel_2;
+  cs_lnum_t  ifac;
+  cs_lnum_t  ivtl;
+  cs_lnum_t  idim;
 
   cs_real_t  coo_axe;
   cs_real_t  d_2_axe;
@@ -500,12 +500,12 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
   cs_real_t  surf_loc;
 
   cs_ventil_t  *ventil = NULL;
-  cs_int_t  *cpt_cel_vtl = NULL;
-  cs_int_t  *num_vtl_cel = NULL;
+  cs_lnum_t  *cpt_cel_vtl = NULL;
+  cs_lnum_t  *num_vtl_cel = NULL;
 
-  const cs_int_t  nbr_cel_et = mesh->n_cells_with_ghosts;
-  const cs_int_t  *fac_cel = mesh->i_face_cells;
-  const cs_int_t  *fbr_cel = mesh->b_face_cells;
+  const cs_lnum_t  nbr_cel_et = mesh->n_cells_with_ghosts;
+  const cs_lnum_2_t  *fac_cel = mesh->i_face_cells;
+  const cs_lnum_t  *b_face_cells = mesh->b_face_cells;
   const cs_real_t  *coo_cen  = mesh_quantities->cell_cen;
   const cs_real_t  *surf_fac = mesh_quantities->i_face_normal;
   const cs_real_t  *surf_fbr = mesh_quantities->b_face_normal;
@@ -513,7 +513,7 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
   /* Create an array for cells marking */
   /*-----------------------------------*/
 
-  BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_int_t);
+  BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_lnum_t);
 
   for (icel = 0 ; icel < nbr_cel_et ; icel++)
     num_vtl_cel[icel] = 0;
@@ -577,12 +577,12 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
   /* Create the lists of cells belonging to each fan */
   /*-------------------------------------------------*/
 
-  BFT_MALLOC(cpt_cel_vtl, cs_glob_ventil_nbr, cs_int_t);
+  BFT_MALLOC(cpt_cel_vtl, cs_glob_ventil_nbr, cs_lnum_t);
 
   for (ivtl = 0 ; ivtl < cs_glob_ventil_nbr ; ivtl++) {
 
     ventil = cs_glob_ventil_tab[ivtl];
-    BFT_MALLOC(ventil->lst_cel, ventil->nbr_cel, cs_int_t);
+    BFT_MALLOC(ventil->lst_cel, ventil->nbr_cel, cs_lnum_t);
 
     cpt_cel_vtl[ivtl] = 0;
   }
@@ -612,8 +612,8 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
 
   for (ifac = 0 ; ifac < mesh->n_i_faces ; ifac++) {
 
-    icel_1 = fac_cel[ifac * 2]     - 1;
-    icel_2 = fac_cel[ifac * 2 + 1] - 1;
+    icel_1 = fac_cel[ifac][0];
+    icel_2 = fac_cel[ifac][1];
 
     if (   icel_1 < mesh->n_cells /* Make sure the contrib is from one domain */
         && num_vtl_cel[icel_1] != num_vtl_cel[icel_2]) {
@@ -637,9 +637,9 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
 
   for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++) {
 
-    if (num_vtl_cel[fbr_cel[ifac] - 1] > 0) {
+    if (num_vtl_cel[b_face_cells[ifac]] > 0) {
       surf_loc = CS_LOC_MODULE((surf_fbr + 3*ifac));
-      ivtl = num_vtl_cel[fbr_cel[ifac] - 1] - 1;
+      ivtl = num_vtl_cel[b_face_cells[ifac]] - 1;
       ventil = cs_glob_ventil_tab[ivtl];
       ventil->surface += surf_loc;
     }
@@ -679,27 +679,27 @@ cs_ventil_cree_listes(const cs_mesh_t              *mesh,
 void
 cs_ventil_cree_coupe(const cs_mesh_t  *mesh)
 {
-  cs_int_t   icel_1, icel_2;
-  cs_int_t   ifac;
+  cs_lnum_t   icel_1, icel_2;
+  cs_lnum_t   ifac;
 
-  cs_int_t  cpt_fac = 0;
-  cs_int_t  cpt_fbr = 0;
+  cs_lnum_t  cpt_fac = 0;
+  cs_lnum_t  cpt_fbr = 0;
 
-  cs_int_t  *num_vtl_cel = NULL;
-  cs_int_t  *liste_fac = NULL;
-  cs_int_t  *liste_fbr = NULL;
+  cs_lnum_t  *num_vtl_cel = NULL;
+  cs_lnum_t  *liste_fac = NULL;
+  cs_lnum_t  *liste_fbr = NULL;
 
-  const cs_int_t  nbr_cel_et = mesh->n_cells_with_ghosts;
-  const cs_int_t  nbr_fac = mesh->n_i_faces;
-  const cs_int_t  nbr_fbr = mesh->n_b_faces;
-  const cs_int_t  *fac_cel = mesh->i_face_cells;
-  const cs_int_t  *fbr_cel = mesh->b_face_cells;
+  const cs_lnum_t  nbr_cel_et = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  nbr_fac = mesh->n_i_faces;
+  const cs_lnum_t  nbr_fbr = mesh->n_b_faces;
+  const cs_lnum_2_t  *fac_cel = mesh->i_face_cells;
+  const cs_lnum_t  *b_face_cells = mesh->b_face_cells;
 
   /* Mark cells and faces */
 
-  BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_int_t);
-  BFT_MALLOC(liste_fac, nbr_fac, cs_int_t);
-  BFT_MALLOC(liste_fbr, nbr_fbr, cs_int_t);
+  BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_lnum_t);
+  BFT_MALLOC(liste_fac, nbr_fac, cs_lnum_t);
+  BFT_MALLOC(liste_fbr, nbr_fbr, cs_lnum_t);
 
   cs_loc_ventil_marque_cellules(mesh,
                                 num_vtl_cel);
@@ -708,8 +708,8 @@ cs_ventil_cree_coupe(const cs_mesh_t  *mesh)
 
   for (ifac = 0 ; ifac < nbr_fac ; ifac++) {
 
-    icel_1 = fac_cel[ifac * 2]     - 1;
-    icel_2 = fac_cel[ifac * 2 + 1] - 1;
+    icel_1 = fac_cel[ifac][0];
+    icel_2 = fac_cel[ifac][1];
 
     if (num_vtl_cel[icel_1] != num_vtl_cel[icel_2])
       liste_fac[cpt_fac++] = ifac;
@@ -720,7 +720,7 @@ cs_ventil_cree_coupe(const cs_mesh_t  *mesh)
 
   for (ifac = 0 ; ifac < nbr_fbr ; ifac++) {
 
-    if (num_vtl_cel[fbr_cel[ifac] - 1] > 0)
+    if (num_vtl_cel[b_face_cells[ifac]] > 0)
       liste_fbr[cpt_fbr++] = ifac;
 
   }
@@ -753,28 +753,28 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
                         const cs_real_t              densite_cel[],
                         const cs_real_t              densite_fbr[])
 {
-  cs_int_t   icel, icel_1, icel_2;
-  cs_int_t   ifac;
-  cs_int_t   ivtl;
-  cs_int_t   idim;
-  cs_int_t   i, sens;
+  cs_lnum_t   icel, icel_1, icel_2;
+  cs_lnum_t   ifac;
+  cs_lnum_t   ivtl;
+  cs_lnum_t   idim;
+  cs_lnum_t   i, sens;
 
   cs_real_t  debit;
   cs_real_t  orient[3];
 
   cs_ventil_t  *ventil = NULL;
-  cs_int_t  *num_vtl_cel = NULL;
+  cs_lnum_t  *num_vtl_cel = NULL;
 
-  const cs_int_t  nbr_cel_et = mesh->n_cells_with_ghosts;
-  const cs_int_t  nbr_fac = mesh->n_i_faces;
-  const cs_int_t  nbr_fbr = mesh->n_b_faces;
+  const cs_lnum_t  nbr_cel_et = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  nbr_fac = mesh->n_i_faces;
+  const cs_lnum_t  nbr_fbr = mesh->n_b_faces;
   const cs_real_t  *coo_cen = mesh_quantities->cell_cen;
-  const cs_int_t   *fac_cel = mesh->i_face_cells;
-  const cs_int_t   *fbr_cel = mesh->b_face_cells;
+  const cs_lnum_2_t   *fac_cel = mesh->i_face_cells;
+  const cs_lnum_t   *b_face_cells = mesh->b_face_cells;
 
   /* Mark the cells */
 
-  BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_int_t);
+  BFT_MALLOC(num_vtl_cel, nbr_cel_et, cs_lnum_t);
 
   cs_loc_ventil_marque_cellules(mesh,
                                 num_vtl_cel);
@@ -791,8 +791,8 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
 
   for (ifac = 0 ; ifac < nbr_fac ; ifac++) {
 
-    icel_1 = fac_cel[ifac * 2]     - 1;
-    icel_2 = fac_cel[ifac * 2 + 1] - 1;
+    icel_1 = fac_cel[ifac][0];
+    icel_2 = fac_cel[ifac][1];
 
     if (   icel_1 < mesh->n_cells /* Make sure the contrib is from one domain */
         && num_vtl_cel[icel_1] != num_vtl_cel[icel_2]) {
@@ -802,7 +802,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
 
       for (i = 0 ; i < 2 ; i++) {
 
-        icel = fac_cel[ifac * 2 + i] - 1;
+        icel = fac_cel[ifac][i];
         ivtl = num_vtl_cel[icel] - 1;
 
         if (ivtl > -1) {
@@ -825,7 +825,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
 
   for (ifac = 0 ; ifac < nbr_fbr ; ifac++) {
 
-    ivtl = num_vtl_cel[fbr_cel[ifac] - 1] - 1;
+    ivtl = num_vtl_cel[b_face_cells[ifac]] - 1;
 
     if (ivtl > -1) {
 
@@ -899,12 +899,12 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
 
 void
 cs_ventil_calcul_force(const cs_mesh_quantities_t  *mesh_quantities,
-                       const cs_int_t               idim_source,
+                       const cs_lnum_t              idim_source,
                        cs_real_t                    t_source[])
 {
-  cs_int_t  icel, iloc;
-  cs_int_t  ivtl;
-  cs_int_t  idim;
+  cs_lnum_t  icel, iloc;
+  cs_lnum_t  ivtl;
+  int  idim;
 
   cs_real_t  f_z, f_theta;
   cs_real_t  f_rot[3];

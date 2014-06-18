@@ -1251,7 +1251,7 @@ _add_single_edges(cs_interface_set_t   *ifs,
                   cs_lnum_t             b_f2v_lst[],
                   cs_lnum_t             i_f2v_idx[],
                   cs_lnum_t             i_f2v_lst[],
-                  cs_lnum_t             i_face_cells[],
+                  cs_lnum_2_t           i_face_cells[],
                   cs_join_sync_t       *s_edges,
                   int                   verbosity)
 {
@@ -1309,7 +1309,7 @@ _add_single_edges(cs_interface_set_t   *ifs,
 
     fid = selection->i_adj_faces[i] - 1;
 
-    if (i_face_cells[2*fid] == 0 || i_face_cells[2*fid+1] == 0) {
+    if (i_face_cells[fid][0] == -1 || i_face_cells[fid][1] == -1) {
 
       s = i_f2v_idx[fid] - 1;
       e = i_f2v_idx[fid+1] - 1;
@@ -1915,7 +1915,7 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
                    cs_lnum_t            n_vertices,
                    cs_lnum_t            vtx_tag[],
                    cs_interface_set_t  *ifs,
-                   cs_lnum_t            i_face_cells[],
+                   cs_lnum_2_t          i_face_cells[],
                    cs_join_select_t    *selection,
                    int                  verbosity)
 {

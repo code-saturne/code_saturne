@@ -1332,15 +1332,15 @@ _define_cell_face_connect(cs_lagr_track_builder_t   *builder)
 
   for (i = 0; i < mesh->n_i_faces; i++)
     for (j = 0; j < 2; j++) {
-      cs_lnum_t iel = mesh->i_face_cells[2*i+j];
+      cs_lnum_t iel = mesh->i_face_cells[i][j] + 1;
       if (iel <= mesh->n_cells)
-                builder->cell_face_idx[iel] += 1;
+        builder->cell_face_idx[iel] += 1;
     }
 
   /* Count of the number of faces per cell: loop on border faces */
 
   for (i = 0; i < mesh->n_b_faces; i++)
-    builder->cell_face_idx[mesh->b_face_cells[i]] += 1;
+    builder->cell_face_idx[mesh->b_face_cells[i] + 1] += 1;
 
   /* Build index */
 
@@ -1355,7 +1355,7 @@ _define_cell_face_connect(cs_lagr_track_builder_t   *builder)
   for (i = 0; i < mesh->n_i_faces; i++) {
     for (j = 0; j < 2; j++) {
 
-      cs_lnum_t iel = mesh->i_face_cells[2*i+j];
+      cs_lnum_t iel = mesh->i_face_cells[i][j] + 1;
 
       if (iel <= mesh->n_cells) {
 
@@ -1370,7 +1370,7 @@ _define_cell_face_connect(cs_lagr_track_builder_t   *builder)
 
   for (i = 0; i < mesh->n_b_faces; i++) {
 
-    cs_lnum_t  cell_id = mesh->b_face_cells[i] - 1;
+    cs_lnum_t  cell_id = mesh->b_face_cells[i];
     cs_lnum_t  shift = builder->cell_face_idx[cell_id] + counter[cell_id];
 
     builder->cell_face_lst[shift] = -(i+1);
@@ -2344,7 +2344,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                 CS_LAGR_PART_DEPOSITED);
-      *cell_num = cs_glob_mesh->b_face_cells[face_id];
+      *cell_num = cs_glob_mesh->b_face_cells[face_id] + 1;
 
       particle_state = CS_LAGR_PART_TREATED;
 
@@ -2358,7 +2358,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
 
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                              cs_glob_mesh->b_face_cells[face_id]);
+                              cs_glob_mesh->b_face_cells[face_id] + 1);
 
     cs_real_t uxn = particle_velocity[0] * face_norm[0];
     cs_real_t vyn = particle_velocity[1] * face_norm[1];
@@ -2416,7 +2416,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                   CS_LAGR_PART_DEPOSITED);
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                  cs_glob_mesh->b_face_cells[face_id]);
+                                  cs_glob_mesh->b_face_cells[face_id] + 1);
 
         for (k = 0; k < 3; k++) {
           particle_velocity[k] = 0.0;
@@ -2645,7 +2645,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           move_particle = CS_LAGR_PART_MOVE_ON;
           particle_state = CS_LAGR_PART_TO_SYNC;
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                    cs_glob_mesh->b_face_cells[face_id]);
+                                    cs_glob_mesh->b_face_cells[face_id] + 1);
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                     CS_LAGR_PART_IN_FLOW);
 
@@ -2699,7 +2699,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       move_particle = CS_LAGR_PART_MOVE_ON;
       particle_state = CS_LAGR_PART_TO_SYNC;
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cs_glob_mesh->b_face_cells[face_id]);
+                                cs_glob_mesh->b_face_cells[face_id] + 1);
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                 CS_LAGR_PART_IN_FLOW);
 
@@ -2738,7 +2738,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     move_particle = CS_LAGR_PART_MOVE_ON;
     particle_state = CS_LAGR_PART_TO_SYNC;
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                              cs_glob_mesh->b_face_cells[face_id]);
+                              cs_glob_mesh->b_face_cells[face_id] + 1);
 
     for (k = 0; k < 3; k++)
       p_info->start_coords[k] = intersect_pt[k];
@@ -2775,7 +2775,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     move_particle = CS_LAGR_PART_MOVE_ON;
     particle_state = CS_LAGR_PART_TO_SYNC;
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                              cs_glob_mesh->b_face_cells[face_id]);
+                              cs_glob_mesh->b_face_cells[face_id] + 1);
 
     for (k = 0; k < 3; k++)
       p_info->start_coords[k] = intersect_pt[k];
@@ -2911,7 +2911,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       move_particle = CS_LAGR_PART_MOVE_ON;
       particle_state = CS_LAGR_PART_TO_SYNC;
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cs_glob_mesh->b_face_cells[face_id]);
+                                cs_glob_mesh->b_face_cells[face_id] + 1);
 
       for (k = 0; k < 3; k++)
         p_info->start_coords[k] = intersect_pt[k];
@@ -3296,21 +3296,21 @@ _local_propagation(void                           *particle,
         else if (indian == 1) { /* Particle moves to the neighbor cell
                                    through the current face "face_num" */
 
-          cs_lnum_t  cell_num1 = mesh->i_face_cells[2*face_id];
-          cs_lnum_t  cell_num2 = mesh->i_face_cells[2*face_id+1];
+          cs_lnum_t  c_id1 = mesh->i_face_cells[face_id][0];
+          cs_lnum_t  c_id2 = mesh->i_face_cells[face_id][1];
 
           p_info->last_face_num = face_num;
 
-          if (cur_cell_id + 1 == cell_num1) {
+          if (cur_cell_id == c_id1) {
             cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                      cell_num2);
-            cur_cell_id = cell_num2 - 1;
+                                      c_id2 + 1);
+            cur_cell_id = c_id2;
           }
 
           else {
             cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                      cell_num1);
-            cur_cell_id = cell_num1 - 1;
+                                      c_id1 + 1);
+            cur_cell_id = c_id1;
           }
 
           if (cur_cell_id >= mesh->n_cells) {

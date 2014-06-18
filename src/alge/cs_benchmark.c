@@ -214,7 +214,7 @@ _print_stats(long    n_runs,
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
  *   cell_num    <-- global cell numbers (1 to n)
- *   face_cell   <-- face -> cells connectivity (1 to n)
+ *   face_cell   <-- face -> cells connectivity
  *   halo        <-- cell halo structure
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
  *   da          <-- diagonal values
@@ -231,7 +231,7 @@ _matrix_vector_test(double                 t_measure,
                     cs_int_t               n_cells_ext,
                     cs_int_t               n_faces,
                     const cs_gnum_t       *cell_num,
-                    const cs_int_t        *face_cell,
+                    const cs_lnum_2_t     *face_cell,
                     const cs_halo_t       *halo,
                     const cs_numbering_t  *numbering,
                     const cs_real_t       *restrict da,
@@ -424,7 +424,7 @@ _matrix_vector_test(double                 t_measure,
  *
  * parameters:
  *   n_faces         <-- local number of internal faces
- *   face_cell       <-- face -> cells connectivity (1 to n)
+ *   face_cell       <-- face -> cells connectivity
  *   xa              <-- extradiagonal values
  *   x               <-- vector
  *   y               <-> vector
@@ -432,7 +432,7 @@ _matrix_vector_test(double                 t_measure,
 
 static void
 _mat_vec_exdiag_native(cs_int_t             n_faces,
-                       const cs_int_t      *face_cell,
+                       const cs_lnum_2_t   *face_cell,
                        const cs_real_t     *restrict xa,
                        cs_real_t           *restrict x,
                        cs_real_t           *restrict y)
@@ -444,11 +444,12 @@ _mat_vec_exdiag_native(cs_int_t             n_faces,
 #pragma disjoint(*x, *y, *xa)
 #endif
 
-  const cs_int_t *restrict face_cel_p = face_cell;
+  const cs_lnum_t *restrict face_cel_p
+    = (const cs_lnum_t *restrict)face_cell;
 
   for (face_id = 0; face_id < n_faces; face_id++) {
-    ii = *face_cel_p++ - 1;
-    jj = *face_cel_p++ - 1;
+    ii = *face_cel_p++;
+    jj = *face_cel_p++;
     y[ii] += xa[face_id] * x[jj];
     y[jj] += xa[face_id] * x[ii];
   }
@@ -468,7 +469,7 @@ _mat_vec_exdiag_native(cs_int_t             n_faces,
 
 static void
 _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
-                          const cs_int_t      *face_cell,
+                          const cs_lnum_2_t   *face_cell,
                           const cs_real_t     *restrict xa,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y)
@@ -487,7 +488,8 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
    *    to another in y[ii] loop (nonzero matrix value on the same line ii).
    */
 
-  const cs_int_t *restrict face_cel_p = face_cell;
+  const cs_lnum_t *restrict face_cel_p
+    = (const cs_lnum_t *restrict)face_cell;
 
   for (face_id = 0;
        face_id < n_faces;
@@ -497,12 +499,12 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
 
     /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
-    ii = face_cel_p[0] - 1;
+    ii = face_cel_p[0];
     ii_prev = ii;
-    y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[1] - 1];
+    y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[1]];
 
     for (kk = 1; kk < kk_max; ++kk) {
-      ii = face_cel_p[2*kk] - 1;
+      ii = face_cel_p[2*kk];
       /* y[ii] += xa[face_id+kk] * x[jj]; */
       if(ii == ii_prev) {
         y_it = y_it_prev;
@@ -512,15 +514,15 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
         y[ii_prev] = y_it_prev;
       }
       ii_prev = ii;
-      y_it_prev = y_it + xa[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+      y_it_prev = y_it + xa[face_id+kk] * x[face_cel_p[2*kk+1]];
     }
     y[ii] = y_it_prev;
 
     /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
     for (kk = 0; kk < kk_max; ++kk) {
-      y[face_cel_p[2*kk+1] - 1]
-        += xa[face_id+kk] * x[face_cel_p[2*kk] - 1];
+      y[face_cel_p[2*kk+1]]
+        += xa[face_id+kk] * x[face_cel_p[2*kk]];
     }
     face_cel_p += 2 * l1_cache_size;
   }
@@ -533,7 +535,7 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
  *
  * parameters:
  *   n_faces         <-- local number of internal faces
- *   face_cell       <-- face -> cells connectivity (1 to n)
+ *   face_cell       <-- face -> cells connectivity
  *   xa              <-- extradiagonal values
  *   x               <-- vector
  *   ya              <-> vector
@@ -541,7 +543,7 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
 
 static void
 _mat_vec_exdiag_part_p1(cs_int_t             n_faces,
-                        const cs_int_t      *face_cell,
+                        const cs_lnum_2_t   *face_cell,
                         const cs_real_t     *restrict xa,
                         cs_real_t           *restrict x,
                         cs_real_t           *restrict ya)
@@ -553,11 +555,12 @@ _mat_vec_exdiag_part_p1(cs_int_t             n_faces,
 #pragma disjoint(*x, *xa, *ya)
 #endif
 
-  const cs_int_t *restrict face_cel_p = face_cell;
+  const cs_lnum_t *restrict face_cel_p
+    = (const cs_lnum_t *restrict)face_cell;
 
   for (face_id = 0; face_id < n_faces; face_id++) {
-    ii = *face_cel_p++ - 1;
-    jj = *face_cel_p++ - 1;
+    ii = *face_cel_p++;
+    jj = *face_cel_p++;
     ya[face_id] += xa[face_id] * x[ii];
     ya[face_id] += xa[face_id] * x[jj];
   }
@@ -571,7 +574,7 @@ _mat_vec_exdiag_part_p1(cs_int_t             n_faces,
  *   n_cells     <-- number of cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
- *   face_cell   <-- face -> cells connectivity (1 to n)
+ *   face_cell   <-- face -> cells connectivity
  *   xa          <-- extradiagonal values
  *   x           <-> vector
  *   y           --> vector
@@ -582,7 +585,7 @@ _sub_matrix_vector_test(double               t_measure,
                         cs_int_t             n_cells,
                         cs_int_t             n_cells_ext,
                         cs_int_t             n_faces,
-                        const cs_int_t      *face_cell,
+                        const cs_lnum_2_t   *face_cell,
                         const cs_real_t     *restrict xa,
                         cs_real_t           *restrict x,
                         cs_real_t           *restrict y)
@@ -755,6 +758,7 @@ cs_benchmark(int  mpi_trace_mode)
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_v = cs_glob_mesh_quantities;
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
 
   size_t n_cells = mesh->n_cells;
   size_t n_cells_ext = mesh->n_cells_with_ghosts;
@@ -811,7 +815,7 @@ cs_benchmark(int  mpi_trace_mode)
                          n_cells_ext,
                          n_faces,
                          mesh->global_cell_num,
-                         mesh->i_face_cells,
+                         i_face_cells,
                          mesh->halo,
                          mesh->i_face_numbering);
 
@@ -833,14 +837,14 @@ cs_benchmark(int  mpi_trace_mode)
                                n_cells_ext,
                                n_faces,
                                mesh->global_cell_num,
-                               mesh->i_face_cells,
+                               i_face_cells,
                                mesh->halo,
                                mesh->i_face_numbering);
 
   _matrix_vector_test(t_measure,
                       mv, false,
                       n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
+                      mesh->global_cell_num, i_face_cells, mesh->halo,
                       mesh->i_face_numbering, da, xa, x, y);
 
   cs_matrix_variant_destroy(&mv);
@@ -861,14 +865,14 @@ cs_benchmark(int  mpi_trace_mode)
                                n_cells_ext,
                                n_faces,
                                mesh->global_cell_num,
-                               mesh->i_face_cells,
+                               i_face_cells,
                                mesh->halo,
                                mesh->i_face_numbering);
 
   _matrix_vector_test(t_measure,
                       mv, true,
                       n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, mesh->i_face_cells, mesh->halo,
+                      mesh->global_cell_num, i_face_cells, mesh->halo,
                       mesh->i_face_numbering, da, xa, x, y);
 
   cs_matrix_variant_destroy(&mv);
@@ -877,7 +881,7 @@ cs_benchmark(int  mpi_trace_mode)
                           n_cells,
                           n_cells_ext,
                           n_faces,
-                          mesh->i_face_cells,
+                          i_face_cells,
                           xa,
                           x,
                           y);

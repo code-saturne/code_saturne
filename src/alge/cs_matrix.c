@@ -149,13 +149,6 @@ static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
        "does not handle case with excluded diagonal.");
 
-static const char *_matrix_fill_name[CS_MATRIX_N_FILL_TYPES]
-  = {N_("scalar"),
-     N_("scalar symmetric"),
-     N_("block diagonal"),
-     N_("block diagonal symmetric"),
-     N_("block")};
-
 static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES * 2]
   = {N_("y <- A.x"),
      N_("y <- (A-D).x"),
@@ -572,17 +565,17 @@ _sort_local(cs_lnum_t  number[],
  *   n_cells     <-- Local number of participating cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
- *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   face_cell   <-- Face -> cells connectivity
  *
  * returns:
  *   pointer to allocated native matrix structure.
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_struct_native_t *
-_create_struct_native(cs_lnum_t         n_cells,
-                      cs_lnum_t         n_cells_ext,
-                      cs_lnum_t         n_faces,
-                      const cs_lnum_t  *face_cell)
+_create_struct_native(cs_lnum_t           n_cells,
+                      cs_lnum_t           n_cells_ext,
+                      cs_lnum_t           n_faces,
+                      const cs_lnum_2_t  *face_cell)
 {
   cs_matrix_struct_native_t  *ms;
 
@@ -882,13 +875,13 @@ _mat_vec_p_l_native(bool                exclude_diag,
 
   if (mc->xa != NULL) {
 
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
+
     if (mc->symmetric) {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         y[ii] += xa[face_id] * x[jj];
         y[jj] += xa[face_id] * x[ii];
       }
@@ -896,11 +889,9 @@ _mat_vec_p_l_native(bool                exclude_diag,
     }
     else {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         y[ii] += xa[2*face_id] * x[jj];
         y[jj] += xa[2*face_id + 1] * x[ii];
       }
@@ -954,13 +945,13 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
 
   if (mc->xa != NULL) {
 
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
+
     if (mc->symmetric) {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
           y[ii*db_size[1] + kk] += xa[face_id] * x[jj*db_size[1] + kk];
           y[jj*db_size[1] + kk] += xa[face_id] * x[ii*db_size[1] + kk];
@@ -969,11 +960,9 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
     }
     else {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
           y[ii*db_size[1] + kk] += xa[2*face_id]     * x[jj*db_size[1] + kk];
           y[jj*db_size[1] + kk] += xa[2*face_id + 1] * x[ii*db_size[1] + kk];
@@ -1033,13 +1022,13 @@ _3_3_mat_vec_p_l_native(bool                exclude_diag,
 
   if (mc->xa != NULL) {
 
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
+
     if (mc->symmetric) {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         for (kk = 0; kk < 3; kk++) {
           y[ii*3 + kk] += xa[face_id] * x[jj*3 + kk];
           y[jj*3 + kk] += xa[face_id] * x[ii*3 + kk];
@@ -1048,11 +1037,9 @@ _3_3_mat_vec_p_l_native(bool                exclude_diag,
     }
     else {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         for (kk = 0; kk < 3; kk++) {
           y[ii*3 + kk] += xa[2*face_id]     * x[jj*3 + kk];
           y[jj*3 + kk] += xa[2*face_id + 1] * x[ii*3 + kk];
@@ -1110,24 +1097,22 @@ _bb_mat_vec_p_l_native(bool                exclude_diag,
 
   if (mc->xa != NULL) {
 
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
+
     if (mc->symmetric) {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         _dense_eb_ax_add(ii, jj, face_id, eb_size, xa, x, y);
         _dense_eb_ax_add(jj, ii, face_id, eb_size, xa, x, y);
       }
     }
     else {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         _dense_eb_ax_add(ii, jj, 2*face_id, eb_size, xa, x, y);
         _dense_eb_ax_add(jj, ii, 2*face_id + 1, eb_size, xa, x, y);
       }
@@ -1190,9 +1175,9 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
 
   if (mc->xa != NULL) {
 
-    if (mc->symmetric) {
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
+    if (mc->symmetric) {
 
       for (g_id = 0; g_id < n_groups; g_id++) {
 
@@ -1202,8 +1187,8 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
+            ii = face_cel_p[face_id][0];
+            jj = face_cel_p[face_id][1];
             y[ii] += xa[face_id] * x[jj];
             y[jj] += xa[face_id] * x[ii];
           }
@@ -1212,8 +1197,6 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
     }
     else {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (g_id = 0; g_id < n_groups; g_id++) {
 
 #       pragma omp parallel for private(face_id, ii, jj)
@@ -1222,8 +1205,8 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
+            ii = face_cel_p[face_id][0];
+            jj = face_cel_p[face_id][1];
             y[ii] += xa[2*face_id] * x[jj];
             y[jj] += xa[2*face_id + 1] * x[ii];
           }
@@ -1285,9 +1268,9 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
 
   if (mc->xa != NULL) {
 
-    if (mc->symmetric) {
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
+    if (mc->symmetric) {
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
@@ -1297,8 +1280,8 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
+            ii = face_cel_p[face_id][0];
+            jj = face_cel_p[face_id][1];
             for (kk = 0; kk < db_size[0]; kk++) {
               y[ii*db_size[1] + kk] += xa[face_id] * x[jj*db_size[1] + kk];
               y[jj*db_size[1] + kk] += xa[face_id] * x[ii*db_size[1] + kk];
@@ -1310,8 +1293,6 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
     }
     else {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
       for (g_id = 0; g_id < n_groups; g_id++) {
 
 #       pragma omp parallel for private(face_id, ii, jj, kk)
@@ -1320,8 +1301,8 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                face_id++) {
-            ii = face_cel_p[2*face_id] -1;
-            jj = face_cel_p[2*face_id + 1] -1;
+            ii = face_cel_p[face_id][0];
+            jj = face_cel_p[face_id][1];
             for (kk = 0; kk < db_size[0]; kk++) {
               y[ii*db_size[1] + kk] += xa[2*face_id]     * x[jj*db_size[1] + kk];
               y[jj*db_size[1] + kk] += xa[2*face_id + 1] * x[ii*db_size[1] + kk];
@@ -1379,9 +1360,9 @@ _mat_vec_p_l_native_bull(bool                exclude_diag,
      *    to another in y[ii] loop (nonzero matrix value on the same line ii).
      */
 
-    if (mc->symmetric) {
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
+    if (mc->symmetric) {
 
       for (face_id = 0;
            face_id < ms->n_faces;
@@ -1391,12 +1372,12 @@ _mat_vec_p_l_native_bull(bool                exclude_diag,
 
         /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
-        ii = face_cel_p[0] - 1;
+        ii = face_cel_p[0][0];
         ii_prev = ii;
-        y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[1] - 1];
+        y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[0][1]];
 
         for (kk = 1; kk < kk_max; ++kk) {
-          ii = face_cel_p[2*kk] - 1;
+          ii = face_cel_p[kk][0];
           /* y[ii] += xa[face_id+kk] * x[jj]; */
           if (ii == ii_prev) {
             y_it = y_it_prev;
@@ -1406,23 +1387,20 @@ _mat_vec_p_l_native_bull(bool                exclude_diag,
             y[ii_prev] = y_it_prev;
           }
           ii_prev = ii;
-          y_it_prev = y_it + xa[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+          y_it_prev = y_it + xa[face_id+kk] * x[face_cel_p[kk][1]];
         }
         y[ii] = y_it_prev;
 
         /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
         for (kk = 0; kk < kk_max; ++kk) {
-          y[face_cel_p[2*kk+1] - 1]
-            += xa[face_id+kk] * x[face_cel_p[2*kk] - 1];
+          y[face_cel_p[kk][1]] += xa[face_id+kk] * x[face_cel_p[kk][0]];
         }
-        face_cel_p += 2 * l1_cache_size;
+        face_cel_p += l1_cache_size;
       }
 
     }
     else {
-
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
 
       for (face_id = 0;
            face_id < ms->n_faces;
@@ -1433,12 +1411,12 @@ _mat_vec_p_l_native_bull(bool                exclude_diag,
 
         /* sub-loop to compute y[ii] += xa[2*face_id] * x[jj] */
 
-        ii = face_cel_p[0] - 1;
+        ii = face_cel_p[0][0];
         ii_prev = ii;
-        y_it_prev = y[ii_prev] + xa[2*face_id] * x[face_cel_p[1] - 1];
+        y_it_prev = y[ii_prev] + xa[2*face_id] * x[face_cel_p[0][1]];
 
         for (kk = 1; kk < kk_max; ++kk) {
-          ii = face_cel_p[2*kk] - 1;
+          ii = face_cel_p[kk][0];
           /* y[ii] += xa[2*(face_id+i)] * x[jj]; */
           if (ii == ii_prev) {
             y_it = y_it_prev;
@@ -1448,17 +1426,16 @@ _mat_vec_p_l_native_bull(bool                exclude_diag,
             y[ii_prev] = y_it_prev;
           }
           ii_prev = ii;
-          y_it_prev = y_it + xa[2*(face_id+kk)] * x[face_cel_p[2*kk+1] - 1];
+          y_it_prev = y_it + xa[2*(face_id+kk)] * x[face_cel_p[kk][1]];
         }
         y[ii] = y_it_prev;
 
         /* sub-loop to compute y[ii] += xa[2*face_id + 1] * x[jj] */
 
         for (kk = 0; kk < kk_max; ++kk) {
-          y[face_cel_p[2*kk+1] - 1]
-            += xa[2*(face_id+kk) + 1] * x[face_cel_p[2*kk] - 1];
+          y[face_cel_p[kk][1]] += xa[2*(face_id+kk) + 1] * x[face_cel_p[kk][0]];
         }
-        face_cel_p += 2 * l1_cache_size;
+        face_cel_p += l1_cache_size;
       }
 
     }
@@ -1505,14 +1482,14 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
 
   if (mc->xa != NULL) {
 
-    if (mc->symmetric) {
+    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
+    if (mc->symmetric) {
 
 #     pragma dir nodep
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         y[ii] += xa[face_id] * x[jj];
         y[jj] += xa[face_id] * x[ii];
       }
@@ -1520,12 +1497,10 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
     }
     else {
 
-      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
-
 #     pragma dir nodep
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
-        ii = face_cel_p[2*face_id] -1;
-        jj = face_cel_p[2*face_id + 1] -1;
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
         y[ii] += xa[2*face_id] * x[jj];
         y[jj] += xa[2*face_id + 1] * x[ii];
       }
@@ -1549,18 +1524,18 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
  *   n_cells     <-- Local number of participating cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
- *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   face_cell   <-- Face -> cells connectivity
  *
  * returns:
  *   pointer to allocated CSR matrix structure.
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_struct_csr_t *
-_create_struct_csr(bool              have_diag,
-                   cs_lnum_t         n_cells,
-                   cs_lnum_t         n_cells_ext,
-                   cs_lnum_t         n_faces,
-                   const cs_lnum_t  *face_cell)
+_create_struct_csr(bool                have_diag,
+                   cs_lnum_t           n_cells,
+                   cs_lnum_t           n_cells_ext,
+                   cs_lnum_t           n_faces,
+                   const cs_lnum_2_t  *face_cell)
 {
   int n_cols_max;
   cs_lnum_t ii, jj, face_id;
@@ -1595,11 +1570,11 @@ _create_struct_csr(bool              have_diag,
 
   if (face_cell != NULL) {
 
-    face_cel_p = face_cell;
+    face_cel_p = (const cs_lnum_t *restrict)face_cell;
 
     for (face_id = 0; face_id < n_faces; face_id++) {
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       ccount[ii] += 1;
       ccount[jj] += 1;
     }
@@ -1630,11 +1605,11 @@ _create_struct_csr(bool              have_diag,
 
   if (face_cell != NULL) {                   /* non-diagonal terms */
 
-    face_cel_p = face_cell;
+    face_cel_p = (const cs_lnum_t *restrict)face_cell;
 
     for (face_id = 0; face_id < n_faces; face_id++) {
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       if (ii < ms->n_rows) {
         ms->col_id[ms->row_index[ii] + ccount[ii]] = jj;
         ccount[ii] += 1;
@@ -1815,19 +1790,19 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
 
   assert(matrix->face_cell != NULL);
 
+  const cs_lnum_t n_faces = matrix->n_faces;
+  const cs_lnum_t *restrict face_cel_p
+    = (const cs_lnum_t *restrict)(matrix->face_cell);
+
   if (symmetric == false) {
 
-    const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
-
-    const cs_real_t  *restrict xa1 = xa;
-    const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
-
     if (interleaved == false) {
+      const cs_real_t  *restrict xa1 = xa;
+      const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->val[kk] = xa1[face_id];
@@ -1841,8 +1816,8 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
     else { /* interleaved == true */
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->val[kk] = xa[2*face_id];
@@ -1857,13 +1832,10 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
   }
   else { /* if symmetric == true */
 
-    const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
-
     for (face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       if (ii < ms->n_rows) {
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
         mc->val[kk] = xa[face_id];
@@ -1908,19 +1880,19 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
 
   assert(matrix->face_cell != NULL);
 
+  const cs_lnum_t n_faces = matrix->n_faces;
+  const cs_lnum_t *restrict face_cel_p
+    = (const cs_lnum_t *restrict)(matrix->face_cell);
+
   if (symmetric == false) {
 
-    const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
-
-    const cs_real_t  *restrict xa1 = xa;
-    const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
-
     if (interleaved == false) {
+      const cs_real_t  *restrict xa1 = xa;
+      const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->val[kk] += xa1[face_id];
@@ -1934,8 +1906,8 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
     else { /* interleaved == true */
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->val[kk] += xa[2*face_id];
@@ -1949,13 +1921,10 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
   }
   else { /* if symmetric == true */
 
-    const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
-
     for (face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       if (ii < ms->n_rows) {
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
         mc->val[kk] += xa[face_id];
@@ -2337,18 +2306,18 @@ _mat_vec_p_l_csr_pf(bool                exclude_diag,
  *   n_cells     <-- Local number of participating cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
- *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   face_cell   <-- Face -> cells connectivity
  *
  * returns:
  *   pointer to allocated CSR matrix structure.
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_struct_csr_sym_t *
-_create_struct_csr_sym(bool              have_diag,
-                       cs_lnum_t         n_cells,
-                       cs_lnum_t         n_cells_ext,
-                       cs_lnum_t         n_faces,
-                       const cs_lnum_t  *face_cell)
+_create_struct_csr_sym(bool                have_diag,
+                       cs_lnum_t           n_cells,
+                       cs_lnum_t           n_cells_ext,
+                       cs_lnum_t           n_faces,
+                       const cs_lnum_2_t  *face_cell)
 {
   int n_cols_max;
   cs_lnum_t ii, jj, face_id;
@@ -2384,11 +2353,11 @@ _create_struct_csr_sym(bool              have_diag,
 
   if (face_cell != NULL) {
 
-    face_cel_p = face_cell;
+    face_cel_p = (const cs_lnum_t *restrict)face_cell;
 
     for (face_id = 0; face_id < n_faces; face_id++) {
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       if (ii < jj)
         ccount[ii] += 1;
       else
@@ -2422,11 +2391,11 @@ _create_struct_csr_sym(bool              have_diag,
 
   if (face_cell != NULL) {                   /* non-diagonal terms */
 
-    face_cel_p = face_cell;
+    face_cel_p = (const cs_lnum_t *restrict)face_cell;
 
     for (face_id = 0; face_id < n_faces; face_id++) {
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       if (ii < jj && ii < ms->n_rows) {
         ms->col_id[ms->row_index[ii] + ccount[ii]] = jj;
         ccount[ii] += 1;
@@ -2574,7 +2543,7 @@ _set_xa_coeffs_csr_sym_direct(cs_matrix_t      *matrix,
 
   const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
   const cs_lnum_t n_faces = matrix->n_faces;
-  const cs_lnum_t *restrict face_cel = matrix->face_cell;
+  const cs_lnum_2_t *restrict face_cel = matrix->face_cell;
 
   /* Copy extra-diagonal values */
 
@@ -2582,8 +2551,8 @@ _set_xa_coeffs_csr_sym_direct(cs_matrix_t      *matrix,
 
 # pragma omp parallel for private(ii, jj, kk) if(n_faces > THR_MIN)
   for (face_id = 0; face_id < n_faces; face_id++) {
-    ii = face_cel[face_id*2] - 1;
-    jj = face_cel[face_id*2 + 1] - 1;
+    ii = face_cel[face_id][0];
+    jj = face_cel[face_id][1];
     if (ii < jj && ii < ms->n_rows) {
       for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
       mc->val[kk] = xa[face_id];
@@ -2617,7 +2586,8 @@ _set_xa_coeffs_csr_sym_increment(cs_matrix_t      *matrix,
 
   const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
   const cs_lnum_t n_faces = matrix->n_faces;
-  const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
+  const cs_lnum_t *restrict face_cel_p
+    = (const cs_lnum_t *restrict)(matrix->face_cell);
 
   /* Copy extra-diagonal values */
 
@@ -2625,8 +2595,8 @@ _set_xa_coeffs_csr_sym_increment(cs_matrix_t      *matrix,
 
   for (face_id = 0; face_id < n_faces; face_id++) {
     cs_lnum_t kk;
-    ii = *face_cel_p++ - 1;
-    jj = *face_cel_p++ - 1;
+    ii = *face_cel_p++;
+    jj = *face_cel_p++;
     if (ii < jj && ii < ms->n_rows) {
       for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
       mc->val[kk] += xa[face_id];
@@ -2975,16 +2945,16 @@ _set_xa_coeffs_msr_direct(cs_matrix_t      *matrix,
   if (symmetric == false) {
 
     const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
-
-    const cs_real_t  *restrict xa1 = xa;
-    const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
+    const cs_lnum_t *restrict face_cel_p
+      = (const cs_lnum_t *restrict)(matrix->face_cell);
 
     if (interleaved == false) {
+      const cs_real_t  *restrict xa1 = xa;
+      const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->x_val[kk] = xa1[face_id];
@@ -2998,8 +2968,8 @@ _set_xa_coeffs_msr_direct(cs_matrix_t      *matrix,
     else { /* interleaved == true */
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->x_val[kk] = xa[2*face_id];
@@ -3015,12 +2985,13 @@ _set_xa_coeffs_msr_direct(cs_matrix_t      *matrix,
   else { /* if symmetric == true */
 
     const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
+    const cs_lnum_t *restrict face_cel_p
+      = (const cs_lnum_t *restrict)(matrix->face_cell);
 
     for (face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       if (ii < ms->n_rows) {
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
         mc->x_val[kk] = xa[face_id];
@@ -3068,7 +3039,8 @@ _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
   if (symmetric == false) {
 
     const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
+    const cs_lnum_t *restrict face_cel_p
+      = (const cs_lnum_t *restrict)(matrix->face_cell);
 
     const cs_real_t  *restrict xa1 = xa;
     const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
@@ -3076,8 +3048,8 @@ _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
     if (interleaved == false) {
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->x_val[kk] += xa1[face_id];
@@ -3091,8 +3063,8 @@ _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
     else { /* interleaved == true */
       for (face_id = 0; face_id < n_faces; face_id++) {
         cs_lnum_t kk, ll;
-        ii = *face_cel_p++ - 1;
-        jj = *face_cel_p++ - 1;
+        ii = *face_cel_p++;
+        jj = *face_cel_p++;
         if (ii < ms->n_rows) {
           for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
           mc->x_val[kk] += xa[2*face_id];
@@ -3107,12 +3079,13 @@ _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
   else { /* if symmetric == true */
 
     const cs_lnum_t n_faces = matrix->n_faces;
-    const cs_lnum_t *restrict face_cel_p = matrix->face_cell;
+    const cs_lnum_t *restrict face_cel_p
+      = (const cs_lnum_t *restrict)(matrix->face_cell);
 
     for (face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
       if (ii < ms->n_rows) {
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
         mc->x_val[kk] += xa[face_id];
@@ -3723,7 +3696,7 @@ _matrix_check(int                    n_variants,
               cs_lnum_t              n_cells_ext,
               cs_lnum_t              n_faces,
               const cs_gnum_t       *cell_num,
-              const cs_lnum_t       *face_cell,
+              const cs_lnum_2_t     *face_cell,
               const cs_halo_t       *halo,
               const cs_numbering_t  *numbering,
               cs_matrix_variant_t   *m_variant)
@@ -4016,7 +3989,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
                            cs_lnum_t              n_cells_ext,
                            cs_lnum_t              n_faces,
                            const cs_gnum_t       *cell_num,
-                           const cs_lnum_t       *face_cell,
+                           const cs_lnum_2_t     *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering)
 {
@@ -5658,7 +5631,7 @@ cs_matrix_variant_test(cs_lnum_t              n_cells,
                        cs_lnum_t              n_cells_ext,
                        cs_lnum_t              n_faces,
                        const cs_gnum_t       *cell_num,
-                       const cs_lnum_t       *face_cell,
+                       const cs_lnum_2_t     *face_cell,
                        const cs_halo_t       *halo,
                        const cs_numbering_t  *numbering)
 {

@@ -23,9 +23,7 @@
 subroutine lagini &
 !================
 
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   lndnod ,                                                       &
-   ifacel , ifabor )
+ ( lndnod )
 
 !===============================================================================
 ! FONCTION :
@@ -41,13 +39,7 @@ subroutine lagini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! e  ! <-- ! nombre d'elements                              !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! lndnod           ! e  ! --> ! dim. connect. cellules->faces                  !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -65,6 +57,7 @@ use entsor
 use period
 use lagpar
 use lagran
+use mesh
 
 !===============================================================================
 
@@ -72,11 +65,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
-integer          nfac   , nfabor
 integer          lndnod
-integer          ifacel(2,nfac)  , ifabor(nfabor)
-
 
 ! Local variables
 

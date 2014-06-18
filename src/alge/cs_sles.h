@@ -82,9 +82,6 @@ void CS_PROCF(reslin, RESLIN)
 (
  const char       *cname,     /* <-- variable name */
  const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
- const cs_int_t   *ncel,      /* <-- Number of local cells */
- const cs_int_t   *nfac,      /* <-- Number of faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ibsize,    /* <-- Block size of element ii,ii */
@@ -103,7 +100,6 @@ void CS_PROCF(reslin, RESLIN)
  const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
  const cs_real_t  *rnorm,     /* <-- Residue normalization */
  cs_real_t        *residu,    /* --> Final non normalized residue */
- const cs_int_t   *ifacel,    /* <-- Face -> cell connectivity  */
  const cs_real_t  *dam,       /* <-- Matrix diagonal */
  const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
  const cs_real_t  *smbrp,     /* <-- System right-hand side */

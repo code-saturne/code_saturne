@@ -217,11 +217,11 @@ _perio_face_clean(cs_join_param_t      param,
 
   for (i = 0; i < n_ii_faces; i++) {
 
-    if (mesh->i_face_cells[2*i] == 0 && mesh->i_face_cells[2*i+1] == 0)
+    if (mesh->i_face_cells[i][0] == -1 && mesh->i_face_cells[i][1] == -1)
       tag[i] = -1;
     else {
-      mesh->i_face_cells[2*n_fi_faces] = mesh->i_face_cells[2*i];
-      mesh->i_face_cells[2*n_fi_faces+1] = mesh->i_face_cells[2*i+1];
+      mesh->i_face_cells[n_fi_faces][0] = mesh->i_face_cells[i][0];
+      mesh->i_face_cells[n_fi_faces][1] = mesh->i_face_cells[i][1];
       n_fi_faces++;
       tag[i] = n_fi_faces;
     }
@@ -234,7 +234,7 @@ _perio_face_clean(cs_join_param_t      param,
             n_ii_faces - n_fi_faces);
 
   mesh->n_i_faces = n_fi_faces;
-  BFT_REALLOC(mesh->i_face_cells, 2*mesh->n_i_faces, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
   BFT_MALLOC(new_f2v_idx, n_fi_faces + 1, cs_lnum_t);
 
   n_fi_faces = 0;

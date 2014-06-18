@@ -78,7 +78,6 @@ subroutine visdyn &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use cstnum
 use optcal
@@ -109,7 +108,7 @@ double precision smagor(ncelet)
 ! Local variables
 
 integer          ii, iel, inc, isou, jsou
-integer          ipcvst, iprev
+integer          iprev
 integer          iclipc
 
 double precision coef, radeux, deux, delta, deltaf

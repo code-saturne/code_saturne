@@ -74,9 +74,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                 cs_int_t        *ipstdv,
                                 cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
-                                const cs_int_t  *isca,
-                                const cs_int_t  *iscapp,
-                                const cs_int_t  *ipprtp,
                                 cs_real_t       *xyzcap);
 
 /*============================================================================

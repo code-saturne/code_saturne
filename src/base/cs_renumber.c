@@ -147,19 +147,19 @@ cs_renumber_i_faces_type_t _i_faces_algorithm = CS_RENUMBER_I_FACES_MULTIPASS;
  *----------------------------------------------------------------------------*/
 
 static void
-_update_family(cs_int_t         n_elts,
-               const cs_int_t  *renum,
-               cs_int_t        *family)
+_update_family(cs_lnum_t         n_elts,
+               const cs_lnum_t  *renum,
+               cs_lnum_t        *family)
 {
-  cs_int_t ii;
-  cs_int_t *old_family;
+  cs_lnum_t ii;
+  cs_lnum_t *old_family;
 
   if (family == NULL)
     return;
 
-  BFT_MALLOC(old_family, n_elts, cs_int_t);
+  BFT_MALLOC(old_family, n_elts, cs_lnum_t);
 
-  memcpy(old_family, family, n_elts*sizeof(cs_int_t));
+  memcpy(old_family, family, n_elts*sizeof(cs_lnum_t));
 
   for (ii = 0; ii < n_elts; ii++)
     family[ii] = old_family[renum[ii] - 1];
@@ -218,15 +218,15 @@ _update_global_num(size_t             n_elts,
 
 static void
 _cs_renumber_update_cells(cs_mesh_t             *mesh,
-                          const cs_int_t        *renum)
+                          const cs_lnum_t       *renum)
 {
-  cs_int_t  ii, jj, kk, face_id, n_vis, start_id, start_id_old;
+  cs_lnum_t  ii, jj, kk, face_id, n_vis, start_id, start_id_old;
 
-  cs_int_t  *face_cells_tmp = NULL;
-  cs_int_t  *new_cell_id = NULL;
+  cs_lnum_t  *face_cells_tmp = NULL;
+  cs_lnum_t  *new_cell_id = NULL;
 
-  cs_int_t  face_cells_max_size = CS_MAX(mesh->n_i_faces*2, mesh->n_b_faces);
-  const cs_int_t  n_cells = mesh->n_cells;
+  cs_lnum_t  face_cells_max_size = CS_MAX(mesh->n_i_faces*2, mesh->n_b_faces);
+  const cs_lnum_t  n_cells = mesh->n_cells;
 
   /* If no renumbering is present, return */
 
@@ -235,8 +235,8 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
   /* Allocate Work arrays */
 
-  BFT_MALLOC(face_cells_tmp, face_cells_max_size, cs_int_t);
-  BFT_MALLOC(new_cell_id, mesh->n_cells_with_ghosts, cs_int_t);
+  BFT_MALLOC(face_cells_tmp, face_cells_max_size, cs_lnum_t);
+  BFT_MALLOC(new_cell_id, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   /* Build old -> new renumbering (1 to n) */
 
@@ -255,24 +255,24 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
   memcpy(face_cells_tmp,
          mesh->i_face_cells,
-         mesh->n_i_faces * 2 * sizeof(cs_int_t));
+         mesh->n_i_faces * 2 * sizeof(cs_lnum_t));
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    ii = face_cells_tmp[face_id*2] - 1;
-    jj = face_cells_tmp[face_id*2 + 1] - 1;
-    mesh->i_face_cells[face_id*2] = new_cell_id[ii] + 1;
-    mesh->i_face_cells[face_id*2 + 1] = new_cell_id[jj] + 1;
+    ii = face_cells_tmp[face_id*2];
+    jj = face_cells_tmp[face_id*2 + 1];
+    mesh->i_face_cells[face_id][0] = new_cell_id[ii];
+    mesh->i_face_cells[face_id][1] = new_cell_id[jj];
   }
 
   if (mesh->n_b_faces > 0) {
 
     memcpy(face_cells_tmp,
            mesh->b_face_cells,
-           mesh->n_b_faces * sizeof(cs_int_t));
+           mesh->n_b_faces * sizeof(cs_lnum_t));
 
     for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
       ii = face_cells_tmp[face_id] - 1;
-      mesh->b_face_cells[face_id] = new_cell_id[ii] + 1;
+      mesh->b_face_cells[face_id] = new_cell_id[ii];
     }
   }
 
@@ -280,18 +280,18 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
   if (mesh->cell_cells_lst != NULL) {
 
-    cs_int_t *cell_cells_idx_old, *cell_cells_lst_old;
-    const cs_int_t cell_cells_lst_size = mesh->cell_cells_idx[n_cells] - 1;
+    cs_lnum_t *cell_cells_idx_old, *cell_cells_lst_old;
+    const cs_lnum_t cell_cells_lst_size = mesh->cell_cells_idx[n_cells] - 1;
 
-    BFT_MALLOC(cell_cells_idx_old, n_cells + 1, cs_int_t);
-    BFT_MALLOC(cell_cells_lst_old, cell_cells_lst_size, cs_int_t);
+    BFT_MALLOC(cell_cells_idx_old, n_cells + 1, cs_lnum_t);
+    BFT_MALLOC(cell_cells_lst_old, cell_cells_lst_size, cs_lnum_t);
 
     memcpy(cell_cells_idx_old,
            mesh->cell_cells_idx,
-           (n_cells + 1)*sizeof(cs_int_t));
+           (n_cells + 1)*sizeof(cs_lnum_t));
     memcpy(cell_cells_lst_old,
            mesh->cell_cells_lst,
-           cell_cells_lst_size*sizeof(cs_int_t));
+           cell_cells_lst_size*sizeof(cs_lnum_t));
 
     mesh->cell_cells_idx[0] = 1;
     start_id = 0;
@@ -340,20 +340,20 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_update_face_vertices(cs_int_t         n_faces,
-                      cs_int_t        *face_vtx_idx,
-                      cs_int_t        *face_vtx,
-                      const cs_int_t  *renum)
+_update_face_vertices(cs_lnum_t         n_faces,
+                      cs_lnum_t        *face_vtx_idx,
+                      cs_lnum_t        *face_vtx,
+                      const cs_lnum_t  *renum)
 {
   if (renum != NULL && face_vtx != NULL) {
 
-    cs_int_t ii, jj, kk, n_vtx, start_id, start_id_old;
-    cs_int_t *face_vtx_idx_old, *face_vtx_old;
+    cs_lnum_t ii, jj, kk, n_vtx, start_id, start_id_old;
+    cs_lnum_t *face_vtx_idx_old, *face_vtx_old;
 
-    const cs_int_t connect_size = face_vtx_idx[n_faces] - 1;
+    const cs_lnum_t connect_size = face_vtx_idx[n_faces] - 1;
 
-    BFT_MALLOC(face_vtx_idx_old, n_faces + 1, cs_int_t);
-    BFT_MALLOC(face_vtx_old, connect_size, cs_int_t);
+    BFT_MALLOC(face_vtx_idx_old, n_faces + 1, cs_lnum_t);
+    BFT_MALLOC(face_vtx_old, connect_size, cs_lnum_t);
 
     memcpy(face_vtx_idx_old, face_vtx_idx, (n_faces+1)*sizeof(int));
     memcpy(face_vtx_old, face_vtx, connect_size*sizeof(int));
@@ -393,32 +393,32 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
                           const cs_lnum_t       *renum_i,
                           const cs_lnum_t       *renum_b)
 {
-  cs_int_t  face_id, face_id_old;
+  cs_lnum_t  face_id, face_id_old;
 
-  cs_int_t  *face_cells_old = NULL;
-
-  const cs_int_t  n_i_faces = mesh->n_i_faces;
-  const cs_int_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
 
   /* Interior faces */
 
   if (renum_i != NULL) {
 
-    /* Allocate Work array */
+    cs_lnum_2_t  *i_face_cells_old = NULL;
 
-    BFT_MALLOC(face_cells_old, n_i_faces*2, cs_int_t);
+   /* Allocate Work array */
+
+    BFT_MALLOC(i_face_cells_old, n_i_faces, cs_lnum_2_t);
 
     /* Update faces -> cells connectivity */
 
-    memcpy(face_cells_old, mesh->i_face_cells, n_i_faces*2*sizeof(cs_int_t));
+    memcpy(i_face_cells_old, mesh->i_face_cells, n_i_faces*sizeof(cs_lnum_2_t));
 
     for (face_id = 0; face_id < n_i_faces; face_id++) {
       face_id_old = renum_i[face_id] - 1;
-      mesh->i_face_cells[face_id*2] = face_cells_old[face_id_old*2];
-      mesh->i_face_cells[face_id*2 + 1] = face_cells_old[face_id_old*2 + 1];
+      mesh->i_face_cells[face_id][0] = i_face_cells_old[face_id_old][0];
+      mesh->i_face_cells[face_id][1] = i_face_cells_old[face_id_old][1];
     }
 
-    BFT_FREE(face_cells_old);
+    BFT_FREE(i_face_cells_old);
 
     /* Update faces -> vertices connectivity */
 
@@ -438,20 +438,22 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
 
   if (renum_b != NULL) {
 
+    cs_lnum_t  *b_face_cells_old = NULL;
+
     /* Allocate Work array */
 
-    BFT_MALLOC(face_cells_old, n_b_faces, cs_int_t);
+    BFT_MALLOC(b_face_cells_old, n_b_faces, cs_lnum_t);
 
     /* Update faces -> cells connectivity */
 
-    memcpy(face_cells_old, mesh->b_face_cells, n_b_faces*sizeof(cs_int_t));
+    memcpy(b_face_cells_old, mesh->b_face_cells, n_b_faces*sizeof(cs_lnum_t));
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
       face_id_old = renum_b[face_id] - 1;
-      mesh->b_face_cells[face_id] = face_cells_old[face_id_old];
+      mesh->b_face_cells[face_id] = b_face_cells_old[face_id_old];
     }
 
-    BFT_FREE(face_cells_old);
+    BFT_FREE(b_face_cells_old);
 
     /* Update faces -> vertices connectivity */
 
@@ -935,9 +937,9 @@ _csr_graph_create(cs_lnum_t         n_cells_ext,
  *----------------------------------------------------------------------------*/
 
 static _csr_graph_t *
-_csr_graph_create_cell_face(cs_lnum_t         n_cells_ext,
-                            cs_lnum_t         n_faces,
-                            const cs_lnum_t  *face_cell)
+_csr_graph_create_cell_face(cs_lnum_t           n_cells_ext,
+                            cs_lnum_t           n_faces,
+                            const cs_lnum_2_t  *face_cell)
 {
   int n_cols_max;
   cs_lnum_t ii, jj, f_id;
@@ -962,8 +964,8 @@ _csr_graph_create_cell_face(cs_lnum_t         n_cells_ext,
     ccount[ii] = 0;
 
   for (f_id = 0; f_id < n_faces; f_id++) {
-    ii = face_cell[f_id*2] - 1;
-    jj = face_cell[f_id*2 + 1] - 1;
+    ii = face_cell[f_id][0];
+    jj = face_cell[f_id][1];
     ccount[ii] += 1;
     ccount[jj] += 1;
   }
@@ -985,8 +987,8 @@ _csr_graph_create_cell_face(cs_lnum_t         n_cells_ext,
   BFT_MALLOC(g->col_id, (g->row_index[g->n_rows]), cs_lnum_t);
 
   for (f_id = 0; f_id < n_faces; f_id++) {
-    ii = face_cell[f_id*2] - 1;
-    jj = face_cell[f_id*2 + 1] - 1;
+    ii = face_cell[f_id][0];
+    jj = face_cell[f_id][1];
     g->col_id[g->row_index[ii] + ccount[ii]] = f_id;
     ccount[ii] += 1;
     g->col_id[g->row_index[jj] + ccount[jj]] = f_id;
@@ -1040,13 +1042,13 @@ _csr_graph_destroy(_csr_graph_t  **graph)
  *----------------------------------------------------------------------------*/
 
 static void
-_independent_face_groups(cs_lnum_t          max_group_size,
-                         cs_lnum_t          n_cells_ext,
-                         cs_lnum_t          n_faces,
-                         const cs_lnum_t   *face_cell,
-                         cs_lnum_t         *new_to_old,
-                         cs_lnum_t         *n_groups,
-                         cs_lnum_t        **group_size)
+_independent_face_groups(cs_lnum_t            max_group_size,
+                         cs_lnum_t            n_cells_ext,
+                         cs_lnum_t            n_faces,
+                         const cs_lnum_2_t   *face_cell,
+                         cs_lnum_t           *new_to_old,
+                         cs_lnum_t           *n_groups,
+                         cs_lnum_t          **group_size)
 {
   cs_lnum_t f_id, i, j, k;
   cs_lnum_t *group_face_ids = NULL, *face_marker = NULL;
@@ -1100,8 +1102,7 @@ _independent_face_groups(cs_lnum_t          max_group_size,
         for (i = 0; i < g_size && f_ok; i++) {
 
           cs_lnum_t f_cmp = group_face_ids[i];
-          cs_lnum_t c_id[2] = {face_cell[f_cmp*2] - 1,
-                               face_cell[f_cmp*2 + 1] - 1};
+          cs_lnum_t c_id[2] = {face_cell[f_cmp][0], face_cell[f_cmp][1]};
 
           for (j = 0; j < 2; j++) {
             cs_lnum_t start_id = cell_faces->row_index[c_id[j]];
@@ -1355,16 +1356,16 @@ _renum_face_multipass_g_unbalance(int               n_i_threads,
  *----------------------------------------------------------------------------*/
 
 static void
-_renum_face_multipass_redistribute(int                         n_i_threads,
-                                   int                         n_g_i_threads,
-                                   int                         g_id,
-                                   double                      relax,
-                                   cs_lnum_t                   faces_list_size,
-                                   const cs_lnum_t   *restrict faces_list,
-                                   const cs_lnum_2_t *restrict l_face_cells,
-                                   int               *restrict f_t_id,
-                                   cs_lnum_t         *restrict n_t_faces,
-                                   cs_lnum_t         *restrict t_face_last,
+_renum_face_multipass_redistribute(int                          n_i_threads,
+                                   int                          n_g_i_threads,
+                                   int                          g_id,
+                                   double                       relax,
+                                   cs_lnum_t                    faces_list_size,
+                                   const cs_lnum_t    *restrict faces_list,
+                                   const cs_lnum_2_t  *restrict l_face_cells,
+                                   int                *restrict f_t_id,
+                                   cs_lnum_t          *restrict n_t_faces,
+                                   cs_lnum_t          *restrict t_face_last,
                                    cs_lnum_t         *restrict t_cell_index)
 {
   int t_id, t_id1;
@@ -1644,8 +1645,8 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
 # pragma omp parallel for private(c_id_0, c_id_1)
   for (f_id = 0; f_id < n_faces; f_id++) {
-    c_id_0 = i_face_cells[f_id][0] - 1;
-    c_id_1 = i_face_cells[f_id][1] - 1;
+    c_id_0 = i_face_cells[f_id][0];
+    c_id_1 = i_face_cells[f_id][1];
     if (c_id_0 < c_id_1) {
       l_face_cells[f_id][0] = c_id_0;
       l_face_cells[f_id][1] = c_id_1;
@@ -1886,7 +1887,7 @@ _renum_i_faces_no_share_cell_in_block(cs_mesh_t    *mesh,
   _independent_face_groups(max_group_size,
                            mesh->n_cells_with_ghosts,
                            mesh->n_i_faces,
-                           mesh->i_face_cells,
+                           (const cs_lnum_2_t *)(mesh->i_face_cells),
                            renum_i,
                            n_i_groups,
                            &i_group_size);
@@ -1988,9 +1989,9 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
       end_id = mesh->n_b_faces;
     else if (end_id > 0 && end_id < mesh->n_b_faces) {
       cs_lnum_t f_id = renum_b[end_id - 1] - 1;
-      cs_lnum_t c_num = mesh->b_face_cells[f_id];
+      cs_lnum_t c_id = mesh->b_face_cells[f_id];
       f_id = renum_b[end_id] - 1;
-      while (mesh->b_face_cells[f_id] == c_num) {
+      while (mesh->b_face_cells[f_id] == c_id) {
         end_id += 1;
         if (end_id < mesh->n_b_faces)
           f_id = renum_b[end_id] - 1;
@@ -2045,8 +2046,8 @@ _log_bandwidth_info(const cs_mesh_t  *mesh,
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
 
-    cs_lnum_t cid0 = i_face_cells[face_id][0] - 1;
-    cs_lnum_t cid1 = i_face_cells[face_id][1] - 1;
+    cs_lnum_t cid0 = i_face_cells[face_id][0];
+    cs_lnum_t cid1 = i_face_cells[face_id][1];
 
     cs_lnum_t distance = CS_ABS(cid1 - cid0);
 
@@ -2440,12 +2441,12 @@ static int
 _renumber_for_vectorizing(cs_mesh_t  *mesh)
 {
   int _ivect[2] = {0, 0};
-  cs_int_t   ivecti = 0, ivectb = 0;
-  cs_int_t  *renum_i = NULL, *renum_b = NULL;
-  cs_int_t  *iworkf = NULL, *ismbs = NULL;
+  cs_lnum_t   ivecti = 0, ivectb = 0;
+  cs_lnum_t  *renum_i = NULL, *renum_b = NULL;
+  cs_lnum_t  *iworkf = NULL, *ismbs = NULL;
 
-  cs_int_t  n_faces_max = CS_MAX(mesh->n_i_faces, mesh->n_b_faces);
-  cs_int_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
+  cs_lnum_t  n_faces_max = CS_MAX(mesh->n_i_faces, mesh->n_b_faces);
+  cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
 
 
 #if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
@@ -2477,10 +2478,10 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
 
   /* Allocate Work arrays */
 
-  BFT_MALLOC(renum_i, mesh->n_i_faces, cs_int_t);
-  BFT_MALLOC(renum_b, mesh->n_b_faces, cs_int_t);
-  BFT_MALLOC(iworkf, n_faces_max, cs_int_t);
-  BFT_MALLOC(ismbs, n_cells_wghosts, cs_int_t);
+  BFT_MALLOC(renum_i, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(renum_b, mesh->n_b_faces, cs_lnum_t);
+  BFT_MALLOC(iworkf, n_faces_max, cs_lnum_t);
+  BFT_MALLOC(ismbs, n_cells_wghosts, cs_lnum_t);
 
   /* Try renumbering */
 
@@ -2491,7 +2492,7 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
                            &vector_size,
                            &ivecti,
                            &ivectb,
-                           mesh->i_face_cells,
+                           (cs_int_t *)(mesh->i_face_cells),
                            mesh->b_face_cells,
                            renum_i,
                            renum_b,
@@ -2507,8 +2508,8 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
 
   if (ivecti > 0 || ivectb > 0) {
 
-    cs_int_t   *_renum_i = NULL;
-    cs_int_t   *_renum_b = NULL;
+    cs_lnum_t   *_renum_i = NULL;
+    cs_lnum_t   *_renum_b = NULL;
 
     if (ivecti > 0)
       _renum_i = renum_i;
@@ -2530,12 +2531,12 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
 
   if (ivecti > 0 || ivectb > 0) {
 
-    cs_int_t  *ismbv = NULL;
+    cs_lnum_t  *ismbv = NULL;
     cs_real_t  *rworkf = NULL, *rsmbs = NULL, *rsmbv = NULL;
 
-    BFT_MALLOC(iworkf, n_faces_max, cs_int_t);
-    BFT_MALLOC(ismbs, n_cells_wghosts, cs_int_t);
-    BFT_MALLOC(ismbv, n_cells_wghosts, cs_int_t);
+    BFT_MALLOC(iworkf, n_faces_max, cs_lnum_t);
+    BFT_MALLOC(ismbs, n_cells_wghosts, cs_lnum_t);
+    BFT_MALLOC(ismbv, n_cells_wghosts, cs_lnum_t);
     BFT_MALLOC(rworkf, n_faces_max, cs_real_t);
     BFT_MALLOC(rsmbs, n_cells_wghosts, cs_real_t);
     BFT_MALLOC(rsmbv, n_cells_wghosts, cs_real_t);
@@ -2544,7 +2545,7 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
                              &(mesh->n_cells),
                              &(mesh->n_i_faces),
                              &(mesh->n_b_faces),
-                             mesh->i_face_cells,
+                             (cs_int_t *)(mesh->i_face_cells),
                              mesh->b_face_cells,
                              iworkf,
                              ismbs,
@@ -2643,8 +2644,8 @@ _renumber_test(cs_mesh_t  *mesh)
           for (f_id = group_index[(t_id*n_groups + g_id)*2];
                f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                f_id++) {
-            c_id_0 = mesh->i_face_cells[f_id*2] - 1;
-            c_id_1 = mesh->i_face_cells[f_id*2 + 1] - 1;
+            c_id_0 = mesh->i_face_cells[f_id][0];
+            c_id_1 = mesh->i_face_cells[f_id][1];
             accumulator[c_id_0] += 1;
             accumulator[c_id_1] += 1;
           }
@@ -2670,8 +2671,8 @@ _renumber_test(cs_mesh_t  *mesh)
             for (f_id = group_index[(t_id*n_groups + g_id)*2];
                  f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                  f_id++) {
-              c_id_0 = mesh->i_face_cells[f_id*2] - 1;
-              c_id_1 = mesh->i_face_cells[f_id*2 + 1] - 1;
+              c_id_0 = mesh->i_face_cells[f_id][0];
+              c_id_1 = mesh->i_face_cells[f_id][1];
               if (   (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
                   || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id))
                 face_errors[0] += 1;
@@ -2723,7 +2724,7 @@ _renumber_test(cs_mesh_t  *mesh)
           for (f_id = group_index[(t_id*n_groups + g_id)*2];
                f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                f_id++) {
-            c_id = mesh->b_face_cells[f_id] - 1;
+            c_id = mesh->b_face_cells[f_id];
             accumulator[c_id] += 1;
           }
         }
@@ -2748,7 +2749,7 @@ _renumber_test(cs_mesh_t  *mesh)
             for (f_id = group_index[(t_id*n_groups + g_id)*2];
                  f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                  f_id++) {
-              c_id = mesh->b_face_cells[f_id] - 1;
+              c_id = mesh->b_face_cells[f_id];
               if (accumulator[c_id] > -1 && accumulator[c_id] != t_id)
                 face_errors[1] += 1;
               accumulator[c_id] = t_id;

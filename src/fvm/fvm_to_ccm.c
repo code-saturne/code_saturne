@@ -1049,11 +1049,11 @@ _count_faces_perio_g(const cs_mesh_t      *b_mesh,
 
   if (b_mesh->periodicity != NULL) {
 
-    const cs_lnum_t *face_cells = b_mesh->i_face_cells;
+    const cs_lnum_2_t *face_cells = b_mesh->i_face_cells;
 
     for (i = 0; i < b_mesh->n_i_faces; i++) {
-      if (   cell_gnum[face_cells[2*i] - 1] == 0
-          || cell_gnum[face_cells[2*i + 1] - 1] == 0)
+      if (   cell_gnum[face_cells[i][0]] == 0
+          || cell_gnum[face_cells[i][1]] == 0)
         n_g_perio_faces += 1;
     }
 
@@ -1473,7 +1473,7 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
     n_cells_per_face = 2;
     n_faces = b_mesh->n_i_faces;
     n_g_faces = b_mesh->n_g_i_faces;
-    face_cells = b_mesh->i_face_cells;
+    face_cells = (const cs_lnum_t *)(b_mesh->i_face_cells);
   }
   else if (entity == kCCMIOBoundaryFaces) {
     n_cells_per_face = 1;
@@ -1489,13 +1489,13 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
 
   if (entity == kCCMIOInternalFaces) {
     for (i = 0; i < n_faces; i++) {
-      face_cell_g[i*2]     = cell_gnum[face_cells[i*2]     - 1];
-      face_cell_g[i*2 + 1] = cell_gnum[face_cells[i*2 + 1] - 1];
+      face_cell_g[i*2]     = cell_gnum[face_cells[i*2]];
+      face_cell_g[i*2 + 1] = cell_gnum[face_cells[i*2 + 1]];
     }
   }
   else {
     for (i = 0; i < n_faces; i++)
-      face_cell_g[i] = cell_gnum[face_cells[i] - 1];
+      face_cell_g[i] = cell_gnum[face_cells[i]];
   }
 
   /* Distribute to blocks and write */
@@ -1606,8 +1606,8 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
 
   if (entity == kCCMIOInternalFaces) {
     for (i = 0; i < n_faces; i++) {
-      if (   cell_gnum[face_cells[2*i] - 1] > 0
-          && cell_gnum[face_cells[2*i + 1] - 1] > 0) {
+      if (   cell_gnum[face_cells[2*i]] > 0
+          && cell_gnum[face_cells[2*i + 1]] > 0) {
         n_face_vertices = face_vtx_idx[i+1] - face_vtx_idx[i];
         face_connect_idx[i+1] = face_connect_idx[i] + n_face_vertices + 1;
       }
@@ -1617,8 +1617,8 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
   }
   else if (entity == kCCMIOBoundaryFaces) {
     for (i = 0; i < n_faces; i++) {
-      if (   cell_gnum[face_cells[2*i] - 1] == 0
-          || cell_gnum[face_cells[2*i + 1] - 1] == 0) {
+      if (   cell_gnum[face_cells[2*i]] == 0
+          || cell_gnum[face_cells[2*i + 1]] == 0) {
         n_face_vertices = face_vtx_idx[i+1] - face_vtx_idx[i];
         face_connect_idx[i+1] = face_connect_idx[i] + n_face_vertices + 1;
       }
@@ -1650,12 +1650,12 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
   }
   else if (entity == kCCMIOBoundaryFaces) {
     for (i = 0; i < n_faces; i++) {
-      if (cell_gnum[face_cells[2*i] - 1] == 0) {
+      if (cell_gnum[face_cells[2*i]] == 0) {
         face_connect_g[k++] = face_vtx_idx[i+1] - face_vtx_idx[i];
         for (j = face_vtx_idx[i+1] - 1; j >= face_vtx_idx[i]; j--)
           face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j - 1] - 1];
       }
-      else if (cell_gnum[face_cells[2*i + 1] - 1] == 0) {
+      else if (cell_gnum[face_cells[2*i + 1]] == 0) {
         face_connect_g[k++] = face_vtx_idx[i+1] - face_vtx_idx[i];
         for (j = face_vtx_idx[i]; j < face_vtx_idx[i+1]; j++)
           face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j - 1] - 1];
@@ -1771,16 +1771,16 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
 
   if (entity == kCCMIOInternalFaces) {
     for (i = 0; i < n_faces; i++) {
-      face_cell_g[i*2]     = cell_gnum[face_cells[i*2]     - 1];
-      face_cell_g[i*2 + 1] = cell_gnum[face_cells[i*2 + 1] - 1];
+      face_cell_g[i*2]     = cell_gnum[face_cells[i*2]];
+      face_cell_g[i*2 + 1] = cell_gnum[face_cells[i*2 + 1]];
     }
   }
   else {
     for (i = 0; i < n_faces; i++) {
       if (cell_gnum[face_cells[i*2] - 1] == 0)
-        face_cell_g[i] = cell_gnum[face_cells[i*2 + 1] - 1];
+        face_cell_g[i] = cell_gnum[face_cells[i*2 + 1]];
       else if (cell_gnum[face_cells[i*2 + 1] - 1] == 0)
-        face_cell_g[i] = cell_gnum[face_cells[i*2] - 1];
+        face_cell_g[i] = cell_gnum[face_cells[i*2]];
       else
         face_cell_g[i] = 0;
     }
@@ -2303,15 +2303,15 @@ _write_face_cells_l(const cs_mesh_t        *b_mesh,
     BFT_MALLOC(face_cells, b_mesh->n_i_faces * 2, cs_ccm_num_t);
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       cs_lnum_t face_id = face_order[i];
-      face_cells[i*2]     = cell_gnum[b_mesh->i_face_cells[face_id*2]     - 1];
-      face_cells[i*2 + 1] = cell_gnum[b_mesh->i_face_cells[face_id*2 + 1] - 1];
+      face_cells[i*2]     = cell_gnum[b_mesh->i_face_cells[face_id][0]];
+      face_cells[i*2 + 1] = cell_gnum[b_mesh->i_face_cells[face_id][1]];
     }
   }
   else if (entity == kCCMIOBoundaryFaces) {
     BFT_MALLOC(face_cells, b_mesh->n_b_faces, cs_ccm_num_t);
     for (i = 0; i < b_mesh->n_b_faces; i++) {
       cs_lnum_t face_id = face_order[i];
-      face_cells[i] = cell_gnum[b_mesh->b_face_cells[face_id] - 1];
+      face_cells[i] = cell_gnum[b_mesh->b_face_cells[face_id]];
     }
   }
 
@@ -2359,7 +2359,7 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
 
   const cs_lnum_t *face_vtx_idx = b_mesh->i_face_vtx_idx;
   const cs_lnum_t *face_vtx_lst = b_mesh->i_face_vtx_lst;
-  const cs_lnum_t *face_cells = b_mesh->i_face_cells;
+  const cs_lnum_2_t *face_cells = b_mesh->i_face_cells;
 
   /* Allocate array large enough for both periodic boundary + true interior
      faces to avoid counting loop */
@@ -2376,8 +2376,8 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
   if (entity == kCCMIOInternalFaces) {
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       cs_lnum_t face_id = face_order[i];
-      if (   cell_gnum[face_cells[2*face_id] - 1] > 0
-          && cell_gnum[face_cells[2*face_id + 1] - 1] > 0) {
+      if (   cell_gnum[face_cells[face_id][0]] > 0
+          && cell_gnum[face_cells[face_id][1]] > 0) {
         n_faces += 1;
         face_connect[k++] = face_vtx_idx[face_id+1] - face_vtx_idx[face_id];
         for (j = face_vtx_idx[face_id]; j < face_vtx_idx[face_id+1]; j++)
@@ -2388,13 +2388,13 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
   else if (entity == kCCMIOBoundaryFaces) {
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       cs_lnum_t face_id = face_order[i];
-      if (cell_gnum[face_cells[2*face_id] - 1] == 0) {
+      if (cell_gnum[face_cells[i][0]] == 0) {
         n_faces += 1;
         face_connect[k++] = face_vtx_idx[face_id+1] - face_vtx_idx[face_id];
         for (j = face_vtx_idx[face_id+1] - 1; j >= face_vtx_idx[face_id]; j--)
           face_connect[k++] = face_vtx_lst[j-1];
       }
-      else if (cell_gnum[face_cells[2*i + 1] - 1] == 0) {
+      else if (cell_gnum[face_cells[i][1]] == 0) {
         n_faces += 1;
         face_connect[k++] = face_vtx_idx[face_id+1] - face_vtx_idx[face_id];
         for (j = face_vtx_idx[face_id]; j < face_vtx_idx[face_id+1]; j++)
@@ -2458,10 +2458,10 @@ _write_face_cells_perio_l(const cs_mesh_t        *b_mesh,
   if (entity == kCCMIOInternalFaces) {
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       cs_lnum_t face_id = face_order[i];
-      if (   cell_gnum[b_mesh->i_face_cells[face_id*2] - 1] > 0
-          && cell_gnum[b_mesh->i_face_cells[face_id*2 + 1] - 1] > 0) {
-        face_cells[j*2]     = cell_gnum[b_mesh->i_face_cells[face_id*2]     - 1];
-        face_cells[j*2 + 1] = cell_gnum[b_mesh->i_face_cells[face_id*2 + 1] - 1];
+      if (   cell_gnum[b_mesh->i_face_cells[face_id][0]] > 0
+          && cell_gnum[b_mesh->i_face_cells[face_id][1]] > 0) {
+        face_cells[j*2]     = cell_gnum[b_mesh->i_face_cells[face_id][0]];
+        face_cells[j*2 + 1] = cell_gnum[b_mesh->i_face_cells[face_id][1]];
         j += 1;
       }
     }
@@ -2469,12 +2469,12 @@ _write_face_cells_perio_l(const cs_mesh_t        *b_mesh,
   else {
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       cs_lnum_t face_id = face_order[i];
-      if (cell_gnum[b_mesh->i_face_cells[face_id*2] - 1] == 0) {
-        face_cells[j] = cell_gnum[b_mesh->i_face_cells[face_id*2 + 1] - 1];
+      if (cell_gnum[b_mesh->i_face_cells[face_id][0]] == 0) {
+        face_cells[j] = cell_gnum[b_mesh->i_face_cells[face_id][1]];
         j += 1;
       }
-      else if (cell_gnum[b_mesh->i_face_cells[face_id*2 + 1] - 1] == 0) {
-        face_cells[j] = cell_gnum[b_mesh->i_face_cells[face_id*2] - 1];
+      else if (cell_gnum[b_mesh->i_face_cells[face_id][1]] == 0) {
+        face_cells[j] = cell_gnum[b_mesh->i_face_cells[face_id][0]];
         j += 1;
       }
     }

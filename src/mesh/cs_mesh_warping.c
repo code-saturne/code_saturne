@@ -388,7 +388,8 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
   fvm_triangulate_state_t  *triangle_state = NULL;
   cs_lnum_t  *new_face_vtx_idx = NULL, *new_face_vtx_lst = NULL;
-  cs_lnum_t  *new_face_cells = NULL, *new_face_family = NULL;
+  cs_lnum_2_t  *new_face_cells = NULL;
+  int        *new_face_family = NULL;
   cs_lnum_t  *cut_face_lst = NULL;
   cs_lnum_t  *new_face_shift = NULL;
   cs_lnum_t  *n_sub_elt_lst = NULL;
@@ -500,8 +501,8 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
   BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
   BFT_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
-  BFT_MALLOC(new_face_cells, 2*n_new_faces, cs_lnum_t);
-  BFT_MALLOC(new_face_family, n_new_faces, cs_lnum_t);
+  BFT_MALLOC(new_face_cells, n_new_faces, cs_lnum_2_t);
+  BFT_MALLOC(new_face_family, n_new_faces, int);
 
   BFT_MALLOC(cut_face_lst, n_cut_faces, cs_lnum_t);
 
@@ -545,8 +546,7 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
         /* Update "face -> cells" connectivity */
 
         for (j = 0; j < 2; j++)
-          new_face_cells[2*n_new_faces + j]
-            = mesh->i_face_cells[2*face_id + j];
+          new_face_cells[n_new_faces][j] = mesh->i_face_cells[face_id][j];
 
         /* Update family for each face */
 
@@ -568,7 +568,7 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
       /* Update "face -> cells" connectivity */
 
       for (j = 0; j < 2; j++)
-        new_face_cells[2*n_new_faces + j] = mesh->i_face_cells[2*face_id + j];
+        new_face_cells[n_new_faces][j] = mesh->i_face_cells[face_id][j];
 
       /* Update family for each face */
 
@@ -828,8 +828,8 @@ _cut_warped_faces(cs_mesh_t      *mesh,
       /* Update "face -> cells" connectivity */
 
       for (j = 0; j < stride; j++)
-        new_face_cells[stride*n_new_faces + j] =
-          (*p_face_cells)[stride*face_id + j];
+        new_face_cells[stride*n_new_faces + j]
+          = (*p_face_cells)[stride*face_id + j];
 
       /* Update family for each faces */
 

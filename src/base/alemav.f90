@@ -143,7 +143,7 @@ call grdvec &
 
 call aledis &
 !==========
- ( ifacel , ifabor , ipnfac , nodfac , ipnfbr , nodfbr , ialtyb , &
+ ( ialtyb ,                                                       &
    meshv  , gradm  ,                                              &
    claale , clbale ,                                              &
    dt     , dproj  )

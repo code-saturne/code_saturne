@@ -238,8 +238,8 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
 
       for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-        cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-        cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
 
         double visci = c_visc[ii];
         double viscj = c_visc[jj];
@@ -253,8 +253,8 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
 
       for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-        cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-        cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
 
         double visci = c_visc[ii];
         double viscj = c_visc[jj];
@@ -280,8 +280,8 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
 
       for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-        cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-        cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
 
         double visci = c_visc[ii] * porosi[ii];
         double viscj = c_visc[jj] * porosi[jj];
@@ -295,8 +295,8 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
 
       for (cs_lnum_t face_id = 0; face_id <m->n_i_faces; face_id++) {
 
-        cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-        cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
 
         double visci = c_visc[ii] * porosi[ii];
         double viscj = c_visc[jj] * porosi[jj];
@@ -311,7 +311,7 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id];
 
       b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
 
@@ -423,8 +423,8 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
       visci[0][0] = c_poro_visc[ii][0];
       visci[1][1] = c_poro_visc[ii][1];
@@ -461,8 +461,8 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-      cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
       double pnd = weight[face_id];
 
@@ -506,7 +506,7 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id];
 
       b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
 
@@ -517,7 +517,7 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id];
 
       b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
 
@@ -650,8 +650,8 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
   /* Always Harmonic mean */
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0] - 1;
-    cs_lnum_t jj = i_face_cells[face_id][1] - 1;
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
     visci[0][0] = c_poro_visc[ii][0];
     visci[1][1] = c_poro_visc[ii][1];
@@ -730,7 +730,7 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-    cs_lnum_t ii = b_face_cells[face_id] - 1;
+    cs_lnum_t ii = b_face_cells[face_id];
 
     visci[0][0] = c_poro_visc[ii][0];
     visci[1][1] = c_poro_visc[ii][1];
@@ -784,7 +784,7 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
       b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
@@ -796,7 +796,7 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id] - 1;
+      cs_lnum_t ii = b_face_cells[face_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
       b_visc[face_id] = b_face_surf[face_id]*porosi[ii];

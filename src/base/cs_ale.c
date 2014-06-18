@@ -93,177 +93,9 @@ CS_PROCF (algrma, ALGRMA)(void)
  *
  * Fortran Interface
  *
- * SUBROUTINE ALDEPL
- * *****************
- *
- * INTEGER         IFACEL(2,NFAC)  : --> : Interior faces -> cells connectivity
- * INTEGER         IFABOR(NFABOR)  : --> : Border faces -> cells connectivity
- * INTEGER         IPNFAC(NFAC+1)  : --> : Interior faces -> vertices index
- * INTEGER         NODFAC(LNDFAC)  : --> : Interior faces -> vertices list
- * INTEGER         IPNFBR(NFABOR+1): --> : Border faces -> vertices index
- * INTEGER         NODFBR(LNDFBR)  : --> : Border faces -> vertices list
- * DOUBLE PRECISION UMA(NCELET)    : --> : Mesh velocity along X
- * DOUBLE PRECISION VMA(NCELET)    : --> : Mesh velocity along Y
- * DOUBLE PRECISION WMA(NCELET)    : --> : Mesh velocity along Z
- * DOUBLE PRECISION COEFAU(NCELET) : --> : Boundary conditions A for UMA
- * DOUBLE PRECISION COEFAV(NCELET) : --> : Boundary conditions A pour VMA
- * DOUBLE PRECISION COEFAW(NCELET) : --> : Boundary conditions A pour WMA
- * DOUBLE PRECISION COEFBU(NCELET) : --> : Boundary conditions B pour UMA
- * DOUBLE PRECISION COEFBV(NCELET) : --> : Boundary conditions B pour VMA
- * DOUBLE PRECISION COEFBW(NCELET) : --> : Boundary conditions B pour WMA
- * DOUBLE PRECISION DT(NCELET)     : --> : Time step
- * DOUBLE PRECISION DEPROJ(NNOD,3)): <-- : Displacement projected on vertices
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
-                          const cs_int_t    b_face_cells[],
-                          const cs_int_t    i_face_vtx_idx[],
-                          const cs_int_t    i_face_vtx_lst[],
-                          const cs_int_t    b_face_vtx_idx[],
-                          const cs_int_t    b_face_vtx_lst[],
-                          cs_real_t        *uma,
-                          cs_real_t        *vma,
-                          cs_real_t        *wma,
-                          cs_real_t        *coefau,
-                          cs_real_t        *coefav,
-                          cs_real_t        *coefaw,
-                          cs_real_t        *coefbu,
-                          cs_real_t        *coefbv,
-                          cs_real_t        *coefbw,
-                          cs_real_t        *dt,
-                          cs_real_t        *disp_proj)
-{
-  cs_int_t  i, j, face_id, vtx_id, cell_id, cell_id1, cell_id2;
-
-  cs_real_t  *vtx_counter = NULL;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_b_faces = mesh->n_b_faces;
-  const cs_int_t  n_i_faces = mesh->n_i_faces;
-  const cs_int_t  dim = mesh->dim;
-
-  BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
-
-  for (vtx_id = 0; vtx_id < n_vertices; vtx_id++) {
-
-    vtx_counter[vtx_id] = 0.;
-    for (i = 0; i < dim; i++)
-      disp_proj[n_vertices*i + vtx_id] = 0.;
-
-  }
-
-  /* Internal face treatment */
-
-  for (face_id = 0; face_id < n_i_faces; face_id++) {
-
-    cell_id1 = i_face_cells[2*face_id] - 1;
-    cell_id2 = i_face_cells[2*face_id+1] - 1;
-
-    if (cell_id1 < n_cells) { /* Test to take into account face only once */
-
-      for (j = i_face_vtx_idx[face_id]; j < i_face_vtx_idx[face_id+1]; j++) {
-
-        /* Get the vertex number */
-
-        vtx_id = i_face_vtx_lst[j-1] - 1;
-
-        disp_proj[vtx_id] +=
-          0.5 *(dt[cell_id1]*uma[cell_id1] + dt[cell_id2]*uma[cell_id2]);
-
-        disp_proj[vtx_id+n_vertices] +=
-          0.5 *(dt[cell_id1]*vma[cell_id1] + dt[cell_id2]*vma[cell_id2]);
-
-        disp_proj[vtx_id+2*n_vertices] +=
-          0.5 *(dt[cell_id1]*wma[cell_id1] + dt[cell_id2]*wma[cell_id2]);
-
-        vtx_counter[vtx_id] += 1.;
-
-      }
-
-    }
-
-  } /* End of loop on internal faces */
-
-  /* Border face treatment.
-     We reintialize vtx_counter on border faces in order to take into account
-     only border face contribution */
-
-  for (face_id = 0; face_id < n_b_faces; face_id++) {
-
-    for (j = b_face_vtx_idx[face_id]; j < b_face_vtx_idx[face_id+1]; j++) {
-
-      vtx_id = b_face_vtx_lst[j-1] - 1;
-      vtx_counter[vtx_id] = 0.;
-
-      for (i = 0; i < dim; i++) disp_proj[vtx_id+i*n_vertices]=0.;
-
-    }
-
-  } /* End of loop on border faces */
-
-  for (face_id = 0; face_id < n_b_faces; face_id++) {
-
-    cell_id = b_face_cells[face_id] - 1;
-
-    for (j = b_face_vtx_idx[face_id]; j < b_face_vtx_idx[face_id+1]; j++) {
-
-      vtx_id = b_face_vtx_lst[j-1] - 1;
-
-      disp_proj[vtx_id] +=
-        dt[cell_id]*(coefau[face_id] + coefbu[face_id]*uma[cell_id]);
-
-      disp_proj[vtx_id + n_vertices] +=
-        dt[cell_id]*(coefav[face_id] + coefbv[face_id]*vma[cell_id]);
-
-      disp_proj[vtx_id + 2*n_vertices] +=
-        dt[cell_id]*(coefaw[face_id] + coefbw[face_id]*wma[cell_id]);
-
-      vtx_counter[vtx_id] += 1.;
-
-    }
-
-  } /* End of loop on border faces */
-
-  if (mesh->vtx_interfaces != NULL) {
-    cs_interface_set_sum(mesh->vtx_interfaces,
-                         n_vertices,
-                         3,
-                         false,
-                         CS_REAL_TYPE,
-                         disp_proj);
-    cs_interface_set_sum(mesh->vtx_interfaces,
-                         n_vertices,
-                         1,
-                         true,
-                         CS_REAL_TYPE,
-                         vtx_counter);
-  }
-
-  for (vtx_id = 0; vtx_id < n_vertices; vtx_id++)
-    for (i = 0; i < dim; i++)
-      disp_proj[vtx_id + i*n_vertices] /= vtx_counter[vtx_id];
-
-  BFT_FREE(vtx_counter);
-}
-
-/*----------------------------------------------------------------------------
- * Projection on mesh vertices of the displacement (computed on cell center)
- *
- * Fortran Interface
- *
  * subroutine aledis
  * *****************
  *
- * ifacel            : <-- : Interior faces -> cells connectivity
- * ifabor            : <-- : Border faces -> cells connectivity
- * ipnfac            : <-- : Interior faces -> vertices index
- * nodfac            : <-- : Interior faces -> vertices list
- * ipnfbr            : <-- : Border faces -> vertices index
- * nodfbr            : <-- : Border faces -> vertices list
  * ialtyb            : <-- : Type of boundary for ALE
  * meshv             : <-- : Mesh velocity
  * gradm             : <-- : Mesh velocity gradient (du_i/dx_j : gradv[][i][j])
@@ -274,13 +106,7 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
-                          const cs_int_t      b_face_cells[],
-                          const cs_int_t      i_face_vtx_idx[],
-                          const cs_int_t      i_face_vtx_lst[],
-                          const cs_int_t      b_face_vtx_idx[],
-                          const cs_int_t      b_face_vtx_lst[],
-                          const cs_int_t      ialtyb[],
+CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
                           const cs_real_t    *meshv,
                           const cs_real_33_t  gradm[],
                           const cs_real_t    *claale,
@@ -292,13 +118,13 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
 
   cs_real_t  *vtx_counter = NULL;
 
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_b_faces = mesh->n_b_faces;
-  const cs_int_t  n_i_faces = mesh->n_i_faces;
-  const cs_int_t  dim = mesh->dim;
-  const cs_real_t  *vtx_coord = mesh->vtx_coord;
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_int_t  n_vertices = m->n_vertices;
+  const cs_int_t  n_cells = m->n_cells;
+  const cs_int_t  n_b_faces = m->n_b_faces;
+  const cs_int_t  n_i_faces = m->n_i_faces;
+  const cs_int_t  dim = m->dim;
+  const cs_real_t  *vtx_coord = m->vtx_coord;
   const cs_real_t  *cell_cen = cs_glob_mesh_quantities->cell_cen;
   const cs_real_t  *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
@@ -317,21 +143,23 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cell_id1 = i_face_cells[2*face_id] - 1;
-    cell_id2 = i_face_cells[2*face_id+1] - 1;
+    cell_id1 = m->i_face_cells[face_id][0];
+    cell_id2 = m->i_face_cells[face_id][1];
 
     cs_real_t dvol1 = 1./cs_glob_mesh_quantities->cell_vol[cell_id1];
     cs_real_t dvol2 = 1./cs_glob_mesh_quantities->cell_vol[cell_id2];
 
     if (cell_id1 < n_cells) { /* Test to take into account face only once */
 
-      for (j = i_face_vtx_idx[face_id]; j < i_face_vtx_idx[face_id+1]; j++) {
+      for (j = m->i_face_vtx_idx[face_id];
+           j < m->i_face_vtx_idx[face_id+1];
+           j++) {
 
         /* Get the vertex number */
 
-        vtx_id = i_face_vtx_lst[j-1] - 1;
+        vtx_id = m->i_face_vtx_lst[j-1] - 1;
 
-        /* Get the vector from the cell center to the node*/
+        /* Get the vector from the cell center to the node */
 
         cs_real_t cen1_node_x = -cell_cen[3*cell_id1]   + vtx_coord[3*vtx_id];
         cs_real_t cen2_node_x = -cell_cen[3*cell_id2]   + vtx_coord[3*vtx_id];
@@ -382,9 +210,11 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
 
     if (ialtyb[face_id] != 2) {
 
-      for (j = b_face_vtx_idx[face_id]; j < b_face_vtx_idx[face_id+1]; j++) {
+      for (j = m->b_face_vtx_idx[face_id];
+           j < m->b_face_vtx_idx[face_id+1];
+           j++) {
 
-        vtx_id = b_face_vtx_lst[j-1] - 1;
+        vtx_id = m->b_face_vtx_lst[j-1] - 1;
         vtx_counter[vtx_id] = 0.;
 
         for (i = 0; i < dim; i++)
@@ -397,13 +227,15 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cell_id = b_face_cells[face_id] - 1;
+    cell_id = m->b_face_cells[face_id];
 
     cs_real_t dsurf = 1./cs_glob_mesh_quantities->b_face_surf[face_id];
 
-    for (j = b_face_vtx_idx[face_id]; j < b_face_vtx_idx[face_id+1]; j++) {
+    for (j = m->b_face_vtx_idx[face_id];
+         j < m->b_face_vtx_idx[face_id+1];
+         j++) {
 
-      vtx_id = b_face_vtx_lst[j-1] - 1;
+      vtx_id = m->b_face_vtx_lst[j-1] - 1;
 
       /* If the boundary face is NOT a sliding face */
 
@@ -474,14 +306,14 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
 
   } /* End of loop on border faces */
 
-  if (mesh->vtx_interfaces != NULL) {
-    cs_interface_set_sum(mesh->vtx_interfaces,
+  if (m->vtx_interfaces != NULL) {
+    cs_interface_set_sum(m->vtx_interfaces,
                          n_vertices,
                          3,
                          true,
                          CS_REAL_TYPE,
                          disp_proj);
-    cs_interface_set_sum(mesh->vtx_interfaces,
+    cs_interface_set_sum(m->vtx_interfaces,
                          n_vertices,
                          1,
                          true,

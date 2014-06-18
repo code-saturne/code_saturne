@@ -458,7 +458,7 @@ _gui_variable_post(int         f_id,
   char *varname = NULL;
   int   num_probe;
 
-  const cs_field_t  *fi = cs_field_by_id(f_id);
+  cs_field_t  *fi = cs_field_by_id(f_id);
   const int var_key_id = cs_field_key_id("post_id");
   int ipp = cs_field_get_key_int(fi, var_key_id);
 
@@ -634,7 +634,7 @@ _gui_property_post(int         f_id,
   char *varname = NULL;
   int num_probe;
 
-  const cs_field_t  *fi = cs_field_by_id(f_id);
+  cs_field_t  *fi = cs_field_by_id(f_id);
   const int var_key_id = cs_field_key_id("post_id");
   int ipp = cs_field_get_key_int(fi, var_key_id);
 
@@ -1163,12 +1163,9 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                 cs_int_t        *ipstdv,
                                 cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
-                                const cs_int_t  *isca,
-                                const cs_int_t  *iscapp,
-                                const cs_int_t  *ipprtp,
                                 cs_real_t       *xyzcap)
 {
-  int i, j;
+  int i;
   int ipp;
   int *ippfld;
   char fmtprb[16];

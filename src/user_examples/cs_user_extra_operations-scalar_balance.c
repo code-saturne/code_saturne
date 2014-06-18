@@ -218,7 +218,7 @@ cs_user_extra_operations(void)
                              grad);
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
-      cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+      cell_id = b_face_cells[face_id]; // associated boundary cell
       h_reconstructed[face_id] = h->val[cell_id]
                                + grad[cell_id][0]*diipb[face_id][0]
                                + grad[cell_id][1]*diipb[face_id][1]
@@ -230,7 +230,7 @@ cs_user_extra_operations(void)
   /* Non-reconstructed value */
   } else {
     for (face_id = 0; face_id < n_b_faces; face_id++) {
-      cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+      cell_id = b_face_cells[face_id]; // associated boundary cell
       h_reconstructed[face_id] = h->val[cell_id];
     }
   }
@@ -253,8 +253,8 @@ cs_user_extra_operations(void)
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cell_id1 = i_face_cells[face_id][0] - 1; // associated boundary cell
-    cell_id2 = i_face_cells[face_id][1] - 1; // associated boundary cell
+    cell_id1 = i_face_cells[face_id][0]; // associated boundary cell
+    cell_id2 = i_face_cells[face_id][1]; // associated boundary cell
 
     /* Contribution to flux from the two cells of the current face
       (The cell is count only once in parallel by checking that
@@ -269,7 +269,7 @@ cs_user_extra_operations(void)
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+    cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face */
     div_balance += b_mass_flux[face_id] * dt[cell_id] * h->val[cell_id];
@@ -297,7 +297,7 @@ cs_user_extra_operations(void)
   for (int i = 0; i < n_faces; i++) {
 
     face_id = face_list[i] - 1;
-    cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+    cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
       (diffusion and convection flux, negative if incoming) */
@@ -318,7 +318,7 @@ cs_user_extra_operations(void)
   for (int i = 0; i < n_faces; i++) {
 
     face_id = face_list[i] - 1;
-    cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+    cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
       (diffusion and convection flux, negative if incoming) */
@@ -338,7 +338,7 @@ cs_user_extra_operations(void)
   for (int i = 0; i < n_faces; i++) {
 
     face_id = face_list[i] - 1;
-    cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+    cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
       (diffusion and convection flux, negative if incoming) */
@@ -358,7 +358,7 @@ cs_user_extra_operations(void)
   for (int i = 0; i < n_faces; i++) {
 
     face_id = face_list[i] - 1;
-    cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+    cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
       (diffusion and convection flux, negative if incoming) */
@@ -378,7 +378,7 @@ cs_user_extra_operations(void)
   for (int i = 0; i < n_faces; i++) {
 
     face_id = face_list[i] - 1;
-    cell_id = b_face_cells[face_id] - 1; // associated boundary cell
+    cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
       (diffusion and convection flux, negative if incoming) */

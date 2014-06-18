@@ -150,8 +150,8 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
 
   for (k = 0; k < mesh->n_i_faces; k++) {
 
-    i = mesh->i_face_cells[2*k] - 1;
-    j = mesh->i_face_cells[2*k + 1] - 1;
+    i = mesh->i_face_cells[k][0];
+    j = mesh->i_face_cells[k][1];
 
     wbuf1[i] += var[j] * cell_vol[j];
     wbuf2[i] += cell_vol[j];

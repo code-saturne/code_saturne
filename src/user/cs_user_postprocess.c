@@ -119,8 +119,8 @@ _i_faces_select_example(void         *input,
 
     /* Adjacent cells  and flags */
 
-    cs_lnum_t c1 = m->i_face_cells[face_id*2] - 1;
-    cs_lnum_t c2 = m->i_face_cells[face_id*2 + 1] - 1;
+    cs_lnum_t c1 = m->i_face_cells[face_id][0];
+    cs_lnum_t c2 = m->i_face_cells[face_id][1];
 
     int iflag1 = family_mask[m->cell_family[c1]];
     int iflag2 = family_mask[m->cell_family[c2]];

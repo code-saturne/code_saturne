@@ -23,9 +23,7 @@
 subroutine vandri &
 !================
 
- (  ndim   , ncelet , ncel   , nfabor ,                           &
-    itypfb , ifabor , ifapat ,                                    &
-    xyzcen , cdgfbo , visvdr , yplusc )
+ (  itypfb , ifapat , visvdr , yplusc )
 
 !===============================================================================
 ! FONCTION :
@@ -39,18 +37,9 @@ subroutine vandri &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
 ! (ncelet)         !    !     !    (rij et echo de paroi      )                !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
 ! visvdr(ncelet)   ! tr ! <-- ! viscosite dynamique ds les cellules            !
 !                  !    !     !  de bord apres amortisst de v driest           !
 ! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
@@ -75,18 +64,18 @@ use entsor
 use cstphy
 use parall
 use pointe, only: uetbor
+use mesh
 use field
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ndim, ncelet , ncel   , nfabor
-integer          itypfb(nfabor),ifabor(nfabor)
+integer          itypfb(nfabor)
 integer          ifapat(ncelet)
 
-double precision xyzcen(ndim,ncelet),cdgfbo(ndim,nfabor)
 double precision visvdr(ncelet)
 double precision yplusc(ncelet)
 

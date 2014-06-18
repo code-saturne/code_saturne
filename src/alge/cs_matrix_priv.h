@@ -103,7 +103,7 @@ typedef struct _cs_matrix_struct_native_t {
 
   /* Pointers to shared arrays */
 
-  const cs_lnum_t   *face_cell;     /* Face -> cells connectivity (1 to n) */
+  const cs_lnum_2_t  *face_cell;    /* Face -> cells connectivity (0 to n-1) */
 
 } cs_matrix_struct_native_t;
 
@@ -258,7 +258,7 @@ struct _cs_matrix_structure_t {
      local->local cell numbering for future info or renumbering,
      and halo) */
 
-  const cs_lnum_t       *face_cell;    /* Face -> cells connectivity (1 to n) */
+  const cs_lnum_2_t     *face_cell;    /* Face -> cells connectivity */
   const cs_gnum_t       *cell_num;     /* Global cell numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
@@ -301,7 +301,7 @@ struct _cs_matrix_t {
      local->local cell numbering for future info or renumbering,
      and halo) */
 
-  const cs_lnum_t       *face_cell;    /* Face -> cells connectivity (1 to n) */
+  const cs_lnum_2_t     *face_cell;    /* Face -> cells connectivity */
   const cs_gnum_t       *cell_num;     /* Global cell numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
