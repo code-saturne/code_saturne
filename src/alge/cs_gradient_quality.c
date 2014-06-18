@@ -237,7 +237,7 @@ cs_gradient_quality(void)
   const cs_int_t iale = 1; /* set ALE indicator to 1 so as to force recompute of
                               boundary cells contribution at each gradient call */
 
-  const cs_int_t ivar = 0, inc = 0, idimtr = 0, iphydp = 0, ipond = 0, iccocg = 1;
+  const cs_int_t ivar = 0, inc = 1, idimtr = 0, iphydp = 0, ipond = 0, iccocg = 1;
   const cs_int_t imobil = 0, nswrgp = 100, iwarnp = 0;
   const cs_real_t epsrgp = 1.e-5, climgp = 1.5, extrap = 0.;
 

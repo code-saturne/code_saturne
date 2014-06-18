@@ -4,6 +4,8 @@ Release 3.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for gradient computation in gradient quality check.
+
 - Fix: missing private attribute in OpenMP loops in tensorial diffusivity computation.
 
 Release 3.0.4 (16 May 2014)
