@@ -48,7 +48,7 @@ module lagran
   !> \addtogroup base
   !> \{
 
-  !> \anchor iilagr 
+  !> \anchor iilagr
   !> activates (>0) or deactivates (=0) the Lagrangian module
   !> the different values correspond to the following modellings:
   !> - = 1 Lagrangian two-phase flow in one-way coupling (no influence of

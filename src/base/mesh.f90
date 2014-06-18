@@ -36,7 +36,7 @@ module mesh
   !> \addtogroup mesh
   !> \{
 
-  !> \anchor ndim 
+  !> \anchor ndim
   !> spatial dimension (3)
   integer :: ndim
   parameter(ndim=3)
@@ -188,7 +188,7 @@ module mesh
   !> With regard to the mesh quality, its ideal value is 0.5
   double precision, dimension(:), pointer :: pond
 
-  !> \anchor dijpf 
+  !> \anchor dijpf
   !> vector I'J' for interior faces
   !> for every internal face, the three components of the vector
   !> \f$\vect{I'J'}\f$, where I' and J' are
@@ -197,7 +197,7 @@ module mesh
   !> through its center
   double precision, dimension(:,:), pointer :: dijpf
 
-  !> \anchor diipb 
+  !> \anchor diipb
   !> vector II' for interior faces
   !> for every boundary face, the three components of the vector
   !> \f$\vect{II'}\f$. I' is the orthogonal projection of I,
@@ -205,7 +205,7 @@ module mesh
   !> straight line perpendicular to the face and passign through its center
   double precision, dimension(:,:), pointer :: diipb
 
-  !> \anchor dofij 
+  !> \anchor dofij
   !> vector OF for interior faces
   !> for every internal face, the three components of the vector
   !> \f$\vect{OF}\f$. O is the intersection
