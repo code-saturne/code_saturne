@@ -144,7 +144,7 @@ void CS_PROCF(astgeo, ASTGEO)
 
   cs_real_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
 
-  cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
+  cs_ast_coupling_t  *ast_coupling = NULL;
 
   n_faces = *(nbfast);
 

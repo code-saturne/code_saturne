@@ -2869,7 +2869,7 @@ cs_file_set_default_access(cs_file_mode_t    mode,
                            cs_file_access_t  method,
                            MPI_Info          hints)
 {
-  cs_file_access_t  _method = _access_method(method, true);
+  cs_file_access_t  _method;
 
   if (mode == CS_FILE_MODE_READ) {
     _method = _access_method(method, false);

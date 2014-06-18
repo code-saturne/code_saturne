@@ -222,7 +222,6 @@ cs_run(void)
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
-    cs_int_t _n_threads = cs_glob_n_threads;
     cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
 
     cs_base_fortran_bft_printf_to_f();

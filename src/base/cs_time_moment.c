@@ -2899,8 +2899,7 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
     if (j > -1) {
 
       cs_time_moment_t *mt = _moment + i;
-      char s[64];
-      const char *name = s;
+      const char *name = NULL;
       if (mt->f_id > -1) {
         const cs_field_t *f = cs_field_by_id(mt->f_id);
         name = f->name;

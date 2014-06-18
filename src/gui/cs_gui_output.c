@@ -1171,7 +1171,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   int i, j;
   int ipp;
   int *ippfld;
-  cs_var_t  *vars = cs_glob_var;
   char fmtprb[16];
 
   {

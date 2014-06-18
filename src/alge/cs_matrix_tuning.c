@@ -714,7 +714,6 @@ cs_matrix_variant_tuned(double                 t_measure,
 
   int                    _n_types = n_types;
   int                    _n_fill_types = n_fill_types;
-  cs_matrix_type_t       *_types = _types;
   cs_matrix_fill_type_t  *_fill_types = fill_types;
   double                 *_fill_weights = fill_weights;
   double                  tot_weight = 0.;
