@@ -1858,13 +1858,16 @@ void CS_PROCF(resmgr, RESMGR)
  const char       *cname,     /* <-- variable name */
  const cs_int_t   *lname,     /* <-- variable name length */
  const cs_int_t   *iresds,    /* <-- Descent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     200: pcg_single reduction */
  const cs_int_t   *iresas,    /* <-- Ascent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     200: pcg_single reduction */
  const cs_int_t   *ireslp,    /* <-- Coarse Resolution type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     200: pcg_single reduction */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
-                                     (0: diagonal) */
+                                     (0: diagonal, -1: none) */
  const cs_int_t   *ncymxp,    /* <-- Max number of cycles */
  const cs_int_t   *nitmds,    /* <-- Max number of iterations for descent */
  const cs_int_t   *nitmas,    /* <-- Max number of iterations for ascent */
@@ -1884,14 +1887,8 @@ void CS_PROCF(resmgr, RESMGR)
 )
 {
   char *var_name;
-  cs_sles_type_t type[4] = {CS_SLES_PCG,
-                            CS_SLES_JACOBI,
-                            CS_SLES_BICGSTAB,
-                            CS_SLES_N_TYPES};
 
-  int _iresds = *iresds;
-  int _iresas = *iresas;
-  int _ireslp = *ireslp;
+  cs_sles_type_t res_type[3] = {*iresds, *iresas, *ireslp};
 
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
@@ -1902,21 +1899,26 @@ void CS_PROCF(resmgr, RESMGR)
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
-  assert(*iresds > -1 && *iresds < 3);
-  assert(*iresas > -1 && *iresas < 3);
-  assert(*ireslp > -1 && *ireslp < 3);
-
-  if (_iresds < 0 || _iresds > 2)
-    _iresds = 3;
-  if (_iresas < 0 || _iresas > 2)
-    _iresas = 3;
-  if (_ireslp < 0 || _ireslp > 2)
-    _ireslp = 3;
+  for (int i = 0; i < 3; i++) {
+    switch(res_type[i]) {
+    case 1:
+      res_type[i] = CS_SLES_JACOBI;
+      break;
+    case 2:
+      res_type[i] = CS_SLES_BICGSTAB;
+      break;
+    case 200:
+      res_type[i] = CS_SLES_PCG_SR;
+      break;
+    default:
+      res_type[i] = CS_SLES_PCG;
+    }
+  }
 
   cs_multigrid_solve(var_name,
-                     type[_iresds],
-                     type[_iresas],
-                     type[_ireslp],
+                     res_type[0],
+                     res_type[1],
+                     res_type[2],
                      true,
                      *ipol,
                      rotation_mode,

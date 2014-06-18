@@ -5,6 +5,8 @@ Release 3.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Allow use of single-reduction conjugate gradient with multigrid solver.
+
 - Fix possible crash due to memory overwrite when no thermal model is active.
 
 - Fix possible initialization-related bug in time moments restart.

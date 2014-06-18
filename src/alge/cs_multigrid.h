@@ -99,13 +99,16 @@ void CS_PROCF(resmgr, RESMGR)
  const char       *cname,     /* <-- variable name */
  const cs_int_t   *lname,     /* <-- variable name length */
  const cs_int_t   *iresds,    /* <-- Descent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     200: pcg_single reduction */
  const cs_int_t   *iresas,    /* <-- Ascent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     200: pcg_single reduction */
  const cs_int_t   *ireslp,    /* <-- Coarse Resolution type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     200: pcg_single reduction */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
-                                     (0: diagonal) */
+                                     (0: diagonal, -1: none) */
  const cs_int_t   *ncymxp,    /* <-- Max number of cycles */
  const cs_int_t   *nitmds,    /* <-- Max number of iterations for descent */
  const cs_int_t   *nitmas,    /* <-- Max number of iterations for ascent */
