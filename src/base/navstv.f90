@@ -174,6 +174,58 @@ double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine resopv &
+   ( nvar   , ncesmp ,                                            &
+     icetsm , isostd ,                                            &
+     dt     , vel    ,                                            &
+     propce ,                                                     &
+     coefav , coefbv , coefa_dp        , coefb_dp ,               &
+     smacel ,                                                     &
+     frcxt  , dfrcxt , tpucou , trav   ,                          &
+     viscf  , viscb  ,                                            &
+     drtp   , tslagr ,                                            &
+     trava  )
+
+    use dimens, only: ndimfb
+    use mesh
+
+    implicit none
+
+    ! Arguments
+
+    integer          nvar, ncesmp
+
+    integer          icetsm(ncesmp)
+    integer          isostd(nfabor+1)
+
+    double precision, dimension (1:ncelet), target :: dt
+    double precision propce(ncelet,*)
+    double precision smacel(ncesmp,nvar)
+    double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
+    double precision, dimension (1:6,1:ncelet), target :: tpucou
+    double precision trav(3,ncelet)
+    double precision viscf(nfac), viscb(ndimfb)
+    double precision drtp(ncelet)
+    double precision tslagr(ncelet,*)
+    double precision trava(ndim,ncelet)
+    double precision coefav(3  ,ndimfb)
+    double precision coefbv(3,3,ndimfb)
+    double precision vel   (3  ,ncelet)
+    double precision coefa_dp(ndimfb)
+    double precision coefb_dp(ndimfb)
+
+  end subroutine resopv
+
+  !=============================================================================
+
+end interface
+
+!===============================================================================
 
 !===============================================================================
 ! 0. Initialization
