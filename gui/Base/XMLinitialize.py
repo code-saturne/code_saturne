@@ -338,7 +338,7 @@ class XMLinit(Variables):
                         if n:
                             n.xmlRemoveNode()
                         ThermalScalarModel(self.case).setThermalModel('potential_temperature')
-                    else:
+                    if (mdl == "humid"):
                         n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
                         if n:
                             n.xmlRemoveNode()
