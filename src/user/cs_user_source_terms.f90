@@ -123,6 +123,7 @@ use parall
 use period
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -139,7 +140,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
-double precision, dimension(:), pointer ::  cpro_rom
+
 ! Local variables
 
 character*80     chaine
@@ -147,6 +148,7 @@ integer          iel
 double precision ckp, qdm
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer ::  cpro_rom
 
 !===============================================================================
 
@@ -658,6 +660,7 @@ use parall
 use period
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
