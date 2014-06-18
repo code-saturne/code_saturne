@@ -5,6 +5,8 @@ Release 3.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix possible crash due to memory overwrite when no thermal model is active.
+
 - Fix possible initialization-related bug in time moments restart.
 
 - Fix for possible division by zero when computing mesh joining-related quantiles.
