@@ -892,7 +892,7 @@ class resource_info(batch_info):
         Determine number of processors per node.
         """
 
-        ppn = 1
+        ppn = None
         if self.n_procs != None and  self.n_nodes != None:
             ppn = self.n_procs / self.n_nodes
 
@@ -1139,6 +1139,15 @@ class mpi_environment:
                    self.mpmd = eval('MPI_MPMD_' + v)
                else:
                    self.__dict__[k] = v
+
+        # We may have a specific syntax for tasks per node if
+        # a launcher from a resource manager is used:
+
+        if resource_info and self.mpiexec and not self.mpiexec_n_per_node:
+            if os.path.basename(self.mpiexec)[:4] == 'srun':
+                ppn = resource_info.n_procs_per_node()
+                if ppn:
+                    self.mpiexec_n_per_node = ' --ntasks-per-node=' + str(ppn)
 
         # Initialize based on known MPI types, or default.
 
@@ -1404,12 +1413,17 @@ class mpi_environment:
 
         launcher_base = os.path.basename(self.mpiexec)
 
-        if launcher_base[:7] == 'mpiexec':
-            self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_configfile | MPI_MPMD_script
-            self.mpiexec_n = ' -n '
-        elif launcher_base[:6] == 'mpirun':
-            self.mpiexec_n = ' -np '
-            self.mpmd = MPI_MPMD_script
+        if not self.mpiexec_n:
+            if launcher_base[:7] == 'mpiexec':
+                self.mpiexec_n = ' -n '
+            elif launcher_base[:6] == 'mpirun':
+                self.mpiexec_n = ' -np '
+
+        if not self.mpmd:
+            if launcher_base[:7] == 'mpiexec':
+                self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_configfile | MPI_MPMD_script
+            elif launcher_base[:6] == 'mpirun':
+                self.mpmd = MPI_MPMD_script
 
         # Other options to add
 
@@ -1426,9 +1440,9 @@ class mpi_environment:
                 if hostsfile != None:
                     self.mpiexec += ' -f ' + hostsfile
 
-            if (resource_info != None):
+            if resource_info != None and not self.mpiexec_n_per_node:
                 ppn = resource_info.n_procs_per_node()
-                if ppn != 1:
+                if ppn:
                     self.mpiexec_n_per_node = ' -ppn ' + str(ppn)
 
         elif pm == 'smpd':
@@ -1533,15 +1547,18 @@ class mpi_environment:
 
         launcher_base = os.path.basename(self.mpiexec)
 
-        self.mpiexec_n = ' -n '
-        if (resource_info != None):
+        if not self.mpiexec_n:
+            self.mpiexec_n = ' -n '
+        if resource_info != None and not self.mpiexec_n_per_node:
             ppn = resource_info.n_procs_per_node()
-            if ppn != 1:
+            if ppn:
                 self.mpiexec_n_per_node = ' --npernode ' + str(ppn)
-        if launcher_base[:7] == 'mpiexec':
-            self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
-        elif launcher_base[:7] == 'mpirun':
-            self.mpmd = MPI_MPMD_script
+
+        if not self.mpmd:
+            if launcher_base[:7] == 'mpiexec':
+                self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
+            elif launcher_base[:6] == 'mpirun':
+                self.mpmd = MPI_MPMD_script
 
         # Other options to add
 
@@ -1614,7 +1631,7 @@ class mpi_environment:
         if rm == 'SLURM':
             self.mpiexec = 'srun'
             self.mpiexec_n = ' --ntasks='
-            if ppn != 1:
+            if ppn:
                 self.mpiexec_n_per_node = ' --ntasks-per-node=' + str(ppn)
         else:
             if ppn != 1:
