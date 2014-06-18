@@ -105,7 +105,7 @@ _get_distrib_statistics(const fvm_box_distrib_t  *distrib,
 
   if (n_quantiles != NULL) {
 
-    cs_lnum_t _n_quantiles = 0;
+    cs_lnum_t _n_quantiles = 1;
 
     /* Get global min and max number of boxes */
 
