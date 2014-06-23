@@ -188,8 +188,8 @@ else if (iprev.eq.1) then
   endif
 endif
 
-call field_get_val_s(iprpfl(itemp), temp)
-call field_get_val_s(iprpfl(itemp1), temp1)
+if (itemp.gt.0) call field_get_val_s(iprpfl(itemp), temp)
+if (itemp1.gt.0) call field_get_val_s(iprpfl(itemp1), temp1)
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
