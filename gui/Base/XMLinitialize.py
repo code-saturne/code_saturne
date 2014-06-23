@@ -243,6 +243,44 @@ class XMLinit(Variables):
                 n.xmlSetTextNode(formula)
                 node.xmlRemoveChild('initial_value', zone_id="1")
 
+        # thermal scalar
+        for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows', 'compressible_model']:
+            node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
+            mdl = node['model']
+            if mdl and mdl != 'off':
+                if phys != 'atmospheric_flows' and phys != 'compressible_model':
+                    n = node.xmlGetNode('scalar', name="Enthalpy")
+                    if n:
+                        n.xmlRemoveNode()
+                    ThermalScalarModel(self.case).setThermalModel('enthalpy')
+                elif phys == 'atmospheric_flows':
+                    if (mdl == "dry"):
+                        n = node.xmlGetNode('scalar', name="potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('potential_temperature')
+                    if (mdl == "humid"):
+                        n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
+                else:
+                    n = node.xmlGetNode('scalar', name="EnergieT")
+                    if n:
+                        n.xmlRemoveNode()
+                    ThermalScalarModel(self.case).setThermalModel('total_energy')
+
+        node = self.case.xmlGetNode('additional_scalars')
+        n = node.xmlGetNode('scalar', type='thermal')
+        if n:
+            nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
+            nthvar = nth.xmlInitNode('variable', 'type')
+            nthvar['type']  = "thermal"
+            nthvar['name']  = n['name']
+            nthvar['label'] = n['label']
+            nthvar.xmlChildsCopy(n)
+            n.xmlRemoveNode()
+
         # Replace scalar by variable in xml
         for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows', 'compressible_model', 'thermal_scalar']:
             nodeP = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
@@ -286,7 +324,7 @@ class XMLinit(Variables):
                     nodeP.xmlInitNode('solver_choice', choice='conjugate_gradient')
             node.xmlRemoveNode()
 
-        # hydrostatique pressure
+        # hydrostatic pressure
         XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
         node = XMLPhysicalPropNode.xmlGetNode('hydrostatic_pressure')
         if node:
@@ -322,43 +360,6 @@ class XMLinit(Variables):
             print("Profiles have been removed from your files due to  incompatibility")
             print("You must re-create them")
 
-        # thermal scalar
-        for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows', 'compressible_model']:
-            node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
-            mdl = node['model']
-            if mdl and mdl != 'off':
-                if phys != 'atmospheric_flows' and phys != 'compressible_model':
-                    n = node.xmlGetNode('scalar', name="Enthalpy")
-                    if n:
-                        n.xmlRemoveNode()
-                    ThermalScalarModel(self.case).setThermalModel('enthalpy')
-                elif phys == 'atmospheric_flows':
-                    if (mdl == "dry"):
-                        n = node.xmlGetNode('scalar', name="potential_temperature")
-                        if n:
-                            n.xmlRemoveNode()
-                        ThermalScalarModel(self.case).setThermalModel('potential_temperature')
-                    if (mdl == "humid"):
-                        n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
-                        if n:
-                            n.xmlRemoveNode()
-                        ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
-                else:
-                    n = node.xmlGetNode('scalar', name="EnergieT")
-                    if n:
-                        n.xmlRemoveNode()
-                    ThermalScalarModel(self.case).setThermalModel('total_energy')
-
-        node = self.case.xmlGetNode('additional_scalars')
-        n = node.xmlGetNode('scalar', type='thermal')
-        if n:
-            nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
-            nthvar = nth.xmlInitNode('variable', 'type')
-            nthvar['type']  = "thermal"
-            nthvar['name']  = n['name']
-            nthvar['label'] = n['label']
-            nthvar.xmlChildsCopy(n)
-            n.xmlRemoveNode()
 
         n = XMLThermoPhysicalNode.xmlGetNode('variable', type='thermal')
         if n:
