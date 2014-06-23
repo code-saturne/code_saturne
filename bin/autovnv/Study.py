@@ -1244,6 +1244,10 @@ class Studies(object):
         return attached_files
 
 
+    def getlabel(self):
+        return self.labels
+
+
     def logs(self):
         try:
             self.reportFile.close()

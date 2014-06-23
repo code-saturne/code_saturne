@@ -128,7 +128,7 @@ def process_cmd_line(argv, pkg):
 # Send the report.
 #-------------------------------------------------------------------------------
 
-def sendmail(code_name, report, to, files):
+def sendmail(code_name, report, labels, to, files):
     """
     Build the mail to be send.
     """
@@ -147,7 +147,7 @@ def sendmail(code_name, report, to, files):
 
     SERVER  = "localhost"
     TO      = to
-    SUBJECT = "%s. Auto V&V %s: " % (code_name, date.today())
+    SUBJECT = "%s. Auto V&V %s: %s " % (code_name, date.today(), labels)
     TEXT    = report
     RETOUR  = "An error occurs during the sending of the log mail"
     FILES   = files
@@ -326,7 +326,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, op
 
     attached_file = studies.build_reports("report_global", "report_detailed")
     if opt_to:
-        sendmail(pkg.code_name, studies.logs(), opt_to, attached_file)
+        sendmail(pkg.code_name, studies.logs(), studies.getlabel(), opt_to, attached_file)
 
 #-------------------------------------------------------------------------------
 # Main
