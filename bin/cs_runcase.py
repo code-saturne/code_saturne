@@ -218,14 +218,9 @@ class runcase(object):
 
         self.save()
 
-        # Give executable permission to the file, if no
-        # batch template is used;
-        # Equivalent to `chmod +x` shell function.
-
-        if not batch_template:
-            st   = os.stat(self.path)
-            mode = st[stat.ST_MODE]
-            os.chmod(self.path, mode | stat.S_IEXEC)
+        st   = os.stat(self.path)
+        mode = st[stat.ST_MODE]
+        os.chmod(self.path, mode | stat.S_IEXEC)
 
     #---------------------------------------------------------------------------
 
