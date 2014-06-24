@@ -190,7 +190,7 @@ def update_command_single_value(args, options, value):
                         i = args.index(arg)
                         break
                 if i > -1:
-                    args[i] = prefix + val_s
+                    args[i] = opt + val_s
 
             else:
                 if args.count(opt) > 0:
