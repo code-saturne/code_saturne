@@ -122,7 +122,7 @@ void CS_PROCF (viscfa, VISCFA)
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_face_viscosity_tensor_velocity
+ * Wrapper to cs_face_anisotropic_viscosity_vector
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (vistnv, VISTNV)
@@ -136,16 +136,16 @@ void CS_PROCF (vistnv, VISTNV)
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  cs_face_viscosity_tensor_velocity(m,
-                                    fvq,
-                                    *visc_mean_type,
-                                    c_visc,
-                                    i_visc,
-                                    b_visc);
+  cs_face_anisotropic_viscosity_vector(m,
+                                       fvq,
+                                       *visc_mean_type,
+                                       c_visc,
+                                       i_visc,
+                                       b_visc);
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_face_viscosity_tensor
+ * Wrapper to cs_face_anisotropic_viscosity_scalar
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (vitens, VITENS)
@@ -161,14 +161,14 @@ void CS_PROCF (vitens, VITENS)
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  cs_face_viscosity_tensor(m,
-                           fvq,
-                           c_visc,
-                           *iwarnp,
-                           weighf,
-                           weighb,
-                           i_visc,
-                           b_visc);
+  cs_face_anisotropic_viscosity_scalar(m,
+                                       fvq,
+                                       c_visc,
+                                       *iwarnp,
+                                       weighf,
+                                       weighb,
+                                       i_visc,
+                                       b_visc);
 }
 
 /*============================================================================
@@ -339,12 +339,12 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
-                                  cs_mesh_quantities_t          *fvq,
-                                  const int                      visc_mean_type,
-                                  cs_real_6_t          *restrict c_visc,
-                                  cs_real_33_t         *restrict i_visc,
-                                  cs_real_t            *restrict b_visc)
+cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
+                                     cs_mesh_quantities_t          *fvq,
+                                     const int                      visc_mean_type,
+                                     cs_real_6_t          *restrict c_visc,
+                                     cs_real_33_t         *restrict i_visc,
+                                     cs_real_t            *restrict b_visc)
 {
   const cs_halo_t  *halo = m->halo;
 
@@ -554,14 +554,14 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_viscosity_tensor(const cs_mesh_t               *m,
-                         cs_mesh_quantities_t          *fvq,
-                         cs_real_6_t          *restrict c_visc,
-                         const int                      iwarnp,
-                         cs_real_2_t          *restrict weighf,
-                         cs_real_t            *restrict weighb,
-                         cs_real_t            *restrict i_visc,
-                         cs_real_t            *restrict b_visc)
+cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
+                                     cs_mesh_quantities_t          *fvq,
+                                     cs_real_6_t          *restrict c_visc,
+                                     const int                      iwarnp,
+                                     cs_real_2_t          *restrict weighf,
+                                     cs_real_t            *restrict weighb,
+                                     cs_real_t            *restrict i_visc,
+                                     cs_real_t            *restrict b_visc)
 {
   const cs_halo_t  *halo = m->halo;
 
