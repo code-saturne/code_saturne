@@ -588,7 +588,6 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
   cs_gnum_t nclipf = 0, nclipb = 0;
-  cs_real_33_t visci, viscj;
   const double eps = 0.1;
 
   cs_real_6_t *c_poro_visc = NULL;
@@ -653,19 +652,9 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 
-    visci[0][0] = c_poro_visc[ii][0];
-    visci[1][1] = c_poro_visc[ii][1];
-    visci[2][2] = c_poro_visc[ii][2];
-    visci[1][0] = c_poro_visc[ii][3];
-    visci[0][1] = c_poro_visc[ii][3];
-    visci[2][1] = c_poro_visc[ii][4];
-    visci[1][2] = c_poro_visc[ii][4];
-    visci[2][0] = c_poro_visc[ii][5];
-    visci[0][2] = c_poro_visc[ii][5];
-
     /* ||Ki.S||^2 */
     cs_real_3_t viscisv;
-    cs_math_33_3_product(visci, i_face_normal[face_id], viscisv);
+    cs_math_sym_33_3_product(c_poro_visc[ii], i_face_normal[face_id], viscisv);
     cs_real_t viscis = cs_math_3_square_norm(viscisv);
 
     /* IF */
@@ -675,7 +664,7 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
     /* IF.Ki.S */
     cs_real_3_t fiki;
-    cs_math_33_3_product(visci, fi, fiki);
+    cs_math_sym_33_3_product(c_poro_visc[ii], fi, fiki);
     cs_real_t fikis = cs_math_3_dot_product(fiki, i_face_normal[face_id]);
 
     double distfi = (1. - weight[face_id])*i_dist[face_id];
@@ -687,19 +676,9 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
       nclipf++;
     }
 
-    viscj[0][0] = c_poro_visc[jj][0];
-    viscj[1][1] = c_poro_visc[jj][1];
-    viscj[2][2] = c_poro_visc[jj][2];
-    viscj[1][0] = c_poro_visc[jj][3];
-    viscj[0][1] = c_poro_visc[jj][3];
-    viscj[2][1] = c_poro_visc[jj][4];
-    viscj[1][2] = c_poro_visc[jj][4];
-    viscj[2][0] = c_poro_visc[jj][5];
-    viscj[0][2] = c_poro_visc[jj][5];
-
     /* ||Kj.S||^2 */
     cs_real_3_t viscjsv;
-    cs_math_33_3_product(viscj, i_face_normal[face_id], viscjsv);
+    cs_math_sym_33_3_product(c_poro_visc[jj], i_face_normal[face_id], viscjsv);
     cs_real_t viscjs = cs_math_3_square_norm(viscjsv);
 
     /* FJ */
@@ -709,7 +688,7 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
     /* FJ.Kj.S */
     cs_real_3_t fjkj;
-    cs_math_33_3_product(viscj, fj, fjkj);
+    cs_math_sym_33_3_product(c_poro_visc[jj], fj, fjkj);
     cs_real_t fjkjs = cs_math_3_dot_product(fjkj, i_face_normal[face_id]);
 
     double distfj = weight[face_id]*i_dist[face_id];
@@ -732,19 +711,9 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
     cs_lnum_t ii = b_face_cells[face_id];
 
-    visci[0][0] = c_poro_visc[ii][0];
-    visci[1][1] = c_poro_visc[ii][1];
-    visci[2][2] = c_poro_visc[ii][2];
-    visci[1][0] = c_poro_visc[ii][3];
-    visci[0][1] = c_poro_visc[ii][3];
-    visci[2][1] = c_poro_visc[ii][4];
-    visci[1][2] = c_poro_visc[ii][4];
-    visci[2][0] = c_poro_visc[ii][5];
-    visci[0][2] = c_poro_visc[ii][5];
-
     /* ||Ki.S||^2 */
     cs_real_3_t viscisv;
-    cs_math_33_3_product(visci, b_face_normal[face_id], viscisv);
+    cs_math_sym_33_3_product(c_poro_visc[ii], b_face_normal[face_id], viscisv);
     cs_real_t viscis = cs_math_3_square_norm(viscisv);
 
     /* IF */
@@ -754,7 +723,7 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
     /* IF.Ki.S */
     cs_real_3_t fiki;
-    cs_math_33_3_product(visci, fi, fiki);
+    cs_math_sym_33_3_product(c_poro_visc[ii], fi, fiki);
     cs_real_t fikis = cs_math_3_dot_product(fiki, b_face_normal[face_id]);
 
     double distfi = b_dist[face_id];
