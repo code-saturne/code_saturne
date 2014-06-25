@@ -86,7 +86,7 @@ integer          keycpl, iflid, ikeyvl
 integer          kdiftn
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv, lprev
-integer          f_id, kscavr, f_vis, f_log
+integer          f_id, kscavr, f_vis, f_log, f_dften
 integer          idfm
 
 character*80     name
@@ -138,6 +138,11 @@ call field_get_key_id("diffusivity_tensor", kdiftn)
 ! User variables
 !---------------
 
+do ivar = 1, nvar
+  ! Init key word: tensorial diffusivity
+  call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))
+enddo
+
 idfm = 0
 
 do ii = 1, nscal
@@ -150,6 +155,8 @@ do ii = 1, nscal
     call field_get_key_int(ivarfl(ivar), keyvis, f_vis)
     call field_get_key_int(ivarfl(ivar), keylog, f_log)
 
+    call field_get_key_int(ivarfl(ivar), kdiftn, f_dften)
+    write(*,*) 'tens diff', ivar, f_dften
     if (ityturt(ii).gt.0) then
       call field_get_name (f_id, name)
       f_name = trim(name)//'_turbulent_flux'
@@ -168,17 +175,16 @@ do ii = 1, nscal
       endif
       call field_set_key_int(iflid, keyvis, f_vis)
       call field_set_key_int(iflid, keylog, f_log)
+
+    ! If the user has chosen a tensorial diffusivity
+    else if (f_dften.eq.6) then
+      idfm = 1
     endif
 
     ! Additional fields for Drift scalars is done in addfld
 
   endif
 
-enddo
-
-do ivar = 1, nvar
-  ! Key word: tensorial diffusivity
-  call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))
 enddo
 
 ! Copy field calculation options into the field structure
