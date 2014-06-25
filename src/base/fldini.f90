@@ -156,7 +156,7 @@ do ii = 1, nscal
     call field_get_key_int(ivarfl(ivar), keylog, f_log)
 
     call field_get_key_int(ivarfl(ivar), kdiftn, f_dften)
-    write(*,*) 'tens diff', ivar, f_dften
+
     if (ityturt(ii).gt.0) then
       call field_get_name (f_id, name)
       f_name = trim(name)//'_turbulent_flux'
@@ -332,8 +332,9 @@ endif
 
 !===============================================================================
 
-! Turbulence
-!-----------
+! Turbulent anisotropic viscosity or user defined tensorial diffusivity for a
+! scalar (exclusive or).
+!----------------------------------------------------------------------
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 1 ! cells
