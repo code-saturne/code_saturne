@@ -400,9 +400,9 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
 
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_math_sym_33_product(w2[cell_id],
-                             porosf[cell_id],
-                             c_visc[cell_id]);
+      cs_math_sym_33_product(porosf[cell_id],
+                             c_visc[cell_id],
+                             w2[cell_id]);
     }
     c_poro_visc = w2;
 
@@ -470,11 +470,11 @@ cs_face_viscosity_tensor_velocity(const cs_mesh_t               *m,
         s1[isou] = pnd*c_poro_visc[ii][isou] + (1.-pnd)*c_poro_visc[jj][isou];
       }
 
-      cs_math_sym_33_inv_cramer(s2, s1);
+      cs_math_sym_33_inv_cramer(s1, s2);
 
-      cs_math_sym_33_product(s1, s2, c_poro_visc[jj]);
+      cs_math_sym_33_product(s2, c_poro_visc[jj], s1);
 
-      cs_math_sym_33_product(s2, c_poro_visc[ii], s1);
+      cs_math_sym_33_product(c_poro_visc[ii], s1, s2);
 
       double srfddi = i_face_surf[face_id]/i_dist[face_id];
 
@@ -629,9 +629,9 @@ cs_face_viscosity_tensor(const cs_mesh_t               *m,
 
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_math_sym_33_product(w2[cell_id],
-                             porosf[cell_id],
-                             c_visc[cell_id]);
+      cs_math_sym_33_product(porosf[cell_id],
+                             c_visc[cell_id],
+                             w2[cell_id]);
     }
     c_poro_visc = w2;
 

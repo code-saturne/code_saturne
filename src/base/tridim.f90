@@ -636,7 +636,7 @@ if (idften(ipr).eq.6) then
     hdls(5) = ckupdc(ielpdc, 5)
     hdls(6) = ckupdc(ielpdc, 6)
 
-    call symmetric_matrix_inverse(dttens(:, iel), hdls)
+    call symmetric_matrix_inverse(hdls, dttens(:, iel))
   enddo
 
 endif

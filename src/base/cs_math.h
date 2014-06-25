@@ -59,8 +59,8 @@ BEGIN_C_DECLS
 
 void CS_PROCF (symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
 (
- cs_real_6_t       sout,
- const cs_real_6_t s
+  const cs_real_6_t s,
+  cs_real_6_t       sout
 );
 
 /*----------------------------------------------------------------------------
@@ -69,9 +69,9 @@ void CS_PROCF (symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
 
 void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
 (
- cs_real_6_t       sout,
  const cs_real_6_t s1,
- const cs_real_6_t s2
+ const cs_real_6_t s2,
+ cs_real_6_t       sout
 );
 
 /*=============================================================================
@@ -85,18 +85,42 @@ void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
  *
  * \param[in]     m             matrix of 3x3 real values
  * \param[in]     v             vector of 3 real values
+ * \param[out]    mv            vector of 3 real values
  *
- * \return the result matrix vector product m.v.
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_33_3_product(cs_real_33_t m,
+cs_math_33_3_product(const cs_real_33_t m,
                      const cs_real_3_t  v,
                      cs_real_3_t mv)
 {
   for (int ii = 0; ii < 3; ii++)
     mv[ii] = m[ii][0] * v[0] + m[ii][1] * v[1] + m[ii][2] * v[2];
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the product of a symmetric matrix of 3x3 real values by
+ * a vector of 3 real values.
+ * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[out]    mv            vector of 3 real values
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_sym_33_3_product(const cs_real_6_t  m,
+                         const cs_real_3_t  v,
+                         cs_real_3_t        mv)
+{
+  mv[0] = m[0] * v[0] + m[3] * v[1] + m[5] * v[2];
+  mv[1] = m[3] * v[0] + m[1] * v[1] + m[4] * v[2];
+  mv[2] = m[5] * v[0] + m[4] * v[1] + m[2] * v[2];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -145,15 +169,16 @@ cs_math_3_square_norm(const cs_real_3_t v)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the inverse of a symmetric matrix using Cramer's rule.
+ * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
  *
- * \param[out]    sout          sout = s1 * s2
  * \param[in]     s             symmetric matrix
+ * \param[out]    sout          sout = s1 * s2
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_inv_cramer(cs_real_6_t       sout,
-                          const cs_real_6_t s)
+cs_math_sym_33_inv_cramer(const cs_real_6_t s,
+                          cs_real_6_t       sout)
 {
   double detinv;
 
@@ -177,17 +202,18 @@ cs_math_sym_33_inv_cramer(cs_real_6_t       sout,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the product of two symmetric matrices.
+ * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
  *
- * \param[out]    sout          sout = s1 * s2
  * \param[in]     s1            symmetric matrix
  * \param[in]     s2            symmetric matrix
+ * \param[out]    sout          sout = s1 * s2
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_product(cs_real_6_t       sout,
-                       const cs_real_6_t s1,
-                       const cs_real_6_t s2)
+cs_math_sym_33_product(const cs_real_6_t s1,
+                       const cs_real_6_t s2,
+                       cs_real_6_t       sout)
 {
   /* S11 */
   sout[0] = s1[0]*s2[0] + s1[3]*s2[3] + s1[5]*s2[5];

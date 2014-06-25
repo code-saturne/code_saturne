@@ -4863,9 +4863,9 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   } else if (porosi != NULL && porosf != NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_math_sym_33_product(w2[cell_id],
-                             porosf[cell_id],
-                             viscel[cell_id]);
+      cs_math_sym_33_product(porosf[cell_id],
+                             viscel[cell_id],
+                             w2[cell_id]);
     }
     viscce = w2;
   }
@@ -6336,9 +6336,9 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
     } else if (porosi != NULL && porosf != NULL) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        cs_math_sym_33_product(w2[cell_id],
-                               porosf[cell_id],
-                               viscel[cell_id]);
+        cs_math_sym_33_product(porosf[cell_id],
+                               viscel[cell_id],
+                               w2[cell_id]);
       }
       viscce = w2;
     }
@@ -7095,9 +7095,9 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
     } else if (porosi != NULL && porosf != NULL) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        cs_math_sym_33_product(w2[cell_id],
-                               porosf[cell_id],
-                               viscel[cell_id]);
+        cs_math_sym_33_product(porosf[cell_id],
+                               viscel[cell_id],
+                               w2[cell_id]);
       }
       viscce = w2;
     }

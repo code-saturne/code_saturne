@@ -89,12 +89,12 @@ BEGIN_C_DECLS
 
 void CS_PROCF (symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
 (
- cs_real_6_t       sout,
- const cs_real_6_t s
+  const cs_real_6_t s,
+  cs_real_6_t       sout
 )
 {
-  cs_math_sym_33_inv_cramer(sout,
-                            s);
+  cs_math_sym_33_inv_cramer(s,
+                            sout);
 }
 
 /*----------------------------------------------------------------------------
@@ -103,14 +103,14 @@ void CS_PROCF (symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
 
 void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
 (
- cs_real_6_t       sout,
- const cs_real_6_t s1,
- const cs_real_6_t s2
+  const cs_real_6_t s1,
+  const cs_real_6_t s2,
+  cs_real_6_t       sout
 )
 {
-  cs_math_sym_33_product(sout,
-                         s1,
-                         s2);
+  cs_math_sym_33_product(s1,
+                         s2,
+                         sout);
 }
 
 /*============================================================================
