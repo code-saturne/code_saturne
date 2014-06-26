@@ -19,38 +19,24 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!===============================================================================
+! Function:
+! ---------
+
+!> \file viswal.f90
+!>
+!> \brief Compute the turbulent viscosity for the WALE LES model
+!>
+!> The turbulent viscosity is:
+!> \f$ \mu_T = \rho (C_{wale} L)^2 * \dfrac{(\tens{S}:\tens{Sd})^{3/2}}
+!>                                         {(\tens{S} :\tens{S})^(5/2)
+!>                                         +(\tens{Sd}:\tens{Sd})^(5/4)} \f$
+!> with \f$ \tens{S}  = 1/2(\gradt \vect{u} + \transpose{\gradt \vect{u}})\f$
+!> and  \f$ \tens{Sd} = \deviator{(\symmetric{(\tens{S}^2)})}\f$
+!-------------------------------------------------------------------------------
 
 subroutine viswal
 
-!===============================================================================
-! FONCTION :
-! --------
-
-! CALCUL DE LA VISCOSITE "TURBULENTE" POUR
-!          UN MODELE LES WALE
-
-! VISCT = ROM * (CWALE*L)**2 *
-!   [(Sijd.Sijd)**(3/2)] / [(Sij.Sij)**(5/2) + (Sijd.Sijd)**(5/4)]
-!
-! avec
-!       Sij = 0.5*[DUi/Dxj + DUj/Dxi]
-! et
-!       Sijd = 0.5*[DUi/Dxk.DUk/Dxj + DUj/Dxk.DUk/Dxi] - 1/3*Delta_ij.Gkk**2
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -80,44 +66,28 @@ integer          iel, inc
 integer          ipcvst, ipcvis, iprev
 integer          i, j, k
 
-double precision coef, deux, delta, tiers
+double precision coef, delta, third
 double precision sij, sijd, s, sd, sinv
-double precision xfil, xa  , xb  , radeux, con
+double precision con
 double precision dudx(ndim,ndim), kdelta(ndim,ndim)
 
 double precision, dimension(:,:,:), allocatable :: gradv
-double precision, dimension(:,:), pointer :: coefau
-double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: visct
 
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialization
 !===============================================================================
 
-call field_get_coefa_v(ivarfl(iu), coefau)
-call field_get_coefb_v(ivarfl(iu), coefbu)
-
-call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
-! --- Pour le calcul de la viscosite de sous-maille
-xfil   = xlesfl
-xa     = ales
-xb     = bles
-deux   = 2.d0
-radeux = sqrt(deux)
-tiers  = 1.d0/3.d0
-
+third  = 1.d0/3.d0
 
 !===============================================================================
-! 2.  CALCUL DU GRADIENT DE VITESSE
-!       W1 = DU/DX, W2 = DU/DY, W3 = DU/DZ
-!       W4 = DV/DX, W5 = DV/DY, W6 = DV/DZ
-!       W7 = DW/DX, W8 = DW/DY, W9 = DW/DZ
+! 2. Computation of the velocity gradient
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
@@ -141,7 +111,7 @@ kdelta(3,1) = 0
 kdelta(3,2) = 0
 kdelta(3,3) = 1
 
-coef = cwale**2 * radeux
+coef = sqrt(2.d0) * cwale**2
 
 do iel = 1, ncel
 
@@ -171,11 +141,12 @@ do iel = 1, ncel
 
       do k = 1, ndim
 
-!  traceless symmetric part of the square of the velocity gradient tensor
-!    Sijd = 0.5 * ( dUi/dXk dUk/dXj + dUj/dXk dUk/dXi) - 1/3 Dij dUk/dXk dUk/dXk
+        ! traceless symmetric part of the square of the velocity gradient tensor
+        !   Sijd = 0.5*( dUi/dXk dUk/dXj + dUj/dXk dUk/dXi)
+        !        - 1/3 Dij dUk/dXk dUk/dXk
 
         sijd = 0.5d0*(dudx(i,k)*dudx(k,j)+ dudx(j,k)*dudx(k,i)) &
-              -tiers*kdelta(i,j)*dudx(k,k)**2
+              -third*kdelta(i,j)*dudx(k,k)**2
 
         sd = sd + sijd**2
 
@@ -184,7 +155,7 @@ do iel = 1, ncel
   enddo
 
 !===============================================================================
-! 3.  CALCUL DE LA VISCOSITE TURBULENTE
+! 3. Computation of turbulent viscosity
 !===============================================================================
 
   ! Turbulent inverse time scale =
@@ -197,7 +168,7 @@ do iel = 1, ncel
     con = 0.d0
   endif
 
-  delta = xfil* (xa*volume(iel))**xb
+  delta = xlesfl* (ales*volume(iel))**bles
   delta = coef * delta**2
 
   visct(iel) = crom(iel) * delta * con
@@ -207,12 +178,12 @@ enddo
 ! Free memory
 deallocate(gradv)
 
-!----
-! FORMAT
-!----
+!-------
+! Format
+!-------
 
 !----
-! FIN
+! End
 !----
 
 return
