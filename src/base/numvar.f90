@@ -210,6 +210,9 @@ module numvar
   !> interior and boundary convective mass flux key ids of the variables
   integer, save :: kimasf, kbmasf
 
+  !> constant diffusivity field id key for scalars
+  integer, save :: kvisl0
+
   !> variable diffusivity field id key for scalars
   integer, save :: kivisl
 
