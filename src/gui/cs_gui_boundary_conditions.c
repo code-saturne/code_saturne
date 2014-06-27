@@ -902,7 +902,8 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
  *   izfppp               <-- zone number for each boundary face
  *   iesicf               <-- type of boundary: imposed inlet (compressible)
  *   isspcf               <-- type of boundary: supersonic outlet (compressible)
- *   iephcf               <-- type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
+ *   iephcf               <-- type of boundary: subsonic inlet at imposed total
+ *                            pressure and total enthalpy (compressible)
  *   isopcf               <-- type of boundary: subsonic outlet (compressible)
  *----------------------------------------------------------------------------*/
 
@@ -1558,7 +1559,8 @@ cs_gui_get_faces_list(int          izone,
  * integer          ientre  <-- type of boundary: inlet
  * integer          iesicf  <-- type of boundary: imposed inlet (compressible)
  * integer          isspcf  <-- type of boundary: supersonic outlet (compressible)
- * integer          iephcf  <-- type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
+ * integer          iephcf  <-- type of boundary: subsonic inlet imposed total
+ *                              pressure and total enthalpy (compressible)
  * integer          isopcf  <-- type of boundary: subsonic outlet (compressible)
  * integer          iparoi  <-- type of boundary: smooth wall
  * integer          iparug  <-- type of boundary: rough wall
@@ -2676,8 +2678,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * INTEGER          IENTRE  <-- type of boundary: inlet
  * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
  * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
- * INTEGER          IEPHCF  --> type of boundary: subsonic inlet at given total pressure
- *                                                and enthalpy (compressible)
+ * INTEGER          IEPHCF  --> type of boundary: subsonic inlet at imposed
+ *                              total pressure and enthalpy (compressible)
  * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  <-- type of boundary: smooth wall
  * INTEGER          IPARUG  <-- type of boundary: rough wall

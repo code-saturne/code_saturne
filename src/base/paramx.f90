@@ -200,7 +200,7 @@ module paramx
   !> quantities.
   integer   isopcf
 
-  !> if \ref itypfb=isopcf: mixed inlet for compressible flow with given total pressure
+  !> if \ref itypfb=iephcf: mixed inlet for compressible flow with given total pressure
   !>                        and total enthalpy (reservoir boundary conditions).
   !>  - Boundary values are obtained by solving a Riemann problem between an inner (values
   !> at boundary cells center) and an outer state.
