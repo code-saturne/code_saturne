@@ -364,12 +364,12 @@ class XMLinit(Variables):
         n = XMLThermoPhysicalNode.xmlGetNode('variable', type='thermal')
         if n:
             for nf in n.xmlGetNodeList('formula'):
-            if nf:
-                status = nf["status"]
-                if not(status) or status == "on":
-                    content = nf.xmlGetTextNode()
-                    content = content.replace(n['label'], n['name'])
-                    nf.xmlSetTextNode(content)
+                if nf:
+                    status = nf["status"]
+                    if not(status) or status == "on":
+                        content = nf.xmlGetTextNode()
+                        content = content.replace(n['label'], n['name'])
+                        nf.xmlSetTextNode(content)
 
 
         # update velocity node
