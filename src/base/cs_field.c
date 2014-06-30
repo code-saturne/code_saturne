@@ -1858,7 +1858,7 @@ cs_field_destroy_all(void)
 
   for (i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
-    if (f->is_owner) {
+    if (f->is_owner && f->vals != NULL) {
       int ii;
       for (ii = 0; ii < f->n_time_vals; ii++)
         BFT_FREE(f->vals[ii]);
