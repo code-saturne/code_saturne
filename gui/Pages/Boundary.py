@@ -4096,7 +4096,7 @@ class MobilWallBoundaryTestCase(ModelTest):
     def checkSetAndGetFormula(self):
         """Check whether the formula could be set and get for mobil wall boundary."""
         model = Boundary("mobile_boundary", "Wall_1", self.case)
-        model.setFormula("mesh_vi1 = 1000;")
+        model.setFormula("mesh_u = 1000;")
 
         node =  model._XMLBoundaryConditionsNode
 
@@ -4104,7 +4104,7 @@ class MobilWallBoundaryTestCase(ModelTest):
                     <wall label="Wall_1">
                         <ale>
                             <formula>
-                                mesh_vi1 = 1000;
+                                mesh_u = 1000;
                             </formula>
                         </ale>
                     </wall>
@@ -4112,7 +4112,7 @@ class MobilWallBoundaryTestCase(ModelTest):
 
         assert node == self.xmlNodeFromString(doc),\
            'Could not set reference formula for mobil wall boundary'
-        assert model.getFormula() == "mesh_vi1 = 1000;",\
+        assert model.getFormula() == "mesh_u = 1000;",\
            'Could not get formula for mobil wall boundary'
 
 

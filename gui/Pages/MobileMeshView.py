@@ -84,8 +84,8 @@ xcen = 5.0;
 ycen = 0.;
 zcen = 6.0;
 xray2 = (x-xcen)^2 + (y-ycen)^2 + (z-zcen)^2;
-mesh_vi1 = 1;
-if (xray2 < xr2) mesh_vi1 = 1e10;
+mesh_viscosity_1 = 1;
+if (xray2 < xr2) mesh_viscosity_1 = 1e10;
 """
 
     viscosity_ortho = """# Viscosity of the mesh allows to control the deformation
@@ -103,13 +103,13 @@ xcen = 5.0;
 ycen = 0.;
 zcen = 6.0;
 xray2 = (x-xcen)^2 + (y-ycen)^2 + (z-zcen)^2;
-mesh_vi1 = 1;
-mesh_vi2 = 1;
-mesh_vi3 = 1;
+mesh_viscosity_1 = 1;
+mesh_viscosity_2 = 1;
+mesh_viscosity_3 = 1;
 if (xray2 < xr2) {
-    mesh_vi1 = 1e10;
-    mesh_vi2 = 1e10;
-    mesh_vi3 = 1e10;
+    mesh_viscosity_1 = 1e10;
+    mesh_viscosity_2 = 1e10;
+    mesh_viscosity_3 = 1e10;
 }
 """
 
