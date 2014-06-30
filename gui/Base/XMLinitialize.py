@@ -363,7 +363,7 @@ class XMLinit(Variables):
 
         n = XMLThermoPhysicalNode.xmlGetNode('variable', type='thermal')
         if n:
-            nf = n.xmlGetNode('formula')
+            for nf in n.xmlGetNodeList('formula'):
             if nf:
                 status = nf["status"]
                 if not(status) or status == "on":
