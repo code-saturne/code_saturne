@@ -814,7 +814,7 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
 {
   int          iel            = 0;
   const char*  symbols[3]     = { "x", "y", "z" };
-  const char*  variables[3]   = { "mesh_vi1", "mesh_vi2", "mesh_vi3" };
+  const char*  variables[3]   = { "mesh_viscosity_1", "mesh_viscosity_2", "mesh_viscosity_3" };
   unsigned int variable_nbr   = 1;
 
   /* Get formula */
@@ -854,10 +854,10 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
       mei_evaluate(ev);
 
       /* Set viscmx, viscmy and viscmz */
-      viscmx[iel] = mei_tree_lookup(ev, "mesh_vi1");
+      viscmx[iel] = mei_tree_lookup(ev, "mesh_viscosity_1");
       if (isOrthotrop) {
-        viscmy[iel] = mei_tree_lookup(ev, "mesh_vi2");
-        viscmz[iel] = mei_tree_lookup(ev, "mesh_vi3");
+        viscmy[iel] = mei_tree_lookup(ev, "mesh_viscosity_2");
+        viscmz[iel] = mei_tree_lookup(ev, "mesh_viscosity_3");
       }
     }
     mei_tree_destroy(ev);
