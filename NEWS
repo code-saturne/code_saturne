@@ -5,6 +5,16 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix deallocation of field values in case a user solver is used.
+
+- Fix bug in the GUI (names instead of labels for the ALE mesh viscosity).
+
+- Fix initial formulas for the fluid characteristics in the mei.
+
+- Fix backward compatibility for thermal initialization in case of several volumic init. zones in GUI.
+
+- Fix bug in the GUI for atmospheric flows (remove liquid pot. temp. only if humid atmosphere is chosen).
+
 - Fix run command update in case of option prefix containing "=".
 
 Release 3.3.1 (18 Jun 2014)
