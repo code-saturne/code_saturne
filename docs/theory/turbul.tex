@@ -514,7 +514,7 @@ with mean flow strain-rate and $\tens{\mathcal{G}}$ is stands for the
 production- tensor associated with buoyancy effects:
 \begin{equation}
 \begin{array}{r c l}
-\displaystyle \tens{ \mathcal{P}} & = & \displaystyle-\rho \left[ \tens{R} \cdot \gradt \, \vect{u} 
+\displaystyle \tens{ \mathcal{P}} & = & \displaystyle-\rho \left[ \tens{R} \cdot \transpose{\gradt \, \vect{u}}
 + \gradt \, \vect{u}  \cdot \tens{R}\right], \\
 \tens{ \mathcal{G}} & = &
 \displaystyle \left[\vect{r} \otimes \vect{g} +\vect{g} \otimes \vect{r}  \right].
@@ -548,8 +548,7 @@ $\tens{\Phi}$ is the term representing pressure-velocity correlations:
 \begin{array}{r c l}
 \tens{\phi}_{1} &=& \displaystyle -\rho \,C_{1}\frac{\varepsilon }{k}%
 \deviator{\tens{R}}, \\
-\tens{\phi}_{2} &=& -\rho \,C_{2} 
-\deviator{\tens{\mathcal{P}}}, \\
+\tens{\phi}_{2} &=& -C_{2} \deviator{\tens{\mathcal{P}}}, \\
 \tens{\phi}_{3} &=& -C_{3} \deviator{ \tens{G} }.
 \end{array}
 \end{equation}
