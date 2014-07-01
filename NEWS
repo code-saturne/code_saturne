@@ -5,6 +5,8 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix deallocation of some boundary arrays if Cressman interpolation in module atmo.
+
 - Fix deallocation of field values in case a user solver is used.
 
 - Fix bug in the GUI (names instead of labels for the ALE mesh viscosity).
