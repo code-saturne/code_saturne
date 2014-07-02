@@ -134,29 +134,29 @@ do isc = 1, nscapp
 
   if (iihmpr.ne.1) then
 
-! ------ Informations relatives a la resolution des scalaires
+    ! ------ Informations relatives a la resolution des scalaires
 
-!         - Facteur multiplicatif du pas de temps
-  cdtvar(ii) = 1.d0
+    ! - Facteur multiplicatif du pas de temps
+    cdtvar(ii) = 1.d0
 
-!         - Schema convectif % schema 2ieme ordre
-!           = 0 : upwind
-!           = 1 : second ordre
-  blencv(ii) = 0.d0
+    ! - Schema convectif % schema 2ieme ordre
+    !   = 0 : upwind
+    !   = 1 : second ordre
+    blencv(ii) = 0.d0
 
-!         - Type de schema convetif second ordre (utile si BLENCV > 0)
-!           = 0 : Second Order Linear Upwind
-!           = 1 : Centre
-  ischcv(ii) = 1
+    ! - Type de schema convetif second ordre (utile si BLENCV > 0)
+    !   = 0 : Second Order Linear Upwind
+    !   = 1 : Centre
+    ischcv(ii) = 1
 
-!         - Test de pente pour basculer d'un schema centre vers l'upwind
-!           = 0 : utlisation automatique du test de pente
-!           = 1 : calcul sans test de pente
-  isstpc(ii) = 0
+    ! - Test de pente pour basculer d'un schema centre vers l'upwind
+    !   = 0 : utlisation automatique du test de pente
+    !   = 1 : calcul sans test de pente
+    isstpc(ii) = 0
 
-!         - Reconstruction des flux de convetion et de diffusion aux faces
-!           = 0 : pas de reconstruction
-  ircflu(ii) = 0
+    ! - Reconstruction des flux de convetion et de diffusion aux faces
+    !   = 0 : pas de reconstruction
+    ircflu(ii) = 0
 
   endif
 
