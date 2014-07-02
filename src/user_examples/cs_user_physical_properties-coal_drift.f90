@@ -171,10 +171,12 @@ if (ntcabs.le.1) then
   do iel = 1, ncel
     visco(iel) = viscl0
     cpro_rom1(iel) = ro0
-    do icla = 1, nclacp
-      call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
-      call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
-      cpro_rom2(iel)  = ro0
+  enddo
+  do icla = 1, nclacp
+    call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
+    call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
+    do iel = 1, ncel
+      cpro_rom2(iel)  = rho20(icla)
       cpro_diam2(iel) = diam20(icla)
     enddo
   enddo
@@ -307,12 +309,12 @@ do iflid = 0, nfld-1
 
   call field_get_key_int(iflid, keydri, iscdri)
 
-  call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
-  call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
-  call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
-
   ! We only handle here one scalar with a drift per particle class
   if (icla.ge.1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
+
+    call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
+    call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
+    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
 
     ! Position of variables, coefficients
     ! -----------------------------------
