@@ -143,7 +143,7 @@ do icla = 1, nclacp
     call field_get_val_s_by_name(name,agecpi)
   endif
 
-  write(name,'(a,i2.2)') 'w_solid_coal_', icla
+  write(name,'(a,i2.2)') 'w_solid_coal', icla
   call field_get_val_s_by_name(name,frmcpi)
 
   do iel = 1, ncel
