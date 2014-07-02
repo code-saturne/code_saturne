@@ -1389,9 +1389,7 @@ if (iwarni(iu).ge.1) then
 
   rnorm = -1.d0
   imax = 1
-  !$omp parallel private(vitnor, rnormt, imaxt)
   rnormt = -1.d0
-  !$omp do
   do iel = 1, ncel
     vitnor = sqrt(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)
     if (vitnor.ge.rnormt) then
@@ -1399,13 +1397,10 @@ if (iwarni(iu).ge.1) then
       imaxt  = iel
     endif
   enddo
-  !$omp critical
   if (rnormt .gt. rnorm) then
-    rnormt = rnorm
+    rnorm = rnormt
     imax = imaxt
   endif
-  !$omp end critical
-  !$omp end parallel
 
   xyzmax(1) = xyzcen(1,imax)
   xyzmax(2) = xyzcen(2,imax)
