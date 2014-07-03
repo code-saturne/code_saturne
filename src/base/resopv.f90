@@ -1749,9 +1749,13 @@ enddo
 ! --- Reconstruction loop (end)
 
 ! Writing
-if(iwarni(ipr).ge.2) then
-  if(isweep.gt.nswmpr) then
-     write(nfecra,1600) chaine(1:16),nswmpr
+if(iwarni(ipr).ge.1) then
+  if (residu.le.epsrsm(ipr)*rnormp) then
+    write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
+
+  ! Writing: non-convergence
+  else if(isweep.gt.nswmpr) then
+    write(nfecra,1600) chaine(1:16),nswmpr
   endif
 endif
 
