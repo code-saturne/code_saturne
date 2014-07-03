@@ -754,12 +754,9 @@ endif
 if (iwarnp.ge.1) then
   if (residu.le.epsrsp*rnorm) then
     write(nfecra,1000) cnom,isweep-1,residu,rnorm
-  endif
-endif
 
-! Writing: non-convergence
-if (iwarnp.ge.1) then
-  if (isweep.gt.nswmod) then
+  ! Writing: non-convergence
+  else if (isweep.gt.nswmod) then
     write(nfecra,1100) cnom, nswmod
   endif
 endif
