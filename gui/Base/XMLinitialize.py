@@ -185,9 +185,59 @@ class XMLinit(Variables):
         return msg
 
 
+
+
     def __backwardCompatibility(self):
         """
         Change XML in order to ensure backward compatibility.
+        """
+        if self.case.root()["solver_version"]:
+            vers = self.case.root()["solver_version"]
+            history = vers.split(";")
+            cur_vers = history[len(history) - 1]
+            if history[len(history) - 1] == self.case['package'].version:
+                self.__backwardCompatibilityCurrentVersion()
+            else:
+                self.__backwardCompatibilityOldVersion(cur_vers)
+                self.__backwardCompatibilityCurrentVersion()
+                his = ""
+                for v in history:
+                    his = his + v + ";"
+                his = his + self.case['package'].version
+                self.case.root().xmlSetAttribute(solver_version = his)
+
+        else:
+            vers = self.case['package'].version
+            self.case.root().xmlSetAttribute(solver_version = vers)
+
+            # apply all backwardCompatibility we don't know when it was create
+            self.__backwardCompatibilityOldVersion("-1")
+            self.__backwardCompatibilityCurrentVersion()
+
+
+    def __backwardCompatibilityOldVersion(self, from_vers):
+        """
+        Change XML in order to ensure backward compatibility for old version
+        """
+        if from_vers == "-1":
+            self.__backwardCompatibilityBefore_3_0()
+            self.__backwardCompatibilityFrom_3_0()
+            self.__backwardCompatibilityFrom_3_1()
+            self.__backwardCompatibilityFrom_3_2()
+        elif from_vers == "3.0":
+            self.__backwardCompatibilityFrom_3_0()
+            self.__backwardCompatibilityFrom_3_1()
+            self.__backwardCompatibilityFrom_3_2()
+        elif from_vers == "3.1":
+            self.__backwardCompatibilityFrom_3_1()
+            self.__backwardCompatibilityFrom_3_2()
+        elif from_vers == "3.2":
+            self.__backwardCompatibilityFrom_3_2()
+
+
+    def __backwardCompatibilityBefore_3_0(self):
+        """
+        Change XML in order to ensure backward compatibility from 2.x to 3.0
         """
         for node in self.case.xmlGetNodeList('initial_value', 'zone'):
             node['zone_id'] = node['zone']
@@ -243,6 +293,92 @@ class XMLinit(Variables):
                 n.xmlSetTextNode(formula)
                 node.xmlRemoveChild('initial_value', zone_id="1")
 
+        # solver
+        XMLNumParameterNode = self.case.xmlInitNode('numerical_parameters')
+        node = XMLNumParameterNode.xmlGetNode('multigrid')
+        if node:
+            if node['status'] == "off":
+                if nodeP:
+                    nodeP.xmlInitNode('solver_choice', choice='conjugate_gradient')
+            node.xmlRemoveNode()
+
+        # hydrostatic pressure
+        XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
+        node = XMLPhysicalPropNode.xmlGetNode('hydrostatic_pressure')
+        if node:
+            stat = node['status']
+            XMLNumParameterNode.xmlInitNode('hydrostatic_pressure', status=stat)
+            node.xmlRemoveNode()
+
+        # Profiles
+        compt = 0
+        for node in self.case.xmlGetNodeList('profile'):
+            nodeInit = node.xmlGetNode('x1')
+            if nodeInit:
+                node.xmlRemoveNode()
+                compt = compt + 1
+        if compt != 0:
+            print("Profiles have been removed from your files due to  incompatibility")
+            print("You must re-create them")
+
+
+    def __backwardCompatibilityFrom_3_0(self):
+        """
+        Change XML in order to ensure backward compatibility from 3.0 to 3.1
+        """
+        # Profiles
+        for node in self.case.xmlGetNodeList('profile'):
+            if node:
+                n = node.xmlGetNode("output_type")
+                if n == None:
+                    freq = node.xmlGetInt("output_frequency")
+                    if freq == -1:
+                        node.xmlSetData('output_type', "end")
+                    else:
+                        node.xmlSetData('output_type', "frequency")
+
+
+    def __backwardCompatibilityFrom_3_1(self):
+        """
+        Change XML in order to ensure backward compatibility from 3.1 to 3.2
+        """
+        # thermal scalar
+        for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows']:
+            node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
+            mdl = node['model']
+            if mdl and mdl != 'off':
+                if phys != 'atmospheric_flows':
+                    n = node.xmlGetNode('scalar', name="Enthalpy")
+                    if n:
+                        n.xmlRemoveNode()
+                    ThermalScalarModel(self.case).setThermalModel('enthalpy')
+                else:
+                    if (mdl == "dry"):
+                        n = node.xmlGetNode('scalar', name="potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('potential_temperature')
+                    else:
+                        n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
+        node = self.case.xmlGetNode('additional_scalars')
+        n = node.xmlGetNode('scalar', type='thermal')
+        if n:
+            nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
+            nthvar = nth.xmlInitNode('scalar', 'type')
+            nthvar['type']  = "thermal"
+            nthvar['name']  = n['name']
+            nthvar['label'] = n['label']
+            nthvar.xmlChildsCopy(n)
+            n.xmlRemoveNode()
+
+
+    def __backwardCompatibilityFrom_3_2(self):
+        """
+        Change XML in order to ensure backward compatibility from 3.2 to 3.3
+        """
         # thermal scalar
         for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows', 'compressible_model']:
             node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
@@ -269,6 +405,15 @@ class XMLinit(Variables):
                     if n:
                         n.xmlRemoveNode()
                     ThermalScalarModel(self.case).setThermalModel('total_energy')
+
+        # properties
+        nodeF = XMLPhysicalPropNode.xmlInitNode('fluid_properties')
+        for prop in ['density', 'molecular_viscosity', 'specific_heat',
+                     'thermal_conductivity', 'volume_viscosity']:
+            node = nodeF.xmlGetNode('property', name=prop)
+            if node:
+                if node['choice'] == 'user_law':
+                    node['choice'] = 'variable'
 
         node = self.case.xmlGetNode('additional_scalars')
         n = node.xmlGetNode('scalar', type='thermal')
@@ -314,52 +459,6 @@ class XMLinit(Variables):
                 newnode['type'] = tpe
             newnode.xmlChildsCopy(node)
             node.xmlRemoveNode()
-
-        # solver
-        XMLNumParameterNode = self.case.xmlInitNode('numerical_parameters')
-        node = XMLNumParameterNode.xmlGetNode('multigrid')
-        if node:
-            if node['status'] == "off":
-                if nodeP:
-                    nodeP.xmlInitNode('solver_choice', choice='conjugate_gradient')
-            node.xmlRemoveNode()
-
-        # hydrostatic pressure
-        XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
-        node = XMLPhysicalPropNode.xmlGetNode('hydrostatic_pressure')
-        if node:
-            stat = node['status']
-            XMLNumParameterNode.xmlInitNode('hydrostatic_pressure', status=stat)
-            node.xmlRemoveNode()
-
-        # properties
-        nodeF = XMLPhysicalPropNode.xmlInitNode('fluid_properties')
-        for prop in ['density', 'molecular_viscosity', 'specific_heat',
-                     'thermal_conductivity', 'volume_viscosity']:
-            node = nodeF.xmlGetNode('property', name=prop)
-            if node:
-                if node['choice'] == 'user_law':
-                    node['choice'] = 'variable'
-
-        # Profiles
-        compt = 0
-        for node in self.case.xmlGetNodeList('profile'):
-            if node:
-                n = node.xmlGetNode("output_type")
-                if n == None:
-                    freq = node.xmlGetInt("output_frequency")
-                    if freq == -1:
-                        node.xmlSetData('output_type', "end")
-                    else:
-                        node.xmlSetData('output_type', "frequency")
-            nodeInit = node.xmlGetNode('x1')
-            if nodeInit:
-                node.xmlRemoveNode()
-                compt = compt + 1
-        if compt != 0:
-            print("Profiles have been removed from your files due to  incompatibility")
-            print("You must re-create them")
-
 
         n = XMLThermoPhysicalNode.xmlGetNode('variable', type='thermal')
         if n:
@@ -672,6 +771,11 @@ class XMLinit(Variables):
                     f = f.replace("viscv =", "volume_viscosity =")
                     n.xmlSetTextNode(f)
 
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
         XMLAnaControl = self.case.xmlGetNode('analysis_control')
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
         for node in self.scalar_node.xmlGetNodeList('variable'):
