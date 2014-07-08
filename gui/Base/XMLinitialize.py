@@ -343,6 +343,7 @@ class XMLinit(Variables):
         Change XML in order to ensure backward compatibility from 3.1 to 3.2
         """
         # thermal scalar
+        XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
         for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows']:
             node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
             mdl = node['model']
@@ -380,6 +381,7 @@ class XMLinit(Variables):
         Change XML in order to ensure backward compatibility from 3.2 to 3.3
         """
         # thermal scalar
+        XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
         for phys in ['solid_fuels', 'gas_combustion', 'joule_effect', 'atmospheric_flows', 'compressible_model']:
             node = XMLThermoPhysicalNode.xmlInitNode(phys, 'model')
             mdl = node['model']
@@ -407,6 +409,7 @@ class XMLinit(Variables):
                     ThermalScalarModel(self.case).setThermalModel('total_energy')
 
         # properties
+        XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
         nodeF = XMLPhysicalPropNode.xmlInitNode('fluid_properties')
         for prop in ['density', 'molecular_viscosity', 'specific_heat',
                      'thermal_conductivity', 'volume_viscosity']:
@@ -794,6 +797,7 @@ class XMLinit(Variables):
                     content = content.replace(name, label)
                     n.xmlSetTextNode(content)
 
+        XMLBoundaryNode = self.case.xmlInitNode('boundary_conditions')
         for node in XMLBoundaryNode.xmlGetNodeList('scalar'):
             name = node['name']
             label = node['label']
