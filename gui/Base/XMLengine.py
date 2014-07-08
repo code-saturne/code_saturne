@@ -515,9 +515,28 @@ class XMLElement:
         for k, v in list(kwargs.items()):
             el.setAttribute(k, _encode(str(v)))
 
+        nn = None
+        for n in self.el.childNodes:
+            if n.nodeType == self.doc.ELEMENT_NODE:
+                if sorted([n.nodeName, tag]) != [n.nodeName, tag]:
+                    nn = n
+                    break
+                if tag == "variable" and n.nodeName == "variable":
+                    name1 = n.getAttributeNode("name").value
+                    name2 = el.getAttributeNode("name").value
+                    if sorted([name1, name2]) != [name1, name2]:
+                        nn = n
+                        break
+                if tag == "property" and n.nodeName == "property":
+                    name1 = n.getAttributeNode("name").value
+                    name2 = el.getAttributeNode("name").value
+                    if sorted([name1, name2]) != [name1, name2]:
+                        nn = n
+                        break
+
         log.debug("xmlAddChild-> %s %s" % (tag, self.__xmlLog()))
 
-        return self._inst(self.el.appendChild(el))
+        return self._inst(self.el.insertBefore(el, nn))
 
 
     def xmlSetTextNode(self, newTextNode):
