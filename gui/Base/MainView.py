@@ -564,7 +564,10 @@ class MainView(object):
                 try:
                     self.recentFiles.removeLast()
                 except:
-                    self.recentFiles.pop()
+                    try:
+                        self.recentFiles.pop()
+                    except:
+                        self.recentFiles.takeLast()
 
 
     def closeEvent(self, event):
