@@ -435,11 +435,11 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
      face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
      face_id++) {
 
-  cs_lnum_t ii = i_face_cells[face_id][0];
-  cs_lnum_t jj = i_face_cells[face_id][1];
-
-  da[ii] -= xa[face_id];
-  da[jj] -= xa[face_id];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
+    
+      da[ii] -= xa[face_id];
+      da[jj] -= xa[face_id];
 
       }
     }
@@ -452,12 +452,12 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
                         if(n_b_faces > THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-     face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-     face_id++) {
+        face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+        face_id++) {
 
-  cs_lnum_t ii = b_face_cells[face_id];
+        cs_lnum_t ii = b_face_cells[face_id];
 
-  da[ii] += thetap*idiffp*b_visc[face_id]*cofbfp[face_id];
+        da[ii] += thetap*idiffp*b_visc[face_id]*cofbfp[face_id];
 
       }
     }
