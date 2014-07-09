@@ -540,7 +540,7 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
         velipb(ifac,isou) = gradv(1,isou,iel)*diipb(1,ifac)    &
                           + gradv(2,isou,iel)*diipb(2,ifac)    &
                           + gradv(3,isou,iel)*diipb(3,ifac)    &
-                          + vel(isou,iel)
+                          + vela(isou,iel)
       enddo
     enddo
 
