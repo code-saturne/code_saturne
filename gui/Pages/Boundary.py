@@ -2284,7 +2284,7 @@ class WallBoundary(Boundary) :
 
 
     @Variables.undoLocal
-    def setScalarFormula(self, label, formula, choice):
+    def setScalarFormula(self, label, choice, formula):
         """
         Public method.
         Set the formula for a turbulent variable.
@@ -3254,7 +3254,7 @@ class InletBoundaryTestCase(ModelTest):
         model.setVelocityChoice('norm')
         model.setTurbulenceChoice('hydraulic_diameter')
         model.th_model.setThermalModel('temperature_celsius')
-        model.setScalar("TempC", 15.)
+        model.setScalar("tempC", 15.)
 
         doc = '''<boundary_conditions>
                     <inlet label="entree1">
@@ -3273,7 +3273,7 @@ class InletBoundaryTestCase(ModelTest):
         assert node == self.xmlNodeFromString(doc),\
            'Could not set thermal scalar value for inlet boundary'
 
-        assert model.getScalar("TempC") == 15,\
+        assert model.getScalar("tempC") == 15,\
            'Could not get thermal scalar value for inlet boundary'
 
 
