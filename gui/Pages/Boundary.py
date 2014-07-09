@@ -2282,7 +2282,7 @@ class WallBoundary(Boundary) :
 
 
     @Variables.undoLocal
-    def setScalarFormula(self, label, formula, choice):
+    def setScalarFormula(self, label, choice, formula):
         """
         Public method.
         Set the formula for a turbulent variable.

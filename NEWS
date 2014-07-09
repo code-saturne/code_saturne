@@ -5,6 +5,8 @@ Release 3.2.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix argument inversion for scalar boundary formula on wall, using the GUI.
+
 - Fix: missing private attribute in OpenMP loops in tensorial diffusivity computation.
 
 - Fix: with no GUI, missing initialization of thermal diffusivity.
