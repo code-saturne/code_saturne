@@ -477,16 +477,8 @@ class FluidCharacteristicsModel(Variables, Model):
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity'))
-        if tag == "density":
-            formula = "density = -1.;"
-        elif tag == "molecular_viscosity":
-            formula = "molecular_viscosity = -1.;"
-        elif tag == "specific_heat":
-            formula = "specific_heat = -1.;"
-        elif tag == "volume_viscosity":
-            formula = "volume_viscosity = -1.;"
-        elif tag == "thermal_conductivity":
-            formula = "thermal_conductivity = -1.;"
+
+        formula = tag + " = -1.;"
 
         return formula
 
