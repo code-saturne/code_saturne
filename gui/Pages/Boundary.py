@@ -3248,7 +3248,7 @@ class InletBoundaryTestCase(ModelTest):
         model.setVelocityChoice('norm')
         model.setTurbulenceChoice('hydraulic_diameter')
         model.th_model.setThermalModel('temperature_celsius')
-        model.setScalar("tempC", 15.)
+        model.setScalar("temperature", 15.)
 
         doc = '''<boundary_conditions>
                     <inlet label="entree1">
@@ -3258,7 +3258,7 @@ class InletBoundaryTestCase(ModelTest):
                         <turbulence choice="hydraulic_diameter">
                             <hydraulic_diameter>1</hydraulic_diameter>
                         </turbulence>
-                        <scalar choice="dirichlet" label="TempC" name="temperature_celsius" type="thermal">
+                        <scalar choice="dirichlet" label="TempC" name="temperature" type="thermal">
                             <dirichlet>15</dirichlet>
                         </scalar>
                     </inlet>
@@ -3267,7 +3267,7 @@ class InletBoundaryTestCase(ModelTest):
         assert node == self.xmlNodeFromString(doc),\
            'Could not set thermal scalar value for inlet boundary'
 
-        assert model.getScalar("tempC") == 15,\
+        assert model.getScalar("temperature") == 15,\
            'Could not get thermal scalar value for inlet boundary'
 
 
