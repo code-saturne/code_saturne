@@ -4,6 +4,8 @@ Release 3.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix argument inversion for scalar boundary formula on wall, using the GUI.
+
 - Fix for possible division by zero when computing mesh joining-related quantiles.
 
 - Fix for gradient computation in gradient quality check.
