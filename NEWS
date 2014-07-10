@@ -5,6 +5,11 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug introduced in velocity boundary conditions (introduced April 2014
+  when enabling higher order time schemes).
+
+- Fix possible error in GUI-defined output profile for scalar variables.
+
 - Fix argument inversion for scalar boundary formula on wall, using the GUI.
 
 - Fix deallocation of some boundary arrays if Cressman interpolation in module atmo.
