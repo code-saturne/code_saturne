@@ -437,7 +437,7 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
 
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
-    
+
       da[ii] -= xa[face_id];
       da[jj] -= xa[face_id];
 
