@@ -203,6 +203,19 @@ def get_flags(pkg, flag, link_build = False):
     if pkg.config.libs['ple'].variant == "internal" and flag == 'cppflags':
         cmd_line.insert(0, "-I" + pkg.get_dir("includedir"))
 
+    # Specific handling of low-level libraries, which should come last,
+    # such as -lm and -lpthread:
+    # If -lm appears multiple times, only add it at the end of the
+    # libraries, so that fast versions of the library may appear first
+
+    if flag == 'libs':
+        for lib in ['-lpthread', '-lm']:
+            n = cmd_line.count(lib)
+            if n > 0:
+                for i in range(n):
+                    cmd_line.remove(lib)
+                cmd_line.append(lib)
+
     # On Windows, flags must be adapted so as to handle the relocation
     # of system headers (together with the compiler)
     # ...unless the compilation is done during the build stage
