@@ -118,13 +118,13 @@ With the Merkle model described above (\S
 \ref{sec:cavit:source_term}), the correction step equation of the
 cavitation model writes:
 \begin{equation*}
-\divs\left(\frac{1}{\rho}\grad\delta P\right) =
+\divs\left(\frac{\Delta t^n}{\rho}\grad\delta P\right) =
 \divs(\widetilde{u})-\Gamma_V(\alpha,P).
 \end{equation*}
 In this equation, the pressure in the cavitation source term is taken
 implicit while the void fraction is explicit:
 \begin{equation*}
-\divs\left(\frac{1}{\rho}\grad(\delta P)^{n+1}\right) =
+\divs\left(\frac{\Delta t^n}{\rho}\grad(\delta P)^{n+1}\right) =
 \divs(\widetilde{u}^{n+1})-\Gamma_V(\alpha^n,P^{n+1})\left(\frac{1}{\rho_v}-\frac{1}{\rho_l}\right).
 \end{equation*}
 %
