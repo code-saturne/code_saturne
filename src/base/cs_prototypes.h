@@ -146,47 +146,6 @@ extern void CS_PROCF (initi1, INITI1)
 extern void CS_PROCF (memfin, MEMFIN) (void);
 
 /*----------------------------------------------------------------------------
- * Mesh renumbering for vector processors
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (numvec, NUMVEC)
-(
- const cs_int_t  *ncelet,   /* <-- number of extended (real + ghost) cells */
- const cs_int_t  *ncel,     /* <-- number of local cells */
- const cs_int_t  *nfac,     /* <-- number of interior faces */
- const cs_int_t  *nfabor,   /* <-- number of boundary faces */
- const cs_int_t  *lregis,   /* <-- vector registor length */
- cs_int_t        *irveci,   /* <-> interior face vectorization indic. */
- cs_int_t        *irvecb,   /* <-> boundary face vectorization indic. */
- cs_int_t         ifacel[], /* <-- interior face->cell connectivity */
- cs_int_t         ifabor[], /* <-- boundary face->cell connectivity */
- cs_int_t         inumfi[], /* <-> interior faces renumbering (size: nfac) */
- cs_int_t         inumfb[], /* <-> boundary faces renumbering (size: nfabor) */
- cs_int_t         iworkf[], /* --- work array, size: max(nfac, nfabor) */
- cs_int_t         ismbs[]   /* --- work array, size: ncelet */
-);
-
-/*----------------------------------------------------------------------------
- * Test renumbering for vector processors
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (tstvec, TSTVEC)
-(
- const cs_int_t  *ncelet,   /* <-- number of extended (real + ghost) cells */
- const cs_int_t  *ncel,     /* <-- number of local cells */
- const cs_int_t  *nfac,     /* <-- number of interior faces */
- const cs_int_t  *nfabor,   /* <-- number of boundary faces */
- const cs_int_t   ifacel[], /* <-- interior face->cell connectivity */
- const cs_int_t   ifabor[], /* <-- boundary face->cell connectivity */
- cs_int_t         iworkf[], /* --- work array, size: max(nfac, nfabor) */
- cs_int_t         ismbs[],  /* --- work array, size: ncelet */
- cs_int_t         ismbv[],  /* --- work array, size: ncelet */
- cs_real_t        rworkf[], /* --- work array, size: max(nfac, nfabor) */
- cs_real_t        rsmbs[],  /* --- work array, size: ncelet */
- cs_real_t        rsmbv[]   /* --- work array, size: ncelet */
-);
-
-/*----------------------------------------------------------------------------
  * User function for output of variables on a post-processing mesh
  *----------------------------------------------------------------------------*/
 

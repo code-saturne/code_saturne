@@ -54,6 +54,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_order.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 
 /*----------------------------------------------------------------------------
@@ -2011,6 +2012,434 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute renumbering of interior faces for vectorizing.
+ *
+ * parameters:
+ *   mesh        <-> pointer to global mesh structure
+ *   vector_size <-- target size for groups
+ *   group_size  <-- target group size
+ *   renum_i     --> interior faces renumbering array (new -> old, 1-based)
+ *
+ * returns:
+ *   0 on success, -1 otherwise
+  *----------------------------------------------------------------------------*/
+
+static int
+_renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
+                               int         vector_size,
+                               cs_lnum_t   renum_i[])
+{
+  int retval = -1;
+
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
+
+  /* Initialize variables to avoid compiler warnings */
+
+  cs_lnum_t swap_id = -1;
+
+  /* Initialization */
+
+  for (cs_lnum_t face_id = 0; face_id < mesh->n_i_faces; face_id++)
+    renum_i[face_id] = face_id + 1;
+
+  /* Order interior faces (we choose to place the "remainder" at the end) */
+
+  /* determine remainder and number of complete registers */
+
+  cs_lnum_t irelii = n_i_faces % vector_size;
+  cs_lnum_t nregii = n_i_faces / vector_size;
+
+  /* External loop */
+
+  for (int loop_id = 0; loop_id < 100; loop_id++) {
+
+    int mod_prev = 0; /* indicates if elements were exchanged in array renum_i */
+
+    cs_lnum_t iregic = 0; /* Previous register */
+
+    cs_lnum_t block_id = 0;  /* Counter to avoid exchanging all elements
+                                of renum_i more than n times */
+
+    /* Loop on elements of renum_i */
+
+    for (cs_lnum_t jj = 0;
+         jj < mesh->n_i_faces && block_id > -1;
+         jj++) {
+
+      cs_lnum_t last_id, inext;
+
+      /* Current register and position inside it */
+
+      cs_lnum_t iregip = iregic;
+      cs_lnum_t jregic = (jj % vector_size) + 1;
+      iregic = jj / vector_size + 1;
+
+      /* Test between last_id, start of register, and current position;
+         take the worst case between remainder at beginning and end:
+         remaninder at beginning */
+
+      if (iregic == 1)
+        last_id = 0;
+      else if (jregic <= irelii)
+        last_id = (iregic-2)*vector_size+irelii;
+      else
+        last_id = (iregic-1)*vector_size;
+
+      /* Swap starting from inext, start of next register */
+
+      if ((iregic == nregii && jregic > irelii) || (iregic == nregii+1))
+        inext = 0;
+      else if (jregic > irelii)
+        inext = iregic*vector_size+irelii;
+      else
+        inext = iregic*vector_size;
+
+      if (iregic != iregip) swap_id = inext - 1;
+
+      block_id = 0;
+
+      /* Test with all preceding elements since last_id:
+       * swap_id indicates with which element of renum_i we swap
+       * mod_prev indicates we modify an already seen element
+       * block_id indicates we have seen all elements and we must mix
+       * (there is no solution) */
+
+      bool test_all_since_last = true;
+
+      while (test_all_since_last) {
+
+        test_all_since_last = false;
+        cs_lnum_t face_id = renum_i[jj] - 1;
+
+        for (cs_lnum_t ii = last_id; ii < jj; ii++) {
+
+          cs_lnum_t cn0 = i_face_cells[renum_i[ii]-1][0];
+          cs_lnum_t cn1 = i_face_cells[renum_i[ii]-1][1];
+          cs_lnum_t cr0 = i_face_cells[face_id][0];
+          cs_lnum_t cr1 = i_face_cells[face_id][1];
+
+          if (cn0 == cr0 || cn1 == cr1 || cn0 == cr1 || cn1 == cr0) {
+
+            swap_id += 1;
+
+            if (swap_id >= n_i_faces) {
+              swap_id = 0;
+              block_id = block_id + 1;
+            }
+            if (swap_id < jj) mod_prev = 1;
+            if (block_id >= 2) {
+              block_id = -1;
+              break;
+            }
+
+            cs_lnum_t itmp = renum_i[swap_id];
+            renum_i[swap_id] = renum_i[jj];
+            renum_i[jj] = itmp;
+
+            test_all_since_last = true;
+            break;
+
+          }
+
+        }
+
+      } /* test_all_since_last */;
+
+    } /* loop on jj (faces) */
+
+    /* If we did not touch elements preceding the current one,
+       the algorithm has succeeded */
+
+    if (mod_prev == 0 && block_id > -1) {
+      retval = 0;
+      break;
+    }
+
+    /* Shuffle if there is no solution or we looped 10 times */
+
+    if (loop_id < 100 && (((loop_id+1)%10 == 0) || block_id == -1)) {
+      for (cs_lnum_t ii = 0; ii < (n_i_faces-4)/2; ii += 2) {
+        cs_lnum_t jj = n_i_faces-ii-1;
+        cs_lnum_t itmp = renum_i[ii] - 1;
+        renum_i[ii] = renum_i[jj];
+        renum_i[jj] = itmp;
+      }
+    }
+
+  } /* Loop on loop_id */
+
+  /* Checks */
+
+  if (retval == 0) {
+
+    cs_lnum_t iok = 0;
+
+    cs_lnum_t *order;
+    BFT_MALLOC(order, n_i_faces, cs_lnum_t);
+    cs_order_lnum_allocated(NULL, renum_i, order, n_i_faces);
+
+    for (cs_lnum_t ii = 0; ii < n_i_faces; ii++) {
+      if (renum_i[order[ii]] !=  n_i_faces-ii)
+        iok -= 1;
+    }
+
+    BFT_FREE(order);
+
+    /* Classical test looping on previous faces */
+
+    if (iok == 0) {
+
+      for (cs_lnum_t jj = 0; jj < mesh->n_i_faces; jj++) {
+
+        /* Current register and position inside it */
+
+        cs_lnum_t iregic = jj / vector_size + 1;
+        cs_lnum_t jregic = (jj % vector_size) + 1;
+
+        /* Test between last_id, start of register, and current position;
+           take the worst case between remainder at beginning and end:
+           remaninder at beginning */
+
+        cs_lnum_t last_id;
+
+        if (iregic == 1)
+          last_id = 0;
+        else if (jregic < irelii)
+          last_id = (iregic-2)*vector_size+irelii;
+        else
+          last_id = (iregic-1)*vector_size;
+
+        /* Test with all preceding elements since last_id */
+
+        for (cs_lnum_t ii = last_id; ii < jj; ii++) {
+
+          cs_lnum_t face_id = renum_i[jj] - 1;
+
+          cs_lnum_t cn0 = i_face_cells[renum_i[ii]-1][0];
+          cs_lnum_t cn1 = i_face_cells[renum_i[ii]-1][1];
+          cs_lnum_t cr0 = i_face_cells[face_id][0];
+          cs_lnum_t cr1 = i_face_cells[face_id][1];
+
+          if (cn0 == cr0 || cn1 == cr1 || cn0 == cr1 || cn1 == cr0)
+            iok -= 1;
+
+        }
+      }
+
+    }
+
+    if (iok != 0 && mesh->verbosity > 2) {
+      /* TODO: add global logging info for rank 0) */
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Faces renumbering for vectorization:\n"
+                   "====================================\n\n"
+                   "%llu errors in interior face renumbering array.\n\n"
+                   "Faces are not renumbered, and vectorization of face loops\n"
+                   "will not be forced.\n"), (unsigned long long)iok);
+      retval = -1;
+    }
+
+  }
+
+  /* Output info */
+
+  if (mesh->verbosity > 0) {
+
+    int ivect_i = (retval == 0) ? 1 : 0;
+    cs_parall_sum(1, CS_INT_TYPE, &ivect_i);
+
+    bft_printf
+      (_("\n"
+         " Vectorization for interior faces to cells gathers on %d/%d ranks\n"),
+       ivect_i, cs_glob_n_ranks);
+
+  }
+
+  /* Return value */
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute renumbering of boundary faces for vectorizing.
+ *
+ * parameters:
+ *   mesh        <-> pointer to global mesh structure
+ *   vector_size <-- target size for groups
+ *   group_size  <-- target group size
+ *   renum_i     --> interior faces renumbering array (new -> old, 1-based)
+ *
+ * returns:
+ *   0 on success, -1 otherwise
+  *----------------------------------------------------------------------------*/
+
+static int
+_renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
+                               int         vector_size,
+                               cs_lnum_t   renum_b[])
+{
+  int retval = -1;
+
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  cs_lnum_t *b_face_cells = mesh->b_face_cells;
+
+  /* Initialization */
+
+  for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++)
+    renum_b[face_id] = face_id + 1;
+
+  /* Order boundary faces */
+
+  /* determine remainder and number of complete registers */
+
+  cs_lnum_t irelib = n_b_faces % vector_size;
+  cs_lnum_t nregib = n_b_faces / vector_size;
+
+  /* Maximum number of boundary faces; if < nregib, there is no solution */
+
+  cs_lnum_t *irhss;
+  BFT_MALLOC(irhss, n_cells, cs_lnum_t);
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+    irhss[cell_id] = 0;
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_lnum_t ii = b_face_cells[face_id];
+    irhss[ii] += 1;
+  }
+
+  cs_lnum_t nfamax = 0;
+  cs_lnum_t nfanp1 = 0;
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    nfamax = CS_MAX(nfamax, irhss[cell_id]);
+    if (irhss[cell_id] == nregib+1)
+      nfanp1 += 1;
+  }
+
+  if (nfamax > nregib+1 || (nfamax == nregib+1 && nfanp1 > irelib)) {
+    BFT_FREE(irhss);
+    return retval;
+  }
+
+  /* Order by decreasing number of cell boundary faces */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_lnum_t cell_id = b_face_cells[face_id];
+    b_face_cells[face_id] += n_cells*irhss[cell_id];
+  }
+
+  cs_lnum_t *order;
+
+  BFT_MALLOC(order, n_b_faces, cs_lnum_t);
+  cs_order_lnum_allocated(NULL, b_face_cells, order, n_b_faces);
+
+  /* Restore connectivity */
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+    b_face_cells[face_id] = b_face_cells[face_id] % n_cells;
+
+  /* Distribute faces in registers */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_lnum_t ireg, ilig, ii;
+    if (face_id <= irelib*(nregib+1)) {
+      ireg = face_id % (nregib+1);
+      ilig = face_id / (nregib+1);
+      ii = ireg*vector_size+ilig;
+    }
+    else {
+      cs_lnum_t face_id1 = face_id-irelib*(nregib+1);
+      ireg = face_id1 % nregib;
+      ilig = face_id1 / nregib + irelib;
+      ii = ireg*vector_size+ilig;
+    }
+    renum_b[ii] = order[face_id] + 1;
+  }
+
+  retval = 0;
+
+  /* Checks */
+
+  cs_lnum_t iok = 0;
+
+  cs_order_lnum_allocated(NULL, renum_b, order, n_b_faces);
+
+  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+  if (renum_b[order[ii]] !=  n_b_faces-ii)
+    iok -= 1;
+  }
+
+  BFT_FREE(order);
+
+  /* Classical test looping on previous faces */
+
+  if (iok == 0) {
+
+    for (cs_lnum_t jj = 0; jj < mesh->n_b_faces; jj++) {
+
+      /* Current register and position inside it */
+
+      cs_lnum_t iregic = jj / vector_size + 1;
+      cs_lnum_t jregic = (jj % vector_size) + 1;
+
+      /* Test between last_id, start of register, and current position;
+         take the worst case between remainder at beginning and end:
+         remaninder at beginning */
+
+      cs_lnum_t last_id;
+
+      if (iregic == 1)
+        last_id = 0;
+      else if (jregic < irelib)
+        last_id = (iregic-2)*vector_size+irelib;
+      else
+        last_id = (iregic-1)*vector_size;
+
+      /* Test with all preceding elements since last_id */
+
+      for (cs_lnum_t ii = last_id; ii < jj; ii++) {
+        cs_lnum_t face_id = renum_b[jj] - 1;
+        if (b_face_cells[renum_b[ii]-1] == b_face_cells[face_id])
+          iok -= 1;
+      }
+
+    }
+
+  }
+
+  if (iok != 0 && mesh->verbosity > 2) {
+    /* TODO: add global logging info for rank 0) */
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Faces renumbering for vectorization:\n"
+                 "====================================\n\n"
+                 "%llu errors in boundary face renumbering array.\n\n"
+                 "Faces are not renumbered, and vectorization of face loops\n"
+                 "will not be forced.\n"), (unsigned long long)iok);
+    retval = -1;
+  }
+
+  /* Output info */
+
+  if (mesh->verbosity > 0) {
+
+    int ivect_b = (retval == 0) ? 1 : 0;
+    cs_parall_sum(1, CS_INT_TYPE, &ivect_b);
+
+    bft_printf
+      (_("\n"
+         " Vectorization for boundary faces to cells gathers on %d/%d ranks\n"),
+       ivect_b, cs_glob_n_ranks);
+
+  }
+
+  /* Return value */
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Log statistics for bandwidth and profile.
  *
  * Bandwidth ist the maximum distance between two adjacent vertices (cells),
@@ -2443,11 +2872,6 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
   int _ivect[2] = {0, 0};
   cs_lnum_t   ivecti = 0, ivectb = 0;
   cs_lnum_t  *renum_i = NULL, *renum_b = NULL;
-  cs_lnum_t  *iworkf = NULL, *ismbs = NULL;
-
-  cs_lnum_t  n_faces_max = CS_MAX(mesh->n_i_faces, mesh->n_b_faces);
-  cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
-
 
 #if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
 
@@ -2480,29 +2904,16 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
 
   BFT_MALLOC(renum_i, mesh->n_i_faces, cs_lnum_t);
   BFT_MALLOC(renum_b, mesh->n_b_faces, cs_lnum_t);
-  BFT_MALLOC(iworkf, n_faces_max, cs_lnum_t);
-  BFT_MALLOC(ismbs, n_cells_wghosts, cs_lnum_t);
 
   /* Try renumbering */
 
-  CS_PROCF(numvec, NUMVEC)(&(mesh->n_cells_with_ghosts),
-                           &(mesh->n_cells),
-                           &(mesh->n_i_faces),
-                           &(mesh->n_b_faces),
-                           &vector_size,
-                           &ivecti,
-                           &ivectb,
-                           (cs_int_t *)(mesh->i_face_cells),
-                           mesh->b_face_cells,
-                           renum_i,
-                           renum_b,
-                           iworkf,
-                           ismbs);
+  ivecti = _renum_i_faces_for_vectorizing(mesh,
+                                          vector_size,
+                                          renum_i);
 
-  /* Free Work arrays */
-
-  BFT_FREE(ismbs);
-  BFT_FREE(iworkf);
+  ivectb = _renum_b_faces_for_vectorizing(mesh,
+                                          vector_size,
+                                          renum_b);
 
   /* Update mesh */
 
@@ -2526,41 +2937,6 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
 
   BFT_FREE(renum_b);
   BFT_FREE(renum_i);
-
-  /* Check renumbering (sanity check) */
-
-  if (ivecti > 0 || ivectb > 0) {
-
-    cs_lnum_t  *ismbv = NULL;
-    cs_real_t  *rworkf = NULL, *rsmbs = NULL, *rsmbv = NULL;
-
-    BFT_MALLOC(iworkf, n_faces_max, cs_lnum_t);
-    BFT_MALLOC(ismbs, n_cells_wghosts, cs_lnum_t);
-    BFT_MALLOC(ismbv, n_cells_wghosts, cs_lnum_t);
-    BFT_MALLOC(rworkf, n_faces_max, cs_real_t);
-    BFT_MALLOC(rsmbs, n_cells_wghosts, cs_real_t);
-    BFT_MALLOC(rsmbv, n_cells_wghosts, cs_real_t);
-
-    CS_PROCF(tstvec, TSTVEC)(&(mesh->n_cells_with_ghosts),
-                             &(mesh->n_cells),
-                             &(mesh->n_i_faces),
-                             &(mesh->n_b_faces),
-                             (cs_int_t *)(mesh->i_face_cells),
-                             mesh->b_face_cells,
-                             iworkf,
-                             ismbs,
-                             ismbv,
-                             rworkf,
-                             rsmbs,
-                             rsmbv);
-
-    BFT_FREE(rsmbv);
-    BFT_FREE(rsmbs);
-    BFT_FREE(rworkf);
-    BFT_FREE(ismbv);
-    BFT_FREE(ismbs);
-    BFT_FREE(iworkf);
-  }
 
   /* Update mesh */
 
@@ -2674,19 +3050,69 @@ _renumber_test(cs_mesh_t  *mesh)
               c_id_0 = mesh->i_face_cells[f_id][0];
               c_id_1 = mesh->i_face_cells[f_id][1];
               if (   (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
-                  || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id))
+                  || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id)) {
                 face_errors[0] += 1;
-              if ( (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
-                || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id)) {
                 if (mesh->verbosity > 0)
                   bft_printf("f_id %d (%d %d) g %d t %d\n",
                              f_id, c_id_0, c_id_1, g_id, t_id);
-                accumulator[c_id_0] = t_id;
-                accumulator[c_id_1] = t_id;
               }
+              accumulator[c_id_0] = t_id;
+              accumulator[c_id_1] = t_id;
             }
           }
 
+        }
+
+      }
+
+      BFT_FREE(accumulator);
+    }
+
+    else if (mesh->i_face_numbering->type == CS_NUMBERING_VECTORIZE) {
+
+      cs_lnum_t f_id, c_id_0, c_id_1;
+
+      cs_lnum_t counter = 0;
+
+      BFT_MALLOC(accumulator, mesh->n_cells_with_ghosts, cs_lnum_t);
+
+      for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
+        accumulator[c_id_0] = 0;
+
+#     pragma dir nodep
+      for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+        c_id_0 = mesh->i_face_cells[f_id][0];
+        c_id_1 = mesh->i_face_cells[f_id][1];
+        accumulator[c_id_0] += 1;
+        accumulator[c_id_1] += 1;
+      }
+
+      for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
+        counter += accumulator[c_id_0];
+
+      face_errors[0] = mesh->n_i_faces*2 - counter;
+
+      /* Additional serial test */
+
+      if (face_errors[0] == 0) {
+
+        const cs_lnum_t vector_size = mesh->i_face_numbering->vector_size;
+
+        for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
+          accumulator[c_id_0] = -1;
+
+        for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+          cs_lnum_t block_id = f_id / vector_size;
+          c_id_0 = mesh->i_face_cells[f_id][0];
+          c_id_1 = mesh->i_face_cells[f_id][1];
+          if (   accumulator[c_id_0] == block_id
+              || accumulator[c_id_1] == block_id)
+            face_errors[0] += 1;
+          if (mesh->verbosity > 0)
+            bft_printf("f_id %d (%d %d) b %d\n",
+                       f_id, c_id_0, c_id_1, block_id);
+          accumulator[c_id_0] = block_id;
+          accumulator[c_id_1] = block_id;
         }
 
       }
@@ -2756,6 +3182,53 @@ _renumber_test(cs_mesh_t  *mesh)
             }
           }
 
+        }
+
+      }
+
+      BFT_FREE(accumulator);
+    }
+
+    if (mesh->b_face_numbering->type == CS_NUMBERING_VECTORIZE) {
+
+      cs_lnum_t f_id, c_id;
+
+      cs_lnum_t counter = 0;
+
+      BFT_MALLOC(accumulator, mesh->n_cells_with_ghosts, cs_lnum_t);
+
+      for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
+        accumulator[c_id] = 0;
+
+#       pragma dir nodep
+        for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+          c_id = mesh->b_face_cells[f_id];
+          accumulator[c_id] += 1;
+        }
+
+      for (c_id = 0; c_id < mesh->n_cells; c_id++)
+        counter += accumulator[c_id];
+
+      face_errors[1] = mesh->n_b_faces - counter;
+
+      /* Additional serial test */
+
+      if (face_errors[1] == 0) {
+
+        const cs_lnum_t vector_size = mesh->i_face_numbering->vector_size;
+
+        for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
+          accumulator[c_id] = -1;
+
+        for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+          cs_lnum_t block_id = f_id / vector_size;
+          c_id = mesh->b_face_cells[f_id];
+          if ( accumulator[c_id] == block_id)
+            face_errors[0] += 1;
+          if (mesh->verbosity > 0)
+            bft_printf("f_id %d (%d) b %d\n",
+                       f_id, c_id, block_id);
+          accumulator[c_id] = block_id;
         }
 
       }

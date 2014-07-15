@@ -285,8 +285,6 @@ modini.f90 \
 mmtycl.f90 \
 navstv.f90 \
 newmrk.f90 \
-numvec.f90 \
-ordita.f90 \
 phyvar.f90 \
 post_util.f90 \
 precli.f90 \
@@ -307,7 +305,6 @@ strpre.f90 \
 tdesi1.f90 \
 tridim.f90 \
 tspdcv.f90 \
-tstvec.f90 \
 typecl.f90 \
 undscr.f90 \
 varpos.f90 \
