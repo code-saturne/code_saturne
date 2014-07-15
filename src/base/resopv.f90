@@ -585,7 +585,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     !==========
     ( indhyd ,                                &
       frchy  , dfrchy ,                       &
-      cvar_pr    , iflux , bflux ,                &
+      cvar_pr, iflux  , bflux ,               &
       coefap , coefbp ,                       &
       cofafp , cofbfp ,                       &
       viscf  , viscb  ,                       &
@@ -637,11 +637,11 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         iel=ifabor(ifac)
 
         if (indhyd.eq.1) then
-          coefa_dp(ifac) =  cvar_pr(iel)                                    &
-                       + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
-                       + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
-                       + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
-                       -  phydr0
+          coefa_dp(ifac) =  cvar_pr(iel)                                  &
+                         + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
+                         + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
+                         + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
+                         -  phydr0
         endif
 
         ! Diffusive flux BCs
@@ -742,11 +742,23 @@ endif
 ! 4. Building of the linear system to solve
 !===============================================================================
 
-! ---> TERME INSTATIONNAIRE
+! ---> Implicit term
 
 do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
+! Implicit part of the cavitation source
+if (icavit.gt.0.and.itscvi.eq.1) then
+  do iel = 1, ncel
+    rovsdt(iel) = rovsdt(iel) - volume(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
+  enddo
+endif
+! Strengthen the diagonal for Low Mach Algorithme
+if (idilat.eq.3) then
+  do iel = 1, ncel
+    rovsdt(iel) = rovsdt(iel) + epsdp*volume(iel)/dt(iel)
+  enddo
+endif
 
 ! ---> Face diffusivity
 if (idiff(ipr).ge.1) then
@@ -805,20 +817,6 @@ call matrix &
    coefb_dp , coefbf_dp     , rovsdt ,                            &
    imasfl , bmasfl , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )
-
-! Strengthen the diagonal
-if (idilat.eq.3) then
-  do iel = 1, ncel
-    dam(iel) = dam(iel) + epsdp*volume(iel)/dt(iel)
-  enddo
-endif
-
-! Implicit part of the cavitation source
-if (icavit.gt.0.and.itscvi.eq.1) then
-  do iel = 1, ncel
-    dam(iel) = dam(iel) - volume(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
-  enddo
-endif
 
 ! Free memory
 deallocate(iflux, bflux)
@@ -1067,7 +1065,7 @@ if (arak.gt.0.d0) then
    iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
-   cvara_pr   ,                                                       &
+   cvara_pr,                                                      &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    viscap , viscap , viscap ,                                     &
@@ -1137,7 +1135,7 @@ if (arak.gt.0.d0) then
    iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
-   cvara_pr   ,                                                       &
+   cvara_pr,                                                      &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
    vitenp ,                                                       &
@@ -1389,16 +1387,9 @@ endif
 
 ! --- Initial right hand side
 do iel = 1, ncel
-  rhs(iel) = - divu(iel)
+  rhs(iel) = - divu(iel) - rovsdt(iel)*cvar_pr(iel)
 enddo
 
-! --- Add eps*pressure*volume/dt in the right hand side
-!     to strengthen the diagonal for the low-Mach algo.
-if (idilat.eq.3) then
-  do iel = 1, ncel
-    rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*cvar_pr(iel)
-  enddo
-endif
 
 ! --- Right hand side residual
 call prodsc(ncel,isqrt,rhs,rhs,residu)
@@ -1678,7 +1669,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
-   cvar_pr    ,                                                       &
+   cvar_pr    ,                                                   &
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
@@ -1693,7 +1684,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
-   cvar_pr    ,                                                       &
+   cvar_pr    ,                                                   &
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
@@ -1704,44 +1695,25 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   endif
 
   do iel = 1, ncel
-    rhs(iel) = - divu(iel) - rhs(iel)
+    rhs(iel) = - divu(iel) - rhs(iel) - rovsdt(iel)*cvar_pr(iel)
   enddo
-
-  ! --- Add eps*pressure*volume/dt in the right hand side
-  !     to strengthen the diagonal for the low-Mach algo.
-  if (idilat.eq.3) then
-    do iel = 1, ncel
-      rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*cvar_pr(iel)
-    enddo
-  endif
-
-  ! Add the implicit part of the cavitation source
-  if (icavit.gt.0.and.itscvi.eq.1) then
-    do iel = 1, ncel
-      rhs(iel) = rhs(iel) + volume(iel)*cvar_pr(iel) &
-                *dgdpca(iel)*(1.d0/rov - 1.d0/rol)
-    enddo
-  endif
 
   ! --- Convergence test
   call prodsc(ncel,isqrt,rhs,rhs,residu)
 
   ! Writing
-  if (iwarni(ipr).ge.2) then
-    write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
-  endif
+  nbivar(ipp) = nbivar(ipp) + niterf
 
   ! Writing
-  nbivar(ipp) = nbivar(ipp) + niterf
+  if (iwarni(ipr).ge.2) then
+    write(nfecra,1400) chaine(1:16), isweep, residu, relaxp
+    write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
+  endif
+
   if (abs(rnormp).gt.0.d0) then
     resvar(ipp) = residu/rnormp
   else
     resvar(ipp) = 0.d0
-  endif
-
-  ! Writing
-  if (iwarnp.ge.3) then
-    write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
   endif
 
   isweep = isweep + 1
@@ -1752,7 +1724,7 @@ enddo
 ! Writing
 if(iwarni(ipr).ge.1) then
   if (residu.le.epsrsm(ipr)*rnormp) then
-    write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
+    write(nfecra,1500) chaine(1:16), isweep-1, residu, rnormp, niterf
 
   ! Writing: non-convergence
   else if(isweep.gt.nswmpr) then
