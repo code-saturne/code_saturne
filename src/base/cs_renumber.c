@@ -142,14 +142,14 @@ cs_renumber_i_faces_type_t _i_faces_algorithm = CS_RENUMBER_I_FACES_MULTIPASS;
  * This is the case when the mesh is read in the obsolete 'slc' format.
  *
  * parameters:
- *   n_elts   <--  Number of elements
- *   renum    <--  Pointer to renumbering array (new -> old, 1 to n)
- *   family   <->  Pointer to array of family ids (or NULL)
+ *   n_elts     <--  Number of elements
+ *   new_to_old <--  Pointer to renumbering array
+ *   family     <->  Pointer to array of family ids (or NULL)
  *----------------------------------------------------------------------------*/
 
 static void
 _update_family(cs_lnum_t         n_elts,
-               const cs_lnum_t  *renum,
+               const cs_lnum_t  *new_to_old,
                cs_lnum_t        *family)
 {
   cs_lnum_t ii;
@@ -163,7 +163,7 @@ _update_family(cs_lnum_t         n_elts,
   memcpy(old_family, family, n_elts*sizeof(cs_lnum_t));
 
   for (ii = 0; ii < n_elts; ii++)
-    family[ii] = old_family[renum[ii] - 1];
+    family[ii] = old_family[new_to_old[ii]];
 
   BFT_FREE(old_family);
 }
@@ -173,13 +173,13 @@ _update_family(cs_lnum_t         n_elts,
  *
  * parameters:
  *   n_elts      --> number of elements in array
- *   init_num    --> initial local number of renumbered elements (1 to n)
+ *   new_to_old  --> renumbering array
  *   global_num  <-> global numbering (allocated if initially NULL)
  *----------------------------------------------------------------------------*/
 
 static void
 _update_global_num(size_t             n_elts,
-                   const cs_lnum_t    init_num[],
+                   const cs_lnum_t    new_to_old[],
                    cs_gnum_t        **global_num)
 {
   size_t i;
@@ -190,7 +190,7 @@ _update_global_num(size_t             n_elts,
     BFT_MALLOC(_global_num, n_elts, cs_gnum_t);
 
     for (i = 0; i < n_elts; i++)
-      _global_num[i] = init_num[i];
+      _global_num[i] = new_to_old[i] + 1;
 
     *global_num = _global_num;
   }
@@ -203,7 +203,7 @@ _update_global_num(size_t             n_elts,
     memcpy(tmp_global, _global_num, n_elts*sizeof(cs_gnum_t));
 
     for (i = 0; i < n_elts; i++)
-      _global_num[i] = tmp_global[init_num[i] - 1];
+      _global_num[i] = tmp_global[new_to_old[i]];
 
     BFT_FREE(tmp_global);
   }
@@ -213,13 +213,13 @@ _update_global_num(size_t             n_elts,
  * Apply renumbering of cells.
  *
  * parameters:
- *   mesh            <-> Pointer to global mesh structure
- *   renum           <-- Cells renumbering array (new -> old)
+ *   mesh       <-> Pointer to global mesh structure
+ *   new_to_old <-- Cells renumbering array
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_renumber_update_cells(cs_mesh_t             *mesh,
-                          const cs_lnum_t       *renum)
+_cs_renumber_update_cells(cs_mesh_t        *mesh,
+                          const cs_lnum_t  *new_to_old)
 {
   cs_lnum_t  ii, jj, kk, face_id, n_vis, start_id, start_id_old;
 
@@ -231,7 +231,7 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
   /* If no renumbering is present, return */
 
-  if (renum == NULL)
+  if (new_to_old == NULL)
     return;
 
   /* Allocate Work arrays */
@@ -239,10 +239,10 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
   BFT_MALLOC(face_cells_tmp, face_cells_max_size, cs_lnum_t);
   BFT_MALLOC(new_cell_id, mesh->n_cells_with_ghosts, cs_lnum_t);
 
-  /* Build old -> new renumbering (1 to n) */
+  /* Build old -> new renumbering */
 
   for (ii = 0; ii < n_cells; ii++)
-    new_cell_id[renum[ii] - 1] = ii;
+    new_cell_id[new_to_old[ii]] = ii;
 
   for (ii = n_cells; ii < mesh->n_cells_with_ghosts; ii++)
     new_cell_id[ii] = ii;
@@ -299,7 +299,7 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
     for (ii = 0; ii < n_cells; ii++) {
 
-      jj = renum[ii] - 1;
+      jj = new_to_old[ii];
       n_vis = cell_cells_idx_old[jj+1] - cell_cells_idx_old[jj];
       start_id_old = cell_cells_idx_old[jj] - 1;
 
@@ -319,15 +319,15 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
   /* Update cell families and global numbering */
 
-  _update_family(n_cells, renum, mesh->cell_family);
+  _update_family(n_cells, new_to_old, mesh->cell_family);
 
-  _update_global_num(n_cells, renum, &(mesh->global_cell_num));
+  _update_global_num(n_cells, new_to_old, &(mesh->global_cell_num));
 
   /* Update parent cell numbers for post-processing meshes
      that may already have been built; Post-processing meshes
      built after renumbering will have correct parent numbers */
 
-  cs_post_renum_cells(renum);
+  cs_post_renum_cells(new_to_old);
 }
 
 /*----------------------------------------------------------------------------
@@ -337,16 +337,16 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
  *   n_faces         <-- Number of faces
  *   face_vtx_idx    <-> Face -> vertices index (1 to n)
  *   face_vtx        <-- Face vertices
- *   renum           <-- Faces renumbering array (new -> old)
+ *   new_to_old      <-- Faces renumbering array
  *----------------------------------------------------------------------------*/
 
 static void
 _update_face_vertices(cs_lnum_t         n_faces,
                       cs_lnum_t        *face_vtx_idx,
                       cs_lnum_t        *face_vtx,
-                      const cs_lnum_t  *renum)
+                      const cs_lnum_t  *new_to_old)
 {
-  if (renum != NULL && face_vtx != NULL) {
+  if (new_to_old != NULL && face_vtx != NULL) {
 
     cs_lnum_t ii, jj, kk, n_vtx, start_id, start_id_old;
     cs_lnum_t *face_vtx_idx_old, *face_vtx_old;
@@ -364,7 +364,7 @@ _update_face_vertices(cs_lnum_t         n_faces,
 
     for (ii = 0; ii < n_faces; ii++) {
 
-      jj = renum[ii] - 1;
+      jj = new_to_old[ii];
       n_vtx = face_vtx_idx_old[jj+1] - face_vtx_idx_old[jj];
       start_id_old = face_vtx_idx_old[jj] - 1;
 
@@ -384,15 +384,15 @@ _update_face_vertices(cs_lnum_t         n_faces,
  * Apply renumbering of faces.
  *
  * parameters:
- *   mesh            <-> Pointer to global mesh structure
- *   renum_i         <-- Interior faces renumbering array (new -> old)
- *   renum_b         <-- Boundary faces renumbering array (new -> old)
+ *   mesh          <-> Pointer to global mesh structure
+ *   new_to_old_i  <-- Interior faces renumbering array
+ *   new_to_old_b  <-- Boundary faces renumbering array
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_renumber_update_faces(cs_mesh_t             *mesh,
-                          const cs_lnum_t       *renum_i,
-                          const cs_lnum_t       *renum_b)
+_cs_renumber_update_faces(cs_mesh_t        *mesh,
+                          const cs_lnum_t  *new_to_old_i,
+                          const cs_lnum_t  *new_to_old_b)
 {
   cs_lnum_t  face_id, face_id_old;
 
@@ -401,7 +401,7 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
 
   /* Interior faces */
 
-  if (renum_i != NULL) {
+  if (new_to_old_i != NULL) {
 
     cs_lnum_2_t  *i_face_cells_old = NULL;
 
@@ -414,7 +414,7 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
     memcpy(i_face_cells_old, mesh->i_face_cells, n_i_faces*sizeof(cs_lnum_2_t));
 
     for (face_id = 0; face_id < n_i_faces; face_id++) {
-      face_id_old = renum_i[face_id] - 1;
+      face_id_old = new_to_old_i[face_id];
       mesh->i_face_cells[face_id][0] = i_face_cells_old[face_id_old][0];
       mesh->i_face_cells[face_id][1] = i_face_cells_old[face_id_old][1];
     }
@@ -426,18 +426,18 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
     _update_face_vertices(n_i_faces,
                           mesh->i_face_vtx_idx,
                           mesh->i_face_vtx_lst,
-                          renum_i);
+                          new_to_old_i);
 
     /* Update face families and global numbering */
 
-    _update_family(n_i_faces, renum_i, mesh->i_face_family);
+    _update_family(n_i_faces, new_to_old_i, mesh->i_face_family);
 
-    _update_global_num(n_i_faces, renum_i, &(mesh->global_i_face_num));
+    _update_global_num(n_i_faces, new_to_old_i, &(mesh->global_i_face_num));
   }
 
   /* Boundary faces */
 
-  if (renum_b != NULL) {
+  if (new_to_old_b != NULL) {
 
     cs_lnum_t  *b_face_cells_old = NULL;
 
@@ -450,7 +450,7 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
     memcpy(b_face_cells_old, mesh->b_face_cells, n_b_faces*sizeof(cs_lnum_t));
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
-      face_id_old = renum_b[face_id] - 1;
+      face_id_old = new_to_old_b[face_id];
       mesh->b_face_cells[face_id] = b_face_cells_old[face_id_old];
     }
 
@@ -461,20 +461,20 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
     _update_face_vertices(n_b_faces,
                           mesh->b_face_vtx_idx,
                           mesh->b_face_vtx_lst,
-                          renum_b);
+                          new_to_old_b);
 
     /* Update face families and global numbering */
 
-    _update_family(n_b_faces, renum_b, mesh->b_face_family);
+    _update_family(n_b_faces, new_to_old_b, mesh->b_face_family);
 
-    _update_global_num(n_b_faces, renum_b, &(mesh->global_b_face_num));
+    _update_global_num(n_b_faces, new_to_old_b, &(mesh->global_b_face_num));
   }
 
   /* Update parent face numbers for post-processing meshes
      that may already have been built; Post-processing meshes
      built after renumbering will have correct parent numbers */
 
-  cs_post_renum_faces(renum_i, renum_b);
+  cs_post_renum_faces(new_to_old_i, new_to_old_b);
 }
 
 /*----------------------------------------------------------------------------
@@ -803,7 +803,7 @@ _sort_local(cs_lnum_t  number[],
  * parameters:
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
- *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   face_cell   <-- Face -> cells connectivity
  *
  * returns:
  *   pointer to allocated CSR graph structure.
@@ -931,7 +931,7 @@ _csr_graph_create(cs_lnum_t         n_cells_ext,
  * parameters:
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
- *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   face_cell   <-- Face -> cells connectivity
  *
  * returns:
  *   pointer to allocated CSR graph structure.
@@ -1036,8 +1036,8 @@ _csr_graph_destroy(_csr_graph_t  **graph)
  *   n_faces         <-- number of faces
  *   n_cells_ext     <-- local number of cells + ghost cells sharing a face
  *   n_faces         <-- local number of faces
- *   face_cell       <-- face -> cells connectivity (1 to n)
- *   new_to_old      --> new -> old face renumbering (1-based)
+ *   face_cell       <-- face -> cells connectivity
+ *   new_to_old      --> new -> old face renumbering
  *   n_groups        --> number of groups
  *   group_size      --> array containing the sizes of groups
  *----------------------------------------------------------------------------*/
@@ -1155,7 +1155,7 @@ _independent_face_groups(cs_lnum_t            max_group_size,
   /* Set return values */
 
   for (f_id = 0; f_id < n_faces; f_id++)
-    new_to_old[old_to_new[f_id]] = f_id + 1;
+    new_to_old[old_to_new[f_id]] = f_id;
 
   BFT_FREE(old_to_new);
 
@@ -1592,7 +1592,7 @@ _renum_face_multipass_remaining(cs_lnum_t                   n_f_cells_prev,
  *   mesh           <-> pointer to global mesh structure
  *   n_i_threads    <-- number of threads required for interior faces
  *   group_size     <-- target group size
- *   renum_i        --> interior faces renumbering array (new -> old, 1-based)
+ *   new_to_old_i   --> interior faces renumbering array
  *   n_groups       --> number of groups of graph edges (interior faces)
  *   group_index    --> group/thread index
  *
@@ -1603,7 +1603,7 @@ _renum_face_multipass_remaining(cs_lnum_t                   n_f_cells_prev,
 static int
 _renum_face_multipass(cs_mesh_t    *mesh,
                       int           n_i_threads,
-                      cs_lnum_t     renum_i[],
+                      cs_lnum_t     new_to_old_i[],
                       cs_lnum_t    *n_groups,
                       cs_lnum_t   **group_index)
 {
@@ -1808,7 +1808,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   for (fl_id = 0; fl_id < n_faces; fl_id++) {
 
     f_id = faces_list[fl_id];
-    renum_i[fl_id] = f_id + 1;
+    new_to_old_i[fl_id] = f_id;
 
     assert(f_t_id[f_id] > -1);
 
@@ -1856,7 +1856,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
  *   n_i_threads    <-- number of threads required for interior faces
  *   max_group_size <-- target size for groups
  *   group_size     <-- target group size
- *   renum_i        --> interior faces renumbering array (new -> old, 1-based)
+ *   new_to_old_i   --> interior faces renumbering array
  *   n_i_groups     --> number of groups of interior faces
  *   i_group_index  --> group/thread index
  *
@@ -1868,7 +1868,7 @@ static int
 _renum_i_faces_no_share_cell_in_block(cs_mesh_t    *mesh,
                                       int           n_i_threads,
                                       int           max_group_size,
-                                      cs_lnum_t     renum_i[],
+                                      cs_lnum_t     new_to_old_i[],
                                       cs_lnum_t    *n_i_groups,
                                       cs_lnum_t   **i_group_index)
 {
@@ -1889,7 +1889,7 @@ _renum_i_faces_no_share_cell_in_block(cs_mesh_t    *mesh,
                            mesh->n_cells_with_ghosts,
                            mesh->n_i_faces,
                            (const cs_lnum_2_t *)(mesh->i_face_cells),
-                           renum_i,
+                           new_to_old_i,
                            n_i_groups,
                            &i_group_size);
 
@@ -1920,7 +1920,7 @@ _renum_i_faces_no_share_cell_in_block(cs_mesh_t    *mesh,
  *   mesh            <-> pointer to global mesh structure
  *   n_b_threads     <-- number of threads required for boundary faces
  *   min_subset_size <-- minimum size of subset associated to a thread
- *   renum_b         <-- interior faces renumbering array (new -> old)
+ *   new_to_old_b    <-- interior faces renumbering array
  *   n_b_groups      --> number of groups of boundary faces
  *   b_group_index   --> group/thread index
  *
@@ -1932,7 +1932,7 @@ static int
 _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
                                            int          n_b_threads,
                                            cs_lnum_t    min_subset_size,
-                                           cs_lnum_t    renum_b[],
+                                           cs_lnum_t    new_to_old_b[],
                                            cs_lnum_t   *n_b_groups,
                                            cs_lnum_t  **b_group_index)
 {
@@ -1965,7 +1965,7 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
   /* Build new numbering index */
 
   for (ii = 0; ii < mesh->n_b_faces; ii++)
-    renum_b[ii] = order[ii] + 1;
+    new_to_old_b[ii] = order[ii];
 
   BFT_FREE(order);
 
@@ -1989,13 +1989,13 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
     if (end_id > mesh->n_b_faces)
       end_id = mesh->n_b_faces;
     else if (end_id > 0 && end_id < mesh->n_b_faces) {
-      cs_lnum_t f_id = renum_b[end_id - 1] - 1;
+      cs_lnum_t f_id = new_to_old_b[end_id - 1];
       cs_lnum_t c_id = mesh->b_face_cells[f_id];
-      f_id = renum_b[end_id] - 1;
+      f_id = new_to_old_b[end_id];
       while (mesh->b_face_cells[f_id] == c_id) {
         end_id += 1;
         if (end_id < mesh->n_b_faces)
-          f_id = renum_b[end_id] - 1;
+          f_id = new_to_old_b[end_id];
         else
           break;
       }
@@ -2015,10 +2015,10 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
  * Compute renumbering of interior faces for vectorizing.
  *
  * parameters:
- *   mesh        <-> pointer to global mesh structure
- *   vector_size <-- target size for groups
- *   group_size  <-- target group size
- *   renum_i     --> interior faces renumbering array (new -> old, 1-based)
+ *   mesh         <-> pointer to global mesh structure
+ *   vector_size  <-- target size for groups
+ *   group_size   <-- target group size
+ *   new_to_old_i --> interior faces renumbering array
  *
  * returns:
  *   0 on success, -1 otherwise
@@ -2027,7 +2027,7 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
 static int
 _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
                                int         vector_size,
-                               cs_lnum_t   renum_i[])
+                               cs_lnum_t   new_to_old_i[])
 {
   int retval = -1;
 
@@ -2041,7 +2041,7 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
   /* Initialization */
 
   for (cs_lnum_t face_id = 0; face_id < mesh->n_i_faces; face_id++)
-    renum_i[face_id] = face_id + 1;
+    new_to_old_i[face_id] = face_id;
 
   /* Order interior faces (we choose to place the "remainder" at the end) */
 
@@ -2054,14 +2054,14 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
 
   for (int loop_id = 0; loop_id < 100; loop_id++) {
 
-    int mod_prev = 0; /* indicates if elements were exchanged in array renum_i */
+    int mod_prev = 0; /* indicates if elements were exchanged in array new_to_old_i */
 
     cs_lnum_t iregic = 0; /* Previous register */
 
     cs_lnum_t block_id = 0;  /* Counter to avoid exchanging all elements
-                                of renum_i more than n times */
+                                of new_to_old_i more than n times */
 
-    /* Loop on elements of renum_i */
+    /* Loop on elements of new_to_old_i */
 
     for (cs_lnum_t jj = 0;
          jj < mesh->n_i_faces && block_id > -1;
@@ -2100,7 +2100,7 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
       block_id = 0;
 
       /* Test with all preceding elements since last_id:
-       * swap_id indicates with which element of renum_i we swap
+       * swap_id indicates with which element of new_to_old_i we swap
        * mod_prev indicates we modify an already seen element
        * block_id indicates we have seen all elements and we must mix
        * (there is no solution) */
@@ -2110,12 +2110,12 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
       while (test_all_since_last) {
 
         test_all_since_last = false;
-        cs_lnum_t face_id = renum_i[jj] - 1;
+        cs_lnum_t face_id = new_to_old_i[jj];
 
         for (cs_lnum_t ii = last_id; ii < jj; ii++) {
 
-          cs_lnum_t cn0 = i_face_cells[renum_i[ii]-1][0];
-          cs_lnum_t cn1 = i_face_cells[renum_i[ii]-1][1];
+          cs_lnum_t cn0 = i_face_cells[new_to_old_i[ii]][0];
+          cs_lnum_t cn1 = i_face_cells[new_to_old_i[ii]][1];
           cs_lnum_t cr0 = i_face_cells[face_id][0];
           cs_lnum_t cr1 = i_face_cells[face_id][1];
 
@@ -2133,9 +2133,9 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
               break;
             }
 
-            cs_lnum_t itmp = renum_i[swap_id];
-            renum_i[swap_id] = renum_i[jj];
-            renum_i[jj] = itmp;
+            cs_lnum_t itmp = new_to_old_i[swap_id];
+            new_to_old_ii[swap_id] = new_to_old_ii[jj];
+            new_to_old_ii[jj] = itmp;
 
             test_all_since_last = true;
             break;
@@ -2161,9 +2161,9 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
     if (loop_id < 100 && (((loop_id+1)%10 == 0) || block_id == -1)) {
       for (cs_lnum_t ii = 0; ii < (n_i_faces-4)/2; ii += 2) {
         cs_lnum_t jj = n_i_faces-ii-1;
-        cs_lnum_t itmp = renum_i[ii] - 1;
-        renum_i[ii] = renum_i[jj];
-        renum_i[jj] = itmp;
+        cs_lnum_t itmp = new_to_old_ii[ii];
+        new_to_old_ii[ii] = new_to_old_ii[jj];
+        new_to_old_ii[jj] = itmp;
       }
     }
 
@@ -2177,10 +2177,10 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
 
     cs_lnum_t *order;
     BFT_MALLOC(order, n_i_faces, cs_lnum_t);
-    cs_order_lnum_allocated(NULL, renum_i, order, n_i_faces);
+    cs_order_lnum_allocated(NULL, new_to_old_i, order, n_i_faces);
 
     for (cs_lnum_t ii = 0; ii < n_i_faces; ii++) {
-      if (renum_i[order[ii]] !=  n_i_faces-ii)
+      if (new_to_old_i[order[ii]] !=  n_i_faces-ii-1)
         iok -= 1;
     }
 
@@ -2214,10 +2214,10 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
 
         for (cs_lnum_t ii = last_id; ii < jj; ii++) {
 
-          cs_lnum_t face_id = renum_i[jj] - 1;
+          cs_lnum_t face_id = new_to_old_i[jj];
 
-          cs_lnum_t cn0 = i_face_cells[renum_i[ii]-1][0];
-          cs_lnum_t cn1 = i_face_cells[renum_i[ii]-1][1];
+          cs_lnum_t cn0 = i_face_cells[new_to_old_ii[ii]][0];
+          cs_lnum_t cn1 = i_face_cells[new_to_old_ii[ii]][1];
           cs_lnum_t cr0 = i_face_cells[face_id][0];
           cs_lnum_t cr1 = i_face_cells[face_id][1];
 
@@ -2265,10 +2265,10 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
  * Compute renumbering of boundary faces for vectorizing.
  *
  * parameters:
- *   mesh        <-> pointer to global mesh structure
- *   vector_size <-- target size for groups
- *   group_size  <-- target group size
- *   renum_i     --> interior faces renumbering array (new -> old, 1-based)
+ *   mesh         <-> pointer to global mesh structure
+ *   vector_size  <-- target size for groups
+ *   group_size   <-- target group size
+ *   new_to_old_b --> interior faces renumbering array
  *
  * returns:
  *   0 on success, -1 otherwise
@@ -2277,7 +2277,7 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
 static int
 _renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
                                int         vector_size,
-                               cs_lnum_t   renum_b[])
+                               cs_lnum_t   new_to_old_b[])
 {
   int retval = -1;
 
@@ -2288,7 +2288,7 @@ _renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
   /* Initialization */
 
   for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++)
-    renum_b[face_id] = face_id + 1;
+    new_to_old_b[face_id] = face_id;
 
   /* Order boundary faces */
 
@@ -2355,7 +2355,7 @@ _renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
       ilig = face_id1 / nregib + irelib;
       ii = ireg*vector_size+ilig;
     }
-    renum_b[ii] = order[face_id] + 1;
+    new_to_old_b[ii] = order[face_id];
   }
 
   retval = 0;
@@ -2364,10 +2364,10 @@ _renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
 
   cs_lnum_t iok = 0;
 
-  cs_order_lnum_allocated(NULL, renum_b, order, n_b_faces);
+  cs_order_lnum_allocated(NULL, new_to_old_b, order, n_b_faces);
 
   for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-  if (renum_b[order[ii]] !=  n_b_faces-ii)
+  if (new_to_old_b[order[ii]] !=  n_b_faces-ii-1)
     iok -= 1;
   }
 
@@ -2400,8 +2400,8 @@ _renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
       /* Test with all preceding elements since last_id */
 
       for (cs_lnum_t ii = last_id; ii < jj; ii++) {
-        cs_lnum_t face_id = renum_b[jj] - 1;
-        if (b_face_cells[renum_b[ii]-1] == b_face_cells[face_id])
+        cs_lnum_t face_id = new_to_old_b[jj];
+        if (b_face_cells[new_to_old_b[ii]] == b_face_cells[face_id])
           iok -= 1;
       }
 
@@ -2694,7 +2694,7 @@ _renumber_for_threads(cs_mesh_t  *mesh)
   int  n_i_groups = 1, n_b_groups = 1;
   cs_lnum_t  max_group_size = 1014;       /* Default */
   cs_lnum_t  ii;
-  cs_lnum_t  *renum_c = NULL, *renum_i = NULL, *renum_b = NULL;
+  cs_lnum_t  *new_to_old_c = NULL, *new_to_old_i = NULL, *new_to_old_b = NULL;
   cs_lnum_t  *i_group_index = NULL, *b_group_index = NULL;
 
   int  n_i_threads = _cs_renumber_n_threads;
@@ -2713,21 +2713,21 @@ _renumber_for_threads(cs_mesh_t  *mesh)
 
   /* Allocate Work arrays */
 
-  BFT_MALLOC(renum_c, mesh->n_cells_with_ghosts, cs_lnum_t);
-  BFT_MALLOC(renum_i, mesh->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(renum_b, mesh->n_b_faces, cs_lnum_t);
+  BFT_MALLOC(new_to_old_c, mesh->n_cells_with_ghosts, cs_lnum_t);
+  BFT_MALLOC(new_to_old_i, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(new_to_old_b, mesh->n_b_faces, cs_lnum_t);
 
   /* Initialize renumbering arrays */
 
   {
     for (ii = 0; ii < mesh->n_cells_with_ghosts; ii++)
-      renum_c[ii] = ii+1;
+      new_to_old_c[ii] = ii;
 
     for (ii = 0; ii < mesh->n_i_faces; ii++)
-      renum_i[ii] = ii+1;
+      new_to_old_i[ii] = ii;
 
     for (ii = 0; ii < mesh->n_b_faces; ii++)
-      renum_b[ii] = ii+1;
+      new_to_old_b[ii] = ii;
   }
 
   /* Interior faces renumbering */
@@ -2740,7 +2740,7 @@ _renumber_for_threads(cs_mesh_t  *mesh)
     retval = _renum_i_faces_no_share_cell_in_block(mesh,
                                                    n_i_threads,
                                                    max_group_size,
-                                                   renum_i,
+                                                   new_to_old_i,
                                                    &n_i_groups,
                                                    &i_group_index);
     break;
@@ -2748,7 +2748,7 @@ _renumber_for_threads(cs_mesh_t  *mesh)
   case CS_RENUMBER_I_FACES_MULTIPASS:
     retval = _renum_face_multipass(mesh,
                                  n_i_threads,
-                                 renum_i,
+                                 new_to_old_i,
                                  &n_i_groups,
                                  &i_group_index);
     break;
@@ -2788,7 +2788,7 @@ _renumber_for_threads(cs_mesh_t  *mesh)
   retval = _renum_b_faces_no_share_cell_across_thread(mesh,
                                                       n_b_threads,
                                                       _min_b_subset_size,
-                                                      renum_b,
+                                                      new_to_old_b,
                                                       &n_b_groups,
                                                       &b_group_index);
 
@@ -2820,31 +2820,31 @@ _renumber_for_threads(cs_mesh_t  *mesh)
   /* Free memory */
 
   if (update_c == 0)
-    BFT_FREE(renum_c);
+    BFT_FREE(new_to_old_c);
 
   if (update_fi == 0)
-    BFT_FREE(renum_i);
+    BFT_FREE(new_to_old_i);
 
   if (update_fb == 0)
-    BFT_FREE(renum_b);
+    BFT_FREE(new_to_old_b);
 
   /* Now update mesh connectivity */
   /*------------------------------*/
 
-  if (renum_i != NULL || renum_b != NULL)
+  if (new_to_old_i != NULL || new_to_old_b != NULL)
     _cs_renumber_update_faces(mesh,
-                              renum_i,
-                              renum_b);
+                              new_to_old_i,
+                              new_to_old_b);
 
-  if (renum_c != NULL)
+  if (new_to_old_c != NULL)
     _cs_renumber_update_cells(mesh,
-                              renum_c);
+                              new_to_old_c);
 
   /* Now free remaining arrays */
 
-  BFT_FREE(renum_i);
-  BFT_FREE(renum_b);
-  BFT_FREE(renum_c);
+  BFT_FREE(new_to_old_i);
+  BFT_FREE(new_to_old_b);
+  BFT_FREE(new_to_old_c);
 
 }
 
@@ -2871,7 +2871,7 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
 {
   int _ivect[2] = {0, 0};
   cs_lnum_t   ivecti = 0, ivectb = 0;
-  cs_lnum_t  *renum_i = NULL, *renum_b = NULL;
+  cs_lnum_t  *new_to_old_i = NULL, *new_to_old_b = NULL;
 
 #if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
 
@@ -2902,41 +2902,41 @@ _renumber_for_vectorizing(cs_mesh_t  *mesh)
 
   /* Allocate Work arrays */
 
-  BFT_MALLOC(renum_i, mesh->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(renum_b, mesh->n_b_faces, cs_lnum_t);
+  BFT_MALLOC(new_to_old_i, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(new_to_old_b, mesh->n_b_faces, cs_lnum_t);
 
   /* Try renumbering */
 
   ivecti = _renum_i_faces_for_vectorizing(mesh,
                                           vector_size,
-                                          renum_i);
+                                          new_to_old_i);
 
   ivectb = _renum_b_faces_for_vectorizing(mesh,
                                           vector_size,
-                                          renum_b);
+                                          new_to_old_b);
 
   /* Update mesh */
 
   if (ivecti > 0 || ivectb > 0) {
 
-    cs_lnum_t   *_renum_i = NULL;
-    cs_lnum_t   *_renum_b = NULL;
+    cs_lnum_t   *_new_to_old_i = NULL;
+    cs_lnum_t   *_new_to_old_b = NULL;
 
     if (ivecti > 0)
-      _renum_i = renum_i;
+      _new_to_old_i = new_to_old_i;
     if (ivectb > 0)
-      _renum_b = renum_b;
+      _new_to_old_b = new_to_old_b;
 
     _cs_renumber_update_faces(mesh,
-                              _renum_i,
-                              _renum_b);
+                              _new_to_old_i,
+                              _new_to_old_b);
 
   }
 
   /* Free final work arrays */
 
-  BFT_FREE(renum_b);
-  BFT_FREE(renum_i);
+  BFT_FREE(new_to_old_b);
+  BFT_FREE(new_to_old_i);
 
   /* Update mesh */
 
