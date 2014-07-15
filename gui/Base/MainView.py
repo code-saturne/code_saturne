@@ -459,10 +459,9 @@ class MainView(object):
         log.debug("loadInitialFile -> %s" % self.cmd_case)
 
         # 1) new case
-
         if self.cmd_case == "new case":
             MainView.NextId += 1
-            self.caseNew()
+            self.fileNew()
             self.dockWidgetBrowserDisplay(True)
 
         # 2) existing case
