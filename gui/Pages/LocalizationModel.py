@@ -73,7 +73,7 @@ class Zone(object):
         """
         """
         self.case = case
-        self._initNatureList()
+        self._initNatureList(self.case)
 
         if label:
             self._label = label
@@ -97,9 +97,10 @@ class Zone(object):
             self._nature = self.defaultValues()['nature']
 
 
-    def _initNatureList(self):
+    def _initNatureList(self, case):
         self._natureList = []
         self._natureDict = {}
+        self.case = case
 
 
     def setLabel(self, text):
@@ -166,14 +167,15 @@ class BoundaryZone(Zone):
         return object.__new__(cls)
 
 
-    def _initNatureList(self):
-        self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
+    def _initNatureList(self, case):
+        self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
 
         self._natureDict = {}
         self._natureDict['wall']     = self.tr("Wall")
         self._natureDict['inlet']    = self.tr("Inlet")
         self._natureDict['outlet']   = self.tr("Outlet")
         self._natureDict['symmetry'] = self.tr("Symmetry")
+        self.case = case
 
 
     def defaultValues(self):
@@ -202,8 +204,9 @@ class VolumicZone(Zone):
         return object.__new__(cls)
 
 
-    def _initNatureList(self):
+    def _initNatureList(self, case):
         self._natureList = ['initialization']
+        self.case = case
 
         if self.case['package'].name == 'code_saturne':
             self._natureList.append('head_losses')

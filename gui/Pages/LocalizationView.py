@@ -769,7 +769,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
             log.debug("slotAddFromSalome: selection criteria -> %s" % loc)
             if loc not in self.mdl.getLocalizationsZonesList():
-                zone = Zone(self.zoneType, localization = loc)
+                zone = Zone(self.zoneType, localization = loc, case = self.case)
                 self.mdl.addZone(zone)
                 self.modelLocalization.addItem(zone)
 
