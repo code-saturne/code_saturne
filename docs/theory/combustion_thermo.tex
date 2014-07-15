@@ -20,25 +20,25 @@
 
 %-------------------------------------------------------------------------------
 %===============================================
-\programme{Thermodynamics}
+\section{Thermodynamics}
 %===============================================
 
 
 %===============================================
-\section*{Function}
+\subsection{Introductrion}
 %===============================================
  
 The description of the thermodynamical of gaseous mixture is as close as
 possible to the JANAF standard. The gases mixture is, often, considered as
-composed of some {\textit{global} species (eg. oxidizer, products, fuel) each of
+composed of some {\textit{global} species (\emph{e.g.} oxidizer, products, fuel) each of
 them beeing a mixture (with known ratio) of \textit{elementary} species
-(oxygen, nitrogen, carbon dioxide, ...).\\
+(oxygen, nitrogen, carbon dioxide, ...).
 
 A tabulation of the enthalpy of both elementary and global species for some
 temperatures is constructed (using JANAF polynoms) or read (if the user found
-useful to define a global specie not simply related to elementary ones ;
-eg. unspecified hydrocarbon known by C, H, O, N, S analysis and heating
-value). The thermodynamic properties of condensed phase are more simple :
+useful to define a global specie not simply related to elementary ones;
+\emph{e.g.} unspecified hydrocarbon known by C, H, O, N, S analysis and heating
+value). The thermodynamic properties of condensed phase are more simple:
 formation enthalpy is computed using properties of gaseous products of
 combustion with air (formation enthalpy of which is zero valued as O2 and N2
 are reference state) and the lower heating value. The heat capacity of
@@ -47,24 +47,24 @@ the corresponding data file dp\_FCP or dp\_FUE).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 %===============================================
-\section*{Gases enthalpy discretisation}
+\subsection{Gases enthalpy discretisation}
 %===============================================
  
 A table of gases (both elementary species and global ones) enthalpy for some
 temperatures (the user choses number of points, temperature in dp\_*** file) is
-computed (enthalpy of elementary species is computed using JANAF polynomia ;
+computed (enthalpy of elementary species is computed using JANAF polynomia;
 enthalpy for global species are computed by weighting of elementary ones) or red
 (subroutine \fort{pptbht}). Then the entahlpy is supposed to be linear
 vs. temperature in each temperature gap (i.e. continuous piece wise linear on
 the whole temperature range). As a consequence, temperature is a linear function
-of enthalpy ; and a simple algorithm (subroutine \fort{cothht}) allows to
+of enthalpy; and a simple algorithm (subroutine \fort{cothht}) allows to
 determine the enthalpy of a mixture of gases (for inlet conditions it is more
 useful to indicate temperature and mass fractions) or to determine temperature
 from enthalpy of the mixture and mass fractions of global species (common use in
 every fluid particle, at every time step).
  
 %===============================================
-\section*{Particles enthalpy discretisation}
+\subsection{Particles enthalpy discretisation}
 %===============================================
  
 Enthalpy of condensed material is rarely known. Usually, only the low heating
@@ -74,8 +74,8 @@ enthalpy of coal or heavy oil can be computed. Assuming the thermal capacity is
 constant for every condensed material a table can be build with ... two (more is
 useless) temperatures, allowing the use of the same simple algorithm for
 temperature-enthalpy conversion. When intermediate gazeous species (volatile or
-vapour) are thermodynamically known, simple assumptions (eg. : char is
-thermodynamically equivalent to pure carbon in reference state ; ashes are
+vapour) are thermodynamically known, simple assumptions (\emph{e.g.}: char is
+thermodynamically equivalent to pure carbon in reference state; ashes are
 inert) allow to deduce enthalpy for heterogeneous reactions (these energies have
 not to be explicitely taken in account for the energy balance of particles).
 

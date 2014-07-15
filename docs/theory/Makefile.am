@@ -42,9 +42,10 @@ clptrg.tex \
 clptur.tex \
 clsyvt.tex \
 codits.tex \
-combbase.tex \
-combgaz.tex \
-combglb.tex \
+combustion_coal.tex \
+combustion_gas.tex \
+combustion_intro.tex \
+combustion_thermo.tex \
 comprs.tex \
 condli.tex \
 covofi.tex \
@@ -63,7 +64,6 @@ operat.tex \
 predvv.tex \
 resopv.tex \
 spadis.tex \
-thermo.tex \
 timstp.tex \
 turbul.tex \
 summary.tex \

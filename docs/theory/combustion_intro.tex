@@ -21,44 +21,43 @@
 %-------------------------------------------------------------------------------
 
 %===============================================
-\programme{ Introduction}\label{ap:combbase}
+\section{Introduction}\label{sec:combbase}
 %===============================================
 
 %===============================================
-\section*{Use \& call}
+\subsection{Use \& call}
 %===============================================
 
 
 From a CFD point of view, combustion is a (sometimes very) complicated way to
-determine $\rho$, the density.\\
+determine $\rho$, the density.
+
 Depending on the presence of a match or not, two solutions exist, known as
 ignited and extinguished. From a numerical point of view, it means that these
-two solutions have two attraction basin; the more representative the model, the
-more difficult the stabilisation of the combustion ( may be difficult to
-ignite). \\
+two solutions have two attraction basin; the more representative the model, the more difficult the stabilisation of the combustion (may be difficult to
+ignite). 
 
 However, combustion models needs few extra fields of scalar with regular
-transport equations, some of them with a reactive or interfacial source term. \\
+transport equations, some of them with a reactive or interfacial source term.
 
-This 2011 version of \CS focuses on stationnary industrial combustion processes
-;
-propagating fires are out of the present range (but  in the short coming release). \\
+This version of \CS focuses on stationnary industrial combustion processes;
+propagating fires are out of the present range (but  in the short coming release). 
 
 In \CS~ modelling of combustion is able to deal with gas phase combustion
 (diffusion, premix, partial premix), and with solid or liquid finely dispersed
-fuels (fixed and fluidised beds are out of range).\\
-Combustion of condensed fuels involves one-way interfacial flux due to phenomena
-in the condensed phase (evaporation or pyrolisis) and reciprocal ones
-(heterogeneous combustion and gasification). Many of the species injected in the
-gas phase are afterwards involved in
-gas phase combustion.\\
+fuels (fixed and fluidised beds are out of range).
+
+Combustion of condensed fuels involves one-way interfacial flux due to phenomena in the condensed phase (evaporation or pyrolisis) and reciprocal ones
+(heterogeneous combustion and gasification). Many of the species injected in the gas phase are afterwards involved in
+gas phase combustion.
+
 That is the reason why many modules are similar for gas, coal and fuel oil
 combustion modelling. Obviously, the thermodynamical description of gas
-species is similar in every version as close as possible to the JANAF rules.\\
-All models are developed in both adiabatic and unadiabatic (permeatic : heat
-loss, e.g. by radiation) version, beyond the standard (\fort{-1, 0, 1}), the
-rule to call models in \fort{usppmo} is:
+species is similar in every version as close as possible to the JANAF rules.
 
+All models are developed in both adiabatic and unadiabatic (permeatic : heat
+loss, \emph{e.g.} by radiation) version, beyond the standard (\fort{-1, 0, 1}), the rule to call models in \fort{usppmo} is:
+%FIXME
 \begin{eqnarray}
 \fort{ippmod(index ; model)}  &=&     -1   ~~\quad \text{unused}                     \nonumber \\
 \fort{ippmod(index ; model)}  &=& ~~   0  ~~~\quad \text{simplest adiabatic version} \nonumber \\
@@ -72,18 +71,19 @@ rule to call models in \fort{usppmo} is:
 Every permeatic version involves the transport of enthalpy (one more variable).
 
 %===============================================
-\section*{Gas combustion modelling}
+\subsection{Gas combustion modelling}
 %===============================================
 
 Gas combustion is limited by disponibility (in the same fluid particle) of both
 fuel and oxidizer and by kinetic effects (a lot of chemical reactions involved
-can be described using an Arrhenius law with high activation energy). The mixing
-of mass (atoms) incoming with fuel and oxydizer is described by a mixture
+can be described using an Arrhenius law with high activation energy). The mixing of mass (atoms) incoming with fuel and oxydizer is described by a mixture
 fraction (mass fraction of matter incoming with fuel), this
-variable is not affected by combustion.\\
+variable is not affected by combustion.
+
 A progress variable is used to describe the transformation of the mixture from
 fuel and oxydant to products (carbon dioxyde and so on).
-Combustion of gas is, traditionnaly, splitted in premix and diffusion regimes.\\
+Combustion of gas is, traditionnaly, splitted in premix and diffusion regimes.
+
 In premixed combustion process a first stage of mixing has been realised
 (without blast ...) and the mixture is introduced in the boiler (or combustor
 can). In common industrial conditions the combustion is mainly limited by the
@@ -93,47 +93,51 @@ of chemistry much faster than mixing (characteristic time for chemistry much
 smaller than characteristic time for turbulent mixing) induces an intermittent
 regime. The gas flow is constituted of totally fresh and totally burnt gases
 (the flamme containing the gases during their transformation is extremely
-thin). With this previous assumptions, Spalding \cite{1} established the "Eddy
+thin). With this previous assumptions, Spalding \cite{Spalding:1971a} established the "Eddy
 Break Up" model, which allows a complete description of the combustion process
 with only one progress variable (mixture fraction is both constant
-- in time - and homogeneous - in space).\\
+- in time - and homogeneous - in space).
+
 In diffusion flames the fuel and the oxydant are introduced by, at least, two
 inlets. In ordinary industrial conditions, their mixing is the main limitation
 and the mixture fraction is enough to qualify a fluid particle, but in turbulent
 flows a {\em P}robability {\em D}ensity {\em F}unction of the mixture fraction
 is needed to qualify the thermodynamical state of the bulk. So, at least, both
 the mean and the variance of the mixture fraction are needed (two variables) to
-fit parameters of the pdf (the shape of whose is presumed).\\
+fit parameters of the pdf (the shape of whose is presumed).
+
 Real world's chemistry is not so fast and, unfortunately, the mixing can not be
 as homogeneous as wished. The main part of industrial combustion occurs in
 partial premix regime. Partial premix occurs if mixing is not finished ( at
 molecular level) when the mixture is introduced, or if air or fuel, are
 staggered, or if a diffusion flame is blown off. For these situations, and
-specifically for lean premix gas turbines \cite{2} developed a model allowing a
+specifically for lean premix gas turbines \cite{Libby:2000a} developed a model allowing a
 description of both mixing and chemical limitations. A collaboration between the
-LCD Poitiers \cite{3} and EDF R\&D has produced a simpler version of their
+LCD Poitiers \cite{Ribert:2004a} and EDF R\&D has produced a simpler version of their
 algorithm. Not only the mean and the variance of both mixture fraction and
 progress variable are needed but also their covariance (five variables).
  
 
 %===============================================
-\section*{Two-phase combustion modelling}
+\subsection{Two-phase combustion modelling}
 %===============================================
-
 
 Coal combustion is the main way to produce electricity in the world. Heavy fuel
 oil combustion have been hugely used to produce electrical energy.
-Biomass is a promising fuel to be used alone or in blend.\\
+Biomass is a promising fuel to be used alone or in blend.
+
 Advanced combustion process may include exhaust gases recycling, pure oxygen or
-steam injection, so the 2011 release of \CS ~takes in account
-three oxidizers (tracked by three mixture fractions).\\
+steam injection, so this release of \CS ~takes into account
+three oxidizers (tracked by three mixture fractions).
+
 Coal is a natural product with a very complex composition. During the industrial
 process of milling, the raw coal is broken in tiny particles of different
 sizes. After its introduction in the boiler, coal particles undergoes drying,
 devolatilisation (heating of coal turn it in a mixture of char and gases),
 heterogenous combustion (of char by oxygen in carbon monoxide), gasification (of
 char by carbon
-dioxide or by water steam in carbon monoxide), leaving ash particles.\\
+dioxide or by water steam in carbon monoxide), leaving ash particles.
+
 The description of fuel evaporation is done with respect to its heaviness :
 after a minimum temperature is reached, the gain of enthalpy is splitted between
 heating and evaporation. This way the evaporation takes place on a range of
@@ -141,7 +145,8 @@ temperature (which can be large). The total evaporation is common for light
 (domestic) oil but impossible for heavy ones : at high temperature, during the
 last evaporation, a craking reaction appears : so a particle similar to the char
 is leaved. The heterogeneous oxydation of this char particle is very similar to
-coal char ones.\\
+coal char ones.
+
 Each of these phenomena are taken into account for some classes of particles : a
 solid class is caracterised by a coal (it is useful to burn mixture of coals
 with differents ranks or mixture of coal with biomass ...) and an initial
@@ -150,21 +155,25 @@ possibility of blending after injection nor cofiring with oil and coal). \CS~
 computes the number, the mass and the enthalpy for each class of particles by
 unit of mass of mixture; allowing the determination of local diameter and
 temperature (for each class;
-e.g. the finest will be be heated the fastest).\\
-The main assumption is to solve only one velocity (and pressure) field : it
+\emph{e.g.} the finest will be be heated the fastest).
+
+The main assumption is to solve only one velocity (and pressure) field: it
 means that the discrepancy of velocity between coal particles and
-gases is assumed to be negligible.\\
+gases is assumed to be negligible.
+
 Due to the radiation, evaporation and heterogeneous combustion, temperature can
 be different for gas and different size particles : so the specific enthalpy of
-each particle class is solved.\\
-The description of coal pyrolysis proposed by \cite{4} is used, leading to two
+each particle class is solved.
+
+The description of coal pyrolysis proposed by \cite{Kobayashi:1976} is used, leading to two
 source terms for light and heavy volatile matters (the moderate temperature
 reaction produces gases with low molecular mass, the high temperature reaction
 produces heavier gases and less char) represented by two passive scalars :
 mixture fractions.  The description of the heterogeneous reaction (which produce
-carbon monoxide) produces a source term for the carbon : the corresponding
+carbon monoxide) produces a source term for the carbon: the corresponding
 mixture fraction is bounded far below one (the carbon can't be free, it is
-always in carbon monoxide form, mixed with nitrogen or other).\\
+always in carbon monoxide form, mixed with nitrogen or other).
+
 The retained model for the gas phase combustion is the assumption of diffusion
 flammelets surrounding particle (for a single paticvle or a cloud), this
 diffusion flame establish itself between a mixing of the previous gaseous fuels
@@ -182,32 +191,4 @@ risks) kineticaly ruled with respect to the mean mass fraction and temperature
 pollutant formation (conversion of $H_{2}S$ to $SO_{2}$ involved in soot
 agglomeration, NOx formation).
 
-%================================================
-\section*{Bibliography}
-%================================================
-
-\begin{thebibliography}{4}
-
-
-\bibitem{1}%Spalding_1971a
-{\sc Spalding, D.B., {\em et al.}},\\
-{\em Mixing and chemical reaction in steady confined turbulent turbulent flames},\\
-13th Int.Symp. on Combustion , pp. 649-657, (1971).
-
-\bibitem{2}%Libby_2000a
-{\sc Libby, P.A. and Williams, F.A.},\\
-{\em A presumed PDF analysis of lean partially premixed turbulent combustion},\\
-Combust. Sci. Technol., 161, pp. 351-390, (2000)
-
-\bibitem{3}%Ribert_2004a
-{\sc Ribert, G.; Champion, M. and Plion, P.},\\
-{\em Modeling turbulent reactive flows with variable equivalence ratio: application to the calculation of a reactive shear layer},\\
-Combust. Sci. Technol., 176, pp. 907-923, (2004)
-
-\bibitem{4}%Kobayashi_1976
-{\sc Kobayashi, H. {\em et al.}},\\
-16th Int.Symp. on Combustion , pp. 425-441, (1976).
-
-\end{thebibliography}
 \newpage
-
