@@ -91,6 +91,7 @@ libsaturne_la_LIBADD = \
 $(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/base/libcsbase.la \
 $(top_builddir)/src/base/libcscore.la \
+$(top_builddir)/src/base/libcsrenumber.la \
 $(top_builddir)/src/pprt/libcspprt.la \
 $(top_builddir)/src/alge/libcsalge.la \
 $(top_builddir)/src/mesh/libcsmesh.la \

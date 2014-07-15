@@ -126,6 +126,7 @@ typedef struct {
   cs_interface_set_t  *vtx_interfaces;   /* Vertices interface set */
   cs_halo_t           *halo;             /* Ghost cells structure */
 
+  cs_numbering_t  *cell_numbering;   /* Cell numbering info */
   cs_numbering_t  *i_face_numbering; /* Interior face numbering info */
   cs_numbering_t  *b_face_numbering; /* Boundary face numbering info */
 
@@ -651,6 +652,19 @@ cs_mesh_sync_var_sym_tens(cs_real_t  *var);
 
 void
 cs_mesh_clean_families(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Create group classes based on a mesh's family definitions.
+ *
+ * parameters:
+ *   mesh <-- pointer to mesh structure
+ *
+ * returns:
+ *   pointer to group classes structure based on mesh's family definitions
+ *----------------------------------------------------------------------------*/
+
+fvm_group_class_set_t *
+cs_mesh_create_group_classes(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Define group classes for a mesh based on its family definitions.

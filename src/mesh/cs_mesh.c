@@ -2177,6 +2177,7 @@ cs_mesh_create(void)
 
   /* Numbering info */
 
+  mesh->cell_numbering = NULL;
   mesh->i_face_numbering = NULL;
   mesh->b_face_numbering = NULL;
 
@@ -2298,6 +2299,8 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 
   /* Free numbering info */
 
+  if (mesh->cell_numbering != NULL)
+    cs_numbering_destroy(&(mesh->cell_numbering));
   if (mesh->i_face_numbering != NULL)
     cs_numbering_destroy(&(mesh->i_face_numbering));
   if (mesh->b_face_numbering != NULL)
@@ -3019,24 +3022,24 @@ cs_mesh_clean_families(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Define group classes for a mesh based on its family definitions.
+ * Create group classes based on a mesh's family definitions.
  *
  * parameters:
- *   mesh <-> pointer to mesh structure
+ *   mesh <-- pointer to mesh structure
+ *
+ * returns:
+ *   pointer to group classes structure based on mesh's family definitions
  *----------------------------------------------------------------------------*/
 
-void
-cs_mesh_init_group_classes(cs_mesh_t  *mesh)
+fvm_group_class_set_t *
+cs_mesh_create_group_classes(cs_mesh_t  *mesh)
 {
   int  i, j;
   int  grp_nbr, grp_num, grp_idx;
 
   char **group = NULL;
 
-  if (mesh->class_defs != NULL)
-    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
-
-  mesh->class_defs = fvm_group_class_set_create();
+  fvm_group_class_set_t *class_defs = fvm_group_class_set_create();
 
   /* Construction of the fvm_group_class structure */
 
@@ -3057,13 +3060,36 @@ cs_mesh_init_group_classes(cs_mesh_t  *mesh)
 
     }
 
-    fvm_group_class_set_add(mesh->class_defs,
+    fvm_group_class_set_add(class_defs,
                             grp_nbr,
                             (const char **)group);
 
   } /* End of loop on families */
 
   BFT_FREE(group);
+
+  return class_defs;
+}
+
+/*----------------------------------------------------------------------------
+ * Define group classes for a mesh based on its family definitions.
+ *
+ * parameters:
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_group_classes(cs_mesh_t  *mesh)
+{
+  int  i, j;
+  int  grp_nbr, grp_num, grp_idx;
+
+  char **group = NULL;
+
+  if (mesh->class_defs != NULL)
+    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+
+  mesh->class_defs = cs_mesh_create_group_classes(mesh);
 }
 
 /*----------------------------------------------------------------------------
@@ -3884,6 +3910,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   /* Dump numbering info */
 
+  cs_numbering_dump(mesh->cell_numbering);
   cs_numbering_dump(mesh->i_face_numbering);
   cs_numbering_dump(mesh->b_face_numbering);
 

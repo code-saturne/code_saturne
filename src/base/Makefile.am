@@ -134,7 +134,7 @@ cs_wall_functions.h
 # Library source files
 
 noinst_LTLIBRARIES = libcscorep.la libcscore.la \
-                     libcsbase.la
+                     libcsbase.la libcsrenumber.la
 
 # Core library.
 # We use a helper library containing only cs_base.c, so as to pass
@@ -232,7 +232,6 @@ cs_post.c \
 cs_post_default.c \
 cs_preprocess.c \
 cs_preprocessor_data.c \
-cs_renumber.c \
 cs_resource.c \
 cs_restart.c \
 cs_restart_default.c \
@@ -314,6 +313,13 @@ verlon.f90 \
 vert1d.f90 \
 visecv.f90 \
 zufall.f90
+
+# Renumbering (may require extra headers)
+
+libcsrenumber_la_CPPFLAGS = $(AM_CPPFLAGS) \
+$(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
+libcsrenumber_la_SOURCES = cs_renumber.c
+libcsrenumber_la_LDFLAGS = -no-undefined
 
 # Conditionally compiled extensions
 lib_LTLIBRARIES =

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-04-18 13:57+0200\n"
+"POT-Creation-Date: 2014-07-15 18:16+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2935,6 +2935,10 @@ msgstr ""
 "Optimisation des matrices symétriques\n"
 "=====================================\n"
 
+msgid ""
+"Backward differentiation in time for scalar variablesis not available yet."
+msgstr ""
+
 #, c-format
 msgid " %s: Convection in centered blending with %f percent of upwind\n"
 msgstr " %s : Convection en blending centré avec %f pourcent d'upwind\n"
@@ -3132,21 +3136,6 @@ msgid ""
 "does not handle case with excluded diagonal."
 msgstr ""
 
-msgid "scalar"
-msgstr ""
-
-msgid "scalar symmetric"
-msgstr "scalaires symmétriques"
-
-msgid "block diagonal"
-msgstr "à diagonale bloc"
-
-msgid "block diagonal symmetric"
-msgstr "symmétriques à diagonale bloc"
-
-msgid "block"
-msgstr "par blocs"
-
 msgid "y <- A.x"
 msgstr ""
 
@@ -3211,6 +3200,9 @@ msgstr ""
 msgid "Native, OpenMP"
 msgstr ""
 
+msgid "Native, OpenMP atomic"
+msgstr ""
+
 msgid "Native, vectorized"
 msgstr ""
 
@@ -3265,6 +3257,21 @@ msgstr ""
 "\n"
 "Réglage pour des matrices de type : %s\n"
 "===================================\n"
+
+msgid "scalar"
+msgstr ""
+
+msgid "scalar symmetric"
+msgstr "scalaires symmétriques"
+
+msgid "block diagonal"
+msgstr "à diagonale bloc"
+
+msgid "block diagonal symmetric"
+msgstr "symmétriques à diagonale bloc"
+
+msgid "block"
+msgstr "par blocs"
 
 #, c-format
 msgid " matrix %s coefficients assign"
@@ -4591,6 +4598,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Field \"%s\" with type flag %d\n"
+"has no value associated with key %d (\"%s\")."
+msgstr ""
+"Le champ \"%s\" avec indicateur de type %d\n"
+"n'a pas de valeur associée avec la clé %d (\"%s\")."
+
+#, c-format
+msgid "Field keyword with id %d is not defined."
+msgstr "Le mot clé de champs avec id %d n'est pas défini."
+
+#, c-format
+msgid ""
 "Error retrieving name from Field %d (\"%s\"):\n"
 "Fortran caller name length (%d) is too small for name \"%s\"\n"
 "(of length %d)."
@@ -4668,18 +4687,6 @@ msgstr "Le champ \"%s\" n'est pas défini."
 #, c-format
 msgid "Field \"%s\" does not have a component \"%s\"."
 msgstr "Le champ \"%s\" n'a pas de composante \"%s\"."
-
-#, c-format
-msgid ""
-"Field \"%s\" with type flag %d\n"
-"has no value associated with key %d (\"%s\")."
-msgstr ""
-"Le champ \"%s\" avec indicateur de type %d\n"
-"n'a pas de valeur associée avec la clé %d (\"%s\")."
-
-#, c-format
-msgid "Field keyword with id %d is not defined."
-msgstr "Le mot clé de champs avec id %d n'est pas défini."
 
 #, c-format
 msgid ""
@@ -5521,6 +5528,30 @@ msgid "      %-19s  %-12.3g\n"
 msgstr ""
 
 #, c-format
+msgid ""
+"Only user variables of dimension 1 are currently handled,\n"
+"but %s is defined with dimension %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error defining user variable \"%s\";\n"
+"this name is already reserved for field with id %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error defining user variance \"%s\";\n"
+"which refers to yet undefined variable \"%s\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error defining user property \"%s\";\n"
+"this name is already reserved for field with id %d."
+msgstr ""
+
+#, c-format
 msgid "Error unloading library: %s."
 msgstr "Erreur au déchargement de la bibliothèque : %s."
 
@@ -5694,13 +5725,6 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-msgid ""
-"\n"
-" Renumbering mesh:\n"
-msgstr ""
-"\n"
-" Renumérotation du maillage:\n"
-
 msgid "Mesh"
 msgstr "Maillage"
 
@@ -5776,6 +5800,39 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue."
 
+msgid "sub-partitioning with LibScotch"
+msgstr "sous-partitionnement avec LibScotch"
+
+msgid "fill-reducing ordering with LibScotch"
+msgstr "renumérotation de matrice creuse avec LibScotch"
+
+msgid "sub-partitioning with METIS"
+msgstr "sous-partitionnement avec Metis"
+
+msgid "fill-reducing ordering with METIS"
+msgstr "renumérotation de matrice creuse avec METIS"
+
+msgid "Morton curve in local bounding box"
+msgstr "courbe de Morton dans boîte englobante locale"
+
+msgid "Hilbert curve in local bounding box"
+msgstr "courbe de Hilbert dans boîte englobante locale"
+
+msgid "none"
+msgstr "aucun"
+
+msgid "coloring, no shared cell in block"
+msgstr "coloriage, pas de cellule partagée dans un bloc"
+
+msgid "multipass"
+msgstr "multipasse"
+
+msgid "vectorizing"
+msgstr "vectorisation"
+
+msgid "no shared cell across threads"
+msgstr "pas de cellule partagée entre fils"
+
 msgid "    no value\n"
 msgstr "    aucune valeur\n"
 
@@ -5805,6 +5862,42 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Faces renumbering for vectorization:\n"
+"====================================\n"
+"\n"
+"%llu errors in interior face renumbering array.\n"
+"\n"
+"Faces are not renumbered, and vectorization of face loops\n"
+"will not be forced.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Vectorization for interior faces to cells gathers on %d/%d ranks\n"
+msgstr ""
+"\n"
+" Vectorization des assemblages faces vers cellules sur %d/%d rangs\n"
+
+#, c-format
+msgid ""
+"Faces renumbering for vectorization:\n"
+"====================================\n"
+"\n"
+"%llu errors in boundary face renumbering array.\n"
+"\n"
+"Faces are not renumbered, and vectorization of face loops\n"
+"will not be forced.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Vectorization for boundary faces to cells gathers on %d/%d ranks\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "\n"
 " Histogram of %s matrix bandwidth per rank:\n"
 "\n"
@@ -5831,7 +5924,7 @@ msgid ""
 msgstr ""
 "\n"
 " Largeur de bande de la matrice pour %s :        %llu\n"
-" Profil/lignes de la matrice pour les %s :       %llu\n"
+" Profil/lignes de la matrice pour le %s :        %llu\n"
 
 #, c-format
 msgid ""
@@ -5875,37 +5968,95 @@ msgstr ""
 " Nombre de groupes de threads pour les %s :      %d\n"
 " Déséquilibre de threads estimé pour les %s :    %10.5e\n"
 
+#, c-format
+msgid ""
+"\n"
+" Sub-partitioning cells to %d domains per rank\n"
+"   (METIS_PartGraphRecursive).\n"
+msgstr ""
+"\n"
+" Sous-partitionnement des cellules vers %d domaines par rang\n"
+"   (METIS_PartGraphRecursive).\n"
+
+#, c-format
+msgid ""
+"\n"
+" Sub-partitioning cells to %d domains per rank\n"
+"  (METIS_PartGraphKway).\n"
+msgstr ""
+"\n"
+" Sous-partitionnement des cellules vers %d domaines par rang\n"
+"   (METIS_PartGraphKway).\n"
+
+msgid ""
+"\n"
+" Ordering cells for fill reduction (METIS_NodeND).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Sub-partitioning cells to %d domains per rank\n"
+"   (SCOTCH_graphPartFixed).\n"
+msgstr ""
+"\n"
+" Sous-partitionnement des cellules vers %d domaines par rang\n"
+"   (SCOTCH_graphPartFixed).\n"
+
+msgid ""
+"\n"
+" Ordering cells for fill reduction (SCOTCH_graphOrderComputeList).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Cell prenumbering of type: %s\n"
+"   not supported in this build.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Cell prenumbering (%s) failed.\n"
+msgstr ""
+"\n"
+" Échec de la pré-numérotation des cellules (%s).\n"
+
+#, c-format
+msgid ""
+"\n"
+" Cell renumbering (%s) failed.\n"
+msgstr ""
+"\n"
+" Échec de la renumérotation des cellules (%s).\n"
+
 msgid "interior faces"
 msgstr "faces intérieures"
 
 msgid "boundary faces"
 msgstr "faces de bord"
 
-#, c-format
 msgid ""
 "\n"
-" Vectorization:\n"
-" --------------\n"
-"   interior faces: %d ranks (of %d)\n"
-"   boundary faces: %d ranks\n"
+"Checking interior faces renumbering...\n"
+msgstr ""
 "\n"
+"Vérification de la numérotation des faces internes...\n"
+
+#, c-format
+msgid "%llu conflicts detected using interior faces renumbering."
 msgstr ""
 
 msgid ""
 "\n"
-"Checking mesh renumbering for threads:\n"
-"-------------------------------------\n"
-"\n"
+"Checking boundary faces renumbering...\n"
 msgstr ""
 "\n"
-"Vérification de la renumérotation de maillage pour les threads\n"
-"--------------------------------------------------------------\n"
+"Vérification de la numérotation des faces de bord...\n"
 
 #, c-format
-msgid ""
-"Conflicts detected using mesh renumbering:\n"
-"  for interior faces: %llu\n"
-"  for boundary faces: %llu"
+msgid "%llu conflicts detected using boundary faces renumbering."
 msgstr ""
 
 msgid ""
@@ -5915,6 +6066,69 @@ msgid ""
 msgstr ""
 "\n"
 " Renumérotation du maillage désactivée.\n"
+
+msgid ""
+"\n"
+"   Cells pre-renumbering deactivated, as it is not useful\n"
+"   for the current numbering algorithm.\n"
+msgstr ""
+
+msgid "no"
+msgstr "non"
+
+msgid "yes"
+msgstr "oui"
+
+msgid "lowest id first"
+msgstr "id le plus bas en premier"
+
+msgid "highest id first"
+msgstr "id le plus haut en premier"
+
+#, c-format
+msgid ""
+"\n"
+"   renumbering for cells:\n"
+"     pre-numbering:                       %s\n"
+"     cells adjacent to ghost cells last:  %s\n"
+"     numbering:                           %s\n"
+msgstr ""
+"\n"
+"   renumérotation des cellules :\n"
+"     pré-numérotation                              %s\n"
+"     cellules adjacentes aux halos en dernier :    %s\n"
+"     numérotation :                                %s\n"
+
+#, c-format
+msgid ""
+"\n"
+"   renumbering for interior faces:\n"
+"     cell adjacency pre-ordering:         %s\n"
+"     faces adjacent to ghost cells last:  %s\n"
+"     numbering:                           %s\n"
+msgstr ""
+"\n"
+"   renumérotation des faces internes :\n"
+"     pré-ordonnancement par cellules adjacentes :  %s\n"
+"     faces adjacentes aux halos en dernier :       %s\n"
+"     numérotation :                                %s\n"
+
+#, c-format
+msgid ""
+"\n"
+"   renumbering for boundary faces:\n"
+"     numbering:                           %s\n"
+msgstr ""
+"\n"
+"   renumérotation des faces de bord :\n"
+"     numérotation :                                %s\n"
+
+msgid ""
+"\n"
+" Renumbering mesh:\n"
+msgstr ""
+"\n"
+" Renumérotation du maillage:\n"
 
 msgid "volume mesh"
 msgstr "maillage volumique"
@@ -8405,10 +8619,6 @@ msgid "Invalid xpath: %s\n"
 msgstr ""
 
 #, c-format
-msgid "Invalid thermal model: %s\n"
-msgstr ""
-
-#, c-format
 msgid "Error: can not use evaluate property: %s\n"
 msgstr ""
 
@@ -8417,6 +8627,18 @@ msgid ""
 "Invalid xpath: %s\n"
 " component not found"
 msgstr ""
+
+#, c-format
+msgid ""
+"The group or attribute \"%s\" in the selection\n"
+"criteria:\n"
+"\"%s\"\n"
+" does not correspond to any cell.\n"
+msgstr ""
+"Le groupe ou attribut \"%s\" figurant dans le\n"
+"critère de sélection:\n"
+"\"%s\"\n"
+" ne correspond à aucune cellule.\n"
 
 #, c-format
 msgid ""
@@ -8436,10 +8658,6 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
-#, c-format
-msgid "Scalar: %s and its variance: %s are the same.\n"
-msgstr ""
-
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
@@ -8447,20 +8665,10 @@ msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
 #, c-format
-msgid "number of properties is not correct: %i instead of: %i\n"
-msgstr ""
-
-#, c-format
 msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any cell.\n"
+"Error: can not find the required symbol: %s\n"
+" %s\n"
 msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune cellule.\n"
 
 #, c-format
 msgid ""
@@ -8472,6 +8680,10 @@ msgstr ""
 
 #, c-format
 msgid "Unable to open the file: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid thermal model: %s\n"
 msgstr ""
 
 #, c-format
@@ -8784,10 +8996,6 @@ msgstr ""
 #, c-format
 msgid " Boundary condition %d not recognized.\n"
 msgstr "La condition limite %d n'est pas reconnue.\n"
-
-#, c-format
-msgid " Incoherent value for move_particle = %d. Value must be 0 or 1.  \n"
-msgstr ""
 
 msgid " Cannot find the relative distant rank.\n"
 msgstr ""
@@ -10051,9 +10259,6 @@ msgstr "    Création du halo distant\n"
 msgid "    Updating the faces -> cells connectivity\n"
 msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 
-msgid "none"
-msgstr ""
-
 msgid "cells"
 msgstr "cellules"
 
@@ -10779,24 +10984,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Tuning for non-symmetric matrices\n"
-#~ "=================================\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Optimisation des matrices non symétriques\n"
-#~ "=========================================\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Tuning for block or block-diagonal matrices\n"
-#~ "===========================================\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Optimisation pour matrices blocs ou à diagonale par blocs\n"
-#~ "=========================================================\n"
-
-#~ msgid "%s\n"
-#~ msgstr "%s\n"

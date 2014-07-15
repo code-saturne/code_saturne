@@ -4700,7 +4700,7 @@ cs_post_write_particle_values(int                    mesh_id,
  * after renumbering will automatically be based upon the new numbering,
  * so this function will not need to be called again.
  *
- * \param[in]  init_cell_num  initial cell numbering (1 to n, new -> old)
+ * \param[in]  init_cell_num  initial cell numbering (new -> old)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4740,7 +4740,7 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
     BFT_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
 
     for (icel = 0; icel < mesh->n_cells; icel++)
-      renum_ent_parent[init_cell_num[icel] - 1] = icel + 1;
+      renum_ent_parent[init_cell_num[icel]] = icel + 1;
 
     /* Effective modification */
 
@@ -4775,8 +4775,8 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
  * after renumbering will automatically be based upon the new numbering,
  * so this function will not need to be called again.
  *
- * \param[in]  init_i_face_num  initial interior numbering (1 to n, new -> old)
- * \param[in]  init_b_face_num  initial boundary numbering (1 to n, new -> old)
+ * \param[in]  init_i_face_num  initial interior numbering (new -> old)
+ * \param[in]  init_b_face_num  initial boundary numbering (new -> old)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4822,7 +4822,7 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
     }
     else {
       for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
-        renum_ent_parent[init_b_face_num[ifac] - 1] = ifac + 1;
+        renum_ent_parent[init_b_face_num[ifac]] = ifac + 1;
     }
 
     if (init_i_face_num == NULL) {
@@ -4836,7 +4836,7 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
       for (ifac = 0, i = mesh->n_b_faces;
            ifac < mesh->n_i_faces;
            ifac++, i++)
-        renum_ent_parent[mesh->n_b_faces + init_i_face_num[ifac] - 1]
+        renum_ent_parent[mesh->n_b_faces + init_i_face_num[ifac]]
           = mesh->n_b_faces + ifac + 1;
     }
 

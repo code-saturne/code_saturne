@@ -1832,6 +1832,111 @@ cs_join_finalize()
   cs_glob_n_joinings = 0;
 }
 
+/*----------------------------------------------------------------------------
+ * Flag boundary faces that will be selected for joining.
+ *
+ * parameters:
+ *   mesh          <-- pointer to mesh structure
+ *   preprocess    <-- true if we are in the preprocessing stage
+ *   b_select_flag <-> false for boundary faces not selected for joining,
+ *                     true for those selected
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
+                            bool              preprocess,
+                            bool              b_select_flag[])
+{
+  for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++)
+    b_select_flag[face_id] = false;
+
+  /* Count active joinings */
+
+  int n_joinings = 0;
+
+  for (int join_id = 0; join_id < cs_glob_n_joinings; join_id++) {
+    if (cs_glob_join_array[join_id] == NULL)
+      continue;
+    cs_join_t  *this_join = cs_glob_join_array[join_id];
+    cs_join_param_t  join_param = this_join->param;
+    if (join_param.preprocessing == preprocess)
+      n_joinings++;
+  }
+
+  if (n_joinings < 1)
+    return;
+
+  /* Prepare selection structures */
+
+  cs_lnum_t *b_face_list;
+  BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+
+  cs_real_t  *b_face_cog = NULL, *b_face_normal = NULL;
+
+  cs_mesh_init_group_classes(mesh);
+  cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+
+  /* Build temporary selection structures */
+
+  const fvm_group_class_set_t *class_defs = mesh->class_defs;
+  fvm_group_class_set_t *_class_defs = NULL;
+
+  if (class_defs == NULL) {
+    _class_defs = fvm_group_class_set_create();
+    class_defs = _class_defs;
+  }
+
+  fvm_selector_t *select_b_faces = fvm_selector_create(mesh->dim,
+                                                       mesh->n_b_faces,
+                                                       class_defs,
+                                                       mesh->b_face_family,
+                                                       1,
+                                                       b_face_cog,
+                                                       b_face_normal);
+
+  /* Loop on each defined joining to deal with */
+
+  for (int join_id = 0; join_id < cs_glob_n_joinings; join_id++) {
+
+    if (cs_glob_join_array[join_id] == NULL)
+      continue;
+
+    cs_join_t  *this_join = cs_glob_join_array[join_id];
+
+    cs_join_param_t  join_param = this_join->param;
+
+    if (join_param.preprocessing != preprocess)
+      continue;
+
+    /* Extract and mark selected boundary faces */
+
+    cs_lnum_t n_b_faces = 0;
+
+    fvm_selector_get_list(select_b_faces,
+                          this_join->criteria,
+                          &n_b_faces,
+                          b_face_list);
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      cs_lnum_t face_id = b_face_list[i] - 1;
+      b_select_flag[face_id] = true;
+    }
+
+  } /* End of loop on joinings */
+
+  /* Free arrays and structures needed for selection */
+
+  BFT_FREE(b_face_cog);
+  BFT_FREE(b_face_normal);
+
+  select_b_faces = fvm_selector_destroy(select_b_faces);
+
+  if (_class_defs != NULL)
+    _class_defs = fvm_group_class_set_destroy(_class_defs);
+
+  BFT_FREE(b_face_list);
+}
+
 /*---------------------------------------------------------------------------*/
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)

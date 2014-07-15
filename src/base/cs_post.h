@@ -912,7 +912,7 @@ cs_post_write_particle_values(int                    mesh_id,
  * so this function will not need to be called again.
  *
  * parameters:
- *   init_cell_num <-- initial cell numbering (1 to n, new -> old)
+ *   init_cell_num <-- initial cell numbering (new -> old)
  *----------------------------------------------------------------------------*/
 
 void
@@ -928,8 +928,8 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[]);
  * so this function will not need to be called again.
  *
  * parameters:
- *   init_i_face_num <-- initial interior numbering (1 to n, new -> old)
- *   init_b_face_num <-- initial boundary numbering (1 to n, new -> old)
+ *   init_i_face_num <-- initial interior numbering (new -> old)
+ *   init_b_face_num <-- initial boundary numbering (new -> old)
  *----------------------------------------------------------------------------*/
 
 void

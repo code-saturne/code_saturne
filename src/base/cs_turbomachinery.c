@@ -985,20 +985,9 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
 
-  /* Renumber mesh based on code options */
+  /* Update interior faces renumbering based on code options */
 
-  /* Free numbering info, as it is not usable after modification
-     (TODO: rebuilding a numbering may be useful, but this will require
-     applying renumberings to field and auxiliairy array values) */
-
-  if (cs_glob_mesh->i_face_numbering != NULL)
-    cs_numbering_destroy(&(cs_glob_mesh->i_face_numbering));
-  if (cs_glob_mesh->b_face_numbering != NULL)
-    cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
-  cs_glob_mesh->i_face_numbering
-    = cs_numbering_create_default(cs_glob_mesh->n_i_faces);
-  cs_glob_mesh->b_face_numbering
-    = cs_numbering_create_default(cs_glob_mesh->n_b_faces);
+  cs_renumber_i_faces(cs_glob_mesh);
 
   /* Build group classes */
 

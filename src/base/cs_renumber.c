@@ -30,6 +30,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <float.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -42,6 +43,42 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * METIS library headers
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(HAVE_PARMETIS)
+#include <parmetis.h>
+#endif
+
+#if defined(HAVE_METIS)
+#include <metis.h>
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
+
+/*----------------------------------------------------------------------------
+ * SCOTCH library headers
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_SCOTCH)
+#include <stdint.h>
+#include <scotch.h>
+#elif defined(HAVE_PTSCOTCH)
+#include <stdint.h>
+#include <ptscotch.h>
+#endif
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -49,13 +86,17 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "fvm_morton.h"
+#include "fvm_hilbert.h"
+
 #include "cs_defs.h"
-#include "cs_prototypes.h"
+#include "cs_halo.h"
+#include "cs_join.h"
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -75,6 +116,25 @@ BEGIN_C_DECLS
   \file cs_renumber.c
         Optional mesh renumbering.
 
+  \enum cs_renumber_cells_type_t
+
+  \brief Cell renumbering algorithm types
+
+  \var CS_RENUMBER_CELLS_SCOTCH_PART
+       Subpartition for thread blocks based SCOTCH library.
+  \var CS_RENUMBER_CELLS_SCOTCH_ORDER
+       Fill-reducing ordering based on SCOTCH library.
+  \var CS_RENUMBER_CELLS_METIS_PART
+       Subpartition for thread blocks based METIS library.
+  \var CS_RENUMBER_CELLS_METIS_ORDER
+       Fill-reducing ordering based on METIS library.
+  \var CS_RENUMBER_CELLS_MORTON
+       Order cells using domain-local Morton space-filling curve.
+  \var CS_RENUMBER_CELLS_HILBERT
+       Order cells using domain-local Hilbert space-filling curve.
+  \var CS_RENUMBER_CELLS_NONE
+       No cells renumbering.
+
   \enum cs_renumber_i_faces_type_t
 
   \brief Interior faces renumbering algorithm types
@@ -87,9 +147,37 @@ BEGIN_C_DECLS
        Use multipass face numbering.
        This should produce a smaller number of blocks, with a diminishing
        number of faces per thread group.
-
+  \var CS_RENUMBER_I_FACES_SIMD
+       Renumber to allow SIMD operations in interior face->cell gather
+       operations (such as SpMV products with native matrix representation).
   \var CS_RENUMBER_I_FACES_NONE
-       No interior face numbering.
+       No interior face renumbering.
+
+  \enum cs_renumber_b_faces_type_t
+
+  \brief Boundary faces renumbering algorithm types
+
+  \var CS_RENUMBER_B_FACES_THREAD
+       Renumber for threads, with one block per thread, and no cell
+       referenced by faces in different threads blocks.
+  \var CS_RENUMBER_I_FACES_SIMD
+       Renumber to allow SIMD operations in boundary face->cell gather
+       operations.
+  \var CS_RENUMBER_I_FACES_NONE
+       No interior face renumbering.
+
+  \enum cs_renumber_ordering_t
+
+  \brief Ordering options for adjacency arrays
+
+  \var CS_RENUMBER_ADJACENT_LOW
+       Lexicographical ordering with lowest adjacent id first
+
+  \var CS_RENUMBER_ADJACENT_HIGH
+       Lexicographical ordering with highest adjacent id first
+} ;
+
+
 */
 
 /*=============================================================================
@@ -125,12 +213,71 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
-int _cs_renumber_n_threads = 0;
+#if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
 
-cs_lnum_t  _min_i_subset_size = 64;
-cs_lnum_t  _min_b_subset_size = 64;
+  /* Vector register numbers and lengths:
+   *   4       4096 ;
+   *  16       1024
+   *  32        512
+   *  64        256
+   * 128        128
+   * 256         64 */
 
-cs_renumber_i_faces_type_t _i_faces_algorithm = CS_RENUMBER_I_FACES_MULTIPASS;
+static int _cs_renumber_vector_size = 1024; /* Use register 16 */
+
+#elif defined(SX) && defined(_SX) /* For NEC SX series */
+
+static int _cs_renumber_vector_size = 256; /* At least for NEC SX-9 */
+
+#else
+
+static int _cs_renumber_vector_size = 4; /* Non-vector machines, with SIMD */
+
+#endif
+
+static int _cs_renumber_n_threads = 1;
+
+static cs_lnum_t  _min_i_subset_size = 64;
+static cs_lnum_t  _min_b_subset_size = 64;
+
+static bool _cells_adjacent_to_halo_last = false;
+static bool _i_faces_adjacent_to_halo_last = false;
+static cs_renumber_ordering_t _i_faces_base_ordering = CS_RENUMBER_ADJACENT_LOW;
+
+static cs_renumber_cells_type_t _cells_algorithm[] = {CS_RENUMBER_CELLS_NONE,
+                                                      CS_RENUMBER_CELLS_NONE};
+
+#if defined(HAVE_OPENMP)
+static cs_renumber_i_faces_type_t _i_faces_algorithm
+  = CS_RENUMBER_I_FACES_MULTIPASS;
+static cs_renumber_b_faces_type_t _b_faces_algorithm
+  = CS_RENUMBER_B_FACES_THREAD;
+#else
+static cs_renumber_i_faces_type_t _i_faces_algorithm
+  = CS_RENUMBER_I_FACES_NONE;
+static cs_renumber_i_faces_type_t _b_faces_algorithm
+   = CS_RENUMBER_B_FACES_NONE;
+#endif
+
+static const char *_cell_renum_name[]
+  = {N_("sub-partitioning with LibScotch"),
+     N_("fill-reducing ordering with LibScotch"),
+     N_("sub-partitioning with METIS"),
+     N_("fill-reducing ordering with METIS"),
+     N_("Morton curve in local bounding box"),
+     N_("Hilbert curve in local bounding box"),
+     N_("none")};
+
+static const char *_i_face_renum_name[]
+  = {N_("coloring, no shared cell in block"),
+     N_("multipass"),
+     N_("vectorizing"),
+     N_("none")};
+
+static const char *_b_face_renum_name[]
+  = {N_("no shared cell across threads"),
+     N_("vectorizing"),
+     N_("none")};
 
 /*============================================================================
  * Private function definitions
@@ -272,7 +419,7 @@ _cs_renumber_update_cells(cs_mesh_t        *mesh,
            mesh->n_b_faces * sizeof(cs_lnum_t));
 
     for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-      ii = face_cells_tmp[face_id] - 1;
+      ii = face_cells_tmp[face_id];
       mesh->b_face_cells[face_id] = new_cell_id[ii];
     }
   }
@@ -310,6 +457,9 @@ _cs_renumber_update_cells(cs_mesh_t        *mesh,
       start_id += n_vis;
       mesh->cell_cells_idx[ii + 1] = start_id + 1;
     }
+
+    BFT_FREE(cell_cells_lst_old);
+    BFT_FREE(cell_cells_idx_old);
   }
 
   /* Free work arrays */
@@ -381,29 +531,24 @@ _update_face_vertices(cs_lnum_t         n_faces,
 }
 
 /*----------------------------------------------------------------------------
- * Apply renumbering of faces.
+ * Apply renumbering of interior faces.
  *
  * parameters:
  *   mesh          <-> Pointer to global mesh structure
  *   new_to_old_i  <-- Interior faces renumbering array
- *   new_to_old_b  <-- Boundary faces renumbering array
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_renumber_update_faces(cs_mesh_t        *mesh,
-                          const cs_lnum_t  *new_to_old_i,
-                          const cs_lnum_t  *new_to_old_b)
+_cs_renumber_update_i_faces(cs_mesh_t        *mesh,
+                            const cs_lnum_t  *new_to_old_i)
 {
-  cs_lnum_t  face_id, face_id_old;
-
-  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
-
-  /* Interior faces */
-
   if (new_to_old_i != NULL) {
 
-    cs_lnum_2_t  *i_face_cells_old = NULL;
+    cs_lnum_t  face_id, face_id_old;
+
+    cs_lnum_2_t  *i_face_cells_old;
+
+    const cs_lnum_t  n_i_faces = mesh->n_i_faces;
 
    /* Allocate Work array */
 
@@ -433,13 +578,35 @@ _cs_renumber_update_faces(cs_mesh_t        *mesh,
     _update_family(n_i_faces, new_to_old_i, mesh->i_face_family);
 
     _update_global_num(n_i_faces, new_to_old_i, &(mesh->global_i_face_num));
+
+    /* Update parent face numbers for post-processing meshes
+       that may already have been built; Post-processing meshes
+       built after renumbering will have correct parent numbers */
+
+    cs_post_renum_faces(new_to_old_i, NULL);
+
   }
+}
 
-  /* Boundary faces */
+/*----------------------------------------------------------------------------
+ * Apply renumbering of boundary faces.
+ *
+ * parameters:
+ *   mesh         <-> Pointer to global mesh structure
+ *   new_to_old_b <-- Boundary faces renumbering array
+ *----------------------------------------------------------------------------*/
 
+static void
+_cs_renumber_update_b_faces(cs_mesh_t        *mesh,
+                            const cs_lnum_t  *new_to_old_b)
+{
   if (new_to_old_b != NULL) {
 
+    cs_lnum_t  face_id, face_id_old;
+
     cs_lnum_t  *b_face_cells_old = NULL;
+
+    const cs_lnum_t  n_b_faces = mesh->n_b_faces;
 
     /* Allocate Work array */
 
@@ -468,13 +635,14 @@ _cs_renumber_update_faces(cs_mesh_t        *mesh,
     _update_family(n_b_faces, new_to_old_b, mesh->b_face_family);
 
     _update_global_num(n_b_faces, new_to_old_b, &(mesh->global_b_face_num));
+
+    /* Update parent face numbers for post-processing meshes
+       that may already have been built; Post-processing meshes
+       built after renumbering will have correct parent numbers */
+
+    cs_post_renum_faces(NULL, new_to_old_b);
+
   }
-
-  /* Update parent face numbers for post-processing meshes
-     that may already have been built; Post-processing meshes
-     built after renumbering will have correct parent numbers */
-
-  cs_post_renum_faces(new_to_old_i, new_to_old_b);
 }
 
 /*----------------------------------------------------------------------------
@@ -687,7 +855,7 @@ _display_histograms_double(int           n_vals,
  * Try to apply renumbering of faces and cells for multiple threads.
  *
  * parameters:
- *   mesh            <->  Pointer to global mesh structure
+ *   mesh  <-> pointer to global mesh structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1029,6 +1197,372 @@ _csr_graph_destroy(_csr_graph_t  **graph)
 }
 
 /*----------------------------------------------------------------------------
+ * Classify ghost cells according to their position in the halo
+ *
+ * The cell_class value will based on the halo section (separated based on
+ * domain first, transform id second; extended ghost cells do not intervene
+ * here), with a base class id of 2.
+ *
+ * parameters:
+ *   mesh       <-> pointer to mesh structure
+ *   halo_class --> resulting cell classification
+ *----------------------------------------------------------------------------*/
+
+static void
+_classify_halo_cells(const cs_mesh_t  *mesh,
+                     int               halo_class[])
+{
+  assert(mesh->halo != NULL);
+
+  int n_c_domains = mesh->halo->n_c_domains;
+  int n_transforms = mesh->halo->n_transforms;
+  int stride = n_transforms + 2;
+  cs_lnum_t *index = mesh->halo->index;
+  cs_lnum_t *perio_lst = mesh->halo->perio_lst;
+
+  for (int i = 0; i < n_c_domains; i++) {
+
+    for (cs_lnum_t j = index[2*i]; j < index[2*i+1]; j++)
+      halo_class[j] = i*stride + 2;
+
+    for (int t_id = 0; t_id < n_transforms; t_id++) {
+      int shift = 4 * n_c_domains * t_id;
+      for (cs_lnum_t k = perio_lst[shift + 4*i];
+           k < perio_lst[shift + 4*i+1];
+           k++)
+        halo_class[k] = i*stride + t_id + 3;
+    }
+
+    /* Extended ghost cells should not intervene here;
+       we initialize for safety, but will not bother
+       with transforms */
+
+    for (cs_lnum_t j = index[2*i+1]; j < index[2*i+2]; j++)
+      halo_class[j] = i*stride + (stride - 1);
+
+  } /* End of loop on involved ranks */
+
+}
+
+/*----------------------------------------------------------------------------
+ * Classify (non-ghost) cells according to their neighbor domain
+ *
+ * For cells connected to one or more ghost cells, the cell_class value
+ * will based on the halo section (separated based on domain first,
+ * transform id second; extended ghost cells do not intervene here),
+ * with a base class id of 2. For cells connected to a boundary face
+ * that will be later joined, the cell class will be 1. For other cells,
+ * the cell class will be 0.
+ *
+ * parameters:
+ *   mesh       <->- pointer to mesh structure
+ *   cell_class --> resulting cell classification
+ *----------------------------------------------------------------------------*/
+
+static void
+_classify_cells_by_neighbor(const cs_mesh_t  *mesh,
+                            int               cell_class[])
+{
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+    cell_class[i] = 0;
+
+  {
+    bool *b_select_flag;
+    BFT_MALLOC(b_select_flag, mesh->n_b_faces, bool);
+
+    cs_join_mark_selected_faces(mesh, false, b_select_flag);
+
+    for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+      if (b_select_flag[face_id] == true)
+        cell_class[mesh->b_face_cells[face_id]] = 1;
+    }
+
+    BFT_FREE(b_select_flag);
+  }
+
+  if (mesh->halo != NULL) {
+
+    int *halo_class;
+    BFT_MALLOC(halo_class, mesh->n_ghost_cells, int);
+
+    _classify_halo_cells(mesh, halo_class);
+
+    /* Now apply this to cells */
+
+    for (cs_lnum_t face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+      for (int s_id = 0; s_id < 2; s_id++) {
+        cs_lnum_t c_id = mesh->i_face_cells[face_id][s_id];
+        if (c_id >= mesh->n_cells) {
+          int min_class = halo_class[c_id - mesh->n_cells];
+          int adj_c_id = mesh->i_face_cells[face_id][(s_id+1)%2];
+          cell_class[adj_c_id] = CS_MAX(cell_class[adj_c_id], min_class);
+        }
+      }
+    }
+
+    BFT_FREE(halo_class);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Initial numbering of interior faces, based on cell adjacency.
+ *
+ * parameters:
+ *   mesh          <-- pointer to global mesh structure
+ *   base_ordering <-- pre-ordering of interior faces by
+ *                     lowest or highest adjacent cell id
+ *   order         --> ordering of interior faces based on cell adjacency
+ *
+ * returns:
+ *   number of faces in ordering before first face adjacent to halo
+ *----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
+                                 cs_renumber_ordering_t   base_ordering,
+                                 cs_lnum_t               *order)
+{
+  cs_lnum_t  *faces_keys;
+
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
+
+  cs_lnum_t n_no_adj_halo = 0;
+
+  if (base_ordering == CS_RENUMBER_ADJACENT_LOW) {
+
+    /* If cells adjacent to halo cells are last, adjacent interior faces
+       will also be last; otherwise, this may be forced */
+
+    if (   mesh->halo != NULL
+        && _i_faces_adjacent_to_halo_last
+        && (! _cells_adjacent_to_halo_last)) {
+
+      cs_lnum_t  *halo_class;
+
+      BFT_MALLOC(faces_keys, mesh->n_i_faces * 3, cs_lnum_t);
+      BFT_MALLOC(halo_class, mesh->n_ghost_cells, cs_lnum_t);
+
+      _classify_halo_cells(mesh, halo_class);
+
+      /* Build lexical ordering of faces */
+
+#     pragma omp parallel for reduction(+:n_no_adj_halo)
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+        cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+        cs_lnum_t c_id_1 = i_face_cells[f_id][1];
+        if (c_id_0 >= n_cells)
+          faces_keys[f_id*3] = halo_class[c_id_0 - n_cells];
+        else if (c_id_1 > n_cells)
+          faces_keys[f_id*3] = halo_class[c_id_1 - n_cells];
+        else {
+          faces_keys[f_id*3] = 0;
+          n_no_adj_halo += 1;
+        }
+        if (c_id_0 < c_id_1) {
+          faces_keys[f_id*3 + 1] = c_id_0;
+          faces_keys[f_id*3 + 2] = c_id_1;
+        }
+        else {
+          faces_keys[f_id*3 + 1] = c_id_1;
+          faces_keys[f_id*3 + 2] = c_id_0;
+        }
+      }
+
+      BFT_FREE(halo_class);
+
+      cs_order_lnum_allocated_s(NULL,
+                                faces_keys,
+                                3,
+                                order,
+                                n_i_faces);
+
+    }
+    else {
+
+      BFT_MALLOC(faces_keys, mesh->n_i_faces*2, cs_lnum_t);
+
+      /* Build lexical ordering of faces */
+
+#     pragma omp parallel for
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+        cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+        cs_lnum_t c_id_1 = i_face_cells[f_id][1];
+        if (c_id_0 < c_id_1) {
+          faces_keys[f_id*2]     = c_id_0;
+          faces_keys[f_id*2 + 1] = c_id_1;
+        }
+        else {
+          faces_keys[f_id*2]     = c_id_1;
+          faces_keys[f_id*2 + 1] = c_id_0;
+        }
+      }
+
+      cs_order_lnum_allocated_s(NULL,
+                                faces_keys,
+                                2,
+                                order,
+                                n_i_faces);
+
+      if (_i_faces_adjacent_to_halo_last) {
+
+        for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+          cs_lnum_t f_id = order[i];
+          if (faces_keys[f_id*2 + 1] > n_cells)
+            break;
+          else
+            n_no_adj_halo += 1;
+        }
+
+      }
+
+    }
+
+  }
+
+  else { /* if (i_faces_base_ordering == CS_RENUMBER_ADJACENT_HIGH) */
+
+    BFT_MALLOC(faces_keys, mesh->n_i_faces*2, cs_lnum_t);
+
+    /* Build lexical ordering of faces */
+
+#   pragma omp parallel for
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+      cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+      cs_lnum_t c_id_1 = i_face_cells[f_id][1];
+      if (c_id_0 < c_id_1) {
+        faces_keys[f_id*2]     = c_id_1;
+        faces_keys[f_id*2 + 1] = c_id_0;
+      }
+      else {
+        faces_keys[f_id*2]     = c_id_0;
+        faces_keys[f_id*2 + 1] = c_id_1;
+      }
+    }
+
+    cs_order_lnum_allocated_s(NULL,
+                              faces_keys,
+                              2,
+                              order,
+                              n_i_faces);
+
+    if (_i_faces_adjacent_to_halo_last) {
+
+      for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+        cs_lnum_t f_id = order[i];
+        if (faces_keys[f_id*2] > n_cells)
+          break;
+        else
+          n_no_adj_halo += 1;
+      }
+
+    }
+
+  } /* end of test on i_faces_base_ordering */
+
+  BFT_FREE(faces_keys);
+
+  return n_no_adj_halo;
+}
+
+/*----------------------------------------------------------------------------
+ * Initial numbering of interior faces, based on cell adjacency.
+ *
+ * parameters:
+ *   mesh <-> pointer to global mesh structure
+ *
+ * returns:
+ *   number of faces in ordering before first face adjacent to halo
+ *----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_renumber_i_faces_by_cell_adjacency(cs_mesh_t  *mesh)
+{
+  cs_lnum_t  *new_to_old_i;
+
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+
+  BFT_MALLOC(new_to_old_i, n_i_faces, cs_lnum_t);
+
+  /* If cells adjacent to halo cells are last, adjacent interior faces
+     will also be last; otherwise, this may be forced */
+
+  cs_lnum_t n_no_adj_halo
+    = _order_i_faces_by_cell_adjacency(mesh,
+                                       _i_faces_base_ordering,
+                                       new_to_old_i);
+
+  /* Check numbering is non trivial */
+
+  {
+    cs_lnum_t f_id = 0;
+    while (f_id < n_i_faces) {
+      if (new_to_old_i[f_id] != f_id)
+        break;
+      else
+        f_id++;
+    }
+    if (f_id == n_i_faces)
+      BFT_FREE(new_to_old_i);
+  }
+
+  /* Update connectivity */
+
+  if (new_to_old_i != NULL)
+    _cs_renumber_update_i_faces(mesh, new_to_old_i);
+
+  BFT_FREE(new_to_old_i);
+
+  return n_no_adj_halo;
+}
+
+/*----------------------------------------------------------------------------
+ * Initial numbering of boundary faces, based on cell adjacency.
+ *
+ * parameters:
+ *   mesh <-> pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_b_faces_by_cell_adjacency(cs_mesh_t  *mesh)
+{
+  cs_lnum_t  *new_to_old_b;
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+
+  BFT_MALLOC(new_to_old_b, n_b_faces, cs_lnum_t);
+
+  cs_order_lnum_allocated(NULL,
+                          mesh->b_face_cells,
+                          new_to_old_b,
+                          n_b_faces);
+
+  /* Check numbering is non trivial */
+
+  {
+    cs_lnum_t f_id = 0;
+    while (f_id < n_b_faces) {
+      if (new_to_old_b[f_id] != f_id)
+        break;
+      else
+        f_id++;
+    }
+    if (f_id == n_b_faces)
+      BFT_FREE(new_to_old_b);
+  }
+
+  /* Update connectivity */
+
+  if (new_to_old_b != NULL)
+    _cs_renumber_update_b_faces(mesh, new_to_old_b);
+
+  BFT_FREE(new_to_old_b);
+}
+
+/*----------------------------------------------------------------------------
  * Build groups including independent faces.
  *
  * parameters:
@@ -1227,8 +1761,8 @@ _thread_bounds_by_group_size(cs_lnum_t   n_faces,
 }
 
 /*----------------------------------------------------------------------------
- * Pre-assign faces to threads of a given group for the multipass
- * algorithm, so as to improve load balance.
+ * Pre-assign faces to threads of a given group for the multipass algorithm
+ * to improve load balance.
  *
  * parameters:
  *   n_i_threads     <-- number of threads required for interior faces
@@ -1284,16 +1818,30 @@ _renum_face_multipass_assign(int                         n_i_threads,
 
     assert(t_id <= n_g_i_threads);
 
-    if (   c_id_0 >= t_cell_index[t_id]
-        && c_id_1 < t_cell_index[t_id+1]) {
-      f_t_id[f_id] = t_id + g_id*n_i_threads;
-      n_t_faces[t_id] += 1;
-      t_face_last[t_id] = fl_id;
+    if (_i_faces_base_ordering == CS_RENUMBER_ADJACENT_LOW) {
+      if (   c_id_0 >= t_cell_index[t_id]
+          && c_id_1 < t_cell_index[t_id+1]) {
+        f_t_id[f_id] = t_id + g_id*n_i_threads;
+        n_t_faces[t_id] += 1;
+        t_face_last[t_id] = fl_id;
+      }
+      else
+        f_t_id[f_id] = -1;
     }
-    else
-      f_t_id[f_id] = -1;
+    else { /* _i_faces_base_ordering == CS_RENUMBER_ADJACENT_HIGH */
+      if (   c_id_0 < t_cell_index[t_id+1]
+          && c_id_1 >= t_cell_index[t_id]) {
+        assert(c_id_0 >= t_cell_index[t_id]);
+        f_t_id[f_id] = t_id + g_id*n_i_threads;
+        n_t_faces[t_id] += 1;
+        t_face_last[t_id] = fl_id;
+      }
+      else
+        f_t_id[f_id] = -1;
+    }
 
   }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -1367,7 +1915,7 @@ _renum_face_multipass_redistribute(int                          n_i_threads,
                                    int                *restrict f_t_id,
                                    cs_lnum_t          *restrict n_t_faces,
                                    cs_lnum_t          *restrict t_face_last,
-                                   cs_lnum_t         *restrict t_cell_index)
+                                   cs_lnum_t          *restrict t_cell_index)
 {
   int t_id, t_id1;
   double unbalance[2];
@@ -1551,25 +2099,55 @@ _renum_face_multipass_remaining(cs_lnum_t                   n_f_cells_prev,
   for (c_id_0 = 0; c_id_0 < n_f_cells_prev; c_id_0++)
     new_cell_id[c_id_0] = -1;
 
-  for (fl_id = 0; fl_id < faces_list_size; fl_id++) {
+  if (_i_faces_base_ordering == CS_RENUMBER_ADJACENT_LOW) {
 
-    f_id = faces_list[fl_id];
+    for (fl_id = 0; fl_id < faces_list_size; fl_id++) {
 
-    c_id_0 = l_face_cells[f_id][0];
-    c_id_1 = l_face_cells[f_id][1];
+      f_id = faces_list[fl_id];
 
-    if (new_cell_id[c_id_0] < 0)
-      new_cell_id[c_id_0] = n_f_cells_new++;
-    if (new_cell_id[c_id_1] < 0)
-      new_cell_id[c_id_1] = n_f_cells_new++;
+      c_id_0 = l_face_cells[f_id][0];
+      c_id_1 = l_face_cells[f_id][1];
 
-    if (new_cell_id[c_id_0] < new_cell_id[c_id_1]) {
-      l_face_cells[f_id][0] = new_cell_id[c_id_0];
-      l_face_cells[f_id][1] = new_cell_id[c_id_1];
+      if (new_cell_id[c_id_0] < 0)
+        new_cell_id[c_id_0] = n_f_cells_new++;
+      if (new_cell_id[c_id_1] < 0)
+        new_cell_id[c_id_1] = n_f_cells_new++;
+
+      if (new_cell_id[c_id_0] < new_cell_id[c_id_1]) {
+        l_face_cells[f_id][0] = new_cell_id[c_id_0];
+        l_face_cells[f_id][1] = new_cell_id[c_id_1];
+      }
+      else {
+        l_face_cells[f_id][0] = new_cell_id[c_id_1];
+        l_face_cells[f_id][1] = new_cell_id[c_id_0];
+      }
+
     }
-    else {
-      l_face_cells[f_id][0] = new_cell_id[c_id_1];
-      l_face_cells[f_id][1] = new_cell_id[c_id_0];
+
+  }
+  else { /* _i_faces_base_ordering == CS_RENUMBER_ADJACENT_HIGH */
+
+    for (fl_id = 0; fl_id < faces_list_size; fl_id++) {
+
+      f_id = faces_list[fl_id];
+
+      c_id_0 = l_face_cells[f_id][0];
+      c_id_1 = l_face_cells[f_id][1];
+
+      if (new_cell_id[c_id_0] < 0)
+        new_cell_id[c_id_0] = n_f_cells_new++;
+      if (new_cell_id[c_id_1] < 0)
+        new_cell_id[c_id_1] = n_f_cells_new++;
+
+      if (new_cell_id[c_id_0] < new_cell_id[c_id_1]) {
+        l_face_cells[f_id][0] = new_cell_id[c_id_1];
+        l_face_cells[f_id][1] = new_cell_id[c_id_0];
+      }
+      else {
+        l_face_cells[f_id][0] = new_cell_id[c_id_0];
+        l_face_cells[f_id][1] = new_cell_id[c_id_1];
+      }
+
     }
 
   }
@@ -1589,12 +2167,14 @@ _renum_face_multipass_remaining(cs_lnum_t                   n_f_cells_prev,
  *       subset size for threads may be the simples approach.
  *
  * parameters:
- *   mesh           <-> pointer to global mesh structure
- *   n_i_threads    <-- number of threads required for interior faces
- *   group_size     <-- target group size
- *   new_to_old_i   --> interior faces renumbering array
- *   n_groups       --> number of groups of graph edges (interior faces)
- *   group_index    --> group/thread index
+ *   mesh                 <-> pointer to global mesh structure
+ *   n_i_threads          <-- number of threads required for interior faces
+ *   group_size           <-- target group size
+ *   new_to_old_i         --> interior faces renumbering array
+ *   n_groups             --> number of groups of graph edges (interior faces)
+ *   n_no_adj_halo_groups --> number of groups with faces not adjacent to
+ *                            halo cells
+ *   group_index          --> group/thread index
  *
  * returns:
  *   0 on success, -1 otherwise
@@ -1605,6 +2185,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
                       int           n_i_threads,
                       cs_lnum_t     new_to_old_i[],
                       cs_lnum_t    *n_groups,
+                      cs_lnum_t    *n_no_adj_halo_groups,
                       cs_lnum_t   **group_index)
 {
   int g_id, t_id;
@@ -1617,12 +2198,15 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
   double redistribute_relaxation_factor = 0.5;
 
+  cs_lnum_t n_no_adj_halo = 0;
+  cs_lnum_t new_count = 0;
   cs_lnum_t faces_list_size = n_faces, faces_list_size_new = 0;
+  cs_lnum_t faces_list_assign_size = faces_list_size;
 
   cs_lnum_t   _n_groups = 0;
+  cs_lnum_t   _n_no_adj_halo_groups = 0;
   cs_lnum_t  *_group_index = NULL;
 
-  cs_lnum_t *restrict faces_keys = NULL;
   cs_lnum_t *restrict faces_list = NULL;
   cs_lnum_2_t *restrict l_face_cells = NULL;
   cs_lnum_t *n_t_faces = NULL;
@@ -1642,28 +2226,50 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   BFT_MALLOC(t_cell_index, n_i_threads + 1, cs_lnum_t);
   BFT_MALLOC(f_t_id, n_faces, int);
 
-  /* Build lexical ordering of faces */
+  /* Build lexical ordering of faces
+     (possibly forcing faces ajacent to ghost cells last) */
 
-# pragma omp parallel for private(c_id_0, c_id_1)
-  for (f_id = 0; f_id < n_faces; f_id++) {
-    c_id_0 = i_face_cells[f_id][0];
-    c_id_1 = i_face_cells[f_id][1];
-    if (c_id_0 < c_id_1) {
-      l_face_cells[f_id][0] = c_id_0;
-      l_face_cells[f_id][1] = c_id_1;
+  n_no_adj_halo
+    = _order_i_faces_by_cell_adjacency(mesh,
+                                       _i_faces_base_ordering,
+                                       faces_list);
+
+  /* Initialize final sorting keys
+     (second key here based on initial ordering, first key
+     will be defined later based on group and thread ids) */
+
+  if (_i_faces_base_ordering == CS_RENUMBER_ADJACENT_LOW) {
+#   pragma omp parallel for private(c_id_0, c_id_1)
+    for (f_id = 0; f_id < n_faces; f_id++) {
+      c_id_0 = i_face_cells[f_id][0];
+      c_id_1 = i_face_cells[f_id][1];
+      if (c_id_0 < c_id_1) {
+        l_face_cells[f_id][0] = c_id_0;
+        l_face_cells[f_id][1] = c_id_1;
+      }
+      else {
+        l_face_cells[f_id][0] = c_id_1;
+        l_face_cells[f_id][1] = c_id_0;
+      }
+      f_t_id[f_id] = -1;
     }
-    else {
-      l_face_cells[f_id][0] = c_id_1;
-      l_face_cells[f_id][1] = c_id_0;
-    }
-    f_t_id[f_id] = -1;
   }
-
-  cs_order_lnum_allocated_s(NULL,
-                            (cs_lnum_t *)l_face_cells,
-                            2,
-                            faces_list,
-                            n_faces);
+  else { /* _i_faces_base_ordering == CS_RENUMBER_ADJACENT_HIGH */
+#   pragma omp parallel for private(c_id_0, c_id_1)
+    for (f_id = 0; f_id < n_faces; f_id++) {
+      c_id_0 = i_face_cells[f_id][0];
+      c_id_1 = i_face_cells[f_id][1];
+      if (c_id_0 < c_id_1) {
+        l_face_cells[f_id][0] = c_id_1;
+        l_face_cells[f_id][1] = c_id_0;
+      }
+      else {
+        l_face_cells[f_id][0] = c_id_0;
+        l_face_cells[f_id][1] = c_id_1;
+      }
+      f_t_id[f_id] = -1;
+    }
+  }
 
   /* Add groups as required */
 
@@ -1672,12 +2278,23 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     int group_size = n_f_cells / n_i_threads;
     int n_g_i_threads = n_i_threads;
 
+    /* If the number of faces not ajacent to ghost cells represents
+       a significant enough portion of faces, place faces adjacent
+       to ghost cells in separate (later) groups */
+
+    if (n_no_adj_halo < faces_list_size / 2)
+      faces_list_assign_size = faces_list_size - n_no_adj_halo;
+    else {
+      faces_list_assign_size = faces_list_size;
+      n_no_adj_halo = 0;
+    }
+
     /* Reduce number of threads for this level if required to
        ensure sufficient work per thread */
 
-    if (faces_list_size / _min_i_subset_size  < n_g_i_threads) {
-      n_g_i_threads = faces_list_size / _min_i_subset_size;
-      if (! (faces_list_size % _min_i_subset_size))
+    if (faces_list_assign_size / _min_i_subset_size  < n_g_i_threads) {
+      n_g_i_threads = faces_list_assign_size / _min_i_subset_size;
+      if (! (faces_list_assign_size % _min_i_subset_size))
         n_g_i_threads += 1;
     }
 
@@ -1696,7 +2313,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     _renum_face_multipass_assign(n_i_threads,
                                  n_g_i_threads,
                                  g_id,
-                                 faces_list_size,
+                                 faces_list_assign_size,
                                  faces_list,
                                  (const cs_lnum_2_t *restrict)l_face_cells,
                                  f_t_id,
@@ -1710,13 +2327,22 @@ _renum_face_multipass(cs_mesh_t    *mesh,
                                        n_g_i_threads,
                                        g_id,
                                        redistribute_relaxation_factor,
-                                       faces_list_size,
+                                       faces_list_assign_size,
                                        faces_list,
                                        (const cs_lnum_2_t *restrict)l_face_cells,
                                        f_t_id,
                                        n_t_faces,
                                        t_face_last,
                                        t_cell_index);
+
+    if (faces_list_assign_size < faces_list_size) {
+
+      _n_no_adj_halo_groups = g_id+1;
+
+      for (fl_id = faces_list_assign_size; fl_id < faces_list_size; fl_id++)
+        f_t_id[f_id] = - 1;
+
+    }
 
     /* Update list of remaining faces */
 
@@ -1726,6 +2352,8 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
       if (f_t_id[f_id] < 0)
         faces_list[faces_list_size_new++] = f_id;
+      else
+        new_to_old_i[new_count++] = f_id;
 
     }
 
@@ -1747,6 +2375,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     for (fl_id = 0; fl_id < faces_list_size; fl_id++) {
       f_id = faces_list[fl_id];
       f_t_id[f_id] = g_id*n_i_threads;
+      new_to_old_i[new_count++] = f_id;
     }
 
     g_id += 1;
@@ -1756,6 +2385,8 @@ _renum_face_multipass(cs_mesh_t    *mesh,
       n_t_faces[t_id] = 0;
 
   }
+
+  assert(new_count == n_faces);
 
   /* Free memory */
 
@@ -1767,31 +2398,6 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   /* Now build final numbering and index */
 
   /* Build lexical ordering of faces */
-
-  BFT_MALLOC(faces_keys, n_faces*3, cs_lnum_t);
-
-# pragma omp parallel for private(c_id_0, c_id_1)
-  for (f_id = 0; f_id < n_faces; f_id++) {
-    faces_keys[f_id*3] = f_t_id[f_id];
-    c_id_0 = i_face_cells[f_id][0];
-    c_id_1 = i_face_cells[f_id][1];
-    if (c_id_0 < c_id_1) {
-      faces_keys[f_id*3 + 1] = c_id_0 - 1;
-      faces_keys[f_id*3 + 2] = c_id_1 - 1;
-    }
-    else {
-      faces_keys[f_id*3 + 1] = c_id_1 - 1;
-      faces_keys[f_id*3 + 2] = c_id_0 - 1;
-    }
-  }
-
-  cs_order_lnum_allocated_s(NULL,
-                            faces_keys,
-                            3,
-                            faces_list,
-                            n_faces);
-
-  BFT_FREE(faces_keys);
 
   _n_groups = g_id;
   BFT_MALLOC(_group_index, _n_groups*n_i_threads*2, cs_lnum_t);
@@ -1805,12 +2411,20 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     }
   }
 
+#if defined(DEBUG) && !defined(NDEBUG)
+  int f_t_id_prev = - 1;
+#endif
+
   for (fl_id = 0; fl_id < n_faces; fl_id++) {
 
-    f_id = faces_list[fl_id];
-    new_to_old_i[fl_id] = f_id;
+    f_id = new_to_old_i[fl_id];
 
     assert(f_t_id[f_id] > -1);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    assert(f_t_id[f_id] >= f_t_id_prev);
+    f_t_id_prev = f_t_id[f_id];
+#endif
 
     t_id = f_t_id[f_id]%n_i_threads;
     g_id = (f_t_id[f_id] - t_id) / n_i_threads;
@@ -1842,6 +2456,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   }
 
   *n_groups = _n_groups;
+  *n_no_adj_halo_groups = _n_no_adj_halo_groups;
   *group_index = _group_index;
 
   return 0;
@@ -2134,8 +2749,8 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
             }
 
             cs_lnum_t itmp = new_to_old_i[swap_id];
-            new_to_old_ii[swap_id] = new_to_old_ii[jj];
-            new_to_old_ii[jj] = itmp;
+            new_to_old_i[swap_id] = new_to_old_i[jj];
+            new_to_old_i[jj] = itmp;
 
             test_all_since_last = true;
             break;
@@ -2161,9 +2776,9 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
     if (loop_id < 100 && (((loop_id+1)%10 == 0) || block_id == -1)) {
       for (cs_lnum_t ii = 0; ii < (n_i_faces-4)/2; ii += 2) {
         cs_lnum_t jj = n_i_faces-ii-1;
-        cs_lnum_t itmp = new_to_old_ii[ii];
-        new_to_old_ii[ii] = new_to_old_ii[jj];
-        new_to_old_ii[jj] = itmp;
+        cs_lnum_t itmp = new_to_old_i[ii];
+        new_to_old_i[ii] = new_to_old_i[jj];
+        new_to_old_i[jj] = itmp;
       }
     }
 
@@ -2216,8 +2831,8 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
 
           cs_lnum_t face_id = new_to_old_i[jj];
 
-          cs_lnum_t cn0 = i_face_cells[new_to_old_ii[ii]][0];
-          cs_lnum_t cn1 = i_face_cells[new_to_old_ii[ii]][1];
+          cs_lnum_t cn0 = i_face_cells[new_to_old_i[ii]][0];
+          cs_lnum_t cn1 = i_face_cells[new_to_old_i[ii]][1];
           cs_lnum_t cr0 = i_face_cells[face_id][0];
           cs_lnum_t cr1 = i_face_cells[face_id][1];
 
@@ -2647,7 +3262,6 @@ _log_threading_info(const char  *elt_type_name,
     _display_histograms_gnum(n_domains, rank_buffer);
 
     BFT_FREE(rank_buffer);
-
     BFT_MALLOC(d_rank_buffer, n_domains, double);
 
     d_loc_buffer = imbalance;
@@ -2658,6 +3272,7 @@ _log_threading_info(const char  *elt_type_name,
        elt_type_name);
     _display_histograms_double(n_domains, d_rank_buffer);
 
+    BFT_FREE(d_rank_buffer);
     BFT_FREE(rank_buffer);
 
   } /* End if n_domains > 1 */
@@ -2676,7 +3291,1338 @@ _log_threading_info(const char  *elt_type_name,
 }
 
 /*----------------------------------------------------------------------------
- * Try to apply renumbering of faces and cells for multiple threads.
+ * Compute local cell centers.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   cell_center --> cell centers array
+ *----------------------------------------------------------------------------*/
+
+static void
+_precompute_cell_center(const cs_mesh_t  *mesh,
+                        cs_coord_t        cell_center[])
+{
+  int ft;
+  cs_lnum_t i, j;
+  cs_lnum_t vtx_id, face_id, start_id, end_id;
+  cs_lnum_t n_face_vertices;
+  cs_coord_t ref_normal[3], vtx_cog[3], face_center[3];
+
+  cs_lnum_t n_cells = mesh->n_cells;
+
+  const cs_lnum_t  *face_cells = NULL;
+  const cs_lnum_t  *face_vtx_idx = NULL;
+  const cs_lnum_t  *face_vtx = NULL;
+  const cs_real_t  *vtx_coord = mesh->vtx_coord;
+
+  cs_lnum_t n_max_face_vertices = 0;
+
+  cs_real_3_t  *face_vtx_coord = NULL;
+  cs_coord_t  *weight = NULL;
+
+  const double surf_epsilon = 1e-24;
+
+  BFT_MALLOC(weight, n_cells, cs_coord_t);
+
+  for (i = 0; i < n_cells; i++) {
+    weight[i] = 0.0;
+    for (j = 0; j < 3; j++)
+      cell_center[i*3 + j] = 0.0;
+  }
+
+  for (ft = 0; ft < 2; ft++) {
+
+    cs_lnum_t n_faces;
+
+    if (ft == 0) {
+      n_faces = mesh->n_i_faces;
+      face_cells = (cs_lnum_t *)(mesh->i_face_cells);
+      face_vtx_idx = mesh->i_face_vtx_idx;
+      face_vtx = mesh->i_face_vtx_lst;
+    }
+    else {
+      n_faces = mesh->n_b_faces;
+      face_cells = mesh->b_face_cells;
+      face_vtx_idx = mesh->b_face_vtx_idx;
+      face_vtx = mesh->b_face_vtx_lst;
+    }
+
+    /* Counting and allocation */
+
+    n_max_face_vertices = 0;
+
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      n_face_vertices = face_vtx_idx[face_id + 1] - face_vtx_idx[face_id];
+      if (n_max_face_vertices <= n_face_vertices)
+        n_max_face_vertices = n_face_vertices;
+    }
+
+    BFT_MALLOC(face_vtx_coord, n_max_face_vertices, cs_real_3_t);
+
+    /* Loop on each face */
+
+    for (face_id = 0; face_id < n_faces; face_id++) {
+
+      /* Initialization */
+
+      cs_lnum_t tri_id;
+
+      cs_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
+      cs_coord_t face_surface = 0.0;
+
+      n_face_vertices = 0;
+
+      start_id = face_vtx_idx[face_id] - 1;
+      end_id = face_vtx_idx[face_id + 1] - 1;
+
+      /* Define the polygon (P) according to the vertices (Pi) of the face */
+
+      for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
+
+        cs_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
+        for (i = 0; i < 3; i++)
+          face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
+        n_face_vertices++;
+
+      }
+
+      /* Compute the center of gravity of the face vertices */
+
+      for (i = 0; i < 3; i++) {
+        vtx_cog[i] = 0.0;
+        for (vtx_id = 0; vtx_id < n_face_vertices; vtx_id++)
+          vtx_cog[i] += face_vtx_coord[vtx_id][i];
+        vtx_cog[i] /= n_face_vertices;
+      }
+
+      /* Loop on the triangles of the face (defined by an edge of the face
+         and its center of gravity) */
+
+      for (i = 0; i < 3; i++) {
+        ref_normal[i] = 0.;
+        face_center[i] = 0.0;
+      }
+
+      for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
+
+        cs_coord_t tri_surface;
+        cs_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
+
+        cs_lnum_t id0 = tri_id;
+        cs_lnum_t id1 = (tri_id + 1)%n_face_vertices;
+
+        /* Normal for each triangle */
+
+        for (i = 0; i < 3; i++) {
+          vect1[i] = face_vtx_coord[id0][i] - vtx_cog[i];
+          vect2[i] = face_vtx_coord[id1][i] - vtx_cog[i];
+        }
+
+        tri_normal[0] = vect1[1] * vect2[2] - vect2[1] * vect1[2];
+        tri_normal[1] = vect2[0] * vect1[2] - vect1[0] * vect2[2];
+        tri_normal[2] = vect1[0] * vect2[1] - vect2[0] * vect1[1];
+
+        if (tri_id == 0) {
+          for (i = 0; i < 3; i++)
+            ref_normal[i] = tri_normal[i];
+        }
+
+        /* Center of gravity for a triangle */
+
+        for (i = 0; i < 3; i++) {
+          tri_center[i] = (  vtx_cog[i]
+                           + face_vtx_coord[id0][i]
+                           + face_vtx_coord[id1][i]) / 3.0;
+        }
+
+        tri_surface = sqrt(  tri_normal[0]*tri_normal[0]
+                           + tri_normal[1]*tri_normal[1]
+                           + tri_normal[2]*tri_normal[2]) * 0.5;
+
+        if ((  tri_normal[0]*ref_normal[0]
+             + tri_normal[1]*ref_normal[1]
+             + tri_normal[2]*ref_normal[2]) < 0.0)
+          tri_surface *= -1.0;
+
+        /* Now compute contribution to face center and surface */
+
+        face_surface += tri_surface;
+
+        for (i = 0; i < 3; i++) {
+          face_center[i] += tri_surface * tri_center[i];
+          unweighted_center[i] = tri_center[i];
+        }
+
+      } /* End of loop  on triangles of the face */
+
+      if (face_surface > surf_epsilon) {
+        for (i = 0; i < 3; i++)
+          face_center[i] /= face_surface;
+      }
+      else {
+        face_surface = surf_epsilon;
+        for (i = 0; i < 3; i++)
+          face_center[i] = unweighted_center[i] * face_surface / n_face_vertices;
+      }
+
+     /* Now contribute to cell centers */
+
+      if (ft == 0) {
+
+        cs_lnum_t cell_id_0 = face_cells[face_id*2];
+        cs_lnum_t cell_id_1 = face_cells[face_id*2 + 1];
+
+        if (cell_id_0 < n_cells) {
+          for (i = 0; i < 3; i++)
+            cell_center[cell_id_0*3 + i] += face_center[i]*face_surface;
+          weight[cell_id_0] += face_surface;
+        }
+
+        if (cell_id_1 < n_cells) {
+          for (i = 0; i < 3; i++)
+            cell_center[cell_id_1*3 + i] += face_center[i]*face_surface;
+          weight[cell_id_1] += face_surface;
+        }
+
+      }
+      else {
+        cs_lnum_t cell_id = face_cells[face_id];
+        for (i = 0; i < 3; i++)
+          cell_center[cell_id*3 + i] += face_center[i]*face_surface;
+        weight[cell_id] += face_surface;
+      }
+
+    } /* End of loop on faces */
+
+    BFT_FREE(face_vtx_coord);
+
+  }
+
+  for (i = 0; i < n_cells; i++) {
+    for (j = 0; j < 3; j++)
+      cell_center[i*3 + j] /= weight[i];
+  }
+
+  BFT_FREE(weight);
+}
+
+/*----------------------------------------------------------------------------
+ * Determine the local extents associated with a set of coordinates
+ *
+ * parameters:
+ *   dim      <-- spatial dimension
+ *   n_coords <-- local number of coordinates
+ *   coords   <-- entity coordinates; size: n_entities*dim (interlaced)
+ *   extents  --> global extents (size: dim*2)
+ *---------------------------------------------------------------------------*/
+
+static void
+_get_coord_extents(int               dim,
+                   size_t            n_coords,
+                   const cs_coord_t  coords[],
+                   cs_coord_t        extents[])
+{
+  size_t  i, j;
+
+  /* Get global min/max coordinates */
+
+  for (j = 0; j < (size_t)dim; j++) {
+    extents[j]       = DBL_MAX;
+    extents[j + dim] = -DBL_MAX;
+  }
+
+  for (i = 0; i < n_coords; i++) {
+    for (j = 0; j < (size_t)dim; j++) {
+      if (coords[i*dim + j] < extents[j])
+        extents[j] = coords[i*dim + j];
+      else if (coords[i*dim + j] > extents[j + dim])
+        extents[j + dim] = coords[i*dim + j];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Renumber cells based on local Morton encoding.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  --> new to old cell renumbering
+ *----------------------------------------------------------------------------*/
+
+static void
+_renum_cells_morton(const cs_mesh_t  *mesh,
+                    cs_lnum_t         new_to_old[])
+{
+  cs_coord_t extents[6];
+  fvm_morton_code_t *m_code = NULL;
+  cs_lnum_t n_cells = mesh->n_cells;
+
+  if (mesh->cell_numbering->n_no_adj_halo_elts > 0)
+    n_cells = mesh->cell_numbering->n_no_adj_halo_elts;
+
+  const int level = sizeof(fvm_morton_int_t)*8 - 1;
+
+  /* Build Morton encoding and order it */
+
+  cs_coord_t *cell_center;
+
+  BFT_MALLOC(cell_center, mesh->n_cells*3, cs_coord_t);
+
+  _precompute_cell_center(mesh, cell_center);
+
+  _get_coord_extents(mesh->dim, mesh->n_cells, cell_center, extents);
+
+  BFT_MALLOC(m_code, mesh->n_cells, fvm_morton_code_t);
+
+  fvm_morton_encode_coords(mesh->dim,
+                           level,
+                           extents,
+                           mesh->n_cells,
+                           cell_center,
+                           m_code);
+
+  fvm_morton_local_order(n_cells, m_code, new_to_old);
+
+  BFT_FREE(m_code);
+
+  BFT_FREE(cell_center);
+}
+
+/*----------------------------------------------------------------------------
+ * Renumber cells based on local Hilbert encoding.
+ *
+ * In the case that 2 entities have a same Hilbert code, their order
+ * will be determined by lexicographical ordering of coordinates.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  --> new to old cell renumbering
+ *----------------------------------------------------------------------------*/
+
+static void
+_renum_cells_hilbert(const cs_mesh_t  *mesh,
+                     cs_lnum_t         new_to_old[])
+{
+  cs_coord_t extents[6];
+
+  cs_coord_t *cell_center;
+
+  BFT_MALLOC(cell_center, mesh->n_cells*3, cs_coord_t);
+
+  _precompute_cell_center(mesh, cell_center);
+
+  _get_coord_extents(mesh->dim, mesh->n_cells, cell_center, extents);
+
+  fvm_hilbert_local_order_coords(mesh->dim,
+                                 extents,
+                                 mesh->n_cells,
+                                 cell_center,
+                                 new_to_old);
+
+  BFT_FREE(cell_center);
+}
+
+#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+
+/*----------------------------------------------------------------------------
+ * Build Metis graph (cell -> cell connectivity, ignoring ghosts)
+ *
+ * parameters:
+ *   mesh           <-- pointer to mesh structure
+ *   n_cells        <-- number of cells considered in graph
+ *   cell_idx       --> cell->cells index
+ *   cell_neighbors --> cell->cells connectivity
+ *----------------------------------------------------------------------------*/
+
+static void
+_metis_graph(const cs_mesh_t   *mesh,
+             idx_t              n_cells,
+             idx_t            **cell_idx,
+             idx_t            **cell_neighbors)
+{
+  idx_t i;
+
+  idx_t  *n_neighbors;
+  idx_t  *_cell_idx;
+  idx_t  *_cell_neighbors;
+
+  const idx_t n_faces = mesh->n_i_faces;
+
+  /* Count and allocate arrays */
+
+  BFT_MALLOC(n_neighbors, n_cells, idx_t);
+
+  for (i = 0; i < n_cells; i++)
+    n_neighbors[i] = 0;
+
+  for (i = 0; i < n_faces; i++) {
+    cs_lnum_t id_0 = mesh->i_face_cells[i][0];
+    cs_lnum_t id_1 = mesh->i_face_cells[i][1];
+    if (id_0 < n_cells && id_1 < n_cells) {
+      n_neighbors[id_0] += 1;
+      n_neighbors[id_1] += 1;
+    }
+  }
+
+  BFT_MALLOC(_cell_idx, n_cells + 1, idx_t);
+
+  _cell_idx[0] = 0;
+
+  for (i = 0; i < n_cells; i++)
+    _cell_idx[i + 1] = _cell_idx[i] + n_neighbors[i];
+
+  BFT_MALLOC(_cell_neighbors, _cell_idx[n_cells], idx_t);
+
+  for (i = 0; i < n_cells; i++)
+    n_neighbors[i] = 0;
+
+  for (i = 0; i < n_faces; i++) {
+
+    cs_lnum_t id_0 = mesh->i_face_cells[i][0];
+    cs_lnum_t id_1 = mesh->i_face_cells[i][1];
+
+    if (id_0 < n_cells && id_1 < n_cells) {
+      _cell_neighbors[_cell_idx[id_0] + n_neighbors[id_0]] = id_1;
+      n_neighbors[id_0] += 1;
+      _cell_neighbors[_cell_idx[id_1] + n_neighbors[id_1]] = id_0;
+      n_neighbors[id_1] += 1;
+    }
+
+  }
+
+  BFT_FREE(n_neighbors);
+
+  *cell_idx = _cell_idx;
+  *cell_neighbors = _cell_neighbors;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute local partition using METIS
+ *
+ * parameters:
+ *   mesh          <-- pointer to mesh structure
+ *   n_parts       <-- number of partitions
+ *   cell_cell_idx <-- cell->cells index
+ *   cell_cell     <-- cell->cells connectivity
+ *   cell_part     --> cell partition
+ *
+ * returns:
+ *   0 in case of success, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_part_metis(const cs_mesh_t  *mesh,
+            idx_t             n_parts,
+            idx_t            *cell_part)
+{
+  idx_t i;
+
+  idx_t   n_constraints = 1;
+
+  idx_t   edgecut = 0; /* <-- Number of faces on partition */
+
+  idx_t   n_cells = mesh->n_cells;
+
+  idx_t  *cell_idx = NULL, *cell_neighbors = NULL;
+
+  int retval = 0, retcode = METIS_OK;
+
+  /* If we have separated cells with no halo adjacency, only partition
+     on those cells */
+
+  if (mesh->cell_numbering->n_no_adj_halo_elts > 0) {
+    for (i = mesh->cell_numbering->n_no_adj_halo_elts; i < n_cells; i++)
+      cell_part[i] = n_parts - 1;
+    n_cells = mesh->cell_numbering->n_no_adj_halo_elts;
+  }
+
+  _metis_graph(mesh, n_cells, &cell_idx, &cell_neighbors);
+
+  /* Subpartition */
+
+  if (n_parts < 8) {
+
+    bft_printf(_("\n"
+                 " Sub-partitioning cells to %d domains per rank\n"
+                 "   (METIS_PartGraphRecursive).\n"),
+               (int)n_parts);
+
+    retcode
+      = METIS_PartGraphRecursive(&n_cells,
+                                 &n_constraints,
+                                 cell_idx,
+                                 cell_neighbors,
+                                 NULL,     /* vwgt:   cell weights */
+                                 NULL,     /* vsize:  size of the vertices */
+                                 NULL,     /* adjwgt: face weights */
+                                 &n_parts,
+                                 NULL,     /* tpwgts */
+                                 NULL,     /* ubvec: load imbalance tolerance */
+                                 NULL,     /* options */
+                                 &edgecut,
+                                 cell_part);
+  }
+
+  else {
+
+    bft_printf(_("\n"
+                 " Sub-partitioning cells to %d domains per rank\n"
+                 "  (METIS_PartGraphKway).\n"),
+               (int)n_parts);
+
+    retcode
+      = METIS_PartGraphKway(&n_cells,
+                            &n_constraints,
+                            cell_idx,
+                            cell_neighbors,
+                            NULL,     /* vwgt:   cell weights */
+                            NULL,     /* vsize:  size of the vertices */
+                            NULL,     /* adjwgt: face weights */
+                            &n_parts,
+                            NULL,     /* tpwgts */
+                            NULL,     /* ubvec: load imbalance tolerance */
+                            NULL,     /* options */
+                            &edgecut,
+                            cell_part);
+
+  }
+
+  BFT_FREE(cell_idx);
+  BFT_FREE(cell_neighbors);
+
+  if (retcode != METIS_OK)
+    retval = 1;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Renumber cells based on local Metis partitioning.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  --> new to old cell renumbering
+ *
+ * returns:
+ *   0 in case of success, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_renum_cells_metis_part(const cs_mesh_t  *mesh,
+                        cs_lnum_t         new_to_old[])
+{
+  idx_t *cell_part;
+  cs_lnum_t *number;
+
+  int retval = 0;
+
+  BFT_MALLOC(cell_part, mesh->n_cells, idx_t);
+  BFT_MALLOC(number, mesh->n_cells * 2, cs_lnum_t);
+
+  retval = _part_metis(mesh, _cs_renumber_n_threads, cell_part);
+
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+    number[i*2] = cell_part[i];
+    number[i*2 + 1] = i;
+  }
+
+  BFT_FREE(cell_part);
+
+  cs_order_lnum_allocated_s(NULL, number, 2, new_to_old, mesh->n_cells);
+
+  BFT_FREE(number);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute local ordering using METIS
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  --> new to old cell renumbering
+ *
+ * returns:
+ *   0 in case of success, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_renum_cells_metis_order(const cs_mesh_t  *mesh,
+                         cs_lnum_t         new_to_old[])
+{
+  idx_t   n_cells = mesh->n_cells;
+  idx_t  *perm = NULL, *iperm = NULL;
+
+  idx_t  *cell_idx = NULL, *cell_neighbors = NULL;
+
+  int retval = 0, retcode = METIS_OK;
+
+  if (sizeof(idx_t) == sizeof(cs_lnum_t))
+    perm = (idx_t *)new_to_old;
+
+  else
+    BFT_MALLOC(perm, n_cells, idx_t);
+
+  /* If we have separated cells with no halo adjacency, only order
+     those cells */
+
+  if (mesh->cell_numbering->n_no_adj_halo_elts > 0) {
+    for (idx_t i = mesh->cell_numbering->n_no_adj_halo_elts; i < n_cells; i++)
+      new_to_old[i] = i;
+    n_cells = mesh->cell_numbering->n_no_adj_halo_elts;
+  }
+
+  BFT_MALLOC(iperm, n_cells, idx_t);
+
+  _metis_graph(mesh, n_cells, &cell_idx, &cell_neighbors);
+
+  bft_printf(_("\n"
+               " Ordering cells for fill reduction (METIS_NodeND).\n"));
+
+  retcode = METIS_NodeND(&n_cells,
+                         cell_idx,
+                         cell_neighbors,
+                         NULL,       /* vwgt:   cell weights */
+                         NULL,       /* options */
+                         perm,
+                         iperm);
+
+  BFT_FREE(iperm);
+
+  if (perm != new_to_old) {
+    for (idx_t i = 0; i < n_cells; i++)
+      new_to_old[i] = perm[i];
+    BFT_FREE(perm);
+  }
+
+  BFT_FREE(cell_idx);
+  BFT_FREE(cell_neighbors);
+
+  if (retcode != METIS_OK)
+    retval = 1;
+
+  return retval;
+}
+
+#endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
+
+#if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
+
+/*----------------------------------------------------------------------------
+ * Sort an array "a" between its left bound "l" and its right bound "r"
+ * thanks to a shell sort (Knuth algorithm).
+ *
+ * parameters:
+ *   l <-- left bound
+ *   r <-- right bound
+ *   a <-> array to sort
+ *---------------------------------------------------------------------------*/
+
+static void
+_scotch_sort_shell(SCOTCH_Num  l,
+                   SCOTCH_Num  r,
+                   SCOTCH_Num  a[])
+{
+  int i, j, h;
+
+  /* Compute stride */
+  for (h = 1; h <= (r-l)/9; h = 3*h+1) ;
+
+  /* Sort array */
+  for (; h > 0; h /= 3) {
+
+    for (i = l+h; i < r; i++) {
+
+      SCOTCH_Num v = a[i];
+
+      j = i;
+      while ((j >= l+h) && (v < a[j-h])) {
+        a[j] = a[j-h];
+        j -= h;
+      }
+      a[j] = v;
+
+    } /* Loop on array elements */
+
+  } /* End of loop on stride */
+
+}
+
+/*----------------------------------------------------------------------------
+ * Build SCOTCH graph (cell -> cell connectivity)
+ *
+ * parameters:
+ *   mesh           <-- pointer to mesh structure
+ *   n_cells        <-- number of cells considered in graph
+ *   cell_idx       --> cell->cells index
+ *   cell_neighbors --> cell->cells connectivity
+ *   mesh_to_graph  --> mesh to graph indirection
+ *
+ * returns:
+ *   number of vertices in graph (cells non in extended halo)
+ *----------------------------------------------------------------------------*/
+
+static SCOTCH_Num
+_scotch_graph(const cs_mesh_t   *mesh,
+              SCOTCH_Num         n_cells,
+              SCOTCH_Num       **cell_idx,
+              SCOTCH_Num       **cell_neighbors,
+              cs_lnum_t        **mesh_to_graph)
+{
+  SCOTCH_Num  i;
+  SCOTCH_Num  start_id, end_id, c_id;
+
+  SCOTCH_Num  *n_neighbors;
+  SCOTCH_Num  *_cell_idx;
+  SCOTCH_Num  *_cell_neighbors;
+  cs_lnum_t   *_mesh_to_graph;
+
+  SCOTCH_Num  n_graph_cells = 0;
+
+  const SCOTCH_Num n_faces = mesh->n_i_faces;
+
+  /* Count and allocate arrays */
+
+  BFT_MALLOC(n_neighbors, n_cells, SCOTCH_Num);
+
+  for (i = 0; i < n_cells; i++)
+    n_neighbors[i] = 0;
+
+  for (i = 0; i < n_faces; i++) {
+    cs_lnum_t id_0 = mesh->i_face_cells[i][0];
+    cs_lnum_t id_1 = mesh->i_face_cells[i][1];
+    if (id_0 < n_cells && id_1 < n_cells) {
+      n_neighbors[id_0] += 1;
+      n_neighbors[id_1] += 1;
+    }
+  }
+
+  BFT_MALLOC(_cell_idx, n_cells + 1, SCOTCH_Num);
+  BFT_MALLOC(_mesh_to_graph, n_cells, cs_lnum_t);
+
+  _cell_idx[0] = 0;
+
+  for (i = 0; i < n_cells; i++) {
+    if (n_neighbors[i] > 0) {
+      _cell_idx[n_graph_cells + 1] = _cell_idx[n_graph_cells] + n_neighbors[i];
+      _mesh_to_graph[i] = n_graph_cells;
+      n_graph_cells++;
+    }
+    else
+      _mesh_to_graph[i] = -1;
+  }
+
+  BFT_MALLOC(_cell_neighbors, _cell_idx[n_graph_cells], SCOTCH_Num);
+
+  for (i = 0; i < n_graph_cells; i++)
+    n_neighbors[i] = 0;
+
+  for (i = 0; i < n_faces; i++) {
+
+    cs_lnum_t id_0 = _mesh_to_graph[mesh->i_face_cells[i][0]];
+    cs_lnum_t id_1 = _mesh_to_graph[mesh->i_face_cells[i][1]];
+
+    if (id_0 > -1 && id_1 > -1) {
+      _cell_neighbors[_cell_idx[id_0] + n_neighbors[id_0]] = id_1;
+      n_neighbors[id_0] += 1;
+      _cell_neighbors[_cell_idx[id_1] + n_neighbors[id_1]] = id_0;
+      n_neighbors[id_1] += 1;
+    }
+
+  }
+
+  BFT_FREE(n_neighbors);
+
+  /* Clean graph */
+
+  c_id = 0;
+  start_id = _cell_idx[0]; /* also = 0 */
+  end_id = 0;
+
+  for (i = 0; i < n_graph_cells; i++) {
+
+    SCOTCH_Num j, n_prev;
+
+    end_id = _cell_idx[i+1];
+
+    if (end_id > start_id) {
+
+      _scotch_sort_shell(start_id, end_id, _cell_neighbors);
+
+      n_prev = _cell_neighbors[start_id];
+      _cell_neighbors[c_id] = n_prev;
+      c_id += 1;
+
+      for (j = start_id + 1; j < end_id; j++) {
+        if (_cell_neighbors[j] != n_prev) {
+          n_prev = _cell_neighbors[j];
+          _cell_neighbors[c_id] = n_prev;
+          c_id += 1;
+        }
+      }
+
+    }
+
+    start_id = end_id;
+    _cell_idx[i+1] = c_id;
+
+  }
+
+  if (c_id < end_id)
+    BFT_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
+
+  /* Set return values */
+
+  *cell_idx = _cell_idx;
+  *cell_neighbors = _cell_neighbors;
+  *mesh_to_graph = _mesh_to_graph;
+
+  return n_graph_cells;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute local partition using SCOTCH
+ *
+ * parameters:
+ *   mesh          <-- pointer to mesh structure
+ *   n_parts       <-- number of partitions
+ *   cell_cell_idx <-- cell->cells index
+ *   cell_cell     <-- cell->cells connectivity
+ *   cell_part     --> cell partition
+ *
+ * returns:
+ *   0 in case of success, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_part_scotch(const cs_mesh_t  *mesh,
+             SCOTCH_Num        n_parts,
+             int              *cell_part)
+{
+  SCOTCH_Num i;
+
+  SCOTCH_Num   n_cells = mesh->n_cells;
+  SCOTCH_Num   n_ext_cells = mesh->n_cells_with_ghosts;
+  SCOTCH_Num   n_graph_cells = 0;
+
+  SCOTCH_Graph  grafdat;  /* Scotch graph object to interface with libScotch */
+  SCOTCH_Strat  stradat;
+
+  SCOTCH_Num  *cell_idx = NULL, *cell_neighbors = NULL;
+  cs_lnum_t   *mesh_to_graph = NULL;
+
+  int  retval = 0;
+
+  /* Initialization */
+
+  for (i = 0; i < n_ext_cells; i++)
+    cell_part[i] = -1; /* 0 to n for constrained sub-partition */
+
+  n_graph_cells = _scotch_graph(mesh,
+                                n_ext_cells,
+                                &cell_idx,
+                                &cell_neighbors,
+                                &mesh_to_graph);
+
+  /* If we have separated cells with no halo adjacency, only partition
+     on those cells; distribute others evenly */
+
+  if (mesh->cell_numbering->n_no_adj_halo_elts > 0)
+    n_cells = mesh->cell_numbering->n_no_adj_halo_elts;
+
+  for (i = n_cells; i < n_graph_cells; i++) {
+    int part_id = ceil((double)i / (double)n_cells) * n_parts - 1;
+    cell_part[i] = CS_MIN(part_id, n_parts - 1);
+  }
+
+  bft_printf(_("\n"
+               " Sub-partitioning cells to %d domains per rank\n"
+               "   (SCOTCH_graphPartFixed).\n"), (int)n_parts);
+
+  /* Partition using libScotch */
+
+  SCOTCH_graphInit(&grafdat);
+
+  retval
+    = SCOTCH_graphBuild(&grafdat,
+                        0,                  /* baseval; 0 to n -1 numbering */
+                        n_graph_cells,      /* vertnbr */
+                        cell_idx,           /* verttab */
+                        NULL,               /* vendtab: verttab + 1 or NULL */
+                        NULL,               /* velotab: vertex weights */
+                        NULL,               /* vlbltab; vertex labels */
+                        cell_idx[n_graph_cells],  /* edgenbr */
+                        cell_neighbors,     /* edgetab */
+                        NULL);              /* edlotab */
+
+  if (retval == 0) {
+
+    SCOTCH_Num  *graph_part = NULL;
+
+    BFT_MALLOC(graph_part, n_graph_cells, SCOTCH_Num);
+
+    for (i = 0; i < n_ext_cells; i++) {
+      if (mesh_to_graph[i] > -1)
+        graph_part[mesh_to_graph[i]] = cell_part[i];
+    }
+
+    SCOTCH_stratInit(&stradat);
+
+    if (SCOTCH_graphCheck(&grafdat) == 0)
+      retval = SCOTCH_graphPartFixed(&grafdat, n_parts, &stradat, graph_part);
+
+    SCOTCH_stratExit(&stradat);
+
+    if (retval == 0) {
+      for (i = 0; i < n_ext_cells; i++) {
+        if (mesh_to_graph[i] > -1)
+          cell_part[i] = graph_part[mesh_to_graph[i]];
+      }
+    }
+
+    BFT_FREE(graph_part);
+
+  }
+
+  SCOTCH_graphExit(&grafdat);
+
+  BFT_FREE(mesh_to_graph);
+
+  BFT_FREE(cell_idx);
+  BFT_FREE(cell_neighbors);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Renumber cells based on local SCOTCH partitioning.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  --> new to old cell renumbering
+ *
+ * returns:
+ *   0 in case of success, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_renum_cells_scotch_part(const cs_mesh_t  *mesh,
+                         cs_lnum_t         new_to_old[])
+{
+  int *cell_part;
+  cs_lnum_t *number;
+
+  int retval = 0;
+
+  BFT_MALLOC(cell_part, mesh->n_cells_with_ghosts, int);
+  BFT_MALLOC(number, mesh->n_cells * 2, cs_lnum_t);
+
+  retval = _part_scotch(mesh, _cs_renumber_n_threads, cell_part);
+
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+    number[i*2] = cell_part[i];
+    number[i*2 + 1] = i;
+  }
+
+  BFT_FREE(cell_part);
+
+  cs_order_lnum_allocated_s(NULL, number, 2, new_to_old, mesh->n_cells);
+
+  BFT_FREE(number);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute local ordering using SCOTCH
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  --> new to old cell renumbering
+ *
+ * returns:
+ *   0 in case of success, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_renum_cells_scotch_order(const cs_mesh_t  *mesh,
+                          cs_lnum_t         new_to_old[])
+{
+  SCOTCH_Num   n_cells = mesh->n_cells;
+  SCOTCH_Num   n_ext_cells = mesh->n_cells_with_ghosts;
+  SCOTCH_Num   n_graph_cells = 0;
+
+  SCOTCH_Graph  grafdat;  /* Scotch graph object to interface with libScotch */
+  SCOTCH_Strat  stradat;
+  SCOTCH_Ordering  order;
+
+  SCOTCH_Num  *peritab = NULL, *listtab = NULL;
+  SCOTCH_Num  *cell_idx = NULL, *cell_neighbors = NULL;
+  cs_lnum_t   *mesh_to_graph = NULL;
+
+  int  retval = 0;
+
+  /* If we have separated cells with no halo adjacency, only order
+     those cells */
+
+  if (mesh->cell_numbering->n_no_adj_halo_elts > 0) {
+    for (SCOTCH_Num i = mesh->cell_numbering->n_no_adj_halo_elts;
+         i < n_cells;
+         i++)
+      new_to_old[i] = i;
+    n_cells = mesh->cell_numbering->n_no_adj_halo_elts;
+  }
+
+  n_graph_cells = _scotch_graph(mesh,
+                                n_ext_cells,
+                                &cell_idx,
+                                &cell_neighbors,
+                                &mesh_to_graph);
+
+  BFT_MALLOC(peritab, n_graph_cells, SCOTCH_Num);
+  BFT_MALLOC(listtab, n_graph_cells, SCOTCH_Num);
+
+  for (SCOTCH_Num i = 0; i < n_cells; i++)
+    listtab[i] = i;
+
+  for (SCOTCH_Num i = n_cells; i < n_graph_cells; i++)
+    peritab[i] = i; /* simple precaution, probably not required */
+
+  bft_printf
+    (_("\n"
+       " Ordering cells for fill reduction (SCOTCH_graphOrderComputeList).\n"));
+
+  /* Order using libScotch */
+
+  SCOTCH_graphInit(&grafdat);
+
+  retval
+    = SCOTCH_graphBuild(&grafdat,
+                        0,                  /* baseval; 0 to n -1 numbering */
+                        n_graph_cells,      /* vertnbr */
+                        cell_idx,           /* verttab */
+                        NULL,               /* vendtab: verttab + 1 or NULL */
+                        NULL,               /* velotab: vertex weights */
+                        NULL,               /* vlbltab; vertex labels */
+                        cell_idx[n_graph_cells],  /* edgenbr */
+                        cell_neighbors,     /* edgetab */
+                        NULL);              /* edlotab */
+
+  if (retval == 0) {
+
+    SCOTCH_stratInit(&stradat);
+
+    if (SCOTCH_graphCheck(&grafdat) == 0) {
+
+      retval = SCOTCH_graphOrderInit(&grafdat,
+                                     &order,
+                                     NULL,   /* permtab */
+                                     peritab,
+                                     NULL,   /* cblkprt */
+                                     NULL,   /* rangtab */
+                                     NULL);  /* treetab */
+
+      if (retval == 0) {
+
+        retval = SCOTCH_graphOrderComputeList(&grafdat,
+                                              &order,
+                                              n_graph_cells,
+                                              listtab,
+                                              &stradat);  /* treetab */
+
+        if (retval != 0) {
+          for (SCOTCH_Num i = 0; i < n_cells; i++)
+            peritab[i] = i;
+        }
+
+        SCOTCH_graphOrderExit(&grafdat, &order);
+
+      }
+
+    }
+
+  }
+
+  SCOTCH_graphExit(&grafdat);
+
+  /* Free local arrays */
+
+  BFT_FREE(listtab);
+
+  SCOTCH_Num j = 0;
+  for (SCOTCH_Num i = 0; i < n_graph_cells; i++) {
+    if (peritab[i] < n_cells)
+      new_to_old[j++] = peritab[i];
+  }
+  BFT_FREE(peritab);
+
+  assert(j == n_cells);
+
+  BFT_FREE(mesh_to_graph);
+
+  BFT_FREE(cell_idx);
+  BFT_FREE(cell_neighbors);
+
+  return retval;
+}
+
+#endif /* defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH) */
+
+/*----------------------------------------------------------------------------
+ * Renumber cells for locality.
+ *
+ * parameters:
+ *   mesh         <-> pointer to global mesh structure
+ *   algorithm    <-- algorithm used for renumbering
+ *   new_to_old_c <-- cell rnumbering array
+ *
+ * returns:
+ *   0 if renumbering was successful, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_cells_locality_renumbering_(cs_mesh_t                 *mesh,
+                             cs_renumber_cells_type_t   algorithm,
+                             cs_lnum_t                 *new_to_old_c)
+{
+  int retval = 0;
+
+  /* Cells renumbering */
+  /*-------------------*/
+
+  switch (algorithm) {
+
+#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+
+  case CS_RENUMBER_CELLS_METIS_PART:
+    retval = _renum_cells_metis_part(mesh, new_to_old_c);
+    break;
+
+  case CS_RENUMBER_CELLS_METIS_ORDER:
+    retval = _renum_cells_metis_order(mesh, new_to_old_c);
+    break;
+
+#endif
+
+#if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
+
+  case CS_RENUMBER_CELLS_SCOTCH_PART:
+    retval = _renum_cells_scotch_part(mesh, new_to_old_c);
+    break;
+
+  case CS_RENUMBER_CELLS_SCOTCH_ORDER:
+    retval = _renum_cells_scotch_order(mesh, new_to_old_c);
+    break;
+
+#endif
+
+  case CS_RENUMBER_CELLS_MORTON:
+    _renum_cells_morton(mesh, new_to_old_c);
+    break;
+
+  case CS_RENUMBER_CELLS_HILBERT:
+    _renum_cells_hilbert(mesh, new_to_old_c);
+    break;
+
+  case CS_RENUMBER_CELLS_NONE:
+    retval = -1;
+    break;
+
+  default:
+    bft_printf
+      (_("\n"
+         " Cell prenumbering of type: %s\n"
+         "   not supported in this build.\n"),
+       _cell_renum_name[algorithm]);
+
+    retval = -1;
+    break;
+  }
+
+  if (retval != 0) {
+    for (cs_lnum_t ii = 0; ii < mesh->n_cells; ii++)
+      new_to_old_c[ii] = ii;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Ensure only cells not neighboring ghost cells are renumbered.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  <-> new to old cell renumbering
+ *----------------------------------------------------------------------------*/
+
+static void
+_renum_only_no_adj_halo_cells(const cs_mesh_t  *mesh,
+                              cs_lnum_t         new_to_old[])
+{
+  if (mesh->cell_numbering->n_no_adj_halo_elts > 0) {
+    cs_lnum_t j = 0;
+    cs_lnum_t n_cells = mesh->cell_numbering->n_no_adj_halo_elts;
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+      cs_lnum_t old_id = new_to_old[i];
+      if (old_id < n_cells)
+        new_to_old[j++] = old_id;
+    }
+    assert(j == n_cells);
+    for (cs_lnum_t i = n_cells; i < mesh->n_cells; i++)
+      new_to_old[i] = i;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Ensure only cells not neighboring ghost cells are renumbered.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  <-> new to old cell renumbering
+ *----------------------------------------------------------------------------*/
+
+static void
+_renum_adj_halo_cells_last(const cs_mesh_t  *mesh,
+                           cs_lnum_t         new_to_old[])
+{
+  cs_lnum_t n_i_cells = 0;
+
+  assert(mesh->cell_numbering != NULL);
+
+  if (_cells_adjacent_to_halo_last) {
+
+    cs_lnum_t *number;
+    int *cell_class;
+
+    BFT_MALLOC(number, mesh->n_cells*2, cs_lnum_t);
+
+    BFT_MALLOC(cell_class, mesh->n_cells, int);
+
+    _classify_cells_by_neighbor(mesh, cell_class);
+
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+      number[i*2] = cell_class[i];
+      if (cell_class[i] == 0)
+        n_i_cells++;
+    }
+
+    BFT_FREE(cell_class);
+
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+      number[new_to_old[i]*2 + 1] = i;
+
+    cs_order_lnum_allocated_s(NULL, number, 2, new_to_old, mesh->n_cells);
+
+    BFT_FREE(number);
+  }
+
+  if (n_i_cells > 0) {
+    cs_numbering_t  *numbering = mesh->cell_numbering;
+    numbering->n_no_adj_halo_elts = n_i_cells;
+    numbering->n_threads = 1;
+    numbering->n_groups = 2;
+    BFT_REALLOC(numbering->group_index, 4, cs_lnum_t);
+    numbering->group_index[0] = 0;
+    numbering->group_index[1] = n_i_cells;
+    numbering->group_index[0] = n_i_cells;
+    numbering->group_index[1] = mesh->n_cells;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Renumber cells for locality and possible computation/communication
+ * overlap.
+ *
+ * parameters:
+ *   mesh <-> pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_cells(cs_mesh_t  *mesh)
+{
+  cs_lnum_t  *new_to_old_c = NULL;
+  int retval = 0;
+  int halo_order_stage = 0;
+
+  if (mesh->cell_numbering != NULL)
+    cs_numbering_destroy(&(mesh->cell_numbering));
+
+  mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
+
+  BFT_MALLOC(new_to_old_c, mesh->n_cells, cs_lnum_t);
+
+  /* When do we reorder cells by adjacent halo ?
+     0: never, 1: after pre-ordering, 2: after ordering;
+     Scotch can be made aware of graph vertices with fixed
+     partition or ordered as "ghosts"; Metis and space-filling
+     curves can not. */
+
+  if (_cells_adjacent_to_halo_last) {
+    switch (_cells_algorithm[1]) {
+    case CS_RENUMBER_CELLS_SCOTCH_PART:
+    case CS_RENUMBER_CELLS_SCOTCH_ORDER:
+      halo_order_stage = 1;
+      break;
+    default:
+      halo_order_stage = 2;
+    }
+  }
+
+  /* Initial numbering, and optional classification by neighbor */
+
+  if (_cells_algorithm[0] != CS_RENUMBER_CELLS_NONE) {
+
+    retval = _cells_locality_renumbering_(mesh,
+                                          _cells_algorithm[0],
+                                          new_to_old_c);
+
+    if (retval != 0 && _cells_algorithm[0] != CS_RENUMBER_CELLS_NONE)
+      bft_printf
+        (_("\n Cell prenumbering (%s) failed.\n"),
+         _cell_renum_name[_cells_algorithm[0]]);
+
+    if (halo_order_stage == 1)
+      _renum_adj_halo_cells_last(mesh, new_to_old_c);
+
+    if (retval == 0 || halo_order_stage == 1)
+      _cs_renumber_update_cells(mesh, new_to_old_c);
+  }
+
+  /* Last stage: numbering for locality */
+
+  retval = _cells_locality_renumbering_(mesh,
+                                        _cells_algorithm[1],
+                                        new_to_old_c);
+
+  if (halo_order_stage == 2)
+    _renum_adj_halo_cells_last(mesh, new_to_old_c);
+  else if (halo_order_stage == 1)
+    _renum_only_no_adj_halo_cells(mesh, new_to_old_c);
+
+  if (retval == 0 || halo_order_stage > 0)
+    _cs_renumber_update_cells(mesh, new_to_old_c);
+
+  else if (retval != 0 && _cells_algorithm[1] != CS_RENUMBER_CELLS_NONE)
+    bft_printf
+      (_("\n Cell renumbering (%s) failed.\n"),
+       _cell_renum_name[_cells_algorithm[1]]);
+
+  /* Now update mesh connectivity */
+  /*------------------------------*/
+
+  if (retval == 0) {
+    bft_printf
+      ("\n ----------------------------------------------------------\n");
+    _cs_renumber_update_cells(mesh, new_to_old_c);
+  }
+
+  /* Now free remaining array */
+
+  BFT_FREE(new_to_old_c);
+}
+
+/*----------------------------------------------------------------------------
+ * Try to apply renumbering of interior faces for multiple threads.
  *
  * Relation to graph edge coloring:
  * No graph vertex (cell) is incident to 2 edges (faces) of the same color.
@@ -2684,59 +4630,56 @@ _log_threading_info(const char  *elt_type_name,
  * Groups may then be built, containing only cells of a given color.
  *
  * parameters:
- *   mesh  <->  Pointer to global mesh structure
+ *   mesh <-> pointer to global mesh structure
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_for_threads(cs_mesh_t  *mesh)
+_renumber_i_faces(cs_mesh_t  *mesh)
 {
-  int  update_c = 0, update_fi = 0, update_fb = 0;
-  int  n_i_groups = 1, n_b_groups = 1;
+  int  n_i_groups = 1, n_i_no_adj_halo_groups = 0;
   cs_lnum_t  max_group_size = 1014;       /* Default */
   cs_lnum_t  ii;
-  cs_lnum_t  *new_to_old_c = NULL, *new_to_old_i = NULL, *new_to_old_b = NULL;
-  cs_lnum_t  *i_group_index = NULL, *b_group_index = NULL;
+  cs_lnum_t  *new_to_old_i = NULL;
+  cs_lnum_t  *i_group_index = NULL;
 
   int  n_i_threads = _cs_renumber_n_threads;
-  int  n_b_threads = _cs_renumber_n_threads;
+
+  cs_numbering_type_t numbering_type = CS_NUMBERING_DEFAULT;
 
   int retval = 0;
 
   /* Note: group indexes for n_threads and n_groups are defined as follows:
    *  group_index <-- group_index[thread_id*group_id*2 + 2*group_id] and
    *                  group_index[thread_id*group_id*2 + 2*group_id +1]
-   *                  define the tart and end ids (+1) for entities in a
+   *                  define the start and end ids (+1) for entities in a
    *                  given group and thread (size: n_groups *2 * n_threads) */
 
-  if (_cs_renumber_n_threads < 2)
-    return;
+  /* Allocate Work array */
 
-  /* Allocate Work arrays */
-
-  BFT_MALLOC(new_to_old_c, mesh->n_cells_with_ghosts, cs_lnum_t);
   BFT_MALLOC(new_to_old_i, mesh->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(new_to_old_b, mesh->n_b_faces, cs_lnum_t);
 
-  /* Initialize renumbering arrays */
+  /* Initialize renumbering array */
 
-  {
-    for (ii = 0; ii < mesh->n_cells_with_ghosts; ii++)
-      new_to_old_c[ii] = ii;
-
-    for (ii = 0; ii < mesh->n_i_faces; ii++)
-      new_to_old_i[ii] = ii;
-
-    for (ii = 0; ii < mesh->n_b_faces; ii++)
-      new_to_old_b[ii] = ii;
-  }
+  for (ii = 0; ii < mesh->n_i_faces; ii++)
+    new_to_old_i[ii] = ii;
 
   /* Interior faces renumbering */
   /*----------------------------*/
+
+  /* We always apply renumbering by cell adjacency using a lexicographical
+     ordering; when ordering by lowest id first, the resulting order should be
+     similar to the "natural" ordering of faces generated during mesh
+     conversion, from a nodal to a "native" (face->cells) representation.
+
+     For some algorithms (such as multipass), this lexicographical ordering is
+     included, so for better efficiency, it is not called twice. */
 
   /* Adjust block size depending on the number of faces and threads */
 
   switch (_i_faces_algorithm) {
   case CS_RENUMBER_I_FACES_BLOCK:
+    numbering_type = CS_NUMBERING_THREADS;
+    _renumber_i_faces_by_cell_adjacency(mesh);
     retval = _renum_i_faces_no_share_cell_in_block(mesh,
                                                    n_i_threads,
                                                    max_group_size,
@@ -2746,256 +4689,205 @@ _renumber_for_threads(cs_mesh_t  *mesh)
     break;
 
   case CS_RENUMBER_I_FACES_MULTIPASS:
+    numbering_type = CS_NUMBERING_THREADS;
     retval = _renum_face_multipass(mesh,
-                                 n_i_threads,
-                                 new_to_old_i,
-                                 &n_i_groups,
-                                 &i_group_index);
+                                   n_i_threads,
+                                   new_to_old_i,
+                                   &n_i_groups,
+                                   &n_i_no_adj_halo_groups,
+                                   &i_group_index);
+    break;
+
+  case CS_RENUMBER_I_FACES_SIMD:
+    numbering_type = CS_NUMBERING_VECTORIZE;
+    _renumber_i_faces_by_cell_adjacency(mesh);
+    retval = _renum_i_faces_for_vectorizing(mesh,
+                                            _cs_renumber_vector_size,
+                                            new_to_old_i);
     break;
 
   case CS_RENUMBER_I_FACES_NONE:
   default:
+    _renumber_i_faces_by_cell_adjacency(mesh);
     retval = -1;
     break;
   }
 
+  /* Update mesh if needed */
+
   if (retval != 0) {
+    numbering_type = CS_NUMBERING_DEFAULT;
     n_i_groups = 1;
     n_i_threads = 1;
-    update_fi = 0;
     BFT_FREE(i_group_index);
   }
   else
-    update_fi = 1;
+    _cs_renumber_update_i_faces(mesh, new_to_old_i);
 
   /* Transfer interior face numbering information to mesh */
 
-  if (n_i_groups *n_i_threads > 1)
+  if (numbering_type == CS_NUMBERING_THREADS) {
     mesh->i_face_numbering = cs_numbering_create_threaded(n_i_threads,
                                                           n_i_groups,
                                                           i_group_index);
-  BFT_FREE(i_group_index);
+    mesh->i_face_numbering->n_no_adj_halo_groups = n_i_no_adj_halo_groups;
+    if (mesh->verbosity > 0)
+      _log_threading_info(_("interior faces"),
+                          mesh->n_domains,
+                          n_i_threads,
+                          n_i_groups,
+                          _estimate_imbalance(mesh->i_face_numbering));
+    if (n_i_threads == 1)
+      mesh->i_face_numbering->type = CS_NUMBERING_DEFAULT;
+  }
+  else if (numbering_type == CS_NUMBERING_VECTORIZE) {
+    mesh->i_face_numbering
+      = cs_numbering_create_vectorized(mesh->n_i_faces,
+                                       _cs_renumber_vector_size);
+  }
+  else
+    mesh->i_face_numbering
+      = cs_numbering_create_default(mesh->n_i_faces);
 
-  _log_threading_info(_("interior faces"),
-                      mesh->n_domains,
-                      n_i_threads,
-                      n_i_groups,
-                      _estimate_imbalance(mesh->i_face_numbering));
+  /* Free memory */
+
+  BFT_FREE(i_group_index);
+  BFT_FREE(new_to_old_i);
+}
+
+/*----------------------------------------------------------------------------
+ * Try to apply renumbering of boundary faces.
+ *
+ * parameters:
+ *   mesh <-> pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_b_faces(cs_mesh_t  *mesh)
+{
+  int  n_b_groups = 1;
+  cs_lnum_t  ii;
+  cs_lnum_t  *new_to_old_b = NULL;
+  cs_lnum_t  *b_group_index = NULL;
+
+  int  n_b_threads = _cs_renumber_n_threads;
+
+  cs_numbering_type_t numbering_type = CS_NUMBERING_DEFAULT;
+
+  int retval = 0;
+
+  /* Note: group indexes for n_threads and 1 group are defined as follows:
+   *  group_index <-- group_index[thread_id] and
+   *                  group_index[thread_id +1]
+   *                  define the start and end ids (+1) for entities in a
+   *                  thread (size: 2 * n_threads) */
+
+  /* Allocate Work array */
+
+  BFT_MALLOC(new_to_old_b, mesh->n_b_faces, cs_lnum_t);
+
+  /* Initialize renumbering array */
+
+  for (ii = 0; ii < mesh->n_b_faces; ii++)
+    new_to_old_b[ii] = ii;
 
   /* Boundary faces renumbering */
   /*----------------------------*/
 
-  retval = _renum_b_faces_no_share_cell_across_thread(mesh,
-                                                      n_b_threads,
-                                                      _min_b_subset_size,
-                                                      new_to_old_b,
-                                                      &n_b_groups,
-                                                      &b_group_index);
+  /* We always apply renumbering by cell adjacency; the resulting order should
+     be similar to the "natural" ordering of faces generated during mesh
+     conversion, from a nodal to a "native" (face->cells) representation.
+
+     For some algorithms (such as no_share_cell_across_thread),
+     this lexicographical ordering is included, so for better efficiency,
+     it is not called twice. */
+
+  switch (_b_faces_algorithm) {
+  case CS_RENUMBER_B_FACES_THREAD:
+    numbering_type = CS_NUMBERING_THREADS;
+    retval = _renum_b_faces_no_share_cell_across_thread(mesh,
+                                                        n_b_threads,
+                                                        _min_b_subset_size,
+                                                        new_to_old_b,
+                                                        &n_b_groups,
+                                                        &b_group_index);
+    break;
+
+  case CS_RENUMBER_B_FACES_SIMD:
+    numbering_type = CS_NUMBERING_VECTORIZE;
+    _renumber_b_faces_by_cell_adjacency(mesh);
+    retval = _renum_b_faces_for_vectorizing(mesh,
+                                            _cs_renumber_vector_size,
+                                            new_to_old_b);
+    break;
+
+  case CS_RENUMBER_B_FACES_NONE:
+  default:
+    _renumber_b_faces_by_cell_adjacency(mesh);
+    retval = -1;
+    break;
+  }
+
+  /* Update mesh if needed */
+  /*-----------------------*/
 
   if (retval != 0) {
     n_b_groups = 1;
     n_b_threads = 1;
-    update_fb = 0;
     BFT_FREE(b_group_index);
   }
   else
-    update_fb = 1;
+    _cs_renumber_update_b_faces(mesh, new_to_old_b);
 
   /* Transfer boundary face numbering information to mesh */
 
-  if (n_b_groups *n_b_threads > 1)
+  if (numbering_type == CS_NUMBERING_THREADS) {
     mesh->b_face_numbering = cs_numbering_create_threaded(n_b_threads,
                                                           n_b_groups,
                                                           b_group_index);
-  BFT_FREE(b_group_index);
+    if (mesh->verbosity > 0)
+      _log_threading_info(_("boundary faces"),
+                          mesh->n_domains,
+                          n_b_threads,
+                          n_b_groups,
+                          _estimate_imbalance(mesh->b_face_numbering));
+    if (n_b_threads == 1)
+      mesh->b_face_numbering->type = CS_NUMBERING_DEFAULT;
+  }
+  else if (numbering_type == CS_NUMBERING_VECTORIZE) {
+    mesh->b_face_numbering
+      = cs_numbering_create_vectorized(mesh->n_b_faces,
+                                       _cs_renumber_vector_size);
+  }
+  else
+    mesh->b_face_numbering
+      = cs_numbering_create_default(mesh->n_b_faces);
 
-  _log_threading_info(_("boundary faces"),
-                      mesh->n_domains,
-                      n_b_threads,
-                      n_b_groups,
-                      _estimate_imbalance(mesh->b_face_numbering));
-
-  bft_printf("\n ----------------------------------------------------------\n");
+  mesh->b_face_numbering->n_no_adj_halo_groups = 1;
 
   /* Free memory */
 
-  if (update_c == 0)
-    BFT_FREE(new_to_old_c);
-
-  if (update_fi == 0)
-    BFT_FREE(new_to_old_i);
-
-  if (update_fb == 0)
-    BFT_FREE(new_to_old_b);
-
-  /* Now update mesh connectivity */
-  /*------------------------------*/
-
-  if (new_to_old_i != NULL || new_to_old_b != NULL)
-    _cs_renumber_update_faces(mesh,
-                              new_to_old_i,
-                              new_to_old_b);
-
-  if (new_to_old_c != NULL)
-    _cs_renumber_update_cells(mesh,
-                              new_to_old_c);
-
-  /* Now free remaining arrays */
-
-  BFT_FREE(new_to_old_i);
+  BFT_FREE(b_group_index);
   BFT_FREE(new_to_old_b);
-  BFT_FREE(new_to_old_c);
-
 }
 
 /*----------------------------------------------------------------------------
- * Try to apply renumbering of faces for vector machines.
- *
- * Renumbering can be cancelled using the IVECTI and IVECTB values in
- * Fortan common IVECTO: -1 indicates we should try to renumber,
- * 0 means we should not renumber. On exit, 0 means we have not found an
- * adequate renumbering, 1 means we have (and it was applied).
- *
- * If the target architecture does not enable vectorization, do as if no
- * adequate renumbering was found.
- *
- * parameters:
- *   mesh            <->  Pointer to global mesh structure
- *
- * returns:
- *   1 if renumbering was tried, 0 otherwise.
- *----------------------------------------------------------------------------*/
-
-static int
-_renumber_for_vectorizing(cs_mesh_t  *mesh)
-{
-  int _ivect[2] = {0, 0};
-  cs_lnum_t   ivecti = 0, ivectb = 0;
-  cs_lnum_t  *new_to_old_i = NULL, *new_to_old_b = NULL;
-
-#if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
-
-  /* Vector register numbers and lengths:
-   *   4       4096 ;
-   *  16       1024
-   *  32        512
-   *  64        256
-   * 128        128
-   * 256         64 */
-
-  const int vector_size = 1024; /* Use register 16 */
-
-#elif defined(SX) && defined(_SX) /* For NEC SX series */
-
-  const int vector_size = 256; /* At least for NEC SX-9 */
-
-#else
-
-  const int vector_size = 1; /* Non-vector machines */
-
-#endif
-
-  /* Nothing to do if vector size = 1 */
-
-  if (vector_size == 1)
-    return 0;
-
-  /* Allocate Work arrays */
-
-  BFT_MALLOC(new_to_old_i, mesh->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(new_to_old_b, mesh->n_b_faces, cs_lnum_t);
-
-  /* Try renumbering */
-
-  ivecti = _renum_i_faces_for_vectorizing(mesh,
-                                          vector_size,
-                                          new_to_old_i);
-
-  ivectb = _renum_b_faces_for_vectorizing(mesh,
-                                          vector_size,
-                                          new_to_old_b);
-
-  /* Update mesh */
-
-  if (ivecti > 0 || ivectb > 0) {
-
-    cs_lnum_t   *_new_to_old_i = NULL;
-    cs_lnum_t   *_new_to_old_b = NULL;
-
-    if (ivecti > 0)
-      _new_to_old_i = new_to_old_i;
-    if (ivectb > 0)
-      _new_to_old_b = new_to_old_b;
-
-    _cs_renumber_update_faces(mesh,
-                              _new_to_old_i,
-                              _new_to_old_b);
-
-  }
-
-  /* Free final work arrays */
-
-  BFT_FREE(new_to_old_b);
-  BFT_FREE(new_to_old_i);
-
-  /* Update mesh */
-
-  if (ivecti > 0)
-    mesh->i_face_numbering
-      = cs_numbering_create_vectorized(mesh->n_i_faces, vector_size);
-  if (ivectb > 0)
-    mesh->b_face_numbering
-      = cs_numbering_create_vectorized(mesh->n_b_faces, vector_size);
-
-  /* Output info */
-
-  _ivect[0] = ivecti; _ivect[1] = ivectb;
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    int ivect_tot[2];
-    MPI_Allreduce(_ivect, ivect_tot, 2, MPI_INT, MPI_SUM,
-                  cs_glob_mpi_comm);
-    _ivect[0] = ivect_tot[0]; _ivect[1] = ivect_tot[1];
-  }
-#endif
-
-  bft_printf(_("\n"
-               " Vectorization:\n"
-               " --------------\n"
-               "   interior faces: %d ranks (of %d)\n"
-               "   boundary faces: %d ranks\n\n"),
-             _ivect[0], cs_glob_n_ranks, _ivect[1]);
-
-  return 1;
-}
-
-/*----------------------------------------------------------------------------
- * Test local operations related to renumbering.
+ * Test local operations related to renumbering for interior faces.
  *
  * parameters:
  *   mesh <-- pointer to mesh structure
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_test(cs_mesh_t  *mesh)
+_renumber_i_test(cs_mesh_t  *mesh)
 {
-  cs_gnum_t face_errors[2] = {0, 0};
-  cs_lnum_t *accumulator = NULL;
-
   if (mesh == NULL)
     return;
 
-  if (mesh->verbosity > 0)
-    bft_printf
-      (_("\n"
-         "Checking mesh renumbering for threads:\n"
-         "-------------------------------------\n\n"));
-
-  /* Check for interior faces */
-  /*--------------------------*/
-
   if (mesh->i_face_numbering != NULL) {
+
+    cs_gnum_t face_errors = 0;
+    cs_lnum_t *accumulator = NULL;
 
     if (mesh->i_face_numbering->type == CS_NUMBERING_THREADS) {
 
@@ -3007,6 +4899,11 @@ _renumber_test(cs_mesh_t  *mesh)
       const int n_threads = mesh->i_face_numbering->n_threads;
       const int n_groups = mesh->i_face_numbering->n_groups;
       const cs_lnum_t *group_index = mesh->i_face_numbering->group_index;
+
+      if (mesh->verbosity > 1)
+        bft_printf
+          (_("\n"
+             "Checking interior faces renumbering...\n"));
 
       BFT_MALLOC(accumulator, mesh->n_cells_with_ghosts, cs_lnum_t);
 
@@ -3032,11 +4929,11 @@ _renumber_test(cs_mesh_t  *mesh)
       for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
         counter += accumulator[c_id_0];
 
-      face_errors[0] = mesh->n_i_faces*2 - counter;
+      face_errors = mesh->n_i_faces*2 - counter;
 
       /* Additional serial test */
 
-      if (face_errors[0] == 0) {
+      if (face_errors == 0) {
 
         for (g_id=0; g_id < n_groups; g_id++) {
 
@@ -3051,8 +4948,8 @@ _renumber_test(cs_mesh_t  *mesh)
               c_id_1 = mesh->i_face_cells[f_id][1];
               if (   (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
                   || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id)) {
-                face_errors[0] += 1;
-                if (mesh->verbosity > 0)
+                face_errors += 1;
+                if (mesh->verbosity > 3)
                   bft_printf("f_id %d (%d %d) g %d t %d\n",
                              f_id, c_id_0, c_id_1, g_id, t_id);
               }
@@ -3079,7 +4976,12 @@ _renumber_test(cs_mesh_t  *mesh)
       for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
         accumulator[c_id_0] = 0;
 
-#     pragma dir nodep
+#     if defined(HAVE_OPENMP)
+#       pragma omp simd safelen(mesh->i_face_numbering->vector_size)
+#     else
+#       pragma dir nodep
+#       pragma GCC ivdep
+#     endif
       for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
         c_id_0 = mesh->i_face_cells[f_id][0];
         c_id_1 = mesh->i_face_cells[f_id][1];
@@ -3090,11 +4992,11 @@ _renumber_test(cs_mesh_t  *mesh)
       for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
         counter += accumulator[c_id_0];
 
-      face_errors[0] = mesh->n_i_faces*2 - counter;
+      face_errors = mesh->n_i_faces*2 - counter;
 
       /* Additional serial test */
 
-      if (face_errors[0] == 0) {
+      if (face_errors == 0) {
 
         const cs_lnum_t vector_size = mesh->i_face_numbering->vector_size;
 
@@ -3106,11 +5008,12 @@ _renumber_test(cs_mesh_t  *mesh)
           c_id_0 = mesh->i_face_cells[f_id][0];
           c_id_1 = mesh->i_face_cells[f_id][1];
           if (   accumulator[c_id_0] == block_id
-              || accumulator[c_id_1] == block_id)
-            face_errors[0] += 1;
-          if (mesh->verbosity > 0)
-            bft_printf("f_id %d (%d %d) b %d\n",
-                       f_id, c_id_0, c_id_1, block_id);
+              || accumulator[c_id_1] == block_id) {
+            face_errors += 1;
+            if (mesh->verbosity > 3)
+              bft_printf("f_id %d (%d %d) b %d\n",
+                         f_id, c_id_0, c_id_1, block_id);
+          }
           accumulator[c_id_0] = block_id;
           accumulator[c_id_1] = block_id;
         }
@@ -3120,12 +5023,44 @@ _renumber_test(cs_mesh_t  *mesh)
       BFT_FREE(accumulator);
     }
 
+    if (mesh->verbosity > 0) {
+
+      cs_parall_counter(&face_errors, 1);
+
+      if (face_errors != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%llu conflicts detected using interior faces renumbering."),
+                  (unsigned long long)face_errors);
+
+    }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Test local operations related to renumbering for boundary faces.
+ *
+ * parameters:
+ *   mesh <-- pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_b_test(cs_mesh_t  *mesh)
+{
+  if (mesh == NULL)
+    return;
 
   /* Check for boundary faces */
   /*--------------------------*/
 
   if (mesh->b_face_numbering != NULL) {
+
+    cs_gnum_t face_errors = 0;
+    cs_lnum_t *accumulator = NULL;
+
+    if (mesh->verbosity > 1)
+      bft_printf
+        (_("\n"
+           "Checking boundary faces renumbering...\n"));
 
     if (mesh->b_face_numbering->type == CS_NUMBERING_THREADS) {
 
@@ -3160,11 +5095,11 @@ _renumber_test(cs_mesh_t  *mesh)
       for (c_id = 0; c_id < mesh->n_cells; c_id++)
         counter += accumulator[c_id];
 
-      face_errors[1] = mesh->n_b_faces - counter;
+      face_errors = mesh->n_b_faces - counter;
 
       /* Additional serial test */
 
-      if (face_errors[1] == 0) {
+      if (face_errors == 0) {
 
         for (g_id=0; g_id < n_groups; g_id++) {
 
@@ -3177,7 +5112,7 @@ _renumber_test(cs_mesh_t  *mesh)
                  f_id++) {
               c_id = mesh->b_face_cells[f_id];
               if (accumulator[c_id] > -1 && accumulator[c_id] != t_id)
-                face_errors[1] += 1;
+                face_errors += 1;
               accumulator[c_id] = t_id;
             }
           }
@@ -3200,7 +5135,12 @@ _renumber_test(cs_mesh_t  *mesh)
       for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
         accumulator[c_id] = 0;
 
-#       pragma dir nodep
+#       if defined(HAVE_OPENMP)
+#         pragma omp simd safelen(mesh->b_face_numbering->vector_size)
+#       else
+#         pragma dir nodep
+#         pragma GCC ivdep
+#       endif
         for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
           c_id = mesh->b_face_cells[f_id];
           accumulator[c_id] += 1;
@@ -3209,11 +5149,11 @@ _renumber_test(cs_mesh_t  *mesh)
       for (c_id = 0; c_id < mesh->n_cells; c_id++)
         counter += accumulator[c_id];
 
-      face_errors[1] = mesh->n_b_faces - counter;
+      face_errors = mesh->n_b_faces - counter;
 
       /* Additional serial test */
 
-      if (face_errors[1] == 0) {
+      if (face_errors == 0) {
 
         const cs_lnum_t vector_size = mesh->i_face_numbering->vector_size;
 
@@ -3223,9 +5163,9 @@ _renumber_test(cs_mesh_t  *mesh)
         for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
           cs_lnum_t block_id = f_id / vector_size;
           c_id = mesh->b_face_cells[f_id];
-          if ( accumulator[c_id] == block_id)
-            face_errors[0] += 1;
-          if (mesh->verbosity > 0)
+          if (accumulator[c_id] == block_id)
+            face_errors += 1;
+          if (mesh->verbosity > 3)
             bft_printf("f_id %d (%d) b %d\n",
                        f_id, c_id, block_id);
           accumulator[c_id] = block_id;
@@ -3236,42 +5176,26 @@ _renumber_test(cs_mesh_t  *mesh)
       BFT_FREE(accumulator);
     }
 
-  }
+    cs_parall_counter(&face_errors, 1);
 
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    cs_gnum_t  g_face_errors[2];
-    MPI_Allreduce(face_errors, g_face_errors, 2, CS_MPI_GNUM, MPI_SUM,
-                  cs_glob_mpi_comm);
-    face_errors[0] = g_face_errors[0];
-    face_errors[1] = g_face_errors[1];
+    if (face_errors != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("%llu conflicts detected using boundary faces renumbering."),
+                (unsigned long long)face_errors);
   }
-#endif
-
-  if (face_errors[0] != 0 || face_errors[1] != 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Conflicts detected using mesh renumbering:\n"
-                "  for interior faces: %llu\n"
-                "  for boundary faces: %llu"),
-              (unsigned long long)(face_errors[0]),
-              (unsigned long long)(face_errors[1]));
 }
 
 /*----------------------------------------------------------------------------
  * Renumber mesh elements for vectorization or OpenMP depending on code
  * options and target machine.
  *
- * Currently, only the legacy vectorizing renumbering is handled.
- *
  * parameters:
  *   mesh  <->  Pointer to global mesh structure
- *
  *----------------------------------------------------------------------------*/
 
 static void
 _renumber_mesh(cs_mesh_t  *mesh)
 {
-  int retval = 0;
   const char *p = NULL;
 
   /* Initialization */
@@ -3292,19 +5216,88 @@ _renumber_mesh(cs_mesh_t  *mesh)
     if (strcmp(p, "IBM") == 0) {
       bft_printf("\n Use IBM Mesh renumbering.\n\n");
       _renumber_for_threads_ibm(mesh);
-      _renumber_test(mesh);
+      _renumber_i_test(mesh);
+      _renumber_b_test(mesh);
       return;
     }
 #endif
 
   }
 
-  /* Try vectorizing first, then renumber for Cache / OpenMP */
+  /* Cell pre-numbering may be ignored if not useful for the
+     chosen renumbering algorithm; scotch algorithms are
+     made aware of the halo and halo-adjacent cells, and
+     graph-based partitioning algorithms in general may use
+     pre-numbering to order cells inside sub-partitions. */
 
-  retval = _renumber_for_vectorizing(mesh);
+  if (_cells_algorithm[0] != CS_RENUMBER_CELLS_NONE) {
 
-  if (retval == 0)
-    _renumber_for_threads(mesh);
+    switch (_cells_algorithm[1]) {
+    case CS_RENUMBER_CELLS_METIS_PART:
+    case CS_RENUMBER_CELLS_SCOTCH_PART:
+      break;
+    case CS_RENUMBER_CELLS_SCOTCH_ORDER:
+      if (_cells_adjacent_to_halo_last)
+        break;
+    default:
+      _cells_algorithm[0] = CS_RENUMBER_CELLS_NONE;
+    }
+
+    if (   _cells_algorithm[0] == CS_RENUMBER_CELLS_NONE
+        && mesh->verbosity > 0)
+      bft_printf
+        (_("\n"
+           "   Cells pre-renumbering deactivated, as it is not useful\n"
+           "   for the current numbering algorithm.\n"));
+  }
+
+  if (mesh->verbosity > 0) {
+
+    int c_halo_adj_last = (_cells_adjacent_to_halo_last) ? 1 : 0;
+    int i_halo_adj_last = (_i_faces_adjacent_to_halo_last) ? 1 : 0;
+    int hi = (_i_faces_base_ordering == CS_RENUMBER_ADJACENT_LOW) ? 0 : 1;
+    const char *no_yes[] = {N_("no"), N_("yes")};
+    const char *low_high[] = {N_("lowest id first"), N_("highest id first")};
+
+    bft_printf
+      (_("\n"
+         "   renumbering for cells:\n"
+         "     pre-numbering:                       %s\n"
+         "     cells adjacent to ghost cells last:  %s\n"
+         "     numbering:                           %s\n"),
+       _cell_renum_name[_cells_algorithm[0]],
+       _(no_yes[c_halo_adj_last]),
+       _cell_renum_name[_cells_algorithm[1]]);
+
+    bft_printf
+      (_("\n"
+         "   renumbering for interior faces:\n"
+         "     cell adjacency pre-ordering:         %s\n"
+         "     faces adjacent to ghost cells last:  %s\n"
+         "     numbering:                           %s\n"),
+        _(low_high[hi]),_(no_yes[i_halo_adj_last]),
+       _i_face_renum_name[_i_faces_algorithm]);
+
+    bft_printf
+      (_("\n"
+         "   renumbering for boundary faces:\n"
+         "     numbering:                           %s\n"),
+       _b_face_renum_name[_b_faces_algorithm]);
+
+  }
+
+  /* Renumber cells first */
+
+  _renumber_cells(mesh);
+
+  /* Renumber faces afterwards */
+
+  _renumber_i_faces(mesh);
+  _renumber_b_faces(mesh);
+
+  if (mesh->verbosity > 0)
+    bft_printf
+      ("\n ----------------------------------------------------------\n");
 }
 
 /*============================================================================
@@ -3385,68 +5378,175 @@ cs_renumber_get_min_subset_size(cs_lnum_t  *min_i_subset_size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Select the algorithm for interior faces renumbering.
+ * \brief Select the algorithm for mesh renumbering.
  *
- * \param[in]  algorithm  algorithm type for interior faces renumbering
+ * \param[in]  halo_adjacent_cells_last  if true, cells adjacent to ghost cells
+ *                                       will be placed last
+ *                                       (after pre-numbering)
+ * \param[in]  halo_adjacent_faces_last  if true, interior faces adjacent to
+ *                                       ghost cells will be placed last
+ *                                       (after pre-numbering)
+ * \param[in]  i_faces_base_ordering     pre-ordering of interior faces by
+ *                                       lowest or highest adjacent cell id
+ * \param[in]  cells_pre_numbering       algorithm for cells pre-numbering
+ * \param[in]  cells_numbering           algorithm for cells numbering
+ * \param[in]  i_faces_numbering         algorithm for interior faces numbering
+ * \param[in]  b_faces_numbering         algorithm for boundary faces numbering
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_set_i_face_algorithm(cs_renumber_i_faces_type_t  algorithm)
+cs_renumber_set_algorithm(bool                        halo_adjacent_cells_last,
+                          bool                        halo_adjacent_faces_last,
+                          cs_renumber_ordering_t      i_faces_base_ordering,
+                          cs_renumber_cells_type_t    cells_pre_numbering,
+                          cs_renumber_cells_type_t    cells_numbering,
+                          cs_renumber_i_faces_type_t  i_faces_numbering,
+                          cs_renumber_i_faces_type_t  b_faces_numbering)
 {
-  _i_faces_algorithm = algorithm;
+  _cells_adjacent_to_halo_last = halo_adjacent_cells_last;
+  _i_faces_adjacent_to_halo_last = halo_adjacent_faces_last;
+  _i_faces_base_ordering = i_faces_base_ordering;
+
+  _cells_algorithm[0] = cells_pre_numbering;
+  _cells_algorithm[1] = cells_numbering;
+  _i_faces_algorithm = i_faces_numbering;
+  _b_faces_algorithm = b_faces_numbering;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the algorithm for interior faces renumbering.
+ * \brief Return the algorithms for mesh renumbering.
  *
- * \return  algorithm type for interior faces renumbering
- */
-/*----------------------------------------------------------------------------*/
-
-cs_renumber_i_faces_type_t
-cs_renumber_get_i_face_algorithm(void)
-{
-  return _i_faces_algorithm;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Renumber mesh elements for vectorization or OpenMP depending on code
- * options and target machine.
+ * Any argument may be passed NULL if this option is not queried.
  *
- * \param[in, out]  mesh             Pointer to global mesh structure
- * \param[in, out]  mesh_quantities  Pointer to global mesh quantities
- *                                   structure
+ * \param[out]  halo_adjacent_cells_last  if true, cells adjacent to ghost cells
+ *                                        will be placed last
+ *                                        (after pre-numbering)
+ * \param[out]  halo_adjacent_faces_last  if true, interior faces adjacent to
+ *                                        ghost cells will be placed last
+ *                                        (after pre-numbering)
+ * \param[out]  i_faces_base_ordering     pre-ordering of interior faces by
+ *                                        lowest or highest adjacent cell id
+ * \param[out]  cells_pre_numbering       algorithm for cells pre-numbering
+ * \param[out]  cells_numbering           algorithm for cells numbering
+ * \param[out]  i_faces_numbering         algorithm for interior faces numbering
+ * \param[out]  b_faces_numbering         algorithm for boundary faces numbering
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_mesh(cs_mesh_t             *mesh,
-                 cs_mesh_quantities_t  *mesh_quantities)
+cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
+                          bool                        *halo_adjacent_faces_last,
+                          cs_renumber_ordering_t      *i_faces_base_ordering,
+                          cs_renumber_cells_type_t    *cells_pre_numbering,
+                          cs_renumber_cells_type_t    *cells_numbering,
+                          cs_renumber_i_faces_type_t  *i_faces_numbering,
+                          cs_renumber_i_faces_type_t  *b_faces_numbering)
 {
-  bool quantities_computed = false;
+  if (halo_adjacent_cells_last != NULL)
+    *halo_adjacent_cells_last = _cells_adjacent_to_halo_last;
+  if (halo_adjacent_faces_last != NULL)
+    *halo_adjacent_faces_last = _i_faces_adjacent_to_halo_last;
+  if (i_faces_base_ordering != NULL)
+    *i_faces_base_ordering = _i_faces_base_ordering;
 
-  if (mesh_quantities != NULL) {
-    if (mesh_quantities->cell_cen != NULL)
-      quantities_computed = true;
-  }
+  if (cells_pre_numbering != NULL)
+    *cells_pre_numbering = _cells_algorithm[0];
+  if (cells_numbering != NULL)
+    *cells_numbering = _cells_algorithm[1];
+  if (i_faces_numbering != NULL)
+    *i_faces_numbering = _i_faces_algorithm;
+  if (b_faces_numbering != NULL)
+    *b_faces_numbering = _b_faces_algorithm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber mesh elements for vectorization or threading depending on
+ * code options and target machine.
+ *
+ * Renumbering cells may also allow improving locality (and favor faces
+ * renumbering).
+ * It is also possible to place cells connected to ghost cells last,
+ * which may be useful to enable computation/communication overlap.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_mesh(cs_mesh_t  *mesh)
+{
+  bft_printf(_("\n Renumbering mesh:\n"));
+  bft_printf_flush();
 
   _renumber_mesh(mesh);
 
+  if (mesh->cell_numbering == NULL)
+    mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
   if (mesh->i_face_numbering == NULL)
     mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
   if (mesh->b_face_numbering == NULL)
     mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
 
-  _renumber_test(mesh);
+  _renumber_i_test(mesh);
+  _renumber_b_test(mesh);
 
   if (mesh->verbosity > 0)
     _log_bandwidth_info(mesh, _("volume mesh"));
+}
 
-  if (quantities_computed)
-    cs_mesh_quantities_compute(mesh, mesh_quantities);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber interior faces for vectorization or threading depending on
+ * code options and target machine.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_i_faces(cs_mesh_t  *mesh)
+{
+  if (mesh->i_face_numbering != NULL)
+    cs_numbering_destroy(&(mesh->i_face_numbering));
+
+  const char *p = NULL;
+
+  /* Initialization */
+
+  if (_cs_renumber_n_threads < 1)
+    _cs_renumber_n_threads = cs_glob_n_threads;
+
+  p = getenv("CS_RENUMBER");
+
+  if (p != NULL) {
+    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0)
+      return;
+  }
+
+  /* Apply renumbering */
+
+  _renumber_i_faces(mesh);
+
+  if (mesh->verbosity > 0)
+    bft_printf
+      ("\n ----------------------------------------------------------\n");
+
+  if (mesh->i_face_numbering == NULL)
+    mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
+
+  _renumber_i_test(mesh);
+
+  if (mesh->verbosity > 0)
+    _log_bandwidth_info(mesh, _("volume mesh"));
 }
 
 /*----------------------------------------------------------------------------*/

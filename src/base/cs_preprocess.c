@@ -306,10 +306,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_user_numbering();
 
-  bft_printf(_("\n Renumbering mesh:\n"));
-  bft_printf_flush();
-  cs_renumber_mesh(cs_glob_mesh,
-                   cs_glob_mesh_quantities);
+  cs_renumber_mesh(cs_glob_mesh);
 
   /* Initialize group classes */
 

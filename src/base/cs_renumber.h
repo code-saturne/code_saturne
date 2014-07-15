@@ -33,7 +33,6 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -47,15 +46,45 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Renumbering algorithm */
+/* Renumbering algorithms */
 
 typedef enum {
 
-  CS_RENUMBER_I_FACES_BLOCK,      /* No shared cell in block */
-  CS_RENUMBER_I_FACES_MULTIPASS,  /* Use multipass face numbering */
-  CS_RENUMBER_I_FACES_NONE        /* No interior face numbering */
+  CS_RENUMBER_CELLS_SCOTCH_PART,     /* SCOTCH partitioning */
+  CS_RENUMBER_CELLS_SCOTCH_ORDER,    /* SCOTCH ordering */
+  CS_RENUMBER_CELLS_METIS_PART,      /* METIS partitioning */
+  CS_RENUMBER_CELLS_METIS_ORDER,     /* METIS ordering */
+  CS_RENUMBER_CELLS_MORTON,          /* Morton space filling curve */
+  CS_RENUMBER_CELLS_HILBERT,         /* Hilbert space filling curve */
+  CS_RENUMBER_CELLS_NONE             /* No interior face numbering */
+
+} cs_renumber_cells_type_t;
+
+typedef enum {
+
+  CS_RENUMBER_I_FACES_BLOCK,         /* No shared cell in block */
+  CS_RENUMBER_I_FACES_MULTIPASS,     /* Use multipass face numbering */
+  CS_RENUMBER_I_FACES_SIMD,          /* Renumber for vector (SIMD) operations */
+  CS_RENUMBER_I_FACES_NONE           /* No interior face numbering */
 
 } cs_renumber_i_faces_type_t;
+
+typedef enum {
+
+  CS_RENUMBER_B_FACES_THREAD,        /* No cell shared between threads */
+  CS_RENUMBER_B_FACES_SIMD,          /* Renumber for vector (SIMD) operations */
+  CS_RENUMBER_B_FACES_NONE           /* No interior face numbering */
+
+} cs_renumber_b_faces_type_t;
+
+/* Ordering options for adjacency arrays */
+
+typedef enum {
+
+  CS_RENUMBER_ADJACENT_LOW,         /* Lowest adjacent id first */
+  CS_RENUMBER_ADJACENT_HIGH         /* Highest adjacent id first */
+
+} cs_renumber_ordering_t;
 
 /*=============================================================================
  * Public function prototypes
@@ -113,37 +142,83 @@ cs_renumber_get_min_subset_size(cs_lnum_t  *min_i_subset_size,
                                 cs_lnum_t  *min_b_subset_size);
 
 /*----------------------------------------------------------------------------
- * Select the algorithm for interior faces renumbering.
+ * Select the options for interior faces renumbering.
  *
  * parameters:
- *   algorithm <-- algorithm type for interior faces renumbering
+ *   halo_adjacent_cells_last <-- if true, cells adjacent to ghost cells
+ *                                will be placed last (after pre-numbering)
+ *   halo_adjacent_faces_last <-- if true, interior faces adjacent to ghost
+ *                                cells will be placed last (after pre-numbering)
+ *   i_faces_base_ordering    <-- pre-ordering of interior faces by
+ *                                lowest or highest adjacent cell id
+ *   cells_pre_numbering      <-- algorithm for cells pre-numbering
+ *   cells_numbering          <-- algorithm for cells numbering
+ *   i_faces_numbering        <-- algorithm for interior faces numbering
+ *   b_faces_numbering        <-- algorithm for boundary faces numbering
  *----------------------------------------------------------------------------*/
 
 void
-cs_renumber_set_i_face_algorithm(cs_renumber_i_faces_type_t  algorithm);
+cs_renumber_set_algorithm(bool                        halo_adjacent_cells_last,
+                          bool                        halo_adjacent_faces_last,
+                          cs_renumber_ordering_t      i_faces_base_ordering,
+                          cs_renumber_cells_type_t    cells_pre_numbering,
+                          cs_renumber_cells_type_t    cells_numbering,
+                          cs_renumber_i_faces_type_t  i_faces_numbering,
+                          cs_renumber_i_faces_type_t  b_faces_numbering);
 
 /*----------------------------------------------------------------------------
- * Return the algorithm for interior faces renumbering.
+ * Return the options for interior faces renumbering.
  *
- * returns:
- *   algorithm type for interior faces renumbering
+ * Any argument may be passed NULL if this option is not queried.
+ *
+ * parameters:
+ *   halo_adjacent_cells_last --> if true, cells adjacent to ghost cells
+ *                                will be placed last (after pre-numbering)
+ *   halo_adjacent_faces_last --> if true, interior faces adjacent to ghost
+ *                                cells will be placed last (after pre-numbering)
+ *   i_faces_base_ordering    --> pre-ordering of interior faces by
+ *                                lowest or highest adjacent cell id
+ *   cells_pre_numbering      --> algorithm for cells pre-numbering
+ *   cells_numbering          --> algorithm for cells numbering
+ *   i_faces_numbering        --> algorithm for interior faces numbering
+ *   b_faces_numbering        --> algorithm for boundary faces numbering
  *----------------------------------------------------------------------------*/
 
-cs_renumber_i_faces_type_t
-cs_renumber_get_i_face_algorithm(void);
+void
+cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
+                          bool                        *halo_adjacent_faces_last,
+                          cs_renumber_ordering_t      *i_faces_base_ordering,
+                          cs_renumber_cells_type_t    *cells_pre_numbering,
+                          cs_renumber_cells_type_t    *cells_numbering,
+                          cs_renumber_i_faces_type_t  *i_faces_numbering,
+                          cs_renumber_i_faces_type_t  *b_faces_numbering);
 
 /*----------------------------------------------------------------------------
- * Renumber mesh elements for vectorization or OpenMP depending on code
+ * Renumber mesh elements for vectorization or threading depending on code
+ * options and target machine.
+ *
+ * Renumbering cells may also allow improving locality (and favor faces
+ * renumbering).
+ * It is also possible to place cells connected to ghost cells last,
+ * which may be useful to enable computation/communication overlap.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_renumber_mesh(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Renumber interior faces for vectorization or threading depending on code
  * options and target machine.
  *
  * parameters:
- *   mesh            <->  Pointer to global mesh structure
- *   mesh_quantities <->  Pointer to global mesh quantities structure
+ *   mesh  <->  pointer to global mesh structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_renumber_mesh(cs_mesh_t             *mesh,
-                 cs_mesh_quantities_t  *mesh_quantities);
+cs_renumber_i_faces(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 

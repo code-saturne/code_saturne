@@ -78,14 +78,14 @@ const char  *cs_numbering_type_name[] = {N_("default"),
  * Create a default numbering information structure.
  *
  * parameters:
- *   n_faces  <-- number of associated faces
+ *   n_elts  <-- number of associated elements
  *
  * returns:
  *   pointer to created cs_numbering_t structure
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_default(cs_lnum_t  n_faces)
+cs_numbering_create_default(cs_lnum_t  n_elts)
 {
   cs_numbering_t  *numbering = NULL;
 
@@ -98,9 +98,12 @@ cs_numbering_create_default(cs_lnum_t  n_faces)
   numbering->n_threads = 1;
   numbering->n_groups = 1;
 
+  numbering->n_no_adj_halo_groups = 0;
+  numbering->n_no_adj_halo_elts = 0;
+
   BFT_MALLOC(numbering->group_index, 2, cs_lnum_t);
   numbering->group_index[0] = 0;
-  numbering->group_index[1] = n_faces;
+  numbering->group_index[1] = n_elts;
 
   return numbering;
 }
@@ -109,7 +112,7 @@ cs_numbering_create_default(cs_lnum_t  n_faces)
  * Create a numbering information structure in case of vectorization.
  *
  * parameters:
- *   n_faces     <-- number of associated faces
+ *   n_elts      <-- number of associated elements
  *   vector_size <-- vector size used for this vectorization
  *
  * returns:
@@ -117,7 +120,7 @@ cs_numbering_create_default(cs_lnum_t  n_faces)
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_vectorized(cs_lnum_t  n_faces,
+cs_numbering_create_vectorized(cs_lnum_t  n_elts,
                                int        vector_size)
 {
   cs_numbering_t  *numbering = NULL;
@@ -133,7 +136,7 @@ cs_numbering_create_vectorized(cs_lnum_t  n_faces,
 
   BFT_MALLOC(numbering->group_index, 2, cs_lnum_t);
   numbering->group_index[0] = 0;
-  numbering->group_index[1] = n_faces;
+  numbering->group_index[1] = n_elts;
 
   return numbering;
 }
@@ -215,14 +218,18 @@ cs_numbering_dump(const cs_numbering_t  *numbering)
     return;
   }
 
-  bft_printf("\n  Numbering:         %p\n"
-             "  type:           %s\n"
-             "  vector_size:    %d\n"
-             "  n_threads:      %d\n"
-             "  n_groups:       %d\n",
+  bft_printf("\n  Numbering:           %p\n"
+             "  type:                  %s\n"
+             "  vector_size:           %d\n"
+             "  n_threads:             %d\n"
+             "  n_groups:              %d\n"
+             "  n_no_adj_halo_groups:  %d\n"
+             "  n_no_adj_halo_elts:    %ld\n",
              (const void *)numbering, cs_numbering_type_name[numbering->type],
              numbering->vector_size,
-             numbering->n_threads, numbering->n_groups);
+             numbering->n_threads, numbering->n_groups,
+             numbering->n_no_adj_halo_groups,
+             (long)(numbering->n_no_adj_halo_elts));
 
   if (numbering->group_index != NULL) {
 

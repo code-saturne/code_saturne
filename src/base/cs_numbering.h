@@ -60,18 +60,25 @@ typedef enum {
 
 typedef struct {
 
-  cs_numbering_type_t   type; /* Numbering type */
+  cs_numbering_type_t   type;     /* Numbering type */
 
-  int   vector_size;          /* Vector size if vectorized, 1 otherwise */
+  int   vector_size;              /* Vector size if vectorized, 1 otherwise */
 
-  int   n_threads;            /* Number of threads */
-  int   n_groups;             /* Number of associated groups */
+  int   n_threads;                /* Number of threads */
+  int   n_groups;                 /* Number of associated groups */
 
-  cs_lnum_t *group_index;   /* For thread t and group g, the start and end
-                                ids for entities in a given group and thread
-                                are group_index[t*n_groups*2 + g] and
-                                group_index[t*n_groups*2 + g + 1] respectively.
-                                (size: n_groups * n_threads * 2) */
+  int   n_no_adj_halo_groups;     /* number of groups for which only non-ghost
+                                     entities are adjacent */
+
+  cs_lnum_t  n_no_adj_halo_elts;  /* Number of elements not adjacent to
+                                     halo elements */
+
+  cs_lnum_t *group_index;         /* For thread t and group g, the start and
+                                     past-the-end ids for entities in a given
+                                     group and thread are respectively:
+                                     group_index[t*n_groups*2 + g] and
+                                     group_index[t*n_groups*2 + g + 1].
+                                     (size: n_groups * n_threads * 2) */
 
 } cs_numbering_t;
 
@@ -95,20 +102,20 @@ extern const char  *cs_numbering_type_name[];
  * Create a default numbering information structure.
  *
  * parameters:
- *   n_faces  <-- number of associated faces
+ *   n_elts  <-- number of associated elements
  *
  * returns:
  *   pointer to created cs_numbering_t structure
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_default(cs_lnum_t  n_faces);
+cs_numbering_create_default(cs_lnum_t  n_elts);
 
 /*----------------------------------------------------------------------------
  * Create a numbering information structure in case of vectorization.
  *
  * parameters:
- *   n_faces     <-- number of associated faces
+ *   n_elts      <-- number of associated elements
  *   vector_size <-- vector size used for this vectorization
  *
  * returns:
@@ -116,7 +123,7 @@ cs_numbering_create_default(cs_lnum_t  n_faces);
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_vectorized(cs_lnum_t  n_faces,
+cs_numbering_create_vectorized(cs_lnum_t  n_elts,
                                int        vector_size);
 
 /*----------------------------------------------------------------------------

@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_join_util.h"
+#include "cs_mesh.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -121,6 +122,21 @@ cs_join_all(bool  preprocess);
 
 void
 cs_join_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Flag boundary faces that will be selected for joining.
+ *
+ * parameters:
+ *   mesh          <-- pointer to mesh structure
+ *   preprocess    <-- true if we are in the preprocessing stage
+ *   b_select_flag <-> false for boundary faces not selected for joining,
+ *                     true for those selected
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
+                            bool              preprocess,
+                            bool              b_select_flag[]);
 
 /*---------------------------------------------------------------------------*/
 
