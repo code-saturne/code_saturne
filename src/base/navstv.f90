@@ -1480,22 +1480,18 @@ if (iwarni(iu).ge.1) then
 
   rnorma = -grand
   rnormi =  grand
-  !$omp parallel do reduction(max: rnorma) reduction(min: rnormi)         &
-  !$omp             private(iel1, iel2, surf, rhom, rnorm)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
     surf = surfan(ifac)
     rhom = (crom(iel1)+crom(iel2))*0.5d0
-    rnorm = imasfl(ifac)/(surf*rhom)
+    rnorm = abs(imasfl(ifac))/(surf*rhom)
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo
   if (irangp.ge.0) then
     call parmax (rnorma)
-    !==========
     call parmin (rnormi)
-    !==========
   endif
   write(nfecra,2300)rnorma, rnormi
 
