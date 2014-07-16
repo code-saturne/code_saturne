@@ -3744,8 +3744,7 @@ _part_metis(const cs_mesh_t  *mesh,
 
     bft_printf(_("\n"
                  " Sub-partitioning cells to %d domains per rank\n"
-                 "   (METIS_PartGraphRecursive).\n"),
-               (int)n_parts);
+                 "   (%).\n"), (int)n_parts, "METIS_PartGraphRecursive");
 
     retcode
       = METIS_PartGraphRecursive(&n_cells,
@@ -3767,8 +3766,7 @@ _part_metis(const cs_mesh_t  *mesh,
 
     bft_printf(_("\n"
                  " Sub-partitioning cells to %d domains per rank\n"
-                 "  (METIS_PartGraphKway).\n"),
-               (int)n_parts);
+                 "   (%).\n"), (int)n_parts, "METIS_PartGraphKway");
 
     retcode
       = METIS_PartGraphKway(&n_cells,
@@ -4135,9 +4133,15 @@ _part_scotch(const cs_mesh_t  *mesh,
     cell_part[i] = CS_MIN(part_id, n_parts - 1);
   }
 
+#if SCOTCH_VERSION >= 6
   bft_printf(_("\n"
                " Sub-partitioning cells to %d domains per rank\n"
-               "   (SCOTCH_graphPartFixed).\n"), (int)n_parts);
+               "   (%).\n"), (int)n_parts, "SCOTCH_graphPartFixed");
+#else
+  bft_printf(_("\n"
+               " Sub-partitioning cells to %d domains per rank\n"
+               "   (%).\n"), (int)n_parts, "SCOTCH_graphPart");
+#endif
 
   /* Partition using libScotch */
 
@@ -4168,8 +4172,13 @@ _part_scotch(const cs_mesh_t  *mesh,
 
     SCOTCH_stratInit(&stradat);
 
-    if (SCOTCH_graphCheck(&grafdat) == 0)
+    if (SCOTCH_graphCheck(&grafdat) == 0) {
+#if SCOTCH_VERSION >= 6
       retval = SCOTCH_graphPartFixed(&grafdat, n_parts, &stradat, graph_part);
+#else
+      retval = SCOTCH_graphPart(&grafdat, n_parts, &stradat, graph_part);
+#endif
+    }
 
     SCOTCH_stratExit(&stradat);
 
