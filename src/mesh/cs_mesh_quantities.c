@@ -407,7 +407,7 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
 
         ii = b_face_cells[face_id];
 
-        udbfs = 1 / b_face_surf[face_id];
+        udbfs = 1. / b_face_surf[face_id];
 
         for (ll = 0; ll < 3; ll++)
           dddij[ll] =   udbfs * b_face_normal[face_id][ll];
