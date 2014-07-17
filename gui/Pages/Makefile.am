@@ -35,6 +35,7 @@ BodyForcesView.py \
 BoundaryConditionsCoalInletView.py \
 BoundaryConditionsCompressibleOutletView.py \
 BoundaryConditionsElectricalView.py \
+BoundaryConditionsExternalHeadLossesView.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshView.py \
 BoundaryConditionsRoughWallView.py \
@@ -142,6 +143,7 @@ BoundaryConditionsCoalInletForm.ui \
 BoundaryConditionsCompressibleOutletForm.ui \
 BoundaryConditionsForm.ui \
 BoundaryConditionsElectricalForm.ui \
+BoundaryConditionsExternalHeadLossesForm.ui \
 BoundaryConditionsMeteoForm.ui \
 BoundaryConditionsMobileMeshForm.ui \
 BoundaryConditionsRoughWallForm.ui \

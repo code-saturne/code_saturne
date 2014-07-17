@@ -101,6 +101,7 @@ typedef struct {
   cs_meteo_t  *meteo;      /* inlet or outlet info for atmospheric flow       */
   mei_tree_t ***scalar;    /* formula for scalar (neumann, dirichlet or
                               exchange coefficient)*/
+  mei_tree_t **headLoss;   /* formula for head loss (free inlet/outlet)       */
 } cs_boundary_t;
 
 /*============================================================================
@@ -141,6 +142,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
+                               const int  *ifrent,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,

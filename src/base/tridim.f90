@@ -787,7 +787,7 @@ do while (iterns.le.nterup)
   ( ntcabs, nfabor,                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
-    isopcf, iparoi, iparug, isymet, isolib,                        &
+    isopcf, iparoi, iparug, isymet, isolib, ifrent,                &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   ielcor, ipoti,                                 &

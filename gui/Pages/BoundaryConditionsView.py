@@ -136,13 +136,14 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
         self.__modelBoundaries = StandardItemModelBoundaries()
         self.treeViewBoundaries.setModel(self.__modelBoundaries)
+        self.treeViewBoundaries.setColumnWidth(2, 110)
 
         # Fill the model with the boundary zone
 
         if MobileMeshModel(self.__case).getMethod() == "off":
-            lst = ('wall', 'inlet', 'outlet')
+            lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet')
         else:
-            lst = ('wall', 'inlet', 'outlet', 'symmetry')
+            lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet')
 
         d = LocalizationModel('BoundaryZone', self.__case)
         for zone in d.getZones():
@@ -169,6 +170,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.setup(self.__case)
         self.radiativeWidget.setup(self.__case)
         self.electricalwidget.setup(self.__case)
+        self.externalHeadLossesWidget.setup(self.__case)
 
         self.__hideAllWidgets()
 
@@ -194,6 +196,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.__selectOutletBoundary(boundary)
         elif nature == 'symmetry':
             self.__selectSymmetryBoundary(boundary)
+        elif nature == 'free_inlet_outlet':
+            self.__selectInletOutletBoundary(boundary)
 
 
     def __selectInletBoundary(self, boundary):
@@ -212,6 +216,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
         self.electricalwidget.showWidget(boundary)
+        self.externalHeadLossesWidget.hideWidget()
 
 
     def __selectWallBoundary(self, boundary):
@@ -224,6 +229,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.showWidget(boundary)
         self.radiativeWidget.showWidget(boundary)
         self.electricalwidget.showWidget(boundary)
+        self.externalHeadLossesWidget.hideWidget()
 
 
     def __selectOutletBoundary(self, boundary):
@@ -238,6 +244,21 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         else:
             self.compressibleOutletWidget.hideWidget()
         self.electricalwidget.showWidget(boundary)
+        self.externalHeadLossesWidget.hideWidget()
+
+
+    def __selectInletOutletBoundary(self, boundary):
+        """
+        Shows widgets for inlet.
+        """
+        self.coalWidget.hideWidget()
+        self.velocityWidget.hideWidget()
+        self.turbulenceWidget.hideWidget()
+        self.meteoWidget.hideWidget()
+        self.scalarsWidget.hideWidget()
+        self.mobileMeshWidget.hideWidget()
+        self.electricalwidget.hideWidget()
+        self.externalHeadLossesWidget.showWidget(boundary)
 
 
     def __selectSymmetryBoundary(self, boundary):
@@ -262,6 +283,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.hideWidget()
         self.radiativeWidget.hideWidget()
         self.electricalwidget.hideWidget()
+        self.externalHeadLossesWidget.hideWidget()
 
 
     def tr(self, text):

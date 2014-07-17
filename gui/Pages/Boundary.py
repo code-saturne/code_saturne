@@ -85,6 +85,8 @@ class Boundary(object) :
             return MeteoBoundary.__new__(MeteoBoundary, label, case)
         elif nature == 'joule_inlet' or nature == 'joule_outlet' or nature == 'joule_wall':
             return JouleBoundary.__new__(JouleBoundary, label, case)
+        elif nature == 'free_inlet_outlet':
+            return InletOutletBoundary.__new__(InletOutletBoundary, label, case)
         else :
             raise ValueError("Unknown boundary nature: " + nature)
 
@@ -1259,6 +1261,45 @@ class JouleBoundary(Boundary) :
 
         n = scalarNode.xmlSetData(choice, formula)
 
+#-------------------------------------------------------------------------------
+# free inlet outlet boundary
+#-------------------------------------------------------------------------------
+
+class InletOutletBoundary(Boundary) :
+    """
+    """
+    def __new__(cls, label, case) :
+        """
+        Constructor
+        """
+        return object.__new__(cls)
+
+
+    @Variables.noUndo
+    def getHeadLossesFormula(self):
+        """
+        Public method.
+        Return the formula for an external head loss.
+        """
+        XMLHeadLossNode = self.boundNode.xmlInitNode('headLoss')
+
+        formula = XMLHeadLossNode.xmlGetString('formula')
+        return formula
+
+
+    @Variables.undoLocal
+    def setHeadLossesFormula(self, formula):
+        """
+        Public method.
+        Set the formula for an external head loss.
+        """
+        XMLHeadLossNode = self.boundNode.xmlInitNode('headLoss')
+        if not XMLHeadLossNode:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = XMLHeadLossNode.xmlInitChildNode('formula')
+        n.xmlSetTextNode(formula)
+
 
 #-------------------------------------------------------------------------------
 # Coal flow inlet boundary
@@ -1284,8 +1325,8 @@ class CoalInletBoundary(InletBoundary) :
         self.__updateCoalInfo()
 
         # Initialize nodes if necessary
-        type = self.getInletType()
-        self.setInletType(type)
+        tpe = self.getInletType()
+        self.setInletType(tpe)
 
 
     def __updateCoalInfo(self):

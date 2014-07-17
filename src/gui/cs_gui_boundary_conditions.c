@@ -294,6 +294,30 @@ _inlet_formula(const char  *label,
 }
 
 /*-----------------------------------------------------------------------------
+ * Formula for head loss.
+ *
+ * parameters:
+ *   label       <--  label of the inlet
+ *----------------------------------------------------------------------------*/
+
+static char*
+_headLoss_formula(const char  *label)
+{
+  char *path = NULL;
+  char *form = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "inlet");
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, "headLoss");
+  cs_xpath_add_function_text(&path);
+
+  form = cs_gui_get_text_value(path);
+  BFT_FREE(path);
+  return form;
+}
+
+/*-----------------------------------------------------------------------------
  * Values for turbulence variable for the current inlet.
  *
  * parameters:
@@ -954,6 +978,7 @@ _init_boundaries(const int  *nfabor,
 
   BFT_MALLOC(boundaries->velocity,  zones,      mei_tree_t*  );
   BFT_MALLOC(boundaries->direction, zones,      mei_tree_t*  );
+  BFT_MALLOC(boundaries->headLoss,  zones,      mei_tree_t*  );
   BFT_MALLOC(boundaries->scalar,    n_fields,   mei_tree_t** );
 
   if (cs_gui_strcmp(vars->model, "solid_fuels"))
@@ -1036,6 +1061,7 @@ _init_boundaries(const int  *nfabor,
     boundaries->rough[izone]     = -999;
     boundaries->velocity[izone]  = NULL;
     boundaries->direction[izone] = NULL;
+    boundaries->headLoss[izone]  = NULL;
 
     if (cs_gui_strcmp(vars->model, "solid_fuels"))
     {
@@ -1219,6 +1245,11 @@ _init_boundaries(const int  *nfabor,
       /* Outlet: data for COMPRESSIBLE MODEL */
       if (cs_gui_strcmp(vars->model, "compressible_model"))
         _outlet_compressible(izone, isspcf, isopcf);
+    }
+    else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
+      const char *sym[] = {"K"};
+      boundaries->headLoss[izone] =
+          _boundary_init_mei_tree(_headLoss_formula(label), sym, 1);
     }
 
     /* for each zone */
@@ -1566,6 +1597,7 @@ cs_gui_get_faces_list(int          izone,
  * integer          iparug  <-- type of boundary: rough wall
  * integer          isymet  <-- type of boundary: symetry
  * integer          isolib  <-- type of boundary: outlet
+ * integer          ifrent  <-- type of boundary: free inlet outlet
  * integer          iqimp   <-- 1 if flow rate is applied
  * integer          icalke  <-- 1 for automatic turbulent boundary conditions
  * integer          ientat  <-- 1 for air temperature boundary conditions (coal)
@@ -1615,6 +1647,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
+                               const int  *ifrent,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -2527,7 +2560,38 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = *isymet;
       }
+    }
+    else if (cs_gui_strcmp(boundaries->nature[izone], "free_inlet_outlet")) {
+      for (int ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[ifbr] = *ifrent;
+      }
 
+      if (boundaries->headLoss != NULL) {
+        t0 = cs_timer_wtime();
+
+        const cs_field_t  *fp = cs_field_by_name_try("pressure");
+        const int var_key_id = cs_field_key_id("variable_id");
+        int ivarp = cs_field_get_key_int(fp, var_key_id) -1;
+
+        mei_tree_insert(boundaries->headLoss[izone], "t", *ttcabs);
+        mei_tree_insert(boundaries->headLoss[izone], "dt", *dtref);
+        mei_tree_insert(boundaries->headLoss[izone], "iter", *ntcabs);
+
+        for (int ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac] -1;
+
+          mei_tree_insert(boundaries->headLoss[izone], "x", cdgfbo[3 * ifbr + 0]);
+          mei_tree_insert(boundaries->headLoss[izone], "y", cdgfbo[3 * ifbr + 1]);
+          mei_tree_insert(boundaries->headLoss[izone], "z", cdgfbo[3 * ifbr + 2]);
+
+          mei_evaluate(boundaries->headLoss[izone]);
+          rcodcl[1 * (*nfabor) * (*nvarcl) + ivarp * (*nfabor) + ifbr] =
+              mei_tree_lookup(boundaries->headLoss[izone], "K");
+        }
+        cs_gui_add_mei_time(cs_timer_wtime() - t0);
+      }
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
       for (int ifac = 0; ifac < faces; ifac++) {
@@ -2849,6 +2913,7 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
       BFT_FREE(boundaries->nature[izone]);
       mei_tree_destroy(boundaries->velocity[izone]);
       mei_tree_destroy(boundaries->direction[izone]);
+      mei_tree_destroy(boundaries->headLoss[izone]);
       for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
 
@@ -2918,6 +2983,7 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
     BFT_FREE(boundaries->dirz);
     BFT_FREE(boundaries->velocity);
     BFT_FREE(boundaries->direction);
+    BFT_FREE(boundaries->headLoss);
     BFT_FREE(boundaries->scalar);
     BFT_FREE(boundaries);
   }

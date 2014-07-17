@@ -184,7 +184,7 @@ class BoundaryNatureDelegate(QItemDelegate):
         for k in list(self.dicoV2M.keys()):
             editor.addItem(k)
         editor.installEventFilter(self)
-        editor.setMinimumWidth(100)
+        editor.setMinimumWidth(120)
         return editor
 
 

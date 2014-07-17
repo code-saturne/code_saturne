@@ -118,6 +118,16 @@
       <item row="11" column="0">
        <widget class="BoundaryConditionsElectricalView" name="electricalwidget" native="true"/>
       </item>
+      <item row="12" column="0">
+       <widget class="BoundaryConditionsExternalHeadLossesView" name="externalHeadLossesWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -159,6 +169,12 @@
    <class>BoundaryConditionsCoalInletView</class>
    <extends>QWidget</extends>
    <header location="global">BoundaryConditionsCoalInletView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsExternalHeadLossesView</class>
+   <extends>QWidget</extends>
+   <header location="global">BoundaryConditionsExternalHeadLossesView.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
