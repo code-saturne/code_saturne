@@ -73,8 +73,8 @@ class MobileMeshModel(Model):
         default = {}
         default['nalinf' ]  = 0
         default['iortvm' ]  = 'isotrop'
-        default['formula_isotrop']  = 'mesh_vi1 = 1;'
-        default['formula_orthotrop'] = 'mesh_vi1 = 1;\nmesh_vi2 = 1;\nmesh_vi3 = 1;'
+        default['formula_isotrop']  = 'mesh_viscosity_1 = 1;'
+        default['formula_orthotrop'] = 'mesh_viscosity_1 = 1;\nmesh_viscosity_2 = 1;\nmesh_viscosity_3 = 1;'
         default['ale_method']  = 'off'
 
         return default
