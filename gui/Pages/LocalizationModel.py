@@ -168,15 +168,24 @@ class BoundaryZone(Zone):
 
 
     def _initNatureList(self, case):
-        self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
+
+        self.case = case
 
         self._natureDict = {}
         self._natureDict['wall']              = self.tr("Wall")
         self._natureDict['inlet']             = self.tr("Inlet")
         self._natureDict['outlet']            = self.tr("Outlet")
         self._natureDict['symmetry']          = self.tr("Symmetry")
-        self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
-        self.case = case
+
+        if case != None:
+            if self.case['package'].name == 'code_saturne':
+                self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
+                self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
+            else:
+                self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
+        else:
+            self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
+            self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
 
 
     def defaultValues(self):
