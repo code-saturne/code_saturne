@@ -683,7 +683,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         if file_name:
             for loc in Informations(file_name, entity).getLocalizations():
                 if loc not in self.mdl.getLocalizationsZonesList():
-                    zone = Zone(self.zoneType, localization = loc)
+                    zone = Zone(self.zoneType, case = self.case, localization = loc)
                     self.mdl.addZone(zone)
                     self.modelLocalization.addItem(zone)
 
@@ -827,7 +827,7 @@ class BoundaryLocalizationView(LocalizationView):
         Constructor.
         """
         self.case = case
-        dicoM2V = Zone("BoundaryZone").getModel2ViewDictionary()
+        dicoM2V = Zone("BoundaryZone", case = self.case).getModel2ViewDictionary()
         self.browser = tree
 
         LocalizationView.__init__(self, "BoundaryZone", parent, self.case, dicoM2V, tree)

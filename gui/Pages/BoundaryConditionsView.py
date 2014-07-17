@@ -249,7 +249,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
     def __selectInletOutletBoundary(self, boundary):
         """
-        Shows widgets for inlet.
+        Shows widgets for free inlet outlet.
         """
         self.coalWidget.hideWidget()
         self.velocityWidget.hideWidget()

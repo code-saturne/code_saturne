@@ -402,7 +402,7 @@ class LocalizationModel(object):
         Add a new zone. Management of default values.
         """
         if newZone == None:
-            newZone = Zone(self._typeZone)
+            newZone = Zone(self._typeZone, case = self.case)
 
         zones = self.getZones()
 
@@ -758,7 +758,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         """
         #LocalizationModel._initModel(self)
         self.__XMLBoundaryConditionsNode = self.case.xmlInitNode('boundary_conditions')
-        self.__natureList = Zone('BoundaryZone').getNatureList()
+        self.__natureList = Zone('BoundaryZone', case = self.case).getNatureList()
 
 
     @Variables.noUndo
@@ -775,7 +775,7 @@ class BoundaryLocalizationModel(LocalizationModel):
             nature = str(node['nature'])
             codeNumber = int(node['name'])
             localization = str(node.xmlGetTextNode())
-            zone = Zone('BoundaryZone', label = label, codeNumber = codeNumber, localization = localization, nature = nature)
+            zone = Zone('BoundaryZone', case = self.case, label = label, codeNumber = codeNumber, localization = localization, nature = nature)
             zones.append(zone)
         return zones
 
