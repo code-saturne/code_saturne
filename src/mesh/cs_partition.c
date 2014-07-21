@@ -3133,7 +3133,11 @@ cs_partition(cs_mesh_t             *mesh,
   /* Initialize local options */
 
   if (stage == CS_PARTITION_MAIN) {
-    if (_part_write_output > 0)
+    if (   (   _algorithm == CS_PARTITION_METIS
+            || _algorithm == CS_PARTITION_SCOTCH)
+        && _part_write_output > 0)
+      write_output = true;
+    else if (_part_write_output > 1)
       write_output = true;
     n_extra_partitions = _part_n_extra_partitions;
   }
