@@ -956,7 +956,7 @@ void CS_PROCF (tplwri, TPLWRI)
 
     if (*tplfmt & fmt_mask) {
 
-      if (*tplnum > -1 && (size_t)(*tplnum) < _n_files_max[fmt]) {
+      if (*tplnum > -1 && (size_t)(*tplnum - 1) < _n_files_max[fmt]) {
         cs_time_plot_t *p = _plot_files[fmt][*tplnum - 1];
         cs_time_plot_vals_write(p, *ntcabs, *ttcabs, *nprb, valprb);
       }
