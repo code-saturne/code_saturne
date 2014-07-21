@@ -2592,7 +2592,8 @@ write(nfecra,9900)
 '                                      (-999 : non applicable)',/)
  7550 format(                                                     &
 ' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
-'       ',a6,' = ',4x,i10,    ' (Force exercee  au bord)',      /,&
+'       ',a6,' = ',4x,i10,    ' (Force exercee par',            /,&
+'       ',6x,'   ',4x,10x,    '   le fluide sur le bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Yplus          au bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Flux thermique au bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Temperature    au bord)',      /,&
@@ -2633,7 +2634,8 @@ write(nfecra,9900)
 '                                      (-999: not applicable)', /)
  7550 format(                                                     &
 ' --- Additional post-processing variables (ipstdv)',           /,&
-'       ',a6,' = ',4x,i10,    ' (Force exerted  at boundary)',  /,&
+'       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
+'       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (Yplus          at boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (Thermal flow   at boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (Temperature    at boundary)',  /,&
