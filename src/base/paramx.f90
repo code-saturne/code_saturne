@@ -227,9 +227,16 @@ module paramx
   !> the flow is incoming, standard outlet when outgoing
   integer   ifrent
 
+  !> \anchor ifreesf
+  !> if \ref itypfb=ifresf: free surface for mobile mesh boundary condition
+  !>  - Homogeneous Neumann boundary condition for velocity and total energy (seen by the reconstruction
+  !> gradients and the diffusion operator).
+  !>  - Dirichlet (\ref icodcl=1) for the pressure.
+  integer   ifreesf
+
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
             iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,       &
-            ieqhcf=11, icscpl=12, ifrent=13)
+            ieqhcf=11, icscpl=12, ifrent=13, ifreesf=14)
 
   !> maximal number of valuators for Navier-Stokes
   integer    nestmx

@@ -948,6 +948,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
                                 const int *const    ibfixe,
                                 const int *const    igliss,
                                 const int *const    ivimpo,
+                                const int *const    ifresf,
                                 int       *const    ialtyb,
                                 const int *const    ipnfbr,
                                 const int *const    nodfbr,
@@ -1012,6 +1013,16 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
         ialtyb[ifbr]  = *ivimpo;
       }
       cs_gui_add_mei_time(cs_timer_wtime() - t0);
+    }
+    else {
+      char *nat = cs_gui_boundary_zone_nature(izone);
+      if (cs_gui_strcmp(nat, "free_surface")) {
+        for (ifac = 0; ifac < faces; ifac++) {
+          int ifbr = faces_list[ifac]-1;
+          ialtyb[ifbr]  = *ifresf;
+        }
+      }
+      BFT_FREE(nat);
     }
     BFT_FREE(faces_list);
   }

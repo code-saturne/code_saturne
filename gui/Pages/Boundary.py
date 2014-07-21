@@ -87,6 +87,8 @@ class Boundary(object) :
             return JouleBoundary.__new__(JouleBoundary, label, case)
         elif nature == 'free_inlet_outlet':
             return InletOutletBoundary.__new__(InletOutletBoundary, label, case)
+        elif nature == 'free_surface':
+            return FreeSurfaceBoundary.__new__(FreeSurfaceBoundary, label, case)
         else :
             raise ValueError("Unknown boundary nature: " + nature)
 
@@ -1275,6 +1277,13 @@ class InletOutletBoundary(Boundary) :
         return object.__new__(cls)
 
 
+    def _initBoundary(self):
+        """
+        Initialize the boundary, add nodes in the boundary node
+        """
+        pass
+
+
     @Variables.noUndo
     def getHeadLossesFormula(self):
         """
@@ -1992,6 +2001,35 @@ class SymmetryBoundary(Boundary) :
         Initialize the boundary, add nodes in the boundary node
         """
         pass
+
+
+#-------------------------------------------------------------------------------
+# free surface boundary
+#-------------------------------------------------------------------------------
+
+class FreeSurfaceBoundary(Boundary) :
+    """
+    """
+    def __new__(cls, label, case) :
+        """
+        Constructor
+        """
+        return object.__new__(cls)
+
+
+    def _initBoundary(self):
+        """
+        Initialize the boundary, add nodes in the boundary node
+        """
+        pass
+
+
+    def deleteFreeSurface(self):
+        """
+        Delete all information of free surface in boundary conditions.
+        """
+        self.boundNode.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # Wall boundary

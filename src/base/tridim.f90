@@ -787,7 +787,7 @@ do while (iterns.le.nterup)
   ( ntcabs, nfabor,                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
-    isopcf, iparoi, iparug, isymet, isolib, ifrent,                &
+    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifreesf,       &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   ielcor, ipoti,                                 &
@@ -899,7 +899,7 @@ do while (iterns.le.nterup)
       call uialcl &
       !==========
     ( nfabor, nozppm,                    &
-      ibfixe, igliss, ivimpo,            &
+      ibfixe, igliss, ivimpo, ifresf,    &
       ialtyb, ipnfbr, nodfbr,            &
       impale,                            &
       depale,                            &

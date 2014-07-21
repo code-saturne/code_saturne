@@ -1598,6 +1598,7 @@ cs_gui_get_faces_list(int          izone,
  * integer          isymet  <-- type of boundary: symetry
  * integer          isolib  <-- type of boundary: outlet
  * integer          ifrent  <-- type of boundary: free inlet outlet
+ * integer          ifreesf <-- type of boundary: free surface
  * integer          iqimp   <-- 1 if flow rate is applied
  * integer          icalke  <-- 1 for automatic turbulent boundary conditions
  * integer          ientat  <-- 1 for air temperature boundary conditions (coal)
@@ -1648,6 +1649,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *isymet,
                                const int  *isolib,
                                const int  *ifrent,
+                               const int  *ifreesf,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -2591,6 +2593,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               mei_tree_lookup(boundaries->headLoss[izone], "K");
         }
         cs_gui_add_mei_time(cs_timer_wtime() - t0);
+      }
+    }
+    else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface")) {
+      for (int ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac]-1;
+        izfppp[ifbr] = zone_nbr;
+        itypfb[ifbr] = *ifreesf;
       }
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {

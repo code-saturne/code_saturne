@@ -45,6 +45,8 @@ import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
 from Pages.OutputControlModel import OutputControlModel
+from Pages.Boundary import Boundary
+from Pages.LocalizationModel import LocalizationModel
 
 #-------------------------------------------------------------------------------
 # Mobil Mesh model class
@@ -156,6 +158,12 @@ class MobileMeshModel(Model):
             if typ not in ('0', '1', '2'):
                 typ = '0'
             self.__removeVariablesandProperties()
+
+            for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+                if zone.getNature() == "free_surface":
+                    Boundary("free_surface", zone.getLabel(), self.case).deleteFreeSurface()
+                    LocalizationModel('BoundaryZone', self.case).deleteZone(zone.getLabel())
+
         self.out.setWriterTimeDependency("-1", 'fixed_mesh')
 
 

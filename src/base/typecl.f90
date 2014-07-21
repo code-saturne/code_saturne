@@ -334,6 +334,15 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
     endif
 
+    ii = ifreesf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Surface libre    ', ii, inb
+#else
+    write(nfecra,6020) 'Free surface     ', ii, inb
+#endif
+
     ii = iindef
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
@@ -344,13 +353,14 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
     do ii = 1, ntypmx
-      if (ii.ne.ientre .and. &
-          ii.ne.iparoi .and. &
-          ii.ne.iparug .and. &
-          ii.ne.isymet .and. &
-          ii.ne.isolib .and. &
-          ii.ne.ifrent .and. &
-          ii.ne.icscpl .and. &
+      if (ii.ne.ientre  .and. &
+          ii.ne.iparoi  .and. &
+          ii.ne.iparug  .and. &
+          ii.ne.isymet  .and. &
+          ii.ne.isolib  .and. &
+          ii.ne.ifrent  .and. &
+          ii.ne.ifreesf .and. &
+          ii.ne.icscpl  .and. &
           ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) call parcpt (inb)
@@ -485,6 +495,7 @@ do ivar = 1, nvar
   do ifac = 1, nfabor
     if ((itypfb(ifac) .ne. isolib) .and. &
         (itypfb(ifac) .ne. ifrent) .and. &
+        (itypfb(ifac) .ne. ifreesf) .and. &
         (itypfb(ifac) .ne. ientre) .and. &
         (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
       rcodcl(ifac,ivar,1) = 0.d0
@@ -502,18 +513,21 @@ do iscal = 1, nscal
     do ifac = 1, nfabor
       if ((itypfb(ifac) .ne. isolib) .and. &
           (itypfb(ifac) .ne. ifrent) .and. &
+          (itypfb(ifac) .ne. ifreesf) .and. &
           (itypfb(ifac) .ne. ientre) .and. &
           (rcodcl(ifac,iut,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,iut,1) = 0.d0
       endif
       if ((itypfb(ifac) .ne. isolib) .and. &
           (itypfb(ifac) .ne. ifrent) .and. &
+          (itypfb(ifac) .ne. ifreesf) .and. &
           (itypfb(ifac) .ne. ientre) .and. &
           (rcodcl(ifac,ivt,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,ivt,1) = 0.d0
       endif
       if ((itypfb(ifac) .ne. isolib) .and. &
           (itypfb(ifac) .ne. ifrent) .and. &
+          (itypfb(ifac) .ne. ifreesf) .and. &
           (itypfb(ifac) .ne. ientre) .and. &
           (rcodcl(ifac,iwt,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,iwt,1) = 0.d0
@@ -558,6 +572,7 @@ do ii = ideb, ifin
     endif
   endif
 enddo
+
 
 ideb = idebty(ifrent)
 ifin = ifinty(ifrent)
@@ -913,6 +928,37 @@ do ivar = 1, nvar
 enddo
 
 
+! ---> surface libre
+
+ideb = idebty(ifreesf)
+ifin = ifinty(ifreesf)
+
+do ivar = 1, nvar
+  if (ivar.eq.ipr) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 1
+        rcodcl(ifac,ivar,1) = p0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  elseif(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      ! Homogeneous Neumann
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
+
+
 ! Free memory
 deallocate(pripb)
 
@@ -1205,6 +1251,34 @@ do ivar = 1, nvar
   enddo
 enddo
 
+! 6.2.c Free surface
+! ===================================
+
+! ---> Free surface
+
+ideb = idebty(ifreesf)
+ifin = ifinty(ifreesf)
+
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
+
+      if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+        icodcl(ifac,ivar) = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      else
+        icodcl(ifac,ivar) = 1
+        ! rcodcl(ifac,ivar,1) is given by the user
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    endif
+  enddo
+enddo
+
 ! 6.3 SYMETRIE bis
 ! =============
 
@@ -1410,6 +1484,18 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     write(nfecra,7020) 'Free inlet       ',ii,inb,flumty(ii)
 #endif
 
+    ii = ifreesf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Surface libre    ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Free surface     ',ii,inb,flumty(ii)
+#endif
+
     if (nbrcpl.ge.1) then
       ii = icscpl
       inb = ifinty(ii)-idebty(ii)+1
@@ -1437,13 +1523,14 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
 #endif
 
     do ii = 1, ntypmx
-      if ( ii.ne.ientre .and.                                    &
-           ii.ne.iparoi .and.                                    &
-           ii.ne.iparug .and.                                    &
-           ii.ne.isymet .and.                                    &
-           ii.ne.isolib .and.                                    &
-           ii.ne.ifrent .and.                                    &
-           ii.ne.icscpl .and.                                    &
+      if ( ii.ne.ientre  .and.                                    &
+           ii.ne.iparoi  .and.                                    &
+           ii.ne.iparug  .and.                                    &
+           ii.ne.isymet  .and.                                    &
+           ii.ne.isolib  .and.                                    &
+           ii.ne.ifrent  .and.                                    &
+           ii.ne.ifreesf .and.                                    &
+           ii.ne.icscpl  .and.                                    &
            ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) then

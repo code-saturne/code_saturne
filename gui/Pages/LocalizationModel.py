@@ -181,6 +181,11 @@ class BoundaryZone(Zone):
             if self.case['package'].name == 'code_saturne':
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
                 self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
+                from Pages.MobileMeshModel import MobileMeshModel
+                if MobileMeshModel(self.case).getMethod() != "off":
+                    self._natureDict['free_surface'] = self.tr("Free surface")
+                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'free_surface']
+                del MobileMeshModel
             else:
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
         else:
