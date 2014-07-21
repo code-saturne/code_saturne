@@ -216,10 +216,11 @@ calculation variable, physical property (time step, density,
 viscosity, specific heat) or turbulent viscosity if {\tt iturb}
 $\geqslant$ 10}
 
-\motcleb{ipstdv}{i}{integer $\geqslant 1$: see below}
-{{\tt ipstyp*ipstcl*ipstft}}{O}{L1}
+\motcleb{ipstdv}{ia}{integer: see below}
+{0}{O}{L1}
 {indicates the data to post-process on the boundary mesh (the boundary mesh must
-have been activated with {\tt ichrbo=1}). The value of {\tt ipstdv} is
+have been activated with {\tt ichrbo=1}).%FIXME 
+ The value of {\tt ipstdv} is
 the product of the following integers, depending on the variables that should be
 post-processed:\\
 \hspace*{1.3cm}{\tt ipstyp}\index{ipstyp}: $y^+$ at the boundary\\
