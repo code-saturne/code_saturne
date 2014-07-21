@@ -196,6 +196,7 @@ double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: rhs, rovsdt
+double precision, allocatable, dimension(:) :: hydro_pres
 double precision, allocatable, dimension(:) :: velflx, velflb, dpvar
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
 double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
@@ -233,7 +234,7 @@ allocate(iflux(nfac), bflux(ndimfb))
 iswdyp = iswdyn(ipr)
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dpvarm1(ncelet), rhs0(ncelet))
-if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet))
+if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet), hydro_pres(ncelet))
 
 ! Diffusive flux Boundary conditions for delta P
 allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
@@ -477,8 +478,8 @@ do ifac = 1, nfabor
   bflux(ifac) = 0.d0
 enddo
 
-! Compute a pseudo hydrostatic pressure increment stored temporarly
-! in cvar_pr(.) with Homogeneous Neumann BCs everywhere
+! Compute a pseudo hydrostatic pressure increment stored
+! in hydro_pres(.) with Homogeneous Neumann BCs everywhere
 if (iphydr.eq.1.and.icalhy.eq.1) then
 
   ifcsor = isostd(nfabor+1)
@@ -585,7 +586,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     !==========
     ( indhyd ,                                &
       frchy  , dfrchy ,                       &
-      cvar_pr, iflux  , bflux ,               &
+      hydro_pres      , iflux  , bflux ,      &
       coefap , coefbp ,                       &
       cofafp , cofbfp ,                       &
       viscf  , viscb  ,                       &
@@ -618,7 +619,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
       phydr0 = 0.d0
     else
       iel0 = ifabor(ifac0)
-      phydr0 = cvar_pr(iel0)                                     &
+      phydr0 = hydro_pres(iel0)                                     &
            +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
            +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
            +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
@@ -637,7 +638,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         iel=ifabor(ifac)
 
         if (indhyd.eq.1) then
-          coefa_dp(ifac) =  cvar_pr(iel)                                  &
+          coefa_dp(ifac) =  hydro_pres(iel)                               &
                          + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
                          + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
                          + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
@@ -2230,7 +2231,7 @@ deallocate(coefaf_dp, coefbf_dp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
-if (icalhy.eq.1) deallocate(frchy, dfrchy)
+if (icalhy.eq.1) deallocate(frchy, dfrchy, hydro_pres)
 if (icavit.ge.0) then
   deallocate(xdtsro)
   if (allocated(xunsro)) deallocate(xunsro)
