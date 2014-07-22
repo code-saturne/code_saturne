@@ -5,6 +5,9 @@ Release 3.2.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in which last probes monitoring file (usually local time step)
+  was empty (bug 66).
+
 - Fix argument inversion for scalar boundary formula on wall, using the GUI.
 
 - Fix: missing private attribute in OpenMP loops in tensorial diffusivity computation.
