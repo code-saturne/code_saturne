@@ -67,7 +67,7 @@ BEGIN_C_DECLS
 void
 cs_create_thinwall(cs_mesh_t  *mesh,
                    cs_lnum_t  *face_list,
-                   int         face_list_size);
+                   cs_lnum_t   face_list_size);
 
 /*----------------------------------------------------------------------------*/
 

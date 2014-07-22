@@ -414,7 +414,7 @@ _add_b_faces(cs_mesh_t        *mesh,
  * parameters:
  *   i_face_cells  <-- interior faces -> cells connectivity
  *   n_g_faces     <-- old number of global boundary faces
- *   n_b_faces     <-- old number of loacl boundary faces
+ *   n_b_faces     <-- old number of local boundary faces
  *   list          <-- list of boundary faces to add (with gost)
  *   list_size     <-- size of list
  *   list_glob_num <-- global numbering of elements in list
@@ -434,12 +434,12 @@ _refresh_b_glob_num(const cs_lnum_2_t  *i_face_cells,
   cs_lnum_t inc = 0;
 
   for (ii = 0; ii < list_size; ii++) {
-    if (i_face_cells[list[ii] - 1][1] > 0) {
+    if (i_face_cells[list[ii] - 1][1] >= 0) {
       b_faces_glob_num[n_b_faces + inc]
         = n_g_faces + 2*(list_glob_num[ii] - 1) + 1;
       inc++;
     }
-    if (i_face_cells[list[ii] - 1][0] > 0) {
+    if (i_face_cells[list[ii] - 1][0] >= 0) {
       b_faces_glob_num[n_b_faces + inc]
         = n_g_faces + 2*(list_glob_num[ii] - 1) + 2;
       inc++;
@@ -464,7 +464,7 @@ _refresh_b_glob_num(const cs_lnum_2_t  *i_face_cells,
 void
 cs_create_thinwall(cs_mesh_t  *mesh,
                    cs_lnum_t  *face_list,
-                   int         face_list_size)
+                   cs_lnum_t   face_list_size)
  {
   cs_lnum_t ii;
   cs_gnum_t _n_g_b_faces, _n_g_i_faces;
@@ -591,7 +591,7 @@ cs_create_thinwall(cs_mesh_t  *mesh,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    int n_bf = 0;
+    cs_lnum_t n_bf = 0;
     for (ii = 0; ii < mesh->n_i_faces; ii++) {
       if (mesh->i_face_cells[ii][1] > 0)
         n_bf++;
