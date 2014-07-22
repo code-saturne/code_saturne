@@ -615,7 +615,10 @@ class XMLinit(Variables):
 
 
         # update formula
-        for node in XMLThermoPhysicalNode.xmlGetNodeList('formula'):
+        nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
+        nvel = XMLThermoPhysicalNode.xmlGetNode('velocity_pressure')
+
+        for node in nvel.xmlGetNodeList('formula'):
             status = node["status"]
             if not(status) or status == "on":
                 content = node.xmlGetTextNode()
@@ -623,10 +626,19 @@ class XMLinit(Variables):
                 content = content.replace("v =", "velocity[1] =")
                 content = content.replace("w =", "velocity[2] =")
                 content = content.replace("P =", "pressure =")
+
+        for node in nth.xmlGetNodeList('formula'):
+            status = node["status"]
+            if not(status) or status == "on":
+                content = node.xmlGetTextNode()
                 content = content.replace("T =", "temperature =")
                 content = content.replace("temperature_celsius =", "temperature =")
                 content = content.replace("temperature_kelvin =", "temperature =")
 
+        for node in XMLThermoPhysicalNode.xmlGetNodeList('formula'):
+            status = node["status"]
+            if not(status) or status == "on":
+                content = node.xmlGetTextNode()
                 nodeas = self.case.xmlGetNode('additional_scalars')
                 nth = nodeas.xmlGetNode('scalar', type='thermal')
                 if nth:
