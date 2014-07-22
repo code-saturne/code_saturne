@@ -118,7 +118,7 @@ cs_mesh_location_n_locations(void);
  *
  * By default, 5 mesh locations are built, matching the 5 first values of
  * the cs_mesh_location_type_t enum: CS_MESH_LOCATION_NONE for global
- * values, CS_MESH_LOCCATION_CELLS for the cellsof the (default) global mesh,
+ * values, CS_MESH_LOCATION_CELLS for the cells of the (default) global mesh,
  * CS_MESH_LOCATION_INTERIOR_FACES and CS_MESH_LOCATION_BOUNDARY_FACES for
  * its faces, and CS_MESH_LOCATION_VERTICES for its vertices.
  *

@@ -2520,7 +2520,7 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Compute or update mesh structure members the depend on other members,
+ * Compute or update mesh structure members that depend on other members,
  * but whose results may be reused, such as global number of elements
  * (cells, vertices, internal and border faces) and sync cell family.
  *
