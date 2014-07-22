@@ -3744,7 +3744,7 @@ _part_metis(const cs_mesh_t  *mesh,
 
     bft_printf(_("\n"
                  " Sub-partitioning cells to %d domains per rank\n"
-                 "   (%).\n"), (int)n_parts, "METIS_PartGraphRecursive");
+                 "   (%s).\n"), (int)n_parts, "METIS_PartGraphRecursive");
 
     retcode
       = METIS_PartGraphRecursive(&n_cells,
@@ -3766,7 +3766,7 @@ _part_metis(const cs_mesh_t  *mesh,
 
     bft_printf(_("\n"
                  " Sub-partitioning cells to %d domains per rank\n"
-                 "   (%).\n"), (int)n_parts, "METIS_PartGraphKway");
+                 "   (%s).\n"), (int)n_parts, "METIS_PartGraphKway");
 
     retcode
       = METIS_PartGraphKway(&n_cells,
@@ -4136,11 +4136,11 @@ _part_scotch(const cs_mesh_t  *mesh,
 #if SCOTCH_VERSION >= 6
   bft_printf(_("\n"
                " Sub-partitioning cells to %d domains per rank\n"
-               "   (%).\n"), (int)n_parts, "SCOTCH_graphPartFixed");
+               "   (%s).\n"), (int)n_parts, "SCOTCH_graphPartFixed");
 #else
   bft_printf(_("\n"
                " Sub-partitioning cells to %d domains per rank\n"
-               "   (%).\n"), (int)n_parts, "SCOTCH_graphPart");
+               "   (%s).\n"), (int)n_parts, "SCOTCH_graphPart");
 #endif
 
   /* Partition using libScotch */
