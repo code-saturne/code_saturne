@@ -5,6 +5,9 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in which last probes monitoring file (usually local time step)
+  was empty (bug 66).
+
 - Fix bug introduced in velocity boundary conditions (introduced April 2014
   when enabling higher order time schemes).
 
@@ -12,7 +15,8 @@ Bug fixes:
 
 - Fix argument inversion for scalar boundary formula on wall, using the GUI.
 
-- Fix deallocation of some boundary arrays if Cressman interpolation in module atmo.
+- Fix deallocation of some boundary arrays if Cressman interpolation in
+  atmospheric module.
 
 - Fix deallocation of field values in case a user solver is used.
 
@@ -20,9 +24,11 @@ Bug fixes:
 
 - Fix initial formulas for the fluid characteristics in the mei.
 
-- Fix backward compatibility for thermal initialization in case of several volumic init. zones in GUI.
+- Fix backward compatibility for thermal initialization in case of several
+  volumic initialization zones in the GUI.
 
-- Fix bug in the GUI for atmospheric flows (remove liquid pot. temp. only if humid atmosphere is chosen).
+- Fix bug in the GUI for atmospheric flows (remove liquid potential temperature
+  only if humid atmosphere is chosen).
 
 - Fix run command update in case of option prefix containing "=".
 
