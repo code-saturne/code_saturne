@@ -45,21 +45,17 @@ BEGIN_C_DECLS
 /* SIMD unit length */
 /*------------------*/
 
-#if defined(HAVE_OPENMP)
+#if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
 
-#  if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
+#  define CS_NUMBERING_SIMD_SIZE 1024 /* Use register 16 */
 
-#    define CS_NUMBERING_SIMD_SIZE 1024 /* Use register 16 */
+#elif defined(SX) && defined(_SX)     /* For NEC SX series */
 
-#  elif defined(SX) && defined(_SX)     /* For NEC SX series */
+#  define CS_NUMBERING_SIMD_SIZE 256  /* At least for NEC SX-9 */
 
-#    define CS_NUMBERING_SIMD_SIZE 256  /* At least for NEC SX-9 */
+#else
 
-#  else
-
-#    define CS_NUMBERING_SIMD_SIZE 4    /* Most current platforms */
-
-#  endif
+#  define CS_NUMBERING_SIMD_SIZE 4    /* Most current platforms */
 
 #endif
 
