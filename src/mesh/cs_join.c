@@ -31,7 +31,8 @@
  *---------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <float.h>
+#include <errno.h>
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1586,6 +1587,16 @@ cs_join_all(bool  preprocess)
 
     clock_start = cs_timer_wtime();  /* Start timer */
 
+    /* Open log file if required */
+
+    if (this_join->log_name != NULL) {
+      cs_glob_join_log = fopen(this_join->log_name, "w");
+      if (cs_glob_join_log == NULL)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Unable to open file: \"%s\" for logging."),
+                  this_join->log_name);
+    }
+
     /* Print informations into log file */
 
     if (mesh->verbosity > 0)
@@ -1779,6 +1790,16 @@ cs_join_all(bool  preprocess)
 
     if (join_type != CS_JOIN_TYPE_NULL)
       mesh->modified = 1;
+
+    /* Close log file if present */
+
+    if (cs_glob_join_log != NULL) {
+      if (fclose(cs_glob_join_log) != 0)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Error closing log file for joining: %d."),
+                  this_join->param.num);
+      cs_glob_join_log = NULL;
+    }
 
   } /* End of loop on joinings */
 
