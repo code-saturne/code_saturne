@@ -269,6 +269,8 @@ typedef struct {
   char              *criteria;   /* Criteria used to select border faces
                                     implied in the joining operation */
 
+  char              *log_name;   /* Optional log file name */
+
 } cs_join_t;
 
 /*----------------------------------------------------------------------------

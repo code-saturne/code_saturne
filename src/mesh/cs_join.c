@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 #include <math.h>
 #include <float.h>
 
@@ -1520,6 +1521,16 @@ cs_join_all(void)
 
     clock_start = cs_timer_wtime();  /* Start timer */
 
+    /* Open log file if required */
+
+    if (this_join->log_name != NULL) {
+      cs_glob_join_log = fopen(this_join->log_name, "w");
+      if (cs_glob_join_log == NULL)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Unable to open file: \"%s\" for logging."),
+                  this_join->log_name);
+    }
+
     /* Print information into log file */
 
     bft_printf(_("\n -------------------------------------------------------\n"
@@ -1750,6 +1761,16 @@ cs_join_all(void)
 
     if (join_type != CS_JOIN_TYPE_NULL)
       mesh->modified = 1;
+
+    /* Close log file if present */
+
+    if (cs_glob_join_log != NULL) {
+      if (fclose(cs_glob_join_log) != 0)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Error closing log file for joining: %d."),
+                  this_join->param.num);
+      cs_glob_join_log = NULL;
+    }
 
   } /* End of loop on joinings */
 

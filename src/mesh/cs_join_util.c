@@ -2118,6 +2118,8 @@ cs_join_create(int                      join_number,
                                    verbosity,
                                    visualization);
 
+  join->log_name = NULL;
+
   /* Copy the selection criteria for future use */
 
   l = strlen(sel_criteria);
@@ -2147,11 +2149,8 @@ cs_join_create(int                      join_number,
       sprintf(rank_add, "_r%04d", cs_glob_rank_id);
     sprintf(logname, "log%cjoin_%02d%s%s.log", DIR_SEPARATOR,
             join_number, perio_add, rank_add);
-    cs_glob_join_log = fopen(logname, "w");
-    if (cs_glob_join_log == NULL)
-      bft_error(__FILE__, __LINE__, errno,
-                _("Unable to open file: \"%s\" for logging."),
-                logname);
+    BFT_MALLOC(join->log_name, strlen(logname) + 1, char);
+    strcpy(join->log_name, logname);
   }
 
   return join;
@@ -2171,14 +2170,7 @@ cs_join_destroy(cs_join_t  **join)
 
     cs_join_t  *_join = *join;
 
-    if (cs_glob_join_log != NULL) {
-      if (fclose(cs_glob_join_log) != 0)
-        bft_error(__FILE__, __LINE__, errno,
-                  _("Error closing log file for joining: %d."),
-                  _join->param.num);
-      cs_glob_join_log = NULL;
-    }
-
+    BFT_FREE(_join->log_name);
     _join_select_destroy(_join->param, &_join->selection);
 
     BFT_FREE(_join->criteria);
