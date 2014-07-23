@@ -5,6 +5,8 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix verbose logging of mesh joining in case of multiple joinings.
+
 - Fix EnSight gold parallel output crash in case of multiple sections of the
   same element type due to splitting of polygons or polyhedra.
 
