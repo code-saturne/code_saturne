@@ -213,27 +213,7 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
-#if defined(__uxpvp__) /* For Fujitsu VPP5000 (or possibly successors) */
-
-  /* Vector register numbers and lengths:
-   *   4       4096 ;
-   *  16       1024
-   *  32        512
-   *  64        256
-   * 128        128
-   * 256         64 */
-
-static int _cs_renumber_vector_size = 1024; /* Use register 16 */
-
-#elif defined(SX) && defined(_SX) /* For NEC SX series */
-
-static int _cs_renumber_vector_size = 256; /* At least for NEC SX-9 */
-
-#else
-
-static int _cs_renumber_vector_size = 4; /* Non-vector machines, with SIMD */
-
-#endif
+static int _cs_renumber_vector_size = CS_NUMBERING_SIMD_SIZE;
 
 static int _cs_renumber_n_threads = 1;
 
@@ -4986,7 +4966,7 @@ _renumber_i_test(cs_mesh_t  *mesh)
         accumulator[c_id_0] = 0;
 
 #     if defined(HAVE_OPENMP)
-#       pragma omp simd safelen(mesh->i_face_numbering->vector_size)
+#       pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
 #     else
 #       pragma dir nodep
 #       pragma GCC ivdep
@@ -5145,7 +5125,7 @@ _renumber_b_test(cs_mesh_t  *mesh)
         accumulator[c_id] = 0;
 
 #       if defined(HAVE_OPENMP)
-#         pragma omp simd safelen(mesh->b_face_numbering->vector_size)
+#         pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
 #       else
 #         pragma dir nodep
 #         pragma GCC ivdep
