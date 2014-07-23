@@ -5,6 +5,9 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix EnSight gold parallel output crash in case of multiple sections of the
+  same element type due to splitting of polygons or polyhedra.
+
 - Fix bug in which last probes monitoring file (usually local time step)
   was empty (bug 66).
 

@@ -2326,7 +2326,9 @@ _export_nodal_tesselated_g(const fvm_to_ensight_writer_t  *w,
     current_section = current_section->next;
 
   } while (   current_section != NULL
-           && current_section->continues_previous == true);
+           && current_section->continues_previous == true
+           &&  (   current_section->section->type
+                == export_section->section->type));
 
   return current_section;
 }
@@ -2403,7 +2405,9 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
     current_section = current_section->next;
 
   } while (   current_section != NULL
-           && current_section->continues_previous == true);
+           && current_section->continues_previous == true
+           &&  (   current_section->section->type
+                == export_section->section->type));
 
   return current_section;
 }
@@ -2510,7 +2514,9 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
     current_section = current_section->next;
 
   } while (   current_section != NULL
-           && current_section->continues_previous == true);
+           && current_section->continues_previous == true
+           &&  (   current_section->section->type
+                == export_section->section->type));
 
   return current_section;
 }
@@ -2830,6 +2836,7 @@ _export_field_values_eg(const fvm_to_ensight_writer_t   *w,
   if (n_sections > 1) {
 
     cs_lnum_t start_id = 0;
+    cs_gnum_t gnum_shift = 0;
 
     BFT_MALLOC(_g_elt_num, part_size, cs_gnum_t);
     g_elt_num = _g_elt_num;
@@ -2843,12 +2850,17 @@ _export_field_values_eg(const fvm_to_ensight_writer_t   *w,
       const cs_lnum_t section_size
         = fvm_io_num_get_local_count(section->global_element_num);
 
-      memcpy(_g_elt_num + start_id,
-             fvm_io_num_get_global_num(section->global_element_num),
-             sizeof(cs_gnum_t)*section_size);
+      const cs_gnum_t * s_gnum
+        = fvm_io_num_get_global_num(section->global_element_num);
+
+      for (j = 0, k = start_id; j < section_size; j++, k++)
+        _g_elt_num[k] = s_gnum[j] + gnum_shift;
+
       start_id += section_size;
+      gnum_shift += fvm_io_num_get_global_count(section->global_element_num);
 
       current_section = current_section->next;
+
 
     } while (   current_section != NULL
              && current_section->continues_previous == true);
@@ -2911,6 +2923,7 @@ _export_field_values_eg(const fvm_to_ensight_writer_t   *w,
   if (have_tesselation) {
 
     BFT_MALLOC(block_n_sub, block_size, int);
+
     cs_part_to_block_copy_array(d,
                                 CS_INT32,
                                 1,
