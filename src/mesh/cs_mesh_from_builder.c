@@ -344,10 +344,10 @@ _extract_face_vertices(cs_mesh_t         *mesh,
   BFT_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces+1, cs_int_t);
   BFT_MALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_int_t);
 
-  mesh->i_face_vtx_idx[0] = 1;
+  mesh->i_face_vtx_idx[0] = 0;
 
   BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces+1, cs_int_t);
-  mesh->b_face_vtx_idx[0] = 1;
+  mesh->b_face_vtx_idx[0] = 0;
 
   if (mesh->n_b_faces > 0)
     BFT_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_int_t);
@@ -361,9 +361,9 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
     if (face_type[i] == '\0') {
       cs_lnum_t *_i_face_vtx =   mesh->i_face_vtx_lst
-                                + mesh->i_face_vtx_idx[n_i_faces] - 1;
+                               + mesh->i_face_vtx_idx[n_i_faces];
       for (j = 0; j < n_f_vertices; j++)
-        _i_face_vtx[j] = _face_vtx[j];
+        _i_face_vtx[j] = _face_vtx[j] - 1;
       mesh->i_face_vtx_idx[n_i_faces + 1] =   mesh->i_face_vtx_idx[n_i_faces]
                                             + n_f_vertices;
       n_i_faces++;
@@ -371,9 +371,9 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
     else if (face_type[i] == '\1' || face_type[i] == '\3') {
       cs_lnum_t *_b_face_vtx =   mesh->b_face_vtx_lst
-                                + mesh->b_face_vtx_idx[n_b_faces] - 1;
+                               + mesh->b_face_vtx_idx[n_b_faces];
       for (j = 0; j < n_f_vertices; j++)
-        _b_face_vtx[j] = _face_vtx[j];
+        _b_face_vtx[j] = _face_vtx[j] - 1;
       mesh->b_face_vtx_idx[n_b_faces + 1] =   mesh->b_face_vtx_idx[n_b_faces]
                                             + n_f_vertices;
       n_b_faces++;
@@ -381,9 +381,9 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
     else if (face_type[i] == '\2') {
       cs_lnum_t *_b_face_vtx =   mesh->b_face_vtx_lst
-                                + mesh->b_face_vtx_idx[n_b_faces] - 1;
+                               + mesh->b_face_vtx_idx[n_b_faces];
       for (j = 0; j < n_f_vertices; j++)
-        _b_face_vtx[j] = _face_vtx[n_f_vertices - j - 1];
+        _b_face_vtx[j] = _face_vtx[n_f_vertices - j - 1] - 1;
       mesh->b_face_vtx_idx[n_b_faces + 1] =   mesh->b_face_vtx_idx[n_b_faces]
                                             + n_f_vertices;
       n_b_faces++;
@@ -878,7 +878,7 @@ _f_face_center(cs_lnum_t         n_f_faces,
 
     for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
 
-      cs_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
+      cs_lnum_t shift = 3 * (face_vtx[vtx_id]);
       for (i = 0; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
       n_face_vertices++;

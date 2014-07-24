@@ -723,38 +723,33 @@ _add_halo_elements(cs_mesh_t        *mesh,
  * Test if loop has to be continued according halo type and face number.
  *
  * parameters:
- *
+ *   mesh    <-- pointer to mesh structure
+ *   face_id <-- interior face id
  *---------------------------------------------------------------------------*/
 
 static bool
-_test_loop_continues(cs_mesh_t   *mesh,
-                     cs_lnum_t    face_num)
+_test_loop_continues(cs_mesh_t  *mesh,
+                     cs_lnum_t   face_id)
 {
   bool  choice = false;
 
   /* Face has to be an internal face */
 
-  if (face_num > mesh->n_b_faces) {
+  if (mesh->halo_type == CS_HALO_STANDARD) {
 
-    if (mesh->halo_type == CS_HALO_STANDARD) {
-
-      cs_lnum_t fac_id = face_num - mesh->n_b_faces - 1;
-
-      if (   mesh->i_face_cells[fac_id][0] < 0
-          || mesh->i_face_cells[fac_id][1] < 0)
-        choice = true;
-      else
-        choice = false;
-
-    }
-    else {
-
-      assert(mesh->halo_type == CS_HALO_EXTENDED);
+    if (   mesh->i_face_cells[face_id][0] < 0
+        || mesh->i_face_cells[face_id][1] < 0)
       choice = true;
+    else
+      choice = false;
 
-    }
+  }
+  else {
 
-  } /* face_num > mesh->n_b_faces */
+    assert(mesh->halo_type == CS_HALO_EXTENDED);
+    choice = true;
+
+  }
 
   return choice;
 }
@@ -766,20 +761,20 @@ _test_loop_continues(cs_mesh_t   *mesh,
  * Second one for filling the ghost cells list.
  *
  * parameters:
- *   mesh           <-- pointer to cs_mesh_t structure
- *   vertex_ifs  <-- pointer to fvm_vertex_ifs_t structure
- *   cell_faces_idx <-- "cell -> faces" connectivity index
- *   cell_faces_lst <-- "cell -> faces" connectivity list
+ *   mesh            <-- pointer to cs_mesh_t structure
+ *   vertex_ifs      <-- pointer to fvm_vertex_ifs_t structure
+ *   gcell_faces_idx <-- "ghost cell -> faces" connectivity index
+ *   gcell_faces_lst <-- "ghost cell -> faces" connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
 _fill_send_halo(cs_mesh_t                 *mesh,
                 const cs_interface_set_t  *vertex_ifs,
-                cs_lnum_t                 *cell_faces_idx,
-                cs_lnum_t                 *cell_faces_lst)
+                cs_lnum_t                 *gcell_faces_idx,
+                cs_lnum_t                 *gcell_faces_lst)
 {
   cs_lnum_t i, cell_id, i_fac, i_vtx;
-  cs_lnum_t fac_id, vtx_id, fac_num;
+  cs_lnum_t fac_id, vtx_id;
   cs_lnum_t n_face_vertices;
 
   cs_halo_type_t  type_tag = CS_HALO_N_TYPES;
@@ -800,7 +795,7 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
   /* We should have the faces -> vertices connectivity to continue */
 
-  if (mesh->i_face_vtx_lst == NULL && mesh->b_face_vtx_lst == NULL)
+  if (mesh->i_face_vtx_lst == NULL)
     return;
 
   /* Create a lookup table to accelerate search in
@@ -829,7 +824,7 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
   */
 
-  if (cell_faces_idx != NULL && cell_faces_lst != NULL) {
+  if (gcell_faces_idx != NULL && gcell_faces_lst != NULL) {
 
     BFT_MALLOC(vtx_checker, n_categories, cs_lnum_t);
     BFT_MALLOC(face_checker, n_categories, cs_halo_type_t);
@@ -848,14 +843,14 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
       /* Loop on faces of the cell */
 
-      for (i_fac = cell_faces_idx[cell_id];
-           i_fac < cell_faces_idx[cell_id + 1]; i_fac++) {
+      for (i_fac = gcell_faces_idx[cell_id];
+           i_fac < gcell_faces_idx[cell_id + 1];
+           i_fac++) {
 
-        fac_num = CS_ABS(cell_faces_lst[i_fac - 1]);
+        fac_id = gcell_faces_lst[i_fac];
 
-        if (_test_loop_continues(mesh, fac_num) == true) {
+        if (_test_loop_continues(mesh, fac_id) == true) {
 
-          fac_id = fac_num - mesh->n_b_faces - 1;
           n_face_vertices = fac_vtx_idx[fac_id + 1] - fac_vtx_idx[fac_id];
 
           /* Initialize checker */
@@ -866,9 +861,10 @@ _fill_send_halo(cs_mesh_t                 *mesh,
           /* Loop on vertices of the face */
 
           for (i_vtx = fac_vtx_idx[fac_id];
-               i_vtx < fac_vtx_idx[fac_id + 1]; i_vtx++) {
+               i_vtx < fac_vtx_idx[fac_id + 1];
+               i_vtx++) {
 
-            vtx_id = fac_vtx_lst[i_vtx - 1] - 1;
+            vtx_id = fac_vtx_lst[i_vtx];
 
             _update_vtx_checker(vtx_id, vtx_checker, vtx_lookup);
 
@@ -918,28 +914,28 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
         /* Loop on faces of the cell */
 
-        for (i_fac = cell_faces_idx[cell_id];
-             i_fac < cell_faces_idx[cell_id+1]; i_fac++) {
+        for (i_fac = gcell_faces_idx[cell_id];
+             i_fac < gcell_faces_idx[cell_id+1];
+             i_fac++) {
 
           /* Initialize checker */
 
           for (i = 0; i < n_categories; i++)
             vtx_checker[i] = 0;
 
-          fac_num = CS_ABS(cell_faces_lst[i_fac - 1]);
+          fac_id = gcell_faces_lst[i_fac];
 
-          if (_test_loop_continues(mesh, fac_num) ==  true) {
-
-            fac_id = fac_num - mesh->n_b_faces - 1;
+          if (_test_loop_continues(mesh, fac_id) ==  true) {
 
             /* Loop on vertices of the face */
 
             n_face_vertices = fac_vtx_idx[fac_id + 1] - fac_vtx_idx[fac_id];
 
             for (i_vtx = fac_vtx_idx[fac_id];
-                 i_vtx < fac_vtx_idx[fac_id + 1]; i_vtx++) {
+                 i_vtx < fac_vtx_idx[fac_id + 1];
+                 i_vtx++) {
 
-              vtx_id = fac_vtx_lst[i_vtx - 1] - 1;
+              vtx_id = fac_vtx_lst[i_vtx];
 
               _update_vtx_checker(vtx_id,
                                   vtx_checker,
@@ -972,7 +968,7 @@ _fill_send_halo(cs_mesh_t                 *mesh,
     BFT_FREE(counter);
     BFT_FREE(cell_tag);
 
-  } /* End if cell_face_idx and cell_faces_lst != NULL */
+  } /* End if gcell_face_idx and gcell_faces_lst != NULL */
 
   /* Destroy the lookup table strcuture */
 
@@ -1401,7 +1397,7 @@ _define_vtx_interface_idx(const cs_interface_set_t  *ifs,
       const cs_lnum_t  *tr_index = cs_interface_get_tr_index(interface);
       const cs_lnum_t  *vtx_ids = cs_interface_get_elt_ids(interface);
 
-      if (tr_index == NULL) {  /*  purelly parallel elements */
+      if (tr_index == NULL) {  /*  purely parallel elements */
 
         for (j = 0; j < (cs_lnum_t)cs_interface_size(interface); j++)
           vtx_interface_idx[vtx_ids[j] + 1] += 1;
@@ -1430,7 +1426,7 @@ _define_vtx_interface_idx(const cs_interface_set_t  *ifs,
 /*---------------------------------------------------------------------------
  * Define an index on vertices belonging the interface for this rank
  * and this perio.
- * Fill the dist_num_lst which is the list of distant numbering associated
+ * Fill the dist_id_lst which is the list of distant ids associated
  * to local vertices (same rank and same transformation).
  *
  * parameters:
@@ -1438,17 +1434,17 @@ _define_vtx_interface_idx(const cs_interface_set_t  *ifs,
  *   rank_id           <-- rank number to work with
  *   tr_id             <-- transformation id to work with
  *   n_vertices        <-- number of vertices
- *   dist_num_lst      <-> list of distant vertex numbers matching criteria
+ *   dist_id_lst       <-> list of distant vertex numbers matching criteria
  *   vtx_interface_idx <-> index on vertices matching criteria
  *---------------------------------------------------------------------------*/
 
 static void
-_define_dist_num_lst(const cs_interface_set_t  *ifs,
-                     int                        rank_id,
-                     int                        tr_id,
-                     cs_lnum_t                  n_vertices,
-                     cs_lnum_t                 *dist_num_lst,
-                     cs_lnum_t                 *vtx_interface_idx)
+_define_dist_id_lst(const cs_interface_set_t  *ifs,
+                    int                        rank_id,
+                    int                        tr_id,
+                    cs_lnum_t                  n_vertices,
+                    cs_lnum_t                 *dist_id_lst,
+                    cs_lnum_t                 *vtx_interface_idx)
 {
   cs_lnum_t  i, j, id, shift;
 
@@ -1482,13 +1478,13 @@ _define_dist_num_lst(const cs_interface_set_t  *ifs,
 
       /* There must be only one distant vertex id per vtx_id when
          we handle a specific rank and a specific periodicity.
-         So, we don't need a counter to fill dist_num_lst */
+         So, we don't need a counter to fill dist_id_lst */
 
       if (tr_index == NULL) {
 
         for (j = 0; j < (cs_lnum_t)cs_interface_size(interface); j++) {
           shift = vtx_interface_idx[vtx_ids[j]];
-          dist_num_lst[shift] = dist_vtx_ids[j] + 1;
+          dist_id_lst[shift] = dist_vtx_ids[j];
         }
 
 
@@ -1497,7 +1493,7 @@ _define_dist_num_lst(const cs_interface_set_t  *ifs,
 
         for (j = tr_index[tr_id]; j < tr_index[tr_id+1]; j++) {
           shift = vtx_interface_idx[vtx_ids[j]];
-          dist_num_lst[shift] = dist_vtx_ids[j] + 1;
+          dist_id_lst[shift] = dist_vtx_ids[j];
         }
 
       }
@@ -1625,7 +1621,7 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
                                       cs_lnum_t            *gcell_dist_vtx_idx)
 {
   cs_lnum_t id, cell_id, i_fac, i_vtx, i_loop;
-  cs_lnum_t start_idx, end_idx, vtx_id, fac_num, fac_id;
+  cs_lnum_t start_idx, end_idx, vtx_id, fac_id;
 
   cs_lnum_t n_loops = 0;
   cs_lnum_t n_added_vertices = 0;
@@ -1674,20 +1670,20 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
       cell_id = halo->send_list[id];
 
       for (i_fac = cell_faces_idx[cell_id];
-           i_fac < cell_faces_idx[cell_id+1]; i_fac++) {
+           i_fac < cell_faces_idx[cell_id+1];
+           i_fac++) {
 
-        fac_num = CS_ABS(cell_faces_lst[i_fac-1]);
+        fac_id = cell_faces_lst[i_fac];
 
-        if (_test_loop_continues(mesh, fac_num) == true) {
-
-          fac_id = fac_num - mesh->n_b_faces - 1;
+        if (_test_loop_continues(mesh, fac_id) == true) {
 
           /* Loop on vertices of the face */
 
           for (i_vtx = fac_vtx_idx[fac_id];
-               i_vtx < fac_vtx_idx[fac_id+1]; i_vtx++) {
+               i_vtx < fac_vtx_idx[fac_id+1];
+               i_vtx++) {
 
-            vtx_id = fac_vtx_lst[i_vtx-1] - 1;
+            vtx_id = fac_vtx_lst[i_vtx];
 
             /* If vertex is on the interface for this rank and this
                transformation */
@@ -1752,7 +1748,7 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
  *   cell_faces_idx     <-- "cell -> faces" connectivity index
  *   cell_faces_lst     <-- "cell -> faces" connectivity list
  *   vtx_interface_idx  <-> index on vertices matching criteria
- *   dist_num_lst       <-> list of distant vertex numbers matching criteria
+ *   dist_id_lst        <-> list of distant vertex numbers matching criteria
  *   counter            <-> counter on vertices
  *   vtx_tag            <-> tag array on vertices
  *   gcell_dist_vtx_idx <-> "ghost cell -> distant vertices" connectivity index
@@ -1767,14 +1763,14 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
                                      cs_lnum_t            *cell_faces_idx,
                                      cs_lnum_t            *cell_faces_lst,
                                      cs_lnum_t            *vtx_interface_idx,
-                                     cs_lnum_t            *dist_num_lst,
+                                     cs_lnum_t            *dist_id_lst,
                                      cs_lnum_t            *counter,
                                      cs_lnum_t            *vtx_tag,
                                      cs_lnum_t            *gcell_dist_vtx_idx,
                                      cs_lnum_t            *gcell_dist_vtx_lst)
 {
   cs_lnum_t i, id, cell_id, i_fac, i_vtx, i_loop;
-  cs_lnum_t shift, vtx_id, fac_num, fac_id, start_idx, end_idx;
+  cs_lnum_t shift, vtx_id, fac_id, start_idx, end_idx;
 
   cs_lnum_t n_loops = 0;
   cs_halo_t  *halo = mesh->halo;
@@ -1783,12 +1779,12 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
   const cs_lnum_t *fac_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t *fac_vtx_lst = mesh->i_face_vtx_lst;
 
-  _define_dist_num_lst(ifs,
-                       halo->c_domain_rank[rank_id],
-                       tr_id,
-                       n_vertices,
-                       dist_num_lst,
-                       vtx_interface_idx);
+  _define_dist_id_lst(ifs,
+                      halo->c_domain_rank[rank_id],
+                      tr_id,
+                      n_vertices,
+                      dist_id_lst,
+                      vtx_interface_idx);
 
   /* Fill the "ghost cells to distant vertices" connectivity */
 
@@ -1815,20 +1811,20 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
       cell_id = halo->send_list[id];
 
       for (i_fac = cell_faces_idx[cell_id];
-           i_fac < cell_faces_idx[cell_id+1]; i_fac++) {
+           i_fac < cell_faces_idx[cell_id+1];
+           i_fac++) {
 
-        fac_num = CS_ABS(cell_faces_lst[i_fac-1]);
+        fac_id = cell_faces_lst[i_fac];
 
-        if (_test_loop_continues(mesh, fac_num) == true) {
-
-          fac_id = fac_num - mesh->n_b_faces - 1;
+        if (_test_loop_continues(mesh, fac_id) == true) {
 
           /* Loop on vertices of the face */
 
           for (i_vtx = fac_vtx_idx[fac_id];
-               i_vtx < fac_vtx_idx[fac_id+1]; i_vtx++) {
+               i_vtx < fac_vtx_idx[fac_id + 1];
+               i_vtx++) {
 
-            vtx_id = fac_vtx_lst[i_vtx-1] - 1;
+            vtx_id = fac_vtx_lst[i_vtx];
 
             /* If vertex is on the interface for this rank and periodicity */
 
@@ -1841,10 +1837,11 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
                 vtx_tag[vtx_id] = id;
 
                 for (i = vtx_interface_idx[vtx_id];
-                     i < vtx_interface_idx[vtx_id+1]; i++) {
+                     i < vtx_interface_idx[vtx_id+1];
+                     i++) {
 
                   shift = gcell_dist_vtx_idx[id] + counter[id];
-                  gcell_dist_vtx_lst[shift] = dist_num_lst[i];
+                  gcell_dist_vtx_lst[shift] = dist_id_lst[i];
                   counter[id] += 1;
 
                 }
@@ -1890,7 +1887,7 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
 
   cs_lnum_t *gcell_dist_vtx_idx = NULL, *gcell_dist_vtx_lst = NULL;
   cs_lnum_t *vtx_interface_idx = NULL;
-  cs_lnum_t *dist_num_lst = NULL;
+  cs_lnum_t *dist_id_lst = NULL;
   cs_lnum_t *vtx_tag = NULL;
   cs_lnum_t *counter = NULL;
 
@@ -1922,10 +1919,10 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
     vtx_tag[i] = -1;
 
   BFT_MALLOC(vtx_interface_idx, n_vertices + 1, cs_lnum_t);
-  BFT_MALLOC(dist_num_lst, max_lst_size, cs_lnum_t);
+  BFT_MALLOC(dist_id_lst, max_lst_size, cs_lnum_t);
 
   for (i = 0; i < max_lst_size; i++)
-    dist_num_lst[i] = -1;
+    dist_id_lst[i] = -1;
 
   /* Loop on each rank belonging to send_halo.
      Create a vertex to ghost cells connectivity for each rank */
@@ -1969,7 +1966,7 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
                                            cell_faces_idx,
                                            cell_faces_lst,
                                            vtx_interface_idx,
-                                           dist_num_lst,
+                                           dist_id_lst,
                                            counter,
                                            vtx_tag,
                                            gcell_dist_vtx_idx,
@@ -1982,7 +1979,7 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
   BFT_FREE(counter);
   BFT_FREE(vtx_tag);
   BFT_FREE(vtx_interface_idx);
-  BFT_FREE(dist_num_lst);
+  BFT_FREE(dist_id_lst);
 
   *p_gcell_dist_vtx_idx = gcell_dist_vtx_idx;
   *p_gcell_dist_vtx_lst = gcell_dist_vtx_lst;
@@ -2055,7 +2052,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
 
       for (i = halo->send_index[2*rank_id], j = 0;
            i < halo->send_index[2*rank_id+2]; i++, j++)
-        send_idx_buffer[j] = ( send_gcell_dist_vtx_idx[i+1]
+        send_idx_buffer[j] = (  send_gcell_dist_vtx_idx[i+1]
                               - send_gcell_dist_vtx_idx[i]);
 
       n_send_elts =  halo->send_index[2*rank_id+2] - halo->send_index[2*rank_id];
@@ -2368,10 +2365,11 @@ _update_i_face_cells(cs_mesh_t           *mesh,
         for (i = start; i < end; i++) {
 
           gcell_id = s_gcell_ids[i];
-          for (j = cell_faces_idx[gcell_id] - 1;
-               j < cell_faces_idx[gcell_id+1] - 1; j++) {
+          for (j = cell_faces_idx[gcell_id];
+               j < cell_faces_idx[gcell_id+1];
+               j++) {
 
-            face_id = CS_ABS(cell_faces_lst[j]) - mesh->n_b_faces - 1;
+            face_id = cell_faces_lst[j];
             if (face_id > -1) {
               if (l2d_fids[face_id] > -1) {
                 shift++;
@@ -2542,10 +2540,11 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
           gcell_id = s_gcell_ids[i];
 
-          for (j = cell_faces_idx[gcell_id] - 1;
-               j < cell_faces_idx[gcell_id+1] - 1; j++) {
+          for (j = cell_faces_idx[gcell_id];
+               j < cell_faces_idx[gcell_id+1];
+               j++) {
 
-            face_id = CS_ABS(cell_faces_lst[j]) - mesh->n_b_faces - 1;
+            face_id = cell_faces_lst[j];
             if (face_id > -1)
               if (l2d_fids[face_id] > -1)
                 send_buffer[shift++] = l2d_fids[face_id];
@@ -2726,7 +2725,6 @@ _clean_halo(cs_mesh_t  *mesh)
   if (n_real_c_domains == n_c_domains)
     return;
 
-
   /* halo->index, halo->perio_lst and n_c_domains need an update */
 
   BFT_MALLOC(new_c_domain_rank, n_real_c_domains, cs_lnum_t);
@@ -2810,7 +2808,6 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
   cs_lnum_t *cell_faces_lst = NULL;
 
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
-  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_2_t *face_cells = mesh->i_face_cells;
   const cs_lnum_t *fac_vtx_idx = mesh->i_face_vtx_idx;
@@ -2828,7 +2825,7 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
   cell_tag = &(cell_buffer[0]);
   counter = &(cell_buffer[n_cells]);
 
-  cell_faces_idx[0] = 1;
+  cell_faces_idx[0] = 0;
   for (i = 0; i < n_cells; i++) {
     cell_faces_idx[i+1] = 0;
     cell_tag[i] = -1;
@@ -2841,9 +2838,10 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
   for (fac_id = 0; fac_id < n_i_faces; fac_id++) {
 
     for (i_vtx = fac_vtx_idx[fac_id];
-         i_vtx < fac_vtx_idx[fac_id + 1]; i_vtx++) {
+         i_vtx < fac_vtx_idx[fac_id + 1];
+         i_vtx++) {
 
-      vtx_id = fac_vtx_lst[i_vtx - 1] - 1;
+      vtx_id = fac_vtx_lst[i_vtx];
 
       if (vtx_tag[vtx_id] == 1) {
 
@@ -2894,14 +2892,15 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
     cell_tag[i] = -1;
   }
 
-  BFT_MALLOC(cell_faces_lst, cell_faces_idx[n_cells]-1, cs_lnum_t);
+  BFT_MALLOC(cell_faces_lst, cell_faces_idx[n_cells], cs_lnum_t);
 
   for (fac_id = 0; fac_id < n_i_faces; fac_id++) {
 
     for (i_vtx = fac_vtx_idx[fac_id];
-         i_vtx < fac_vtx_idx[fac_id + 1]; i_vtx++) {
+         i_vtx < fac_vtx_idx[fac_id + 1];
+         i_vtx++) {
 
-      vtx_id = fac_vtx_lst[i_vtx - 1] - 1;
+      vtx_id = fac_vtx_lst[i_vtx];
 
       if (vtx_tag[vtx_id] == 1) {
 
@@ -2912,8 +2911,8 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
           if (cell_tag[id2] != fac_id) {
 
             cell_tag[id2] = fac_id;
-            shift = cell_faces_idx[id2] - 1 + counter[id2];
-            cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+            shift = cell_faces_idx[id2] + counter[id2];
+            cell_faces_lst[shift] = fac_id;
             counter[id2] += 1;
 
           }
@@ -2923,8 +2922,8 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
           if (cell_tag[id1] != fac_id) {
 
             cell_tag[id1] = fac_id;
-            shift = cell_faces_idx[id1] - 1 + counter[id1];
-            cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+            shift = cell_faces_idx[id1] + counter[id1];
+            cell_faces_lst[shift] = fac_id;
             counter[id1] += 1;
 
           }
@@ -2935,15 +2934,15 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
 
             if (cell_tag[id1] != fac_id) {
               cell_tag[id1] = fac_id;
-              shift = cell_faces_idx[id1] - 1 + counter[id1];
-              cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+              shift = cell_faces_idx[id1] + counter[id1];
+              cell_faces_lst[shift] = fac_id;
               counter[id1] += 1;
             }
 
             if (cell_tag[id2] != fac_id) {
               cell_tag[id2] = fac_id;
-              shift = cell_faces_idx[id2] - 1 + counter[id2];
-              cell_faces_lst[shift] = fac_id + 1 + n_b_faces;
+              shift = cell_faces_idx[id2] + counter[id2];
+              cell_faces_lst[shift] = fac_id;
               counter[id2] += 1;
             }
 
@@ -2961,7 +2960,6 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
 
   *p_cell_faces_idx = cell_faces_idx;
   *p_cell_faces_lst = cell_faces_lst;
-
 }
 
 /*============================================================================
@@ -3018,7 +3016,6 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
 
   bft_printf(_("    Halo cleaning\n"));
   bft_printf_flush();
-
 
   _clean_halo(mesh);
 #endif

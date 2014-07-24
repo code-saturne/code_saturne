@@ -109,9 +109,10 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state);
  *
  * parameters:
  *   dim               <-- spatial dimension (2 or 3).
+ *   base              <-- base numbering (usually 0 or 1)
  *   n_vertices        <-- number of vertices defining the polygon.
  *   coords            <-- coordinates of the triangulation's vertices.
- *   parent_vertex_num <-- optional indirection to vertex coordinates (1 to n).
+ *   parent_vertex_num <-- optional indirection to vertex coordinates.
  *   polygon_vertices  <-- polygon connectivity; size: n_vertices or empty.
  *   mode              <-- triangles connectivity by vertex number or
  *                         polygon vertex index (1 to n).
@@ -125,6 +126,7 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state);
 
 int
 fvm_triangulate_polygon(int                             dim,
+                        int                             base,
                         int                             n_vertices,
                         const cs_coord_t                coords[],
                         const cs_lnum_t                 parent_vertex_num[],
@@ -145,6 +147,7 @@ fvm_triangulate_polygon(int                             dim,
  *
  * parameters:
  *   dim                  <-- spatial dimension (2 or 3).
+ *   base                 <-- base numbering (usually 0 or 1)
  *   coords               <-- coordinates of the triangulation's vertices.
  *   parent_vertex_num    <-- optional indirection to vertex coordinates
  *   quadrangle_vertices  <-- polygon connectivity; size: n_vertices or empty.
@@ -156,6 +159,7 @@ fvm_triangulate_polygon(int                             dim,
 
 int
 fvm_triangulate_quadrangle(int               dim,
+                           int               base,
                            const cs_coord_t  coords[],
                            const cs_lnum_t   parent_vertex_num[],
                            const cs_lnum_t   quadrangle_vertices[],

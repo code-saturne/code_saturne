@@ -106,13 +106,13 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
                           cs_real_t  wbuf1[],
                           cs_real_t  wbuf2[])
 {
-  cs_int_t  i, j, k;
+  cs_lnum_t  i, j, k;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
-  const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   assert(cell_cells_idx != NULL);
@@ -138,9 +138,9 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
 
     /* Loop on connected cells (without cells sharing a face) */
 
-    for (j = cell_cells_idx[i] - 1; j < cell_cells_idx[i+1] - 1; j++) {
+    for (j = cell_cells_idx[i]; j < cell_cells_idx[i+1]; j++) {
 
-      k = cell_cells_lst[j] - 1;
+      k = cell_cells_lst[j];
       wbuf1[i] += var[k] * cell_vol[k];
       wbuf2[i] += cell_vol[k];
 

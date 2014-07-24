@@ -409,7 +409,7 @@ _cs_renumber_update_cells(cs_mesh_t        *mesh,
   if (mesh->cell_cells_lst != NULL) {
 
     cs_lnum_t *cell_cells_idx_old, *cell_cells_lst_old;
-    const cs_lnum_t cell_cells_lst_size = mesh->cell_cells_idx[n_cells] - 1;
+    const cs_lnum_t cell_cells_lst_size = mesh->cell_cells_idx[n_cells];
 
     BFT_MALLOC(cell_cells_idx_old, n_cells + 1, cs_lnum_t);
     BFT_MALLOC(cell_cells_lst_old, cell_cells_lst_size, cs_lnum_t);
@@ -421,21 +421,21 @@ _cs_renumber_update_cells(cs_mesh_t        *mesh,
            mesh->cell_cells_lst,
            cell_cells_lst_size*sizeof(cs_lnum_t));
 
-    mesh->cell_cells_idx[0] = 1;
+    mesh->cell_cells_idx[0] = 0;
     start_id = 0;
 
     for (ii = 0; ii < n_cells; ii++) {
 
       jj = new_to_old[ii];
       n_vis = cell_cells_idx_old[jj+1] - cell_cells_idx_old[jj];
-      start_id_old = cell_cells_idx_old[jj] - 1;
+      start_id_old = cell_cells_idx_old[jj];
 
       for (kk = 0; kk < n_vis; kk++)
         mesh->cell_cells_lst[start_id + kk]
-          = new_cell_id[cell_cells_lst_old[start_id_old + kk] - 1] + 1;
+          = new_cell_id[cell_cells_lst_old[start_id_old + kk]];
 
       start_id += n_vis;
-      mesh->cell_cells_idx[ii + 1] = start_id + 1;
+      mesh->cell_cells_idx[ii + 1] = start_id;
     }
 
     BFT_FREE(cell_cells_lst_old);
@@ -465,7 +465,7 @@ _cs_renumber_update_cells(cs_mesh_t        *mesh,
  *
  * parameters:
  *   n_faces         <-- Number of faces
- *   face_vtx_idx    <-> Face -> vertices index (1 to n)
+ *   face_vtx_idx    <-> Face -> vertices index
  *   face_vtx        <-- Face vertices
  *   new_to_old      <-- Faces renumbering array
  *----------------------------------------------------------------------------*/
@@ -481,7 +481,7 @@ _update_face_vertices(cs_lnum_t         n_faces,
     cs_lnum_t ii, jj, kk, n_vtx, start_id, start_id_old;
     cs_lnum_t *face_vtx_idx_old, *face_vtx_old;
 
-    const cs_lnum_t connect_size = face_vtx_idx[n_faces] - 1;
+    const cs_lnum_t connect_size = face_vtx_idx[n_faces];
 
     BFT_MALLOC(face_vtx_idx_old, n_faces + 1, cs_lnum_t);
     BFT_MALLOC(face_vtx_old, connect_size, cs_lnum_t);
@@ -489,20 +489,20 @@ _update_face_vertices(cs_lnum_t         n_faces,
     memcpy(face_vtx_idx_old, face_vtx_idx, (n_faces+1)*sizeof(int));
     memcpy(face_vtx_old, face_vtx, connect_size*sizeof(int));
 
-    face_vtx_idx[0] = 1;
+    face_vtx_idx[0] = 0;
     start_id = 0;
 
     for (ii = 0; ii < n_faces; ii++) {
 
       jj = new_to_old[ii];
       n_vtx = face_vtx_idx_old[jj+1] - face_vtx_idx_old[jj];
-      start_id_old = face_vtx_idx_old[jj] - 1;
+      start_id_old = face_vtx_idx_old[jj];
 
       for (kk = 0; kk < n_vtx; kk++)
         face_vtx[start_id + kk] = face_vtx_old[start_id_old + kk];
 
       start_id += n_vtx;
-      face_vtx_idx[ii + 1] = start_id + 1;
+      face_vtx_idx[ii + 1] = start_id;
     }
 
     BFT_FREE(face_vtx_idx_old);

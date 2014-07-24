@@ -507,7 +507,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 {
   int        g_id, t_id;
   cs_gnum_t  t_n_clip;
-  cs_lnum_t  face_id, ii, jj, ll, cidx;
+  cs_lnum_t  face_id, ii, jj, ll;
   cs_real_t  dist[3];
   cs_real_t  dvar, dist1, dist2, dpdxf, dpdyf, dpdzf;
   cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
@@ -632,13 +632,13 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, jj, ll, dist, dist1, dvar)
+#     pragma omp parallel for private(jj, ll, dist, dist1, dvar)
       for (ii = 0; ii < n_cells; ii++) {
-        for (cidx = cell_cells_idx[ii] - 1;
-             cidx < cell_cells_idx[ii+1] - 1;
+        for (cs_lnum_t cidx = cell_cells_idx[ii];
+             cidx < cell_cells_idx[ii+1];
              cidx++) {
 
-          jj = cell_cells_lst[cidx] - 1;
+          jj = cell_cells_lst[cidx];
 
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
@@ -697,14 +697,14 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, jj, ll, dist, \
+#     pragma omp parallel for private(jj, ll, dist, \
                                       dpdxf, dpdyf, dpdzf, dist1, dvar)
       for (ii = 0; ii < n_cells; ii++) {
-        for (cidx = cell_cells_idx[ii] - 1;
-             cidx < cell_cells_idx[ii+1] - 1;
+        for (cs_lnum_t cidx = cell_cells_idx[ii];
+             cidx < cell_cells_idx[ii+1];
              cidx++) {
 
-          jj = cell_cells_lst[cidx] - 1;
+          jj = cell_cells_lst[cidx];
 
           for (ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
@@ -820,16 +820,16 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, jj, factor1, factor2)
+#     pragma omp parallel for private(jj, factor1, factor2)
       for (ii = 0; ii < n_cells; ii++) {
 
         factor1 = 1.0;
 
-        for (cidx = cell_cells_idx[ii] - 1;
-             cidx < cell_cells_idx[ii+1] - 1;
+        for (cs_lnum_t cidx = cell_cells_idx[ii];
+             cidx < cell_cells_idx[ii+1];
              cidx++) {
 
-          jj = cell_cells_lst[cidx] - 1;
+          jj = cell_cells_lst[cidx];
 
           factor2 = 1.0;
 
@@ -1785,7 +1785,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
   cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
   cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
 
-  cs_lnum_t  cell_id, cidx, face_id, ii, jj, ll, mm;
+  cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
   cs_real_t  a11, a12, a13, a22, a23, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
@@ -1967,11 +1967,13 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
 
     if (halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, jj, ll, dc, fctb, pfac)
+#     pragma omp parallel for private(jj, ll, dc, fctb, pfac)
       for (ii = 0; ii < n_cells; ii++) {
-        for (cidx = cell_cells_idx[ii]; cidx < cell_cells_idx[ii+1]; cidx++) {
+        for (cs_lnum_t cidx = cell_cells_idx[ii];
+             cidx < cell_cells_idx[ii+1];
+             cidx++) {
 
-          jj = cell_cells_lst[cidx - 1] - 1;
+          jj = cell_cells_lst[cidx];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2079,11 +2081,13 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
 
     if (halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, jj, ll, dc, fctb, pfac)
+#     pragma omp parallel for private(jj, ll, dc, fctb, pfac)
       for (ii = 0; ii < n_cells; ii++) {
-        for (cidx = cell_cells_idx[ii]; cidx < cell_cells_idx[ii+1]; cidx++) {
+        for (cs_lnum_t cidx = cell_cells_idx[ii];
+             cidx < cell_cells_idx[ii+1];
+             cidx++) {
 
-          jj = cell_cells_lst[cidx - 1] - 1;
+          jj = cell_cells_lst[cidx];
 
           /* Note: replaced the expressions:
            *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])
@@ -2233,7 +2237,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 {
   int        g_id, t_id;
   cs_gnum_t  t_n_clip;
-  cs_lnum_t  cell_id, cell_id1, cell_id2, cidx, face_id, i, j;
+  cs_lnum_t  cell_id, cell_id1, cell_id2, face_id, i, j;
   cs_real_3_t dist, grad_dist1, grad_dist2;
   cs_real_t  dvar_sq, dist_sq1, dist_sq2;
   cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
@@ -2360,14 +2364,14 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, cell_id2, i, dist, \
+#     pragma omp parallel for private(cell_id2, i, dist, \
                                       grad_dist1, dist_sq1, dvar_sq)
       for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
-        for (cidx = cell_cells_idx[cell_id1];
+        for (cs_lnum_t cidx = cell_cells_idx[cell_id1];
              cidx < cell_cells_idx[cell_id1+1];
              cidx++) {
 
-          cell_id2 = cell_cells_lst[cidx-1] - 1;
+          cell_id2 = cell_cells_lst[cidx];
 
           for (i = 0; i < 3; i++)
             dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
@@ -2452,14 +2456,14 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, cell_id2, i, dist, \
+#     pragma omp parallel for private(cell_id2, i, dist, \
                                       grad_dist1, dist_sq1, dvar_sq)
       for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
-        for (cidx = cell_cells_idx[cell_id1];
+        for (cs_lnum_t cidx = cell_cells_idx[cell_id1];
              cidx < cell_cells_idx[cell_id1+1];
              cidx++) {
 
-          cell_id2 = cell_cells_lst[cidx-1] - 1;
+          cell_id2 = cell_cells_lst[cidx];
 
           for (i = 0; i < 3; i++)
             dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
@@ -2582,16 +2586,16 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, cell_id2, min_factor, factor2)
+#     pragma omp parallel for private(cell_id2, min_factor, factor2)
       for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
 
         min_factor = 1.0;
 
-        for (cidx = cell_cells_idx[cell_id1];
+        for (cs_lnum_t cidx = cell_cells_idx[cell_id1];
              cidx < cell_cells_idx[cell_id1+1];
              cidx++) {
 
-          cell_id2 = cell_cells_lst[cidx-1] - 1;
+          cell_id2 = cell_cells_lst[cidx];
           factor2 = 1.0;
 
           if (denum[cell_id2] > clipp_coef_sq * denom[cell_id2])
@@ -3145,7 +3149,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
 
-  cs_lnum_t  cell_id, cidx, face_id, cell_id1, cell_id2, i, j, k;
+  cs_lnum_t  cell_id, face_id, cell_id1, cell_id2, i, j, k;
   int        g_id, t_id;
   cs_real_t  pfac, ddc;
   cs_real_3_t  dc;
@@ -3214,13 +3218,13 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   if (halo_type == CS_HALO_EXTENDED) {
 
-#   pragma omp parallel for private(cidx, cell_id2, dc, pfac, ddc, i, j)
+#   pragma omp parallel for private(cell_id2, dc, pfac, ddc, i, j)
     for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
-      for (cidx = cell_cells_idx[cell_id1];
+      for (cs_lnum_t cidx = cell_cells_idx[cell_id1];
            cidx < cell_cells_idx[cell_id1+1];
            cidx++) {
 
-        cell_id2 = cell_cells_lst[cidx - 1] - 1;
+        cell_id2 = cell_cells_lst[cidx];
 
         for (i = 0; i < 3; i++)
           dc[i] = cell_cen[cell_id2][i] - cell_cen[cell_id1][i];
@@ -4066,7 +4070,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
 
-  cs_lnum_t  cell_id, cidx, face_id, ii, jj, ll;
+  cs_lnum_t  cell_id, face_id, ii, jj, ll;
   int        g_id, t_id;
   cs_real_t  pfac;
   cs_real_3_t  dc;
@@ -4130,11 +4134,13 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
     if (halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, jj, ll, dc, fctb, pfac)
+#     pragma omp parallel for private(jj, ll, dc, fctb, pfac)
       for (ii = 0; ii < n_cells; ii++) {
-        for (cidx = cell_cells_idx[ii]; cidx < cell_cells_idx[ii+1]; cidx++) {
+        for (cs_lnum_t cidx = cell_cells_idx[ii];
+             cidx < cell_cells_idx[ii+1];
+             cidx++) {
 
-          jj = cell_cells_lst[cidx - 1] - 1;
+          jj = cell_cells_lst[cidx];
 
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -4236,11 +4242,13 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
     if (halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(cidx, jj, ll, dc, fctb, pfac)
+#     pragma omp parallel for private(jj, ll, dc, fctb, pfac)
       for (ii = 0; ii < n_cells; ii++) {
-        for (cidx = cell_cells_idx[ii]; cidx < cell_cells_idx[ii+1]; cidx++) {
+        for (cs_lnum_t cidx = cell_cells_idx[ii];
+             cidx < cell_cells_idx[ii+1];
+             cidx++) {
 
-          jj = cell_cells_lst[cidx - 1] - 1;
+          jj = cell_cells_lst[cidx];
 
           /* Note: replaced the expressions:
            *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])

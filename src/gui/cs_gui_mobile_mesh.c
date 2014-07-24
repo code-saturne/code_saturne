@@ -104,8 +104,8 @@ enum ale_boundary_nature
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_iale_parameter(const char   *const param,
-                            double *const keyword)
+_iale_parameter(const char  *const param,
+                double      *const keyword)
 {
   char   *path   = NULL;
   char   *type = NULL;
@@ -143,7 +143,7 @@ cs_gui_iale_parameter(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_get_ale_status(int  *const keyword)
+_get_ale_status(int  *const keyword)
 {
   char *path = NULL;
   int   result;
@@ -264,7 +264,7 @@ cs_gui_init_mei_tree(char         *formula,
  *----------------------------------------------------------------------------*/
 
 static char *
-get_ale_formula(void)
+_get_ale_formula(void)
 {
   char *aleFormula;
 
@@ -283,7 +283,7 @@ get_ale_formula(void)
  *----------------------------------------------------------------------------*/
 
 static char *
-get_ale_mesh_viscosity(void)
+_get_ale_mesh_viscosity(void)
 {
   char *viscosityType;
 
@@ -306,8 +306,8 @@ get_ale_mesh_viscosity(void)
  *----------------------------------------------------------------------------*/
 
 static char*
-get_ale_boundary_formula(const char *const label,
-                                     const char *const choice)
+_get_ale_boundary_formula(const char *const label,
+                          const char *const choice)
 {
   char* formula;
 
@@ -329,28 +329,28 @@ get_ale_boundary_formula(const char *const label,
  * Get uialcl data for fixed displacement
  *
  * parameters:
- *   label        --> boundary label
- *   begin        --> begin index for nodfbr
- *   end          --> end index for nodfbr
- *   nnod         --> number of node
- *   nodfbr       --> NODFBR
- *   impale       <-- IMPALE
- *   depale       <-- DEPALE
- *   dtref        --> time step
- *   ttcabs       --> current time
- *   ntcabs       --> current iteration number
+ *   label          --> boundary label
+ *   begin          --> begin index for nodfbr
+ *   end            --> end index for nodfbr
+ *   nnod           --> number of node
+ *   b_face_vtx_lst --> NODFBR
+ *   impale         <-- IMPALE
+ *   depale         <-- DEPALE
+ *   dtref          --> time step
+ *   ttcabs         --> current time
+ *   ntcabs         --> current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
-uialcl_fixed_displacement(const char *const label,
-                          const int         begin,
-                          const int         end,
-                          const int  *const nodfbr,
-                          int        *const impale,
-                          cs_real_3_t      *depale,
-                          const double      dtref,
-                          const double      ttcabs,
-                          const int         ntcabs)
+_uialcl_fixed_displacement(const char       *label,
+                           const cs_lnum_t   begin,
+                           const cs_lnum_t   end,
+                           const cs_lnum_t   b_face_vtx_lst[],
+                           int              *impale,
+                           cs_real_3_t      *depale,
+                           const double      dtref,
+                           const double      ttcabs,
+                           const int         ntcabs)
 {
   int ii = 0;
   mei_tree_t *ev;
@@ -360,7 +360,7 @@ uialcl_fixed_displacement(const char *const label,
   unsigned int variable_nbr = 3;
 
   /* Get formula */
-  char* formula = get_ale_boundary_formula(label, "fixed_displacement");
+  char* formula =_get_ale_boundary_formula(label, "fixed_displacement");
 
   if (!formula)
     bft_error(__FILE__, __LINE__, 0,
@@ -382,7 +382,7 @@ uialcl_fixed_displacement(const char *const label,
 
   /* Set depale and impale */
   for (ii = begin; ii < end; ++ii) {
-    int inod = nodfbr[ii-1] - 1;
+    cs_lnum_t inod = b_face_vtx_lst[ii];
     if (impale[inod] == 0) {
       depale[inod][0] = X_mesh;
       depale[inod][1] = Y_mesh;
@@ -424,7 +424,7 @@ uialcl_fixed_velocity(const char*   label,
   const char*  variables[3] = { "mesh_u", "mesh_v", "mesh_w" };
 
   /* Get formula */
-  char* formula = get_ale_boundary_formula(label, "fixed_velocity");
+  char* formula =_get_ale_boundary_formula(label, "fixed_velocity");
 
   if (!formula)
     bft_error(__FILE__, __LINE__, 0,
@@ -453,7 +453,7 @@ uialcl_fixed_velocity(const char*   label,
  *----------------------------------------------------------------------------*/
 
 static enum ale_boundary_nature
-get_ale_boundary_nature(const char *const label)
+_get_ale_boundary_nature(const char *const label)
 {
   char *ale_boundary_nature;
 
@@ -819,8 +819,8 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
 
   /* Get formula */
   mei_tree_t *ev;
-  char *aleFormula    = get_ale_formula();
-  char *viscosityType = get_ale_mesh_viscosity();
+  char *aleFormula    =_get_ale_formula();
+  char *viscosityType =_get_ale_mesh_viscosity();
   unsigned int isOrthotrop = cs_gui_strcmp(viscosityType, "orthotrop");
 
   if (isOrthotrop)
@@ -893,21 +893,21 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
 {
   double value;
 
-  cs_gui_get_ale_status(iale);
+  _get_ale_status(iale);
 
   if (*iale) {
     value =(double) *nalinf;
-    cs_gui_iale_parameter("fluid_initialization_sub_iterations", &value);
+    _iale_parameter("fluid_initialization_sub_iterations", &value);
     *nalinf = (int) value;
 
     value =(double) *nalimx;
-    cs_gui_iale_parameter("max_iterations_implicitation", &value);
+    _iale_parameter("max_iterations_implicitation", &value);
     *nalimx = (int) value;
 
-    cs_gui_iale_parameter("implicitation_precision", epalim);
+    _iale_parameter("implicitation_precision", epalim);
 
     value =(double) *iortvm;
-    cs_gui_iale_parameter("mesh_viscosity", &value);
+    _iale_parameter("mesh_viscosity", &value);
     *iortvm = (int) value;
   }
 
@@ -927,11 +927,8 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  *  uialcl
  *
  * parameters:
- *   nfabor       --> Number of boundary faces
  *   nozppm       --> Max number of boundary conditions zone
  *   ialtyb       --> ialtyb
- *   ipnfbr       --> First node position for each boundary in nodfbr
- *   nodfbr       --> uialcl_fixed_displacement
  *   impale       --> uialcl_fixed_displacement
  *   depale       --> See uialcl_fixed_displacement
  *   dtref        --> time step
@@ -943,15 +940,12 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  *   rcodcl       --> See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
-                                const int *const    nozppm,
+void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
                                 const int *const    ibfixe,
                                 const int *const    igliss,
                                 const int *const    ivimpo,
                                 const int *const    ifresf,
                                 int       *const    ialtyb,
-                                const int *const    ipnfbr,
-                                const int *const    nodfbr,
                                 int       *const    impale,
                                 cs_real_3_t        *depale,
                                 double    *const    dtref,
@@ -964,8 +958,10 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
 {
   double t0;
   int  izone = 0;
-  int  ifac  = 0;
+  cs_lnum_t  ifac  = 0;
   int  faces = 0;
+
+  const cs_mesh_t *m = cs_glob_mesh;
 
   int zones = cs_gui_boundary_zones_number();
 
@@ -973,42 +969,44 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
   for (izone=0 ; izone < zones ; izone++) {
     int* faces_list = cs_gui_get_faces_list(izone,
                                             boundaries->label[izone],
-                                            *nfabor,
+                                            m->n_b_faces,
                                             *nozppm,
                                             &faces);
 
     /* get the ale choice */
     const char* label = boundaries->label[izone];
-    enum ale_boundary_nature nature = get_ale_boundary_nature(label);
+    enum ale_boundary_nature nature =_get_ale_boundary_nature(label);
 
     if (nature ==  ale_boundary_nature_fixed_wall) {
       for (ifac = 0; ifac < faces; ifac++) {
-        int ifbr = faces_list[ifac]-1;
+        cs_lnum_t ifbr = faces_list[ifac]-1;
         ialtyb[ifbr]  = *ibfixe;
       }
     }
     else if (nature ==  ale_boundary_nature_sliding_wall) {
       for (ifac = 0; ifac < faces; ifac++) {
-        int ifbr = faces_list[ifac]-1;
+        cs_lnum_t ifbr = faces_list[ifac]-1;
         ialtyb[ifbr]  = *igliss;
       }
     }
     else if (nature == ale_boundary_nature_fixed_displacement) {
       t0 = cs_timer_wtime();
       for (ifac = 0; ifac < faces; ifac++) {
-        int ifbr = faces_list[ifac]-1;
-        uialcl_fixed_displacement(label, ipnfbr[ifbr], ipnfbr[ifbr+1],
-                                  nodfbr, impale, depale,
-                                  *dtref, *ttcabs, *ntcabs);
+        cs_lnum_t ifbr = faces_list[ifac]-1;
+        _uialcl_fixed_displacement(label,
+                                   m->b_face_vtx_idx[ifbr],
+                                   m->b_face_vtx_idx[ifbr+1],
+                                   m->b_face_vtx_lst, impale, depale,
+                                   *dtref, *ttcabs, *ntcabs);
       }
       cs_gui_add_mei_time(cs_timer_wtime() - t0);
     }
     else if (nature == ale_boundary_nature_fixed_velocity) {
       t0 = cs_timer_wtime();
       for (ifac = 0; ifac < faces; ifac++) {
-        int ifbr = faces_list[ifac]-1;
+        cs_lnum_t ifbr = faces_list[ifac]-1;
         uialcl_fixed_velocity(label, *iuma, *ivma, *iwma,
-                              *nfabor, ifbr, rcodcl,
+                              m->n_b_faces, ifbr, rcodcl,
                               *dtref, *ttcabs, *ntcabs);
         ialtyb[ifbr]  = *ivimpo;
       }
@@ -1018,7 +1016,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
       char *nat = cs_gui_boundary_zone_nature(izone);
       if (cs_gui_strcmp(nat, "free_surface")) {
         for (ifac = 0; ifac < faces; ifac++) {
-          int ifbr = faces_list[ifac]-1;
+          cs_lnum_t ifbr = faces_list[ifac]-1;
           ialtyb[ifbr]  = *ifresf;
         }
       }
@@ -1075,7 +1073,7 @@ void CS_PROCF (uistr1, UISTR1) (const int *const nfabor,
     char *label  = get_boundary_attribute(izone + 1, "label");
 
     /* Keep only internal coupling */
-    if (   get_ale_boundary_nature(label)
+    if (  _get_ale_boundary_nature(label)
         == ale_boundary_nature_internal_coupling) {
       /* Read initial_displacement, equilibrium_displacement and initial_velocity */
       get_internal_coupling_xyz_values(label, "initial_displacement",
@@ -1130,7 +1128,7 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
     const char *label = boundaries->label[izone];
 
     /* Keep only internal coupling */
-    if (get_ale_boundary_nature(label) == ale_boundary_nature_internal_coupling) {
+    if (_get_ale_boundary_nature(label) == ale_boundary_nature_internal_coupling) {
 
 #if 0
       /* Read internal coupling data for boundaries */

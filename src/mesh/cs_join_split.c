@@ -217,9 +217,9 @@ _face_bbox(const cs_join_mesh_t  *m,
   const double  eps = 1e-5;
   const cs_join_vertex_t  *vertices = m->vertices;
 
-  for (i = m->face_vtx_idx[fid] - 1; i < m->face_vtx_idx[fid+1] - 1; i++) {
+  for (i = m->face_vtx_idx[fid]; i < m->face_vtx_idx[fid+1]; i++) {
 
-    int  vid = m->face_vtx_lst[i] - 1;
+    int  vid = m->face_vtx_lst[i];
     double  tol = (1 + eps) * vertices[vid].tolerance;
 
     for (k = 0; k < 3; k++) {
@@ -479,8 +479,8 @@ _define_head_and_ext_edges(cs_lnum_t               face_id,
   cs_lnum_t  i, j, k, shift;
   cs_lnum_t  couple[2];
 
-  cs_lnum_t  start_id = mesh->face_vtx_idx[face_id]-1;
-  cs_lnum_t  end_id = mesh->face_vtx_idx[face_id+1]-1;
+  cs_lnum_t  start_id = mesh->face_vtx_idx[face_id];
+  cs_lnum_t  end_id = mesh->face_vtx_idx[face_id+1];
   cs_lnum_t  n_face_vertices = end_id - start_id;
 
   assert(perm < n_face_vertices);
@@ -490,8 +490,8 @@ _define_head_and_ext_edges(cs_lnum_t               face_id,
     couple[0] = mesh->face_vtx_lst[i];
     couple[1] = mesh->face_vtx_lst[i+1];
 
-    for (j = edges->vtx_idx[couple[0]-1];
-         j < edges->vtx_idx[couple[0]]; j++)
+    for (j = edges->vtx_idx[couple[0]];
+         j < edges->vtx_idx[couple[0]+1]; j++)
       if (edges->adj_vtx_lst[j] == couple[1])
         break;
 
@@ -507,8 +507,8 @@ _define_head_and_ext_edges(cs_lnum_t               face_id,
   couple[0] = mesh->face_vtx_lst[end_id-1];
   couple[1] = mesh->face_vtx_lst[start_id];
 
-  for (j = edges->vtx_idx[couple[0]-1];
-       j < edges->vtx_idx[couple[0]]; j++)
+  for (j = edges->vtx_idx[couple[0]];
+       j < edges->vtx_idx[couple[0]+1]; j++)
     if (edges->adj_vtx_lst[j] == couple[1])
       break;
 
@@ -863,7 +863,7 @@ _find_next(cs_join_param_t         param,
 
     for (i = v2v_s; i < v2v_e; i++) {
 
-      cs_lnum_t  vid3 = edges->adj_vtx_lst[i]-1;
+      cs_lnum_t  vid3 = edges->adj_vtx_lst[i];
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg && cs_glob_join_log != NULL)
@@ -1011,7 +1011,7 @@ _find_next(cs_join_param_t         param,
 
     for (i = v2v_s; i < v2v_e; i++) {
 
-      cs_lnum_t  vid3 = edges->adj_vtx_lst[i]-1;
+      cs_lnum_t  vid3 = edges->adj_vtx_lst[i];
 
       if (vid3 != vid1) {
         *next_edge = edges->edge_lst[i];
@@ -1728,22 +1728,22 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
 
   } /* End of loop on new faces */
 
-  new_mesh->face_vtx_idx[0] = 1;
+  new_mesh->face_vtx_idx[0] = 0;
   for (i = 0; i < n_new_faces; i++)
     new_mesh->face_vtx_idx[i+1] += new_mesh->face_vtx_idx[i];
 
   BFT_MALLOC(new_mesh->face_vtx_lst,
-             new_mesh->face_vtx_idx[n_new_faces]-1,
+             new_mesh->face_vtx_idx[n_new_faces],
              cs_lnum_t);
 
   for (i = 0; i < n_new_faces; i++) {
 
     id = subfaces[i];
-    shift = new_mesh->face_vtx_idx[i] - 1;
+    shift = new_mesh->face_vtx_idx[i];
 
     for (j = builder->subface_index->array[id], k = 0;
          j < builder->subface_index->array[id+1]; j++, k++)
-      new_mesh->face_vtx_lst[shift + k] = builder->subface_connect->array[j];
+      new_mesh->face_vtx_lst[shift + k] = builder->subface_connect->array[j] - 1;
 
   } /* End of loop on new faces */
 
@@ -2043,7 +2043,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
           for (j = 0; j < n_face_vertices; j++)
             builder->subface_connect->array[subface_s + j]
-              = w->face_vtx_lst[j + w->face_vtx_idx[fid] - 1];
+              = w->face_vtx_lst[j + w->face_vtx_idx[fid]] + 1;
 
           if (param.verbosity > 2) {
             fprintf(cs_glob_join_log,

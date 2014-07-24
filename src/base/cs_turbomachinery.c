@@ -596,10 +596,10 @@ _update_rotor_vertices(cs_turbomachinery_t *tbm)
     cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
     cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
     if (cell_flag[c_id_0] || cell_flag[c_id_1]) {
-      for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id]-1;
-           i < mesh->i_face_vtx_idx[f_id+1]-1;
+      for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
+           i < mesh->i_face_vtx_idx[f_id+1];
            i++)
-        rotor_vtx[mesh->i_face_vtx_lst[i]-1] = 1;
+        rotor_vtx[mesh->i_face_vtx_lst[i]] = 1;
     }
   }
 
@@ -608,10 +608,10 @@ _update_rotor_vertices(cs_turbomachinery_t *tbm)
   for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
     cs_lnum_t c_id = mesh->b_face_cells[f_id];
     if (cell_flag[c_id]) {
-      for (cs_lnum_t i = mesh->b_face_vtx_idx[f_id]-1;
-           i < mesh->b_face_vtx_idx[f_id+1]-1;
+      for (cs_lnum_t i = mesh->b_face_vtx_idx[f_id];
+           i < mesh->b_face_vtx_idx[f_id+1];
            i++)
-        rotor_vtx[mesh->b_face_vtx_lst[i]-1] = 1;
+        rotor_vtx[mesh->b_face_vtx_lst[i]] = 1;
     }
   }
 

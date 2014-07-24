@@ -107,12 +107,8 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
  *
  *
  * parameters:
- * nfabor       --> Number of boundary faces
  * nozppm       --> Max number of boundary conditions zone
  * ialtyb       --> ialtyb
- * ipnfbr       --> First node position for each boundary in nodfbr
- * nnod         --> number of node
- * nodfbr       --> uialcl_fixed_displacement
  * impale       --> uialcl_fixed_displacement
  * depale       --> See uialcl_fixed_displacement
  * dtref        --> time step
@@ -124,15 +120,12 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
  * rcodcl       --> See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
-                                 const int *const    nozppm,
+void CS_PROCF (uialcl, UIALCL) ( const int *const    nozppm,
                                  const int *const    ibfixe,
                                  const int *const    igliss,
                                  const int *const    ivimpo,
                                  const int *const    ifresf,
                                  int       *const    ialtyb,
-                                 const int *const    ipnfbr,
-                                 const int *const    nodfbr,
                                        int *const    impale,
                                  cs_real_3_t        *depale,
                                  double *const       dtref,

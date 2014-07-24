@@ -150,8 +150,8 @@ _clean_i_faces(cs_lnum_t         *i_face_vtx_idx,
 
     if (remove_face == false) {
       if (face_id != ind_full) {
-        for (i = i_face_vtx_idx[ind_full] - 1;
-             i < i_face_vtx_idx[ind_full] + d - 1;
+        for (i = i_face_vtx_idx[ind_full];
+             i < i_face_vtx_idx[ind_full] + d;
              i++)
           i_face_vtx_lst[i] = i_face_vtx_lst[i + l_shift];
       }

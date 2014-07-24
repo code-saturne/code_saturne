@@ -85,25 +85,23 @@ module mesh
   ! pointer to C array used by ifabor (0 to n-1 numbering)
   integer, dimension(:), pointer :: ifabor_0
 
-  !> \anchor ipnfac
-  !> position of the first node of the each internal face in the array nodfac
-  !> (see \ref note_3)
-  integer, dimension(:), pointer :: ipnfac
+  ! pointer to C array used by ipnfac (0 to n-1 numbering)
+  integer, dimension(:), pointer :: ipnfac_0
 
-  !> \anchor nodfac
-  !> index-numbers of the nodes of each internal face
-  !> (see \ref note_3)
-  integer, dimension(:), pointer :: nodfac
+  ! pointer to C array used by nodfac (0 to n-1 numbering)
+  integer, dimension(:), pointer :: nodfac_0
 
   !> \anchor ipnfbr
   !> position of the first node of the each boundary face in the array nodfbr
   !> (see \ref note_3)
-  integer, dimension(:), pointer :: ipnfbr
+  ! pointer to C array used by ipnfbr (0 to n-1 numbering)
+  integer, dimension(:), pointer :: ipnfbr_0
 
   !> \anchor nodfbr
   !> index-numbers of the nodes of each boundary face
   !> (see \ref note_3)
-  integer, dimension(:), pointer :: nodfbr
+  ! pointer to C array used by nodfbr (0 to n-1 numbering)
+  integer, dimension(:), pointer :: nodfbr_0
 
   !> \anchor ifmfbr
   !> family number of the boundary faces. See \ref note_1
@@ -254,6 +252,90 @@ contains
     icel = ifabor_0(ifac) + 1
 
   end function ifabor
+
+  !=============================================================================
+
+  !> \anchor ipnfac
+  !> position of the first node of the each internal face in the array nodfac
+  !> (see \ref note_3)
+
+  elemental pure function ipnfac(ifac) result(ipn)
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: ifac
+    integer             :: ipn
+
+    ! Function body
+
+    ipn = ipnfac_0(ifac) + 1
+
+  end function ipnfac
+
+  !=============================================================================
+
+  !> \anchor nodfac
+  !> indexed-numbers of the nodes of each internal face
+  !> (see \ref note_3)
+
+  elemental pure function nodfac(ipn) result(inod)
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: ipn
+    integer             :: inod
+
+    ! Function body
+
+    inod = nodfac_0(ipn) + 1
+
+  end function nodfac
+
+  !=============================================================================
+
+  !> \anchor ipnfbr
+  !> position of the first node of the each boundary face in the array nodfbr
+  !> (see \ref note_3)
+
+  elemental pure function ipnfbr(ifac) result(ipn)
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: ifac
+    integer             :: ipn
+
+    ! Function body
+
+    ipn = ipnfbr_0(ifac) + 1
+
+  end function ipnfbr
+
+  !=============================================================================
+
+  !> \anchor nodfbr
+  !> indexed-numbers of the nodes of each boundary face
+  !> (see \ref note_3)
+
+  elemental pure function nodfbr(ipn) result(inod)
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: ipn
+    integer             :: inod
+
+    ! Function body
+
+    inod = nodfbr_0(ipn) + 1
+
+  end function nodfbr
 
   !=============================================================================
 

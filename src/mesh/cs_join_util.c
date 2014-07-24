@@ -381,8 +381,8 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
     counter[i] = 0;
 
   for (i = 0; i < n_faces; i++) {
-    for (j = f2v_idx[i] - 1; j < f2v_idx[i+1] - 1; j++) {
-      vtx_id = f2v_lst[j] - 1;
+    for (j = f2v_idx[i]; j < f2v_idx[i+1]; j++) {
+      vtx_id = f2v_lst[j];
       counter[vtx_id] += 1;
     }
   } /* End of loop on faces */
@@ -404,9 +404,9 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
 
   for (i = 0; i < n_faces; i++) {
 
-    for (j = f2v_idx[i] - 1; j < f2v_idx[i+1] - 1; j++) {
+    for (j = f2v_idx[i]; j < f2v_idx[i+1]; j++) {
 
-      vtx_id = f2v_lst[j] - 1;
+      vtx_id = f2v_lst[j];
       shift = v2f_idx[vtx_id] + counter[vtx_id];
       v2f_lst[shift] = i+1;
       counter[vtx_id] += 1;
@@ -1281,13 +1281,13 @@ _add_single_edges(cs_interface_set_t   *ifs,
   for (i = 0; i < selection->n_b_adj_faces; i++) {
 
     fid = selection->b_adj_faces[i] - 1;
-    s = b_f2v_idx[fid] - 1;
-    e = b_f2v_idx[fid+1] - 1;
+    s = b_f2v_idx[fid];
+    e = b_f2v_idx[fid+1];
 
     for (j = s; j < e - 1; j++)
       _add_s_edge(vertex_tag,
-                  b_f2v_lst[j]-1,
-                  b_f2v_lst[j+1]-1,
+                  b_f2v_lst[j],
+                  b_f2v_lst[j+1],
                   sel_v2v_idx,
                   sel_v2v_lst,
                   &tmp_size,
@@ -1295,8 +1295,8 @@ _add_single_edges(cs_interface_set_t   *ifs,
                   &tmp_edges);
 
     _add_s_edge(vertex_tag,
-                b_f2v_lst[e-1]-1,
-                b_f2v_lst[s]-1,
+                b_f2v_lst[e-1],
+                b_f2v_lst[s],
                 sel_v2v_idx,
                 sel_v2v_lst,
                 &tmp_size,
@@ -1311,13 +1311,13 @@ _add_single_edges(cs_interface_set_t   *ifs,
 
     if (i_face_cells[fid][0] == -1 || i_face_cells[fid][1] == -1) {
 
-      s = i_f2v_idx[fid] - 1;
-      e = i_f2v_idx[fid+1] - 1;
+      s = i_f2v_idx[fid];
+      e = i_f2v_idx[fid+1];
 
       for (j = s; j < e - 1; j++)
         _add_s_edge(vertex_tag,
-                    i_f2v_lst[j]-1,
-                    i_f2v_lst[j+1]-1,
+                    i_f2v_lst[j],
+                    i_f2v_lst[j+1],
                     sel_v2v_idx,
                     sel_v2v_lst,
                     &tmp_size,
@@ -1325,8 +1325,8 @@ _add_single_edges(cs_interface_set_t   *ifs,
                     &tmp_edges);
 
       _add_s_edge(vertex_tag,
-                  i_f2v_lst[e-1]-1,
-                  i_f2v_lst[s]-1,
+                  i_f2v_lst[e-1],
+                  i_f2v_lst[s],
                   sel_v2v_idx,
                   sel_v2v_lst,
                   &tmp_size,
@@ -2556,8 +2556,8 @@ cs_join_extract_vertices(cs_lnum_t         n_select_faces,
 
       face_id = select_faces[i] - 1;
 
-      for (j = f2v_idx[face_id] - 1; j < f2v_idx[face_id+1] - 1; j++)
-        counter[f2v_lst[j]-1] = 1;
+      for (j = f2v_idx[face_id]; j < f2v_idx[face_id+1]; j++)
+        counter[f2v_lst[j]] = 1;
 
     }
 
@@ -2653,13 +2653,13 @@ cs_join_build_edges_idx(cs_lnum_t        n_faces,
   for (i = 0; i < n_faces; i++) {
 
     fid = faces[i] - 1;
-    s = f2v_idx[fid] - 1;
-    e = f2v_idx[fid+1] - 1;
+    s = f2v_idx[fid];
+    e = f2v_idx[fid+1];
 
     for (j = s; j < e - 1; j++) { /* scan edges */
 
-      v1 = f2v_lst[j];
-      v2 = f2v_lst[j+1];
+      v1 = f2v_lst[j] + 1;
+      v2 = f2v_lst[j+1] + 1;
 
       if (v1 < v2)
         v2v_idx[v1] += 1;
@@ -2674,8 +2674,8 @@ cs_join_build_edges_idx(cs_lnum_t        n_faces,
 
     /* Last edge */
 
-    v1 = f2v_lst[e-1];
-    v2 = f2v_lst[s];
+    v1 = f2v_lst[e-1] + 1;
+    v2 = f2v_lst[s] + 1;
 
     if (v1 < v2)
       v2v_idx[v1] += 1;
@@ -2718,13 +2718,13 @@ cs_join_build_edges_lst(cs_lnum_t        n_faces,
   for (i = 0; i < n_faces; i++) {
 
     fid = faces[i] - 1;
-    s = f2v_idx[fid] - 1;
-    e = f2v_idx[fid+1] - 1;
+    s = f2v_idx[fid];
+    e = f2v_idx[fid+1];
 
     for (j = s; j < e - 1; j++) { /* Scan edges */
 
-      v1_id = f2v_lst[j] - 1;
-      v2_id = f2v_lst[j+1] - 1;
+      v1_id = f2v_lst[j];
+      v2_id = f2v_lst[j+1];
 
       if (v1_id < v2_id) {
         shift = v2v_idx[v1_id] + count[v1_id];
@@ -2741,8 +2741,8 @@ cs_join_build_edges_lst(cs_lnum_t        n_faces,
 
     /* Last edge */
 
-    v1_id = f2v_lst[e-1] - 1;
-    v2_id = f2v_lst[s] - 1;
+    v1_id = f2v_lst[e-1];
+    v2_id = f2v_lst[s];
 
     if (v1_id < v2_id) {
       shift = v2v_idx[v1_id] + count[v1_id];

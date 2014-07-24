@@ -548,7 +548,7 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
  * parameters:
  *   idx_start       <-- first vertex index
  *   idx_end         <-- last vertex index
- *   face_vertex_num <-- face -> vertices connectivity
+ *   face_vertex_id  <-- face -> vertices connectivity
  *   face_normal     <-- face normal
  *   vertex_coords   <-- vertices coordinates
  *   face_warping    --> face warping angle
@@ -558,11 +558,11 @@ static void
 _get_face_warping(cs_int_t         idx_start,
                   cs_int_t         idx_end,
                   const cs_real_t  face_normal[],
-                  const cs_int_t   face_vertex_num[],
+                  const cs_int_t   face_vertex_id[],
                   const cs_real_t  vertex_coords[],
                   double           face_warping[])
 {
-  cs_int_t  i, idx, vertex_num1, vertex_num2;
+  cs_int_t  i, idx, vertex_id1, vertex_id2;
   double  edge_cos_alpha;
   cs_real_t  vect[3];
 
@@ -575,14 +575,14 @@ _get_face_warping(cs_int_t         idx_start,
 
   for (idx = idx_start; idx < idx_end - 1; idx++) {
 
-    vertex_num1 = face_vertex_num[idx] - 1;
-    vertex_num2 = face_vertex_num[idx + 1] - 1;
+    vertex_id1 = face_vertex_id[idx];
+    vertex_id2 = face_vertex_id[idx + 1];
 
     /* Get vertex coordinates */
 
     for (i = 0; i < dim; i++)
-      vect[i] =  vertex_coords[vertex_num2*dim + i]
-               - vertex_coords[vertex_num1*dim + i];
+      vect[i] =  vertex_coords[vertex_id2*dim + i]
+               - vertex_coords[vertex_id1*dim + i];
 
     edge_cos_alpha = _COSINE_3D(vect, face_normal);
     edge_cos_alpha = CS_ABS(edge_cos_alpha);
@@ -592,14 +592,14 @@ _get_face_warping(cs_int_t         idx_start,
 
   /* Last edge */
 
-  vertex_num1 = face_vertex_num[idx_end - 1] - 1;
-  vertex_num2 = face_vertex_num[idx_start] - 1;
+  vertex_id1 = face_vertex_id[idx_end - 1];
+  vertex_id2 = face_vertex_id[idx_start];
 
   /* Get vertex coordinates */
 
   for (i = 0; i < dim; i++)
-    vect[i] =  vertex_coords[vertex_num2*dim + i]
-             - vertex_coords[vertex_num1*dim + i];
+    vect[i] =  vertex_coords[vertex_id2*dim + i]
+             - vertex_coords[vertex_id1*dim + i];
 
   edge_cos_alpha = _COSINE_3D(vect, face_normal);
   edge_cos_alpha = CS_ABS(edge_cos_alpha);
@@ -698,11 +698,11 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
 
     for (i = 0; i < mesh->n_i_faces; i++) {
 
-      idx_start = mesh->i_face_vtx_idx[i] - 1;
-      idx_end = mesh->i_face_vtx_idx[i + 1] - 1;
+      idx_start = mesh->i_face_vtx_idx[i];
+      idx_end = mesh->i_face_vtx_idx[i + 1];
 
       for (j = idx_start; j < idx_end; j++) {
-        vtx_id = mesh->i_face_vtx_lst[j] - 1;
+        vtx_id = mesh->i_face_vtx_lst[j];
         if (i_face_val[i] > vtx_val[vtx_id])
           vtx_val[vtx_id] = i_face_val[i];
       }
@@ -715,11 +715,11 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
 
     for (i = 0; i < mesh->n_b_faces; i++) {
 
-      idx_start = mesh->b_face_vtx_idx[i] - 1;
-      idx_end = mesh->b_face_vtx_idx[i + 1] - 1;
+      idx_start = mesh->b_face_vtx_idx[i];
+      idx_end = mesh->b_face_vtx_idx[i + 1];
 
       for (j = idx_start; j < idx_end; j++) {
-        vtx_id = mesh->b_face_vtx_lst[j] - 1;
+        vtx_id = mesh->b_face_vtx_lst[j];
         if (b_face_val[i] > vtx_val[vtx_id])
           vtx_val[vtx_id] = b_face_val[i];
       }
@@ -782,8 +782,8 @@ cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
 
     /* Evaluate warping for each edge of face. Keep the max. */
 
-    idx_start = i_face_vtx_idx[face_id] - 1;
-    idx_end = i_face_vtx_idx[face_id + 1] - 1;
+    idx_start = i_face_vtx_idx[face_id];
+    idx_end = i_face_vtx_idx[face_id + 1];
 
     _get_face_warping(idx_start,
                       idx_end,
@@ -806,8 +806,8 @@ cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
 
     /* Evaluate warping for each edge */
 
-    idx_start = b_face_vtx_idx[face_id] - 1;
-    idx_end = b_face_vtx_idx[face_id + 1] - 1;
+    idx_start = b_face_vtx_idx[face_id];
+    idx_end = b_face_vtx_idx[face_id + 1];
 
     _get_face_warping(idx_start,
                       idx_end,

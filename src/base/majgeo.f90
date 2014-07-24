@@ -198,10 +198,10 @@ ifabor_0 => ifabo2(1:nfabor)
 ifmfbr => ifmfb2(1:nfabor)
 ifmcel => ifmce2(1:ncelet)
 
-ipnfac => ipnfa2(1:nfac+1)
-nodfac => nodfa2(1:lndfac)
-ipnfbr => ipnfb2(1:nfabor+1)
-nodfbr => nodfb2(1:lndfbr)
+ipnfac_0 => ipnfa2(1:nfac+1)
+nodfac_0 => nodfa2(1:lndfac)
+ipnfbr_0 => ipnfb2(1:nfabor+1)
+nodfbr_0 => nodfb2(1:lndfbr)
 
 icelbr => icelb2(1:ncelbr)
 

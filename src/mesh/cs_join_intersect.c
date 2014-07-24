@@ -255,9 +255,9 @@ _get_face_extents(const cs_lnum_t          face_start,
 
   /* Loop on vertices */
 
-  for (i = face_start - 1; i < face_end - 1; i++) {
+  for (i = face_start; i < face_end; i++) {
 
-    cs_lnum_t  vtx_id = face_vtx_lst[i] - 1;
+    cs_lnum_t  vtx_id = face_vtx_lst[i];
     cs_join_vertex_t  vtx = vertices[vtx_id];
 
     for (j = 0; j < 3; j++) {
@@ -4027,13 +4027,13 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
   for (i = 0; i < mesh->n_faces; i++) {
 
-    cs_lnum_t  start = mesh->face_vtx_idx[i] - 1;
-    cs_lnum_t  end = mesh->face_vtx_idx[i+1] - 1;
+    cs_lnum_t  start = mesh->face_vtx_idx[i];
+    cs_lnum_t  end = mesh->face_vtx_idx[i+1];
 
     for (j = start; j < end - 1; j++) {
 
-      edge_num = cs_join_mesh_get_edge(mesh->face_vtx_lst[j],
-                                       mesh->face_vtx_lst[j+1],
+      edge_num = cs_join_mesh_get_edge(mesh->face_vtx_lst[j] + 1,
+                                       mesh->face_vtx_lst[j+1] + 1,
                                        edges);
 
       shift = face2edge_idx[i] + count[i];
@@ -4042,8 +4042,8 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
     }
 
-    edge_num = cs_join_mesh_get_edge(mesh->face_vtx_lst[end-1],
-                                     mesh->face_vtx_lst[start],
+    edge_num = cs_join_mesh_get_edge(mesh->face_vtx_lst[end-1] + 1,
+                                     mesh->face_vtx_lst[start] + 1,
                                      edges);
 
     shift = face2edge_idx[i] + count[i];

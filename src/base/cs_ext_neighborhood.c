@@ -88,8 +88,9 @@ BEGIN_C_DECLS
  * parameters:
  *   mesh               <-- pointer to a cs_mesh_t structure
  *   p_cell_i_faces_idx --> pointer to the "cell -> faces" connectivity index
- *                          (1 to n numbering)
+ *                          (0 to n-1 numbering)
  *   p_cell_i_faces_lst --> pointer to the "cell -> faces" connectivity list
+ *                          (0 to n-1, no orientation)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -129,13 +130,13 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
 
   /* Build position index */
 
-  cell_faces_idx[0] = 1;
+  cell_faces_idx[0] = 0;
   for (j = 0 ; j < mesh->n_cells ; j++)
-    cell_faces_idx[j + 1] = cell_faces_idx[j] + cell_faces_idx[j + 1];
+    cell_faces_idx[j + 1] += cell_faces_idx[j];
 
   /* Build array of values */
 
-  BFT_MALLOC(cell_faces_lst, cell_faces_idx[mesh->n_cells] - 1, cs_lnum_t);
+  BFT_MALLOC(cell_faces_lst, cell_faces_idx[mesh->n_cells], cs_lnum_t);
   BFT_MALLOC(cell_faces_count, mesh->n_cells, cs_lnum_t);
 
   for (i = 0 ; i < mesh->n_cells ; i++)
@@ -145,11 +146,11 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
     j1 = mesh->i_face_cells[i][0];
     j2 = mesh->i_face_cells[i][1];
     if (j1 < mesh->n_cells) {
-      cell_faces_lst[cell_faces_idx[j1] + cell_faces_count[j1] - 1] = i + 1;
+      cell_faces_lst[cell_faces_idx[j1] + cell_faces_count[j1]] = i;
       cell_faces_count[j1] += 1;
     }
     if (j2 < mesh->n_cells) {
-      cell_faces_lst[cell_faces_idx[j2] + cell_faces_count[j2] - 1] = -(i + 1);
+      cell_faces_lst[cell_faces_idx[j2] + cell_faces_count[j2]] = i;
       cell_faces_count[j2] += 1;
     }
   }
@@ -160,7 +161,6 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
 
   *p_cell_i_faces_idx = cell_faces_idx;
   *p_cell_i_faces_lst = cell_faces_lst;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
                           cs_lnum_t  *p_vtx_cells_lst[])
 {
   cs_lnum_t  i, j, idx;
-  cs_lnum_t  vtx_id, face_id, cell_num;
+  cs_lnum_t  vtx_id, face_id, cell_id;
 
   bool      already_seen;
 
@@ -207,27 +207,27 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   for (face_id = 0; face_id < n_faces; face_id++) {
 
-    for (i = face_vtx_idx[face_id] - 1; i < face_vtx_idx[face_id+1] - 1; i++) {
-      vtx_id = face_vtx_lst[i] - 1;
+    for (i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
+      vtx_id = face_vtx_lst[i];
       vtx_faces_idx[vtx_id + 1] += 1;
     }
 
   } /* End of loop on faces */
 
-  vtx_faces_idx[0] = 1;
+  vtx_faces_idx[0] = 0;
   for (vtx_id = 0; vtx_id < n_vertices; vtx_id++)
     vtx_faces_idx[vtx_id + 1] += vtx_faces_idx[vtx_id];
 
   /* Allocation and definiton of "vtx -> faces" connectivity list */
 
-  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices] - 1, cs_lnum_t);
+  BFT_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices], cs_lnum_t);
 
   for (face_id = 0; face_id < n_faces; face_id++) {
 
-    for (i = face_vtx_idx[face_id] - 1; i < face_vtx_idx[face_id+1] - 1; i++) {
+    for (i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
 
-      vtx_id = face_vtx_lst[i] - 1;
-      vtx_faces_lst[vtx_faces_idx[vtx_id]-1] = face_id + 1;
+      vtx_id = face_vtx_lst[i];
+      vtx_faces_lst[vtx_faces_idx[vtx_id]] = face_id;
       vtx_faces_idx[vtx_id] += 1;
 
     }
@@ -236,30 +236,30 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   for (vtx_id = n_vertices; vtx_id > 0; vtx_id--)
     vtx_faces_idx[vtx_id] = vtx_faces_idx[vtx_id-1];
-  vtx_faces_idx[0] = 1;
+  vtx_faces_idx[0] = 0;
 
   /* Define "vertex -> cells" connectivity.
      Use "vertex -> faces" connectivity and "face -> cells" connectivity */
 
   BFT_MALLOC(vtx_cells_lst, vtx_cells_estimated_connect_size, cs_lnum_t);
 
-  vtx_cells_idx[0] = 1;
+  vtx_cells_idx[0] = 0;
 
   for (vtx_id = 0; vtx_id < n_vertices; vtx_id++) {
 
-    for (i = vtx_faces_idx[vtx_id] - 1; i < vtx_faces_idx[vtx_id+1] - 1; i++) {
+    for (i = vtx_faces_idx[vtx_id]; i < vtx_faces_idx[vtx_id+1]; i++) {
 
-      face_id = vtx_faces_lst[i] - 1;
+      face_id = vtx_faces_lst[i];
 
       for (j = 0; j < 2; j++) { /* For the cells sharing this face */
 
-        cell_num = face_cells[face_id][j] + 1;
+        cell_id = face_cells[face_id][j];
 
         already_seen = false;
-        idx = vtx_cells_idx[vtx_id] - 1;
+        idx = vtx_cells_idx[vtx_id];
 
         while ((already_seen == false) && (idx < vtx_cells_connect_size)) {
-          if (cell_num == vtx_cells_lst[idx])
+          if (cell_id == vtx_cells_lst[idx])
             already_seen = true;
           idx++;
         }
@@ -272,7 +272,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
                         vtx_cells_estimated_connect_size, cs_lnum_t);
           }
 
-          vtx_cells_lst[vtx_cells_connect_size] = cell_num;
+          vtx_cells_lst[vtx_cells_connect_size] = cell_id;
           vtx_cells_connect_size += 1;
 
         }
@@ -281,7 +281,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
     } /* End of loop on faces sharing this vertex */
 
-    vtx_cells_idx[vtx_id+1] = vtx_cells_connect_size + 1;
+    vtx_cells_idx[vtx_id+1] = vtx_cells_connect_size;
 
   } /* End of loop on vertices */
 
@@ -304,6 +304,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
  *   face_id        <-- identification number for the face
  *   cell_id        <-- identification number for the cell sharing this face
  *   mesh           <-- pointer to a cs_mesh_t structure
+ *   cell_cells_tag <-- pointer to a tag array
  *   vtx_cells_idx  --> pointer to the "vtx -> cells" connectivity index
  *   vtx_cells_lst  --> pointer to the "vtx -> cells" connectivity list
  *   vtx_gcells_idx --> pointer to the "vtx -> gcells" connectivity index
@@ -311,19 +312,17 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_tag_cells(cs_lnum_t    face_id,
-           cs_lnum_t    cell_id,
-           cs_mesh_t   *mesh,
-           cs_lnum_t    vtx_cells_idx[],
-           cs_lnum_t    vtx_cells_lst[],
-           cs_lnum_t    vtx_gcells_idx[],
-           cs_lnum_t    vtx_gcells_lst[])
+_tag_cells(cs_lnum_t         face_id,
+           cs_lnum_t         cell_id,
+           const cs_mesh_t  *mesh,
+           char              cell_cells_tag[],
+           cs_lnum_t         vtx_cells_idx[],
+           cs_lnum_t         vtx_cells_lst[],
+           cs_lnum_t         vtx_gcells_idx[],
+           cs_lnum_t         vtx_gcells_lst[])
 {
-  cs_lnum_t  i, j, k;
-  cs_lnum_t  vtx_id, ext_cell_num, cell_num;
-
-  cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
-  cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
 
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  *face_vtx_idx = mesh->i_face_vtx_idx;
@@ -331,52 +330,52 @@ _tag_cells(cs_lnum_t    face_id,
 
   if (cell_id < n_cells) {
 
-    for (i = cell_cells_idx[cell_id] - 1;
-         i < cell_cells_idx[cell_id+1] - 1;
+    for (cs_lnum_t i = cell_cells_idx[cell_id];
+         i < cell_cells_idx[cell_id+1];
          i++) {
-
-      ext_cell_num = cell_cells_lst[i];
 
       /* For cell not tagged yet */
 
-      if (ext_cell_num > 0) {
+      if (cell_cells_tag[i] == 0) {
+
+        cs_lnum_t ext_cell_id = cell_cells_lst[i];
 
         /* Cells sharing a vertex with the face */
 
-        for (j = face_vtx_idx[face_id] - 1;
-             j < face_vtx_idx[face_id+1] - 1;
+        for (cs_lnum_t j = face_vtx_idx[face_id];
+             j < face_vtx_idx[face_id+1];
              j++) {
 
-          vtx_id = face_vtx_lst[j] - 1;
+          cs_lnum_t vtx_id = face_vtx_lst[j];
 
-          if (ext_cell_num <= n_cells) { /* true cell */
+          if (ext_cell_id < n_cells) { /* true cell */
 
-            for (k = vtx_cells_idx[vtx_id] - 1;
-                 k < vtx_cells_idx[vtx_id+1] - 1;
+            for (cs_lnum_t k = vtx_cells_idx[vtx_id];
+                 k < vtx_cells_idx[vtx_id+1];
                  k++) {
 
-              cell_num = vtx_cells_lst[k];
+              cs_lnum_t loc_cell_id = vtx_cells_lst[k];
 
               /* Comparison and selection */
 
-              if (cell_num == ext_cell_num && cell_cells_lst[i] > 0)
-                cell_cells_lst[i] = - cell_cells_lst[i];
+              if (loc_cell_id == ext_cell_id && cell_cells_tag[i] == 0)
+                cell_cells_tag[i] = 1;
 
             } /* End of loop on cells sharing this vertex */
 
           }
           else { /* ext_cell_num >= n_cells; i.e. ghost cell */
 
-            for (k = vtx_gcells_idx[vtx_id];
+            for (cs_lnum_t k = vtx_gcells_idx[vtx_id];
                  k < vtx_gcells_idx[vtx_id+1];
                  k++) {
 
-              cell_num = vtx_gcells_lst[k] + n_cells + 1;
+              cs_lnum_t loc_cell_id = vtx_gcells_lst[k] + n_cells;
 
               /* Comparison and selection */
 
-              if (cell_num == ext_cell_num && cell_cells_lst[i] > 0)
-                cell_cells_lst[i] = - cell_cells_lst[i];
+              if (loc_cell_id == ext_cell_id && cell_cells_tag[i] == 0)
+                cell_cells_tag[i] = 1;
 
             }
 
@@ -440,7 +439,7 @@ _reverse_connectivity_idx(cs_halo_t   *halo,
 
     for (j = gcell_vtx_idx[id]; j < gcell_vtx_idx[id+1]; j++) {
 
-      vtx_id = gcell_vtx_lst[j] - 1;
+      vtx_id = gcell_vtx_lst[j];
 
       if (checker[vtx_id] != id) {
         checker[vtx_id] = id;
@@ -453,7 +452,6 @@ _reverse_connectivity_idx(cs_halo_t   *halo,
 
   for (i = 0; i < n_vertices; i++)
     vtx_gcells_idx[i+1] += vtx_gcells_idx[i];
-
 }
 
 /*---------------------------------------------------------------------------
@@ -508,7 +506,7 @@ _reverse_connectivity_lst(cs_halo_t   *halo,
 
     for (j = gcell_vtx_idx[id]; j < gcell_vtx_idx[id+1]; j++) {
 
-      vtx_id = gcell_vtx_lst[j] - 1;
+      vtx_id = gcell_vtx_lst[j];
 
       if (checker[vtx_id] != id) {
 
@@ -639,12 +637,13 @@ _create_vtx_cells_connect2(cs_mesh_t   *mesh,
 
     for (i = cell_i_faces_idx[cell_id]; i < cell_i_faces_idx[cell_id+1]; i++) {
 
-      fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
+      fac_id = cell_i_faces_lst[i];
 
       for (i_vtx = fac_vtx_idx[fac_id];
-           i_vtx < fac_vtx_idx[fac_id+1]; i_vtx++) {
+           i_vtx < fac_vtx_idx[fac_id+1];
+           i_vtx++) {
 
-        vtx_id = fac_vtx_lst[i_vtx-1] - 1;
+        vtx_id = fac_vtx_lst[i_vtx];
 
         if (vtx_tag[vtx_id] != cell_id) {
 
@@ -674,12 +673,13 @@ _create_vtx_cells_connect2(cs_mesh_t   *mesh,
 
     for (i = cell_i_faces_idx[cell_id]; i < cell_i_faces_idx[cell_id+1]; i++) {
 
-      fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
+      fac_id = cell_i_faces_lst[i];
 
       for (i_vtx = fac_vtx_idx[fac_id];
-           i_vtx < fac_vtx_idx[fac_id+1]; i_vtx++) {
+           i_vtx < fac_vtx_idx[fac_id+1];
+           i_vtx++) {
 
-        vtx_id = fac_vtx_lst[i_vtx-1] - 1;
+        vtx_id = fac_vtx_lst[i_vtx];
 
         if (vtx_tag[vtx_id] != cell_id) {
 
@@ -720,14 +720,14 @@ _create_vtx_cells_connect2(cs_mesh_t   *mesh,
 
 static void
 _create_cell_cells_connect(cs_mesh_t  *mesh,
-                           cs_lnum_t    *cell_i_faces_idx,
-                           cs_lnum_t    *cell_i_faces_lst,
-                           cs_lnum_t    *vtx_gcells_idx,
-                           cs_lnum_t    *vtx_gcells_lst,
-                           cs_lnum_t    *vtx_cells_idx,
-                           cs_lnum_t    *vtx_cells_lst,
-                           cs_lnum_t    *p_cell_cells_idx[],
-                           cs_lnum_t    *p_cell_cells_lst[])
+                           cs_lnum_t  *cell_i_faces_idx,
+                           cs_lnum_t  *cell_i_faces_lst,
+                           cs_lnum_t  *vtx_gcells_idx,
+                           cs_lnum_t  *vtx_gcells_lst,
+                           cs_lnum_t  *vtx_cells_idx,
+                           cs_lnum_t  *vtx_cells_lst,
+                           cs_lnum_t  *p_cell_cells_idx[],
+                           cs_lnum_t  *p_cell_cells_lst[])
 {
   cs_lnum_t  i, j, i_cel, fac_id, i_vtx;
   cs_lnum_t  cell_id, vtx_id, shift;
@@ -749,7 +749,7 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
   cell_tag = &(cell_buffer[0]);
   cell_count = &(cell_buffer[n_cells_wghosts]);
 
-  cell_cells_idx[0] = 1;
+  cell_cells_idx[0] = 0;
   for (i = 0; i < n_cells; i++) {
     cell_cells_idx[i+1] = 0;
     cell_count[i] = 0;
@@ -766,7 +766,7 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
     for (i = cell_i_faces_idx[i_cel]; i < cell_i_faces_idx[i_cel+1]; i++) {
 
-      fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
+      fac_id = cell_i_faces_lst[i];
 
       cell_tag[face_cells[fac_id][0]] = i_cel;
       cell_tag[face_cells[fac_id][1]] = i_cel;
@@ -777,12 +777,13 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
     for (i = cell_i_faces_idx[i_cel]; i < cell_i_faces_idx[i_cel+1]; i++) {
 
-      fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
+      fac_id = cell_i_faces_lst[i];
 
       for (i_vtx = fac_vtx_idx[fac_id];
-           i_vtx < fac_vtx_idx[fac_id+1]; i_vtx++) {
+           i_vtx < fac_vtx_idx[fac_id+1];
+           i_vtx++) {
 
-        vtx_id = fac_vtx_lst[i_vtx-1] - 1;
+        vtx_id = fac_vtx_lst[i_vtx];
 
         /* For cells belonging to this rank, get vertex -> cells connect. */
 
@@ -828,7 +829,7 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
   for (i = 0; i < n_cells_wghosts; i++)
     cell_tag[i] = -1;
 
-  BFT_MALLOC(cell_cells_lst, cell_cells_idx[n_cells] - 1, cs_lnum_t);
+  BFT_MALLOC(cell_cells_lst, cell_cells_idx[n_cells], cs_lnum_t);
 
   /* Fill list */
 
@@ -838,7 +839,7 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
     for (i = cell_i_faces_idx[i_cel]; i < cell_i_faces_idx[i_cel+1]; i++) {
 
-      fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
+      fac_id = cell_i_faces_lst[i];
 
       cell_tag[face_cells[fac_id][0]] = i_cel;
       cell_tag[face_cells[fac_id][1]] = i_cel;
@@ -849,12 +850,13 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
     for (i = cell_i_faces_idx[i_cel]; i < cell_i_faces_idx[i_cel+1]; i++) {
 
-      fac_id = CS_ABS(cell_i_faces_lst[i-1]) - 1;
+      fac_id = cell_i_faces_lst[i];
 
       for (i_vtx = fac_vtx_idx[fac_id];
-           i_vtx < fac_vtx_idx[fac_id+1]; i_vtx++) {
+           i_vtx < fac_vtx_idx[fac_id+1];
+           i_vtx++) {
 
-        vtx_id = fac_vtx_lst[i_vtx-1] - 1;
+        vtx_id = fac_vtx_lst[i_vtx];
 
         /* For cells belonging to this rank, get vertex -> cells connect. */
 
@@ -864,8 +866,8 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
           if (cell_tag[cell_id] != i_cel) {
 
-            shift = cell_cells_idx[i_cel] - 1 + cell_count[i_cel];
-            cell_cells_lst[shift] = cell_id + 1;
+            shift = cell_cells_idx[i_cel] + cell_count[i_cel];
+            cell_cells_lst[shift] = cell_id;
             cell_tag[cell_id] = i_cel;
             cell_count[i_cel] += 1;
 
@@ -883,8 +885,8 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
             if (cell_tag[cell_id] != i_cel) {
 
-              shift = cell_cells_idx[i_cel]  - 1 + cell_count[i_cel];
-              cell_cells_lst[shift] = cell_id + 1;
+              shift = cell_cells_idx[i_cel] + cell_count[i_cel];
+              cell_cells_lst[shift] = cell_id;
               cell_tag[cell_id] = i_cel;
               cell_count[i_cel] += 1;
 
@@ -1049,7 +1051,12 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
                                    &vtx_gcells_idx,
                                    &vtx_gcells_lst);
 
-      /* Tag cells to eliminate (set a negative number) */
+      /* Tag cells to eliminate (0 to eleiminate, 1 to keep) */
+
+      char *cell_cells_tag;
+      BFT_MALLOC(cell_cells_tag, mesh->cell_cells_idx[n_cells], char);
+      for (i = 0; i < mesh->cell_cells_idx[n_cells]; i++)
+        cell_cells_tag[i] = 0;
 
       for (face_id = 0 ; face_id < n_faces ; face_id++) {
 
@@ -1093,9 +1100,11 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
              vertex of the face. */
 
           _tag_cells(face_id, cell_i, mesh,
+                     cell_cells_tag,
                      vtx_cells_idx, vtx_cells_lst,
                      vtx_gcells_idx, vtx_gcells_lst);
           _tag_cells(face_id, cell_j, mesh,
+                     cell_cells_tag,
                      vtx_cells_idx, vtx_cells_lst,
                      vtx_gcells_idx, vtx_gcells_lst);
 
@@ -1113,21 +1122,15 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
         BFT_FREE(vtx_gcells_lst);
       }
 
-      /* Change all signs in cell_cells_lst in order to have cells to
-         eliminate < 0 */
+      /* Delete cells with tag == 0 */
 
-      for (i = 0 ; i < mesh->cell_cells_idx[n_cells]-1 ; i++)
-        mesh->cell_cells_lst[i] = - mesh->cell_cells_lst[i];
-
-      /* Delete negative cells */
-
-      init_cell_cells_connect_size = cell_cells_idx[n_cells] - 1;
+      init_cell_cells_connect_size = cell_cells_idx[n_cells];
 
       for (cell_id = 0; cell_id < n_cells; cell_id++) {
 
-        for (i = previous_idx; i < cell_cells_idx[cell_id+1] - 1; i++) {
+        for (i = previous_idx; i < cell_cells_idx[cell_id+1]; i++) {
 
-          if (cell_cells_lst[i] > 0) {
+          if (cell_cells_tag[i] != 0) {
             new_idx++;
             cell_cells_lst[new_idx] = cell_cells_lst[i];
           }
@@ -1136,14 +1139,16 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
         } /* End of loop on cells in the extended neighborhood of cell_id+1 */
 
-        previous_idx = cell_cells_idx[cell_id+1] - 1;
+        previous_idx = cell_cells_idx[cell_id+1];
         cell_cells_idx[cell_id+1] -= n_deleted_cells;
 
       } /* End of loop on cells */
 
+      BFT_FREE(cell_cells_tag);
+
       /* Reallocation of cell_cells_lst */
 
-      BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells]-1, cs_lnum_t);
+      BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells], cs_lnum_t);
 
       /* Output for listing */
 
@@ -1181,12 +1186,12 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
          (unsigned long long)n_deleted_cells,
          ratio);
 
-#if 0 /* For debugging purpose */
+#if 0 /* For debugging purposes */
       for (i = 0; i < mesh->n_cells ; i++) {
         cs_lnum_t  j;
         bft_printf(" cell %d :: ", i+1);
-        for (j = mesh->cell_cells_idx[i]-1;
-             j < mesh->cell_cells_idx[i+1]-1;
+        for (j = mesh->cell_cells_idx[i];
+             j < mesh->cell_cells_idx[i+1];
              j++)
           bft_printf(" %d ", mesh->cell_cells_lst[j]);
         bft_printf("\n");
@@ -1268,7 +1273,6 @@ cs_ext_neighborhood_define(cs_mesh_t  *mesh)
   BFT_FREE(cell_i_faces_lst);
   BFT_FREE(vtx_cells_idx);
   BFT_FREE(vtx_cells_lst);
-
 }
 
 /*----------------------------------------------------------------------------*/

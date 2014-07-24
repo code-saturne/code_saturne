@@ -898,9 +898,9 @@ do while (iterns.le.nterup)
 
       call uialcl &
       !==========
-    ( nfabor, nozppm,                    &
+    ( nozppm,                            &
       ibfixe, igliss, ivimpo, ifresf,    &
-      ialtyb, ipnfbr, nodfbr,            &
+      ialtyb,                            &
       impale,                            &
       depale,                            &
       dtref, ttcabs, ntcabs,             &

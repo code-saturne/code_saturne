@@ -58,8 +58,8 @@ void
 cs_mesh_halo_define(cs_mesh_t           *mesh,
                     cs_interface_set_t  *face_ifs,
                     cs_interface_set_t  *vertex_ifs,
-                    cs_int_t            *p_gcell_vtx_idx[],
-                    cs_int_t            *p_gcell_vtx_lst[]);
+                    cs_lnum_t           *p_gcell_vtx_idx[],
+                    cs_lnum_t           *p_gcell_vtx_lst[]);
 
 /*----------------------------------------------------------------------------*/
 

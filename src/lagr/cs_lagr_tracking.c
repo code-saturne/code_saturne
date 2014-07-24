@@ -1804,7 +1804,7 @@ _where_are_you(cs_lnum_t                       face_num,
   /* Vertex coordinates of the studied face */
 
   for (i = 0; i < n_vertices - 1; i++) {
-    cs_lnum_t  vtx_id = face_connect[i] - 1;
+    cs_lnum_t  vtx_id = face_connect[i];
     for (j = 0; j < 3; j++)
       max_value = CS_MAX(max_value, CS_ABS(mesh->vtx_coord[3*vtx_id+j]));
   }
@@ -1841,8 +1841,8 @@ _where_are_you(cs_lnum_t                       face_num,
 
   assert(colocalization == 0);
 
-  vtx_id1 = face_connect[0] - 1; /* First vertex of the face */
-  vtx_id2 = face_connect[1] - 1; /* Second vertex of the face */
+  vtx_id1 = face_connect[0]; /* First vertex of the face */
+  vtx_id2 = face_connect[1]; /* Second vertex of the face */
 
   for (i = 0; i < 3; i++) {
     vtx1[i] = mesh->vtx_coord[3*vtx_id1+i];
@@ -1909,7 +1909,7 @@ _where_are_you(cs_lnum_t                       face_num,
 
   for (i = 1; i < n_vertices; i++) {
 
-    vtx_id1 = face_connect[i] - 1;
+    vtx_id1 = face_connect[i];
     for (j = 0; j < 3; j++)
       vtx1[j] = mesh->vtx_coord[3*vtx_id1+j];
 
@@ -1948,7 +1948,7 @@ _where_are_you(cs_lnum_t                       face_num,
 
       /* Test orienation of [P, Q, V(i-1), V(i)] */
 
-      vtx_id2 = face_connect[i-1] - 1;
+      vtx_id2 = face_connect[i-1];
       for (j = 0; j < 3; j++)
         vtx2[j] = mesh->vtx_coord[3*vtx_id2+j];
 
@@ -2019,9 +2019,10 @@ _where_are_you(cs_lnum_t                       face_num,
      particle locations */
 
   assert(orient_count == 2);
+  assert(ijkl_ref > 0);
 
-  vtx_id1 = face_connect[ijkl_ref - 1] - 1;
-  vtx_id2 = face_connect[ijkl_ref] - 1;
+  vtx_id1 = face_connect[ijkl_ref - 1];
+  vtx_id2 = face_connect[ijkl_ref];
 
   for (j = 0; j < 3; j++) {
     vtx1[j] = mesh->vtx_coord[3*vtx_id1+j];
@@ -3259,8 +3260,8 @@ _local_propagation(void                           *particle,
         /* Interior face which is different from the incoming face */
 
         cs_lnum_t  face_id = face_num - 1;
-        cs_lnum_t  vtx_start = mesh->i_face_vtx_idx[face_id] - 1;
-        cs_lnum_t  vtx_end = mesh->i_face_vtx_idx[face_id+1] - 1;
+        cs_lnum_t  vtx_start = mesh->i_face_vtx_idx[face_id];
+        cs_lnum_t  vtx_end = mesh->i_face_vtx_idx[face_id+1];
         cs_lnum_t  n_vertices = vtx_end - vtx_start + 1;
 
         for (k = 0, j = vtx_start; j < vtx_end; j++, k++)
@@ -3530,8 +3531,8 @@ _local_propagation(void                           *particle,
         /* Boundary faces */
 
         cs_lnum_t  face_id = CS_ABS(face_num) - 1;
-        cs_lnum_t  vtx_start = mesh->b_face_vtx_idx[face_id] - 1;
-        cs_lnum_t  vtx_end = mesh->b_face_vtx_idx[face_id+1] - 1;
+        cs_lnum_t  vtx_start = mesh->b_face_vtx_idx[face_id];
+        cs_lnum_t  vtx_end = mesh->b_face_vtx_idx[face_id+1];
         cs_lnum_t  n_vertices = vtx_end - vtx_start + 1;
 
         for (k = 0, j = vtx_start; j < vtx_end; j++, k++)

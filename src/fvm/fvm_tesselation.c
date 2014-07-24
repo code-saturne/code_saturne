@@ -961,6 +961,7 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
     if (n_vertices > 4) {
 
       n_triangles = fvm_triangulate_polygon(dim,
+                                            1,
                                             n_vertices,
                                             vertex_coords,
                                             parent_vertex_num,

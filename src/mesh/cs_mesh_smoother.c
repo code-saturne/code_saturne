@@ -383,15 +383,15 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 
   for (face_id = 0; face_id < n_faces; face_id++) {
 
-    start = face_vtx_idx[face_id] - 1;
-    end = face_vtx_idx[face_id + 1] - 1;
+    start = face_vtx_idx[face_id];
+    end = face_vtx_idx[face_id + 1];
 
     /* Loop on the vertices of the face */
 
     for (j = start; j < end - 1; j++) {
 
-      vtx_id1 = face_vtx_lst[j] - 1;
-      vtx_id2 = face_vtx_lst[j+1] - 1;
+      vtx_id1 = face_vtx_lst[j];
+      vtx_id2 = face_vtx_lst[j+1];
 
       for (k = 0; k < 3; k++) {
         a[k] = vtx_coords[3*vtx_id1 + k];
@@ -407,8 +407,8 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 
     /* Case end - start */
 
-    vtx_id1 = face_vtx_lst[end-1] - 1;
-    vtx_id2 = face_vtx_lst[start] - 1;
+    vtx_id1 = face_vtx_lst[end-1];
+    vtx_id2 = face_vtx_lst[start];
 
     for (k = 0; k < 3; k++) {
       a[k] = vtx_coords[3*vtx_id1 + k];
@@ -690,10 +690,10 @@ _unwarping_mvt(cs_mesh_t            *mesh,
 #endif
 
   for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-    start_id = mesh->b_face_vtx_idx[face_id] -1;
-    end_id = mesh->b_face_vtx_idx[face_id + 1] -1;
+    start_id = mesh->b_face_vtx_idx[face_id];
+    end_id = mesh->b_face_vtx_idx[face_id + 1];
     for (i = start_id; i < end_id; i++) {
-      vtx = mesh->b_face_vtx_lst[i] -1;
+      vtx = mesh->b_face_vtx_lst[i];
       lambda = 0.0;
       for (coord_id = 0; coord_id < 3; coord_id++)
         lambda +=  (mesh->vtx_coord[3*vtx + coord_id]
@@ -712,10 +712,10 @@ _unwarping_mvt(cs_mesh_t            *mesh,
 
   for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
     if (mesh->i_face_cells[face_id][0] < mesh->n_cells) {
-      start_id = mesh->i_face_vtx_idx[face_id] -1;
-      end_id = mesh->i_face_vtx_idx[face_id + 1] -1;
+      start_id = mesh->i_face_vtx_idx[face_id];
+      end_id = mesh->i_face_vtx_idx[face_id + 1];
       for (i = start_id; i < end_id; i++) {
-        vtx = mesh->i_face_vtx_lst[i] -1;
+        vtx = mesh->i_face_vtx_lst[i];
         lambda = 0.0;
         for (coord_id = 0; coord_id < 3; coord_id++)
           lambda += (mesh->vtx_coord[3*vtx + coord_id]
@@ -771,11 +771,11 @@ _compute_vtx_normals(cs_mesh_t           *mesh,
     b_vtx_norm[i] = 0.;
 
   for (i = 0; i < mesh->n_b_faces; i++) {
-    for (j = mesh->b_face_vtx_idx[i] -1;
-         j < mesh->b_face_vtx_idx[i+1] -1;
+    for (j = mesh->b_face_vtx_idx[i];
+         j < mesh->b_face_vtx_idx[i+1];
          j++) {
       for (coord_id = 0; coord_id < 3; coord_id++) {
-        b_vtx_norm[(mesh->b_face_vtx_lst[j]-1)*3 + coord_id]
+        b_vtx_norm[(mesh->b_face_vtx_lst[j])*3 + coord_id]
           += b_face_norm[i*3 + coord_id];
       }
     }
@@ -858,15 +858,15 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
     _vtx_is_fixed[j] = 0;
 
   for (face = 0; face < mesh->n_b_faces; face++) {
-    for (j = mesh->b_face_vtx_idx[face] -1;
-         j < mesh->b_face_vtx_idx[face +1] -1;
+    for (j = mesh->b_face_vtx_idx[face];
+         j < mesh->b_face_vtx_idx[face +1];
          j++) {
       face_norm = &b_face_norm[face*3];
-      vtx_norm = &b_vtx_norm[(mesh->b_face_vtx_lst[j] -1)*3];
+      vtx_norm = &b_vtx_norm[(mesh->b_face_vtx_lst[j])*3];
 
       if (_DOT_PRODUCT_3D(face_norm, vtx_norm) < cos(feature_angle*_PI_/180.0)
           || feature_angle < DBL_MIN)
-        _vtx_is_fixed[mesh->b_face_vtx_lst[j] -1] += 1;
+        _vtx_is_fixed[mesh->b_face_vtx_lst[j]] += 1;
     }
   }
 

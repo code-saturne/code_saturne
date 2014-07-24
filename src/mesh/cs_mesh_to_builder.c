@@ -148,12 +148,12 @@ _mesh_to_builder_face_vertices_g(const cs_mesh_t     *mesh,
   for (i = 0; i < n_i_faces; i++) {
     for (j = mesh->i_face_vtx_idx[i]; j < mesh->i_face_vtx_idx[i+1]; j++)
       face_vtx_g[k++]
-        = mesh->global_vtx_num[mesh->i_face_vtx_lst[j - 1] - 1];
+        = mesh->global_vtx_num[mesh->i_face_vtx_lst[j]];
   }
   for (i = 0; i < n_b_faces; i++) {
     for (j = mesh->b_face_vtx_idx[i]; j < mesh->b_face_vtx_idx[i+1]; j++)
       face_vtx_g[k++]
-        = mesh->global_vtx_num[mesh->b_face_vtx_lst[j - 1] - 1];
+        = mesh->global_vtx_num[mesh->b_face_vtx_lst[j]];
   }
 
   n_block_faces = (mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0]);
@@ -883,7 +883,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
       k = b_order[i];
       for (j = mesh->b_face_vtx_idx[k]; j < mesh->b_face_vtx_idx[k+1]; j++)
         mb->face_vertices[l++]
-          = mesh->global_vtx_num[mesh->b_face_vtx_lst[j - 1] - 1];
+          = mesh->global_vtx_num[mesh->b_face_vtx_lst[j]];
     }
   }
   else { /* if (mesh->global_vtx_num == NULL) */
@@ -891,12 +891,12 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     for (i = 0; i < n_i_faces; i++) {
       k = i_order[i];
       for (j = mesh->i_face_vtx_idx[k]; j < mesh->i_face_vtx_idx[k+1]; j++)
-        mb->face_vertices[l++] = mesh->i_face_vtx_lst[j - 1];
+        mb->face_vertices[l++] = mesh->i_face_vtx_lst[j] + 1;
     }
     for (i = 0; i < n_b_faces; i++) {
       k = b_order[i];
       for (j = mesh->b_face_vtx_idx[k]; j < mesh->b_face_vtx_idx[k+1]; j++)
-        mb->face_vertices[l++] = mesh->b_face_vtx_lst[j - 1];
+        mb->face_vertices[l++] = mesh->b_face_vtx_lst[j] + 1;
     }
   }
 

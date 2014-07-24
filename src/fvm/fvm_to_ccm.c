@@ -1370,7 +1370,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
   for (i = 0; i < n_faces; i++) {
     face_connect_g[k++] = face_vtx_idx[i+1] - face_vtx_idx[i];
     for (j = face_vtx_idx[i]; j < face_vtx_idx[i+1]; j++)
-      face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j - 1] - 1];
+      face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j]];
   }
 
   BFT_MALLOC(_face_connect_g, _face_connect_idx[block_size], cs_ccm_num_t);
@@ -1644,7 +1644,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
       if (face_vtx_idx[i+1] > face_vtx_idx[i]) {
         face_connect_g[k++] = face_vtx_idx[i+1] - face_vtx_idx[i];
         for (j = face_vtx_idx[i]; j < face_vtx_idx[i+1]; j++)
-          face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j - 1] - 1];
+          face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j]];
       }
     }
   }
@@ -1653,12 +1653,12 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
       if (cell_gnum[face_cells[2*i]] == 0) {
         face_connect_g[k++] = face_vtx_idx[i+1] - face_vtx_idx[i];
         for (j = face_vtx_idx[i+1] - 1; j >= face_vtx_idx[i]; j--)
-          face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j - 1] - 1];
+          face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j]];
       }
       else if (cell_gnum[face_cells[2*i + 1]] == 0) {
         face_connect_g[k++] = face_vtx_idx[i+1] - face_vtx_idx[i];
         for (j = face_vtx_idx[i]; j < face_vtx_idx[i+1]; j++)
-          face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j - 1] - 1];
+          face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j]];
       }
     }
   }
@@ -2254,7 +2254,7 @@ _write_face_vertices_l(const cs_mesh_t         *b_mesh,
     cs_lnum_t face_id = face_order[i];
     face_connect[k++] = face_vtx_idx[face_id+1] - face_vtx_idx[face_id];
     for (j = face_vtx_idx[face_id]; j < face_vtx_idx[face_id+1]; j++)
-      face_connect[k++] = face_vtx_lst[j-1];
+      face_connect[k++] = face_vtx_lst[j] + 1;
   }
 
   /* Now write face -> vertices connectivity */
@@ -2381,7 +2381,7 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
         n_faces += 1;
         face_connect[k++] = face_vtx_idx[face_id+1] - face_vtx_idx[face_id];
         for (j = face_vtx_idx[face_id]; j < face_vtx_idx[face_id+1]; j++)
-          face_connect[k++] = face_vtx_lst[j-1];
+          face_connect[k++] = face_vtx_lst[j] + 1;
       }
     }
   }
@@ -2392,13 +2392,13 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
         n_faces += 1;
         face_connect[k++] = face_vtx_idx[face_id+1] - face_vtx_idx[face_id];
         for (j = face_vtx_idx[face_id+1] - 1; j >= face_vtx_idx[face_id]; j--)
-          face_connect[k++] = face_vtx_lst[j-1];
+          face_connect[k++] = face_vtx_lst[j] + 1;
       }
       else if (cell_gnum[face_cells[i][1]] == 0) {
         n_faces += 1;
         face_connect[k++] = face_vtx_idx[face_id+1] - face_vtx_idx[face_id];
         for (j = face_vtx_idx[face_id]; j < face_vtx_idx[face_id+1]; j++)
-          face_connect[k++] = face_vtx_lst[j-1];
+          face_connect[k++] = face_vtx_lst[j] + 1;
       }
     }
   }

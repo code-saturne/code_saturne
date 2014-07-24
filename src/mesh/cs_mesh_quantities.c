@@ -301,7 +301,7 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
   cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
   cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
 
-  cs_lnum_t  cell_id, cidx, face_id, ii, jj, ll, mm;
+  cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
   cs_real_t  a11, a12, a13, a22, a23, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
@@ -362,11 +362,13 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
 
   if (m->halo_type == CS_HALO_EXTENDED) {
 
-#   pragma omp parallel for private(cidx, jj, ll, mm, uddij2, dc)
+#   pragma omp parallel for private(jj, ll, mm, uddij2, dc)
     for (ii = 0; ii < n_cells; ii++) {
-      for (cidx = cell_cells_idx[ii]; cidx < cell_cells_idx[ii+1]; cidx++) {
+      for (cs_lnum_t cidx = cell_cells_idx[ii];
+           cidx < cell_cells_idx[ii+1];
+           cidx++) {
 
-        jj = cell_cells_lst[cidx - 1] - 1;
+        jj = cell_cells_lst[cidx];
 
         for (ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -614,7 +616,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
 
-  cs_lnum_t  cell_id, cidx, face_id, cell_id1, cell_id2, i, j;
+  cs_lnum_t  cell_id, face_id, cell_id1, cell_id2, i, j;
   int        g_id, t_id;
   cs_real_t  a11, a12, a13, a22, a23, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
@@ -672,13 +674,13 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
 
   if (m->halo_type == CS_HALO_EXTENDED) {
 
-#   pragma omp parallel for private(cidx, cell_id2, ddc, dc, i, j)
+#   pragma omp parallel for private(cell_id2, ddc, dc, i, j)
     for (cell_id1 = 0; cell_id1 < n_cells; cell_id1++) {
-      for (cidx = cell_cells_idx[cell_id1];
+      for (cs_lnum_t cidx = cell_cells_idx[cell_id1];
            cidx < cell_cells_idx[cell_id1+1];
            cidx++) {
 
-        cell_id2 = cell_cells_lst[cidx - 1] - 1;
+        cell_id2 = cell_cells_lst[cidx];
 
         for (i = 0; i < 3; i++)
           dc[i] = cell_cen[cell_id2][i] - cell_cen[cell_id1][i];
@@ -840,8 +842,8 @@ _compute_face_normal(cs_lnum_t         dim,
 
     n_face_vertices = 0;
 
-    start_id = face_vtx_idx[face_id] - 1;
-    end_id = face_vtx_idx[face_id + 1] - 1;
+    start_id = face_vtx_idx[face_id];
+    end_id = face_vtx_idx[face_id + 1];
 
     for (i = 0; i < 3; i++)
       this_face_normal[i] = 0.0;
@@ -850,7 +852,7 @@ _compute_face_normal(cs_lnum_t         dim,
 
     for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
 
-      shift = 3 * (face_vtx_lst[vtx_id] - 1);
+      shift = 3 * (face_vtx_lst[vtx_id]);
       for (i = 0; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
       n_face_vertices++;
@@ -1009,14 +1011,14 @@ _compute_face_quantities(const cs_lnum_t   dim,
 
     /* Define the polygon (P) according to the vertices (Pi) of the face */
 
-    lower_vtx_id = face_vtx_idx[fac_id] - 1;
-    upper_vtx_id = face_vtx_idx[fac_id + 1] - 1;
+    lower_vtx_id = face_vtx_idx[fac_id];
+    upper_vtx_id = face_vtx_idx[fac_id + 1];
 
     n_face_vertices = 0;
 
     for (vtx_id = lower_vtx_id; vtx_id < upper_vtx_id; vtx_id++) {
 
-      lower_coord_id = 3 * (face_vtx_lst[vtx_id] - 1);
+      lower_coord_id = 3 * (face_vtx_lst[vtx_id]);
 
       for (i = X; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[lower_coord_id + i];
@@ -1290,9 +1292,9 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
 
       /* Loop on vertices of the face */
 
-      for (k = _face_vtx_idx[fac_id]-1; k < _face_vtx_idx[fac_id + 1]-1; k++) {
+      for (k = _face_vtx_idx[fac_id]; k < _face_vtx_idx[fac_id + 1]; k++) {
 
-        vtx_id = _face_vtx_lst[k] - 1;
+        vtx_id = _face_vtx_lst[k];
 
         if (vtx_tag[vtx_id] < cell_id) {
           for (i = 0 ; i < 3 ; i++)

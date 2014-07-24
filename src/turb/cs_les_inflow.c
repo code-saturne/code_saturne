@@ -492,8 +492,8 @@ _synthetic_eddy_method(const cs_int_t    n_points,
       double length_scale_min = -HUGE_VAL;
 
       for (j = mesh->b_face_vtx_idx[b_face_id];
-                 j < mesh->b_face_vtx_idx[b_face_id + 1]; j++) {
-              cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j-1] - 1;
+           j < mesh->b_face_vtx_idx[b_face_id + 1]; j++) {
+              cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j];
               length_scale_min = CS_MAX(length_scale_min,
                               2.*CS_ABS(mesh_q->cell_cen[3*cell_id + coo_id]
                                         - mesh->vtx_coord[3*vtx_id + coo_id]));
@@ -999,8 +999,8 @@ _rescale_flowrate(cs_int_t     n_points,
     cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
 
     cs_lnum_t idx = mesh->b_face_vtx_idx[b_face_id];
-    cs_lnum_t vtx_id1 = mesh->b_face_vtx_lst[idx-1] - 1;
-    cs_lnum_t vtx_id2 = mesh->b_face_vtx_lst[idx] - 1;
+    cs_lnum_t vtx_id1 = mesh->b_face_vtx_lst[idx];
+    cs_lnum_t vtx_id2 = mesh->b_face_vtx_lst[idx+1];
 
     double norm = 0.;
     double normal_comp = 0., tangent_comp1 = 0., tangent_comp2 = 0.;

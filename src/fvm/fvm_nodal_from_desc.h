@@ -67,7 +67,7 @@ BEGIN_C_DECLS
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   cell_gc_id      <-- cell -> group class ids, or NULL
@@ -113,7 +113,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   face_gc_id      <-- face -> group class ids, or NULL (per face list)
  *   parent_face_num <-- face -> parent face number (1 to n) if non-trivial
  *                       (i.e. if face definitions correspond to a subset
@@ -143,7 +143,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   vertex_num      --> nodal connectivity of cell, if not a general

@@ -253,26 +253,26 @@ _perio_face_clean(cs_join_param_t      param,
 
   /* Update interior face connectivity */
 
-  new_f2v_idx[0] = 1;
+  new_f2v_idx[0] = 0;
   for (i = 0; i < n_fi_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
   n_fi_faces = 0;
   for (i = 0; i < n_ii_faces; i++) {
     if (tag[i] > 0) {
-      shift = new_f2v_idx[n_fi_faces] - 1;
-      for (k = 0, j = mesh->i_face_vtx_idx[i]-1;
-           j < mesh->i_face_vtx_idx[i+1]-1; j++, k++)
+      shift = new_f2v_idx[n_fi_faces];
+      for (k = 0, j = mesh->i_face_vtx_idx[i];
+           j < mesh->i_face_vtx_idx[i+1]; j++, k++)
         mesh->i_face_vtx_lst[shift+k] = mesh->i_face_vtx_lst[j];
       n_fi_faces++;
     }
   }
 
-  BFT_REALLOC(mesh->i_face_vtx_lst, new_f2v_idx[n_fi_faces]-1, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_vtx_lst, new_f2v_idx[n_fi_faces], cs_lnum_t);
   BFT_FREE(mesh->i_face_vtx_idx);
 
   mesh->i_face_vtx_idx = new_f2v_idx;
-  mesh->i_face_vtx_connect_size = new_f2v_idx[n_fi_faces]-1;
+  mesh->i_face_vtx_connect_size = new_f2v_idx[n_fi_faces];
 
   /* There is no need to define a new glbal interior face numbering
      because the excluded faces are always defined on an another rank */
@@ -647,15 +647,15 @@ cs_join_perio_apply(cs_join_t          *this_join,
   BFT_REALLOC(jmesh->face_vtx_idx, jmesh->n_faces + 1, cs_lnum_t);
   BFT_REALLOC(jmesh->face_gnum, jmesh->n_faces, cs_gnum_t);
   BFT_REALLOC(jmesh->face_vtx_lst,
-              2*(jmesh->face_vtx_idx[n_init_faces]-1), cs_lnum_t);
+              2*(jmesh->face_vtx_idx[n_init_faces]), cs_lnum_t);
 
   for (i = 0; i < n_init_faces; i++) {
 
     int  pfid = n_init_faces + i;
-    int  s = jmesh->face_vtx_idx[i] - 1;
-    int  e = jmesh->face_vtx_idx[i+1] - 1;
-    int  ps = jmesh->face_vtx_idx[pfid] - 1;
-    int  pe = jmesh->face_vtx_idx[pfid] - 1 + e - s;
+    int  s = jmesh->face_vtx_idx[i];
+    int  e = jmesh->face_vtx_idx[i+1];
+    int  ps = jmesh->face_vtx_idx[pfid];
+    int  pe = jmesh->face_vtx_idx[pfid] + e - s;
     cs_gnum_t  new_gnum = 2*jmesh->face_gnum[i];
 
     jmesh->face_gnum[i] = new_gnum - 1;
@@ -663,7 +663,7 @@ cs_join_perio_apply(cs_join_t          *this_join,
 
     for (j = s, shift = ps; j < e; j++, shift++)
       jmesh->face_vtx_lst[shift] = jmesh->face_vtx_lst[j] + n_init_vertices;
-    jmesh->face_vtx_idx[pfid+1] =  pe + 1;
+    jmesh->face_vtx_idx[pfid+1] =  pe;
 
   }
 
@@ -803,14 +803,14 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   for (i = 0; i < n_init_faces; i++) {
 
     is_modified = false;
-    start = jmesh->face_vtx_idx[2*i]-1;
-    end = jmesh->face_vtx_idx[2*i+1]-1;
+    start = jmesh->face_vtx_idx[2*i];
+    end = jmesh->face_vtx_idx[2*i+1];
     perio_start = end;
-    perio_end = jmesh->face_vtx_idx[2*i+2]-1;
+    perio_end = jmesh->face_vtx_idx[2*i+2];
 
     for (j = perio_start; j < perio_end; j++) {
 
-      vid = jmesh->face_vtx_lst[j] - 1;
+      vid = jmesh->face_vtx_lst[j];
       state = jmesh->vertices[vid].state;
 
       if (state == CS_JOIN_STATE_PERIO_MERGE) {
@@ -950,45 +950,45 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   /* Update face->vertex connectivity for original faces if needed
      Copy connectivity for periodic faces */
 
-  new_f2v_idx[0] = 1;
+  new_f2v_idx[0] = 0;
   for (i = 0; i < jmesh->n_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_MALLOC(new_f2v_lst, new_f2v_idx[jmesh->n_faces] - 1, cs_lnum_t);
+  BFT_MALLOC(new_f2v_lst, new_f2v_idx[jmesh->n_faces], cs_lnum_t);
 
   for (i = 0; i < n_init_faces; i++) {
 
-    start = jmesh->face_vtx_idx[2*i]-1;
-    end = jmesh->face_vtx_idx[2*i+1]-1;
+    start = jmesh->face_vtx_idx[2*i];
+    end = jmesh->face_vtx_idx[2*i+1];
     perio_start = end;
-    perio_end = jmesh->face_vtx_idx[2*i+2]-1;
+    perio_end = jmesh->face_vtx_idx[2*i+2];
 
     if (f_state[2*i] == false) { /* No modification to apply */
 
-      for (j = start, shift = new_f2v_idx[2*i] - 1;
+      for (j = start, shift = new_f2v_idx[2*i];
            j < perio_start; j++, shift++)
         new_f2v_lst[shift] = jmesh->face_vtx_lst[j];
 
     }
     else { /* Modification to apply from the periodic face */
 
-      for (j = perio_start, shift = new_f2v_idx[2*i] - 1;
+      for (j = perio_start, shift = new_f2v_idx[2*i];
            j < perio_end; j++, shift++) {
 
-        vid = jmesh->face_vtx_lst[j] - 1;
+        vid = jmesh->face_vtx_lst[j];
         state = jmesh->vertices[vid].state;
 
         if (   state == CS_JOIN_STATE_PERIO_MERGE
             || state == CS_JOIN_STATE_PERIO)
-          new_f2v_lst[shift] = linked_id[vid] + 1;
+          new_f2v_lst[shift] = linked_id[vid];
         else if (state == CS_JOIN_STATE_MERGE) {
           if (linked_id[vid] > -1)
-            new_f2v_lst[shift] = linked_id[vid] + 1;
+            new_f2v_lst[shift] = linked_id[vid];
           else
-            new_f2v_lst[shift] = vtag[vid];
+            new_f2v_lst[shift] = vtag[vid] - 1;
         }
         else if (state == CS_JOIN_STATE_NEW)
-          new_f2v_lst[shift] = vtag[vid];
+          new_f2v_lst[shift] = vtag[vid] - 1;
         else
           bft_error(__FILE__, __LINE__, 0,
                     _("  Vertex state (%d) is not consistent.\n"
@@ -1001,7 +1001,7 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
 
     /* Copy periodic face connectivity */
 
-    for (j = perio_start, shift = new_f2v_idx[2*i+1] - 1;
+    for (j = perio_start, shift = new_f2v_idx[2*i+1];
          j < perio_end; j++, shift++)
       new_f2v_lst[shift] = jmesh->face_vtx_lst[j];
 
@@ -1060,10 +1060,10 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
 
     jmesh->face_gnum[i] = jmesh->face_gnum[2*i];
 
-    for (j = jmesh->face_vtx_idx[2*i]-1; j < jmesh->face_vtx_idx[2*i+1]-1; j++)
+    for (j = jmesh->face_vtx_idx[2*i]; j < jmesh->face_vtx_idx[2*i+1]; j++)
       jmesh->face_vtx_lst[shift++] = jmesh->face_vtx_lst[j];
 
-    jmesh->face_vtx_idx[i+1] = shift + 1;
+    jmesh->face_vtx_idx[i+1] = shift;
 
   }
 
@@ -1333,8 +1333,8 @@ cs_join_perio_split_back(cs_join_t          *this_join,
   for (i = 0; i < jmesh->n_faces; i++) {
     if (f_tag[i] == 1 || f_tag[i] == -1) {
 
-      new_f2v_idx[n1_faces+1] =
-        jmesh->face_vtx_idx[i+1] - jmesh->face_vtx_idx[i];
+      new_f2v_idx[n1_faces+1]
+        = jmesh->face_vtx_idx[i+1] - jmesh->face_vtx_idx[i];
       new_fgnum[n1_faces] = jmesh->face_gnum[i];
 
       new_history->index[n1_faces+1] =
@@ -1352,8 +1352,8 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
       assert(f_tag[i] == -1 || f_tag[i] == -2);
 
-      new_f2v_idx[shift + 1] =
-        jmesh->face_vtx_idx[i+1] - jmesh->face_vtx_idx[i];
+      new_f2v_idx[shift + 1]
+        = jmesh->face_vtx_idx[i+1] - jmesh->face_vtx_idx[i];
       new_fgnum[shift] = f2_gnum[n2_faces];
 
       new_history->index[shift+1] =
@@ -1397,8 +1397,8 @@ cs_join_perio_split_back(cs_join_t          *this_join,
   for (i = 0; i < jmesh->n_faces; i++) {
     if (f_tag[i] < 0) { /* Periodicity to transfer back */
 
-      for (j = jmesh->face_vtx_idx[i]-1; j < jmesh->face_vtx_idx[i+1]-1; j++) {
-        vid = jmesh->face_vtx_lst[j] - 1;
+      for (j = jmesh->face_vtx_idx[i]; j < jmesh->face_vtx_idx[i+1]; j++) {
+        vid = jmesh->face_vtx_lst[j];
 
         if (linked_id[vid] == -1)
           linked_id[vid] = -2; /* Have to get the related id. Add a new
@@ -1505,7 +1505,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
   jmesh->n_vertices += n_vertices_to_add;
 
-  new_f2v_idx[0] = 1;
+  new_f2v_idx[0] = 0;
   new_history->index[0] = 0;
 
   for (i = 0; i < n_final_faces; i++) {
@@ -1513,14 +1513,14 @@ cs_join_perio_split_back(cs_join_t          *this_join,
     new_history->index[i+1] += new_history->index[i];
   }
 
-  BFT_MALLOC(new_f2v_lst, new_f2v_idx[n_final_faces] - 1, cs_lnum_t);
+  BFT_MALLOC(new_f2v_lst, new_f2v_idx[n_final_faces], cs_lnum_t);
   BFT_MALLOC(new_history->g_list, new_history->index[new_history->n_elts],
              cs_gnum_t);
 
   /* Define a new face connectivity and a new face history */
 
   shift1 = 0; /*kept faces in face connect. */
-  shift2 = new_f2v_idx[n1_faces] - 1; /* transfered faces in face connect. */
+  shift2 = new_f2v_idx[n1_faces]; /* transfered faces in face connect. */
 
   shift3 = 0; /* kept faces in face history */
   shift4 = new_history->index[n1_faces]; /* transfered faces in face history */
@@ -1537,8 +1537,8 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
   for (i = 0; i < jmesh->n_faces; i++) {
 
-    start = jmesh->face_vtx_idx[i]-1;
-    end = jmesh->face_vtx_idx[i+1]-1;
+    start = jmesh->face_vtx_idx[i];
+    end = jmesh->face_vtx_idx[i+1];
 
     if (f_tag[i] == 1) { /* Original face to keep */
 
@@ -1564,10 +1564,10 @@ cs_join_perio_split_back(cs_join_t          *this_join,
       /* Define face connectivity */
 
       for (j = start; j < end; j++) {
-        vid = jmesh->face_vtx_lst[j] - 1;
+        vid = jmesh->face_vtx_lst[j];
         assert(linked_id[vid] > -1);
-        new_f2v_lst[shift1++] = vid + 1;
-        new_f2v_lst[shift2++] = linked_id[vid] + 1;
+        new_f2v_lst[shift1++] = vid;
+        new_f2v_lst[shift2++] = linked_id[vid];
       }
 
       /* Define new old->new face history */
@@ -1593,9 +1593,9 @@ cs_join_perio_split_back(cs_join_t          *this_join,
       n2_faces++;
 
       for (j = start; j < end; j++) {
-        vid = jmesh->face_vtx_lst[j] - 1;
+        vid = jmesh->face_vtx_lst[j];
         assert(linked_id[vid] > -1);
-        new_f2v_lst[shift2++] = linked_id[vid] + 1;
+        new_f2v_lst[shift2++] = linked_id[vid];
       }
 
       for (j = n2o_hist->index[i]; j < n2o_hist->index[i+1]; j++) {

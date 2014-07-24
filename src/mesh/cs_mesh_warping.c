@@ -259,10 +259,10 @@ _match_halo_face_cut(const cs_mesh_t           *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id];
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id];
             for (v_id = start_id; v_id < end_id; v_id++)
-              send_buf[l++] = new_face_vtx_lst[v_id];
+              send_buf[l++] = new_face_vtx_lst[v_id] + 1;
           }
         }
       }
@@ -279,10 +279,10 @@ _match_halo_face_cut(const cs_mesh_t           *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id];
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id];
             for (v_id = start_id; v_id < end_id; v_id++)
-              send_buf[l++] = new_face_vtx_lst[v_id];
+              send_buf[l++] = new_face_vtx_lst[v_id] + 1;
           }
         }
       }
@@ -329,10 +329,10 @@ _match_halo_face_cut(const cs_mesh_t           *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id];
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id];
             for (v_id = start_id; v_id < end_id; v_id++)
-              new_face_vtx_lst[v_id] = recv_buf[l++];
+              new_face_vtx_lst[v_id] = recv_buf[l++] - 1;
           }
         }
       }
@@ -349,10 +349,10 @@ _match_halo_face_cut(const cs_mesh_t           *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id];
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id];
             for (v_id = start_id; v_id < end_id; v_id++)
-              new_face_vtx_lst[v_id] = recv_buf[l++];
+              new_face_vtx_lst[v_id] = recv_buf[l++] - 1;
           }
         }
       }
@@ -462,8 +462,8 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
   for (face_id = 0; face_id < n_init_faces; face_id++) {
 
-    idx_start = mesh->i_face_vtx_idx[face_id] - 1;
-    idx_end = mesh->i_face_vtx_idx[face_id + 1] - 1;
+    idx_start = mesh->i_face_vtx_idx[face_id];
+    idx_end = mesh->i_face_vtx_idx[face_id + 1];
 
     n_face_vertices = idx_end - idx_start;
     n_max_face_vertices = CS_MAX(n_max_face_vertices, n_face_vertices);
@@ -513,20 +513,21 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
      the local vertex positions in the parent faces, not to the true
      vertex numbers, so as to be synchronizable across interfaces. */
 
-  new_face_vtx_idx[0] = 1;
+  new_face_vtx_idx[0] = 0;
   connect_size = 0;
   n_new_faces = 0;
   n_cut_faces = 0;
 
   for (face_id = 0; face_id < n_init_faces; face_id++) {
 
-    idx_start = mesh->i_face_vtx_idx[face_id] - 1;
-    idx_end = mesh->i_face_vtx_idx[face_id + 1] - 1;
+    idx_start = mesh->i_face_vtx_idx[face_id];
+    idx_end = mesh->i_face_vtx_idx[face_id + 1];
     n_face_vertices = idx_end - idx_start;
 
     if (cut_flag[face_id] != 0) {
 
       n_triangles = fvm_triangulate_polygon(dim,
+                                            0,
                                             n_face_vertices,
                                             mesh->vtx_coord,
                                             NULL,
@@ -621,22 +622,22 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
     if (cut_flag[face_id] != 0) {
 
-      idx_start = mesh->i_face_vtx_idx[face_id] - 1;
-      idx_end = mesh->i_face_vtx_idx[face_id + 1] - 1;
+      idx_start = mesh->i_face_vtx_idx[face_id];
+      idx_end = mesh->i_face_vtx_idx[face_id + 1];
 
       n_face_vertices = idx_end - idx_start;
       n_triangles = n_face_vertices - 2;
 
       face_shift = new_face_shift[face_id];
 
-      old_face_idx = mesh->i_face_vtx_idx[face_id] - 1;
+      old_face_idx = mesh->i_face_vtx_idx[face_id];
 
       for (i = 0; i < n_triangles; i++) {
 
-        for (j = new_face_vtx_idx[face_shift] - 1;
-             j < new_face_vtx_idx[face_shift+1] - 1; j++) {
+        for (j = new_face_vtx_idx[face_shift];
+             j < new_face_vtx_idx[face_shift+1]; j++) {
 
-          cs_lnum_t v_id = new_face_vtx_lst[j] - 1;
+          cs_lnum_t v_id = new_face_vtx_lst[j];
           new_face_vtx_lst[j] = mesh->i_face_vtx_lst[old_face_idx + v_id];
         }
 
@@ -732,8 +733,8 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
   for (face_id = 0; face_id < n_init_faces; face_id++) {
 
-    idx_start = (*p_face_vtx_idx)[face_id] - 1;
-    idx_end = (*p_face_vtx_idx)[face_id + 1] - 1;
+    idx_start = (*p_face_vtx_idx)[face_id];
+    idx_end = (*p_face_vtx_idx)[face_id + 1];
 
     n_face_vertices = idx_end - idx_start;
     n_max_face_vertices = CS_MAX(n_max_face_vertices, n_face_vertices);
@@ -773,20 +774,21 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
   /* Second loop : define the new connectivity after triangulation */
 
-  new_face_vtx_idx[0] = 1;
+  new_face_vtx_idx[0] = 0;
   connect_size = 0;
   n_new_faces = 0;
   n_cut_faces = 0;
 
   for (face_id = 0; face_id < n_init_faces; face_id++) {
 
-    idx_start = (*p_face_vtx_idx)[face_id] - 1;
-    idx_end = (*p_face_vtx_idx)[face_id + 1] - 1;
+    idx_start = (*p_face_vtx_idx)[face_id];
+    idx_end = (*p_face_vtx_idx)[face_id + 1];
     n_face_vertices = idx_end - idx_start;
 
     if (cut_flag[face_id] != 0) {
 
       n_triangles = fvm_triangulate_polygon(dim,
+                                            0,
                                             n_face_vertices,
                                             mesh->vtx_coord,
                                             NULL,

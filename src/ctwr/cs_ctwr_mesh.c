@@ -1504,7 +1504,7 @@ void cs_ctwr_adeau
            icel < cell_cells_idx[iair + 1];
            icel++) {
 
-         indice = cell_cells_lst[icel] - 1;
+         indice = cell_cells_lst[icel];
          if (ct->mark_ze[indice+1]==1) {
             nvois[nbvois]= indice;
             nbvois += 1;

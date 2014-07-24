@@ -210,9 +210,9 @@ cs_mesh_coherency_check(void)
     cs_real_t _min[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
     cs_real_t _max[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
 
-    for (i = face_vtx_idx[face_id]-1; i < face_vtx_idx[face_id+1]-1; i++) {
+    for (i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
 
-      cs_lnum_t vtx_id = face_vtx_lst[i]-1;
+      cs_lnum_t vtx_id = face_vtx_lst[i];
       const cs_real_t *coord = vtx_coord + (3*vtx_id);
 
       for (j = 0; j < 3; j++) {
@@ -245,9 +245,9 @@ cs_mesh_coherency_check(void)
     cs_real_t _min[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
     cs_real_t _max[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
 
-    for (i = face_vtx_idx[face_id]-1; i < face_vtx_idx[face_id+1]-1; i++) {
+    for (i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
 
-      cs_lnum_t vtx_id = face_vtx_lst[i]-1;
+      cs_lnum_t vtx_id = face_vtx_lst[i];
       const cs_real_t *coord = vtx_coord + (3*vtx_id);
 
       for (j = 0; j < 3; j++) {
@@ -363,10 +363,11 @@ cs_mesh_coherency_check(void)
 
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
 
-      for (i = cell_cells_idx[cell_id]-1;
-           i < cell_cells_idx[cell_id+1]-1; i++) {
+      for (i = cell_cells_idx[cell_id];
+           i < cell_cells_idx[cell_id+1];
+           i++) {
 
-        cs_lnum_t  cell_id2 = mesh->cell_cells_lst[i] - 1;
+        cs_lnum_t  cell_id2 = mesh->cell_cells_lst[i];
 
         _check_bounding_boxes(_("extended"),
                               cell_id,

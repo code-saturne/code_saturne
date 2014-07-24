@@ -157,7 +157,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
 
         /* Get the vertex number */
 
-        vtx_id = m->i_face_vtx_lst[j-1] - 1;
+        vtx_id = m->i_face_vtx_lst[j];
 
         /* Get the vector from the cell center to the node */
 
@@ -214,7 +214,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
            j < m->b_face_vtx_idx[face_id+1];
            j++) {
 
-        vtx_id = m->b_face_vtx_lst[j-1] - 1;
+        vtx_id = m->b_face_vtx_lst[j];
         vtx_counter[vtx_id] = 0.;
 
         for (i = 0; i < dim; i++)
@@ -235,7 +235,7 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
          j < m->b_face_vtx_idx[face_id+1];
          j++) {
 
-      vtx_id = m->b_face_vtx_lst[j-1] - 1;
+      vtx_id = m->b_face_vtx_lst[j];
 
       /* If the boundary face is NOT a sliding face */
 

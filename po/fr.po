@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-07-22 17:31+0200\n"
+"POT-Creation-Date: 2014-07-24 18:15+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5028,11 +5028,6 @@ msgstr ""
 "Les %d transformations périodiques du halo ne correspondent\n"
 "pas à celles du maillage principal (au nombre de %d).\n"
 
-msgid ""
-"Trying to build an interface with unordered elements\n"
-"not currently handled."
-msgstr ""
-
 #, c-format
 msgid "Called cs_interface_set_sum with unhandled datatype (%d)."
 msgstr ""
@@ -9244,6 +9239,10 @@ msgid "  Joining number %d is not defined.\n"
 msgstr "  Le recollement numéro %d n'est pas défini.\n"
 
 #, c-format
+msgid "Unable to open file: \"%s\" for logging."
+msgstr "Impossibile d'ouvrir le fichier : \"%s\" pour la trace."
+
+#, c-format
 msgid ""
 "\n"
 "  Number of faces to treat locally: %10d\n"
@@ -9274,6 +9273,10 @@ msgstr ""
 "\n"
 "  Traitement complet pour le recollement %2d\n"
 "    temps écoulé :                                  %10.3g\n"
+
+#, c-format
+msgid "Error closing log file for joining: %d."
+msgstr "Erreur à la fermeture du fichier de traces pour le recollement : %d."
 
 #, c-format
 msgid ""
@@ -9741,14 +9744,6 @@ msgstr ""
 
 msgid "The log directory cannot be created"
 msgstr "Le répertoire de traces (log) ne peut être créé"
-
-#, c-format
-msgid "Unable to open file: \"%s\" for logging."
-msgstr "Impossibile d'ouvrir le fichier : \"%s\" pour la trace."
-
-#, c-format
-msgid "Error closing log file for joining: %d."
-msgstr "Erreur à la fermeture du fichier de traces pour le recollement : %d."
 
 #, c-format
 msgid "  Global number of boundary faces selected for joining: %10llu\n"

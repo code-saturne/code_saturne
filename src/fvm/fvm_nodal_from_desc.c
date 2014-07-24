@@ -102,7 +102,7 @@ typedef enum {
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *
@@ -115,7 +115,7 @@ _is_prism_or_poly(const cs_lnum_t    cell_id,
                   const int          n_face_lists,
                   const cs_lnum_t    face_list_shift[],
                   const cs_lnum_t   *face_vertex_idx[],
-                  const cs_lnum_t   *face_vertex_num[],
+                  const cs_lnum_t   *face_vertex[],
                   const cs_lnum_t    cell_face_idx[],
                   const cs_lnum_t    cell_face_num[])
 {
@@ -141,8 +141,8 @@ _is_prism_or_poly(const cs_lnum_t    cell_id,
     assert(fl > -1);
     face_id -= face_list_shift[fl];
 
-    vertex_id_start = face_vertex_idx[fl][face_id] - 1;
-    vertex_id_end   = face_vertex_idx[fl][face_id + 1] - 1;
+    vertex_id_start = face_vertex_idx[fl][face_id];
+    vertex_id_end   = face_vertex_idx[fl][face_id + 1];
     n_face_vertices = vertex_id_end - vertex_id_start;
 
     if (n_face_vertices == 3) {
@@ -150,12 +150,12 @@ _is_prism_or_poly(const cs_lnum_t    cell_id,
       if (cell_face_num[idx] > 0) {
         for (vtx = 0 ; vtx < 3 ; vtx++)
           vtx_tria[n_trias*3 + vtx]
-            = face_vertex_num[fl][vertex_id_start + vtx];
+            = face_vertex[fl][vertex_id_start + vtx] + 1;
       }
       else {
         for (vtx = 0 ; vtx < 3 ; vtx++)
           vtx_tria[n_trias*3 + vtx]
-            = face_vertex_num[fl][vertex_id_end - 1 - vtx];
+            = face_vertex[fl][vertex_id_end - 1 - vtx] + 1;
       }
 
       n_trias += 1;
@@ -199,7 +199,7 @@ _is_prism_or_poly(const cs_lnum_t    cell_id,
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   cell_vtx_tria   --> local triangle definitions (optional, 4 max.)
@@ -214,7 +214,7 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
                       const int          n_face_lists,
                       const cs_lnum_t    face_list_shift[],
                       const cs_lnum_t   *face_vertex_idx[],
-                      const cs_lnum_t   *face_vertex_num[],
+                      const cs_lnum_t   *face_vertex[],
                       const cs_lnum_t    cell_face_idx[],
                       const cs_lnum_t    cell_face_num[],
                       cs_lnum_t         *cell_vtx_tria,
@@ -261,8 +261,8 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
     assert(fl > -1);
     face_id -= face_list_shift[fl];
 
-    vertex_id_start = face_vertex_idx[fl][face_id] - 1;
-    vertex_id_end   = face_vertex_idx[fl][face_id + 1] - 1;
+    vertex_id_start = face_vertex_idx[fl][face_id];
+    vertex_id_end   = face_vertex_idx[fl][face_id + 1];
     n_face_vertices = vertex_id_end - vertex_id_start;
 
     if (n_face_vertices == 3) {
@@ -271,12 +271,12 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
         if (cell_face_num[idx] > 0) {
           for (vtx = 0 ; vtx < n_face_vertices ; vtx++)
             cell_vtx_tria[n_trias*3 + vtx]
-              = face_vertex_num[fl][vertex_id_start + vtx];
+              = face_vertex[fl][vertex_id_start + vtx] + 1;
         }
         else {
           for (vtx = 0 ; vtx < n_face_vertices ; vtx++)
             cell_vtx_tria[n_trias*3 + vtx]
-              = face_vertex_num[fl][vertex_id_end - 1 - vtx];
+              = face_vertex[fl][vertex_id_end - 1 - vtx] + 1;
         }
       }
 
@@ -289,12 +289,12 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
         if (cell_face_num[idx] > 0) {
           for (vtx = 0 ; vtx < n_face_vertices ; vtx++)
             cell_vtx_quad[n_quads*4 + vtx]
-              = face_vertex_num[fl][vertex_id_start + vtx];
+              = face_vertex[fl][vertex_id_start + vtx] + 1;
         }
         else {
           for (vtx = 0 ; vtx < n_face_vertices ; vtx++)
             cell_vtx_quad[n_quads*4 + vtx]
-              = face_vertex_num[fl][vertex_id_end - 1 - vtx];
+              = face_vertex[fl][vertex_id_end - 1 - vtx] + 1;
         }
       }
 
@@ -318,7 +318,7 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
                                     n_face_lists,
                                     face_list_shift,
                                     face_vertex_idx,
-                                    face_vertex_num,
+                                    face_vertex,
                                     cell_face_idx,
                                     cell_face_num);
     else if (n_trias == 4) {
@@ -833,8 +833,8 @@ _nodal_face_from_desc_size(const cs_lnum_t    face_id,
   assert(fl > -1);
   _face_id -= face_list_shift[fl];
 
-  vertex_id_start = face_vertex_idx[fl][_face_id] - 1;
-  vertex_id_end   = face_vertex_idx[fl][_face_id + 1] - 1;
+  vertex_id_start = face_vertex_idx[fl][_face_id];
+  vertex_id_end   = face_vertex_idx[fl][_face_id + 1];
   n_face_vertices = vertex_id_end - vertex_id_start;
 
   return n_face_vertices;
@@ -842,9 +842,9 @@ _nodal_face_from_desc_size(const cs_lnum_t    face_id,
 }
 
 /*----------------------------------------------------------------------------
- * Copy the vertex numbers defining a given face.
+ * Copy the vertex ids defining a given face.
  *
- * The face_vtx[] array is filled with the vertex numbers of the face,
+ * The face_vtx[] array is filled with the vertex ids of the face,
  * and should be large enough to receive them.
  *
  * parameters:
@@ -853,7 +853,7 @@ _nodal_face_from_desc_size(const cs_lnum_t    face_id,
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   face_vtx        --> local face definition
  *----------------------------------------------------------------------------*/
 
@@ -862,27 +862,27 @@ _nodal_face_from_desc_copy(const cs_lnum_t    face_id,
                            const int          n_face_lists,
                            const cs_lnum_t    face_list_shift[],
                            const cs_lnum_t   *face_vertex_idx[],
-                           const cs_lnum_t   *face_vertex_num[],
+                           const cs_lnum_t   *face_vertex[],
                            cs_lnum_t         *face_vtx)
 {
   cs_lnum_t   fl, _face_id;
   cs_lnum_t   vtx, vertex_id, vertex_id_start, vertex_id_end;
 
-  /* Copy vertex numbers */
-  /*---------------------*/
+  /* Copy vertex ids */
+  /*-----------------*/
 
   _face_id = face_id;
   for (fl = n_face_lists - 1 ; _face_id < face_list_shift[fl] ; fl--);
   assert(fl > -1);
   _face_id -= face_list_shift[fl];
 
-  vertex_id_start = face_vertex_idx[fl][_face_id] - 1;
-  vertex_id_end   = face_vertex_idx[fl][_face_id + 1] - 1;
+  vertex_id_start = face_vertex_idx[fl][_face_id];
+  vertex_id_end   = face_vertex_idx[fl][_face_id + 1];
 
   for (vtx = 0, vertex_id = vertex_id_start ;
        vertex_id < vertex_id_end ;
        vtx++, vertex_id++)
-    face_vtx[vtx] = face_vertex_num[fl][vertex_id];
+    face_vtx[vtx] = face_vertex[fl][vertex_id] + 1;
 }
 
 /*----------------------------------------------------------------------------
@@ -896,7 +896,7 @@ _nodal_face_from_desc_copy(const cs_lnum_t    face_id,
  *   face_list_shift <-- face list to common number number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   cell_face_list  --> numbers of faces defining polyhedra
@@ -909,7 +909,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
                              const int             n_face_lists,
                              const cs_lnum_t       face_list_shift[],
                              const cs_lnum_t      *face_vertex_idx[],
-                             const cs_lnum_t      *face_vertex_num[],
+                             const cs_lnum_t      *face_vertex[],
                              const cs_lnum_t       cell_face_idx[],
                              const cs_lnum_t       cell_face_num[],
                              cs_lnum_t            *cell_face_list[])
@@ -1059,11 +1059,11 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
       assert(fl < n_face_lists);
       face_id -= face_list_shift[fl];
 
-      for (i = face_vertex_idx[fl][face_id] - 1 ;
-           i < face_vertex_idx[fl][face_id + 1] - 1 ;
+      for (i = face_vertex_idx[fl][face_id];
+           i < face_vertex_idx[fl][face_id + 1];
            i++)
         this_section->_vertex_num[c_cell_face_vertex_nums++]
-          = face_vertex_num[fl][i];
+          = face_vertex[fl][i] + 1;
 
       c_cell_face_vertex_idxs += 1;
       this_section->_vertex_index[c_cell_face_vertex_idxs]
@@ -1263,7 +1263,7 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists + 1
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   cell_gc_id      <-- cell -> group class ids, or NULL
@@ -1280,7 +1280,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               const int           n_face_lists,
                               const cs_lnum_t     face_list_shift[],
                               const cs_lnum_t    *face_vertex_idx[],
-                              const cs_lnum_t    *face_vertex_num[],
+                              const cs_lnum_t    *face_vertex[],
                               const cs_lnum_t     cell_face_idx[],
                               const cs_lnum_t     cell_face_num[],
                               const int           cell_gc_id[],
@@ -1328,7 +1328,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                                       n_face_lists,
                                       face_list_shift,
                                       face_vertex_idx,
-                                      face_vertex_num,
+                                      face_vertex,
                                       cell_face_idx,
                                       cell_face_num,
                                       NULL,
@@ -1407,7 +1407,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                                       n_face_lists,
                                       face_list_shift,
                                       face_vertex_idx,
-                                      face_vertex_num,
+                                      face_vertex,
                                       cell_face_idx,
                                       cell_face_num,
                                       cell_vtx_tria,
@@ -1480,7 +1480,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
        n_face_lists,
        face_list_shift,
        face_vertex_idx,
-       face_vertex_num,
+       face_vertex,
        cell_face_idx,
        cell_face_num,
        cell_face_list);
@@ -1538,7 +1538,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   face_gc_id      <-- face -> group class ids, or NULL (per face list)
  *   parent_face_num <-- face -> parent face number (1 to n) if non-trivial
  *                       (i.e. if face definitions correspond to a subset
@@ -1552,7 +1552,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                               const int           n_face_lists,
                               const cs_lnum_t     face_list_shift[],
                               const cs_lnum_t    *face_vertex_idx[],
-                              const cs_lnum_t    *face_vertex_num[],
+                              const cs_lnum_t    *face_vertex[],
                               const int          *face_gc_id[],
                               const cs_lnum_t     parent_face_num[])
 {
@@ -1710,7 +1710,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                                n_face_lists,
                                face_list_shift,
                                face_vertex_idx,
-                               face_vertex_num,
+                               face_vertex,
                                p_vertex_num);
 
     section->_parent_element_num[n_elements_type[face_type]] = face_id + 1;
@@ -1783,7 +1783,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
- *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
  *   vertex_num      --> nodal connectivity of cell, if not a general
@@ -1798,7 +1798,7 @@ fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
                          const int          n_face_lists,
                          const cs_lnum_t    face_list_shift[],
                          const cs_lnum_t   *face_vertex_idx[],
-                         const cs_lnum_t   *face_vertex_num[],
+                         const cs_lnum_t   *face_vertex[],
                          const cs_lnum_t    cell_face_idx[],
                          const cs_lnum_t    cell_face_num[],
                          cs_lnum_t          vertex_num[8])
@@ -1811,7 +1811,7 @@ fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
                                                   n_face_lists,
                                                   face_list_shift,
                                                   face_vertex_idx,
-                                                  face_vertex_num,
+                                                  face_vertex,
                                                   cell_face_idx,
                                                   cell_face_num,
                                                   cell_vtx_tria,

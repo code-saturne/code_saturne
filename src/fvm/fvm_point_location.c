@@ -2397,6 +2397,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
       if (n_vertices == 4)
 
         n_triangles = fvm_triangulate_quadrangle(3,
+                                                 1,
                                                  vertex_coords,
                                                  parent_vertex_num,
                                                  _vertex_num,
@@ -2405,6 +2406,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
       else if (n_vertices > 4)
 
         n_triangles = fvm_triangulate_polygon(3,
+                                              1,
                                               n_vertices,
                                               vertex_coords,
                                               parent_vertex_num,
@@ -2590,6 +2592,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
     vertex_id = this_section->vertex_index[i];
 
     n_triangles = fvm_triangulate_polygon(3,
+                                          1,
                                           n_vertices,
                                           vertex_coords,
                                           parent_vertex_num,
@@ -2704,6 +2707,7 @@ _polygons_section_closest_3d(const fvm_nodal_section_t   *this_section,
     vertex_id = this_section->vertex_index[i];
 
     n_triangles = fvm_triangulate_polygon(3,
+                                          1,
                                           n_vertices,
                                           vertex_coords,
                                           parent_vertex_num,
@@ -2867,6 +2871,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
         if (this_section->type == FVM_FACE_QUAD)
 
           n_triangles = fvm_triangulate_quadrangle(3,
+                                                   1,
                                                    vertex_coords,
                                                    parent_vertex_num,
                                                    (  this_section->vertex_num
@@ -2990,6 +2995,7 @@ _nodal_section_closest_3d(const fvm_nodal_section_t  *this_section,
         if (this_section->type == FVM_FACE_QUAD)
 
           n_triangles = fvm_triangulate_quadrangle(3,
+                                                   1,
                                                    vertex_coords,
                                                    parent_vertex_num,
                                                    (  this_section->vertex_num
@@ -3192,6 +3198,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
       vertex_id = this_section->vertex_index[i];
 
       n_triangles = fvm_triangulate_polygon(2,
+                                            1,
                                             n_vertices,
                                             vertex_coords,
                                             parent_vertex_num,
@@ -3207,6 +3214,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
       /* Triangulate quadrangle */
 
       n_triangles = fvm_triangulate_quadrangle(2,
+                                               1,
                                                vertex_coords,
                                                parent_vertex_num,
                                                (  this_section->vertex_num

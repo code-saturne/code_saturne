@@ -185,6 +185,7 @@ _triangulate_section(int                         dim,
 
       if (n_vertices == 4)
         n_triangles = fvm_triangulate_quadrangle(dim,
+                                                 1,
                                                  vertex_coords,
                                                  parent_vertex_num,
                                                  (  base_section->vertex_num
@@ -194,6 +195,7 @@ _triangulate_section(int                         dim,
 
       else {
         n_triangles = fvm_triangulate_polygon(dim,
+                                              1,
                                               n_vertices,
                                               vertex_coords,
                                               parent_vertex_num,
@@ -400,6 +402,7 @@ _triangulate_section_polygons(int                         dim,
     if (n_vertices > 4) {
 
       n_triangles = fvm_triangulate_polygon(dim,
+                                            1,
                                             n_vertices,
                                             vertex_coords,
                                             parent_vertex_num,

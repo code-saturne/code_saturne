@@ -887,6 +887,7 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state)
  *
  * parameters:
  *   dim               <-- spatial dimension (2 or 3).
+ *   base              <-- base numbering (usually 0 or 1)
  *   n_vertices        <-- number of vertices defining the polygon.
  *   coords            <-- coordinates of the triangulation's vertices.
  *   parent_vertex_num <-- optional indirection to vertex coordinates (1 to n).
@@ -903,6 +904,7 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state)
 
 int
 fvm_triangulate_polygon(int                             dim,
+                        int                             base,
                         int                             n_vertices,
                         const cs_coord_t                coords[],
                         const cs_lnum_t                 parent_vertex_num[],
@@ -943,14 +945,14 @@ fvm_triangulate_polygon(int                             dim,
   if (parent_vertex_num != NULL) {
     if (polygon_vertices != NULL) {
       for (i = 0; i < n_vertices; i++) {
-        int vertex_id = parent_vertex_num[polygon_vertices[i]-1] - 1;
+        int vertex_id = parent_vertex_num[polygon_vertices[i]-base] - base;
         for (j = 0; j < dim; j++)
           state->coords[i*dim + j] = coords[vertex_id*dim + j];
       }
     }
     else {
       for (i = 0; i < (n_vertices * dim); i++) {
-        int vertex_id = parent_vertex_num[i] - 1;
+        int vertex_id = parent_vertex_num[i] - base;
         state->coords[i] = coords[vertex_id];
       }
     }
@@ -1075,7 +1077,7 @@ fvm_triangulate_polygon(int                             dim,
   }
   else {
     for (i = 0; i < n_triangles * 3; i++)
-      triangle_vertices[i] = state->triangle_vertices[i] + 1;
+      triangle_vertices[i] = state->triangle_vertices[i] + base;
   }
 
   return n_triangles;
@@ -1093,6 +1095,7 @@ fvm_triangulate_polygon(int                             dim,
  *
  * parameters:
  *   dim                  <-- spatial dimension (2 or 3).
+ *   base                 <-- base numbering (usually 0 or 1)
  *   coords               <-- coordinates of the triangulation's vertices.
  *   parent_vertex_num    <-- optional indirection to vertex coordinates
  *   quadrangle_vertices  <-- polygon connectivity; size: n_vertices or empty.
@@ -1104,6 +1107,7 @@ fvm_triangulate_polygon(int                             dim,
 
 int
 fvm_triangulate_quadrangle(int               dim,
+                           int               base,
                            const cs_coord_t  coords[],
                            const cs_lnum_t   parent_vertex_num[],
                            const cs_lnum_t   quadrangle_vertices[],
@@ -1118,12 +1122,12 @@ fvm_triangulate_quadrangle(int               dim,
 
   if (quadrangle_vertices != NULL) {
     for (i = 0; i < 4 ; i++)
-      vertex_id[i] = quadrangle_vertices[i] - 1;
+      vertex_id[i] = quadrangle_vertices[i] - base;
   }
 
   if (parent_vertex_num != NULL) {
     for (i = 0; i < 4 ; i++)
-      vertex_id[i] = parent_vertex_num[i] - 1;
+      vertex_id[i] = parent_vertex_num[i] - base;
   }
 
   /* Check for an obtuse angle */
@@ -1204,20 +1208,20 @@ fvm_triangulate_quadrangle(int               dim,
   }
   else { /* if (quadrangle_vertices == NULL) */
     if (d2_02 < d2_13) {
-      triangle_vertices[0] = 1; /* 1st triangle */
-      triangle_vertices[1] = 2;
-      triangle_vertices[2] = 3;
-      triangle_vertices[3] = 3; /* 2nd triangle */
-      triangle_vertices[4] = 4;
-      triangle_vertices[5] = 1;
+      triangle_vertices[0] = base + 0; /* 1st triangle */
+      triangle_vertices[1] = base + 1;
+      triangle_vertices[2] = base + 2;
+      triangle_vertices[3] = base + 2; /* 2nd triangle */
+      triangle_vertices[4] = base + 3;
+      triangle_vertices[5] = base + 0;
     }
     else {
-      triangle_vertices[0] = 1; /* 1st triangle */
-      triangle_vertices[1] = 2;
-      triangle_vertices[2] = 4;
-      triangle_vertices[3] = 3; /* 2nd triangle */
-      triangle_vertices[4] = 4;
-      triangle_vertices[5] = 2;
+      triangle_vertices[0] = base + 0; /* 1st triangle */
+      triangle_vertices[1] = base + 1;
+      triangle_vertices[2] = base + 3;
+      triangle_vertices[3] = base + 2; /* 2nd triangle */
+      triangle_vertices[4] = base + 3;
+      triangle_vertices[5] = base + 1;
     }
   }
 

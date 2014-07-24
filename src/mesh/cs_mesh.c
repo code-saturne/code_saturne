@@ -573,7 +573,7 @@ _define_perio_vtx_couples(const cs_mesh_t      *mesh,
           for (v_id = mesh->i_face_vtx_idx[f_id];
                v_id < mesh->i_face_vtx_idx[f_id + 1];
                v_id++)
-            send_num[l++] = vtx_gnum[mesh->i_face_vtx_lst[v_id - 1] - 1];
+            send_num[l++] = vtx_gnum[mesh->i_face_vtx_lst[v_id]];
         }
 
       }
@@ -585,7 +585,7 @@ _define_perio_vtx_couples(const cs_mesh_t      *mesh,
           for (v_id = mesh->i_face_vtx_idx[f_id];
                v_id < mesh->i_face_vtx_idx[f_id + 1];
                v_id++)
-            send_num[l++] = mesh->i_face_vtx_lst[v_id - 1];
+            send_num[l++] = mesh->i_face_vtx_lst[v_id] + 1;
         }
 
       }
@@ -636,7 +636,7 @@ _define_perio_vtx_couples(const cs_mesh_t      *mesh,
           for (v_id = mesh->i_face_vtx_idx[f_id];
                v_id < mesh->i_face_vtx_idx[f_id + 1];
                v_id++) {
-            perio_couples[j][nc++] = vtx_gnum[mesh->i_face_vtx_lst[v_id - 1] - 1];
+            perio_couples[j][nc++] = vtx_gnum[mesh->i_face_vtx_lst[v_id]];
             perio_couples[j][nc++] = recv_num[l++];
           }
         }
@@ -650,7 +650,7 @@ _define_perio_vtx_couples(const cs_mesh_t      *mesh,
           for (v_id = mesh->i_face_vtx_idx[f_id];
                v_id < mesh->i_face_vtx_idx[f_id + 1];
                v_id++) {
-            perio_couples[j][nc++] = mesh->i_face_vtx_lst[v_id - 1];
+            perio_couples[j][nc++] = mesh->i_face_vtx_lst[v_id] + 1;
             perio_couples[j][nc++] = recv_num[l++];
           }
         }
@@ -1385,10 +1385,10 @@ _discard_free_vertices(cs_mesh_t  *mesh)
     new_vertex_id[i] = -1;
 
   for (i = 0; i < mesh->i_face_vtx_connect_size; i++)
-    new_vertex_id[mesh->i_face_vtx_lst[i] - 1] = 0;
+    new_vertex_id[mesh->i_face_vtx_lst[i]] = 0;
 
   for (i = 0; i < mesh->b_face_vtx_connect_size; i++)
-    new_vertex_id[mesh->b_face_vtx_lst[i] - 1] = 0;
+    new_vertex_id[mesh->b_face_vtx_lst[i]] = 0;
 
   /* Transform marker to mapping */
 
@@ -1404,10 +1404,10 @@ _discard_free_vertices(cs_mesh_t  *mesh)
     /* Update face connectivity */
 
     for (i = 0; i < mesh->i_face_vtx_connect_size; i++)
-      mesh->i_face_vtx_lst[i] = new_vertex_id[mesh->i_face_vtx_lst[i] - 1] + 1;
+      mesh->i_face_vtx_lst[i] = new_vertex_id[mesh->i_face_vtx_lst[i]];
 
     for (i = 0; i < mesh->b_face_vtx_connect_size; i++)
-      mesh->b_face_vtx_lst[i] = new_vertex_id[mesh->b_face_vtx_lst[i] - 1] + 1;
+      mesh->b_face_vtx_lst[i] = new_vertex_id[mesh->b_face_vtx_lst[i]];
 
     /* Update vertex connectivity and global numbering */
 
@@ -1427,7 +1427,7 @@ _discard_free_vertices(cs_mesh_t  *mesh)
     if (mesh->gcell_vtx_lst != NULL) {
       const cs_lnum_t n = mesh->gcell_vtx_idx[mesh->n_ghost_cells];
       for (i = 0; i < n; i++)
-        mesh->gcell_vtx_lst[i] = new_vertex_id[mesh->gcell_vtx_lst[i] - 1] + 1;
+        mesh->gcell_vtx_lst[i] = new_vertex_id[mesh->gcell_vtx_lst[i]];
     }
 
     /* Update mesh structure */
@@ -2351,9 +2351,9 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
       mesh->b_face_cells[j] = mesh->b_face_cells[i];
       mesh->b_face_family[j] = mesh->b_face_family[i];
 
-      mesh->b_face_vtx_idx[j] = l+1;
+      mesh->b_face_vtx_idx[j] = l;
       for (k = mesh->b_face_vtx_idx[i]; k < mesh->b_face_vtx_idx[i+1]; k++)
-        mesh->b_face_vtx_lst[l++] = mesh->b_face_vtx_lst[k-1];
+        mesh->b_face_vtx_lst[l++] = mesh->b_face_vtx_lst[k];
 
       if (mesh->global_b_face_num != NULL)
         mesh->global_b_face_num[j] = mesh->global_b_face_num[i];
@@ -2363,7 +2363,7 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
 
   }
 
-  mesh->b_face_vtx_idx[j] = l+1;
+  mesh->b_face_vtx_idx[j] = l;
   mesh->b_face_vtx_connect_size = l;
 
   /* Resize arrays if necessary */
@@ -3767,14 +3767,14 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   bft_printf("\nVertex coordinates:\n");
   for (i = 0; i < mesh->n_vertices; i++)
     bft_printf("   <%3d >  %10.3f        %10.3f        %10.3f\n",
-               i+1, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
+               i, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
                mesh->vtx_coord[3*i+2]);
 
   if (mesh->n_domains > 1) {
     bft_printf("\nGlobal vertex numbering:\n");
     for (i = 0; i < mesh->n_vertices; i++)
       bft_printf("   <%7d >  %10llu\n",
-                 i+1, (unsigned long long)(mesh->global_vtx_num[i]));
+                 i, (unsigned long long)(mesh->global_vtx_num[i]));
   }
 
   bft_printf("\n\n        ---------------------------"
@@ -3783,13 +3783,13 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   bft_printf("\nInternal faces -> Cells connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++)
-    bft_printf("   < %7d >  %7d  <---->  %7d\n", i+1,
+    bft_printf("   < %7d >  %7d  <---->  %7d\n", i,
                mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
 
   bft_printf("\nInternal faces -> vertices connectivity:\n");
   for (i = 0; i < mesh->n_i_faces; i++) {
-    bft_printf("    < %7d >", i+1);
-    for (j = mesh->i_face_vtx_idx[i]-1; j < mesh->i_face_vtx_idx[i+1]-1; j++)
+    bft_printf("    < %7d >", i);
+    for (j = mesh->i_face_vtx_idx[i]; j < mesh->i_face_vtx_idx[i+1]; j++)
       bft_printf("  %7d ",mesh->i_face_vtx_lst[j]);
     bft_printf("\n");
   }
@@ -3799,7 +3799,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     bft_printf("\nInternal faces global numbering:\n");
     for (i = 0; i < mesh->n_i_faces; i++)
       bft_printf("   < %7d >  %12llu",
-                 i+1, (unsigned long long)(mesh->global_i_face_num[i]));
+                 i, (unsigned long long)(mesh->global_i_face_num[i]));
     bft_printf("\n");
 
   }
@@ -3810,12 +3810,12 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   bft_printf("\nBorder faces -> Cells connectivity:\n");
   for (i = 0; i < mesh->n_b_faces; i++)
-    bft_printf("   < %7d >  %7d\n", i+1, mesh->b_face_cells[i]);
+    bft_printf("   < %7d >  %7d\n", i, mesh->b_face_cells[i]);
 
   bft_printf("\nBorder faces -> vertices connectivity:\n");
   for (i = 0; i < mesh->n_b_faces; i++) {
-    bft_printf("   < %7d >", i+1);
-    for (j = mesh->b_face_vtx_idx[i]-1; j < mesh->b_face_vtx_idx[i+1]-1; j++)
+    bft_printf("   < %7d >", i);
+    for (j = mesh->b_face_vtx_idx[i]; j < mesh->b_face_vtx_idx[i+1]; j++)
       bft_printf("  %7d ",mesh->b_face_vtx_lst[j]);
     bft_printf("\n");
   }
@@ -3828,7 +3828,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\nCell global numbering:\n");
     for (i = 0; i < mesh->n_cells; i++)
-      bft_printf("   < %7d >  %12llu", i+1,
+      bft_printf("   < %7d >  %12llu", i,
                  (unsigned long long)(mesh->global_cell_num[i]));
     bft_printf("\n");
 
@@ -3837,7 +3837,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   bft_printf("\nNumber of families: %3d\n",mesh->n_families);
   bft_printf("Family of each cell:\n");
   for (i = 0; i < mesh->n_cells_with_ghosts; i++)
-    bft_printf("   < %3d >  %5d\n", i+1, mesh->cell_family[i]);
+    bft_printf("   < %3d >  %5d\n", i, mesh->cell_family[i]);
 
   if (mesh->halo != NULL) {
 
@@ -3857,12 +3857,12 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
       bft_printf("\n\nRank id:        %d\n"
                  "Halo index start:        %d        end:        %d\n"
                  "Send index start:        %d        end:        %d\n"
-                 "Send cell numbers:\n",
+                 "Send cell ids:\n",
                  halo->c_domain_rank[i],
                  halo->index[2*i], halo->index[2*i+2],
                  halo->send_index[2*i], halo->send_index[2*i+2]);
       for (j = halo->send_index[2*i]; j < halo->send_index[2*i+2]; j++)
-        bft_printf("  %10d : %10d\n", j+1, halo->send_list[j]+1);
+        bft_printf("  %10d : %10d\n", j, halo->send_list[j]);
 
     } /* End of loop on the frontiers of halo */
 
@@ -3900,9 +3900,22 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
     for (i = 0; i < mesh->n_cells; i++) {
-      bft_printf("< cell num:%3d>        ", i+1);
-      for (j = mesh->cell_cells_idx[i]-1; j < mesh->cell_cells_idx[i+1]-1; j++)
+      bft_printf("< cell id:%3d>         ", i);
+      for (j = mesh->cell_cells_idx[i]; j < mesh->cell_cells_idx[i+1]; j++)
         bft_printf("%d        ", mesh->cell_cells_lst[j]);
+      bft_printf("\n");
+    }
+
+  }
+
+  if (mesh->gcell_vtx_idx != NULL) {
+
+    bft_printf("\n\nGhost cell -> vertices connectivity "
+               "for extended neighborhood\n\n");
+    for (i = 0; i < mesh->n_ghost_cells; i++) {
+      bft_printf("< gcell id:%3d>        ", i + mesh->n_cells);
+      for (j = mesh->gcell_vtx_idx[i]; j < mesh->gcell_vtx_idx[i+1]; j++)
+        bft_printf("%d        ", mesh->gcell_vtx_lst[j]);
       bft_printf("\n");
     }
 
