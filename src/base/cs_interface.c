@@ -87,7 +87,7 @@ struct _cs_interface_t {
   cs_lnum_t   *match_id;       /* Matching element ids for same-rank interface,
                                   distant element ids such that match_id[i]
                                   on distant rank matches local_id[i]
-                                  (temporary life cycle enven in parallel */
+                                  (temporary life cycle enven in parallel) */
   cs_lnum_t   *send_order;     /* Local element ids ordered so that
                                   receive matches elt_id for other-rank
                                   interfaces, and match_id[send_order[i]]
@@ -525,14 +525,15 @@ _global_num_max(cs_lnum_t         n_elts,
                 const cs_gnum_t   global_num[],
                 MPI_Comm          comm)
 {
-  cs_gnum_t   local_max, global_max;
+  cs_gnum_t  global_max;
+  cs_gnum_t  local_max = 0;
 
   /* Get maximum global number value */
 
-  if (n_elts > 0)
-    local_max = global_num[n_elts - 1];
-  else
-    local_max = 0;
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    if (global_num[i] > local_max)
+      local_max = global_num[i];
+  }
 
   MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
 
@@ -589,8 +590,7 @@ _block_global_num_to_equiv(int                n_ranks,
     return e;
 
   /* Determine equivalent elements; requires ordering to loop through buffer
-     by increasing number (block blocks associated with each rank are
-     already sorted, but the whole "gathered" block is not). */
+     by increasing number. */
 
   BFT_MALLOC(recv_order, n_elts_recv, cs_lnum_t);
 
@@ -905,7 +905,7 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
 /*----------------------------------------------------------------------------
  * Global ordering associated with an I/O numbering structure.
  *
- * The global_num values should be sorted, but need not be contiguous.
+ * The global_num values need not be ordered or contiguous.
  *
  * parameters:
  *   ifs  <-> pointer to structure that should be updated
@@ -932,7 +932,7 @@ _cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
   cs_lnum_t   *equiv_id = NULL;
   cs_lnum_t   *equiv_send, *equiv_recv = NULL;
   cs_lnum_t   *recv_num = NULL, *send_num = NULL;
-  cs_gnum_t   *recv_global_num = NULL;
+  cs_gnum_t   *send_global_num = NULL, *recv_global_num = NULL;
 
   /* Initialization */
 
@@ -976,26 +976,29 @@ _cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
     recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
   }
 
-  /* As data is sorted by increasing base global numbering, we do not
-     need to build an extra array, but only to send the correct parts
-     of the global_num[] array to the correct processors */
-
   n_elts_recv = recv_shift[size];
+  n_elts_send = send_shift[size];
 
   BFT_MALLOC(recv_global_num, n_elts_recv, cs_gnum_t);
   BFT_MALLOC(recv_num, n_elts_recv, cs_lnum_t);
 
-  MPI_Alltoallv(global_num, send_count, send_shift, CS_MPI_GNUM,
+  BFT_MALLOC(send_num, n_elts_send, cs_lnum_t);
+  BFT_MALLOC(send_global_num, n_elts_send, cs_gnum_t);
+
+  for (rank = 0; rank < size; rank++)
+    send_count[rank] = 0;
+
+  for (i = 0; i < n_elts; i++) {
+    rank = (global_num[i] - 1) / block_size;
+    send_global_num[send_shift[rank] + send_count[rank]] = global_num[i];
+    send_num[send_shift[rank] + send_count[rank]] = i+1;
+    send_count[rank] += 1;
+  }
+
+  MPI_Alltoallv(send_global_num, send_count, send_shift, CS_MPI_GNUM,
                 recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
 
-  /* We also need to send the corresponding local numbers */
-
-  n_elts_send = send_shift[size];
-
-  BFT_MALLOC(send_num, n_elts_send, cs_lnum_t);
-
-  for (i = 0; i < n_elts_send; i++)
-    send_num[i] = i+1;
+  BFT_FREE(send_global_num);
 
   MPI_Alltoallv(send_num, send_count, send_shift, CS_MPI_LNUM,
                 recv_num, recv_count, recv_shift, CS_MPI_LNUM, comm);
@@ -1136,7 +1139,7 @@ _cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
  *
  * parameters:
  *   n_counts        <-- number of counts per processor (1 or 2)
- *   size            <-- communicator sizelements
+ *   size            <-- communicator size
  *   send_count      <-- send element count for each rank [size*n_counts]
  *   recv_count      --> receive element count for each rank [size*n_counts]
  *   comm            <-- associated MPI communicator
@@ -2333,8 +2336,6 @@ _merge_periodic_equiv(int                   n_blocks,
 /*----------------------------------------------------------------------------
  * Creation of a list of interfaces between elements of a same type.
  *
- * The corresponding elements must be locally ordered.
- *
  * parameters:
  *   ifs                 <-> pointer to structure that should be updated
  *   n_elts              <-- local number of elements
@@ -2376,7 +2377,7 @@ _add_global_equiv_periodic(cs_interface_set_t      *ifs,
   cs_lnum_t   *equiv_id = NULL, *couple_equiv_id = NULL;
   cs_lnum_t   *equiv_send = NULL, *equiv_recv = NULL;
   cs_lnum_t   *recv_num = NULL, *send_num = NULL;
-  cs_gnum_t   *recv_global_num = NULL;
+  cs_gnum_t   *send_global_num = NULL, *recv_global_num = NULL;
   cs_gnum_t   *block_couples = NULL;
 
   /* Initialization */
@@ -2444,21 +2445,28 @@ _add_global_equiv_periodic(cs_interface_set_t      *ifs,
      of the global_num[] array to the correct processors */
 
   n_elts_recv = recv_shift[size];
+  n_elts_send = send_shift[size];
 
   BFT_MALLOC(recv_global_num, n_elts_recv, cs_gnum_t);
   BFT_MALLOC(recv_num, n_elts_recv, cs_lnum_t);
 
-  MPI_Alltoallv(global_num, send_count, send_shift, CS_MPI_GNUM,
+  BFT_MALLOC(send_num, n_elts_send, cs_lnum_t);
+  BFT_MALLOC(send_global_num, n_elts_send, cs_gnum_t);
+
+  for (rank = 0; rank < size; rank++)
+    send_count[rank] = 0;
+
+  for (i = 0; i < n_elts; i++) {
+    rank = (global_num[i] - 1) / block_size;
+    send_global_num[send_shift[rank] + send_count[rank]] = global_num[i];
+    send_num[send_shift[rank] + send_count[rank]] = i+1;
+    send_count[rank] += 1;
+  }
+
+  MPI_Alltoallv(send_global_num, send_count, send_shift, CS_MPI_GNUM,
                 recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
 
-  /* We also need to send the corresponding local numbers */
-
-  n_elts_send = send_shift[size];
-
-  BFT_MALLOC(send_num, n_elts_send, cs_lnum_t);
-
-  for (i = 0; i < n_elts_send; i++)
-    send_num[i] = i+1;
+  BFT_FREE(send_global_num);
 
   MPI_Alltoallv(send_num, send_count, send_shift, CS_MPI_LNUM,
                 recv_num, recv_count, recv_shift, CS_MPI_LNUM, comm);
@@ -2742,7 +2750,7 @@ _define_periodic_couples_sp(const fvm_periodicity_t  *periodicity,
 
   }
 
-  /* Sort periodic couples by local correspondant, remove duplicates */
+  /* Sort periodic couples by local match, remove duplicates */
 
   _sort_periodic_couples(&_n_couples,
                          &_couples);
@@ -2930,8 +2938,6 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
  *
  * This simplified algorithm is intended for single-process mode.
  *
- * The corresponding elements must be locally ordered.
- *
  * parameters:
  *   ifs                <-> pointer to structure that should be updated
  *   periodicity        <-- periodicity information (NULL if none)
@@ -3118,6 +3124,78 @@ _order_elt_id(cs_interface_set_t  *ifs)
     }
 
     BFT_FREE(tmp);
+    BFT_FREE(order);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Order interfaces by increasing element id.
+ *
+ * parameters:
+ *   ifs <-> pointer to interface set
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_by_elt_id(cs_interface_set_t  *ifs)
+{
+  int i;
+
+  for (i = 0; i < ifs->size; i++) {
+
+    int section_id;
+
+    int  tr_index_size = 2;
+    cs_lnum_t  _tr_index[2] = {0, 0};
+    cs_lnum_t  *order = NULL, *buffer = NULL;
+    const cs_lnum_t  *tr_index = _tr_index;
+
+    cs_interface_t *itf = ifs->interfaces[i];
+
+    if (itf == NULL)
+      return;
+
+    /* When this function is called, a distant-rank interface should have
+       a match_id array, but not a send_order array */
+
+    assert(itf->send_order == NULL);
+
+    _tr_index[1] = itf->size;
+
+    if (itf->tr_index_size > 0) {
+      tr_index_size = itf->tr_index_size;
+      tr_index = itf->tr_index;
+    }
+
+    BFT_MALLOC(order, tr_index[tr_index_size - 1], cs_lnum_t);
+    BFT_MALLOC(buffer, tr_index[tr_index_size - 1]*2, cs_lnum_t);
+
+    for (section_id = 0; section_id < tr_index_size - 1; section_id++) {
+
+      cs_lnum_t start_id = tr_index[section_id];
+      cs_lnum_t end_id = tr_index[section_id + 1];
+
+      /* Now compute distant ordering to build send_order */
+
+      cs_order_lnum_allocated(NULL,
+                              itf->elt_id + start_id,
+                              order + start_id,
+                              end_id - start_id);
+
+      for (cs_lnum_t j = start_id; j < end_id; j++) {
+        buffer[j*2] = itf->elt_id[j];
+        buffer[j*2+1] = itf->match_id[j];
+      }
+
+      for (cs_lnum_t j = start_id; j < end_id; j++) {
+        cs_lnum_t k = order[j] + start_id;
+        itf->elt_id[j] = buffer[k*2];
+        itf->match_id[j] = buffer[k*2+1];
+      }
+
+    }
+
+    BFT_FREE(buffer);
     BFT_FREE(order);
 
   }
@@ -3663,8 +3741,6 @@ cs_interface_get_tr_index(const cs_interface_t  *itf)
  * if the periodicity structure provides for composed periodicities, so they
  * need not be defined prior to this function being called.
  *
- * The corresponding elements must be locally ordered.
- *
  * \param[in]  n_elts                 number of local elements considered
  *                                    (size of parent_element_number[])
  * \param[in]  parent_element_number  pointer to list of selected elements
@@ -3700,14 +3776,6 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
   cs_interface_set_t  *ifs;
 
   /* Initial checks */
-
-  if (   cs_order_gnum_test(parent_element_number,
-                            global_number,
-                            n_elts) == false
-      && global_number != NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Trying to build an interface with unordered elements\n"
-                "not currently handled."));
 
   if (   (cs_glob_n_ranks < 2)
       && (periodicity == NULL || n_periodic_lists == 0))
@@ -3785,6 +3853,7 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
 
   /* Finish preparation of interface set and return */
 
+  _order_by_elt_id(ifs);
   _match_id_to_send_order(ifs);
 
   return ifs;

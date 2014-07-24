@@ -184,8 +184,6 @@ cs_interface_get_tr_index(const cs_interface_t  *itf);
  * if the periodicity structure provides for composed periodicities, so they
  * need not be defined prior to this function.
  *
- * The corresponding elements must be locally ordered.
- *
  * parameters:
  *   n_elts             <-- number of local elements considered
  *                          (size of parent_element_number[]

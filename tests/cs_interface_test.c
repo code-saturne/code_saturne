@@ -70,17 +70,19 @@ _init_periodicity(void)
 }
 
 static void
-_periodic_is_test(int                       comm_size,
+_periodic_is_test(int                       ordered_gnum,
+                  int                       comm_size,
                   int                       comm_rank,
                   cs_gnum_t                 n_side,
                   int                       n_periodic_lists,
                   const fvm_periodicity_t  *perio)
 {
-  cs_lnum_t ii;
-  cs_gnum_t jj, kk, couple_id;
+  cs_lnum_t ii, couple_id;
+  cs_gnum_t jj, kk;
 
-  cs_gnum_t n_max = n_side * n_side * n_side;
-  cs_lnum_t n_elements = ((n_max+1)*4) / (3*comm_size);
+  cs_gnum_t n_3 = n_side * n_side * n_side;
+  cs_lnum_t n_elements = ((n_3+1)*4) / (3*comm_size);
+  cs_gnum_t n_max = (n_elements * 3 / 4) * (comm_size-1) + n_elements;
   int periodicity_num[3] = {1, 2, 3};
 
   cs_lnum_t *n_periodic_couples = NULL;
@@ -94,11 +96,17 @@ _periodic_is_test(int                       comm_size,
 
     BFT_MALLOC(global_number, n_elements, cs_gnum_t);
 
-    for (ii = 0; ii < n_elements; ii++) {
+    for (ii = 0; ii < n_elements; ii++)
       global_number[ii] = (n_elements * 3 / 4) * comm_rank + ii + 1;
-    }
+
     if (comm_rank == comm_size -1 && global_number[n_elements - 1] < n_max)
       global_number[n_elements - 1] = n_max;
+
+    if (ordered_gnum == false) {
+      for (ii = 0; ii < n_elements; ii++) {
+        global_number[ii] = n_max + 1 - global_number[ii];
+      }
+    }
 
   }
 
@@ -153,6 +161,15 @@ _periodic_is_test(int                       comm_size,
 
     }
 
+    if (ordered_gnum == false) {
+      for (couple_id = 0; couple_id < n_periodic_couples[ii]; couple_id++) {
+        periodic_couples[ii][couple_id*2]
+          = n_max + 1 - periodic_couples[ii][couple_id*2];
+        periodic_couples[ii][couple_id*2+1]
+          = n_max + 1 - periodic_couples[ii][couple_id*2+1];
+      }
+    }
+
   }
 
   ifset = cs_interface_set_create(n_elements,
@@ -180,7 +197,7 @@ _periodic_is_test(int                       comm_size,
   cs_interface_set_dump(ifset);
   cs_interface_set_free_match_ids(ifset);
 
-  bft_printf("Interface set sum test:\n\n", comm_rank);
+  bft_printf("Interface set sum test:\n\n");
 
   BFT_MALLOC(var, n_elements*2, cs_real_t);
 
@@ -205,7 +222,7 @@ _periodic_is_test(int                       comm_size,
  * Fonction d'impression d'un message sur la sortie standard
  *----------------------------------------------------------------------------*/
 
-static int _bft_printf_proxy
+static int _bft_printf_proxy_o
 (
  const char     *const format,
        va_list         arg_ptr
@@ -220,7 +237,30 @@ static int _bft_printf_proxy
     if (cs_glob_mpi_comm != MPI_COMM_NULL)
       MPI_Comm_rank(cs_glob_mpi_comm, &rank);
 #endif
-    sprintf (filename, "cs_interface_test_out.%d", rank);
+    sprintf (filename, "cs_interface_test_o_out.%d", rank);
+    f = fopen(filename, "w");
+    assert(f != NULL);
+  }
+
+  return vfprintf(f, format, arg_ptr);
+}
+
+static int _bft_printf_proxy_u
+(
+ const char     *const format,
+       va_list         arg_ptr
+)
+{
+  static FILE *f = NULL;
+
+  if (f == NULL) {
+    char filename[64];
+    int rank = 0;
+#if defined(HAVE_MPI)
+    if (cs_glob_mpi_comm != MPI_COMM_NULL)
+      MPI_Comm_rank(cs_glob_mpi_comm, &rank);
+#endif
+    sprintf (filename, "cs_interface_test_u_out.%d", rank);
     f = fopen(filename, "w");
     assert(f != NULL);
   }
@@ -276,7 +316,6 @@ main (int argc, char *argv[])
 
 #endif /* (HAVE_MPI) */
 
-  bft_printf_proxy_set(_bft_printf_proxy);
   bft_error_handler_set(_bft_error_handler);
 
   if (size > 1)
@@ -285,56 +324,72 @@ main (int argc, char *argv[])
     strcpy(mem_trace_name, "cs_interface_test_mem");
   bft_mem_init(mem_trace_name);
 
-  /* Build arbitrary interface */
+  for (int ordered = 1; ordered >= 0; ordered--) {
 
-  if (size > 1) {
+    if (ordered)
+      bft_printf_proxy_set(_bft_printf_proxy_o);
+    else
+      bft_printf_proxy_set(_bft_printf_proxy_u);
 
-    BFT_MALLOC(global_number, n_elements, cs_gnum_t);
+    /* Build arbitrary interface */
 
-    for (ii = 0; ii < n_elements; ii++)
-      global_number[ii] = (n_elements * 3 / 4) * rank + ii + 1;
+    if (size > 1) {
 
-    ifset = cs_interface_set_create(n_elements,
-                                    NULL,
-                                    global_number,
-                                    NULL,
-                                    0,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+      BFT_MALLOC(global_number, n_elements, cs_gnum_t);
 
-    BFT_FREE(global_number);
+      for (ii = 0; ii < n_elements; ii++)
+        global_number[ii] = (n_elements * 3 / 4) * rank + ii + 1;
 
-    bft_printf("Interface on rank %d:\n\n", rank);
+      if (ordered == 0) {
+        cs_gnum_t gnum_max = (n_elements * 3 / 4) * (size - 1) + n_elements;
+        for (ii = 0; ii < n_elements; ii++)
+          global_number[ii] = gnum_max + 3 - global_number[ii];
+      }
 
-    cs_interface_set_add_match_ids(ifset);
-    cs_interface_set_dump(ifset);
-    cs_interface_set_free_match_ids(ifset);
+      ifset = cs_interface_set_create(n_elements,
+                                      NULL,
+                                      global_number,
+                                      NULL,
+                                      0,
+                                      NULL,
+                                      NULL,
+                                      NULL);
 
-    /* We are finished for this interface */
+      BFT_FREE(global_number);
 
-    cs_interface_set_destroy(&ifset);
+      bft_printf("Interface on rank %d:\n\n", rank);
+
+      cs_interface_set_add_match_ids(ifset);
+      cs_interface_set_dump(ifset);
+      cs_interface_set_free_match_ids(ifset);
+
+      /* We are finished for this interface */
+
+      cs_interface_set_destroy(&ifset);
+
+    }
+
+    /* Now build interface with periodicity */
+
+    perio = _init_periodicity();
+
+    /* Dump periodicity info for first rank (identical on all ranks) */
+
+    if (rank == 0)
+      fvm_periodicity_dump(perio);
+
+    _periodic_is_test(ordered,
+                      size,
+                      rank,
+                      4, /* n vertices/cube side */
+                      3, /* n_periodic_lists */
+                      perio);
+
+    /* We are finished */
+
+    fvm_periodicity_destroy(perio);
 
   }
-
-  /* Now build interface with periodicity */
-
-  perio = _init_periodicity();
-
-  /* Dump periodicity info for first rank (identical on all ranks) */
-
-  if (rank == 0)
-    fvm_periodicity_dump(perio);
-
-  _periodic_is_test(size,
-                    rank,
-                    4, /* n vertices/cube side */
-                    3, /* n_periodic_lists */
-                    perio);
-
-  /* We are finished */
-
-  fvm_periodicity_destroy(perio);
 
   bft_mem_end();
 
