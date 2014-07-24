@@ -4821,6 +4821,7 @@ _renumber_b_faces(cs_mesh_t  *mesh)
   /*-----------------------*/
 
   if (retval != 0) {
+    numbering_type = CS_NUMBERING_DEFAULT;
     n_b_groups = 1;
     n_b_threads = 1;
     BFT_FREE(b_group_index);
