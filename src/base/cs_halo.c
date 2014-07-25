@@ -666,7 +666,7 @@ cs_halo_free_buffer(void)
 }
 
 /*----------------------------------------------------------------------------
- * Apply cell renumbering to a halo
+ * Apply local cells renumbering to a halo
  *
  * parameters:
  *   halo        <-- pointer to halo structure
@@ -679,12 +679,146 @@ cs_halo_renumber_cells(cs_halo_t        *halo,
 {
   if (halo != NULL) {
 
-    cs_lnum_t i;
     const cs_lnum_t n_elts = halo->n_send_elts[CS_HALO_EXTENDED];
 
-    for (i = 0; i < n_elts; i++)
-      halo->send_list[i] = new_cell_id[halo->send_list[i]];
+    for (cs_lnum_t j = 0; j < n_elts; j++)
+      halo->send_list[j] = new_cell_id[halo->send_list[j]];
+
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Apply ghost cells renumbering to a halo
+ *
+ * parameters:
+ *   halo        <-- pointer to halo structure
+ *   old_cell_id <-- array indicating new -> old cell id (0 to n-1)
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
+                             const cs_lnum_t   old_cell_id[])
+{
+  if (halo == NULL)
+    return;
+
+  const cs_lnum_t n_elts = halo->n_send_elts[CS_HALO_EXTENDED];
+
+  /* Reverse update from distant cells */
+
+  cs_lnum_t *send_buf, *recv_buf;
+
+  BFT_MALLOC(send_buf, halo->n_send_elts[1], cs_lnum_t);
+  BFT_MALLOC(recv_buf, halo->n_elts[1], cs_lnum_t);
+
+  for (int i = 0; i < halo->n_c_domains; i++) {
+    cs_lnum_t start = halo->index[2*i];
+    cs_lnum_t end = halo->index[2*i+2];
+    cs_lnum_t shift = halo->n_local_elts + halo->index[2*i];
+    for (cs_lnum_t j = start; j < end; j++) {
+      recv_buf[j] = old_cell_id[halo->n_local_elts + j] - shift;
+      assert(recv_buf[j] >= 0 && recv_buf[j] < (end - start));
+    }
+  }
+
+  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    int rank_id;
+    int request_count = 0;
+    const int local_rank = cs_glob_rank_id;
+
+    /* Receive data from distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      cs_lnum_t start = halo->send_index[2*rank_id];
+      cs_lnum_t length = (  halo->send_index[2*rank_id + 2]
+                          - halo->send_index[2*rank_id]);
+
+      if (halo->c_domain_rank[rank_id] != local_rank)
+        MPI_Irecv(send_buf + start,
+                  length,
+                  CS_MPI_LNUM,
+                  halo->c_domain_rank[rank_id],
+                  local_rank,
+                  cs_glob_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      else
+        local_rank_id = rank_id;
+
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      /* If this is not the local rank */
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        cs_lnum_t start = halo->index[2*rank_id];
+        cs_lnum_t length = (  halo->index[2*rank_id + 2]
+                            - halo->index[2*rank_id]);
+
+        MPI_Isend(recv_buf + start,
+                  length,
+                  CS_MPI_LNUM,
+                  halo->c_domain_rank[rank_id],
+                  halo->c_domain_rank[rank_id],
+                  cs_glob_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+
+    }
+
+    /* Wait for all exchanges */
+
+    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
+
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  /* Copy local values if present */
+
+  if (local_rank_id > -1) {
+
+    cs_lnum_t *recv = recv_buf + halo->index[2*local_rank_id];
+
+    cs_lnum_t start = halo->send_index[2*local_rank_id];
+    cs_lnum_t length = (  halo->send_index[2*local_rank_id + 2]
+                        - halo->send_index[2*local_rank_id]);
+
+    for (cs_lnum_t j = 0; j < length; j++)
+      send_buf[j+start] = recv[j];
+
+  }
+
+  BFT_FREE(recv_buf);
+
+  /* Now apply renumbering to send list */
+
+  for (int i = 0; i < halo->n_c_domains; i++) {
+    cs_lnum_t start = halo->send_index[2*i];
+    cs_lnum_t end = halo->send_index[2*i+2];
+    for (cs_lnum_t j = start; j < end; j++)
+      send_buf[j] = halo->send_list[start + send_buf[j]];
+    for (cs_lnum_t j = start; j < end; j++)
+      halo->send_list[j] = send_buf[j];
+  }
+
+  BFT_FREE(send_buf);
 }
 
 /*----------------------------------------------------------------------------

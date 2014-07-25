@@ -220,6 +220,7 @@ static int _cs_renumber_n_threads = 1;
 static cs_lnum_t  _min_i_subset_size = 64;
 static cs_lnum_t  _min_b_subset_size = 64;
 
+static bool _renumber_ghost_cells = true;
 static bool _cells_adjacent_to_halo_last = false;
 static bool _i_faces_adjacent_to_halo_last = false;
 static cs_renumber_ordering_t _i_faces_base_ordering = CS_RENUMBER_ADJACENT_LOW;
@@ -235,7 +236,7 @@ static cs_renumber_b_faces_type_t _b_faces_algorithm
 #else
 static cs_renumber_i_faces_type_t _i_faces_algorithm
   = CS_RENUMBER_I_FACES_NONE;
-static cs_renumber_i_faces_type_t _b_faces_algorithm
+static cs_renumber_b_faces_type_t _b_faces_algorithm
    = CS_RENUMBER_B_FACES_NONE;
 #endif
 
@@ -337,16 +338,133 @@ _update_global_num(size_t             n_elts,
 }
 
 /*----------------------------------------------------------------------------
+ * Reorder ghost cells according to their position in the halo and adjacency
+ *
+ * Reordering keeps cells in a section based halo class (separated based on
+ * domain first, transform id second), but reorders cells within a section
+ * based on their adjacency.
+ *
+ * parameters:
+ *   mesh       <-> pointer to mesh structure
+ *   old_to_new <-> old to new cells numbering (non-ghost in, add ghosts out)
+ *   new_to_old <-> new to old cells numbering (non-ghost in, add ghosts out)
+ *----------------------------------------------------------------------------*/
+
+static void
+_reorder_halo_cells(const cs_mesh_t  *mesh,
+                    cs_lnum_t         old_to_new[],
+                    cs_lnum_t         new_to_old[])
+{
+  assert(mesh->halo != NULL);
+
+  int n_c_domains = mesh->halo->n_c_domains;
+  int n_transforms = mesh->halo->n_transforms;
+  int stride = 2*n_transforms + 2;
+  cs_lnum_t *index = mesh->halo->index;
+  cs_lnum_t *perio_lst = mesh->halo->perio_lst;
+  const cs_lnum_t n_cells = mesh->n_cells;
+
+  cs_lnum_t *keys;
+
+  assert(mesh->n_ghost_cells == mesh->halo->n_elts[1]);
+
+  BFT_MALLOC(keys, mesh->n_ghost_cells*2, cs_lnum_t);
+
+  for (int i = 0; i < n_c_domains; i++) {
+
+    for (cs_lnum_t j = index[2*i]; j < index[2*i+1]; j++) {
+      keys[j*2] = i*stride;
+      keys[j*2 + 1] = -1;
+    }
+
+    for (int t_id = 0; t_id < n_transforms; t_id++) {
+      int shift = 4 * n_c_domains * t_id;
+      cs_lnum_t s = perio_lst[shift + 4*i];
+      cs_lnum_t e = s + perio_lst[shift + 4*i + 1];
+      for (cs_lnum_t j = s; j < e; j++)
+        keys[j*2] = i*stride + t_id + 1;
+    }
+
+    for (cs_lnum_t j = index[2*i+1]; j < index[2*i+2]; j++) {
+      keys[j*2] = i*stride + n_transforms + 1;
+      keys[j*2 + 1] = -1;
+    }
+
+    for (int t_id = 0; t_id < n_transforms; t_id++) {
+      int shift = 4 * n_c_domains * t_id;
+      cs_lnum_t s = perio_lst[shift + 4*i + 2];
+      cs_lnum_t e = s + perio_lst[shift + 4*i + 3];
+      for (cs_lnum_t j = s; j < e; j++)
+        keys[j*2] = i*stride + n_transforms + t_id + 2;
+    }
+
+  } /* End of loop on involved ranks */
+
+  /* Order standard halo by adjacency */
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+    cs_lnum_t gc_id_0 = mesh->i_face_cells[f_id][0] - n_cells;
+    cs_lnum_t gc_id_1 = mesh->i_face_cells[f_id][1] - n_cells;
+    if (gc_id_0 > -1) {
+      if (keys[gc_id_0*2 + 1] < 0)
+        keys[gc_id_0*2 + 1] = old_to_new[mesh->i_face_cells[f_id][1]];
+    }
+    if (gc_id_1 > -1) {
+      if (keys[gc_id_1*2 + 1] < 0)
+        keys[gc_id_1*2 + 1] = old_to_new[mesh->i_face_cells[f_id][0]];
+    }
+  }
+
+  /* Order extended halo by adjacency */
+
+  if (mesh->cell_cells_lst != NULL) {
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+      for (cs_lnum_t kk = mesh->cell_cells_idx[ii];
+           kk < mesh->cell_cells_idx[ii];
+           kk++) {
+        cs_lnum_t gc_id = mesh->cell_cells_lst[kk] - n_cells;
+        if (gc_id > -1) {
+          if (keys[gc_id*2 + 1] < 0)
+            keys[gc_id*2 + 1] = old_to_new[ii];
+        }
+      }
+    }
+  }
+
+  /* Ensure all keys are initialized */
+
+  for (cs_lnum_t j = 0; j < mesh->n_ghost_cells; j++) {
+    if (keys[j*2 + 1] < 0)
+      keys[j*2 + 1] = j;
+  }
+
+  cs_order_lnum_allocated_s(NULL,
+                            keys,
+                            2,
+                            new_to_old + n_cells,
+                            mesh->n_ghost_cells);
+
+
+  BFT_FREE(keys);
+
+  for (cs_lnum_t j = 0; j < mesh->n_ghost_cells; j++) {
+    new_to_old[n_cells + j] += n_cells;
+    old_to_new[new_to_old[n_cells + j]] = n_cells + j;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Apply renumbering of cells.
  *
  * parameters:
  *   mesh       <-> Pointer to global mesh structure
- *   new_to_old <-- Cells renumbering array
+ *   new_to_old <-> Cells renumbering array (size: mesh->n_cells_with_ghosts,
+ *                  values at indexes mesh->n_cells and above may be modified)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_renumber_update_cells(cs_mesh_t        *mesh,
-                          const cs_lnum_t  *new_to_old)
+_cs_renumber_update_cells(cs_mesh_t  *mesh,
+                          cs_lnum_t  *new_to_old)
 {
   cs_lnum_t  ii, jj, kk, face_id, n_vis, start_id, start_id_old;
 
@@ -371,13 +489,22 @@ _cs_renumber_update_cells(cs_mesh_t        *mesh,
   for (ii = 0; ii < n_cells; ii++)
     new_cell_id[new_to_old[ii]] = ii;
 
-  for (ii = n_cells; ii < mesh->n_cells_with_ghosts; ii++)
+  for (ii = n_cells; ii < mesh->n_cells_with_ghosts; ii++) {
+    new_to_old[ii] = ii;
     new_cell_id[ii] = ii;
+  }
 
   /* Update halo connectivity */
 
   if (mesh->halo != NULL)
     cs_halo_renumber_cells(mesh->halo, new_cell_id);
+
+  /* Try to optimize ghost cells, based on adjacency */
+
+  if (_renumber_ghost_cells && mesh->halo != NULL) {
+    _reorder_halo_cells(mesh, new_cell_id, new_to_old);
+    cs_halo_renumber_ghost_cells(mesh->halo, new_to_old);
+  }
 
   /* Update faces -> cells connectivity */
 
@@ -440,6 +567,46 @@ _cs_renumber_update_cells(cs_mesh_t        *mesh,
 
     BFT_FREE(cell_cells_lst_old);
     BFT_FREE(cell_cells_idx_old);
+  }
+
+  /* Update ghost cell -> vertices connectivity for extended neighborhood */
+
+  if (mesh->gcell_vtx_lst != NULL) {
+
+    cs_lnum_t *gcell_vtx_idx_old, *gcell_vtx_lst_old;
+    const cs_lnum_t  n_ghost_cells = mesh->n_ghost_cells;
+    const cs_lnum_t gcell_vtx_lst_size
+      = mesh->gcell_vtx_idx[mesh->n_ghost_cells];
+
+    BFT_MALLOC(gcell_vtx_idx_old, n_ghost_cells + 1, cs_lnum_t);
+    BFT_MALLOC(gcell_vtx_lst_old, gcell_vtx_lst_size, cs_lnum_t);
+
+    memcpy(gcell_vtx_idx_old,
+           mesh->gcell_vtx_idx,
+           (n_ghost_cells + 1)*sizeof(cs_lnum_t));
+    memcpy(gcell_vtx_lst_old,
+           mesh->gcell_vtx_lst,
+           gcell_vtx_lst_size*sizeof(cs_lnum_t));
+
+    mesh->gcell_vtx_idx[0] = 0;
+    start_id = 0;
+
+    for (ii = 0; ii < n_ghost_cells; ii++) {
+
+      jj = new_to_old[n_cells + ii] - n_cells;
+      n_vis = gcell_vtx_idx_old[jj+1] - gcell_vtx_idx_old[jj];
+      start_id_old = gcell_vtx_idx_old[jj];
+
+      for (kk = 0; kk < n_vis; kk++)
+        mesh->gcell_vtx_lst[start_id + kk]
+          = gcell_vtx_lst_old[start_id_old + kk];
+
+      start_id += n_vis;
+      mesh->gcell_vtx_idx[ii + 1] = start_id;
+    }
+
+    BFT_FREE(gcell_vtx_lst_old);
+    BFT_FREE(gcell_vtx_idx_old);
   }
 
   /* Free work arrays */
@@ -1207,9 +1374,9 @@ _classify_halo_cells(const cs_mesh_t  *mesh,
 
     for (int t_id = 0; t_id < n_transforms; t_id++) {
       int shift = 4 * n_c_domains * t_id;
-      for (cs_lnum_t k = perio_lst[shift + 4*i];
-           k < perio_lst[shift + 4*i+1];
-           k++)
+      cs_lnum_t s = perio_lst[shift + 4*i];
+      cs_lnum_t e = s + perio_lst[shift + 4*i + 1];
+      for (cs_lnum_t k = s; k < e; k++)
         halo_class[k] = i*stride + t_id + 3;
     }
 
@@ -4538,7 +4705,7 @@ _renumber_cells(cs_mesh_t  *mesh)
 
   mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
 
-  BFT_MALLOC(new_to_old_c, mesh->n_cells, cs_lnum_t);
+  BFT_MALLOC(new_to_old_c, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   /* When do we reorder cells by adjacent halo ?
      0: never, 1: after pre-ordering, 2: after ordering;

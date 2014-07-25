@@ -229,7 +229,7 @@ void
 cs_halo_free_buffer(void);
 
 /*----------------------------------------------------------------------------
- * Apply cell renumbering to a halo
+ * Apply local cells renumbering to a halo
  *
  * parameters:
  *   halo        <-- pointer to halo structure
@@ -239,6 +239,18 @@ cs_halo_free_buffer(void);
 void
 cs_halo_renumber_cells(cs_halo_t        *halo,
                        const cs_lnum_t   new_cell_id[]);
+
+/*----------------------------------------------------------------------------
+ * Apply ghost cells renumbering to a halo
+ *
+ * parameters:
+ *   halo        <-- pointer to halo structure
+ *   old_cell_id <-- array indicating new -> old cell id (0 to n-1)
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
+                             const cs_lnum_t   old_cell_id[]);
 
 /*----------------------------------------------------------------------------
  * Update array of any type of halo values in case of parallelism or
