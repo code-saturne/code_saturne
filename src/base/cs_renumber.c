@@ -4366,7 +4366,7 @@ _renum_cells_scotch_order(const cs_mesh_t  *mesh,
  *   new_to_old_c <-- cell rnumbering array
  *
  * returns:
- *   0 if renumbering was successful, 0 otherwise
+ *   0 if renumbering was successful, -1 if failed, 1 if not required
  *----------------------------------------------------------------------------*/
 
 static int
@@ -4414,7 +4414,7 @@ _cells_locality_renumbering_(cs_mesh_t                 *mesh,
     break;
 
   case CS_RENUMBER_CELLS_NONE:
-    retval = -1;
+    retval = 1;
     break;
 
   default:
@@ -4588,22 +4588,19 @@ _renumber_cells(cs_mesh_t  *mesh)
   else if (halo_order_stage == 1)
     _renum_only_no_adj_halo_cells(mesh, new_to_old_c);
 
-  if (retval == 0 || halo_order_stage > 0)
-    _cs_renumber_update_cells(mesh, new_to_old_c);
-
-  else if (retval != 0 && _cells_algorithm[1] != CS_RENUMBER_CELLS_NONE)
-    bft_printf
-      (_("\n Cell renumbering (%s) failed.\n"),
-       _cell_renum_name[_cells_algorithm[1]]);
-
   /* Now update mesh connectivity */
   /*------------------------------*/
 
-  if (retval == 0) {
+  if (retval == 0 || halo_order_stage > 0)
+    _cs_renumber_update_cells(mesh, new_to_old_c);
+
+  else if (retval < 0)
+    bft_printf(_("\n Cell renumbering (%s) failed.\n"),
+               _cell_renum_name[_cells_algorithm[1]]);
+
+  if (_cells_algorithm[1] != CS_RENUMBER_CELLS_NONE)
     bft_printf
       ("\n ----------------------------------------------------------\n");
-    _cs_renumber_update_cells(mesh, new_to_old_c);
-  }
 
   /* Now free remaining array */
 
