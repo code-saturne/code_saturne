@@ -3352,14 +3352,14 @@ _precompute_cell_center(const cs_mesh_t  *mesh,
 
       n_face_vertices = 0;
 
-      start_id = face_vtx_idx[face_id] - 1;
-      end_id = face_vtx_idx[face_id + 1] - 1;
+      start_id = face_vtx_idx[face_id];
+      end_id = face_vtx_idx[face_id + 1];
 
       /* Define the polygon (P) according to the vertices (Pi) of the face */
 
       for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
 
-        cs_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
+        cs_lnum_t shift = 3 * face_vtx[vtx_id];
         for (i = 0; i < 3; i++)
           face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
         n_face_vertices++;
@@ -5145,7 +5145,7 @@ _renumber_b_test(cs_mesh_t  *mesh)
 
       if (face_errors == 0) {
 
-        const cs_lnum_t vector_size = mesh->i_face_numbering->vector_size;
+        const cs_lnum_t vector_size = mesh->b_face_numbering->vector_size;
 
         for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
           accumulator[c_id] = -1;
