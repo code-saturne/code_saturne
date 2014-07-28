@@ -4871,8 +4871,6 @@ _renumber_i_faces(cs_mesh_t  *mesh)
   if (retval != 0) {
     n_i_groups = 1;
     n_i_threads = 1;
-    i_group_index[0] = 0;
-    i_group_index[1] = mesh->n_i_faces;
   }
   else
     _cs_renumber_update_i_faces(mesh, new_to_old_i);
@@ -4880,6 +4878,11 @@ _renumber_i_faces(cs_mesh_t  *mesh)
   /* Transfer interior face numbering information to mesh */
 
   if (numbering_type == CS_NUMBERING_THREADS) {
+    if (retval != 0) {
+      BFT_REALLOC(i_group_index, 2, cs_lnum_t);
+      i_group_index[0] = 0;
+      i_group_index[1] = mesh->n_i_faces;
+    }
     mesh->i_face_numbering = cs_numbering_create_threaded(n_i_threads,
                                                           n_i_groups,
                                                           i_group_index);
@@ -4987,8 +4990,6 @@ _renumber_b_faces(cs_mesh_t  *mesh)
   if (retval != 0) {
     n_b_groups = 1;
     n_b_threads = 1;
-    b_group_index[0] = 0;
-    b_group_index[1] = mesh->n_b_faces;
   }
   else
     _cs_renumber_update_b_faces(mesh, new_to_old_b);
@@ -4996,6 +4997,11 @@ _renumber_b_faces(cs_mesh_t  *mesh)
   /* Transfer boundary face numbering information to mesh */
 
   if (numbering_type == CS_NUMBERING_THREADS) {
+    if (retval != 0) {
+      BFT_REALLOC(b_group_index, 2, cs_lnum_t);
+      b_group_index[0] = 0;
+      b_group_index[1] = mesh->n_b_faces;
+    }
     mesh->b_face_numbering = cs_numbering_create_threaded(n_b_threads,
                                                           n_b_groups,
                                                           b_group_index);
