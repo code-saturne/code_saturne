@@ -63,24 +63,6 @@ void
 CS_PROCF (pervec, PERVEC) (cs_real_t  var[]);
 
 /*----------------------------------------------------------------------------
- * Rotate vector values for periodic cells on extended halos.
- *
- * Fortran API:
- *
- * subroutine perrve
- * *****************
- *
- * double precision var1(ncelet) : <-> : component 1 of vector
- * double precision var2(ncelet) : <-> : component 2 of vector
- * double precision var3(ncelet) : <-> : component 3 of vector
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (perrve, PERRVE) (cs_real_t  var1[],
-                           cs_real_t  var2[],
-                           cs_real_t  var3[]);
-
-/*----------------------------------------------------------------------------
  * Rotate tensor values for periodic cells on extended halos.
  *
  * Fortran API:
@@ -240,23 +222,6 @@ cs_halo_perio_sync_var_diag_ni(const cs_halo_t *halo,
                                cs_real_t        var11[],
                                cs_real_t        var22[],
                                cs_real_t        var33[]);
-
-/*----------------------------------------------------------------------------
- * Synchronize values for a real diagonal tensor (interleaved)
- * between periodic cells.
- *
- * We only know the diagonal of the tensor.
- *
- * parameters:
- *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
- *   var       <-> diagonal tensor to update
- *----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync_var_diag(const cs_halo_t *halo,
-                            cs_halo_type_t   sync_mode,
-                            cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
  * Apply rotation on the gradient of Reynolds stress tensor

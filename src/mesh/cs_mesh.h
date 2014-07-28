@@ -312,22 +312,6 @@ void CS_PROCF(syndia, SYNDIA)
 );
 
 /*----------------------------------------------------------------------------
- * Update a diagonal tensor array in case of parallelism and/or periodicity.
- *
- * Fortran interface:
- *
- * subroutine syndin(var)
- * *****************
- *
- * var   : <-> : interleaved diagonal tensor (of dimension 3)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(syndin, SYNDIN)
-(
- cs_real_t  var[]
-);
-
-/*----------------------------------------------------------------------------
  * Update a tensor array in case of parallelism and/or periodicity.
  *
  * Fortran interface:
@@ -586,16 +570,6 @@ void
 cs_mesh_sync_var_diag_ni(cs_real_t  *var11,
                          cs_real_t  *var22,
                          cs_real_t  *var33);
-
-/*----------------------------------------------------------------------------
- * Update a diagonal tensor array in case of parallelism and/or periodicity.
- *
- * parameters:
- *   var  <->  diagonal tensor interleaved array
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_diag(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
  * Update a tensor array in case of parallelism and/or periodicity.

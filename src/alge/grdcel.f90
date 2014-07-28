@@ -123,7 +123,7 @@ double precision rvoid(1)
 ! By default, the gradient will be treated as a vector ...
 !   (i.e. we assume it is the gradient of a scalar field)
 
-! If there is no rotation, halos are synchronized by synvec/synvni
+! If there is no rotation, halos are synchronized by synvec
 !   (periodicity is implicit)
 
 ! If rotational periodicities are present,
