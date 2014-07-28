@@ -818,7 +818,8 @@ class XMLinit(Variables):
             else:
                 node['label'] = name
 
-        XMLAleMethod = self.case.xmlGetNode('ale_method')
+        XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
+        XMLAleMethod = XMLThermoPhysicalModel.xmlInitNode('ale_method')
         for node in XMLAleMethod.xmlGetNodeList('formula'):
             if node:
                 content = node.xmlGetTextNode()
