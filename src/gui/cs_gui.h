@@ -343,6 +343,7 @@ void CS_PROCF (uiprop, UIPROP) (const int  *ivisls,
 
 void CS_PROCF (uimoyt, UIMOYT) (const int  *ndgmox,
                                 int        *ntdmom,
+                                double     *ttdmom,
                                 int        *imoold,
                                 int        *idfmom);
 

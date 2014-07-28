@@ -827,6 +827,12 @@ class XMLinit(Variables):
                 content = content.replace("mesh_vi3", "mesh_viscosity_3")
                 node.xmlSetTextNode(content)
 
+        for node in self.case.xmlGetNodeList('time_average'):
+            if node:
+                time_node = node.xmlGetNode("time_start")
+                if not time_node:
+                    node.xmlSetData('time_start', -1.)
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------

@@ -3452,6 +3452,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *ivisls,
 
 void CS_PROCF (uimoyt, UIMOYT) (const int    *ndgmox,
                                       int    *ntdmom,
+                                      double *ttdmom,
                                       int    *imoold,
                                       int    *idfmom)
 {
@@ -3467,6 +3468,9 @@ void CS_PROCF (uimoyt, UIMOYT) (const int    *ndgmox,
     imom = i + 1;
 
     _get_time_average_data(imom, "time_step_start", &ntdmom[i]);
+
+    if (ntdmom[i] == -1)
+      _get_time_average_time_start(imom, "time_start", &ttdmom[i]);
 
     /* test on isuite */
     cs_gui_restart_parameters_status("restart", &isuite);
@@ -5445,6 +5449,7 @@ cs_gui_turbomachinery_rotor(void)
   double rotation_invariant[3];
   double rotation_velocity;
   char *cell_criteria;
+  char *model;
 
   const char rotor_id[] = "0";
 
@@ -5457,7 +5462,7 @@ cs_gui_turbomachinery_rotor(void)
 
   BFT_FREE(path);
 
-  if !(cs_gui_strcmp(model, "off")) {
+  if (!cs_gui_strcmp(model, "off")) {
 
     rotation_axis[0] = _rotor_option(rotor_id, "axis_x");
     rotation_axis[1] = _rotor_option(rotor_id, "axis_y");

@@ -407,7 +407,7 @@ if (iihmpr.eq.1) then
   call uiprop (ivisls, ismago, iale, icp)
   !==========
 
-  call uimoyt (ndgmox, ntdmom, imoold, idfmom)
+  call uimoyt (ndgmox, ntdmom, ttdmom, imoold, idfmom)
   !==========
 
   call uiipsu(iporos)

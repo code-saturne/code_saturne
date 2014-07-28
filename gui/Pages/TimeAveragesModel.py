@@ -77,8 +77,9 @@ class TimeAveragesModel(Model):
         @rtype: C{Dict}
         """
         value = {}
-        value['start']   = 1
-        value['restart'] = -2
+        value['start']     = 1
+        value['timestart'] = 0.
+        value['restart']   = -2
 
         return value
 
@@ -126,7 +127,7 @@ class TimeAveragesModel(Model):
         return list(self.dicoLabel2Name.keys())
 
 
-    def __updateTimeAverage(self, nb, label, start, restart, lst):
+    def __updateTimeAverage(self, nb, label, start, timestart, restart, lst):
         """
         Private method.
         Update data for average I{label}.
@@ -156,6 +157,7 @@ class TimeAveragesModel(Model):
             node.xmlAddChild('var_prop', name=name, component=comp)
 
         node.xmlSetData('time_step_start', start)
+        node.xmlSetData('time_start',      timestart)
 
         if StartRestartModel(self.case).getRestartPath():
             if restart != -2:
@@ -165,7 +167,7 @@ class TimeAveragesModel(Model):
 
 
     @Variables.undoGlobal
-    def setTimeAverage(self, label, start, restart, lst):
+    def setTimeAverage(self, label, start, timestart, restart, lst):
         """
         Public method.
         Add a new time average I{label}.
@@ -178,16 +180,16 @@ class TimeAveragesModel(Model):
         @type list: C{List}
         @param lst: list of variables and properties for the new time average I{label}.
         """
-        self.isGreater(start, 0)
+        self.isGreater(start, -2)
         self.isNotInList(restart, [0])
         self.isNotInList(label, self.getTimeAverageLabels())
 
         nb = self.getNumberOfTimeAverage()
-        self.__updateTimeAverage(nb+1, label, start, restart, lst)
+        self.__updateTimeAverage(nb+1, label, start, timestart, restart, lst)
 
 
     @Variables.undoGlobal
-    def replaceTimeAverage(self, old_label, new_label, start, restart, lst):
+    def replaceTimeAverage(self, old_label, new_label, start, timestart, restart, lst):
         """
         Public method.
         Replaces data for time average I{old_label}.
@@ -202,7 +204,7 @@ class TimeAveragesModel(Model):
         @type list: C{List}
         @param list: new list of variables and properties for the time average I{old_label}.
         """
-        self.isGreater(start, 0)
+        self.isGreater(start, -2)
         self.isNotInList(restart, [0])
 
         node = self.node_mean.xmlGetNode('time_average', label=old_label)
@@ -210,8 +212,9 @@ class TimeAveragesModel(Model):
             node['label'] = new_label
             node.xmlRemoveChild('var_prop')
             node.xmlRemoveChild('time_step_start')
+            node.xmlRemoveChild('time_start')
             node.xmlRemoveChild('restart_from_time_average')
-        self.__updateTimeAverage(node['id'], new_label, start, restart, lst)
+        self.__updateTimeAverage(node['id'], new_label, start, timestart, restart, lst)
 
 
     @Variables.undoGlobal
@@ -245,6 +248,7 @@ class TimeAveragesModel(Model):
         restart = self.defaultValues()['restart']
         node = self.node_mean.xmlGetNode('time_average', id=imom)
         start = node.xmlGetInt('time_step_start')
+        timestart = node.xmlGetInt('time_start')
         if StartRestartModel(self.case).getRestartPath():
             restart = node.xmlGetInt('restart_from_time_average')
 
@@ -252,7 +256,7 @@ class TimeAveragesModel(Model):
             for label in list(self.dicoLabel2Name.keys()):
                 if self.dicoLabel2Name[label] == (var['name'], var['component']):
                     lst.append(label)
-        return node['label'], start, restart, lst
+        return node['label'], start, timestart, restart, lst
 
 
     @Variables.noUndo
