@@ -1059,9 +1059,7 @@ call pstvar                                                       &
 !==========
  ( ntcabs ,                                                       &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce )
+   nbpmax , nvp    , nvp1   , nvep   , nivep  )
 
 !===============================================================================
 ! Probes

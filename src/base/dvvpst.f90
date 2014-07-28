@@ -44,7 +44,6 @@
 !> \param[in]     nfbrps        number of boundary faces
 !> \param[in]     lstcel        post-processing mesh cell numbers
 !> \param[in]     lstfbr        post-processing mesh boundary faces numbers
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] tracel        post processing cell real values
 !> \param[in,out] trafbr        post processing boundary faces real values
 !______________________________________________________________________________
@@ -54,7 +53,6 @@ subroutine dvvpst &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    ncelps , nfbrps ,                                              &
    lstcel , lstfbr ,                                              &
-   rtp    , propce ,                                              &
    tracel , trafbr )
 
 !===============================================================================
@@ -95,25 +93,22 @@ integer          ncelps , nfbrps
 
 integer          lstcel(ncelps), lstfbr(nfbrps)
 
-double precision rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision tracel(ncelps*3)
 double precision trafbr(nfbrps*3)
 
 ! Local variables
 
-character*80     name80
+character(len=80) :: name80
 
 logical          ilved , ientla, ivarpr
-integer          inc   , iccocg, nswrgp, imligp, iwarnp
+integer          inc   , iccocg
 integer          ifac  , iloc  , ivar
 integer          ipp   , idimt , kk   , ll, iel
-integer          ivarl , ivar0
+integer          ivarl
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
-integer          ipcsii, iflpst, itplus, iprev
+integer          ifcsii, iflpst, itplus, iprev
 
-double precision epsrgp, climgp, extrap
 double precision pcentr
 
 double precision rbid(1)
@@ -126,6 +121,7 @@ double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
 double precision, dimension(:), pointer :: crom, yplbr
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cpotr, cpoti, cvisii
 double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
@@ -546,7 +542,7 @@ else if (numtyp .eq. -2) then
 
     if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
 
-      call post_boundary_thermal_flux(nfbrps, lstfbr, propce, trafbr)
+      call post_boundary_thermal_flux(nfbrps, lstfbr, trafbr)
 
       idimt = 1        ! variable dimension
       ientla = .true.  ! interleaved values
@@ -588,7 +584,7 @@ else if (numtyp .eq. -2) then
 
     ! Compute variable on boundary faces
 
-    call post_boundary_nusselt(nfbrps, lstfbr, propce, trafbr)
+    call post_boundary_nusselt(nfbrps, lstfbr, trafbr)
 
     call post_write_var(nummai, 'Wall law Nusselt', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
@@ -808,7 +804,7 @@ if (numtyp.eq.-1) then
       .or. ippmod(ielarc).ge.1                                      &
       .or. ippmod(ielion).ge.1) then
 
-    allocate(grad(ncelet,3))
+    allocate(grad(3,ncelet))
 
     if (.true.) then
 
@@ -817,27 +813,14 @@ if (numtyp.eq.-1) then
       ivar = isca(ipotr)
 
       inc = 1
+      iprev = 0
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-      ivar0 = 0
 
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra ,epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad)
-
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+                                 iccocg,                                     &
+                                 grad)
       idimt  = 3
-      ientla = .false.
+      ientla = .true.
       ivarpr = .true.
 
       call post_write_var(nummai, 'Pot_Gradient_R', idimt, ientla, ivarpr,   &
@@ -854,28 +837,15 @@ if (numtyp.eq.-1) then
       ivar = isca(ipoti)
 
       inc = 1
+      iprev = 0
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
 
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad)
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+                                 iccocg,                                     &
+                                 grad)
 
       idimt  = 3
-      ientla = .false.
+      ientla = .true.
       ivarpr = .true.
 
       call post_write_var(nummai, 'Pot_Gradient_Im', idimt, ientla, ivarpr,  &
@@ -892,34 +862,25 @@ if (numtyp.eq.-1) then
       ivar = isca(ipoti)
 
       ! As in elflux
-      ipcsii = ipproc(ivisls(ipoti))
+
+      call field_get_key_int (ivarfl(ivar), kivisl, ifcsii)
+      if (ifcsii .ge. 0) then
+        call field_get_val_s(ifcsii, cvisii)
+      endif
 
       inc = 1
+      iprev = 0
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
 
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad)
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+                                 iccocg,                                     &
+                                 grad)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = -propce(iel,ipcsii)*grad(iel,1)
-        tracel(2 + (iloc-1)*idimt) = -propce(iel,ipcsii)*grad(iel,2)
-        tracel(3 + (iloc-1)*idimt) = -propce(iel,ipcsii)*grad(iel,3)
+        tracel(1 + (iloc-1)*idimt) = -cvisii(iel)*grad(1,iel)
+        tracel(2 + (iloc-1)*idimt) = -cvisii(iel)*grad(2,iel)
+        tracel(3 + (iloc-1)*idimt) = -cvisii(iel)*grad(3,iel)
       enddo
 
       idimt  = 3
@@ -940,33 +901,20 @@ if (numtyp.eq.-1) then
       ivar = isca(ipotva(1))
 
       inc = 1
+      iprev = 0
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
 
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad)
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+                                 iccocg,                                     &
+                                 grad)
 
       ! B = rot A ( B = curl A)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
         tracel(1 + (iloc-1)*idimt) =  zero
-        tracel(2 + (iloc-1)*idimt) =  grad(iel,3)
-        tracel(3 + (iloc-1)*idimt) = -grad(iel,2)
+        tracel(2 + (iloc-1)*idimt) =  grad(3,iel)
+        tracel(3 + (iloc-1)*idimt) = -grad(2,iel)
       enddo
 
       ! Ay component
@@ -974,32 +922,19 @@ if (numtyp.eq.-1) then
       ivar = isca(ipotva(2))
 
       inc = 1
+      iprev = 0
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
 
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad)
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+                                 iccocg,                                     &
+                                 grad)
 
       ! B = rot A (B = curl A)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) - grad(iel,3)
-        tracel(3 + (iloc-1)*idimt) = tracel(3 + (iloc-1)*idimt) + grad(iel,1)
+        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) - grad(3,iel)
+        tracel(3 + (iloc-1)*idimt) = tracel(3 + (iloc-1)*idimt) + grad(1,iel)
       enddo
 
       ! Az component
@@ -1007,32 +942,19 @@ if (numtyp.eq.-1) then
       ivar = isca(ipotva(3))
 
       inc = 1
+      iprev = 0
       iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
 
-      ivar0 = 0
-
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-      call grdcel                                                 &
-      !==========
-        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
-         rtp(1,ivar), coefap, coefbp,                             &
-         grad   )
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+                                 iccocg,                                     &
+                                 grad)
 
       ! B = rot A (B = curl A)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) + grad(iel,2)
-        tracel(2 + (iloc-1)*idimt) = tracel(2 + (iloc-1)*idimt) - grad(iel,1)
+        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) + grad(2,iel)
+        tracel(2 + (iloc-1)*idimt) = tracel(2 + (iloc-1)*idimt) - grad(1,iel)
       enddo
 
       idimt  = 3
@@ -1048,13 +970,14 @@ if (numtyp.eq.-1) then
 
     if (.true. .and. ippmod(ieljou).eq.4) then
 
-      ivar = isca(ipotr)
+      ivar = 0
+
+      call field_get_val_s(ivarfl(isca(ipotr)), cpotr)
+      call field_get_val_s(ivarfl(isca(ipoti)), cpoti)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(iloc) =                                              &
-          sqrt( rtp(iel,isca(ipotr))*rtp(iel,isca(ipotr))           &
-               +rtp(iel,isca(ipoti))*rtp(iel,isca(ipoti)) )
+        tracel(iloc) = sqrt(cpotr(iel)*cpotr(iel) + cpoti(iel)*cpoti(iel))
       enddo
 
       idimt  = 1
@@ -1064,24 +987,20 @@ if (numtyp.eq.-1) then
       call post_write_var(nummai, 'Pot_Module', idimt, ientla, ivarpr,  &
                           ntcabs, ttcabs, tracel, rbid, rbid)
 
-      ivar = isca(ipotr)
-
       do iloc = 1, ncelps
 
         iel = lstcel(iloc)
 
-        if (rtp(iel,isca(ipotr)) .ne. 0.d0) then
-          if (rtp(iel,isca(ipotr)) .ge. 0.d0) then
-            tracel(iloc) = atan(rtp(iel,isca(ipoti))/rtp(iel,isca(ipotr)))
+        if (cpotr(iel) .ne. 0.d0) then
+          if (cpotr(iel) .ge. 0.d0) then
+            tracel(iloc) = atan(cpoti(iel)/cpotr(iel))
           else
-            if (rtp(iel,isca(ipoti)) .gt. 0.d0) then
+            if (cpoti(iel) .gt. 0.d0) then
               tracel(iloc) = 4.d0*atan(1.d0)                      &
-                             + atan(  rtp(iel,isca(ipoti))        &
-                                    / rtp(iel,isca(ipotr)))
+                             + atan(cpoti(iel) / cpotr(iel))
             else
               tracel(iloc) = -4.d0*atan(1.d0)                     &
-                             + atan(  rtp(iel,isca(ipoti))        &
-                                    / rtp(iel,isca(ipotr)))
+                             + atan(cpoti(iel) / cpotr(iel))
             endif
           endif
         else

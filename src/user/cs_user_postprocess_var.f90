@@ -63,7 +63,6 @@
 !> \param[in]     lstcel        list of cells in post-processing mesh
 !> \param[in]     lstfac        list of interior faces in post-processing mesh
 !> \param[in]     lstfbr        list of boundary faces in post-processing mesh
-!> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
 subroutine usvpst &
@@ -71,8 +70,7 @@ subroutine usvpst &
    nvar   , nscal  , nvlsta ,                                     &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
-   lstcel , lstfac , lstfbr ,                                     &
-   dt     )
+   lstcel , lstfac , lstfbr )
 
 !===============================================================================
 
@@ -107,11 +105,10 @@ integer          ncelps, nfacps, nfbrps
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
-double precision dt(ncelet)
 
 ! Local variables
 
-integer          ntindp
+integer          ntindp, f_id
 integer          iel, ifac, iloc, ivar
 integer          idimt, ii , jj
 logical          ientla, ivarpr
@@ -125,7 +122,7 @@ double precision, dimension(:), pointer :: bfpro_rom
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_var
 
-double precision, dimension(:), pointer :: cmom_1, cmom_2
+double precision, dimension(:), pointer :: cmom_1, cmom_2, cdt
 
 double precision, dimension(:,:), pointer :: cvar_vel
 
@@ -220,6 +217,14 @@ endif
 
 !   Examples given here correspond to the meshes defined in
 !   cs_user_postprocess.c
+
+!===============================================================================
+! Examples for initialization
+!===============================================================================
+
+! Pointer to local time step
+call field_get_id('dt', f_id)
+call field_get_val_s(f_id, cdt)
 
 !===============================================================================
 ! Examples of volume variables on the main volume mesh (ipart = -1)

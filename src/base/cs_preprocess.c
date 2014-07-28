@@ -397,7 +397,7 @@ cs_preprocess_mesh_update_fortran(void)
               &ngrpb,
               idxfi,
               idxfb,
-              m->i_face_cells,
+              (const cs_lnum_2_t *)(m->i_face_cells),
               m->b_face_cells,
               m->b_face_family,
               m->cell_family,

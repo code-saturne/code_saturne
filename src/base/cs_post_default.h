@@ -80,12 +80,7 @@ void CS_PROCF (pstgeo, PSTGEO)
  * *****************
  *                  ( ntcabs,
  *                    nvar,   nscal,  nvlsta, nvisbr,
- *                    nbpmax, nvp, nvp1, nvep, nivep,
- *                    itepa,
- *                    dt,     rtpa,   rtp,    propce,
- *                    coefa,  coefb,
- *                    statce, stativ, statfb,
- *                    ettp, ettpa, tepa )
+ *                    nbpmax, nvp, nvp1, nvep, nivep )
  *
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
@@ -99,11 +94,6 @@ void CS_PROCF (pstgeo, PSTGEO)
  * integer          nvep        : <-- : number of real particle attributes
  * integer          nivep       : <-- : number of interger particle attributes
  * double precision ttcabs      : <-- : current physical time
- * integer          itepa       : <-- : integer particle attributes
- * double precision dt          : <-- : local time step
- * double precision rtpa        : <-- : cell variables at previous time step
- * double precision rtp         : <-- : cell variables
- * double precision propce      : <-- : cell physical properties
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
@@ -117,12 +107,7 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *nvp,
  const cs_int_t   *nvp1,
  const cs_int_t   *nvep,
- const cs_int_t   *nivep,
- const cs_int_t    itepa[],
- const cs_real_t   dt[],
- const cs_real_t   rtpa[],
- const cs_real_t   rtp[],
- const cs_real_t   propce[]
+ const cs_int_t   *nivep
 );
 
 /*----------------------------------------------------------------------------

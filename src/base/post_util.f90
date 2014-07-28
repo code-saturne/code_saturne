@@ -37,13 +37,11 @@
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[in]     propce        physical properties at cell centers
 !> \param[out]    bflux         boundary heat flux at selected faces
 !_______________________________________________________________________________
 
 subroutine post_boundary_thermal_flux &
  ( nfbrps , lstfbr ,                                              &
-   propce ,                                                       &
    bflux )
 
 !===============================================================================
@@ -73,7 +71,6 @@ implicit none
 
 integer, intent(in)                                :: nfbrps
 integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: propce
 double precision, dimension(nfbrps), intent(out)   :: bflux
 
 ! Local variables
@@ -81,12 +78,12 @@ double precision, dimension(nfbrps), intent(out)   :: bflux
 integer ::         inc, iccocg
 integer ::         ifac, iloc, ivar
 integer ::         iel
-integer ::         ipcvsl, iflmab
+integer ::         ifcvsl, iflmab
 
 double precision :: xvsl  , srfbn
 double precision :: visct , flumab, diipbx, diipby, diipbz, tcel
 
-double precision, dimension(:), pointer :: cvisct
+double precision, dimension(:), pointer :: cvisct, cviscl
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -114,11 +111,11 @@ if (iscalt.gt.0) then
 
   call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
-  if (ivisls(iscalt).gt.0) then
-    ipcvsl = ipproc(ivisls(iscalt))
-  else
-    ipcvsl = 0
+  call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
+  if (ifcvsl .ge. 0) then
+    call field_get_val_s(ifcvsl, cviscl)
   endif
+
   call field_get_val_s(iprpfl(ivisct), cvisct)
   call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
   call field_get_val_s(iflmab, bmasfl)
@@ -154,8 +151,8 @@ if (iscalt.gt.0) then
       tcel =   tscalp(iel)                                                  &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
-      if (ipcvsl.gt.0) then
-        xvsl = propce(iel,ipcvsl)
+      if (ifcvsl.gt.0) then
+        xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)
       endif
@@ -181,8 +178,8 @@ if (iscalt.gt.0) then
 
       tcel = tscalp(iel)
 
-      if (ipcvsl.gt.0) then
-        xvsl = propce(iel,ipcvsl)
+      if (ifcvsl.gt.0) then
+        xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)
       endif
@@ -379,13 +376,11 @@ end subroutine post_boundary_temperature
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[in]     propce        physical properties at cell centers
 !> \param[out]    bnussl        Nusselt near boundary
 !_______________________________________________________________________________
 
 subroutine post_boundary_nusselt &
  ( nfbrps , lstfbr ,                                              &
-   propce ,                                                       &
    bnussl )
 
 !===============================================================================
@@ -415,20 +410,19 @@ implicit none
 
 integer, intent(in)                                :: nfbrps
 integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: propce
 double precision, dimension(nfbrps), intent(out)   :: bnussl
 
 ! Local variables
 
 integer ::         inc, iccocg
 integer ::         iel, ifac, iloc, ivar
-integer ::         ipcvsl, itplus, itstar
+integer ::         ifcvsl, itplus, itstar
 
 double precision :: xvsl  , srfbn
 double precision :: visct , diipbx, diipby, diipbz
 double precision :: numer, denom, tcel
 
-double precision, dimension(:), pointer :: cvisct
+double precision, dimension(:), pointer :: cvisct, cviscl
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -458,11 +452,11 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   ! Physical property pointers
 
-  if (ivisls(iscalt).gt.0) then
-    ipcvsl = ipproc(ivisls(iscalt))
-  else
-    ipcvsl = 0
+  call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
+  if (ifcvsl .ge. 0) then
+    call field_get_val_s(ifcvsl, cviscl)
   endif
+
   call field_get_val_s(iprpfl(ivisct), cvisct)
 
   ! Compute variable values at boundary faces
@@ -499,8 +493,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       tcel =   tscalp(iel)                                                 &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
-      if (ipcvsl.gt.0) then
-        xvsl = propce(iel,ipcvsl)
+      if (ifcvsl.gt.0) then
+        xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)
       endif
@@ -531,8 +525,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
       tcel = tscalp(iel)
 
-      if (ipcvsl.gt.0) then
-        xvsl = propce(iel,ipcvsl)
+      if (ifcvsl.gt.0) then
+        xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)
       endif

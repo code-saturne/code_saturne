@@ -111,12 +111,11 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_thermal_flux &
-      (nfbrps, lstfbr, propce, bflux)
+      (nfbrps, lstfbr, bflux)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(ncelet, *), intent(in), target :: propce
       double precision, dimension(nfbrps), intent(out)           :: bflux
     end subroutine post_boundary_thermal_flux
 
@@ -135,12 +134,11 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_nusselt &
-      (nfbrps, lstfbr, propce, bnussl)
+      (nfbrps, lstfbr, bnussl)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(ncelet, *), intent(in), target :: propce
       double precision, dimension(nfbrps), intent(out)           :: bnussl
     end subroutine post_boundary_nusselt
 

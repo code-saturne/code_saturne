@@ -87,13 +87,6 @@ typedef struct {
   const cs_int_t   *nvep;
   const cs_int_t   *nivep;
 
-  const cs_int_t   *itepa;
-
-  const cs_real_t  *dt;
-  const cs_real_t  *rtpa;
-  const cs_real_t  *rtp;
-  const cs_real_t  *propce;
-
   /* Lagrangian variables */
 
   bool      particle_attr[CS_LAGR_N_ATTRIBUTES];
@@ -276,8 +269,6 @@ _write_additional_vars(void                  *input,
                               _input->nvlsta, _input->nvisbr,
                               &n_cells, &n_b_faces,
                               cell_list, b_face_list,
-                              _input->rtp,
-                              _input->propce,
                               cel_vals, b_face_vals);
 
   /* Free work array */
@@ -290,8 +281,7 @@ _write_additional_vars(void                  *input,
                             _input->nvar, _input->nscal, _input->nvlsta,
                             &n_cells, &n_i_faces, &n_b_faces,
                             itypps,
-                            cell_list, i_face_list, b_face_list,
-                            _input->dt);
+                            cell_list, i_face_list, b_face_list);
 
 }
 
@@ -325,10 +315,7 @@ void CS_PROCF (pstgeo, PSTGEO)
  * *****************
  *                  ( ntcabs,
  *                    nvar,   nscal,  nvlsta, nvisbr,
- *                    nbpmax, nvp, nvp1, nvep, nivep,
- *                    itepa,
- *                    dt,     rtpa,   rtp,    propce,
- *                    ettp, ettpa, tepa )
+ *                    nbpmax, nvp, nvp1, nvep, nivep )
  *
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
@@ -341,11 +328,6 @@ void CS_PROCF (pstgeo, PSTGEO)
  *                              :     : particle velocity
  * integer          nvep        : <-- : number of real particle attributes
  * integer          nivep       : <-- : number of interger particle attributes
- * integer          itepa       : <-- : integer particle attributes
- * double precision dt          : <-- : local time step
- * double precision rtpa        : <-- : cell variables at previous time step
- * double precision rtp         : <-- : cell variables
- * double precision propce      : <-- : cell physical properties
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
@@ -359,12 +341,7 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *nvp,
  const cs_int_t   *nvp1,
  const cs_int_t   *nvep,
- const cs_int_t   *nivep,
- const cs_int_t    itepa[],
- const cs_real_t   dt[],
- const cs_real_t   rtpa[],
- const cs_real_t   rtp[],
- const cs_real_t   propce[]
+ const cs_int_t   *nivep
 )
 {
   /* Define or update map of variables */
@@ -380,13 +357,6 @@ void CS_PROCF (pstvar, PSTVAR)
   _default_input.nvp1 = nvp1;
   _default_input.nvep = nvep;
   _default_input.nivep = nivep;
-
-  _default_input.itepa = itepa;
-
-  _default_input.dt = dt;
-  _default_input.rtpa = rtpa;
-  _default_input.rtp = rtp;
-  _default_input.propce = propce;
 
   /* Register function for first pass */
 
