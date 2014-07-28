@@ -670,6 +670,7 @@ _log_fields(void)
         name = f->name;
 
       size_t l_name_width = cs_log_strlen(name);
+      if (f->dim == 3) l_name_width += 3;
 
       max_name_width = CS_MAX(max_name_width, l_name_width);
 
