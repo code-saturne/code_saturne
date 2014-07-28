@@ -73,8 +73,6 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
-        editor.setValidator(validator)
         return editor
 
 
@@ -84,7 +82,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = editor.text()
         model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 
@@ -131,7 +129,7 @@ class StandardItemModelRotor(QStandardItemModel):
 
         self.mdl = mdl
 
-        self.headers = [self.tr("Velocity"),
+        self.headers = [self.tr("Rotation velocity (rad)"),
                         self.tr("Selection criteria")]
 
         self.tooltip = [self.tr("Rotation velocity"),
@@ -332,6 +330,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             if self.rotor_id != -1:
                 self.groupBoxRotation.show()
                 self.__setValuesRotation(self.rotor_id)
+            if mdl == "frozen":
+                self.groupBoxJoin.setTitle("Face joining (optionnal)")
+            elif mdl == "transient":
+                self.groupBoxJoin.setTitle("Face joining")
         else:
             self.groupBoxDefineTurboMachinery.hide()
             self.groupBoxRotation.hide()

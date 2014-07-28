@@ -65,8 +65,8 @@ class TurboMachineryModel(Variables, Model):
         defvalue['selector']       = "all[]"
         defvalue['fraction']       = 0.1
         defvalue['plane']          = 25.0
-        defvalue['verbosity']      = 1
-        defvalue['visualization']  = 1
+        defvalue['verbosity']      = 0
+        defvalue['visualization']  = 0
         defvalue['angle']          = 0.01
         defvalue['model']          = 'off'
         defvalue['velocity']       = 1.

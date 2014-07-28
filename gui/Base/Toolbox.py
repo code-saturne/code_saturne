@@ -165,7 +165,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.DefineUserScalarsView as Page
         thisPage = Page.DefineUserScalarsView(root, case, stbar)
 
-    elif page_name == tr("TurboMachinery"):
+    elif page_name == tr("Turbomachinery"):
         import Pages.TurboMachineryView as Page
         thisPage = Page.TurboMachineryView(root, case)
 
