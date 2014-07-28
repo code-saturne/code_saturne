@@ -96,7 +96,7 @@ logical          ilved
 double precision, dimension(:,:), pointer :: claale
 double precision, dimension(:,:,:), pointer :: clbale
 
-double precision, allocatable, dimension(:,:) :: dproj, meshv
+double precision, allocatable, dimension(:,:) :: dproj
 double precision, allocatable, dimension(:,:,:) :: gradm
 double precision, dimension(:,:), pointer :: mshvel, mshvela
 
@@ -110,6 +110,9 @@ if (iwarni(iuma).ge.1) then
   write(nfecra,1000)
 endif
 
+call field_get_val_v(ivarfl(iuma), mshvel)
+call field_get_val_prev_v(ivarfl(iuma), mshvela)
+
 !===============================================================================
 ! 2.  MISE A JOUR DE LA GEOMETRIE
 !===============================================================================
@@ -118,15 +121,8 @@ endif
 !     Projection du deplacement calcule sur les noeuds
 
 ! Allocate a temporary array
-allocate(dproj(3,nnod),meshv(3,ncelet))
+allocate(dproj(3,nnod))
 allocate(gradm(3,3,ncelet))
-
-do iel = 1, ncelet
-  meshv(1,iel) = rtp(iel,iuma)
-  meshv(2,iel) = rtp(iel,ivma)
-  meshv(3,iel) = rtp(iel,iwma)
-enddo
-
 
 ilved = .true.
 inc = 1
@@ -140,13 +136,13 @@ call grdvec &
   nswrgr(iuma)    , imligr(iuma)    , iwarni(iuma) ,             &
   epsrgr(iuma), climgr(iuma),                                    &
   ilved  ,                                                       &
-  meshv  , claale , clbale ,                                     &
+  mshvel , claale , clbale ,                                     &
   gradm  )
 
 call aledis &
 !==========
  ( ialtyb ,                                                       &
-   meshv  , gradm  ,                                              &
+   mshvel , gradm  ,                                              &
    claale , clbale ,                                              &
    dt     , dproj  )
 
@@ -162,7 +158,7 @@ do inod = 1, nnod
 enddo
 
 ! Free memory
-deallocate(dproj,meshv)
+deallocate(dproj)
 deallocate(gradm)
 
 ! Mise a jour de la geometrie
@@ -179,8 +175,6 @@ call algrma(volmin, volmax, voltot)
 ! Abort at the end of the current time-step if there is a negative volume
 if (volmin.le.0.d0) ntmabs = ntcabs
 
-call field_get_val_v(ivarfl(iuma), mshvel)
-call field_get_val_prev_v(ivarfl(iuma), mshvela)
 ! Si on est a l'iteration d'initialisation, on remet les vitesses de maillage
 !   a leur valeur initiale
 if (itrale.eq.0) then
