@@ -1334,6 +1334,35 @@ _get_time_average_data(int          id,
 }
 
 /*----------------------------------------------------------------------------
+ * Get value of a parameter for a given time average.
+ *
+ * parameters:
+ *   id              <--  time average number (imom)
+ *   param           <--  name of the parameter
+ *   data           -->   value of the parameter
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_time_average_time_start(int          id,
+                             const char  *param,
+                             double      *data)
+{
+  char  *path = NULL;
+  double result = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
+  cs_xpath_add_element_num(&path, "time_average", id);
+  cs_xpath_add_element(&path, param);
+
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &result))
+    *data = result;
+
+  BFT_FREE(path);
+}
+
+/*----------------------------------------------------------------------------
  * Return the name of a variable or a property for a given time average.
  *
  * parameters:
@@ -3421,10 +3450,11 @@ void CS_PROCF (uiprop, UIPROP) (const int *ivisls,
  * Temporal averaging treatment
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uimoyt, UIMOYT) (const int *ndgmox,
-                                      int *ntdmom,
-                                      int *imoold,
-                                      int *idfmom)
+void CS_PROCF (uimoyt, UIMOYT) (const int    *ndgmox,
+                                      int    *ntdmom,
+                                      double *ttdmom,
+                                      int    *imoold,
+                                      int    *idfmom)
 {
   int imom = 0;
   int isuite = 0;
@@ -3438,6 +3468,9 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *ndgmox,
     imom = i + 1;
 
     _get_time_average_data(imom, "time_step_start", &ntdmom[i]);
+
+    if (ntdmom[i] == -1)
+      _get_time_average_time_start(imom, "time_start", &ttdmom[i]);
 
     /* test on isuite */
     cs_gui_restart_parameters_status("restart", &isuite);
@@ -5419,68 +5452,80 @@ cs_gui_turbomachinery_rotor(void)
 
   const char rotor_id[] = "0";
 
-  rotation_axis[0] = _rotor_option(rotor_id, "axis_x");
-  rotation_axis[1] = _rotor_option(rotor_id, "axis_y");
-  rotation_axis[2] = _rotor_option(rotor_id, "axis_z");
-
-  rotation_invariant[0] = _rotor_option(rotor_id, "invariant_x");
-  rotation_invariant[1] = _rotor_option(rotor_id, "invariant_y");
-  rotation_invariant[2] = _rotor_option(rotor_id, "invariant_z");
-
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
+  cs_xpath_add_elements(&path, 2,
                         "thermophysical_models",
-                        "turbomachinery",
-                        "rotor");
+                        "turbomachinery");
+  cs_xpath_add_attribute(&path, "model");
+  model = cs_gui_get_attribute_value(path);
 
-  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
-  cs_xpath_add_element(&path, "velocity");
-  cs_xpath_add_element(&path, "value");
-  cs_xpath_add_function_text(&path);
-  cs_gui_get_double(path, &rotation_velocity);
   BFT_FREE(path);
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
-                        "thermophysical_models",
-                        "turbomachinery",
-                        "rotor");
+  if !(cs_gui_strcmp(model, "off")) {
 
-  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
-  cs_xpath_add_element(&path, "criteria");
-  cs_xpath_add_function_text(&path);
-  cell_criteria = cs_gui_get_text_value(path);
-  BFT_FREE(path);
+    rotation_axis[0] = _rotor_option(rotor_id, "axis_x");
+    rotation_axis[1] = _rotor_option(rotor_id, "axis_y");
+    rotation_axis[2] = _rotor_option(rotor_id, "axis_z");
 
-  cs_turbomachinery_add_rotor(cell_criteria,
-                              rotation_velocity,
-                              rotation_axis,
-                              rotation_invariant);
+    rotation_invariant[0] = _rotor_option(rotor_id, "invariant_x");
+    rotation_invariant[1] = _rotor_option(rotor_id, "invariant_y");
+    rotation_invariant[2] = _rotor_option(rotor_id, "invariant_z");
 
-  int n_join = 0;
-  n_join = cs_gui_get_tag_number
-             ("/thermophysical_models/turbomachinery/joining/face_joining", 1);
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3,
+                          "thermophysical_models",
+                          "turbomachinery",
+                          "rotor");
 
-  if (n_join != 0) {
-    for (int join_id = 0; join_id < n_join; join_id++) {
+    cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
+    cs_xpath_add_element(&path, "velocity");
+    cs_xpath_add_element(&path, "value");
+    cs_xpath_add_function_text(&path);
+    cs_gui_get_double(path, &rotation_velocity);
+    BFT_FREE(path);
 
-      char *selector_s  =  _get_rotor_face_joining("selector", join_id+1);
-      char *fraction_s  =  _get_rotor_face_joining("fraction", join_id+1);
-      char *plane_s     =  _get_rotor_face_joining("plane", join_id+1);
-      char *verbosity_s =  _get_rotor_face_joining("verbosity", join_id+1);
-      char *visu_s      =  _get_rotor_face_joining("visualization", join_id+1);
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3,
+                          "thermophysical_models",
+                          "turbomachinery",
+                          "rotor");
 
-      double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
-      double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
-      int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
-      int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
+    cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
+    cs_xpath_add_element(&path, "criteria");
+    cs_xpath_add_function_text(&path);
+    cell_criteria = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    cs_turbomachinery_add_rotor(cell_criteria,
+                                rotation_velocity,
+                                rotation_axis,
+                                rotation_invariant);
+
+    int n_join = 0;
+    n_join = cs_gui_get_tag_number
+               ("/thermophysical_models/turbomachinery/joining/face_joining", 1);
+
+    if (n_join != 0) {
+      for (int join_id = 0; join_id < n_join; join_id++) {
+
+        char *selector_s  =  _get_rotor_face_joining("selector", join_id+1);
+        char *fraction_s  =  _get_rotor_face_joining("fraction", join_id+1);
+        char *plane_s     =  _get_rotor_face_joining("plane", join_id+1);
+        char *verbosity_s =  _get_rotor_face_joining("verbosity", join_id+1);
+        char *visu_s      =  _get_rotor_face_joining("visualization", join_id+1);
+
+        double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
+        double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
+        int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
+        int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
 
 
-      (void) cs_turbomachinery_join_add(selector_s,
-                                        fraction,
-                                        plane,
-                                        verbosity,
-                                        visualization);
+        (void) cs_turbomachinery_join_add(selector_s,
+                                          fraction,
+                                          plane,
+                                          verbosity,
+                                          visualization);
+      }
     }
   }
 }
