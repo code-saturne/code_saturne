@@ -25,7 +25,7 @@ subroutine pptycl &
 
  ( nvar   ,                                                       &
    icodcl , itypfb , izfppp ,                                     &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -56,9 +56,6 @@ subroutine pptycl &
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -113,8 +110,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -291,7 +287,7 @@ elseif (ippmod(icompf).ge.0) then
   !==========
  ( nvar   ,                                                       &
    icodcl , itypfb ,                                              &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    rcodcl )
 
 ! ---> Ecoulements atmospheriques

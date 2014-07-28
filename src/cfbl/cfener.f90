@@ -273,10 +273,7 @@ enddo
 !     ==============================    --               ij  ij
 
 if (idiff(iu).ge. 1) then
-  call cfdivs                                                     &
-  !==========
- ( propce ,                                                       &
-   smbrs  , vel )
+  call cfdivs(smbrs, vel)
 endif
 
 !                              __   P        n+1

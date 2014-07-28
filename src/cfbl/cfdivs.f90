@@ -23,8 +23,7 @@
 subroutine cfdivs &
 !================
 
- ( propce ,                                                      &
-   diverg , vel)
+ ( diverg , vel )
 
 !===============================================================================
 ! FONCTION :
@@ -42,9 +41,6 @@ subroutine cfdivs &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! diverg (ncelet)  ! tr ! --> ! div(sigma.u)                                   !
 ! vel (ncelet)     ! tr ! <-- ! velocity                                       !
 !__________________!____!_____!________________________________________________!
@@ -81,18 +77,15 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision diverg(ncelet)
 double precision vel(3,ncelet)
 
 ! Local variables
 
 integer          inc, iel, ifac, ii, jj
-integer          nswrgp, imligp, iwarnp
-integer          ipcvis, ipcvst, ipcvsv
+integer          ipcvsv
 integer          iprev
 
-double precision epsrgp, climgp, extrap
 double precision vecfac, kappa, mu, trgdru
 double precision sigma(3,3)
 
@@ -101,7 +94,7 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: tempv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
-double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: viscl, visct, cpro_kappa
 
 !===============================================================================
 
@@ -121,6 +114,7 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 if(iviscv.gt.0) then
   ipcvsv = ipproc(iviscv)
+  call field_get_val_s(iprpfl(ipcvsv), cpro_kappa)
 else
   ipcvsv = 0
 endif
@@ -142,7 +136,7 @@ endif
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(vistot)
   if (ipcvsv.gt.0) then
-    call synsca(propce(1,ipcvsv))
+    call synsca(cpro_kappa)
   endif
 endif
 
@@ -162,7 +156,7 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
 ! Variable kappa in space
 if (ipcvsv.gt.0) then
   do iel = 1, ncel
-    kappa = propce(iel,ipcvsv)
+    kappa = cpro_kappa(iel)
     mu = vistot(iel)
     trgdru = gradv(1, 1, iel)+gradv(2, 2, iel)+gradv(3, 3, iel)
 

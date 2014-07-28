@@ -25,7 +25,7 @@ subroutine cfxtcl &
 
  ( nvar   ,                                                       &
    icodcl , itypfb ,                                              &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -53,9 +53,6 @@ subroutine cfxtcl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -107,8 +104,7 @@ integer          nvar
 integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -134,7 +130,7 @@ double precision, allocatable, dimension(:,:) :: bval
 
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: coefbp
-double precision, dimension(:), pointer :: crom, brom
+double precision, dimension(:), pointer :: crom, brom, cpro_cv, cvar_en
 double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
@@ -161,6 +157,10 @@ call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
+
+call field_get_val_s(ivarfl(ien), cvar_en)
+
+if (icv.gt.0) call field_get_val_s(iprpfl(icv), cpro_cv)
 
 !     Liste des variables compressible :
 ivarcf(1) = ipr
@@ -334,8 +334,7 @@ do ifac = 1, nfabor
       if(icv.eq.0) then
         rcodcl(ifac,ien,1) = cv0*rcodcl(ifac,itk,1)
       else
-        rcodcl(ifac,ien,1) = propce(iel,ipproc(icv))  &
-             *rcodcl(ifac,itk,1)
+        rcodcl(ifac,ien,1) = cpro_cv(iel)*rcodcl(ifac,itk,1)
       endif
       rcodcl(ifac,ien,1) = rcodcl(ifac,ien,1)             &
            + 0.5d0*(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)          &
@@ -472,7 +471,6 @@ do ifac = 1, nfabor
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   rtp    ,                                                       &
    w1     , w2     , bval )
 
 
@@ -513,7 +511,7 @@ do ifac = 1, nfabor
     rcodcl(ifac,iu ,1) = vel(1,iel)
     rcodcl(ifac,iv ,1) = vel(2,iel)
     rcodcl(ifac,iw ,1) = vel(3,iel)
-    rcodcl(ifac,ien,1) = rtp(iel,ien)
+    rcodcl(ifac,ien,1) = cvar_en(iel)
 
     do ivar = 1, nvar
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
@@ -568,7 +566,7 @@ do ifac = 1, nfabor
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cf_thermo_subsonic_outlet_bc(rtp, bval, ifac)
+    call cf_thermo_subsonic_outlet_bc(bval, ifac)
     !==============================
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -613,7 +611,7 @@ do ifac = 1, nfabor
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cf_thermo_ph_inlet_bc(rtp, bval, ifac)
+    call cf_thermo_ph_inlet_bc(bval, ifac)
     !=======================
 
 !     flux de masse et type de conditions aux limites :
@@ -713,10 +711,8 @@ do ifac = 1, nfabor
 
       if ( itypfb(ifac).eq.iesicf ) then
 
-        call cfrusb                                                   &
+        call cfrusb(nvar, ifac, gammag, bval)
         !==========
-     ( nvar   , ifac   ,                                              &
-       gammag , rtp    , bval )
 
 !    Pour les autres types (sortie subsonique, entree QH, entree PH),
 !    On calcule des flux analytiques

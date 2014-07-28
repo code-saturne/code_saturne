@@ -84,14 +84,12 @@
 !>                              - 0 variables and properties not modified
 !>                              - > 0 variables and properties modified for a
 !>                                bulk computation / face number for a B.C.
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                              (at current time step)
 !> \param[out]    output1       computed therm. property 1 at cell centers
 !> \param[out]    output2       computed therm. property 2 at cell centers
 !> \param[in,out] bval          variable values at boundary faces
 !-------------------------------------------------------------------------------
 
-subroutine cfther(nvar, iccfth, imodif, rtp, output1, output2, bval)
+subroutine cfther(nvar, iccfth, imodif, output1, output2, bval)
 
 !===============================================================================
 
@@ -121,8 +119,6 @@ implicit none
 
 integer          nvar, iccfth, imodif
 
-double precision rtp(ncelet,nflown:nvar)
-
 double precision output1(*), output2(*), bval(nfabor,nvar)
 
 ! Local variables
@@ -131,7 +127,7 @@ integer          ifac0, l_size, iel, ifac, itk, ien
 
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvar_tk, cvar_en
 
 !===============================================================================
 
@@ -148,6 +144,8 @@ if (iccfth.ge.0) then
   call field_get_val_s(ibrom, brom)
   itk = isca(itempk)
   ien = isca(ienerg)
+  call field_get_val_s(ivarfl(itk), cvar_tk)
+  call field_get_val_s(ivarfl(ien), cvar_en)
 endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
@@ -163,11 +161,11 @@ if (iccfth.eq.60000) then
 
   call cf_thermo_te_from_dp(cvar_pr, crom, output1, output2, vel, ncel)
 
-  ! Transfer to the array rtp
+  ! Transfer to cell fields
   if (imodif.gt.0) then
     do iel = 1, ncel
-      rtp(iel,itk) = output1(iel)
-      rtp(iel,ien) = output2(iel)
+      cvar_tk(iel) = output1(iel)
+      cvar_en(iel) = output2(iel)
     enddo
   endif
 
@@ -175,28 +173,28 @@ if (iccfth.eq.60000) then
 ! Calculation of density and energy from pressure and temperature:
 elseif (iccfth.eq.100000) then
 
-  call cf_check_temperature(rtp(1,itk), ncel)
+  call cf_check_temperature(cvar_tk, ncel)
 
-  call cf_thermo_de_from_pt(cvar_pr, rtp(1,itk), output1, output2, vel, ncel)
+  call cf_thermo_de_from_pt(cvar_pr, cvar_tk, output1, output2, vel, ncel)
 
-  ! Transfer to the array rtp
+  ! Transfer to the cell fields
   if (imodif.gt.0) then
     do iel = 1, ncel
       crom(iel) = output1(iel)
-      rtp(iel,ien) = output2(iel)
+      cvar_en(iel) = output2(iel)
     enddo
   endif
 
 ! Calculation of density and temperature from pressure and energy
 elseif (iccfth.eq.140000) then
 
-  call cf_thermo_dt_from_pe(cvar_pr, rtp(1,ien), output1, output2, vel, ncel)
+  call cf_thermo_dt_from_pe(cvar_pr, cvar_en, output1, output2, vel, ncel)
 
-  ! Transfer to the array rtp
+  ! Transfer to cell fields
   if (imodif.gt.0) then
     do iel = 1, ncel
       crom(iel) = output1(iel)
-      rtp(iel,itk) = output2(iel)
+      cvar_tk(iel) = output2(iel)
     enddo
   endif
 
@@ -204,27 +202,27 @@ elseif (iccfth.eq.140000) then
 ! Calculation of pressure and energy from density and temperature
 elseif (iccfth.eq.150000) then
 
-  call cf_thermo_pe_from_dt(crom, rtp(1,itk), cvar_pr, rtp(1,ien), vel, ncel )
+  call cf_thermo_pe_from_dt(crom, cvar_tk, cvar_pr, cvar_en, vel, ncel )
 
-  ! Transfer to the array rtp
+  ! Transfer to cell fields
   if (imodif.gt.0) then
     do iel = 1, ncel
       cvar_pr(iel) = output1(iel)
-      rtp(iel,ien) = output2(iel)
+      cvar_en(iel) = output2(iel)
     enddo
   endif
 
 ! Calculation of pressure and temperature from density and energy
 elseif (iccfth.eq.210000) then
 
-  call cf_thermo_pt_from_de(crom, rtp(1,ien), output1, output2,    &
+  call cf_thermo_pt_from_de(crom, cvar_en, output1, output2,    &
                             vel, ncel)
 
-  ! Transfer to the array rtp
+  ! Transfer to cell fields
   if (imodif.gt.0) then
     do iel = 1, ncel
       cvar_pr(iel) = output1(iel)
-      rtp(iel,itk) = output2(iel)
+      cvar_tk(iel) = output2(iel)
     enddo
   endif
 
@@ -455,11 +453,9 @@ end subroutine cf_thermo_gamma
 
 !> \param[in]     ncel    number of cells
 !> \param[in]     ncelet  total number of cells on the local rank
-!> \param[in,out] rtp     calculated variables at cell centers
-!>                        (at current time step)
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_default_init(ncel, ncelet, rtp)
+subroutine cf_thermo_default_init(ncel, ncelet)
 
 !===============================================================================
 
@@ -484,23 +480,22 @@ implicit none
 
 integer ncel, ncelet
 
-double precision rtp(ncelet,nflown:nvar)
-
 ! Local variables
 
 integer ien, iel
 
 double precision xmasml
 
-double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: crom, cvar_en
 
 !===============================================================================
 
 ! Default initializations
 ! t0 is positive (this assumption has been checked in verini)
 
-call field_get_val_s(icrom, crom)
 ien = isca(ienerg)
+call field_get_val_s(ivarfl(ien), cvar_en)
+call field_get_val_s(icrom, crom)
 
 call cf_get_molar_mass(xmasml)
 
@@ -511,7 +506,7 @@ if (ieos.eq.1) then
   if (isuite.eq.0) then
     do iel = 1, ncel
       crom(iel) = p0 * xmasml/(rr*t0)
-      rtp(iel,ien) = cv0 * t0
+      cvar_en(iel) = cv0 * t0
     enddo
   endif
 
@@ -1870,13 +1865,11 @@ end subroutine cf_thermo_wall_bc
 !-------------------------------------------------------------------------------
 !> \brief Compute subsonic outlet boundary conditions.
 
-!> \param[in]     rtp     calculated variables at cell centers
-!>                        (at current time step)
 !> \param[in,out] bval    variable values at boundary faces
 !> \param[in]     ifac    boundary face indice
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_subsonic_outlet_bc(rtp, bval, ifac)
+subroutine cf_thermo_subsonic_outlet_bc(bval, ifac)
 
 !===============================================================================
 
@@ -1901,7 +1894,6 @@ implicit none
 
 integer ifac
 
-double precision rtp(ncelet,nflown:nvar)
 double precision bval(nfabor,*)
 
 ! Local variables
@@ -1914,7 +1906,7 @@ double precision ci, c1, mi, a, b, sigma1, pinf
 
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvar_en
 
 !===============================================================================
 
@@ -1935,6 +1927,7 @@ if (ieos.eq.1) then
   call field_get_val_s(ibrom, brom)
 
   call field_get_val_s(ivarfl(ipr), cvar_pr)
+  call field_get_val_s(ivarfl(ien), cvar_en)
 
   iel = ifabor(ifac)
 
@@ -1946,7 +1939,7 @@ if (ieos.eq.1) then
   uni  = ( vel(1,iel) * surfbo(1,ifac)                             &
          + vel(2,iel) * surfbo(2,ifac)                             &
          + vel(3,iel) * surfbo(3,ifac) ) / surfbn(ifac)
-  ei   = rtp(iel,isca(ienerg)) - 0.5d0 * uni**2
+  ei   = cvar_en(iel) - 0.5d0 * uni**2
 
   ! Rarefaction case
   if (pinf.le.pri) then
@@ -2032,7 +2025,7 @@ if (ieos.eq.1) then
         ! rob = roi
         brom(ifac) = roi
         ! eb = ei
-        bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
+        bval(ifac,isca(ienerg)) = cvar_en(iel)
 
       endif
 
@@ -2100,7 +2093,7 @@ if (ieos.eq.1) then
         ! rob = roi
         brom(ifac) = roi
         ! eb = ei
-        bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
+        bval(ifac,isca(ienerg)) = cvar_en(iel)
 
       endif ! test on shock speed sign
 
@@ -2118,13 +2111,11 @@ end subroutine cf_thermo_subsonic_outlet_bc
 !> \brief Compute inlet boundary condition with total pressure and total
 !> enthalpy imposed.
 
-!> \param[in]     rtp     calculated variables at cell centers
-!>                        (at current time step)
 !> \param[in,out] bval    variable values at boundary faces
-!> \param[in]     ifac    boundary face indice
+!> \param[in]     ifac    boundary face number
 !-------------------------------------------------------------------------------
 
-subroutine cf_thermo_ph_inlet_bc(rtp, bval, ifac)
+subroutine cf_thermo_ph_inlet_bc(bval, ifac)
 
 !===============================================================================
 
@@ -2152,7 +2143,6 @@ implicit none
 
 integer ifac
 
-double precision rtp(ncelet,nflown:nvar)
 double precision bval(nfabor,*)
 
 ! Local variables
@@ -2166,7 +2156,7 @@ double precision dir(3)
 
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvar_en
 
 !===============================================================================
 
@@ -2185,6 +2175,7 @@ if (ieos.eq.1) then
   call field_get_val_s(ibrom, brom)
 
   call field_get_val_s(ivarfl(ipr), cvar_pr)
+  call field_get_val_s(ivarfl(isca(ienerg)), cvar_en)
 
   iel  = ifabor(ifac)
 
@@ -2226,9 +2217,9 @@ if (ieos.eq.1) then
   utyi = vel(2,iel) - uni * surfbo(2,ifac) * surfbn(ifac)
   utzi = vel(3,iel) - uni * surfbo(3,ifac) * surfbn(ifac)
 
-  ei   = rtp(iel,isca(ienerg)) - 0.5d0 * ( vel(1,iel)**2           &
-                                         + vel(2,iel)**2           &
-                                         + vel(3,iel)**2 )
+  ei   = cvar_en(iel) - 0.5d0 * (  vel(1,iel)**2           &
+                                 + vel(2,iel)**2           &
+                                 + vel(3,iel)**2 )
 
   ptot = bval(ifac,ipr)
   rhotot = gamagp / (gamagp - 1.d0) * ptot / bval(ifac,isca(ienerg))
@@ -2297,7 +2288,7 @@ if (ieos.eq.1) then
           ! rob = roi
           brom(ifac) = roi
           ! eb = ei
-          bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
+          bval(ifac,isca(ienerg)) = cvar_en(iel)
 
         endif
 
@@ -2360,7 +2351,7 @@ if (ieos.eq.1) then
           ! rob = roi
           brom(ifac) = roi
           ! eb = ei
-          bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
+          bval(ifac,isca(ienerg)) = cvar_en(iel)
 
           ! Outlet in sonic state
         else

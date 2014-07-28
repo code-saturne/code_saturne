@@ -144,7 +144,7 @@ if  (ippmod(icompf).ge.0) then
     rtp(iel,isca(itempk)) = t0
   enddo
 
-  call cf_thermo_default_init(ncel, ncelet, rtp)
+  call cf_thermo_default_init(ncel, ncelet)
   !==========================
 
   ! On initialise la diffusivite thermique
@@ -225,7 +225,6 @@ else
     !==========
    ( nvar   ,                                                                   &
      ithvar , imodif ,                                                          &
-     rtp    ,                                                                   &
      w1     , w2     , rvoid )
 
     deallocate(w1, w2)

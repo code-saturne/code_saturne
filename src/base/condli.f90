@@ -93,8 +93,6 @@
 !> \param[in,out] isostd        indicator for standard outlet
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
@@ -123,7 +121,7 @@ subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  ,                                                       &
    icodcl , isostd ,                                              &
-   dt     , rtp    , rtpa   , propce , rcodcl ,                   &
+   dt     , propce , rcodcl ,                                     &
    visvdr , hbord  , theipb , frcxt  )
 
 !===============================================================================
@@ -161,7 +159,7 @@ integer          isvhb
 integer          icodcl(nfabor,nvarcl)
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(3,ncelet)
@@ -214,7 +212,7 @@ double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: crom
 
 double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cpro_cp, cvar_s, cvara_s
 
 !===============================================================================
 
@@ -293,7 +291,7 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( nvar   ,                                                       &
    icodcl , itypfb , izfppp ,                                     &
-   dt     , rtp    , propce ,                                     &
+   dt     ,                                                       &
    rcodcl )
 endif
 
@@ -460,6 +458,8 @@ if (iscalt.gt.0) then
 
   if (ntcabs.gt.1 .and. itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
 
+    call field_get_val_s(ivarfl(ivar), cvar_s)
+
     inc = 1
     iprev = 1
     iccocg = 1
@@ -470,7 +470,7 @@ if (iscalt.gt.0) then
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
-      theipb(ifac) = rtpa(iel,ivar) &
+      theipb(ifac) = cvar_s(iel) &
                    + grad(1,iel)*diipb(1,ifac) &
                    + grad(2,iel)*diipb(2,ifac) &
                    + grad(3,iel)*diipb(3,ifac)
@@ -478,9 +478,11 @@ if (iscalt.gt.0) then
 
   else
 
+    call field_get_val_prev_s(ivarfl(ivar), cvara_s)
+
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
-      theipb(ifac) = rtpa(iel,ivar)
+      theipb(ifac) = cvara_s(iel)
     enddo
 
   endif
@@ -569,15 +571,17 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
 
   do isou = 1 , 6
 
-    if(isou.eq.1) ivar = ir11
-    if(isou.eq.2) ivar = ir22
-    if(isou.eq.3) ivar = ir33
-    if(isou.eq.4) ivar = ir12
-    if(isou.eq.5) ivar = ir13
-    if(isou.eq.6) ivar = ir23
+    if (isou.eq.1) ivar = ir11
+    if (isou.eq.2) ivar = ir22
+    if (isou.eq.3) ivar = ir33
+    if (isou.eq.4) ivar = ir12
+    if (isou.eq.5) ivar = ir13
+    if (isou.eq.6) ivar = ir23
 
 
-    if(ntcabs.gt.1.and.irijrb.eq.1) then
+    if (ntcabs.gt.1.and.irijrb.eq.1) then
+
+      call field_get_val_s(ivarfl(ivar), cvar_s)
 
       inc = 1
       iprev = 1
@@ -589,7 +593,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
-        rijipb(ifac,isou) = rtpa(iel,ivar)            &
+        rijipb(ifac,isou) = cvar_s(iel)               &
                           + grad(1,iel)*diipb(1,ifac) &
                           + grad(2,iel)*diipb(2,ifac) &
                           + grad(3,iel)*diipb(3,ifac)
@@ -599,9 +603,11 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
     !     in I is stored instead of the value in I'
     else
 
+      call field_get_val_prev_s(ivarfl(ivar), cvara_s)
+
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
-        rijipb(ifac,isou) = rtpa(iel,ivar)
+        rijipb(ifac,isou) = cvara_s(iel)
       enddo
 
     endif
@@ -659,7 +665,7 @@ if (ipatrg.ne.0) then
   call clptrg &
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , rcodcl ,                                              &
+   rcodcl ,                                                       &
    velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 

@@ -135,7 +135,7 @@ else
 ! ----- Initialisations par defaut
 
     !     On initialise Cv
-    call cf_thermo_default_init(ncel, ncelet, rtp)
+    call cf_thermo_default_init(ncel, ncelet)
     !==========================
 
   endif

@@ -26,7 +26,7 @@ subroutine cfrusb &
  ( nvar   ,                                                       &
    ifac   ,                                                       &
    gammag ,                                                       &
-   rtp    , bval   )
+   bval   )
 
 !===============================================================================
 ! FUNCTION :
@@ -46,7 +46,6 @@ subroutine cfrusb &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! ifac             ! i  ! <-- ! face number                                    !
 ! gammag           ! r  ! <-- ! gamma du gaz                                   !
-! rtp(ncelet,nvar) ! tr ! <-- ! variables de calcul au centre des cellules     !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -85,7 +84,6 @@ integer          ifac
 
 double precision gammag
 
-double precision rtp(ncelet,nflown:nvar)
 double precision bval(nfabor,nvar)
 
 ! Local variables
@@ -101,7 +99,7 @@ double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvar_en
 
 !===============================================================================
 
@@ -118,6 +116,7 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
+call field_get_val_s(ivarfl(ien), cvar_en)
 
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
@@ -180,10 +179,10 @@ bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + cvar_pr(iel))
 
 ! Total energy flux
 coface(ifac) = surfbn(ifac)*                                                    &
-               0.5d0*( rund*bval(ifac,ien) + runi*rtp(iel,ien)                  &
-                       +und*bval(ifac,ipr) + uni*cvar_pr(iel)                       &
+               0.5d0*( rund*bval(ifac,ien) + runi*cvar_en(iel)                  &
+                       +und*bval(ifac,ipr) + uni*cvar_pr(iel)                   &
                        -rrus*(brom(ifac)*bval(ifac,ien)                         &
-                       -crom(iel)*rtp(iel,ien)) )
+                       -crom(iel)*cvar_en(iel)) )
 
 return
 

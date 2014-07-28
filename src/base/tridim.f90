@@ -1001,7 +1001,7 @@ do while (iterns.le.nterup)
 ( nvar   , nscal  , iterns ,                                     &
   isvhb  ,                                                       &
   icodcl , isostd ,                                              &
-  dt     , rtp    , rtpa   , propce ,                            &
+  dt     , propce ,                                              &
   rcodcl ,                                                       &
   visvdr , hbord  , theipb ,                                     &
   frcxt  )

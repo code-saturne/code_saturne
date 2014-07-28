@@ -76,8 +76,6 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -106,7 +104,7 @@
 
 subroutine clptrg &
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , rcodcl ,                                              &
+   rcodcl ,                                                       &
    velipb , rijipb , visvdr ,                                     &
    hbord  , theipb )
 
@@ -146,7 +144,6 @@ integer          nscal, isvhb
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision visvdr(ncelet)
@@ -725,8 +722,7 @@ do ifac = 1, nfabor
       uet    ,                                                       &
       gredu  , q0     , e0     , rib    ,lmo     ,                   &
       cfnnu  , cfnns  , cfnnk  , cfnne  ,                            &
-      icodcl ,                                                       &
-      rtp    , rcodcl )
+      icodcl , rcodcl )
 
     endif
 

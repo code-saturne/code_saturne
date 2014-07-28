@@ -29,7 +29,7 @@ subroutine atmcls &
    gredu  , q0     , e0     , rib    , lmo    ,                   &
    cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
-   rtp    , rcodcl )
+   rcodcl )
 
 !===============================================================================
 ! FUNCTION :
@@ -49,11 +49,11 @@ subroutine atmcls &
 ! utau             ! r  ! <-- ! vitesse moyenne tangentielle                   !
 ! yplus            ! r  ! <-- ! distance adim a la paroi                       !
 !                  !    !     !  calculee au moyen de uk                       !
-! uet              ! r  ! <-- ! vitesse de frottement cf entete                !
+! uet              ! r  ! --> ! vitesse de frottement cf entete                !
 ! gredu            ! r  ! --> ! reduced gravity for non horizontal wall        !
-! q0, e0           ! r  ! <-- ! sensible and latent heat flux                  !
-! rib, lmo         ! r  ! <-- ! Richardson number and Monin-Obukhov length     !
-! coeffu,s,k,e     ! r  ! <-- ! non neutral correction coefficients for        !
+! q0, e0           ! r  ! --> ! sensible and latent heat flux                  !
+! rib, lmo         ! r  ! --> ! Richardson number and Monin-Obukhov length     !
+! cfnnu,s,k,e      ! r  ! --> ! non neutral correction coefficients for        !
 !                  !    !     !   profiles of momentum scalar turbulence       !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvarcl) !    !     !  de bord                                       !
@@ -64,8 +64,6 @@ subroutine atmcls &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -104,6 +102,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 use atincl
 
 !===============================================================================
@@ -120,7 +119,6 @@ double precision utau, yplus, uet
 double precision gredu, rib, lmo, q0, e0
 double precision cfnnu, cfnns, cfnnk,cfnne
 
-double precision rtp(ncelet,nflown:nvar)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -130,15 +128,13 @@ double precision rscp1,rscp2
 double precision actu,actt,b,c,d
 double precision fm,fh,fmden1,fmden2,fhden
 double precision rugd,rugt,distbf
+double precision, dimension(:), pointer :: cvar_totwt, cvar_t
 
 !===============================================================================
-
-
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
-
 
 b = 5.d0
 c = 5.d0
@@ -154,25 +150,30 @@ rugt = rcodcl(ifac,iv,3)
 actu = xkappa/log((distbf+rugd)/rugd)
 actt = xkappa/log((distbf+rugt)/rugt)
 
+if (ippmod(iatmos).eq.2) then
+  call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+endif
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+
 ! prise en compte de l'humidite dans le rapport r/cp
 if (ippmod(iatmos).eq.2) then
-   rscp1 = (rair/cp0)*(1.d0 + (rvsra-cpvcpa)*rcodcl(ifac, isca(itotwt),1))
-   rscp2 = (rair/cp0)*(1.d0 + (rvsra-cpvcpa)*rtp(iel,isca(itotwt)))
+  rscp1 = (rair/cp0)*(1.d0 + (rvsra-cpvcpa)*rcodcl(ifac, isca(itotwt),1))
+  rscp2 = (rair/cp0)*(1.d0 + (rvsra-cpvcpa)*cvar_totwt(iel))
 else
-   rscp1 = rair/cp0
-   rscp2 = rair/cp0
+  rscp1 = rair/cp0
+  rscp2 = rair/cp0
 endif
 
-  tpot1 = rcodcl(ifac,isca(iscalt),1)
-  tpot2 = rtp(iel,isca(iscalt))
+tpot1 = rcodcl(ifac,isca(iscalt),1)
+tpot2 = cvar_t(iel)
 
 !     .........    ............................................
 !     3.2 - compute virtual potential temperature at two levels
 !     .........    ............................................
 
 if (ippmod(iatmos).eq.2) then
-    tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0)* rcodcl(ifac, isca(itotwt),1))
-    tpotv2 = tpot2*(1.d0 + (rvsra - 1.d0)* rtp(iel,isca(itotwt)))
+  tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0)* rcodcl(ifac, isca(itotwt),1))
+  tpotv2 = tpot2*(1.d0 + (rvsra - 1.d0)* cvar_totwt(iel))
 else
   tpotv1 = tpot1
   tpotv2 = tpot2
@@ -250,7 +251,6 @@ endif
 !  if ( ippmod(iatmos).eq.2 ) then
 !    e0 = (qvs(ifac)-qv(iel)) * uet * actt * fh / sqrt(fm)
 !  endif
-
 
 !----
 ! fin
