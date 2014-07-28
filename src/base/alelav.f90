@@ -99,10 +99,11 @@ double precision, dimension(:,:), pointer :: cfaale, claale
 double precision, dimension(:,:,:), pointer :: cfbale, clbale
 
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:,:) :: smbr, meshv, meshva
+double precision, allocatable, dimension(:,:) :: smbr
 double precision, allocatable, dimension(:,:,:) :: fimp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom
+double precision, dimension(:,:), pointer :: mshvel, mshvela 
 
 !===============================================================================
 
@@ -113,7 +114,6 @@ double precision, dimension(:), pointer :: brom
 ! Allocate temporary arrays for the radiative equations resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(3,ncelet))
-allocate(meshv(3,ncelet), meshva(3,ncelet))
 allocate(fimp(3,3,ncelet))
 
 rinfiv(1) = rinfin
@@ -128,6 +128,9 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_val_v(ivarfl(iuma), mshvel)
+call field_get_val_prev_v(ivarfl(iuma), mshvela)
 
 if(iwarni(iuma).ge.1) then
   write(nfecra,1000)
@@ -177,7 +180,6 @@ enddo
 ! 2. SOLVING OF THE MESH VELOCITY EQUATION
 !===============================================================================
 
-
 ippu = ipprtp(iuma)
 ippv = ipprtp(ivma)
 ippw = ipprtp(iwma)
@@ -188,9 +190,6 @@ if (iwarni(iuma).ge.1) then
 endif
 
 do iel = 1, ncelet
-  meshva(1,iel) = rtpa(iel,iuma)
-  meshva(2,iel) = rtpa(iel,ivma)
-  meshva(3,iel) = rtpa(iel,iwma)
   do isou = 1, 3
     smbr(isou,iel)   = 0.d0
     do jsou = 1, 3
@@ -252,26 +251,19 @@ call coditv &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
-   meshva , meshva ,                                              &
+   mshvela         , mshvela         ,                            &
    claale , clbale , cfaale , cfbale ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , viscf  , viscb  ,          &
    icvflb , ivoid  ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
-   meshv  ,                                                       &
+   mshvel ,                                                       &
    rvoid  )
-
-do iel = 1, ncelet
-   rtp(iel,iuma) = meshv(1,iel)
-   rtp(iel,ivma) = meshv(2,iel)
-   rtp(iel,iwma) = meshv(3,iel)
-enddo
 
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(smbr, fimp)
-deallocate(meshv, meshva)
 
 !--------
 ! FORMATS

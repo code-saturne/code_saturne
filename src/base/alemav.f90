@@ -97,6 +97,7 @@ double precision, dimension(:,:,:), pointer :: clbale
 
 double precision, allocatable, dimension(:,:) :: dproj, meshv
 double precision, allocatable, dimension(:,:,:) :: gradm
+double precision, dimension(:,:), pointer :: mshvel, mshvela
 
 !===============================================================================
 
@@ -178,13 +179,15 @@ call algrma
 if (volmin.le.0.d0) ntmabs = ntcabs
 
 
+call field_get_val_v(ivarfl(iuma), mshvel)
+call field_get_val_prev_v(ivarfl(iuma), mshvela)
 ! Si on est a l'iteration d'initialisation, on remet les vitesses de maillage
 !   a leur valeur initiale
 if (itrale.eq.0) then
   do iel = 1, ncelet
-    rtp(iel,iuma) = rtpa(iel,iuma)
-    rtp(iel,ivma) = rtpa(iel,ivma)
-    rtp(iel,iwma) = rtpa(iel,iwma)
+    do idim = 1, ndim
+      mshvel(idim, iel) = mshvela(idim,iel)
+    enddo
   enddo
 endif
 !--------

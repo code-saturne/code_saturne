@@ -119,7 +119,7 @@ double precision rval
 double precision, allocatable, dimension(:,:) :: l_velocity
 
 double precision, dimension(:,:), pointer :: xut
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer :: vel, mshvel
 
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
@@ -1145,27 +1145,38 @@ if (iale.eq.1 .and. jale.eq.1) then
   nbval  = 1
   irtyp  = 2
 
+  ! TODO: must be improved for field structure
+  allocate(l_velocity(ncelet, 3))
+  call field_get_val_v(ivarfl(iuma), mshvel)
+
   rubriq = 'vit_maillage_u_ce'
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              rtp(1,iuma),ierror)
+              l_velocity(:,1),ierror)
   nberro=nberro+ierror
 
   rubriq = 'vit_maillage_v_ce'
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              rtp(1,ivma),ierror)
+              l_velocity(:,2),ierror)
   nberro=nberro+ierror
 
   rubriq = 'vit_maillage_w_ce'
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              rtp(1,iwma),ierror)
+              l_velocity(:,3),ierror)
   nberro=nberro+ierror
+  do iel = 1, ncelet
+    do isou = 1, 3
+      mshvel(isou, iel) = l_velocity(iel,isou)
+    enddo
+  enddo
+  
+  deallocate(l_velocity)
 
   if (nberro.ne.0) then
     write(nfecra,9513)
-    do iel = 1, ncel
-      rtp(iel,iuma) = 0.d0
-      rtp(iel,ivma) = 0.d0
-      rtp(iel,iwma) = 0.d0
+    do iel = 1, ncelet
+      do isou = 1, 3
+        mshvel(isou, iel) = 0.d0
+      enddo
     enddo
   endif
 

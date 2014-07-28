@@ -149,7 +149,6 @@ double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, dimension(:,:), allocatable :: gradp
-double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:), allocatable :: coefa_dp, coefb_dp
 double precision, dimension(:), allocatable :: xinvro
 
@@ -169,6 +168,7 @@ double precision, dimension(:), pointer :: brom, crom, croma, viscl, visct
 double precision, dimension(:), pointer :: ivoifl, bvoifl
 double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
+double precision, dimension(:,:), pointer :: mshvel
 
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
@@ -489,13 +489,7 @@ if (iprco.le.0) then
   ! In the ALE framework, we add the mesh velocity
   if (iale.eq.1) then
 
-    allocate(mshvel(3,ncelet))
-
-    do iel = 1, ncelet
-      mshvel(1,iel) = rtp(iel,iuma)
-      mshvel(2,iel) = rtp(iel,ivma)
-      mshvel(3,iel) = rtp(iel,iwma)
-    enddo
+    call field_get_val_v(ivarfl(iuma), mshvel)
 
     ! One temporary array needed for internal faces, in case some internal vertices
     !  are moved directly by the user
@@ -564,7 +558,6 @@ if (iprco.le.0) then
 
     ! Free memory
     deallocate(intflx, bouflx)
-    deallocate(mshvel)
 
   endif
 
@@ -1057,14 +1050,7 @@ endif
 ! In the ALE framework, we add the mesh velocity
 if (iale.eq.1) then
 
-  allocate(mshvel(3,ncelet))
-
-  !$omp parallel do
-  do iel = 1, ncelet
-    mshvel(1,iel) = rtp(iel,iuma)
-    mshvel(2,iel) = rtp(iel,ivma)
-    mshvel(3,iel) = rtp(iel,iwma)
-  enddo
+  call field_get_val_v(ivarfl(iuma), mshvel)
 
   ! One temporary array needed for internal faces, in case some internal vertices
   !  are moved directly by the user
@@ -1133,7 +1119,6 @@ if (iale.eq.1) then
 
   ! Free memory
   deallocate(intflx, bouflx)
-  deallocate(mshvel)
 
 endif
 
