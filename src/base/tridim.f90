@@ -109,8 +109,10 @@ double precision, pointer, dimension(:) :: prhyd
 
 ! Local variables
 
+logical          interleaved
+
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
-integer          ncv   , iok   , ifld
+integer          ncv   , iok   , ifld  , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
 
@@ -151,7 +153,8 @@ double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpav
 double precision, dimension(:,:), pointer :: vel
-
+double precision, dimension(:,:), pointer :: cvar_vec
+double precision, dimension(:), pointer :: cvar_sca
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_ep, cvara_ep
 double precision, dimension(:), pointer :: cvar_omg, cvara_omg
@@ -201,6 +204,9 @@ end interface
 
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
+
+! Number of fields
+call field_get_n_fields(nfld)
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -318,11 +324,28 @@ endif
 
 if (irangp.ge.0 .or. iperio.eq.1) then
 
-  call synvin(vel)
+  do f_id = 0, nfld-1
 
-  do ivar = nflown, nvar
-    call synsce (rtp(1,ivar))
-    !==========
+    call field_get_dim(f_id, f_dim, interleaved)
+    call field_get_type(f_id, f_type)
+
+    ! Is the field of type FIELD_VARIABLE?
+    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+      if (f_dim.eq.1) then
+
+        call field_get_val_s(f_id, cvar_sca)
+        call synsce (cvar_sca)
+
+      else if (f_dim.eq.3) then
+
+        call field_get_val_v(f_id, cvar_vec)
+        call synvin(cvar_vec)
+
+      else
+        call csexit(1)
+      endif
+
+    endif
   enddo
 
 endif
