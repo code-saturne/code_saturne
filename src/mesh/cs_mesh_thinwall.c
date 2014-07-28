@@ -379,7 +379,7 @@ _add_b_faces(cs_mesh_t        *mesh,
 
       for (jj = 0; jj < n_face_vertices; jj++) {
         b_face_vtx_lst[b_face_vtx_connect_size + jj]
-          = i_face_vtx_lst[i_face_vtx_idx[list[ii] - 1] + jj - 1];
+          = i_face_vtx_lst[i_face_vtx_idx[list[ii] - 1] + jj];
       }
 
       inc++;
@@ -398,7 +398,7 @@ _add_b_faces(cs_mesh_t        *mesh,
       for (jj = 0; jj < n_face_vertices; jj++) {
         b_face_vtx_lst[b_face_vtx_connect_size + jj]
           = i_face_vtx_lst[   i_face_vtx_idx[list[ii] - 1]
-                           +  n_face_vertices - jj - 2];
+                           +  n_face_vertices - jj - 1];
       }
 
       inc++;
