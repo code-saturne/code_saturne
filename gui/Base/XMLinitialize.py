@@ -818,6 +818,15 @@ class XMLinit(Variables):
             else:
                 node['label'] = name
 
+        XMLAleMethod = self.case.xmlGetNode('ale_method')
+        for node in XMLAleMethod.xmlGetNodeList('formula'):
+            if node:
+                content = node.xmlGetTextNode()
+                content = content.replace("mesh_vi1", "mesh_viscosity_1")
+                content = content.replace("mesh_vi2", "mesh_viscosity_2")
+                content = content.replace("mesh_vi3", "mesh_viscosity_3")
+                node.xmlSetTextNode(content)
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------
