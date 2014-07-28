@@ -4869,10 +4869,10 @@ _renumber_i_faces(cs_mesh_t  *mesh)
   /* Update mesh if needed */
 
   if (retval != 0) {
-    numbering_type = CS_NUMBERING_DEFAULT;
     n_i_groups = 1;
     n_i_threads = 1;
-    BFT_FREE(i_group_index);
+    i_group_index[0] = 0;
+    i_group_index[1] = mesh->n_i_faces;
   }
   else
     _cs_renumber_update_i_faces(mesh, new_to_old_i);
@@ -4985,10 +4985,10 @@ _renumber_b_faces(cs_mesh_t  *mesh)
   /*-----------------------*/
 
   if (retval != 0) {
-    numbering_type = CS_NUMBERING_DEFAULT;
     n_b_groups = 1;
     n_b_threads = 1;
-    BFT_FREE(b_group_index);
+    b_group_index[0] = 0;
+    b_group_index[1] = mesh->n_b_faces;
   }
   else
     _cs_renumber_update_b_faces(mesh, new_to_old_b);
