@@ -3452,7 +3452,6 @@ void CS_PROCF (uiprop, UIPROP) (const int *ivisls,
 
 void CS_PROCF (uimoyt, UIMOYT) (const int    *ndgmox,
                                       int    *ntdmom,
-                                      double *ttdmom,
                                       int    *imoold,
                                       int    *idfmom)
 {
@@ -3468,9 +3467,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int    *ndgmox,
     imom = i + 1;
 
     _get_time_average_data(imom, "time_step_start", &ntdmom[i]);
-
-    if (ntdmom[i] == -1)
-      _get_time_average_time_start(imom, "time_start", &ttdmom[i]);
 
     /* test on isuite */
     cs_gui_restart_parameters_status("restart", &isuite);
