@@ -3084,15 +3084,18 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
     if (l2_residual < epsrgp*l2_norm) {
       if (verbosity >= 2) {
         bft_printf
-          (_(" %s: isweep = %d, residue norm: %e, norm: %e, var: %s\n"),
+          (_(" %s: isweep = %d, normed residual: %e, norm: %e, var: %s\n"),
            __func__, isweep, l2_residual/l2_norm, l2_norm, var_name);
       }
     }
     else if (isweep >= n_r_sweeps) {
       if (verbosity >= 0) {
-        bft_printf(" %s: isweep = %d, residu norm: %e, norm: %e, var: = %s\n",
-                   __func__, isweep, l2_residual/l2_norm, l2_norm, var_name);
-        bft_printf("@ @@ warning: non convergence of grdvec\n");
+        bft_printf(_(" Warning:\n"
+                     " --------\n"
+                     "   %s; variable: %s; sweeps: %d\n"
+                     "   %*s  normed residual: %11.4e; norm: %11.4e\n"),
+                   __func__, var_name, isweep,
+                   (int)(strlen(__func__)), " ", l2_residual/l2_norm, l2_norm);
       }
     }
   }
