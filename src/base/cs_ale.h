@@ -50,13 +50,18 @@ BEGIN_C_DECLS
  *
  * Fortran Interface
  *
- * SUBROUTINE ALGRMA
+ * subroutine algrma
  * *****************
  *
+ * min_vol           : --> : Minimum cell volume
+ * max_vol           : --> : Maximum cell volume
+ * tot_vol           : --> : Total mesh volume
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (algrma, ALGRMA)(void);
+CS_PROCF (algrma, ALGRMA)(cs_real_t  *min_vol,
+                          cs_real_t  *max_vol,
+                          cs_real_t  *tot_vol);
 
 /*----------------------------------------------------------------------------
  * Projection on mesh vertices of the displacement (computed on cell center)

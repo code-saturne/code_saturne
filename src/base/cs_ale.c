@@ -72,20 +72,28 @@ BEGIN_C_DECLS
  *
  * Fortran Interface
  *
- * SUBROUTINE ALGRMA
+ * subroutine algrma
  * *****************
  *
+ * min_vol           : --> : Minimum cell volume
+ * max_vol           : --> : Maximum cell volume
+ * tot_vol           : --> : Total mesh volume
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (algrma, ALGRMA)(void)
+CS_PROCF (algrma, ALGRMA)(cs_real_t  *min_vol,
+                          cs_real_t  *max_vol,
+                          cs_real_t  *tot_vol)
 {
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  cs_mesh_quantities_compute(cs_glob_mesh,
-                             cs_glob_mesh_quantities);
-  cs_mesh_bad_cells_detect(cs_glob_mesh,
-                           cs_glob_mesh_quantities);
+  cs_mesh_quantities_compute(m, mq);
+  cs_mesh_bad_cells_detect(m, mq);
 
+  *min_vol = mq->min_vol;
+  *max_vol = mq->max_vol;
+  *tot_vol = mq->tot_vol;
 }
 
 /*----------------------------------------------------------------------------

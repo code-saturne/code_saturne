@@ -44,6 +44,7 @@
 !> \param[in,out] depale        nodes displacements
 !> \param[in,out] xyzno0        nodes coordinates of the initial mesh
 !_______________________________________________________________________________
+
 subroutine alemav &
  ( itrale ,                                                       &
    impale , ialtyb ,                                              &
@@ -105,7 +106,7 @@ double precision, dimension(:,:), pointer :: mshvel, mshvela
 ! 1.  INITIALISATION
 !===============================================================================
 
-if(iwarni(iuma).ge.1) then
+if (iwarni(iuma).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -172,12 +173,11 @@ do inod = 1, nnod
   enddo
 enddo
 
-call algrma
+call algrma(volmin, volmax, voltot)
 !==========
 
 ! Abort at the end of the current time-step if there is a negative volume
 if (volmin.le.0.d0) ntmabs = ntcabs
-
 
 call field_get_val_v(ivarfl(iuma), mshvel)
 call field_get_val_prev_v(ivarfl(iuma), mshvela)

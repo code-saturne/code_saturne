@@ -502,7 +502,7 @@ if (isuite.eq.1) then
       enddo
     enddo
 
-    call algrma
+    call algrma(volmin, volmax, voltot)
     !==========
 
     ! Abort at the end of the current time-step if there is a negative volume
