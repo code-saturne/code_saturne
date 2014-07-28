@@ -318,8 +318,6 @@ endif
 !            elles sont remplies par les routines de communication et
 !            on y preleve seulement de l'information)
 
-
-
 ! ---> Halo synchronization
 
 if (irangp.ge.0 .or. iperio.eq.1) then
@@ -339,7 +337,7 @@ if (irangp.ge.0 .or. iperio.eq.1) then
       else if (f_dim.eq.3) then
 
         call field_get_val_v(f_id, cvar_vec)
-        call synvin(cvar_vec)
+        call synvie(cvar_vec)
 
       else
         call csexit(1)
@@ -353,11 +351,6 @@ endif
 ! ---> Periodicity of rotation
 
 if (iperio.eq.1) then
-
-  !  -- Vitesse
-
-  call pervec (vel)
-  !==========
 
   !  -- Reynolds stress tensor
 

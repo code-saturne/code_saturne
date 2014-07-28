@@ -448,31 +448,6 @@ _test_halo_compatibility(const cs_halo_t  *halo)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Rotate vector values for periodic cells on extended halos.
- *
- * Fortran API:
- *
- * subroutine pervec
- * *****************
- *
- * double precision var(3,ncelet) : <-> : interleaved vector
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (pervec, PERVEC) (cs_real_t  var[])
-{
-  const cs_halo_t *halo = cs_glob_mesh->halo;
-
-  if (halo == NULL)
-    return;
-
-  cs_halo_perio_sync_var_vect(halo,
-                              CS_HALO_EXTENDED,
-                              var,
-                              0);
-}
-
-/*----------------------------------------------------------------------------
  * Rotate tensor values for periodic cells on extended halos.
  *
  * Fortran API:

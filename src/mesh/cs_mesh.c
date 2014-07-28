@@ -1957,6 +1957,26 @@ void CS_PROCF(synvin, SYNVIN)
 
 /*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity,
+ * using an extended halo.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synvie, SYNVIE)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_vect_ext(var);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity,
  * ignoring periodicity of rotation.
  *
  * Fortran interface:
@@ -3228,6 +3248,30 @@ cs_mesh_sync_var_vect(cs_real_t  *var)
   if (cs_glob_mesh->n_init_perio > 0)
     cs_halo_perio_sync_var_vect(halo,
                                 CS_HALO_STANDARD,
+                                var,
+                                3);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity,
+ * using an extended halo.
+ *
+ * parameters:
+ *   var  <->  interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_vect_ext(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var_strided(halo, CS_HALO_EXTENDED, var, 3);
+
+  if (cs_glob_mesh->n_init_perio > 0)
+    cs_halo_perio_sync_var_vect(halo,
+                                CS_HALO_EXTENDED,
                                 var,
                                 3);
 }

@@ -103,7 +103,7 @@ double precision, allocatable, dimension(:,:) :: smbr
 double precision, allocatable, dimension(:,:,:) :: fimp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom
-double precision, dimension(:,:), pointer :: mshvel, mshvela 
+double precision, dimension(:,:), pointer :: mshvel, mshvela
 
 !===============================================================================
 

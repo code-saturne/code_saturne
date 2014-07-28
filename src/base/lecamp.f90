@@ -1168,7 +1168,7 @@ if (iale.eq.1 .and. jale.eq.1) then
       mshvel(isou, iel) = l_velocity(iel,isou)
     enddo
   enddo
-  
+
   deallocate(l_velocity)
 
   if (nberro.ne.0) then
