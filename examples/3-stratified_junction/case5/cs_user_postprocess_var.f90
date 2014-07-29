@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 3.0.0-rc1
-!                      --------------------------
+!VERS
+
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2014 EDF S.A.
@@ -63,25 +63,14 @@
 !> \param[in]     lstcel        list of cells in post-processing mesh
 !> \param[in]     lstfac        list of interior faces in post-processing mesh
 !> \param[in]     lstfbr        list of boundary faces in post-processing mesh
-!> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
-!> \param[in]     propfb        physical properties at boundary face centers
-!> \param[in]     statis        statistic values (Lagrangian)
 !_______________________________________________________________________________
 
 subroutine usvpst &
-!================
-
  ( ipart  ,                                                       &
    nvar   , nscal  , nvlsta ,                                     &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
-   lstcel , lstfac , lstfbr ,                                     &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   statis )
+   lstcel , lstfac , lstfbr )
 
 !===============================================================================
 
@@ -116,10 +105,6 @@ integer          ncelps, nfacps, nfbrps
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
-double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision statis(ncelet,nvlsta)
 
 ! Local variables
 
@@ -128,6 +113,7 @@ integer          idimt
 logical          ientla, ivarpr
 double precision rvoid(1)
 
+double precision, dimension(:), pointer :: cvar_var
 !===============================================================================
 
 !===============================================================================
@@ -206,15 +192,16 @@ if (ipart.ge.1) then
   ! -------------------------
 
   ivar = isca(iscalt)  ! for temperature
+  call field_get_val_s(ivarfl(ivar), cvar_var)
 
   idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
   ientla = .true.  ! interleaved
   ivarpr = .true.  ! defined on parent mesh
 
-  ! Output values; as we have no cell values, we can pass a
+  ! Output values; as we have no face values, we can pass a
   ! trivial array for those.
   call post_write_var(ipart, 'temperature', idimt, ientla, ivarpr,   &
-                      ntcabs, ttcabs, rtp(1, ivar), rvoid, rvoid)
+                      ntcabs, ttcabs, cvar_var, rvoid, rvoid)
 
 endif ! end of test on post-processing mesh number
 
