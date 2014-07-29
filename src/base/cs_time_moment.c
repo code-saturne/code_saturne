@@ -2238,14 +2238,13 @@ cs_time_moment_update_all(void)
 
     cs_time_moment_wa_t *mwa = _moment_wa + i;
 
-    if (mwa->t_start < 0. && mwa->nt_start <= ts->nt_cur) {
+    if (mwa->t_start < 0. && mwa->nt_start <= ts->nt_cur)
       mwa->t_start = _t_prev_iter;
-      active_moments = true;
-    }
-    else if (mwa->nt_start < 0 && mwa->t_start <= ts->t_cur) {
+    else if (mwa->nt_start < 0 && mwa->t_start <= ts->t_cur)
       mwa->nt_start = ts->nt_cur;
+
+    if (mwa->nt_start <= ts->nt_cur)
       active_moments = true;
-    }
 
   }
 
@@ -2259,7 +2258,7 @@ cs_time_moment_update_all(void)
 
   for (i = 0; i < _n_moment_wa; i++) {
     cs_time_moment_wa_t *mwa = _moment_wa + i;
-    if (mwa->nt_start <= ts->nt_cur) {
+    if (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur) {
       _ensure_init_weight_accumulator(mwa);
       wa_cur_data[i] = _compute_current_weight(mwa,
                                                dt_val,
@@ -2281,7 +2280,8 @@ cs_time_moment_update_all(void)
       cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
 
       if (   mt->nt_cur < ts->nt_cur
-           && (int)(mt->type) == m_type && mwa->nt_start <= ts->nt_cur) {
+           && (int)(mt->type) == m_type
+           && (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur)) {
 
         /* Current and accumulated weight */
 
