@@ -689,7 +689,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         if file_name:
             for loc in Informations(file_name, entity).getLocalizations():
                 if loc not in self.mdl.getLocalizationsZonesList():
-                    zone = Zone(self.zoneType, localization = loc)
+                    zone = Zone(self.zoneType, case = self.case, localization = loc)
                     self.mdl.addZone(zone)
                     self.modelLocalization.addItem(zone)
 
@@ -775,7 +775,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
             log.debug("slotAddFromSalome: selection criteria -> %s" % loc)
             if loc not in self.mdl.getLocalizationsZonesList():
-                zone = Zone(self.zoneType, localization = loc)
+                zone = Zone(self.zoneType, localization = loc, case = self.case)
                 self.mdl.addZone(zone)
                 self.modelLocalization.addItem(zone)
 
