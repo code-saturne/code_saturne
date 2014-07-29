@@ -2238,13 +2238,14 @@ cs_time_moment_update_all(void)
 
     cs_time_moment_wa_t *mwa = _moment_wa + i;
 
-    if (mwa->t_start < 0. && mwa->nt_start <= ts->nt_cur)
+    if (mwa->t_start < 0. && mwa->nt_start <= ts->nt_cur) {
       mwa->t_start = _t_prev_iter;
-    else if (mwa->nt_start < 0 && mwa->t_start <= ts->t_cur)
-      mwa->nt_start = ts->nt_cur;
-
-    if (mwa->nt_start <= ts->nt_cur)
       active_moments = true;
+    }
+    else if (mwa->nt_start < 0 && mwa->t_start <= ts->t_cur) {
+      mwa->nt_start = ts->nt_cur;
+      active_moments = true;
+    }
 
   }
 
