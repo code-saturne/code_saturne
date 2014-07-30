@@ -1109,12 +1109,12 @@ if (nscal.gt.0) then
     if (ityturt(iscal).eq.2 .or. ityturt(iscal).eq.3) then
 
       ! Name of the previous scalar ivar
-      call field_get_name(ivarfl(iscold(iscal)), fname)
+      call field_get_name(ivarfl(isca(iscold(iscal))), fname)
       rubriq = trim(fname)//'_turbulent_flux_ce'
 
       ! Index of the corresponding turbulent flux
       call field_get_name(ivarfl(ivar), fname)
-      call field_get_id(trim(fname)//'_turbulent_flux_ce', f_id)
+      call field_get_id(trim(fname)//'_turbulent_flux', f_id)
       call field_get_val_v(f_id, xut)
 
       itysup = 1
