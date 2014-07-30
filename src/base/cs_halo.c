@@ -1285,10 +1285,9 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
   cs_lnum_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
-  if (stride > _cs_glob_halo_max_stride) {
+  if (stride > _cs_glob_halo_max_stride)
     _cs_glob_halo_max_stride = stride;
-    cs_halo_update_buffers(halo);
-  }
+  cs_halo_update_buffers(halo);
 
   if (sync_mode == CS_HALO_STANDARD)
     end_shift = 1;
