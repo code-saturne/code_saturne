@@ -1389,7 +1389,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
           for (j = 0; j < dim; j++)
             c[j] = 0.0;
           for (li = start_id; li < end_id; li++) {
-            i = vl[i];
+            i = vl[li];
             for (j = 0; j < dim; j++) {
               c[j] += v[i*dim + j];
               if (v[i*dim + j] < lmin[j])
