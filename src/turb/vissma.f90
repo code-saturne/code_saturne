@@ -20,33 +20,31 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vissma
 
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
+!> \file vissma.f90
+!> \brief Calculation of turbulent viscosity for
+!>        a Smagorinsky LES model
+!>
+!> \f[ \mu_T = \rho (C_{S} l)^2  \sqrt{2 S_{ij}S_{ij}} \f]
+!> \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
+!>
+!> Edge faces types are available at the previous time step
+!> (except at the first time step, when the itypfb and itrifb
+!> have not been filled).
+!>
+!-------------------------------------------------------------------------------
 
-! CALCUL DE LA VISCOSITE "TURBULENTE" POUR
-!          UN MODELE LES SMAGORINSKI
-
-! VISCT = ROM * (SMAGO  * L) **2 * SQRT ( 2 * Sij.Sij )
-!       Sij = (DUi/Dxj + DUj/Dxi)/2
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine vissma
 
 !===============================================================================
 ! Module files
@@ -86,7 +84,7 @@ double precision, dimension(:), pointer :: visct
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1.  Initialization
 !===============================================================================
 
 call field_get_coefa_v(ivarfl(iu), coefau)
@@ -98,7 +96,7 @@ allocate(gradv(3, 3, ncelet))
 call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
-! --- Pour le calcul de la viscosite de sous-maille
+! --- For the calculation of viscosity on the sub-mesh
 xfil   = xlesfl
 xa     = ales
 xb     = bles
@@ -106,7 +104,7 @@ deux   = 2.d0
 radeux = sqrt(deux)
 
 !===============================================================================
-! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE
+! 2.  Calculation of velocity gradient and of
 !       S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
 !===============================================================================
 
@@ -138,7 +136,7 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3.  CALCUL DE LA VISCOSITE (DYNAMIQUE)
+! 3.  Calcualtion of (dynamic) velocity
 !===============================================================================
 
 coef = csmago**2 * radeux
@@ -151,12 +149,12 @@ do iel = 1, ncel
 enddo
 
 !----
-! FORMAT
+! Format
 !----
 
 
 !----
-! FIN
+! End
 !----
 
 return

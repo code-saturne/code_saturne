@@ -20,52 +20,47 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine turbsa &
-!================
 
+!===============================================================================
+! Purpose:
+! --------
+!> \file turbsa.f90
+!> \brief Solving op the equation of \f$ \tilde{\nu} \f$, which is the scalar
+!>        quantity defined by the Spalart-Allmaras model for 1 time-step.
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        number of ncepdp cells with head losses
+!> \param[in]     icetsm        number of cells with mass source
+!> \param[in]     itypsm        type of mass source for the variables
+!>                               (cf. ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     tslagr        term of coupling return of
+!>                               lagrangian
+!> \param[in]     ckupdc        work array for head losses
+!> \param[in]     smacel        value of variables associated to the
+!                               mass source
+!                               for ivar = ipr, smacel = mass flux
+!______________________________________________________________________________!
+
+subroutine turbsa &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    ckupdc , smacel ,                                              &
    itypfb )
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Solving op the equation of nusa, which is the scalar quantity defined by
-! the Spalart-Allmaras model for 1 time-step.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -271,7 +266,8 @@ deallocate(grad)
 !      stored in rhssa
 !===============================================================================
 
-! Herebelow, we only handle  the case where all the walls have the same roughness
+! Herebelow, we only handle  the case where all the walls have
+! the same roughness
 ! To extend it, we should be able to link every fluid cell to a boundary face
 ! (and then give it the appropriate roughness value)
 
@@ -336,7 +332,7 @@ do iel = 1, ncel
     visct = cvisct(iel)
   endif
   rom   = cromo(iel)
-  ! Kinematic viscosity
+  ! kinematic viscosity
   nu0   = viscl(iel)/rom
   ! We have to know if there is any rough wall
   distbf= dispar(iel)
@@ -377,7 +373,7 @@ do iel = 1, ncel
      dsigma * csab2*trgrdn(iel)+csab1r(iel)*taussa*nusa-csaw1*fw*(nusa/distbf)**2)
 
   ! Implicitation of the negative source terms of the SA equation.
-  ! NB : this term could be negative, and if so, then we explicit it.
+  ! NB: this term could be negative, and if so, then we explicit it.
   tinssa(iel) = (max(csaw1*fw*nusa/distbf**2-csab1r(iel)*taussa,0.d0)         &
                       )*rom*volume(iel)
 
@@ -409,7 +405,6 @@ call cs_user_turbulence_source_terms &
 
 !===============================================================================
 ! 6. User source terms and d/dt(rho) and div(rho u) are taken into account
-
 !      stored in rhssa
 !===============================================================================
 
@@ -422,7 +417,8 @@ if (isto2t.gt.0) then
      tuexpn =propce(iel,iptsta)
 
     ! The explicit user source terms are stored for the next time step
-    ! On stoque les TS explicites du temps n (TS model + TS utilisateur)
+    ! We store the explicit source terms of time n (model source terms + user
+    ! source terms)
     propce(iel,iptsta) = rhssa(iel) + tsexp(iel)
 
 
@@ -659,12 +655,12 @@ deallocate(dpvar)
 #if defined(_CS_LANG_FR)
 
  1000 format(/,                                                   &
-'   ** RESOLUTION DE SPALART-ALLMARAS                         ',/,&
+'   ** Resolution de Spalart-Allmaras                         ',/,&
 '      ------------------------------------                   ',/)
 #else
 
  1000 format(/,                                                   &
-'   ** SOLVING SPALART-ALLMARAS      '                         ,/,&
+'   ** Solving Spalart-Allmaras      '                         ,/,&
 '      ------------------------------'                         ,/)
 #endif
 

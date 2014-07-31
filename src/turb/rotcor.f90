@@ -33,13 +33,13 @@
 !> Two type of rotation/curvature correction are computed, depending on
 !> the specific eddy-viscosity model:
 !>
-!> * itycor = 1: - Cazalbou correction (varible ce2 coefficient in the
+!> - itycor = 1: - Cazalbou correction (variable Ce2 coefficient in the
 !>                 destruction term of dissipation equation)
 !>               - default correction for \f$ k - \epsilon \f$ type models,
 !>                 including elliptic relaxation/blending models
 !>                (iturb = 20, 21, 50 or 51)
 !>
-!> * itycor = 2: - Spalart-Shur correction (production terms are multiplied
+!> - itycor = 2: - Spalart-Shur correction (production terms are multiplied
 !>                 by a rotation function)
 !>               - default correction for \f$ k - \omega \f$ SST or
 !>                 Spalart-Allmaras (iturb = 60 or 70)
@@ -48,14 +48,14 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     dt            time step (per cell)
 !> \param[out]    rotfct        rotation function of Spalart-Shur correction
 !>                               at cell center
 !> \param[out]    ce2rc         modified ce2 coeficient of Cazalbou correction
 !>                               at cell center
-!_______________________________________________________________________________
+!______________________________________________________________________________!
 
 subroutine rotcor &
  ( dt     , rotfct , ce2rc  )
@@ -367,7 +367,7 @@ if (itycor.eq.1) then
 
   do iel = 1, ncel
 
-    ! Computation of STILDE = sqrt(2.S_ij.S_ij) et WTILDE = sqrt(W_ij.W_ij/2)
+    ! Computation of stilde = sqrt(2.S_ij.S_ij) et wtilde = sqrt(W_ij.W_ij/2)
     stilde = max(sqrt(eta1(iel)*2.d0),1.d-15)
     wtilde = max(sqrt(eta2(iel)/2.d0),1.d-15)
 
@@ -394,7 +394,7 @@ elseif (itycor.eq.2) then
 
   do iel = 1, ncel
 
-    ! Computation of STILDE = 2.S_ij.S_ij and WTILDE = 2.W_ij.W_ij
+    ! Computation of stilde = 2.S_ij.S_ij and wtilde = 2.W_ij.W_ij
     stilde = max(eta1(iel)*2.d0,1.d-15)
     wtilde = max(eta2(iel)*2.d0,1.d-15)
 

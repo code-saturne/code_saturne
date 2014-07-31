@@ -33,7 +33,7 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
@@ -296,7 +296,7 @@ enddo
 !===============================================================================
 ! 4. Compute the first part of the production term: muT (S^D)**2
 
-!      En sortie de l'etape on conserve strain, divu,
+!      Going out of the step we keep strain, divu,
 !===============================================================================
 
 ! For the Linear Production k-epsilon model,
@@ -358,10 +358,10 @@ endif
 !===============================================================================
 ! 6. Compute the buoyancy term
 
-!      Les s.m. recoivent production et termes de gravite
-!      Tableaux de travail              viscb
-!      Les s.m. sont stockes dans       smbrk, smbre
-!      En sortie de l'etape on conserve smbrk, smbre,
+!      The mass sources receive production and gravity terms
+!      Work arrays                      viscb
+!      The mass sources are stored in   smbrk, smbre
+!      Going out of the step we keep    smbrk, smbre,
 !                                       divu,
 !===============================================================================
 
@@ -439,8 +439,8 @@ else if (igrake.eq.1) then
 
 endif
 
-! En v2f, on stocke la production  dans prdv2f qui sera complete plus loin pour
-! contenir le terme de production complet
+! In v2f, we store the production in prdv2f which will be complete further
+! for containing the complete production term
 if (itytur.eq.5) then
   do iel = 1, ncel
     prdv2f(iel) = smbrk(iel)
@@ -448,17 +448,17 @@ if (itytur.eq.5) then
 endif
 
 !===============================================================================
-! 7. pre Seulement pour le modele bl-v2/k, calcul de e et ceps2*
+! 7. pre Only for the bl-v2/k model, calculation of E and Ceps2*
 
-!      Les termes sont stockes dans     w10, w11
-!      Tableaux de travail              w2, w3
+!      The terms are stored in          w10, w11
+!      Work arrays                      w2, w3
 !                                       viscf, viscb
-!      En sortie de l'etape on conserve w10, w11
+!      Going out of the step we keep w10, w11
 !===============================================================================
 
 if (iturb.eq.51) then
 
-  ! Calcul du terme CEPS2*: Il est stocke dans w10
+  ! Calculation of Ceps2*: it is stored in w10
 
   do iel=1,ncel
     visct = propce(iel,ipcvto)
@@ -521,8 +521,8 @@ if (iturb.eq.51) then
     w10(iel) = cpale2*(1.d0-(cpale2-cpale4)/cpale2*w10(iel)*cvara_al(iel)**3)
   enddo
 
-  ! Calcul du terme 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
-  !  (i.e. E term / k)           : Il est stocke dans w11
+  ! Calculation of 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
+  !  (i.e. E term / k)           : it is stored in w11
 
   ! Allocate a work array
   allocate(w12(ncelet))
@@ -569,8 +569,8 @@ endif
 ! smbre = ceps1 epsilon/k (prod + g ) - rho0 volume epsilon epsilon/k
 ! smbrk =                  prod + g   - rho0 volume epsilon
 
-! Si on extrapole les termes sources et rho  , il faut ici rho^n
-!                                    et visct, il faut ici visct^n
+! If we extrapolate the source terms and rho, we need here rho^n
+!                                    and visct, we need here visct^n
 
 if (itytur.eq.2) then
 
@@ -641,7 +641,7 @@ else if (iturb.eq.50) then
                - d2s3*rho*ceps1*xk*divu(iel)                        &
                )
 
-    ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
+    ! We store the part with Pk in PRDV2F which will be reused in RESV2F
     prdv2f(iel) = prdv2f(iel)                               &
                 - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
@@ -682,7 +682,7 @@ else if (iturb.eq.51) then
                - d2s3*rho*cpale1*xk/tt*divu(iel)                            &
                )
 
-    ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
+    ! We store the part with Pk in PRDV2F which will be reused in RESV2F
     prdv2f(iel) = prdv2f(iel)                               &
                 - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
@@ -705,9 +705,9 @@ endif
 !    The scalar strain rate (strain) and the trace of the velocity gradient
 !     (divu) are available.
 !
-!    La partie a expliciter est stockee dans    w7, w8
-!    La partie a impliciter est stockee dans    usimpk, usimpe
-!    En sortie de l'etape on conserve           strain, divu,
+!    The part to be explicit is stored in       w7, w8
+!    The part to be implicit is stored in       usimpk, usimpe
+!    Going out of the step we keep              strain, divu,
 !===============================================================================
 
 do iel = 1, ncel
@@ -775,27 +775,27 @@ else
 endif
 
 !===============================================================================
-! 10. Prise en compte des termes sources lagrangien
-!     couplage retour
+! 10. Taking into account the lagrangian source terms
+!     output coupling
 !===============================================================================
 
-! Ordre 2 non pris en compte
+! Second order is not taken into account
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
   do iel = 1,ncel
 
-    ! Termes sources explicte et implicte sur k
+    ! Explicit and implicit source terms on k
     smbrk(iel)  = smbrk(iel) + tslagr(iel,itske)
 
-    ! Termes sources explicte sur Eps
+    ! Explicit source terms on Eps
     smbre(iel)  = smbre(iel)                                    &
                 + ce4 *tslagr(iel,itske) *cvara_ep(iel)             &
                                          /cvara_k(iel)
 
-    ! Termes sources implicite sur k
+    ! Implicit source terms on k
     tinstk(iel) = tinstk(iel) + max(-tslagr(iel,itsli),zero)
 
-    ! Termes sources implicte sur Eps
+    ! Implicit souce terms on Eps
     tinste(iel) = tinste(iel) + max((-ce4*tslagr(iel,itske)/cvara_k(iel)), zero)
 
   enddo
@@ -805,8 +805,8 @@ endif
 !===============================================================================
 ! 11. Mass source terms (Implicit and explicit parts)
 
-!       En sortie de l'etape on conserve divu,
-!                                        smbrk, smbre
+!       Going out of the step we keep divu,
+!                                     smbrk, smbre
 !===============================================================================
 
 if (ncesmp.gt.0) then
@@ -816,10 +816,10 @@ if (ncesmp.gt.0) then
     w3(iel) = 0.d0
   enddo
 
-  ! Entier egal a 1 (pour navsto : nb de sur-iter)
+  ! Integer equal to 1 (for navsto: nb of sur-iter)
   iiun = 1
 
-  ! On incremente smbrs par -Gamma rtpa et rovsdt par Gamma (*theta)
+  ! We incremente smbrs with -Gamma rtpa and rovsdt with Gamma (*theta)
   ivar = ik
 
   call catsma &
@@ -840,13 +840,13 @@ if (ncesmp.gt.0) then
    volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
    smbre  , w3     , w5 )
 
-  ! Si on extrapole les TS on met Gamma Pinj dans propce
+  ! If we extrapolate the source terms we put Gamma Pinj in propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta  ) = propce(iel,iptsta  ) + w4(iel)
       propce(iel,iptsta+1) = propce(iel,iptsta+1) + w5(iel)
     enddo
-  ! Sinon on le met directement dans smbr
+  ! Otherwise we put it directly in smbr
   else
     do iel = 1, ncel
       smbrk(iel) = smbrk(iel) + w4(iel)
@@ -863,12 +863,12 @@ if (ncesmp.gt.0) then
 endif
 
 !===============================================================================
-! 12.1 Prise en compte des termes de conv/diff dans le second membre pour le
-!      couplage renforcé k-epsilon (ikecou == 1)
+! 12.1 Taking into account the terms of conv/diff in the second member for the
+!      strengthened coupling k-epsilon (ikecou == 1)
 
-!      Tableaux de travail              w4, w5
-!      Les termes sont stockes dans     w7 et w8, puis ajoutes a smbrk, smbre
-!      En sortie de l'etape on conserve divu,
+!      Work table                       w4, w5
+!      The terms are stored in          w7 et w8, then added to smbrk, smbre
+!      Going out of the step we keep    divu,
 !                                       smbrk, smbre
 !                                       w7, w8
 !===============================================================================
@@ -880,7 +880,7 @@ if (ikecou.eq.1) then
     w8 (iel) = 0.d0
   enddo
 
-  ! ---> Traitement de k
+  ! ---> Treatment of k
   ivar   = ik
   call field_get_label(ivarfl(ivar), chaine)
 
@@ -955,7 +955,7 @@ if (ikecou.eq.1) then
   endif
 
 
-  ! ---> Traitement de epsilon
+  ! ---> Treatment of epsilon
   ivar   = iep
   call field_get_label(ivarfl(ivar), chaine)
 
@@ -1040,7 +1040,7 @@ endif
 
 !===============================================================================
 
-! Ordre 2 non pris en compte
+! Second order is not taken into account
 if (ikecou.eq.1) then
 
   if (iturb.eq.20) then
@@ -1079,17 +1079,17 @@ if (ikecou.eq.1) then
 
     enddo
 
-    ! on enleve la convection/diffusion au temps n a smbrk et smbre
-    ! si on les avait calcules
+    ! we remove the convection/diffusion at time n from smbrk and smbre
+    ! if they were calculated
     do iel = 1, ncel
       smbrk(iel) = smbrk(iel) - w7(iel)
       smbre(iel) = smbre(iel) - w8(iel)
     enddo
 
-  ! Dans verini on bloque la combinaison iturb!=20/ikecou=1
+  ! In verini we block the mix iturb!=20/ikecou=1
   else
 
-    write(nfecra,*)'ikecou=1 non valide avec ce modele de turbulence'
+    write(nfecra,*)'ikecou=1 is not validated with this turbulent model'
     call csexit (1)
 
   endif
@@ -1111,8 +1111,8 @@ endif
 !===============================================================================
 ! 14. Solving
 
-!       On utilise                      smbrk, smbre,  tinstk, tinste
-!       Tableaux de travail             w1
+!       We use                          smbrk, smbre,  tinstk, tinste
+!       Work table                      w1
 !===============================================================================
 
 ! ---> turbulent kinetic (k) energy treatment
@@ -1324,10 +1324,10 @@ if (allocated(prdtke)) deallocate(prdtke, prdeps)
 '   ** Resolution du k-epsilon                   ',/,&
 '      -----------------------                   ',/)
  1001 format(/,                                      &
-'   ** Resolution du k-epsilon a prod lineaire   ',/,&
+'   ** Resolution du k-epsilon a prod lineaire',/,&
 '      ---------------------------------------   ',/)
  1002 format(/,                                      &
-'   ** Resolution du v2f (k et epsilon)          ',/,&
+'   ** Resolution du v2f (k et epsilon)               ',/,&
 '      --------------------------------          ',/)
  1100 format(1X,A8,' : Bilan explicite = ',E14.5)
 

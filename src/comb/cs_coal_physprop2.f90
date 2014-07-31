@@ -20,37 +20,37 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_physprop2  &
-!===========================
- ( ncelet , ncel , rtp , propce )
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
-! CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
-! (CLASSES DE PARTICULES)
-! VALEURS CELLULES
-! ----------------
-!   FRACTION MASSIQUE DE SOLIDE
-!     ET CLIPPING EVENTUELS
-!   DIAMETRE
-!   MASSE VOLUMIQUE
-!     ET CLIPPING EVENTUELS
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
+!> \file cs_coal_physprop2.f90
+!>
+!> \brief Calculation of physic properties of dispersed phase
+!>        (classes of particules)
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!> Cell calues
+!> -----------
+!> - Mass fraction of solid
+!>   and eventual clipping
+!> - Diameter
+!> - Mass density
+!>   and eventual clipping
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     rtp           calculation variables in cell centers
+!>                                 (current instant)
+!> \param[in,out] propce        physic properties at cell centers
+!______________________________________________________________________________!
+
+subroutine cs_coal_physprop2  &
+ ( ncelet , ncel , rtp , propce )
 
 !===============================================================================
 ! Module files
@@ -102,19 +102,19 @@ double precision, dimension(:), pointer :: xagcpi, agecpi, frmcpi
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initializations
 !===============================================================================
 !
 d1s3 = 1.d0/3.d0
 !
-! --> Coefficient relatif au diametre de coke
+! --> Coefficient relating to the coke diameter
 coedmi = 1.2d0
 !
 !===============================================================================
-! 2. CALCUL POUR CHAQUE CLASSE
-!    DE LA FRACTION MASSIQUE DE SOLIDE
-!    DU DIAMETRE DU COKE
-!    DE LA MASSE VOLUMIQUE DU CHARBON
+! 2. Calculation for each class
+!    - of the solid mass fraction
+!    - of the coke diameter
+!    - of the coal mass density
 !===============================================================================
 !
 do icla = 1, nclacp
@@ -156,14 +156,14 @@ do icla = 1, nclacp
     xnp    = rtp(iel,isca(inp(icla)))
     xashcl = xashch(ichcor(icla))
     xuash  = xnp*xmp0(icla)*(1.d0-xashcl)
-! --- Calcul de la fraction massique de solide
+    ! --- Calculation of the solid mass fraction
     propce(iel,ipcx2c) = xch + xck + xnp*xmash(icla)
-!         Prise en compte de l'humidite
+    !     Taking into account the humidity
     if ( ippmod(iccoal) .ge. 1 ) then
       propce(iel,ipcx2c) = propce(iel,ipcx2c)                     &
                           +rtp(iel,isca(ixwt(icla)))
     endif
-! ---- Clipping eventuels pour la fraction massique de solide
+    ! ---- Eventual clipping for the solid mass fraction
     if ( propce(iel,ipcx2c) .gt. (1.d0+epsicp) ) then
       n1 = n1 + 1
       x2max = max(propce(iel,ipcx2c),x2max)
@@ -175,18 +175,18 @@ do icla = 1, nclacp
     endif
 
 
-! --- Initialisation
+    ! --- Initialization
 
     propce(iel,ipcro2) = rho20(icla)
     propce(iel,ipcdi2) = diam20(icla)
 
     if ( xuash.gt.epsicp ) then
 
-! --- Calcul du diametre du charbon reactif : Dch
+      ! --- Calculation of the reactive coal diameter: Dch
 
       dch = diam20(icla)*(xch/xuash)**d1s3
 
-! ---- Clipping eventuels pour le diametre du charbon reactif
+      ! ---- Eventual clipping for the reactive coal diameter
 
       if ( dch .gt. (diam20(icla)+epsicp) ) then
         n3 = n3 + 1
@@ -198,12 +198,12 @@ do icla = 1, nclacp
         dch = zero
       endif
 
-! --- Calcul du diametre du coke : Dck stocke ds PROPCE(IEL,IPCDI2)
+      ! --- Calculation of the coke diamter: Dck stores in propce(iel,ipcdi2)
 
       dck = ( (xch/rho20(icla)+xck/rhock(ichcor(icla)))/          &
               ((1.d0-xashcl)*pi/6.d0*xnp) )**d1s3
 
-! ---- Clipping eventuels pour le diametre du coke
+      ! ---- Eventual clipping for the coke diameter
 
       if ( dck .gt. coedmi*diam20(icla) ) then
         n5 = n5 + 1
@@ -216,12 +216,12 @@ do icla = 1, nclacp
       endif
       propce(iel,ipcdi2) = dck
 
-! --- Masse volumique
+      ! --- Density
 
       ro2ini = rho20(icla)
-!         Prise en compte de l'humidite
+      !     Taking into account humidity
       if ( ippmod(iccoal) .eq. 1 ) then
-!           pour l'instant on suppose que ROH2O est constant
+      !     at the moment we asume that ROH2O is constant
         roh2o = 998.203
         ro2ini = rho20(icla)+ rtp(iel,isca(ixwt(icla)))           &
                              *roh2o
@@ -234,7 +234,7 @@ do icla = 1, nclacp
         ( xashcl*diam20(icla)**3 +                                &
           (1.d0-xashcl)*dck**3 )
 
-! ---- Clipping pour la masse volumique
+      ! ---- Clipping for density
 
       if ( propce(iel,ipcro2) .gt. (ro2ini+epsicp) ) then
         n7 = n7 + 1
@@ -249,7 +249,7 @@ do icla = 1, nclacp
       endif
     endif
 
-    ! Particle age by class
+    ! Particle age per class
     if (i_coal_drift.eq.1.and.frmcpi(iel).gt.epsicp) then
       agecpi(iel) = xagcpi(iel)/frmcpi(iel)
     endif
@@ -327,32 +327,31 @@ enddo
 !--------
 
 !===============================================================================
- 1001 format(/,1X,' CLIPPING EN MAX DE LA FRM SOL. POUR LA CLASSE ',    &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Max       : ',G15.7)
- 1002 format(/,1X,' CLIPPING EN MIN DE LA FRM SOL. POUR LA CLASSE ',    &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Max       : ',G15.7)
- 1003 format(/,1X,' CLIPPING EN MAX DU DIAMETRE CH POUR LA CLASSE ',    &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Max       : ',G15.7)
- 1004 format(/,1X,' CLIPPING EN MIN DU DIAMETRE CH POUR LA CLASSE ',    &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Min       : ',G15.7)
- 1005 format(/,1X,' CLIPPING EN MAX DU DIAMETRE CK POUR LA CLASSE ',    &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Max       : ',G15.7)
- 1006 format(/,1X,' CLIPPING EN MIN DU DIAMETRE CK POUR LA CLASSE ',    &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Min       : ',G15.7)
- 1007 format(/,1X,' CLIPPING EN MAX DE LA MASSE VOL. POUR LA CLASSE ',  &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Max       : ',G15.7)
- 1008 format(/,1X,' CLIPPING EN MIN DE LA MASSE VOL. POUR LA CLASSE ',  &
-        I3,/,10X,' Nombre de points : ',I8,                       &
-           /,10X,' Valeur Min       : ',G15.7)
+ 1001 format(/,1X,' clipping in max for solid mass frac. for class',    &
+        I3,/,10X,' Number of points : ',I8,                       &
+           /,10X,' Max value        : ',G15.7)
+ 1002 format(/,1X,' clipping in min for solid mass frac. for class',    &
+        I3,/,10X,' Number of points: ',I8,                       &
+           /,10X,' Max value        : ',G15.7)
+ 1003 format(/,1X,' clipping in max of coal diameter for class    ',    &
+        I3,/,10X,' Number of points: ',I8,                       &
+           /,10X,' Max value        : ',G15.7)
+ 1004 format(/,1X,' clipping in max of coal diameter for class    ',    &
+        I3,/,10X,' Number of points: ',I8,                       &
+           /,10X,' Min value        : ',G15.7)
+ 1005 format(/,1X,' clipping in max for coke diameter for class   ',    &
+        I3,/,10X,' Number of points: ',I8,                       &
+           /,10X,' Max value        : ',G15.7)
+ 1006 format(/,1X,' clipping in min for coke diameter for class   ',    &
+        I3,/,10X,' Number of points: ',I8,                       &
+           /,10X,' Min value        : ',G15.7)
+ 1007 format(/,1X,' clipping in max of mass density for class       ',  &
+        I3,/,10X,' Number of points: ',I8,                       &
+           /,10X,' Max value        : ',G15.7)
+ 1008 format(/,1X,' clipping in min for mass density for class      ',  &
+        I3,/,10X,' Number of points: ',I8,                       &
+           /,10X,' Min value        : ',G15.7)
 !===============================================================================
-
 
 !----
 ! End

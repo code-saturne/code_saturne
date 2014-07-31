@@ -65,7 +65,7 @@
 !>           read the paragraph dedicated to the description of \c impale array in the
 !>           usalcl.f90 subroutine), unless the USER has modified the condition of
 !>           at least one  component of mesh velocity (modification of \c icodcl array,
-!>           please read the following paragraph \ref non_std_bc)
+!>           please read the following paragraph \ref non_std_bc_usa)
 !>
 !>  - \c ialtyb(ifac) = \c igliss: The mesh slides on corresponding face \c ifac.
 !>           The normal component of mesh velocity is automatically set to 0.
@@ -284,7 +284,7 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     itrale        number of iterations for ALE method
 !> \param[in]     nvar          total number of variables

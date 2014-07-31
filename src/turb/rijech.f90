@@ -20,43 +20,35 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine rijech &
-!================
+!===============================================================================
+! Function:
+! ---------
+!> \file rijech.f90
+!> \brief Terms of wall echo for R_{ij}
+!>        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
+!>        \f$isou =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
 
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! ARGUMENTS
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     ivar          variable number
+!> \param[in]     isou          passage numbero
+!> \param[in]     ipp           variable number for post-outpu
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!                                (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     produc        production
+!> \param[in,out] smbr          work array for second member
+!______________________________________________________________________________!
+
+subroutine rijech &
  ( isou   ,                                                       &
    rtpa   ,                                                       &
    produc , smbr   )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! TERMES D'ECHO DE PAROI
-!   POUR Rij
-! VAR  = R11 R22 R33 R12 R13 R23
-! ISOU =  1   2   3   4   5   6
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ivar             ! i  ! <-- ! variable number                                !
-! isou             ! e  ! <-- ! numero de passage                              !
-! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! produc           ! tr ! <-- ! production                                     !
-!  (6,ncelet)      !    !     !                                                !
-! smbr(ncelet      ! tr ! <-- ! tableau de travail pour sec mem                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -109,7 +101,7 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays
@@ -132,7 +124,7 @@ vnj = 0.d0
 vnk = 0.d0
 vnm = 0.d0
 
-! Memoire
+! Memory
 
 call field_get_val_s(icrom, crom)
 if (isto2t.gt.0.and.iroext.gt.0) then
@@ -156,14 +148,14 @@ cmu075 = cmu**0.75d0
 d2s3   = 2.d0/3.d0
 
 !===============================================================================
-! 2. CALCUL AUX CELLULES DES NORMALES EN PAROI CORRESPONDANTES
+! 2.Calculation in the orthogonal straights cells in corresponding walls
 !===============================================================================
 
-!     On stocke les composantes dans les tableaux de travail W2, W3 et W4
+!     We store the components in the work tables W2, W3 and W4
 
 if(abs(icdpar).eq.2) then
 
-!     On connait la face de paroi correspondante
+!     We know the corresponding wall face
 
     do iel = 1, ncel
       ifacpt = ifapat(iel)
@@ -175,11 +167,11 @@ if(abs(icdpar).eq.2) then
 
 elseif(abs(icdpar).eq.1) then
 
-!     La normale est definie comme - gradient de la distance
-!       a la paroi
+  !     The orthogonal straght is defined as -gradient of the distance
+  !       to the wall
 
-!       La distance a la paroi vaut 0 en paroi
-!         par definition et obeit a un flux nul ailleurs
+  !       The distance to the wall worth 0 at the wall
+  !         by definition and obey a flux nowhere else
 
   ! Allocate temporary arrays
   allocate(coefax(nfabor), coefbx(nfabor))
@@ -194,7 +186,7 @@ elseif(abs(icdpar).eq.1) then
     endif
   enddo
 
-!       Calcul du gradient
+  !       Calculation of gradient
 
   ! Allcoate a temporary array for the gradient calculation
   allocate(grad(ncelet,3))
@@ -219,7 +211,7 @@ elseif(abs(icdpar).eq.1) then
   ! Free memory
   deallocate(coefax, coefbx)
 
-!     Normalisation (attention, le gradient peut etre nul, parfois)
+  !     Normalization (warning, the gradient may be sometimes equal to 0)
 
   do iel = 1 ,ncel
     xnorme = max(sqrt(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2),epzero)
@@ -234,12 +226,12 @@ elseif(abs(icdpar).eq.1) then
 endif
 
 !===============================================================================
-! 2. CALCUL DE VARIABLES DE TRAVAIL
+! 2. Calculation of work variables
 !===============================================================================
 
 
 
-! ---> Production et k
+! ---> Production and k
 
 do iel = 1 , ncel
   produk(iel) = 0.5d0 * (produc(1,iel)  + produc(2,iel)  + produc(3,iel))
@@ -249,7 +241,7 @@ enddo
 
 
 
-! ---> Indices des tensions
+! ---> Tension rating
 
 if     ((isou.eq.1).or.(isou.eq.4).or.(isou.eq.5)) then
   ii = 1
@@ -267,7 +259,7 @@ elseif  (isou.eq.1) then
   jj = 1
 endif
 
-! ---> Boucle pour construction des termes sources
+! ---> Loop for source terms construction
 
 do iel = 1, ncel
   w6(iel) = 0.d0
@@ -275,11 +267,11 @@ enddo
 
 do kk = 1, 3
 
-! ---> Sommes sur m
+  ! ---> Sum on m
 
   do mm = 1, 3
 
-!   --> Delta km
+    !   --> Delta km
 
     if(kk.eq.mm) then
       deltkm = 1.0d0
@@ -287,7 +279,7 @@ do kk = 1, 3
       deltkm = 0.0d0
     endif
 
-!  --> R km
+    !  --> R km
 
     if     ((kk*mm).eq.1) then
       irkm = ir11
@@ -309,7 +301,7 @@ do kk = 1, 3
       iskm = 6
     endif
 
-!  --> Termes en R km et Phi km
+    !  --> Terms with R km and Phi km
 
     do iel = 1, ncel
 
@@ -337,10 +329,10 @@ do kk = 1, 3
 
   enddo
 
-! ---> Fin des sommes sur m
+  ! ---> End of sum on m
 
 
-!  --> R ki
+  !  --> R ki
 
   if     ((kk*ii).eq.1) then
     irki = ir11
@@ -362,7 +354,7 @@ do kk = 1, 3
     iski = 6
   endif
 
-!  --> R kj
+  !  --> R kj
 
   if     ((kk*jj).eq.1) then
     irkj = ir11
@@ -384,7 +376,7 @@ do kk = 1, 3
     iskj = 6
   endif
 
-!   --> Delta ki
+  !   --> Delta ki
 
   if (kk.eq.ii) then
     deltki = 1.d0
@@ -392,7 +384,7 @@ do kk = 1, 3
     deltki = 0.d0
   endif
 
-!   --> Delta kj
+  !   --> Delta kj
 
   if (kk.eq.jj) then
     deltkj = 1.d0
@@ -437,9 +429,9 @@ do kk = 1, 3
 enddo
 
 
-! ---> Distance a la paroi et fonction d'amortissement : W3
-!     Pour chaque mode de calcul : meme code, test
-!       en dehors de la boucle
+! ---> Distance to the wall and amortization function: W3
+!      For each calculation mode: same code, test
+!      Apart from the loop
 
 if(abs(icdpar).eq.2) then
   do iel = 1 , ncel
@@ -465,7 +457,7 @@ else
 endif
 
 
-! ---> Increment du terme source
+! ---> Increment of source term
 
 do iel = 1, ncel
   smbr(iel) = smbr(iel) + cromo(iel)*volume(iel)*w6(iel)*w3(iel)

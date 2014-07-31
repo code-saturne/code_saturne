@@ -84,13 +84,13 @@ Therefore :
  <b> Remaining initialisation</b>
 
 
-  IVAR: number of the thermal variable
+  ivar: number of the thermal variable
 
    \snippet cs_user_radiative_transfert_parameters.f90 ivar
 
   Min and Max values for the wall temperatures (clipping otherwise)
  
- \f$ T_{min} \f$ and \f$^T_{max} \f$ are given in Kelvin.
+ \f$ T_{min} \f$ and \f$T_{max} \f$ are given in Kelvin.
 
   \snippet  cs_user_radiative_transfert_parameters.f90 temp
 
@@ -124,15 +124,15 @@ Therefore :
 \subsubsection manda Mandatory data
 
    - \ref isothp(ifac) boundary face type
-               -   = \ref itpimp -> Gray wall with fixed inside temperature
-               -   = \ref ipgrno -> Gray wall with fixed outside temperature
-               -   = \ref iprefl -> Reflecting wall with fixed outside temperature
-               -   = \ref ifgrno -> Gray wall with fixed conduction flux
-               -   = \ref ifrefl -> Reflecting wall with fixed conduction flux
+               -  \c itpimp -> Gray wall with fixed inside temperature
+               -  \c ipgrno -> Gray wall with fixed outside temperature
+               -  \c iprefl -> Reflecting wall with fixed outside temperature
+               -  \c ifgrno -> Gray wall with fixed conduction flux
+               -  \c ifrefl -> Reflecting wall with fixed conduction flux
 
    - \ref tintp(ifac) inside wall temperature (Kelvin)
                   initialize thwall at the first time step.
-                  If \ref isothp = \ref itpimp, the value of thwall is fixed to \c tintp
+                  If \c isothp = \c itpimp, the value of thwall is fixed to \c tintp
                   In the other case, \c tintp is only for initialization.
 \subsubsection data Other data (depending of the isothp)
 
@@ -180,17 +180,17 @@ Here is a list of examples:
 For wall boundary faces which have the color 4: \n
 Gray or black wall and fixed conduction flux through the wall
 
-\f[ \frac{\vect{XLAMP}}{EPAP} \cdot (T_{parop} - T_{extp}) = \text{fixed conduction flux in } W\cdot m^{-2} \f]
-\f[ \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: = \vect{RODCL}(IFAC,IVAR,3) \f]
+\f[ \frac{XLAMP}{EPAP} \cdot (T_{parop} - T_{extp}) = \text{fixed conduction flux in } W\cdot m^{-2} \f]
+\f[ \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: = RODCL(IFAC,IVAR,3) \f]
 
-If the conduction flux is zero then the wall is adiabatic. The array \f$ \vect{RCODCL}(IFAC,IVAR,3)\f$ has the value of the flux. \n
+If the conduction flux is zero then the wall is adiabatic. The array \f$ RCODCL(IFAC,IVAR,3)\f$ has the value of the flux. \n
 Flux density (< 0 if gain for the fluid)
- - For temperature T, in \f$ W\cdot m^{-2}\f$:
+ - For temperature \f$T\f$, in \f$ W\cdot m^{-2}\f$:
  
- \f[ \vect{RCODCL}(IFAC,IVAR,3)=C_p (VISCLS+\frac{VISCT}{\sigma})\cdot \grad{T} \f]
+ \f[ RCODCL(IFAC,IVAR,3)=C_p (VISCLS+\frac{VISCT}{\sigma})\cdot \grad{T}\cdot \vect{n} \f]
 
- - For enthalpy H, in \f$ W \cdot m^{-2} \f$:
- \f[ \vect{RCODC}(IFAC,IVAR,3)=(VISCLS+\frac{VISCT}{\sigma})\cdot \grad{H} \f]
+ - For enthalpy \f$h\f$, in \f$ W \cdot m^{-2} \f$:
+ \f[ RCODC(IFAC,IVAR,3)=(VISCLS+\frac{VISCT}{\sigma})\cdot \grad{H} \cdot \vect{n}\f]
 
 
 \snippet  cs_user_radiative_transfert_parameters.f90 example_4
@@ -200,21 +200,21 @@ Flux density (< 0 if gain for the fluid)
 For wall boundary faces which have the color 5:\n
 reflecting wall and fixed conduction flux through the wall
 
-\f[ \frac{\vect{XLAMP}}{EPAP} \cdot (T_{parop} - T_{extp}) = \text{fixed conduction flux}\f]
+\f[ \frac{XLAMP}{EPAP} \cdot (T_{parop} - T_{extp}) = \text{fixed conduction flux}\f]
 and \f$ EPSP = 0 \f$
 
 If the conduction flux is zero then the wall is adiabatic.
  Flux density (< 0 if gain for the fluid)
-  - For temperatures T,    in \f$ W\cdot m^{-2} \f$:
-    \f[  \vect{RCODCL}(IFAC,IVAR,3) = C_p  (VISCLS+\frac{VISCT}{\sigma}) \cdot \grad{T} \f]
-  - For enthalpies H,      in \f$ W \cdot m^{-2} \f$:
-    \f[  \vect{RCODCL}(IFAC,IVAR,3) =    (VISCLS+\frac{VISCT}{\sigma})  \cdot \grad{H} \f]
+  - For temperatures \f$T\f$,    in \f$ W\cdot m^{-2} \f$:
+    \f[  RCODCL(IFAC,IVAR,3) = C_p  (VISCLS+\frac{VISCT}{\sigma}) \cdot \grad{T}\cdot \vect{n} \f]
+  - For enthalpies \f$h\f$,      in \f$ W \cdot m^{-2} \f$:
+    \f[  RCODCL(IFAC,IVAR,3) =    (VISCLS+\frac{VISCT}{\sigma})  \cdot \grad{H} \cdot \vect{n} \f]
 
 \snippet  cs_user_radiative_transfert_parameters.f90 example_5
 
 \section w Warning 
 
-For all boundary faces that are not wall it is MANDATORY to impose a number of zone in the array \ref izfrdp. For each zone, informations will be displayed in the listing.
+For all boundary faces that are not wall it is MANDATORY to impose a number of zone in the array \c izfrdp. For each zone, informations will be displayed in the listing.
 
 \snippet cs_user_radiative_transfert_parameters.f90 w
 

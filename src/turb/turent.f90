@@ -20,68 +20,66 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine keendb &
-!================
-
- ( uref2, dh, xrho, xmu , cmu, xkappa, ustar2, xk, xeps )
-
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
+!> \file turent.f90
+!> \brief Calculation of turbulent inlet conditions for a circular duct flow
+!>        with smooth wall.
+!>
+!> \brief Calculation of \f$ u^\star \f$, \f$ k \f$ and \f$\varepsilon \f$
+!>        from a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
+!>        for a circular duct flow with smooth wall
+!>        (use for inlet boundary conditions).
+!>
+!> Both \f$ u^\star \f$ and\f$ (k,\varepsilon )\f$ are returned, so that
+!> the user may compute other values of \f$ k \f$ and \f$ \varepsilon \f$
+!> with the \f$ u^\star \f$.
+!>
+!> We use the laws coming for Idel'Cik, i.e.
+!> the head losses coefficient \f$ \lambda \f$ is defined by:
+!> \f[ |\dfrac{\Delta P}{\Delta x}| =
+!>                        \dfrac{\lambda}{D_H} \frac{1}{2} \rho U_{ref}^2 \f]
+!>
+!> then  the relation reads \f$u^\star = U_{ref} \sqrt{\dfrac{\lambda}{8}}\f$.
+!> \f$\lambda \f$ depends on the hydraulic Reynolds number
+!> \f$ Re = \dfrac{U_{ref} D_H}{ \nu} \f$ and is given by:
+!>  - for \f$ Re < 2000 \f$
+!>      \f[ \lambda = \dfrac{64}{Re} \f]
+!>
+!>  - for \f$ Re > 4000 \f$
+!>      \f[ \lambda = \dfrac{1}{( 1.8 \log_{10}(Re)-1.64 )^2} \f]
+!>
+!>  - for \f$ 2000 < Re < 4000 \f$, we complete by a straight line
+!>      \f[ \lambda = 0.021377 + 5.3115. 10^{-6} Re \f]
+!>
+!>  From \f$ u^\star \f$, we can estimate \f$ k \f$ and \f$ \varepsilon\f$
+!>  from the well known formulae of developped turbulence
+!>
+!> \f[ k = \dfrac{u^{\star 2}}{\sqrt{C_\mu}} \f]
+!> \f[ \varepsilon = \dfrac{ u^{\star 3}}{(\kappa D_H /10)} \f]
+!-------------------------------------------------------------------------------
 
-!    CALCUL DE U*, K ET EPSILON A PARTIR D'UN DIAMETRE ET D'UNE
-!      VITESSE DEBITANTE POUR DES ECOULEMENTS EN CONDUITE
-!      CIRCULAIRE A PAROI LISSE
-!    -> UTILISE POUR LES CONDITIONS AUX LIMITES D'ENTREE
-
-!    ON SORT A LA FOIS U* ET (XK,XEPS) POUR PERMETTRE
-!      A L'UTILISATEUR DE CALCULER DES XK ET XEPS DIFFERENTS
-!      AVEC LE U*, S'IL LE SOUHAITE
-
-
-!    ON UTILISE DES LOIS TIREES DE IDEL'CIK
-!    LE COEFFICIENT DE PERTE DE CHARGE XLMBDA EST DEFINI PAR
-!     |dP/dx| = XLMBDA/DH * 1/2*XRHO*UREF**2
-
-!     PUIS U*=UREF*SQRT(XLMBDA/8)
-
-!    POUR Re < 2000
-!      XLMBDA = 64/Re
-
-!    POUR Re > 4000
-!      XLMBDA = 1/( 1.8*LOG10(Re)-1.64 )**2
-
-!    POUR 2000 < Re < 4000, ON COMPLETE PAR UNE DROITE
-!      XLMBDA = 0.021377 + 5.3115D-6*Re
-
-
-!    A PARTIR DE U*, ON ESTIME XK ET XEPS A PARTIR DE FORMULES
-!      CLASSIQUES DE TURBULENCE DEVELOPPEE
-
-!    XK   = USTAR2/SQRT(CMU)
-!    XEPS = USTAR2**1.5D0/(XKAPPA*DH*0.1D0)
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! uref2            ! r  ! <-- ! carre de la vitesse debitante de               !
-!                  !    !     !                            reference           !
-! dh               ! r  ! <-- ! diametre hydraulique                           !
-! xrho             ! r  ! <-- ! masse volumique                                !
-! xmu              ! r  ! <-- ! viscosite dynamique                            !
-! cmu              ! r  ! <-- ! constante cmu                                  !
-! xkappa           ! r  ! <-- ! constante kappa                                !
-! ustar2           ! r  ! --> ! carre de la vitesse de frottement              !
-! xk               ! r  ! --> ! intensite turbulente calculee                  !
-! xeps             ! r  ! --> ! dissipation turbulente calculee                !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     uref2         square of the flow speed of reference
+!> \param[in]     dh            hydraulic diameter \f$ D_H \f$
+!> \param[in]     xrho          mass density \f$ \rho \f$
+!> \param[in]     xmu           dynamic viscosity \f$ \nu \f$
+!> \param[in]     cmu           constant \f$ C_\nu \f$
+!> \param[in]     xkappa        constant \f$ \kappa \f$
+!> \param[out]    ustar2        square of friction speed
+!> \param[out]    xk            calculated turbulent intensity \f$ k \f$
+!> \param[out]    xeps          calculated turbulent dissipation
+!>                              \f$ \varepsilon \f$
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+
+subroutine keendb &
+ ( uref2, dh, xrho, xmu , cmu, xkappa, ustar2, xk, xeps )
 
 !===============================================================================
 ! Module files
@@ -105,8 +103,8 @@ double precision re, xlmbda
 re = sqrt(uref2)*dh*xrho/xmu
 
 if (re.lt.2000) then
-!     dans ce cas on calcule directement u*^2 pour eviter un probleme
-!      sur xlmbda=64/Re quand Re->0
+  !     in this case we calculate directly \f$u*^2\f$ to avoid an issue with
+  !      \f$ xlmbda= \dfrac{64}{Re} \f$ when Re->0
 
   ustar2 = 8.d0*xmu*sqrt(uref2)/xrho/dh
 
@@ -126,50 +124,45 @@ xk   = ustar2/sqrt(cmu)
 xeps = ustar2**1.5d0/(xkappa*dh*0.1d0)
 
 !----
-! FIN
+! End
 !----
 
 return
 end subroutine
-subroutine keenin &
-!================
-
- ( uref2, xintur, dh, cmu, xkappa, xk, xeps )
 
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
+!> \brief Calculation of \f$ u^\star\f$, \f$ k \f$ and \f$\varepsilon\f$
+!>        from a diameter \f$ D_H \f$, a turbulent intensity \f$ I \f$
+!>        and the reference velocity \f$ U_{ref} \f$
+!>        for a circular duct flow with smooth wall
+!>        (use for inlet boundary conditions).
+!>
+!> \f$ u^\star = I U_{ref} \f$
+!> Then we estimate \f$ k \f$ and \f$ \varepsilon \f$ from classic formulae of
+!> developped turbulence
+!> \f[ k = \dfrac{u^{\star 2}}{\sqrt{C_\mu}} \f]
+!> \f[ \varepsilon = \dfrac{u^{\star 3}}{ \kappa D_H / 10} \f]
+!-------------------------------------------------------------------------------
 
-!    CALCUL DE U*, K ET EPSILON A PARTIR D'UN DIAMETRE ET D'UNE
-!      INTENSITE TURBULENTE
-!    -> UTILISE POUR LES CONDITIONS AUX LIMITES D'ENTREE
-
-
-!    ON ESTIME XK ET XEPS A PARTIR DE FORMULES
-!      CLASSIQUES DE TURBULENCE DEVELOPPEE
-
-!    XK   = USTAR2/SQRT(CMU)
-!    XEPS = USTAR2**1.5D0/(XKAPPA*DH*0.1D0)
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! uref2            ! r  ! <-- ! carre de la vitesse debitante de               !
-!                  !    !     !                            reference           !
-! xintur           ! r  ! <-- ! intensite turbulente                           !
-! dh               ! r  ! <-- ! diametre hydraulique                           !
-! cmu              ! r  ! <-- ! constante cmu                                  !
-! xkappa           ! r  ! <-- ! constante kappa                                !
-! xk               ! r  ! --> ! intensite turbulente calculee                  !
-! xeps             ! r  ! --> ! dissipation turbulente calculee                !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     uref2         square of the flow velocity of reference
+!> \param[in]     xintur        turbulent intensity \f$ I \f$
+!> \param[in]     dh            hydraulic diameter \f$ D_H \f$
+!> \param[in]     cmu           constant \f$ C_\mu \f$
+!> \param[in]     xkappa        constant \f$ \kappa \f$
+!> \param[in,out] xk            calculated turbulent intensity \f$ k \f$
+!> \param[out]    xeps          calculated turbulent disspation
+!>                              \f$ \varepsilon \f$
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine keenin &
+ ( uref2, xintur, dh, cmu, xkappa, xk, xeps )
 
 !===============================================================================
 ! Module files

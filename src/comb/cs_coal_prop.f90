@@ -20,26 +20,23 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_prop
-!======================
 
 !===============================================================================
-! Purpose:
-! --------
-
-! Define state variables for pulverized coal combustion.
+!> Purpose:
+!> --------
+!> \file cs_coal_prop.f90
+!> \brief Define state variables for pulverized coal combustion.
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!>
+!______________________________________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine cs_coal_prop
 
 !===============================================================================
 ! Module files
@@ -85,12 +82,12 @@ idim1  = 1
 ilved  = .false.   ! not interleaved by default
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
-iopchr = 1         ! Postprocessing level for variables
+iopchr = 1         ! postprocessing level for variables
 
 ! Key id of the coal scalar class
 call field_get_key_id("scalar_class", keyccl)
 
-! ---> Definition des pointeurs relatifs aux variables d'etat
+! ---> Definition of pointers related to state variables
 
 nprini = nproce
 
@@ -240,7 +237,7 @@ if (i_coal_drift.eq.1) then
   call field_set_key_int(f_id, keylog, 1)
 endif
 
-! Balance: C,  O,  H
+! Balance: C, O and H
 
 call add_property_field('balance_c', 'Balance_C', ibcarbone)
 call add_property_field('balance_o', 'Balance_O', iboxygen)

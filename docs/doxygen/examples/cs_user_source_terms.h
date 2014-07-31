@@ -50,7 +50,7 @@
  \brief Additional right-hand side source terms for velocity components equation
  (Navier-Stokes)
 
-  \section use  Usage
+  \section use_src1  Usage
 
   The additional source term is decomposed into an explicit part \f$(\vect{crvexp})\f$ and
   an implicit part \f$(\tens{crvimp})\f$ that must be provided here.
@@ -60,7 +60,7 @@
    = \tens{crvimp}\cdot  \vect{u} + \vect{crvexp}
   \f]
 
-  Note that \f$\vect{crvexp}\f$ and \f$\tens{crvimp}\f$ are defined after the Finite Volu me integration
+  Note that \f$\vect{crvexp}\f$ and \f$\tens{crvimp}\f$ are defined after the Finite Volume integration
   over the cells, so they include the \f$\norm{\vol{\celli}}\f$ term. More precisely:
    - \f$\vect{crvexp}\f$ is expressed in \f$ kg\cdot ms^{-2} \f$
    - \f$\tens{crvimp}\f$ is expressed in \f$ kg\cdot s^{-1} \f$
@@ -99,9 +99,10 @@ The following initialization block needs to be added for the following examples:
 At the end of the subroutine, it is recommended to deallocate the work array:
    \snippet cs_user_source_terms.f90 deallocate_1
  
-In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their alloacation is good pratice, and avoids using a diff erent logic C and Fortran.
+In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their alloacation is good pratice, and avoids using a different logic C and Fortran.
  
-   \section example_source_terms_1  Example of arbitrary source term for component u:
+   \section example_source_terms_1  Example
+Example of arbitrary source term for component \f$\vect{u}\f$:
 
    \f$ \vect{S} = \tens{A} \cdot \vect{u} + \vect{B} \f$ appearing in the equation under the form:
 
@@ -136,7 +137,7 @@ It is followed by:
  
 
 */
-//_______________________________________________________________________________________ _________
+//_________________________________________________________________________________________________
 /*!
    \page subroutine_ustssc For transported scalar: ustssc subroutine
   
@@ -162,7 +163,7 @@ It is followed by:
  the routine. It is not needed to do it in the routine (waste of CPU time).
 
  For stability reasons, \c Code_Saturne will not add \c -crvimp directly to the
- diagonal of the matrix, but <tt> Max(-crvimp,0) </tt>. This way, the \c crvimp term is
+ diagonal of the matrix, but <tt> Max(-crvimp,0).</tt> This way, the \c crvimp term is
  treated implicitely only if it strengthens the diagonal of the matrix.
  However, when using the second-order in time scheme, this limitation cannot
  be done anymore and \c -crvimp is added directly. The user should therefore test
@@ -173,8 +174,8 @@ It is followed by:
    - \c crvimp at time n+1/2
 
 
- The selection of cells where to apply the source terms is based on a getcel
- command. For more info on the syntax of the getcel command, refer to the
+ The selection of cells where to apply the source terms is based on a \ref getcel
+ command. For more info on the syntax of the \ref getcel command, refer to the
  user manual or to the comments on the similar command getfbr in the routine
  \ref cs_user_boundary_conditions.
 
@@ -248,7 +249,7 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
 
  - If <tt> iscavr(iscal) = 0 </tt>:
    the scalar \ref iscal is not a variance
- - If <tt> iscavr(iscal) > 0 </tt> and <tt> iscavr(iscal) < nscal + 1 </tt> :
+ - If <tt> iscavr(iscal) > 0 </tt> and <tt> iscavr(iscal) < nscal + 1:</tt>
    the scalar \ref iscal is the variance of the scalar \c iscavr(iscal)
 
 \n
@@ -281,7 +282,7 @@ which yields:
  - <tt> crvimp(iel) = volume(iel)*A = -volume(iel)*rho\tauf </tt>
  - <tt> crvexp(iem) = volume(iel)*B= volume(iel)*rho*prod_f </tt>
 
- \section bodysource2 Body
+ \subsection bodysource2 Body
  
  \warning It is quite frequent to forget to remove this example when it is not needed. Therefore t he following test is designed to prevent any bad surprise.
 
@@ -310,7 +311,7 @@ Example of arbitrary volumic heat term in the equation for enthalpy h.
     - <tt> crvexp(iel) = volume(iel)* pwatt/volf </tt>
 
 
-  \section end2 Body
+  \subsection end2 Body
 
   \warning It is quite frequent to forget to remove this example when it is not needed. Therefore  the following test is designed to prevend any bad surprise.
    
@@ -336,9 +337,9 @@ with  <tt> pwatt = 100.d0 </tt>
 
    \brief Additional right_hand side source terms for turbulence models
 
-   \section use3 Usage
+   \section use_src3 Usage
 
- The additional source term is decomposed into an explicit part (\c crvexp) and an implic it part (\c crvimp) that must be provided here. The resulting equations solved by the code are: 
+ The additional source term is decomposed into an explicit part \f$(crvexp)\f$ and an implic it part \f$(crvimp)\f$ that must be provided here. The resulting equations solved by the code are: 
  
 \f[
   \rho \norm{\vol{\celli}} \DP{\varia} + ....
@@ -398,11 +399,11 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
    \snippet cs_user_source_terms.f90  current_turb_3    
   
 
-   \section example3_1 Example 3
+   \section example3_1 Example 
 Example of arbitrary additional source term for turbulence models (Source term on the TKE "k" here).
 
 
-   Source term for \c cvar_var:
+   Source term for \f$\varia:\f$
    \f[ \rho \norm{\vol{\celli}} \frac{d(\varia)}{dt} = ... - \rho \norm{\vol{\celli}} \cdot ff - \rho \frac{ \varia}{\tau}\f]
  with \f$ ff \f$ = <tt>  3.d0 </tt> an \f$ \tau \f$ = <tt> 4.d0 </tt>
 

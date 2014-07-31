@@ -49,7 +49,7 @@
  Note that calling this subroutine completely overwrites head losses
  defined using the GUI.
 
-  \ref ckupdc is the local head loss term.
+  ckupdc is the local head loss term.
 
  It appears on the momentum as follows:
      \f[ \rho \frac{d \vect{u}}{d t} = - \grad p + \vect{headloss} \: (+\: \text{other terms})\f]
@@ -123,8 +123,8 @@
   - \c iappel = 2: Identification of the cells where a head loss term is imposed: array \c icepdc(ncepdc). Called once at the beginning of the calculation.
 
 \note 
-  - Do not use \ref ckupdc in this section (it is defined with <tt> iappel = 3) </tt>
-  - Use \ref  icepdc in this section only with <tt> (iappel = 2) </tt>
+  - Do not use ckupdc in this section (it is defined with <tt> iappel = 3) </tt>
+  - Use icepdc in this section only with <tt> (iappel = 2) </tt>
 
 To be completed by the user: cell selection
     
@@ -178,13 +178,13 @@ To be completed by the user: cell selection
   
    To be completed by the user: coefficient values:
    
-  \warning   It is important that all \ref ckupdc values are defined (by zero values if
+  \warning   It is important that all \c ckupdc values are defined (by zero values if
      necessary), as they will be used to compute a source term in cells
      identified previously. They are initialized by zero values,
      and the user must keep this initialization.
                        
-   \subsection other_example More examples 
-   \subsubsection diagonal_tensor Example 1: head losses in direction x
+    
+   \subsection diagonal_tensor Example 1: head losses in direction x
 
  Diagonal tensor : Example of head losses in direction \c x 
 
@@ -192,7 +192,7 @@ To be completed by the user: cell selection
 
 
 
-  \subsubsection alpha_tensor Example 2: alpha = 45 degres
+  \subsection alpha_tensor Example 2: alpha = 45 degres
 
   3x3 tensor: Example of head losses at alpha = 45 degres x,y
  direction \c x resists by \c ck1 and \c y by \c ck2 \n

@@ -17,45 +17,37 @@
 ! You should have received a copy of the GNU General Public License along with
 ! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_physprop2 &
-!================
 
- ( ncelet , ncel   ,                              &
-   rtp    , propce )
-
+!-------------------------------------------------------------------------------
 !===============================================================================
-! FONCTION :
+! Function :
 ! --------
-
-! CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
-! VALEURS CELLULES
-! ----------------
-
-!   FRACTION MASSIQUE DE LIQUIDE
-!     ET CLIPPING EVENTUELS
-!   DIAMETRE
-!   MASSE VOLUMIQUE
-!     ET CLIPPING EVENTUELS
+!> \file cs_fuel_physprop2.f90
+!> \brief Calculation of the physical properties of the dispersed phase
+!> Cell values
+!> -----------
+!> - Mass fraction of liquid
+!>   and eventual clippings
+!> - Diameter
+!> - Mass density
+!>   and eventual clippings
 
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     rtp           calculation variables at cell centers
+!>                                 (current instant)
+!> \param[in]     propce        physic properties at cell centers
+!>______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine cs_fuel_physprop2 &
+ ( ncelet , ncel   ,                              &
+   rtp    , propce )
 
 !===============================================================================
 ! Module files
@@ -96,16 +88,16 @@ double precision diam2m , diam2x
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initialization
 !===============================================================================
 
 d1s3 = 1.d0/3.d0
 
 !===============================================================================
-! 2. CALCUL POUR CHAQUE CLASSE
-!    DE LA MASSE VOLUMIQUE DU FOL
-!    DE LA FRACTION MASSIQUE DE FOL
-!    DU DIAMETRE DU COKE
+! 2. Calculation for each class
+!    - of mass density of fol
+!    - of mass fraction of fol
+!    - of diameter of coke
 !===============================================================================
 
 do icla = 1, nclafu
@@ -120,11 +112,11 @@ do icla = 1, nclafu
 
   do iel = 1, ncel
 
-!  Masse Volumique
+    !  Mass density
     propce(iel,ipcro2) = rho0fl
-!
-! --- Calcul du diametre de la particule
-!
+
+    ! --- Calculation of the particle diameter
+
     yfol   = rtp(iel,isca(iyfol(icla)))
     xnp    = rtp(iel,isca(ing  (icla)))
     if ( yfol .gt. epsifl .and. (xnp*yfol) .gt. 0.d0) then
@@ -176,12 +168,12 @@ enddo
 ! Formats
 !----
 
- 1001 format(/,1X,' CLIPPING EN MAX DU DIAMETRE CLASSE :',I2,           &
-       /,10X,' Nombre de points : ',I8,                           &
-       /,10X,' Valeur Max       : ',G15.7)
- 1002 format(/,1X,' CLIPPING EN MIN DU DIAMETRE CLASSE :',I2,           &
-       /,10X,' Nombre de points : ',I8,                           &
-       /,10X,' Valeur Min       : ',G15.7)
+ 1001 format(/,1X,' clipping in max of class diameter:',I2,           &
+       /,10X,' Number of points: ',I8,                           &
+       /,10X,' Max value: ',G15.7)
+ 1002 format(/,1X,' clipping in min of class diametre:',I2,           &
+       /,10X,' Number of points: ',I8,                           &
+       /,10X,' Min value: ',G15.7)
 
 
 !----

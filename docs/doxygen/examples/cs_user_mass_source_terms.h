@@ -32,10 +32,10 @@
   
 
 
-The subroutine \ref ustsma is called at three different stages in the code <tt> (iappel = 1, 2 or 3) </tt>
-  - \ref iappel = 1: Calculation of the number of cells where a mass source is imposed: \ref ncesmp. Called once at the beginning of the calculation.
-  - \ref iappel = 2: Identification of the cells where a mass source term is imposed: array \c icesmp(ncesmp). Called once at the beginning of the calculation.
-  - \ref iappel = 3: Calculation of the values of the mass source terms. Called at each time step.  
+The subroutine \ref ustsma is called at three different stages in the code <tt> (iappel = 1, 2 or 3):</tt>
+  - \c iappel = 1: Calculation of the number of cells where a mass source is imposed: \c ncesmp. Called once at the beginning of the calculation.
+  - \c iappel = 2: Identification of the cells where a mass source term is imposed: array \c icesmp(ncesmp). Called once at the beginning of the calculation.
+  - \c iappel = 3: Calculation of the values of the mass source terms. Called at each time step.  
 
 
 The equation for mass conservation becomes: \f$ \dfrac{\partial \rho}{\partial t}+\divs{(\rho \vect{u})}=\gamma \f$
@@ -85,7 +85,7 @@ Two options are available:
      term is imposed, no source term will be taken into account.
 
  - if a scalar doesn't evolve following the standard equation
-     \f$ \dfrac{d(\rho f)}{dt} + \dfrac{d(\rho U f)}{dx} = ...\f$
+     \f$ \dfrac{\partial{(\rho f)}}{\partial{dt}} + \divs{(\rho U f)} = ...\f$
      (alternate convective field for instance), the source term
      set by this routine will not be correct (except in case of
      injection at the local value of the variable). The proper source
@@ -94,7 +94,7 @@ Two options are available:
   \remark <b> Idenfication of the cells:</b> \n
 The selection of cells where to apply the source term is based on a \ref getcel command. For more info on the syntax of the \ref getcel command, refer to the user manual or to the comments on the similar command \ref getfbr in the routine \ref cs_user_boundary_conditions.
 
-  \section loc_var Local variables
+  \section loc_var_ms Local variables
 
   \snippet cs_user_mass_source_terms.f90 loc_var
 
@@ -110,9 +110,9 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
  
    \section one_or_two First or second call
 
- - First call: <tt> iappel = 1</tt>: \amshore ncesmp: calculation of the number of cells with mass source term
+ - First call: <tt> iappel = 1</tt>: \c ncesmp: calculation of the number of cells with mass source term
 
- - Second call (if \c ncesmp>0): <tt>iappel = 2</tt>: \amshore icetsm: index number of cells with mass source terms
+ - Second call (if \c ncesmp>0): <tt>iappel = 2</tt>: \c icetsm: index number of cells with mass source terms
 
 
 
@@ -141,7 +141,7 @@ This section <tt> (iappel = 1 or 2) </tt> is only accessed at the beginning of a
   also have a coordinate X between 2.5 and 5).
   One should also pay attention that, on the first call, the
   array \ref icetsm doesn't exist yet. It mustn't be used outside
-  of tests (\ref iappel.eq.2).
+  of tests (\c iappel.eq.2).
 
  \warning It is quite frequent to forget to remove this example when it is
   not needed. Therefore the following test is designed to prevent
@@ -156,7 +156,7 @@ This section <tt> (iappel = 1 or 2) </tt> is only accessed at the beginning of a
   \snippet  cs_user_mass_source_terms.f90 generic_sub 
 
 
- \section three For ncesmp > 0, third call
+ \section three Third call (for ncesmp > 0)   
 
   \c iappel = 3: -  \c itypsm: type of mass source term 
                  -  \c smacel : mass source term
@@ -169,7 +169,7 @@ Simulation of an inlet condition by mass source terms and printing of the total 
 
   \snippet  cs_user_mass_source_terms.f90 example_2_1 
 
- \subsection calcul_inlet Calculation of the inlet conditions for k and epsilon with standard laws in a circular pipe
+ Calculation of the inlet conditions for k and epsilon with standard laws in a circular pipe
 
  \snippet cs_user_mass_source_terms.f90 inlet_cal 
 
@@ -180,7 +180,7 @@ Simulation of a suction (by a pump for instance) with a total rate of\f$80 000 \
 
   \snippet cs_user_mass_source_terms.f90 test_2_2
 
-  Calculation of the total volume of the area where the mass source term is imposed (the case of parallel computing is taken intoo account with the call to \c parsom).
+  Calculation of the total volume of the area where the mass source term is imposed (the case of parallel computing is taken into account with the call to \c parsom).
 
  \snippet   cs_user_mass_source_terms.f90  calcul_total
 

@@ -20,46 +20,46 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! --------
+!> \file cs_coal thfieldconv1.f90
+!> \brief Calculation of the gas temperature
+!>        Function with gas enthalpy and concentrations
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     ncelet          number of extended (real + ghost) cells
+!> \param[in]     ncel            number of cells
+!> \param[in]     ntbmci          macro table size mc integers
+!> \param[in]     ntbmcr          macro table size mc reals
+!> \param[in]     eh              gas enthalpy
+!>                                (j/kg of gaseous mixture)
+!> \param[in]     fuel1           mass fraction CHx1
+!> \param[in]     fuel2           mass fraction CHx2
+!> \param[in]     fuel3           mass fraction CO
+!> \param[in]     oxyd            mass fraction O2
+!> \param[in]     prod1           mass fraction CO2
+!> \param[in]     prod2           mass fraction H2O
+!> \param[in]     xiner           mass fraction N2
+!> \param[in,out] tp              gas temperature in kelvin
+!> \param[in]     tbmci           macro integer table mc travail
+!> \param[in]     tbmcr           macro real table    mc travail
+!> \param[in,out] eh0             real work array
+!> \param[in,out] eh1             real work array
+!______________________________________________________________________________!
+
 subroutine cs_coal_thfieldconv1 &
-!==============================
  ( ncelet , ncel   ,                                              &
    eh     , x2     , rtp    ,                                     &
    fuel1  , fuel2  , fuel3  , fuel4 , fuel5 , fuel6 , fuel7 ,     &
    oxyd   , prod1  , prod2  , prod3 , xiner ,                     &
    tp     )
-!===============================================================================
-! FONCTION :
-! --------
-! CALCUL DE LA TEMPERATURE DU GAZ
-!  EN FONCTION DE L'ENTHALPIE DU GAZ ET DES CONCENTRATIONS
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! ntbmci           ! e  ! <-- ! taille du macro tableau mc entiers             !
-! ntbmcr           ! e  ! <-- ! taille du macro tableau mc reels               !
-! eh               ! tr ! <-- ! enthalpie du gaz                               !
-!                  !    !     ! (j/kg de melange gazeux)                       !
-! fuel1            ! tr ! <-- ! fraction massique chx1                         !
-! fuel2            ! tr ! <-- ! fraction massique chx2                         !
-! fuel3            ! tr ! <-- ! fraction massique co                           !
-! oxyd             ! tr ! <-- ! fraction massique o2                           !
-! prod1            ! tr ! <-- ! fraction massique co2                          !
-! prod2            ! tr ! <-- ! fraction massique h2o                          !
-! xiner            ! tr ! <-- ! fraction massique n2                           !
-! tp               ! tr ! --> ! temperature du gaz (kelvin)                    !
-! tbmci            ! tr ! <-- ! macro tableau entier mc travail                !
-! tbmcr            ! tr ! <-- ! macro tableau reel   mc travail                !
-! eh0              ! tr ! <-- ! tableau reel de travail                        !
-! eh1              ! tr ! <-- ! tableau reel de travail                        !
-!__________________!____!_____!________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHAMNUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !==============================================================================
 ! Module files
@@ -117,25 +117,25 @@ if ( iok > 0  ) then
   call csexit(1)
 endif
 !===============================================================================
-!
+
 do icel = 1, ncel
   do icha = 1, ncharb
     f1mc(icel,icha) = rtp(icel,isca(if1m(icha))) /(1.d0-x2(icel))
     f2mc(icel,icha) = rtp(icel,isca(if2m(icha))) /(1.d0-x2(icel))
   enddo
 enddo
-!
+
 i = npo-1
 do icel = 1, ncel
 
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m a TH(NPO)
+! --- Calculation of enthalpy of the gaseous species CHx1m
+!                                            and CHx2m at TH(NPO)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
   ychx20 = zero
   do icha = 1, ncharb
-!
+
     den1   = 1.d0                                                  &
          / ( a1(icha)*wmole(ichx1c(icha))                          &
             +b1(icha)*wmole(ico)                                   &
@@ -172,7 +172,7 @@ do icel = 1, ncel
     ehchx2 = ehgaze(ichx2,i+1)
   endif
 
-! --- Clipping eventuel de TP a TH(NPO) si EH > EH1
+  ! --- Eventual clipping of temperature at TH(NPO) if EH > EH1
 
   eh1 = fuel1(icel)*ehchx1                                  &
        +fuel2(icel)*ehchx2                                  &
@@ -193,8 +193,8 @@ enddo
 i = 1
 do icel = 1, ncel
 
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m a TH(1)
+  ! --- Calculation of enthalpy of the gaseous species CHx1m
+  !                                            and CHx2m at TH(1)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
@@ -236,7 +236,7 @@ do icel = 1, ncel
     ehchx2 = ehgaze(ichx2,i)
   endif
 
-! --- Clipping eventuel de TP a TH(1) si EH < EH0
+  ! --- Eventual clipping of temperature at TH(1) if EH < EH0
 
   eh0  = fuel1(icel)*ehchx1                                  &
         +fuel2(icel)*ehchx2                                  &
@@ -259,8 +259,8 @@ enddo
 do i = 1, npo-1
   do icel = 1, ncel
 
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m pour TH(I)
+    ! --- Calculation of enthalpy of the gaseous species CHx1m
+    !                                            and CHx2m for TH(I)
     ehchx1 = zero
     ehchx2 = zero
     ychx10 = zero
@@ -314,8 +314,8 @@ do i = 1, npo-1
          +prod3(icel)*ehgaze(iso2,i)                          &
          +xiner(icel)*ehgaze(in2 ,i)
 
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m pour TH(I+1)
+    ! --- Calculation of enthalpy of the gaseous species CHx1m
+    !                                            and CHx2m for TH(I+1)
     ehchx1 = zero
     ehchx2 = zero
     ychx10 = zero

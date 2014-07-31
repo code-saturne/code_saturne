@@ -20,43 +20,44 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_bcond &
-!=======================
+!===============================================================================
+! Function :
+! --------
+!>  \file cs_coal_bcomb.f90
+!>  \brief   Boundary condition automatic for pulverized coal combution
+!
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     itypfb        boundary face types
+!> \param[in,out] izfppp        zone number for the edge face for
+!>                                      the specific physic module
+!> \param[in,out] rcodcl        value of the boundary conditions to edge faces
+!>
+!>                              boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                               -  coefficient (infinite if no exchange)
+!>                               -  rcodcl(3) value flux density
+!>                               -  (negative if gain) \f$w.m^{-2} \f$ or
+!>                               -  roughtness in \f$m\f$ if  icodcl=6
+!>                                -# for velocity:
+!>                                           \f$(\mu+\mu_T)\gradv \vect{u}\f$
+!>                                -# for pressure: \f$ \Delta \grad P
+!>                                                 \cdot \vect{n} \f$
+!>                                -# for scalar:   \f$ C_p \left ( K +
+!>                                                 \dfrac{K_T}{\sigma_T} \right)
+!>                                                 \grad T \cdot \vect{n} \f$
+!______________________________________________________________________________!
+
+subroutine cs_coal_bcond &
  ( itypfb , izfppp ,                                              &
    rcodcl )
 
-!===============================================================================
-! FONCTION :
-! --------
-!    BOUNDARY CONDITION AUTOMATIC FOR PULVERISED COAL COMBUSTION
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
-! izfppp(nfabor)   ! te ! <-- ! numero de zone de la face de bord              !
-!                  !    !     !  pour le module phys. part.                    !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -90,7 +91,6 @@ integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision rcodcl(nfabor,nvarcl,3)
-
 ! Local variables
 
 character*80     name
@@ -113,11 +113,9 @@ double precision wmh2o,wmco2,wmn2,wmo2
 double precision, dimension(:), pointer ::  brom
 integer, dimension (:), allocatable :: iagecp
 double precision, dimension(:), pointer :: viscl
-
 !===============================================================================
-! 1. Initialization
+! 0. Initialization
 !===============================================================================
-
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iprpfl(iviscl), viscl)
 
@@ -138,54 +136,38 @@ if (f_id.ne.-1) then
     call field_get_key_int(f_id, keyvar, iagecp(icla))
   enddo
 endif
-
 !===============================================================================
-! 1.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
+! 1.  Exchanges in parallel for the user data
 !===============================================================================
-
-!  En realite on pourrait eviter cet echange en modifiant uscpcl et en
-!    demandant a l'utilisateur de donner les grandeurs dependant de la
-!    zone hors de la boucle sur les faces de bord : les grandeurs
-!    seraient ainsi disponibles sur tous les processeurs. Cependant,
-!    ca rend le sous programme utilisateur un peu plus complique et
-!    surtout, si l'utilisateur le modifie de travers, ca ne marche pas.
-!  On suppose que toutes les grandeurs fournies sont positives, ce qui
-!    permet d'utiliser un max pour que tous les procs les connaissent.
-!    Si ce n'est pas le cas, c'est plus complique mais on peut s'en tirer
-!    avec un max quand meme.
-!
+!  In fact this exchange could be avoided by changing uscpcl and by asking
+!    the user to give the variables which depend of the area out of the loop
+!    on the edge faces: the variables would be available on all processors.
+!  However, it makes the user subroutine a bit more complicated and especially
+!    if the user modifies it through, it does not work.
+!  We assume that all the provided variables are positive,
+!    which allows to use a max for the proceedings know them.
+!  If this is not the case, it is more complicated but we can get a max anyway.
 if(irangp.ge.0) then
   call parimx(nozapm,iqimp )
-  !==========
   call parimx(nozapm,ientat)
-  !==========
   call parimx(nozapm,ientcp)
-  !==========
   call parimx(nozapm,inmoxy)
-  !==========
   call parrmx(nozapm,qimpat)
-  !==========
   call parrmx(nozapm,timpat)
-  !==========
   nbrval = nozppm*ncharm
   call parrmx(nbrval,qimpcp)
-  !==========
   nbrval = nozppm*ncharm
   call parrmx(nbrval,timpcp)
-  !==========
   nbrval = nozppm*ncharm*ncpcmx
   call parrmx(nbrval,distch)
-  !==========
 endif
 
-
 !===============================================================================
-! 2.  CORRECTION DES VITESSES (EN NORME) POUR CONTROLER LES DEBITS
-!     IMPOSES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 2.  Correction of the velocities (in norm) for controlling the imposed flow
+!       Loop over all input faces
 !                     =========================
 !===============================================================================
-! --- Debit calcule
+! --- Calculated flow
 do izone = 1, nozppm
   qcalc(izone) = 0.d0
 enddo
@@ -207,9 +189,8 @@ do izone = 1, nozapm
   endif
 enddo
 
-! --- Correction des vitesses en norme a partir de la 2eme iter
-!     car sinon on ne connait pas la masse volumique au bord
-
+! --- Correction of the velocities (in norm) from the second iteration,
+!       otherwise we do not know the density at the edge
 if ( ntcabs .gt. 1 ) then
   iok = 0
   do ii = 1, nzfppp
@@ -223,7 +204,6 @@ if ( ntcabs .gt. 1 ) then
   enddo
   if(iok.ne.0) then
     call csexit (1)
-    !==========
   endif
   do ifac = 1, nfabor
     izone = izfppp(ifac)
@@ -238,52 +218,53 @@ if ( ntcabs .gt. 1 ) then
       rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
     endif
   enddo
-!
+
 else
-!
+
   do izone = 1, nozapm
     qimpc(izone) = qimpat(izone)
     do icha = 1, ncharb
       qimpc(izone) = qimpc(izone) + qimpcp(izone,icha)
     enddo
   enddo
-!
+
 endif
-!
+
+
  2001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,&
-'@    =========                        CHARBON PULVERISE      ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
+'@ @@ WARNING : SPECIFIC PHYSIC MODULE                        ',/,&
+'@    =========                        pulverized coal        ',/,&
+'@    problem in the boundary conditions                      ',/,&
 '@                                                            ',/,&
-'@  Le debit est impose sur la zone IZONE =     ', I10         ,/,&
-'@    puisque                IQIMP(IZONE) =     ', I10         ,/,&
-'@  Or, sur cette zone, le produit RHO D S integre est nul :  ',/,&
-'@    il vaut                             = ',E14.5            ,/,&
-'@    (D est la direction selon laquelle est impose le debit).',/,&
+'@  The flow rate is imposed on the area izone =  ', I10       ,/,&
+'@    because                iqimp(izone) =     ', I10         ,/,&
+'@  However, on this area, the integrated product rho D S     ',/,&
+'@    is zero                             :                   ',/,&
+'@    it is                               = ',E14.5            ,/,&
+'@    (D is the direction in which the flow is imposed).      ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calculation can not be executed                       ',/,&
 '@                                                            ',/,&
-'@  Verifier uscpcl, et en particulier                        ',/,&
-'@    - que le vecteur  RCODCL(IFAC,IU,1)                     ',/,&
-'@                      RCODCL(IFAC,IV,1),                    ',/,&
-'@                      RCODCL(IFAC,IW,1) qui determine       ',/,&
-'@      la direction de la vitesse est non nul et n''est pas  ',/,&
-'@      uniformement perpendiculaire aux face d''entree       ',/,&
-'@    - que la surface de l''entree n''est pas nulle (ou que  ',/,&
-'@      le nombre de faces de bord dans la zone est non nul)  ',/,&
-'@    - que la masse volumique n''est pas nulle               ',/,&
+'@  Check uscpcl, and in particular                           ',/,&
+'@    - that the vector  rcodcl(ifac,iu,1)                    ',/,&
+'@                       rcodcl(ifac,iv,1),                   ',/,&
+'@                       rcodcl ifac,iw,1) which determines   ',/,&
+'@      the direction of the velocity is not zero and is not  ',/,&
+'@      uniformly perpendicular to the imput faces            ',/,&
+'@    - that the surface of the imput is not zero (or the     ',/,&
+'@      number of edge faces in the area is non-zero)         ',/,&
+'@    - that the density is not zero                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 !===============================================================================
-! 3. VERIFICATIONS
-!        Somme des DISTributions CHarbon = 100% pour les zones IENTCP =1
+! 3. Verifications
+!        Sum coal distribution = 100% for area ientcp = 1
 !===============================================================================
-
 iok = 0
 do ii = 1, nzfppp
   izone = ilzppp(ii)
@@ -309,7 +290,6 @@ enddo
 
 if(iok.ne.0) then
   call csexit (1)
-  !==========
 endif
 
 
@@ -317,62 +297,57 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,&
-'@    =========                        CHARBON PULVERISE      ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
+'@ @@ WARNING : SPECIFIC PHYSIC MODULE                        ',/,&
+'@    =========                        pulverized coal        ',/,&
+'@    probleme in the boundary conditions                     ',/,&
 '@                                                            ',/,&
-'@        Zone    Charbon     Classe         Distch(%)        '  )
+'@        Zone    Coal     Class         Distch(%)        '  )
  2011 format(                                                           &
 '@  ',I10   ,' ',I10   ,' ',I10   ,'    ',E14.5                  )
  2012 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,&
-'@    =========                        CHARBON PULVERISE      ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
+'@ @@ WARNING : SPECIFIC PHYSIC MODULE                        ',/,&
+'@    =========                        pulverized coal        ',/,&
+'@    probleme in the boundary conditions                     ',/,&
 '@                                                            ',/,&
-'@  On impose une entree charbon en IZONE = ', I10             ,/,&
-'@    puisque               IENTCP(IZONE) = ', I10             ,/,&
-'@  Or, sur cette zone, la somme des distributions par classe ',/,&
-'@    en pourcentage pour le charbon ICHA = ', I10             ,/,&
-'@    est differente de 100% : elle vaut TOTCP = ', E14.5      ,/,&
-'@    avec                           TOTCP-100 = ', E14.5      ,/,&
+'@  A coal input is imposed in izone = ', I10                  ,/,&
+'@    because               ientcp(izone) = ', I10             ,/,&
+'@  However, on this area, the sum of distributions by class  ',/,&
+'@    in percentage for coal         icha = ', I10             ,/,&
+'@    is different from 100% : it is     totcp = ', E14.5      ,/,&
+'@    with                           totcp-100 = ', E14.5      ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calcul will not run                                   ',/,&
 '@                                                            ',/,&
-'@  Verifier uscpcl.                                          ',/,&
+'@  Check    uscpcl.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 !===============================================================================
-! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 4.  Filling the table of the boundary conditions
+!       Loop on all input faces
 !                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LA TURBULENCE
+!         Determining the family and its properties
+!         Imposing boundary conditions for the turbulence
 
 !===============================================================================
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-!      ELEMENT ADJACENT A LA FACE DE BORD
-
+  ! Neighboring element to the edge face
   if ( itypfb(ifac).eq.ientre ) then
+    ! ----  Automatic processing of turbulence
 
-! ----  Traitement automatique de la turbulence
-
+    !       The turbulence is calculated by default if icalke different from 0
+    !          - or from hydraulic diameter and a reference velocity adapted
+    !            for the current input if icalke = 1
+    !          - either from the hydraulic diameter, a reference velocity and
+    !            a turbulence intensity adapted to the current input if icalke = 2
     if ( icalke(izone).ne.0 ) then
-
-!       La turbulence est calculee par defaut si ICALKE different de 0
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference adaptes a l'entree courante si ICALKE = 1
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference et de l'intensite turvulente
-!            adaptes a l'entree courante si ICALKE = 2
 
       uref2 = rcodcl(ifac,iu,1)**2                         &
             + rcodcl(ifac,iv,1)**2                         &
@@ -389,12 +364,10 @@ do ifac = 1, nfabor
       xeent = epzero
       if (icke.eq.1) then
         call keendb                                               &
-        !==========
         ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
           ustar2, xkent, xeent )
       else if (icke.eq.2) then
         call keenin                                               &
-        !==========
         ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
       endif
 
@@ -434,20 +407,17 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 5.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 5.  Filling the table  of the boundary conditions
+!       Loop on all input faces
 !                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LES SCALAIRES
+!         Determining the family and its properties
+!         Imposing boundary conditions for scalars
 !===============================================================================
-
 do ii = 1, nzfppp
 
   izone = ilzppp(ii)
-
-! Une entree IENTRE est forcement du type
-!            IENTAT = 1 ou IENTCP = 1
+  ! One input ientre is necessarily the type
+  !            ientat = 1 or ientcp = 1
   if ( ientat(izone).eq.1 .or. ientcp(izone).eq.1) then
 
     x20t  (izone) = zero
@@ -460,8 +430,8 @@ do ii = 1, nzfppp
       do iclapc = 1, nclpch(icha)
 
         icla = iclapc + idecal
-! ------ Calcul de X2 total par zone
-!         Petite retouche au cas ou l'entree est fermee
+        ! ------ Calculating X2 total per area
+        !         Small correction in case the input is close
         if(abs(qimpc(izone)).lt.epzero) then
           x20(izone,icla) = 0.d0
         else
@@ -469,7 +439,7 @@ do ii = 1, nzfppp
                           * distch(izone,icha,iclapc)*1.d-2
         endif
         x20t(izone)     = x20t(izone) +  x20(izone,icla)
-! ------ Calcul de H2 de la classe ICLA
+        ! ------ Calculating H2 of class icla
         do isol = 1, nsolim
           xsolid(isol) = zero
         enddo
@@ -478,8 +448,7 @@ do ii = 1, nzfppp
           xsolid(ich(icha)) = 1.d0-xashch(icha)
           xsolid(ick(icha)) = zero
           xsolid(iash(icha)) = xashch(icha)
-
-!------- Prise en compte de l'humidite
+          !------- Taking into account humidity
           if ( ippmod(iccoal) .eq. 1 ) then
             xsolid(ich(icha)) = xsolid(ich(icha))-xwatch(icha)
             xsolid(iwat(icha)) = xwatch(icha)
@@ -499,8 +468,6 @@ do ii = 1, nzfppp
         mode = -1
         t1 = t2
         call cs_coal_htconvers2(mode,icla,h2(izone,icla),xsolid,t2,t1)
-        !======================
-
         x2h20t(izone) = x2h20t(izone)+x20(izone,icla)*h2(izone,icla)
 
       enddo
@@ -509,7 +476,7 @@ do ii = 1, nzfppp
 
     enddo
 
-! ------ Calcul de H1(IZONE)
+    ! ------ Calculating H1(izone)
     do ige = 1, ngazem
       coefe(ige) = zero
     enddo
@@ -530,7 +497,6 @@ do ii = 1, nzfppp
     t1   = timpat(izone)
     mode = -1
     call cs_coal_htconvers1(mode,h1(izone),coefe,f1mc,f2mc,t1)
-   !=======================
 
   endif
 
@@ -540,11 +506,10 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-!      ELEMENT ADJACENT A LA FACE DE BORD
-
+  !      Adjacent element of the edge face
   if ( itypfb(ifac).eq.ientre ) then
 
-! ----  Traitement automatique des scalaires physiques particulieres
+    ! ----  Automatic processing of specific physic scalar
 
     idecal = 0
 
@@ -553,26 +518,33 @@ do ifac = 1, nfabor
       do iclapc = 1, nclpch(icha)
 
         icla = iclapc + idecal
-! ------ CL pour Xch de la classe ICLA
+
+        ! ------ Boundary conditions for Xch of class icla
         rcodcl(ifac,isca(ixch(icla)),1) = x20(izone,icla)         &
                                         * (1.d0-xashch(icha))
-!             Prise en compte de l'humidite
+        !             Taking into account humidity
         if ( ippmod(iccoal) .eq. 1 ) then
           rcodcl(ifac,isca(ixch(icla)),1) = x20(izone,icla)       &
                                           *(1.d0-xashch(icha)     &
                                                 -xwatch(icha))
         endif
-! ------ CL pour Xck de la classe ICLA
+        ! ------ Boundary conditions for Xck of class icla
         rcodcl(ifac,isca(ixck(icla)),1) = 0.d0
-! ------ CL pour Np de la classe ICLA
+
+        ! ------ Boundary conditions for Np of class icla
+
         rcodcl(ifac,isca(inp(icla)),1) = x20(izone,icla)          &
                                         / xmp0(icla)
-! ------ CL pour Xwater de la classe ICLA
+
+        ! ------ Boundary conditions for Xwater of class icla
+
         if ( ippmod(iccoal) .eq. 1 ) then
           rcodcl(ifac,isca(ixwt(icla)),1) = x20(izone,icla)       &
                                            *xwatch(icha)
         endif
-! ------ CL pour H2 de la classe ICLA
+
+        ! ------ Boundary conditions for H2 of class icla
+
         rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)          &
                                         *h2(izone,icla)
         if (i_coal_drift.eq.1) then
@@ -582,7 +554,8 @@ do ifac = 1, nfabor
 
       idecal = idecal + nclpch(icha)
 
-! ------ CL pour X1F1M et X1F2M du charbon ICHA
+      ! ------ Boundary conditions for X1F1M and X1F2M from coal icha
+
       rcodcl(ifac,isca(if1m(icha)),1) = zero
       rcodcl(ifac,isca(if2m(icha)),1) = zero
 
@@ -590,10 +563,11 @@ do ifac = 1, nfabor
     if (i_coal_drift.eq.1) then
       rcodcl(ifac, iaggas, 1) = zero
     endif
-! ------ CL pour HM
+
+    ! ------ Boundary conditions for HM
     rcodcl(ifac,isca(iscalt),1) = (1.d0-x20t(izone))*h1(izone)    &
                                  +x2h20t(izone)
-! ------ CL pour X1.F4M (Oxyd 2)
+    ! ------ Boundary conditions for X1.F4M (Oxyd 2)
     if ( noxyd .ge. 2 ) then
       if ( inmoxy(izone) .eq. 2 ) then
         rcodcl(ifac,isca(if4m),1)   = (1.d0-x20t(izone))
@@ -601,7 +575,9 @@ do ifac = 1, nfabor
         rcodcl(ifac,isca(if4m),1)   = zero
       endif
     endif
-! ------ CL pour X1.F5M (Oxyd3)
+
+    ! ------ Boundary conditions for X1.F5M (Oxyd3)
+
     if ( noxyd .eq. 3 ) then
       if ( inmoxy(izone) .eq. 3 ) then
         rcodcl(ifac,isca(if5m),1)   = (1.d0-x20t(izone))
@@ -609,24 +585,30 @@ do ifac = 1, nfabor
         rcodcl(ifac,isca(if5m),1)   = zero
       endif
     endif
-! ------ CL pour X1.F6M (Water)
+
+    ! ------ Boundary conditions for X1.F6M (Water)
+
     if ( ippmod(iccoal) .ge. 1 ) then
       rcodcl(ifac,isca(if6m),1) = zero
     endif
-! ------ CL pour X1.F7M_O2
+
+    ! ------ Boundary conditions for X1.F7M_O2
+
     rcodcl(ifac,isca(if7m),1)   = zero
-! ------ CL pour X1.FM8_CO2
+
+    ! ------ Boundary conditions for X1.FM8_CO2
+
     if ( ihtco2 .eq. 1 ) then
       rcodcl(ifac,isca(if8m),1) = zero
     endif
-! ------ CL pour X1.FM9_H2O
+    ! ------ Boundary conditions for X1.FM9_H2O
     if ( ihth2o .eq. 1 ) then
       rcodcl(ifac,isca(if9m),1) = zero
     endif
-! ------ CL pour X1.Variance
+    ! ------ Boundary conditions for X1.Variance
     rcodcl(ifac,isca(ifvp2m),1) = zero
 
-! ------ CL pour X1.YCO2
+    ! ------ Boundary conditions for X1.YCO2
     if ( ieqco2 .eq. 1 ) then
       ioxy =  inmoxy(izone)
       wmo2   = wmole(io2)
@@ -638,7 +620,7 @@ do ifac = 1, nfabor
       xco2 = oxyco2(ioxy)*wmco2/dmas
       rcodcl(ifac,isca(iyco2),1)   = xco2*(1.d0-x20t(izone))
     endif
-! ------ CL pour X1.HCN, X1.NO, Taire
+    ! ------ Boundary conditions for X1.HCN, X1.NO, Taire
     if( ieqnox .eq. 1 ) then
       rcodcl(ifac,isca(iyhcn ),1)  = zero
       rcodcl(ifac,isca(iyno  ),1)  = zero
@@ -652,7 +634,6 @@ enddo
 
 ! Free memory
 if (allocated(iagecp)) deallocate(iagecp)
-
 !--------
 ! Formats
 !--------

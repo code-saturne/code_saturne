@@ -20,34 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_htconvers2 &
-!============================
- ( mode , icla , enthal , xsolid , temper , t1)
 !===============================================================================
-!  FONCTION  :
-!  --------
-! CALCUL DE LA TEMPERATURE DES PARTICULES
-!  EN FONCTION DE L'ENTHALPIE ET DES CONCENTRATIONS
-!  SI IMODE = 1
-! CALCUL DE L'ENTHALPIE DES PARTICULES
-!  EN FONCTION DE LA TEMPERATURE ET DES CONCENTRATIONS
-!  SI IMODE = -1
+! Function:
+! --------
+!>  \file  cs_coal_htconvers2.f90
+!>
+!> \brief  - Calculating temperature of particles
+!>           Function with enthalpy and concentrations
+!>           if imode = 1
+!>         - Calculating particles enthalpy
+!>           Function with temperature and concentrations
+!>           if imode = -1
+!-------------------------------------------------------------------------------
+
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! mode             ! e  ! <-- !  -1 : t -> h  ;   1 : h -> t                   !
-! icla             ! e  ! <-- ! numero de la classe                            !
-! enthal           ! r  ! <-- ! enthalpie massique j/kg                        !
-! xsolid           ! tr ! <-- ! fraction massique des constituants             !
-! temper           ! r  ! <-- ! temperature en kelvin                          !
-!__________________!____!_____!________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     mode          -1: t -> h; 1: h -> t
+!> \param[in]     icla          class number
+!> \param[in,out] enthal        mass enthalpy (in \f$ j . kg^{-1}) \f$
+!> \param[in]     xsolid        mass fraction of components
+!> \param[in,out] temper        temperature (in kelvin)
+!______________________________________________________________________________!
+
+subroutine cs_coal_htconvers2 &
+ ( mode , icla , enthal , xsolid , temper , t1)
 
 !===============================================================================
 ! Module files
@@ -82,26 +81,26 @@ integer          it , isol , ihflt2
 double precision eh1 , eh0 , x2
 
 !===============================================================================
-! Mode de conversion
+! Conversion mode
 ihflt2 = 1
 
 if ( ihflt2.eq.0 ) then
 
 !===============================================================================
-! 2. H2 FONCTION LINEAIRE T2
+! 1. H2 linear function
 !===============================================================================
 
   icha = ichcor(icla)
 
   if ( mode.eq.-1 ) then
 
-! --> Loi temperature -> enthalpie (MODE = -1)
+  ! --> Temperature law -> enthalpy (mode = -1)
 
     enthal = h02ch(icha) + cp2ch(icha)*(temper-trefth)
 
   elseif ( mode.eq.1 ) then
 
-! --> Loi enthalpie -> temperature (MODE = 1)
+  ! --> Enthalpy law -> temperature (mode = 1)
 
     temper =  (enthal-h02ch(icha))/cp2ch(icha) + trefth
 
@@ -117,12 +116,12 @@ if ( ihflt2.eq.0 ) then
 elseif( ihflt2.ne.0 ) then
 
 !===============================================================================
-! 3. H2 TABULE
+! 2. H2 tabulated
 !===============================================================================
 
   if ( mode.eq.-1 ) then
 
-! --> Loi temperature -> enthalpie (MODE = -1)
+    ! --> Temperature law -> enthalpy (mode = -1)
 
     it = npoc
     if ( temper.ge.thc(it) ) then
@@ -162,7 +161,7 @@ elseif( ihflt2.ne.0 ) then
 
   elseif ( mode.eq.1 ) then
 
-! --> Loi enthalpie -> temperature (MODE = 1)
+    ! --> Enthalpy law -> temperature (mode = 1)
 
     x2 = 0.d0
     do isol = 1, nsolid
@@ -219,13 +218,13 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR DANS CS_COAL_HT_CONVERS2             ',/,&
+'@ @@ WARNING : Error in cs_coal_htconver2             ',/,&
 '@    =========                                               ',/,&
-'@    VALEUR INCORRECTE DE L''ARGUMENT MODE                   ',/,&
-'@    CE DOIT ETRE UN ENTIER EGAL A 1 OU -1                   ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
+'@    Incorrecte value of the argument mode                   ',/,&
+'@    it must be an integer equal to 1 or -1                  ',/,&
+'@    it worths here ',I10                                     ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calculation can not run.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

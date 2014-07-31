@@ -20,37 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine rijthe &
-!================
 
+!===============================================================================
+! Function:
+! ---------
+!> \file rijthe.f90
+!> \brief Gravity terms
+!>        For \f$R_{ij}\f$ and \f$\epsilon\f$
+!>        \f[ var = R_{11} \: R_{22} \: R_{33} \:R_{12} \:R_{13} \:R_{23}
+!>        \:\varepsilon \f]
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! ARGUMENTS
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ivar          variable number
+!> \param[in]     gradro        work array for \f$ \grad{rom} \f$
+!> \param[in,out] smbr          work array for second member
+!______________________________________________________________________________!
+
+subroutine rijthe &
  ( nscal  ,                                                       &
    ivar   ,                                                       &
    gradro , smbr   )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! TERMES DE GRAVITE
-!   POUR Rij et EPSILON
-! VAR  = R11 R22 R33 R12 R13 R23 EP
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ivar             ! i  ! <-- ! variable number                                !
-! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
-! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -95,10 +91,10 @@ double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
-! EBRSM
+! ebrsm
 if (iturb.eq.32) then
   csttmp = cebmr6
 else
@@ -124,11 +120,11 @@ call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
 call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
 
 !===============================================================================
-! 2. TERMES POUR RIJ :
-!      ROM*VOLUME*dRij/dt =
-!                     ... + (Gij - CRIJ3*(Gij-Delta ij Gkk/3))*VOLUME
-!            Avec Gij = -(1.5 CMU/PRDTUR) (K/EPS) (Rit Gj + Rjt Gi)
-!                 Rit = Rik dROM/dxk (somme sur k)
+! 2. Terms for Rij:
+!      rom*volume*dRij/dt =
+!                     ... + (Gij - CRIJ3*(Gij-Delta ij Gkk/3))*volume
+!            With Gij = -(1.5 cmu/prdtur) (k/eps) (Rit Gj + Rjt Gi)
+!                 Rit = Rik drom/dxk (sum on k)
 !===============================================================================
 
 
@@ -283,15 +279,15 @@ elseif (ivar.eq.ir23) then
   enddo
 
 !===============================================================================
-! 3. TERMES POUR EPSILON :
-!      ROM*VOLUME*dEps/dt =
-!                     ... + CEPS1*(EPS/K)*MAX(0,(Gkk/2))*VOLUME
-!            Avec Gij = -(1.5 CMU/PRDTUR) (K/EPS) (Rit Gj + Rjt Gi)
-!                 Rit = Rik dROM/dxk (somme sur k)
-!            On simplifie (EPS/K) en notant
-!                GijP = -(1.5 CMU/PRDTUR)         (Rit Gj + Rjt Gi)
-!      ROM*VOLUME*dEps/dt =
-!                     ... + CEPS1*        MAX(0,(GkkP/2))*VOLUME
+! 3. Terms for epsilon:
+!      rom*volumr*deps/dt =
+!                     ... + CEPS1*(EPS/K)*Max(0,(Gkk/2))*volume
+!            With Gij = -(1.5 cmu/prdtur) (k/eps) (Rit Gj + Rjt Gi)
+!                 Rit = Rik drom/dxk (sum on k)
+!            We simplify (eps/k) by noting
+!                GijP = -(1.5 cmu/prdtur)         (Rit Gj + Rjt Gi)
+!      rom*volume*deps/dt =
+!                     ... + CEPS1*        Max(0,(GkkP/2))*volume
 !===============================================================================
 
 

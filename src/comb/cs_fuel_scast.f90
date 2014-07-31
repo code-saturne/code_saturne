@@ -20,66 +20,57 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_scast &
-!=======================
 
+!===============================================================================
+! Function:
+! ---------
+!> \file cs_fuel_scast.f90
+!> \brief Specific physic routine: fuel oil flame.
+!>   We indicate the source terms for a scalar PP
+!>   on a step time
+!>
+!>
+!> \warning   The treatment of source terms is different from
+!>            the treatment in ustssc.f
+!>
+!> we solve \f$ rovsdt D(var) = smbrs \f$
+!>
+!> \f$ rovsdt \f$ and \f$ smbrs \f$ already contain eventual user source term.
+!>  So they have to be incremented and be erased
+!>
+!> For stability reasons, we only add in rovsdt positive terms.
+!>  There is no stress for smbrs.
+!>
+!> In the case of a source term in \f$ cexp + cimp \varia \f$ we must
+!> write:
+!>        \f[ smbrs  = smbrs  + cexp + cimp\cdot \varia\f]
+!>        \f[ rovsdt = rovsdt + Max(-cimp,0)\f]
+!>
+!> We provide here rovsdt and smbrs (they contain rho*volume)
+!>    smbrs in \f$kg\cdot [variable] \cdot s^{-1}\f$:
+!>     ex : for velocity               \f$kg\cdot m \cdot s^{-2}\f$
+!>          for temperatures           \f$kg \cdot [degres] \cdot s^{-1}\f$
+!>          for enthalpies             \f$J \cdot s^{-1} \f$
+!>    rovsdt in \f$kg \cdot s^{-1}\f$
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+!            ARGUMENTS
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     iscal         scalar number
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] smbrs         second explicit member
+!> \param[in,out] rovsdt        implicit diagonal part
+!______________________________________________________________________________!
+
+subroutine cs_fuel_scast &
  ( iscal  ,                                                       &
    rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! ROUTINE PHYSIQUE PARTICULIERE : FLAMME FUEL
-!   ON PRECISE LES TERMES SOURCES POUR UN SCALAIRE PP
-!   SUR UN PAS DE TEMPS
-
-
-! ATTENTION : LE TRAITEMENT DES TERMES SOURCES EST DIFFERENT
-! ---------   DE CELUI DE USTSSC.F
-
-! ON RESOUT ROVSDT*D(VAR) = SMBRS
-
-! ROVSDT ET SMBRS CONTIENNENT DEJA D'EVENTUELS TERMES SOURCES
-!  UTILISATEUR. IL FAUT DONC LES INCREMENTER ET PAS LES
-!  ECRASER
-
-! POUR DES QUESTIONS DE STABILITE, ON NE RAJOUTE DANS ROVSDT
-!  QUE DES TERMES POSITIFS. IL N'Y A PAS DE CONTRAINTE POUR
-!  SMBRS
-
-! DANS LE CAS D'UN TERME SOURCE EN CEXP + CIMP*VAR ON DOIT
-! ECRIRE :
-!          SMBRS  = SMBRS  + CEXP + CIMP*VAR
-!          ROVSDT = ROVSDT + MAX(-CIMP,ZERO)
-
-! ON FOURNIT ICI ROVSDT ET SMBRS (ILS CONTIENNENT RHO*VOLUME)
-!    SMBRS en kg variable/s :
-!     ex : pour la vitesse            kg m/s2
-!          pour les temperatures      kg degres/s
-!          pour les enthalpies        Joules/s
-!    ROVSDT en kg /s
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! iscal            ! i  ! <-- ! scalar number                                  !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
-! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
-
 !===============================================================================
 ! Module files
 !===============================================================================
@@ -149,33 +140,33 @@ double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
-! --- Numero du scalaire a traiter : ISCAL
+! --- Number of the scalar to treat: iscal
 
-! --- Numero de la variable associee au scalaire a traiter ISCAL
+! --- Number of the variable associated to the scalar to treat iscal
 ivar = isca(iscal)
 
-! --- Nom de la variable associee au scalaire a traiter ISCAL
+! --- Name of the variable associated to scalar to treat iscal
 call field_get_label(ivarfl(ivar), chaine)
 
-! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
+! --- Number of the physic bulks (Cf cs_user_boundary_conditions)
 call field_get_val_s(icrom, crom)
 
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
-! --- Temperature phase gaz
+! --- Gas phase temperature
 
 ipcte1 = ipproc(itemp1)
 
 !===============================================================================
-! 2. PRISE EN COMPTE DES TERMES SOURCES POUR LES VARIABLES RELATIVES
-!    AUX CLASSES DE PARTICULES
+! 2. Taking into account the source terms for the relative particles
+!    in the particles classes
 !===============================================================================
 
-! --> Terme source pour l'enthalpie du liquide
+! --> Source term for the liquid enthalpy
 
 if ( ivar .ge. isca(ih2(1))     .and.                            &
      ivar .le. isca(ih2(nclafu))      ) then
@@ -193,29 +184,28 @@ if ( ivar .ge. isca(ih2(1))     .and.                            &
   ipcght = ipproc(igmhtf(numcla))
   ipchgl = ipproc(ih1hlf(numcla))
 
-!       La variable est l'enthalpie du liquide ramenée à
-!       la masse de mélange
-!       Les flux interfaciaux contribuent à faire varier l'enthalpie
-!       du liquide
-!       La vapeur emporte son enthalpie
-!       flux = PROPCE(IEL,IPPROC(IGMEVA))
-!       enthalpie massique reconstituée à partir de EHGAZE(IFOV )
-!       à la température de la goutte
-!       L'oxydation héterogène comporte un flux "entrant" d'O2
-!       un flux sortant de CO
-!       le flux net est celui du carbone
-!       fluxIN  = 16/12 * PROPCE(IEL,IPPROC(IGMHTF))
-!       fluxOUT = 28/12 * PROPCE(IEL,IPPROC(IGMHTF))
-!       Enthalpie entrante reconstituée à partir de EHGAZE(IO2 )
-!       à la température du gaz environnant
-!       Enthalpie sortante reconstituée à partir de EHGAZE(ICO )
-!       à la température du grain
+  !       The variable is the liquid enthalpy for the mixture mass
+  !       The interfacial flux contribute to the variation of the liquid
+  !       enthalpy
+  !       The vapor takes away its enthalpy
+  !       flux = propce(iel,ipproc(igmeva))
+  !       massic enthalpy reconstructed from ehgaze(ifov )
+  !       at the drop temperature
+  !       The heterogeneous oxidation contains an input flux of O2
+  !       an output flux of CO
+  !       The net flux is the carbon flux
+  !       fluxIN  = 16/12 * propce(iel,ipproc(igmhtf))
+  !       fluxOUT = 28/12 * propce(iel,ipproc(igmhtf))
+  !       Input enthalpy reconstructed from ehgaze(IO2 )
+  !       at the surrounding gas temperature
+  !       Output enthalpy reconstructed from ehgaze(ico )
+  !       at the grain temperature
 
   imode = -1
   do iel = 1, ncel
-!
+
     if ( rtpa(iel,isca(iyfol(numcla))) .gt. epsifl ) then
-!
+
       rom = crom(iel)
 
       do iesp = 1, ngazem
@@ -251,7 +241,7 @@ if ( ivar .ge. isca(ih2(1))     .and.                            &
 
   enddo
 
-! --> T.S. pour la masse de liquide
+! --> Source terme for the liquid mass
 
 elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
          ivar .le. isca(iyfol(nclafu))        ) then
@@ -287,7 +277,7 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
 
   enddo
 
-! --> T.S. pour le traceur de la vapeur
+! --> Source term for the vopor tracer
 
 elseif ( ivar .eq. isca(ifvap) ) then
 
@@ -316,7 +306,7 @@ elseif ( ivar .eq. isca(ifvap) ) then
 
   enddo
 
-! --> T.S. pour le traceur du C ex réaction heterogene
+! --> Source term for the C tracer ex heterogeneous reaction
 
 elseif ( ivar .eq. isca(if7m) ) then
 
@@ -345,7 +335,7 @@ elseif ( ivar .eq. isca(if7m) ) then
 
 endif
 
-! --> Terme source pour la variance du traceur 4 (Air)
+! --> Source term for the variance of the tracer 4 (Air)
 
 if ( ivar.eq.isca(ifvp2m) ) then
 
@@ -353,8 +343,8 @@ if ( ivar.eq.isca(ifvp2m) ) then
     write(nfecra,1000) chaine(1:8)
   endif
 
-! ---- Calcul des termes sources explicite et implicite
-!      relatif aux echanges interfaciaux entre phases
+  ! ---- Calculation of the source the explicit and implicit source terms
+  !      relative to interfacial exchanges between phases
 
   call cs_fuel_fp2st &
  !==================
@@ -365,7 +355,7 @@ if ( ivar.eq.isca(ifvp2m) ) then
 endif
 
 
-! --> Terme source pour CO2
+! --> Source term for CO2
 
 if ( ieqco2 .ge. 1 ) then
 
@@ -375,42 +365,42 @@ if ( ieqco2 .ge. 1 ) then
       write(nfecra,1000) chaine(1:8)
     endif
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+    ! ---- Contribution of the interfacial source term to the explicit and implicit balances
 
-! Oxydation du CO
-! ===============
+    ! Oxidation of CO
+    ! ===============
 
-!  Dryer Glassman : XK0P en (moles/m3)**(-0.75) s-1
-!          XK0P = 1.26D10
-!           XK0P = 1.26D7 * (1.1)**(NTCABS)
-!           IF ( XK0P .GT. 1.26D10 ) XK0P=1.26D10
-!           T0P  = 4807.D0
-!  Howard : XK0P en (moles/m3)**(-0.75) s-1
-!             XK0P = 4.11D9
-!             T0P  = 15090.D0
-!  Westbrook & Dryer
+    !  Dryer Glassman : XK0P in (mol/m3)**(-0.75) s-1
+    !          XK0P = 1.26D10
+    !          XK0P = 1.26D7 * (1.1)**(NTCABS)
+    !          IF ( XK0P .GT. 1.26D10 ) XK0P=1.26D10
+    !          T0P  = 4807.D0
+    !  Howard : XK0P en [(moles/m3)**(-0.75) s-1]
+    !          XK0P = 4.11D9
+    !          T0P  = 15090.D0
+    !  Westbrook & Dryer
 
     lnk0p = 23.256d0
     t0p  = 20096.d0
-!
-!  Hawkin et Smith Purdue University Engeneering Bulletin, i
-!  Research series 108 vol 33, n 3n 1949
-!  Kp = 10**(4.6-14833/T)
-!  Constante d'equilibre en pression partielle (atm           !)
-!  XKOE est le log decimal de la constante pre-exponentielle
-!  TOE  n'est PAS une temerature d'activation  ... il reste un lg(e)
-!  pour repasser en Kc et utiliser des concetrations (moles/m3)
-!  Kc = (1/RT)**variation nb moles * Kp
-!  ici Kc = sqrt(0.082*T)*Kp
+
+    !  Hawkin et Smith Purdue University Engeneering Bulletin, i
+    !  Research series 108 vol 33, n 3n 1949
+    !  Kp = 10**(4.6-14833/T)
+    !  Equilibrum constant in partial pressure [atm           !]
+    !  XKOE is the decimal log of the pre-exponential constant
+    !  TOE  is NOT an activation temperature  ... it remains a lg(e)
+    !  to go back in Kc and to use concentrations [moles/m3]
+    !  Kc = (1/RT)**variation nb moles * Kp
+    !  here Kc = sqrt(0.082*T)*Kp
 
     l10k0e = 4.6d0
     t0e  = 14833.d0
-! Dissociation du CO2 (Trinh Minh Chinh)
-! ===================
-!          XK0M = 5.D8
-!          T0M  = 4807.D0
-!          XK0M = 0.D0
-!  Westbrook & Dryer
+    ! Dissociation of CO2 (Trinh Minh Chinh)
+    ! ===================
+    !          XK0M = 5.D8
+    !          T0M  = 4807.D0
+    !          XK0M = 0.D0
+    !  Westbrook & Dryer
 
     lnk0m = 20.03d0
     t0m  = 20096.d0
@@ -418,9 +408,9 @@ if ( ieqco2 .ge. 1 ) then
     err1mx = 0.d0
     err2mx = 0.d0
 
-! Nombre d'iterations
+    ! Number of iterations
     itermx = 500
-! Nombre de points converges
+   ! Number of convergent points
 
    nbpauv = 0
    nbepau = 0
@@ -429,11 +419,11 @@ if ( ieqco2 .ge. 1 ) then
    nbpass = 0
    nbarre = 0
    nbimax = 0
-! Precision pour la convergence
+   ! Precision for convergence
    errch = 1.d-8
 
    do iel = 1, ncel
-!
+
      xxco  = propce(iel,ipproc(iym1(ico  )))/wmole(ico)           &
             *propce(iel,ipproc(irom1))
      xxo2  = propce(iel,ipproc(iym1(io2  )))/wmole(io2)           &
@@ -442,36 +432,36 @@ if ( ieqco2 .ge. 1 ) then
             *propce(iel,ipproc(irom1))
      xxh2o = propce(iel,ipproc(iym1(ih2o )))/wmole(ih2o)          &
             *propce(iel,ipproc(irom1))
-!
+
      xxco  = max(xxco ,zero)
      xxo2  = max(xxo2 ,zero)
      xxco2 = max(xxco2,zero)
      xxh2o = max(xxh2o,zero)
      sqh2o = sqrt(xxh2o)
-!
+
      xkp = exp(lnk0p-t0p/propce(iel,ipproc(itemp1)))
      xkm = exp(lnk0m-t0m/propce(iel,ipproc(itemp1)))
-!
+
      xkpequ = 10.d0**(l10k0e-t0e/propce(iel,ipproc(itemp1)))
      xkcequ = xkpequ                                              &
              /sqrt(8.32d0*propce(iel,ipproc(itemp1))/1.015d5)
 
-!        initialisation par l'état transporté
+     !        initialization per transported state
 
      anmr  = xxco2
      xcom  = xxco + xxco2
      xo2m  = xxo2 + 0.5d0*xxco2
-!
+
      if ( propce(iel,ipproc(itemp1)) .gt. 1200.d0 ) then
 
-!           Recherche de l'état d'équilibre
-!           Recerche itérative sans controle de convergence
-!            (pour conserver la parallelisation sur les mailles)
-!           sur le nombre de moles de reaction séparant
-!           l'etat avant réaction (tel que calculé par Cpcym)
-!           de l'état d'équilibre
-!          ANMR doit etre borne entre 0 et Min(XCOM,2.*XO2M)
-!          on recherche la solution par dichotomie
+     !           Search for the equilibrum state
+     !           Iterative search with convergence control
+     !            (to preserve parallelism on the meshes)
+     !            on the number of reaction mols which separate
+     !            the state before reaction (as calculated by Cpcym)
+     !            of the equilibrum state
+     !           anmr must be confined between 0 and Min(xcom,2.*xo2m)
+     !           We look for the solution by dichotomy
 
        anmr0 = 0.d0
        anmr1 = min(xcom,2.d0*xo2m)
@@ -506,7 +496,7 @@ if ( ieqco2 .ge. 1 ) then
            endif
            iterch = iterch + 1
          enddo
-!
+
          if ( iterch .ge. itermx) then
            nberic = nberic + 1
          else
@@ -530,12 +520,12 @@ if ( ieqco2 .ge. 1 ) then
        xcoeq  = xcom - xco2eq
 
      endif
-!
+
      if ( xco2eq.gt.xxco2 ) then
-!           oxydation
+       !           oxidation
        xden = xkp*sqh2o*(xxo2)**0.25d0
      else
-!           dissociation
+       !           dissociation
        xden = xkm
      endif
      if ( xden .ne. 0.d0 ) then
@@ -548,14 +538,14 @@ if ( ieqco2 .ge. 1 ) then
          x2 = x2 + rtpa(iel,isca(iyfol(icla)))
        enddo
 
-!    On transporte CO2
+       !    We transport CO2
 
        smbrs(iel)  = smbrs(iel)                                   &
                     +wmole(ico2)/propce(iel,ipproc(irom1))        &
          * (xco2eq-xxco2)/(tauchi+tautur)                         &
          * (1.d0-x2)                                              &
          * volume(iel) * crom(iel)
-!
+
        w1 = volume(iel)*crom(iel)/(tauchi+tautur)
        rovsdt(iel) = rovsdt(iel) +   max(w1,zero)
 
@@ -565,7 +555,7 @@ if ( ieqco2 .ge. 1 ) then
      endif
 
    enddo
-!
+
    if(irangp.ge.0) then
      call parcpt(nberic)
      call parmax(err1mx)
@@ -585,8 +575,8 @@ if ( ieqco2 .ge. 1 ) then
 endif
 
 
-! --> Terme source pour HCN et NO : uniquement a partir de la 2eme
-!                                   iter
+! --> Source term for HCN and NO: only from the second
+!                                   iteration
 
 if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
@@ -596,28 +586,27 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
     iexp2  = ipproc(ighcn2)
     iexp3  = ipproc(ignoth)
 
-! QPR= %N libéré pendant l'evaporation/taux de matieres volatiles
-!          moyen
+    ! QPR= %N released during the evaporation/average volatile materials
+    !          rate
 
     qpr = 1.3d0
 
-! YMOY = % vapeur en sorties
+    ! YMOY = % output vapor
 
     ymoy = 0.7d0
 
-! Azote dans le fuel
+    ! Azote in the fuel oil
 
     fn = 0.015
 
-! Masse molaire
-
+    ! Molar mass
     wmhcn = wmole(ihcn)
     wmno  = 0.030d0
     wmo2  = wmole(io2)
 
     if ( ivar.eq.isca(iyhcn) ) then
 
-!        Terme source HCN
+      !        Source term HCN
 
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
@@ -627,7 +616,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       auxmax =-1.d+20
 
       do iel=1,ncel
-!
+
         xxo2 = propce(iel,ipproc(iym1(io2)))                        &
               *propce(iel,ipproc(immel))/wmo2
 
@@ -671,7 +660,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
     if ( ivar.eq.isca(iyno) ) then
 
-!        Terme source NO
+      !        Source term NO
 
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
@@ -704,7 +693,7 @@ endif
 ! Formats
 !--------
 
- 1000 format(' TERMES SOURCES PHYSIQUE PARTICULIERE POUR LA VARIABLE '  &
+ 1000 format(' Specific physic source term for the variable '  &
        ,a8,/)
 
 !----

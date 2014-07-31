@@ -36,29 +36,24 @@
 !>    Possible intervention of the user.
 !
 !-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! Arguments
 !________________________________________________________________________________.
-!   mode            name            role                                         !
+!  mode           name          role
 !________________________________________________________________________________!
-!>  \param[in]      nvlsta          nb of Lagrangian statistical variables
-!>  \param[in]      ivarl           number of the stat (between 1 and nvlsta)
-!>  \param[in]      ivarl1          number of the global stat + group
-!>                                  (average or variance)
-!>  \param[in]      ivarlm          number of the stat mean + group
-!>  \param[in]      iflu            0: mean of the stat ivarl/ivarl1
-!>                                  1: variance of the stat ivarl/ivarl1
-!>  \param[in]      ilpd1           "pointer" to global statistical weight
+!> \param[in]     nvlsta        nb of Lagrangian statistical variables
+!> \param[in]     ivarl         number of the stat (between 1 and nvlsta)
+!> \param[in]     ivarl1        number of the global stat + group
+!>                               (average or variance)
+!> \param[in]     ivarlm        number of the stat mean + group
+!> \param[in]     iflu          0: mean of the stat ivarl/ivarl1
+!>                               1: variance of the stat ivarl/ivarl1
+!> \param[in]     ilpd1         "pointer" to global statistical weight
 !>
-!>  \param[in]      icla            0: global statistic
-!>                                  !=0: stat for the icla group
-!>   \param[in]     tracel(ncelet)  real array, values cells post
+!> \param[in]     icla          0: global statistic
+!>                                !=0: stat for the icla group
+!> \param[in]     tracel        real array, values cells post
 !_________________________________________________________________________________
-!
-!>     Type: i (integer), r (real), s (string), a (array), l (logical),
-!>           and composite types (ex: ra real array)
-!>     mode: <-- input, --> output, <-> modifies data, --- work array
-!=================================================================================
-
 
 subroutine uslaen &
  ( nvlsta ,                                                       &

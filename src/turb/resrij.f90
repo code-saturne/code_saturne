@@ -29,20 +29,19 @@
 !> \brief This subroutine performs the solving of the Reynolds stress components
 !> in \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
 !>
-!> Remark:
+!> \remark
 !> - isou=1 for \f$ R_{11} \f$
 !> - isou=2 for \f$ R_{22} \f$
 !> - isou=3 for \f$ R_{33} \f$
 !> - isou=4 for \f$ R_{12} \f$
 !> - isou=5 for \f$ R_{13} \f$
 !> - isou=6 for \f$ R_{23} \f$
-!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
@@ -59,22 +58,22 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     grdvit        tableau de travail pour terme grad
-!>                                 de vitesse     uniqt pour iturb=31
-!> \param[in]     produc        tableau de travail pour production
-!> \param[in]     gradro        tableau de travail pour grad rom
-!>                              (sans rho volume) uniqt pour iturb=30
+!> \param[in]     grdvit        work array for the velocity grad term
+!>                                 onyl for iturb=31
+!> \param[in]     produc        work array for production
+!> \param[in]     gradro        work array for grad rom
+!>                              (without rho volume) only for iturb=30
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate (see \ref ustsma)
-!> \param[in]     viscf         visc*surface/dist aux faces internes
-!> \param[in]     viscb         visc*surface/dist aux faces de bord
+!> \param[in]     viscf         visc*surface/dist at internal faces
+!> \param[in]     viscb         visc*surface/dist at edge faces
 !> \param[in]     tslagr        coupling term for lagrangian
 !> \param[in]     tslage        explicit source terms for the Lagrangian module
 !> \param[in]     tslagi        implicit source terms for the Lagrangian module
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
-!_______________________________________________________________________________
+!______________________________________________________________________________!
 
 subroutine resrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
@@ -214,7 +213,7 @@ endif
 d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
 
-!     S pour Source, V pour Variable
+!     S as Source, V as Variable
 thets  = thetst
 thetv  = thetav(ivar )
 
@@ -258,18 +257,18 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
-!     Si on extrapole les T.S.
+!     If we extrapolate the source terms
 if(isto2t.gt.0) then
   do iel = 1, ncel
-!       Sauvegarde pour echange
+!       Save for exchange
     tuexpr = propce(iel,iptsta+isou-1)
-!       Pour la suite et le pas de temps suivant
+!       For continuation and next time step
     propce(iel,iptsta+isou-1) = smbr(iel)
-!       Second membre du pas de temps precedent
-!       On suppose -ROVSDT > 0 : on implicite
-!          le terme source utilisateur (le reste)
+!       Second member of previous time step
+!       We suppose -rovsdt > 0: we implicite
+!          the user source term (the rest)
     smbr(iel) = rovsdt(iel)*rtpa(iel,ivar)  - thets*tuexpr
-!       Diagonale
+!       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
@@ -283,7 +282,7 @@ endif
 ! 3. Lagrangian source terms
 !===============================================================================
 
-!     Ordre 2 non pris en compte
+!     Second order is not taken into account
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
   do iel = 1,ncel
     smbr(iel)   = smbr(iel)   + tslage(iel)
@@ -297,10 +296,10 @@ endif
 
 if (ncesmp.gt.0) then
 
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
+!       Integer equal to 1 (for navsto: nb of sur-iter)
   iiun = 1
 
-!       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
+!       We increment smbr with -Gamma rtpa and rocsdt with Gamma (*theta)
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
@@ -308,13 +307,13 @@ if (ncesmp.gt.0) then
    volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
+!       If we extrapolate the source terms we put Gamma Pinj in propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
       propce(iel,iptsta+isou-1) + w1(iel)
     enddo
-!       Sinon on le met directement dans SMBR
+!       Otherwise we put it directly in smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w1(iel)
@@ -337,104 +336,104 @@ enddo
 ! 6. Production, Pressure-Strain correlation, dissipation
 !===============================================================================
 
-! ---> Calcul de k pour la suite du sous-programme
-!       on utilise un tableau de travail puisqu'il y en a...
+! ---> Calculation of k for the sub-routine continuation
+!       we use a work array
 do iel = 1, ncel
   w8(iel) = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
 enddo
 
-! ---> Terme source
+! ---> Source term
 
-!      (1-CRIJ2) Pij (pour toutes les composantes de Rij)
+!      (1-CRIJ2) Pij (for all components of Rij)
 
 !      DELTAIJ*(2/3.CRIJ2.P+2/3.CRIJ1.EPSILON)
-!                    (termes diagonaux pour R11, R22 et R33)
+!                    (diagonal terms for R11, R22 et R33)
 
 !      -DELTAIJ*2/3*EPSILON
 
-!     Si on extrapole les TS
-!       On modifie la partie implicite :
-!         Dans PHI1, on ne prendra que RHO CRIJ1 EPSILON/K et non pas
-!                                  RHO CRIJ1 EPSILON/K (1-2/3 DELTAIJ)
-!         Cela permet de conserver k^n au lieu de (R11^(n+1)+R22^n+R33^n)
-!         Ce choix est discutable. C'est la solution ISOLUC = 1
-!       Si on veut tout prendre en implicite (comme c'est fait
-!         en ordre 1 std), c'est la solution ISOLUC = 2
-!       -> a tester plus precisement si necessaire
+!     If we extrapolate the source terms
+!     We modify the implicit part:
+!     In PHI1, we will only take rho CRIJ1 epsilon/k and not
+!                                rho CRIJ1 epsilon/k (1-2/3 DELTAIJ)
+!     It allow to keep  k^n instead of (R11^(n+1)+R22^n+R33^n)
+!     This choice is questionable. It is the solution isoluc = 1
+!     If we want to take all as implicit (like it is done in
+!     standard first order), it is the solution isoluc = 2
+!     -> to  be tested more precisely if necessary
 
 
-!     Si on extrapole les TS
+!     If we extrapolate the source terms
 if (isto2t.gt.0) then
 
   isoluc = 1
 
   do iel = 1, ncel
 
-!     Demi-traces de Prod et R
+    !     Half-traces of Prod and R
     trprod = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
     trrij  = w8(iel)
 
-!     Calcul de Prod+Phi1+Phi2-Eps
-!       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-!       Dans PROPCE :
-!       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-!       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
+    !     Calculation of Prod+Phi1+Phi2-Eps
+    !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
+    !       In propce:
+    !       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
+    !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
     propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1)         &
                           + cromo(iel) * volume(iel)              &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
             +(crij1-1.d0)* cvara_ep(iel)  )                           &
          +(1.0d0-crij2)*produc(isou,iel)               )
-!       Dans SMBR
-!       =       -C1rho eps/k(Rij         )
-!       = rho{                                     -C1eps/kRij}
+    !       In smbr
+    !       =       -C1rho eps/k(Rij         )
+    !       = rho{                                     -C1eps/kRij}
     smbr(iel) = smbr(iel) + crom(iel) * volume(iel)               &
       *( -crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar)  )
 
-!     Calcul de la partie implicite issue de Phi1
-!       = C1rho eps/k(1        )
+    !     Calculation of the implicit part coming from Phil
+    !       = C1rho eps/k(1        )
     rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)           &
                             *crij1*cvara_ep(iel)/trrij*thetv
 
   enddo
 
-!     Si on veut impliciter un bout de -C1rho eps/k(   -2/3k dij)
+  !     If we want to implicit a part of -C1rho eps/k(   -2/3k dij)
   if(isoluc.eq.2) then
 
     do iel = 1, ncel
 
       trrij  = w8(iel)
 
-!    On enleve a CROMO
-!       =       -C1rho eps/k(   -1/3Rij dij)
+     !    We remove of cromo
+     !       =       -C1rho eps/k(   -1/3Rij dij)
       propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1)       &
                           - cromo(iel) * volume(iel)              &
       *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar))
-!    On ajoute a SMBR (avec CROM)
-!       =       -C1rho eps/k(   -1/3Rij dij)
+      !    We add to smbr (with crom)
+      !       =       -C1rho eps/k(   -1/3Rij dij)
       smbr(iel)                 = smbr(iel)                       &
                           + crom(iel) * volume(iel)               &
       *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar))
-!    On ajoute a ROVSDT (avec CROM)
-!       =        C1rho eps/k(   -1/3    dij)
+      !    We add to rovsdt (woth crom)
+      !       =        C1rho eps/k(   -1/3    dij)
       rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)         &
       *(deltij*d1s3*crij1*cvara_ep(iel)/trrij                 )
     enddo
 
   endif
 
-! Si on n'extrapole pas les termes sources
+! If we do not extrapolate the source terms
 else
 
   do iel = 1, ncel
 
-!     Demi-traces de Prod et R
+    !     Half-traces of Prod and R
     trprod = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
     trrij  = w8(iel)
 
-!     Calcul de Prod+Phi1+Phi2-Eps
-!       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-!       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij-C1eps/kRij}
+    !     Calculation of Prod+Phi1+Phi2-Eps
+    !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
+    !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij-C1eps/kRij}
     smbr(iel) = smbr(iel) + crom(iel) * volume(iel)               &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
@@ -442,8 +441,8 @@ else
          +(1.0d0-crij2)*produc(isou,iel)                          &
          -crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar)  )
 
-!     Calcul de la partie implicite issue de Phi1
-!       = C1rho eps/k(1-1/3 dij)
+    !     Calculation of the implicit part coming from Phi1
+    !       = C1rho eps/k(1-1/3 dij)
     rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)           &
          *(1.d0-d1s3*deltij)*crij1*cvara_ep(iel)/trrij
   enddo
@@ -545,12 +544,12 @@ if (irijec.eq.1) then
   call rijech(isou, rtpa, produc, w7)
   !==========
 
-  ! Si on extrapole les T.S. : PROPCE
+  ! If we extrapolate the source terms: propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
        propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
      enddo
-  ! Sinon SMBR
+  ! Otherwise smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w7(iel)
@@ -700,11 +699,11 @@ deallocate(weighf, weighb)
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+ 1000 format(/,'           Resolution pour la variable ',A8,/)
 
 #else
 
- 1000 format(/,'           SOLVING VARIABLE ',A8           ,/)
+ 1000 format(/,'           Solving variable ',A8           ,/)
 
 #endif
 

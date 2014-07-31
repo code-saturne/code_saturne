@@ -36,7 +36,7 @@
   - Fills boundary conditions (\c ialtyb, \c icodcl, \c rcodcl) for mesh velocity.
   - This subroutine also enables one to fix displacement on nodes.
 
- \section intro Introduction
+ \section intro_ale Introduction
 
  Here one defines boundary conditions on a per-face basis.
 
@@ -51,12 +51,12 @@
 
  Detailed explanation will be found in the theory guide.
 
- \section bc_types Boundary condition types
+ \section bc_types_ale Boundary condition types
 
  Boundary conditions may be assigned in two ways.
 
 
- \subsection std_bcs For "standard" boundary conditions
+ \subsection std_bcs_ale For "standard" boundary conditions
 
  One defines a code in the \c ialtyb array (of dimensions number of
  boundary faces). The available codes are:
@@ -87,7 +87,7 @@
            non zero mesh velocity components.
 
 
- \subsection non_std_bc For "non-standard" conditions
+ \subsection non_std_bc_ale For "non-standard" conditions
 
  Other than (fixed boundary, sliding mesh boundary, fixed velocity), one
  defines for each face and each component \c IVAR = IUMA, IVMA, IWMA:
@@ -126,7 +126,7 @@
     Flux density (in \f$kg \cdot m \cdot s^2\f$) = J if icodcl(ifac, ivar) = 3
                  (<0 if gain, n outwards-facing normal)
     \f$ rcodcl(ifac,ivar,3) = -(VISCMA) \grad {Um}.\vect{n} \f$
-              (Um represents mesh velocity)
+              \f$(Um\f$ represents mesh velocity)
 
 
   - The definition of condition \c rcodcl(ifac,ivar,3)
@@ -136,11 +136,11 @@
             Neuman condition on mesh velocity. Any other value will be
             physically nonsense in that context.
 
-  - If the user assigns a value to \c ialtyb equal to \ref ibfixe, \ref igliss,
- or \ref ivimpo and does not modify \c icodcl (zero value by
+  - If the user assigns a value to \c ialtyb equal to \c ibfixe, \c igliss,
+ or \c ivimpo and does not modify \c icodcl (zero value by
  default), \c ialtyb will define the boundary condition type.
 
- To the contrary, if the user prescribes \ref icodcl(ifac, ivar) (nonzero),
+ To the contrary, if the user prescribes \c icodcl(ifac, ivar) (nonzero),
  the values assigned to rcodcl will be used for the considered face
  and variable (if rcodcl values are not set, the default values will
  be used for the face and variable, so:
@@ -149,26 +149,26 @@
                          - \c rcodcl(ifac, ivar, 3) = 0.d0)
 
  If the user decides to prescribe his own non-standard boundary conditions,
- it will be necessary to assign values to \ref icodcl AND to \ref rcodcl for ALL
+ it will be necessary to assign values to \c icodcl AND to \c rcodcl for ALL
  mesh velocity components. Thus, the user does not need to assign values
- to \ref IALTYB for each associated face, as it will not be taken into account
+ to \c ialtyb for each associated face, as it will not be taken into account
  in the code.
 
 
- \subsection cons_rul Consistency rules
+ \subsection cons_rul_ale Consistency rules
 
  A consistency rules between \c icodcl codes for variables with
  non-standard boundary conditions:
-  - If a symetry code (\ref icodcl = 4) is imposed for one mesh velocity
+  - If a symetry code (\c icodcl = 4) is imposed for one mesh velocity
     component, one must have the same condition for all other mesh
     velocity components.
 
 
- \subsection fix_nod Fixed displacement on nodes
+ \subsection fix_nod_ale Fixed displacement on nodes
 
  For a better precision concerning mesh displacement, one can also assign values
  of displacement to certain internal and/or boundary nodes. Thus, one
- need to fill \c DEPALE and \ref impale arrays :
+ need to fill \c DEPALE and \c impale arrays :
   - \c depale(1,inod) = displacement of node inod in 'x' direction
   - \c depale(2,inod) = displacement of node inod in 'y' direction
   - \c depale(3,inod) = displacement of node inod in 'z' direction
@@ -177,7 +177,7 @@
  \c impale(inod) = 1 indicates that the displacement of node inod is imposed.
 
 
- \note \ref impale array is initialized to the value of 0; if its value
+ \note \c impale array is initialized to the value of 0; if its value
        is not modified, corresponding value in \c DEPALE array will not be
        taken into account.
 
@@ -186,7 +186,7 @@
  During mesh's geometry re-calculation at each time step, the position of the
  nodes, which displacement is fixed (\c i.e. \c impale=1), is not calculated
  using the value of mesh velocity at the center of corresponding cell, but
- directly filled using the values of \ref DEPALE.
+ directly filled using the values of \s DEPALE.
 
  If the displacement is fixed for all nodes of a boundary face it's not
  necessary to prescribe boundary conditions at this face on mesh velocity.
@@ -196,27 +196,27 @@
     value, that is calculated using \c DEPALE array.
 
  If a fixed boundary condition (\c ialtyb(ifac)=ibfixe) is imposed to the face
- \c ifac, the displacement of each node inod belonging to ifac is considered
+ \c ifac, the displacement of each node \c inod belonging to \c ifac is considered
  to be fixed, meaning that \c impale(inod) = 1 and \c depale(.,inod) = 0.d0.
 
 
- \subsubsection nod_des Description of nodes
+ \subsubsection nod_des_ale Description of nodes
 
- \ref nnod gives the total (internal and boundary) number of nodes.
+ \c nnod gives the total (internal and boundary) number of nodes.
  Vertices coordinates are given by \c xyznod(3, nnod) array. This table is
  updated at each time step of the calculation.
  \c xyzno0(3,nnod) gives the coordinates of initial mesh at the beginning
  of the calculation.
 
  The faces - nodes connectivity is stored by means of four integer arrays :
- \ref ipnfac, \ref nodfac, \ref ipnfbr, \ref nodfbr.
+ \c ipnfac, \c nodfac, \c ipnfbr, \c nodfbr.
 
  \c nodfac(nodfbr) stores sequentially the index-numbers of the nodes of each
  internal (boundary) face.
  \c ipnfac(ipnfbr) gives the position of the first node of each internal
  (boundary) face in the array \c nodfac(nodfbr).
 
- For example, in order to get all nodes of internal face \ref ifac, one can
+ For example, in order to get all nodes of internal face \c ifac, one can
  use the following loop:
 
  \code
@@ -229,10 +229,10 @@
  \endcode
 
 
- \subsection flui_bc Influence on boundary conditions related to fluid velocity
+ \subsection flui_bc_ale Influence on boundary conditions related to fluid velocity
 
  The effect of fluid velocity and ALE modeling on boundary faces that
- are declared as walls (\ref itypfb = \ref iparoi or \ref iparug) really depends on
+ are declared as walls (\c itypfb = \c iparoi or \c iparug) really depends on
  the physical nature of this interface.
 
  Indeed when studying an immersed structure the motion of corresponding
@@ -276,36 +276,36 @@
  specified in this subroutine.)
 
 
-\subsubsection cell_id Cells identification
+\subsubsection cell_id_ale Cells identification
 
  Cells may be identified using the getcel subroutine.
  The syntax of this subroutine is described in the
  cs_user_boundary_conditions.f90 subroutine,
  but a more thorough description can be found in the user guide.
 
- \subsubsection fac_id Faces identification
+ \subsubsection fac_id_ale Faces identification
 
  Faces may be identified using the \ref getfbr subroutine.
  The syntax of this subroutine is described in the
  cs_user_boundary_conditions.f90 subroutine,
  but a more thorough description can be found in the user guide.
 
-  \section example Example of boundary conditions ale
+  \section example_ale Example of boundary conditions ale
 
 Here is the list of examples:
 
-  \subpage example_ale
+  \subpage example_ale2
 */
-//_______________________________________________
+//______________________________________________________________________________________
 /*!
 
-  \page example_ale Examples of boundary conditions ale
+  \page example_ale2 Examples of boundary conditions ale
 
-  \section loc_var Local variables
+  \section loc_var_ale Local variables
 
   \snippet  cs_user_boundary_conditions-ale.f90 loc_var
 
-  \section init_fin Initialization and finalization
+  \section init_fin_ale Initialization and finalization
 
   The following initialization block needs to be added for the following examples:   
    \snippet cs_user_boundary_conditions-ale.f90 allocate_ale
@@ -315,30 +315,30 @@ At the end of the subroutine, it is recommended to deallocate the work array:
  
 In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic C and Fortran.
 
-  \section assign Assign boundary conditions to boundary faces
+  \section assign_ale Assign boundary conditions to boundary faces
 
 One may use selection criteria to filter boundary case subsets.\n Loop on faces from a subset. \n Set the boundary condition for each face.
 
-   \subsection calcualtion Calculation of displacement at current time step
+   \subsection calcualtion_ale Calculation of displacement at current time step
 
    \snippet  cs_user_boundary_conditions-ale.f90 calcul
 
-   \subsection example1 Example 1
+   \subsection example1_ale Example 1
  Example : For boundary faces of color 4 assign a fixed velocity
 
    \snippet  cs_user_boundary_conditions-ale.f90 example_1
 
-   \subsection example2 Example 2
+   \subsection example2_ale Example 2
 Example: For boundary face of color 5 assign a fixed displacement on nodes 
 
    \snippet  cs_user_boundary_conditions-ale.f90 example_2 
 
-   \subsection  example3 Example 3
+   \subsection  example3_ale Example 3
 Example : For boundary faces of color 6 assign a sliding boundary 
 
    \snippet  cs_user_boundary_conditions-ale.f90  example_3 
 
-   \subsection  example4 Example 4
+   \subsection  example4_ale Example 4
 Example : Prescribe elsewhere a fixed boundary
 
    \snippet  cs_user_boundary_conditions-ale.f90 example_4 

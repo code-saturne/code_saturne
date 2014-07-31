@@ -33,7 +33,7 @@
 !>  - Fills boundary conditions (ialtyb, icodcl, rcodcl) for mesh velocity.
 !>  - This subroutine also enables one to fix displacement on nodes.
 !>
-!> \section intro Introduction
+!> \section intro_usa Introduction
 !>
 !> Here one defines boundary conditions on a per-face basis.
 !>
@@ -48,12 +48,12 @@
 !>
 !> Detailed explanation will be found in the theory guide.
 !>
-!> \section bc_types Boundary condition types
+!> \section bc_types_usa Boundary condition types
 !>
 !> Boundary conditions may be assigned in two ways.
 !>
 !>
-!> \subsection std_bcs For "standard" boundary conditions
+!> \subsection std_bcs_usa For "standard" boundary conditions
 !>
 !> One defines a code in the \c ialtyb array (of dimensions number of
 !> boundary faces). The available codes are:
@@ -84,7 +84,7 @@
 !>           non zero mesh velocity components.
 !>
 !>
-!> \subsection non_std_bc For "non-standard" conditions
+!> \subsection non_std_bc_usa For "non-standard" conditions
 !>
 !> Other than (fixed boundary, sliding mesh boundary, fixed velocity), one
 !> defines for each face and each component \c IVAR = IUMA, IVMA, IWMA:
@@ -147,7 +147,7 @@
 !> in the code.
 !>
 !>
-!> \subsection cons_rul Consistency rules
+!> \subsection cons_rul_usa Consistency rules
 !>
 !> A consistency rules between \c icodcl codes for variables with
 !> non-standard boundary conditions:
@@ -156,7 +156,7 @@
 !>    velocity components.
 !>
 !>
-!> \subsection fix_nod Fixed displacement on nodes
+!> \subsection fix_nod_usa Fixed displacement on nodes
 !>
 !> For a better precision concerning mesh displacement, one can also assign values
 !> of displacement to certain internal and/or boundary nodes. Thus, one
@@ -188,7 +188,7 @@
 !> to be fixed, meaning that \c impale(inod) = 1 and \c depale(.,inod) = 0.d0.
 !>
 !>
-!> \subsubsection nod_des Description of nodes
+!> \subsubsection nod_des_usa Description of nodes
 !>
 !> \c nnod gives the total (internal and boundary) number of nodes.
 !> Vertices coordinates are given by \c xyznod(3, nnod) array. This table is
@@ -264,7 +264,7 @@
 !> specified in this subroutine.)
 !>
 !>
-!>\subsubsection cell_id Cells identification
+!>\subsubsection cell_id_usa Cells identification
 !>
 !> Cells may be identified using the getcel subroutine.
 !> The syntax of this subroutine is described in the
@@ -272,7 +272,7 @@
 !> but a more thorough description can be found in the user guide.
 !>
 !>
-!> \subsubsection fac_id Faces identification
+!> \subsubsection fac_id_usa Faces identification
 !>
 !> Faces may be identified using the \ref getfbr subroutine.
 !> The syntax of this subroutine is described in the

@@ -20,58 +20,52 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine visdyn &
-!================
 
+!===============================================================================
+! Function:
+! --------
+!> \file visdyn.f90
+!> \brief Calculation of turbulent viscosity for
+!>        a dynamic Smagorinsky LES model
+!>
+!> \f[ smago = \dfrac{L_{ij}M_{ij}}{M_{ij}M_{ij}} \f]
+!>
+!> \f[ \mu_T = \rho smago L^2  \sqrt{2 S_{ij}S_{ij}} \f]
+!> \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
+!>
+!> We have at edge faces types at previous time step
+!>   (except at first time step, when tables itypfb and itrifb
+!>   have not been filled).
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        number of ncepdp cells with losses
+!> \param[in]     icetsm        number of cells with mass source
+!> \param[in]     itypsm        type of mass source for the variable
+!>                               (cf. ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     ckupdc        work array for head losses
+!> \param[in]     smacel        value of variables associated to the
+!>                               mass source
+!>                               for ivar = ipr, smacel = mass flux
+!> \param[in,out] smagor        smagorinski's constant in the cas of
+!>                              a dynamic model
+!______________________________________________________________________________!
+
+subroutine visdyn &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    ckupdc , smacel ,                                              &
    smagor )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! CALCUL DE LA VISCOSITE "TURBULENTE" POUR
-! UN MODELE LES SMAGORINSKI DYNAMIQUE
-
-! SMAGO = LijMij/MijMij
-
-! VISCT = ROM * SMAGO  * L**2 * SQRT ( 2 * Sij.Sij )
-!       Sij = (DUi/Dxj + DUj/Dxi)/2
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! smagor(ncelet)   ! tr ! <-- ! constante de smagorinsky dans le cas           !
-!                  !    !     ! d'un modlele dynamique                         !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -136,7 +130,7 @@ double precision, dimension(:), pointer :: visct
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1.  Iniatilization
 !===============================================================================
 
 ! Map field arrays
@@ -155,7 +149,7 @@ allocate(xmij(ncelet,6))
 call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
-! --- Pour le calcul de la viscosite de sous-maille
+! --- For the calculation of the viscosity of the sub-mesh
 xfil   = xlesfl
 xfil2  = xlesfd
 xa     = ales
@@ -165,7 +159,7 @@ radeux = sqrt(deux)
 xsmgmx = smagmx
 
 !===============================================================================
-! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE
+! 2.  Calculation of velocity gradient and of
 !       S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
 !===============================================================================
 
@@ -234,14 +228,14 @@ enddo
 ! Free memory
 deallocate(gradv, gradvf)
 
-!     Ici XMIJ contient Sij
-!         VISCT contient ||S||
-!            SQRT(2)*SQRT(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
-!         W9                 contient ||SF||
-!            SQRT(2)*SQRT(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2))
+!     Here XMIJ contains Sij
+!         VISCT contains ||S||
+!            sqrt(2)*sqrt(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
+!         W9                 contains ||SF||
+!            sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2))
 
 !===============================================================================
-! 3.  CALCUL DE Mij
+! 3.  Calculation of Mij
 !===============================================================================
 
 do iel = 1, ncel
@@ -273,14 +267,14 @@ do ii = 1, 6
 
 enddo
 
-!     Ici Aij contient alpha_ij, Bij contient beta_ij tilde
-!        et XMIJ contient M_ij
+!     Here Aij contains alpha_ij, Bij contains beta_ij tilde
+!        and XMIJ contains M_ij
 
 !===============================================================================
-! 4.  CALCUL DE LA CONSTANTE DE SMAGORINSKY DYNAMIQUE
+! 4.  Calculation of the dynamic Smagorinsky constant
 !===============================================================================
 
-! FILTRAGE DE LA VITESSE ET DE SON CARRE
+! Filtering the velocity and its square
 
 
 ! U**2
@@ -357,7 +351,7 @@ call cfiltr &
 
 do iel = 1, ncel
 
-! --- Calcul de Lij
+! --- Calculation of Lij
   xl11 = w1(iel) - w7(iel) * w7(iel)
   xl22 = w2(iel) - w8(iel) * w8(iel)
   xl33 = w3(iel) - w9(iel) * w9(iel)
@@ -371,11 +365,11 @@ do iel = 1, ncel
   xm12 = xmij(iel,4)
   xm13 = xmij(iel,5)
   xm23 = xmij(iel,6)
-! ---Calcul de Mij :: Lij
+! ---Calculation of Mij :: Lij
   w1(iel) = xm11 * xl11 + 2.d0* xm12 * xl12 + 2.d0* xm13 * xl13 + &
                                 xm22 * xl22 + 2.d0* xm23 * xl23 + &
                                                     xm33 * xl33
-! ---Calcul de Mij :: Mij
+! ---Calculation of Mij :: Mij
   w2(iel) = xm11 * xm11 + 2.d0* xm12 * xm12 + 2.d0* xm13 * xm13 + &
                                 xm22 * xm22 + 2.d0* xm23 * xm23 + &
                                                     xm33 * xm33
@@ -389,9 +383,9 @@ if (irangp.ge.0.or.iperio.eq.1) then
   !==========
 endif
 
-!     Par defaut on fait une moyenne locale du numerateur et du
-!     denominateur, puis seulement on fait le rapport.
-!     L'utilisateur peut faire autrement dans USSMAG
+!     By default we make a local average of numerator and of
+!     denominator, then only we make the quotient.
+!     The user can make otherwise in ussmag.
 
 call cfiltr                                                       &
 !==========
@@ -429,10 +423,10 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 3.  CALCUL DE LA VISCOSITE (DYNAMIQUE)
+! 3.  Calculation of (dynamic) velocity
 !===============================================================================
 
-! On clippe en (mu + mu_t)>0 dans phyvar
+! Clipping in (mu + mu_t)>0 in phyvar
 
 do iel = 1, ncel
   coef = smagor(iel)
@@ -441,7 +435,7 @@ do iel = 1, ncel
        * coef * delta**2 * visct(iel)
 enddo
 
-!     Quelques impressions
+!     Some printings
 if(iwarni(iu).ge.1) then
 
   smagma = -1.0d12
@@ -478,17 +472,17 @@ deallocate(w10, w0)
 deallocate(xmij)
 
 !----
-! FORMAT
+! Formats
 !----
 
 #if defined(_CS_LANG_FR)
 
  1000 format(                                                           &
-' Nb Clipping Constante Smagorinsky par valeurs maximales ',I10,/)
+' Nb Clipping Constante  Smagorinsky par valeurs maximales',I10,/)
  2001 format(                                                           &
-' --- Informations sur la constante de Smagorinsky^2          ',/,&
+' --- Informations sur la constante de Smagorinsky^2             ',/,&
 ' ----------------------------------                          ',/,&
-' Valeur moy  Valeur min  Valeur max                          ',/,&
+' Val. moy.      Val. min   Val. max                               ',/,&
 ' ----------------------------------                          '  )
  2002 format(                                                           &
  e12.4    ,      e12.4,      e12.4                               )
@@ -512,7 +506,7 @@ deallocate(xmij)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

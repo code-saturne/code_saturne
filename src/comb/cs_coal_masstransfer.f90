@@ -20,31 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_masstransfer &
-!=============================
- ( ncelet , ncel , rtpa , propce , volume )
 
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
-! CALCUL DES TERMES DE TRANSFERT DE MASSE ENTRE LA PHASE CONTINUE
-! ET LA PHASE DISPERSEE
+!> \file cs_coal_masstransfert.f90
+!>
+!> \brief Calculation of the terms of mass transfert
+!>        between the continous phase and the dispersed phase
+!>
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant precedent)                !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-!__________________!____!_____!________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!   mode           name          role
+!______________________________________________________________________________!
+!> \param[in]      ncelet        number of extended (real + ghost) cells
+!> \param[in]      ncel          number of cells
+!> \param[in]      rtpa          calculation variables at the centre of cells
+!>                                 (previous instant)
+!> \param[in,out]  propce        physic properties at cell centers
+!> \param[in]      volume        cell volumes
+!______________________________________________________________________________!
+
+subroutine cs_coal_masstransfer &
+ ( ncelet , ncel , rtpa , propce , volume )
 
 !===============================================================================
 ! Module files
@@ -117,7 +119,7 @@ if ( iok1 > 0 ) then
 endif
 !===============================================================================
 
-! --- Initialisation des termes de transfert de masse
+! --- Initialization of mass transfert terms
 
 do icla = 1, nclacp
   ipcgd1 = ipproc(igmdv1(icla))
@@ -132,11 +134,11 @@ do icla = 1, nclacp
   enddo
 enddo
 
-! --- Calcul de la masse volumique du melange gazeux
+! --- Calculation of mass density of the gas mixture
 
 call field_get_val_s(icrom, crom)
 
-! ---- Calcul de X2=somme(X2i) et X2SRO2 = somme(X2i/Rho2i)
+! ---- Calculation of X2=somme(X2i) and X2SRO2 = sum(X2i/Rho2i)
 
 x2     ( : ) = zero
 x2srho2( : ) = zero
@@ -148,7 +150,7 @@ do icla = 1, nclacp
     xash = rtpa(iel,isca(inp (icla)))*xmash(icla)
     xx2   = xch + xck + xash
 
-!         Prise en compte de l'humidite
+   ! ---- Taking into account humidity
 
     if ( ippmod(iccoal) .eq. 1 ) then
       xx2 = xx2+rtpa(iel,isca(ixwt(icla)))
@@ -168,7 +170,7 @@ enddo
 
 
 !===============================================================================
-! 2. TRANSFERTS DE MASSE PAR DEVOLATILISATION
+! 2. Mass transfert by devolatilization
 !===============================================================================
 
 ipcte1 = ipproc(itemp1)
@@ -182,17 +184,17 @@ do icla = 1, nclacp
 
   do iel = 1, ncel
 
-! --- Transfert de masse du au degagemnt des MV legeres (s-1) < 0
+  ! --- Mass transfert due to degagement of light mass density (s-1) < 0
 
     propce(iel,ipcgd1) = -y1ch(ichcor(icla))*a1ch(ichcor(icla))   &
       * exp(-e1ch(ichcor(icla))/(rr*propce(iel,ipctem)))
 
-! --- Transfert de masse du au degagemnt des MV lourdes (s-1) < 0
+  ! --- Mass transfert due to degagement of heavy mass density (s-1) < 0
 
     propce(iel,ipcgd2) = -y2ch(ichcor(icla))*a2ch(ichcor(icla))   &
       * exp(-e2ch(ichcor(icla))/(rr*propce(iel,ipctem)))
 
-! --- Taux de disparition du charbon reactif (s-1) < 0
+  ! --- Rate of disappearance of reactive coal (s-1) < 0
 
     propce(iel,ipcgch) = - a1ch(ichcor(icla))                     &
       * exp(-e1ch(ichcor(icla))/(rr*propce(iel,ipctem)))          &
@@ -205,12 +207,12 @@ enddo
 
 
 !===============================================================================
-! 3. CALCUL DE RHO_COKE MOYEN POUR CHAQUE CHARBON
-!    On suppose pour le calcul de la masse volumique du coke que
-!    la devolatilisation a lieu a volume constant
+! 3. Calculation of average RHO_COKE for each coal
+!    It is assumed for the calculation of the mass density of the coke
+!     that the devolatization takes place at constant volume
 !===============================================================================
 
-! --- Initialisation
+! --- Initialization
 
 do icha = 1, ncharb
   devto1(icha) = zero
@@ -218,7 +220,7 @@ do icha = 1, ncharb
   rhock(icha)  = rho0ch(icha)
 enddo
 
-! --- Calcul de l'integrale de GMDEV1 et GMDEV2 pour chaque charbon
+! --- Calculation of the integral of GMDEV1 and GMDEV2 for each coal
 
 call field_get_val_s(icrom, crom)
 do icla = 1, nclacp
@@ -239,7 +241,7 @@ do icla = 1, nclacp
   endif
 enddo
 
-! --- Calcul de la masse volumique moyenne du coke
+! --- Calculation of average mass density of coke
 
 do icha = 1, ncharb
   den = y2ch(icha)*devto1(icha)+y1ch(icha)*devto2(icha)
@@ -250,7 +252,7 @@ do icha = 1, ncharb
 enddo
 
 !===============================================================================
-! 4. TRANSFERTS DE MASSE PAR COMBUSTION HETEROGENE AVEC O2
+! 4. Mass transfert by heterogeneous combustion with O2
 !===============================================================================
 
 ipcyox = ipproc(iym1(io2))
@@ -268,23 +270,23 @@ do icla = 1, nclacp
     xnp   = rtpa(iel,isca(inp(icla)))
     xuash = xnp*(1.d0-xashch(icha))*xmp0(icla)
 
-! --- Calcul de la pression partielle en oxygene (atm)
-!                                                 ---
-!       PO2 = RHO1*RR*T*YO2/MO2
+    ! --- Calculation of the partial pressure of oxygen [atm]
+    !                                                 ---
+    !       PO2 = RHO1*RR*T*YO2/MO2
 
     pparo2 = rho1(iel)*rr*propce(iel,ipcte1)*propce(iel,ipcyox)/wmole(io2)
     pparo2 = pparo2 / prefth
 
-! --- Coefficient de cinetique chimique de formation de CO
-!       en (kg.m-2.s-1.atm(-n))
+    ! --- Coefficient of chemical kinetics of formation of CO
+    !       in [kg.m-2.s-1.atm(-n)]
 
     xdfchi = ahetch(ichcor(icla))                                 &
       * exp(-ehetch(ichcor(icla))*4185.d0                         &
              / (rr * propce(iel,ipctem)) )
 
-! --- Coefficient de diffusion en  (Kg/m2/s/atm) : XDFEXT
-!     Coefficient global pour n=0.5 en (kg/m2/s) : XDFTOT0
-!     Coefficient global pour n=1   en (Kg/m2/s) : XDFTOT1
+    ! --- Diffusion coefficient  in kg/m2/s/[atm] : XDFEXT
+    !     Global coefficient for n=0.5 in kg/m2/s : XDFTOT0
+    !     Global coefficient for n=1   in Kg/m2/s : XDFTOT1
 
     diacka = propce(iel,ipcdia)/diam20(icla)
     if ( diacka .gt. epsicp ) then
@@ -298,11 +300,10 @@ do icla = 1, nclacp
       xdftot0 = xdfchi*pparo2**0.5d0
     endif
 
-! Rq AE : Pour l'instant, on se limite a ce test
-!         L'introduction d'une correlation de soufflage viendra
-!         ulterieurement.
+    ! Remark AE: For now, we limit ourselves to this test
+    !         The introduction of a blowing correlation will come later
 
-! --- Calcul de COXCK tq : Se = COXCK * XCK**(2/3)
+    ! --- Calculation of coxck such as: Se = coxck * Xck**(2/3)
 
     coxck = zero
     if ( xuash.gt.epsicp ) then
@@ -310,8 +311,8 @@ do icla = 1, nclacp
             (rho20(icla)/(rhock(icha)*xuash))**(2.d0/3.d0)
     endif
 
-! --- Calcul de PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT0*PPARO2*XNP < 0
-! --- ou  PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT1*PPARO2*XNP < 0
+    ! --- Calculation of propce(iel,ipcght) = - coxck*Xdftoto*PPARO2*Xnp < 0
+    ! --- or  propce(iel,ipcght) = - coxck*XDFTOT1*PPARO2*Xnp < 0
 
     if (iochet(icha).eq.1) then
       propce(iel,ipcght) = - xdftot1*coxck*xnp
@@ -324,7 +325,7 @@ do icla = 1, nclacp
 enddo
 
 !===============================================================================
-! 5. TRANSFERTS DE MASSE PAR COMBUSTION HETEROGENE AVEC CO2
+! 5. Mass transfert by heterogeneous combustion with CO2
 !===============================================================================
 
 if ( ihtco2 .eq. 1) then
@@ -344,24 +345,24 @@ if ( ihtco2 .eq. 1) then
       xnp   = rtpa(iel,isca(inp(icla)))
       xuash = xnp*(1.d0-xashch(icha))*xmp0(icla)
 
-! --- Calcul de la pression partielle en CO2 (atm)
-!                                                 ---
-!       PCO2 = RHO1*RR*T*YCO2/MCO2
+      ! --- Calculation of partial pressure of CO2 [atm]
+      !                                                 ---
+      !       PCO2 = RHO1*RR*T*YCO2/MCO2
 
       pprco2 = rho1(iel)*rr*propce(iel,ipcte1)                    &
                            *propce(iel,ipyco2)/wmole(ico2)
       pprco2 = pprco2 / prefth
 
-! --- Coefficient de cinetique chimique de formation de CO
-!       en (kg.m-2.s-1.atm(-n))
+      ! --- Coefficient of chemical kinetics of formation of CO
+      !       in kg.m-2.s-1.atm(-n)
 
       xdfchi = ahetc2(ichcor(icla))                               &
         * exp(-ehetc2(ichcor(icla))*4185.d0                       &
                / (rr * propce(iel,ipctem)) )
 
-! --- Coefficient de diffusion en  (Kg/m2/s/atm) : XDFEXT
-!     Coefficient global pour n=0.5 en (kg/m2/s) : XDFTOT0
-!     Coefficient global pour n=1   en (Kg/m2/s) : XDFTOT1
+      ! --- Diffusion coefficient in kg/m2/s/[atm] : XDFEXT
+      !     Global coefficient for n=0.5 in kg/m2/s : XDFTOT0
+      !     Glabal coefficient for n=1   in [g/m2/s : XDFTOT1
 
       diacka = propce(iel,ipcdia)/diam20(icla)
       if ( diacka .gt. epsicp ) then
@@ -375,11 +376,10 @@ if ( ihtco2 .eq. 1) then
         xdftot0 = xdfchi*pprco2**0.5d0
       endif
 
-! Rq AE : Pour l'instant, on se limite a ce test
-!         L'introduction d'une correlation de soufflage viendra
-!         ulterieurement.
+      ! Remark AE: For now, we limit ourselves to this test
+      !         The introduction of a blowing correlation will come later
 
-! --- Calcul de COXCK tq : Se = COXCK * XCK**(2/3)
+      ! --- Calculation of coxck such as: Se = coxck * Xck**(2/3)
 
       coxck = zero
       if ( xuash.gt.epsicp ) then
@@ -387,8 +387,8 @@ if ( ihtco2 .eq. 1) then
               (rho20(icla)/(rhock(icha)*xuash))**(2.d0/3.d0)
       endif
 
-! --- Calcul de PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT0*PPRCO2*XNP < 0
-! --- ou  PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT1*PPRCO2*XNP < 0
+      ! --- Calculation of propce(iel,ipcght) = - coxck*XDFTOT0*PPRCO2*Xnp < 0
+      ! --- or  propce(iel,ipcght) = - coxck*XDFTOT1*PPRCO2*Xnp < 0
 
       if (ioetc2(icha).eq.1) then
         propce(iel,ipcght) = - xdftot1*coxck*xnp
@@ -403,7 +403,7 @@ if ( ihtco2 .eq. 1) then
 endif
 
 !===============================================================================
-! 6. TRANSFERTS DE MASSE PAR COMBUSTION HETEROGENE AVEC H2O
+! 6. Mass transfert by heterogeneous combustion with H2O
 !===============================================================================
 
 if ( ihth2o .eq. 1) then
@@ -423,23 +423,23 @@ if ( ihth2o .eq. 1) then
       xnp   = rtpa(iel,isca(inp(icla)))
       xuash = xnp*(1.d0-xashch(icha))*xmp0(icla)
 
-! --- Calcul de la pression partielle en H2O (atm)
-!                                                 ---
-!       PH2O = RHO1*RR*T*YH2O/MH2O
+      ! --- Calculation of partial pressure of H2O [atm]
+      !                                                 ---
+      !       PH2O = RHO1*RR*T*YH2O/MH2O
 
       pprh2o = rho1(iel)*rr*propce(iel,ipcte1)*propce(iel,ipyh2o)/wmole(ih2o)
       pprh2o = pprh2o/ prefth
 
-! --- Coefficient de cinetique chimique de formation de CO
-!       en (kg.m-2.s-1.atm(-n))
+      ! --- Coefficient of chemical kinetics of formation of CO
+      !       in kg.m-2.s-1.atm(-n)
 
       xdfchi = ahetwt(ichcor(icla))                               &
         * exp(-ehetwt(ichcor(icla))*4185.d0                       &
                / (rr * propce(iel,ipctem)) )
 
-! --- Coefficient de diffusion en  (Kg/m2/s/atm) : XDFEXT
-!     Coefficient global pour n=0.5 en (kg/m2/s) : XDFTOT0
-!     Coefficient global pour n=1   en (Kg/m2/s) : XDFTOT1
+      ! --- Diffusion coefficient in kg/m2/s/[atm]: XDFEXT
+      !     Global coefficient for n=0.5 in kg/m2/s: XDFTOT0
+      !     Global coefficient for n=1 in kg/m2/s: XDFTOT1
 
       diacka = propce(iel,ipcdia)/diam20(icla)
       if ( diacka .gt. epsicp ) then
@@ -453,11 +453,10 @@ if ( ihth2o .eq. 1) then
         xdftot0 = xdfchi*pprh2o**0.5d0
       endif
 
-! Rq AE : Pour l'instant, on se limite a ce test
-!         L'introduction d'une correlation de soufflage viendra
-!         ulterieurement.
+      ! Reamrk AE: For now, we limit ourselves to this test
+      !         The introduction of a blowing correlation will come later
 
-! --- Calcul de COXCK tq : Se = COXCK * XCK**(2/3)
+      ! --- Calculation of coxck such as: Se = coxck * Xck**(2/3)
 
       coxck = zero
       if ( xuash.gt.epsicp ) then
@@ -465,8 +464,8 @@ if ( ihth2o .eq. 1) then
               (rho20(icla)/(rhock(icha)*xuash))**(2.d0/3.d0)
       endif
 
-! --- Calcul de PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT0*PPRH2O*XNP < 0
-! --- ou  PROPCE(IEL,IPCGHT) = - COXCK*XDFTOT1*PPRH2O*XNP < 0
+      ! --- Calculation of propce(iel,ipcght) = - coxck*XDFTOT0*PPRH2O*Xnp < 0
+      ! --- or propce(iel,ipcght) = - coxck*XDFTOT1*PPRH2O*Xnp < 0
 
       if (ioetwt(icha).eq.1) then
         propce(iel,ipcght) = - xdftot1*coxck*xnp
@@ -481,12 +480,12 @@ if ( ihth2o .eq. 1) then
 endif
 
 !===============================================================================
-! 7. TRANSFERTS DE MASSE LORS DE LA PHASE DE SECHAGE
+! 7. Mass transfert during the dryer phase
 !===============================================================================
 
 if ( ippmod(iccoal) .ge. 1 ) then
 
-!      Chaleur Latente en J/kg
+  !      Latente heat in J/kg
   lv     = 2.263d+6
   tebl   = 100.d0+tkelvi
 
@@ -540,8 +539,8 @@ if ( ippmod(iccoal) .ge. 1 ) then
     ipcsec = ipproc(igmsec(icla))
     ipcro2 = ipproc(irom2(icla))
 
-! -------- Calcul du diametre des particules dans W2
-!          On calcule le d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
+    ! -------- Calculation of the diameter of particles in W2
+    !          d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
 
 
     tmax = -1.d+20
@@ -562,8 +561,8 @@ if ( ippmod(iccoal) .ge. 1 ) then
 
         xnp = rtpa(iel,isca(inp(icla)))
 
-!             Calcul du diametre des particules dans W2
-!             On calcule le d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
+        !             Calculation of the diameter of the particules in W2
+        !             d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
 
         dp  = ( xashch(icha)*diam20(icla)**2 +                    &
                  (1.d0-xashch(icha))*propce(iel,ipcdia)**2        &
@@ -611,7 +610,7 @@ if ( ippmod(iccoal) .ge. 1 ) then
           propce(iel,ipcsec) = pi*dp*propce(iel,iromf)                    &
                               *diftl0*shrd*xnp                            &
                    *log((1.D0-propce(iel,ipproc(iym1(ih2o))))/(1.d0-yv))
-!
+
           if ( propce(iel,ipcsec) .lt. 0.d0 ) then
             propce(iel,ipcsec) = 0.d0
             npoin63 = npoin63 + 1
@@ -620,11 +619,11 @@ if ( ippmod(iccoal) .ge. 1 ) then
           npoin4 = npoin4 + 1
           propce(iel,ipcsec) = 0.d0
         endif
-!
+
       else
-!
+
         propce(iel,ipcsec) = 0.d0
-!
+
       endif
 
       tmax = max(propce(iel,ipcsec),tmax)
@@ -654,16 +653,16 @@ if ( ippmod(iccoal) .ge. 1 ) then
 
 
     if (modntl.eq.0) then
-      WRITE(NFECRA,*) ' POUR LA CLASSE = ',ICLA,npoint
-      WRITE(NFECRA,*) '   NBRE DE PTS XWAT >0   =',NPOIN1
+      WRITE(NFECRA,*) ' For the class = ',ICLA,npoint
+      WRITE(NFECRA,*) '   Number of pts Xwat >0   =',NPOIN1
       WRITE(NFECRA,*) '               T < TEBL  =',NPOIN2
       WRITE(NFECRA,*) '               YV     >0 =',NPOIN3
       WRITE(NFECRA,*) '               YV     <0 =',NPOIN4
-      WRITE(NFECRA,*) '   ANNUL G   T < TEBL=   ', npoin63
-      WRITE(NFECRA,*) '   MIN MAX TS = ',TMIN,TMAX
-      WRITE(NFECRA,*) '   MIN MAX YV = ',YVMIN,YVMAX
+      WRITE(NFECRA,*) '   Annul G   T < TEBL=   ', npoin63
+      WRITE(NFECRA,*) '   Min Max ST = ',TMIN,TMAX
+      WRITE(NFECRA,*) '   Min Max YV = ',YVMIN,YVMAX
 
-      WRITE(NFECRA,*) ' CLIPPING DE YV EN MAX ',NPYV,YYMAX
+      WRITE(NFECRA,*) ' Clipping of YV at Max ',NPYV,YYMAX
     endif
 
   enddo
@@ -675,7 +674,7 @@ endif
 !----
 deallocate(x2,x2srho2,rho1,w1,STAT=iok1)
 if ( iok1 > 0 ) then
-  write(nfecra,*) ' Erreur de deallocation memoire dans : '
+  write(nfecra,*) ' Deallocation memory error in : '
   write(nfecra,*) '     cs_coal_masstransfer    '
   call csexit(1)
 endif
@@ -684,7 +683,6 @@ endif
 !--------
 ! Formats
 !--------
-
 !----
 ! End
 !----

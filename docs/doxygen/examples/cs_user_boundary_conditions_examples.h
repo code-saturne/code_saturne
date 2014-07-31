@@ -28,7 +28,7 @@
   \page cs_user_boundary_conditions_examples cs_user_boundary_conditions.f90
 
 
-  \section intro Introduction
+  \section intro_bc Introduction
 
   This page provides several examples of code blocks that may be used
   to define boundary conditions in \ref cs_user_boundary_conditions.
@@ -57,14 +57,14 @@
 
   \page base_examples Basic examples
 
-  \section base_loc_var Local variables to be added
+  \section base_loc_var_bc Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
 
   \snippet cs_user_boundary_conditions-advanced.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_ex Initialization and finalization
 
   The following initialization block needs to be added for the following examples:
 
@@ -78,11 +78,11 @@
   but deallocating arrays in a symmetric manner to their allocation is good
   practice, and it avoids using a different logic for C and Fortran.
 
-  \section base_body Body
+  \section base_body_bc Body
 
   In the body, we may define several boundary conditions. Here are a few examples.
 
-  \section base_example_1 Inlet example with hydraulic diameter
+  \section base_example_1_bc Inlet example with hydraulic diameter
 
   Assign an inlet to boundary faces of group '2' and x < 0.01.
 
@@ -112,7 +112,7 @@
 
   \snippet cs_user_boundary_conditions-base.f90 example_1
 
-  \section base_example_2 Inlet example with turbulence intensity
+  \section base_example_2_bc Inlet example with turbulence intensity
 
   Assign an inlet to boundary faces of group '3'.
 
@@ -132,7 +132,7 @@
 
   \snippet cs_user_boundary_conditions-base.f90 example_2
 
-  \section base_example_3 Assign an outlet to boundary faces of group 'outlet'
+  \section base_example_3_bc Assign an outlet to boundary faces of group 'outlet'
 
   Outlet:
   - zero flux for velocity and temperature, prescribed pressure
@@ -141,7 +141,7 @@
 
   \snippet cs_user_boundary_conditions-base.f90 example_3
 
-  \section base_example_4 Wall example
+  \section base_example_4_bc Wall example
 
   Assign a wall to boundary faces of group '5'.
 
@@ -152,7 +152,7 @@
 
   \snippet cs_user_boundary_conditions-base.f90 example_4
 
-  \section base_example_5 Rough wall example
+  \section base_example_5_bc Rough wall example
 
   Assign a rough wall to boundary faces of group '7'.
 
@@ -163,7 +163,7 @@
 
   \snippet cs_user_boundary_conditions-base.f90 example_5
 
-  \section base_example_6 Symmetry example
+  \section base_example_6_bc Symmetry example
 
   Assign a symmetry condition to boundary faces of group '4'
 
@@ -175,18 +175,18 @@
  
   \page channel_inlet Infinite channel inlet
 
-  \section channel_inlet_loc_var Local variables to be added
+  \section channel_inlet_loc_var_bc Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
 
   \snippet cs_user_boundary_conditions-auto_inlet_profile.f90 loc_var_dec
 
-  \section channel_inlet_init Initialization and finalization
+  \section channel_inlet_init_bc Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
-  \section channel_inlet_example_1 Body
+  \section channel_inlet_example_1_bc Body
 
   Here, we define an inlet boundary condition for a very long channel or duct
   with a section matching the boundary faces of group 'INLET'.
@@ -214,11 +214,11 @@
  
   \page advanced_examples Advanced examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_be Local variables to be added
 
   \snippet cs_user_boundary_conditions-advanced.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_be Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -262,11 +262,11 @@
  
   \page atmospheric_examples Atmospheric examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_atm Local variables to be added
 
   \snippet cs_user_boundary_conditions-atmospheric.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_atm Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -314,11 +314,11 @@
  
   \page compressible_examples Compressible examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_ce Local variables to be added
 
   \snippet cs_user_boundary_conditions-compressible.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_ce Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -443,11 +443,11 @@ TODO : Verifier la traduction
  
   \page cooling_towers_examples Cooling towers examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_cle Local variables to be added
 
   \snippet cs_user_boundary_conditions-cooling_towers.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_cte Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -576,11 +576,11 @@ TODO : Verifier la traduction
    
   \page fuel_examples Fuel examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_fe Local variables to be added
 
   \snippet cs_user_boundary_conditions-fuel.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_fe Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -620,11 +620,11 @@ TODO : Verifier la traduction
  
   \page gas_3ptchem_examples Gas 3 PTCHEM examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_ptchem Local variables to be added
 
   \snippet cs_user_boundary_conditions-gas_3ptchem.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_ptchem Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -664,11 +664,11 @@ TODO : Verifier la traduction
  
   \page gas_ebu_examples Gas EBU examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_ebu Local variables to be added
 
   \snippet cs_user_boundary_conditions-gas_ebu.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_ebu Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -708,11 +708,11 @@ TODO : Verifier la traduction
  
   \page gas_libby_williams_examples Gas Libby-Williams examples
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_lw Local variables to be added
 
   \snippet cs_user_boundary_conditions-gas_libby_williams.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_lw Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -752,11 +752,11 @@ TODO : Verifier la traduction
  
   \page pulverized_coal1 Pulverized coal
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_pc Local variables to be added
 
   \snippet cs_user_boundary_conditions-pulverized_coal.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_pc Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
@@ -796,11 +796,11 @@ TODO : Verifier la traduction
  
   \page pulverized_coal2 Pulverized coal lagrangian
 
-  \section advanced_loc_var Local variables to be added
+  \section advanced_loc_var_pcl Local variables to be added
 
   \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 loc_var_dec
 
-  \section base_init Initialization and finalization
+  \section base_init_pcl Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 

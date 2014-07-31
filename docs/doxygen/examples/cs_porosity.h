@@ -28,7 +28,7 @@
   \page cs_porosity Examples of data settings for porous media (usporo.f90)
 
 
-  \section intro Introduction
+  \section intro_poro Introduction
 
   This function computes the porosity (volume factor \f$ \epsilon \f$
   when porosity module is activated (iporos = 1 in cs_user_parameters.f90).
@@ -45,7 +45,7 @@
   \page base_poro_examples Basic example
 
 
-  \section base_loc_var Local variables to be added
+  \section base_loc_var_poro Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
@@ -53,7 +53,7 @@
   \snippet cs_user_porosity.f90 loc_var_dec
 
 
-  \section subroutine_end Test to remove for use of subroutine end
+  \section subroutine_end_poro Test to remove for use of subroutine end
 
   The following initialization block needs to be added for the following examples:
 

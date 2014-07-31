@@ -20,36 +20,34 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_htconvers2 &
-!============================
- ( mode   , enthal , xsolid , temper )
 
 !===============================================================================
-!  FONCTION  :
+!  Function  :
 !  --------
-! CALCUL DE LA TEMPERATURE DES PARTICULES
-!  EN FONCTION DE L'ENTHALPIE ET DES CONCENTRATIONS
-!  SI IMODE = 1
-! CALCUL DE L'ENTHALPIE DES PARTICULES
-!  EN FONCTION DE LA TEMPERATURE ET DES CONCENTRATIONS
-!  SI IMODE = -1
+!> \file cs_fuel_htconvers.f90
+!>
+!> \brief   - Calculation of the temperature of particles
+!>  Function with enthalpy and concentrations
+!>  if imode = 1
+!>          - Calculation of enthalpy of particles
+!>  Function with temperature and concentrations
+!>  if imode = -1
+!-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! mode             ! e  ! <-- !  -1 : t -> h  ;   1 : h -> t                   !
-! icla             ! e  ! <-- ! numero de la classe                            !
-! enthal           ! r  ! <-- ! enthalpie massique j/kg                        !
-! xsolid           ! tr ! <-- ! fraction massique des constituants             !
-! temper           ! r  ! <-- ! temperature en kelvin                          !
-!__________________!____!_____!________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name             role
+!______________________________________________________________________________!
+!> \param[in]     mode             -1 : t -> h  ;   1 : h -> t
+!> \param[in]     icla             class number
+!> \param[in,out] enthal           mass enthalpy in \f$j\cdot kg^{-1}\f$
+!> \param[in]     xsolid           mass fraction
+!>                                   of the components
+!> \param[in,out] temper           temperature in \f$kelvin\f$
+!______________________________________________________________________________!
 
+subroutine cs_fuel_htconvers2 &
+ ( mode   , enthal , xsolid , temper )
 !===============================================================================
 ! Module files
 !===============================================================================
@@ -84,27 +82,27 @@ integer          it, isol, ihflt2
 double precision eh1, eh0
 
 !===============================================================================
-! Mode de conversion
+! Conversion mode
 ihflt2 = 0
 
 if ( ihflt2.eq.0 ) then
 
 !===============================================================================
-! 2. H2 FONCTION LINEAIRE T2
+! 2. H2 linear function T2
 !===============================================================================
 
   if ( mode.eq.-1 ) then
 
-! --> Loi temperature -> enthalpie (MODE = -1)
+    ! --> Temperature law -> enthalpy (mode = -1)
 
     enthal =  h02fol + cp2fol*(temper-trefth)
 
   elseif ( mode.eq.1 ) then
 
-! --> Loi enthalpie -> temperature (MODE = 1)
+    ! --> Enthalpy law -> temperature (mode = 1)
 
     temper =  (enthal-h02fol)/cp2fol + trefth
-!
+
     if ( temper .le. th(1)   ) temper = th(1)
     if ( temper .gt. th(npo) ) temper = th(npo)
 
@@ -120,12 +118,12 @@ if ( ihflt2.eq.0 ) then
 elseif( ihflt2.ne.0 ) then
 
 !===============================================================================
-! 3. H2 TABULE
+! 3. H2 tabulated
 !===============================================================================
 
   if ( mode.eq.-1 ) then
 
-! --> Loi temperature -> enthalpie (MODE = -1)
+    ! --> Temperature law -> enthalpy (mode = -1)
 
     it = npoc
     if ( temper.ge.thc(it) ) then
@@ -164,7 +162,7 @@ elseif( ihflt2.ne.0 ) then
 
   elseif ( mode.eq.1 ) then
 
-! --> Loi enthalpie -> temperature (MODE = 1)
+    ! --> Enthalpy law -> temperature (mode = 1)
 
     it  = npoc-1
     eh1 = zero
@@ -210,13 +208,13 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR DANS CS_FUEL_HTCONVERS2              ',/,&
+'@ @@ WARNING: Error in cs_fuel_htconvers2                    ',/,&
 '@    =========                                               ',/,&
-'@    VALEUR INCORRECTE DE L''ARGUMENT MODE                   ',/,&
-'@    CE DOIT ETRE UN ENTIER EGAL A 1 OU -1                   ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
+'@    Incorrect value of argument mode                        ',/,&
+'@    it must be an integer equal to 1 or -1                  ',/,&
+'@    it worths here ',I10                                     ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calculation can not run.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

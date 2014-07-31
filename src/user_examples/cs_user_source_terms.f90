@@ -41,7 +41,7 @@
 !> \brief Additional right-hand side source terms for velocity components equation
 !> (Navier-Stokes)
 !>
-!> \section use  Usage
+!> \section use_src1  Usage
 !>
 !> The additional source term is decomposed into an explicit part (\c crvexp) and
 !> an implicit part (\c crvimp) that must be provided here.

@@ -20,57 +20,51 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine resv2f &
-!================
 
+!===============================================================================
+! Function:
+! ---------
+!> \file resv2f.f90
+!> \brief Resolution of source convection diffusion equations
+!>        for \f$\phi\f$ and diffusion for \f$ \overline{f} \f$
+!>        as part of the V2F phi-model
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+!  Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in,out] ivar          variable number
+!> \param[in]     isou          passage number
+!> \param[in,out] ipp           variable number for the post output
+!> \param[in]     icepdc        number of ncepdp cells with head losses
+!> \param[in]     icetsm        number of cells with mass source
+!> \param[in]     itypsm        type of masss source for the
+!>                              variables (cf. ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                              (at current and previous time steps)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     ckupdc        work array for head losses
+!> \param[in]     smacel        value of variables associated to the
+!>                              mass source
+!>                              for ivar=ipr,smacel=flux of masse
+!> \param[in]     prdv2f        storage table of term
+!>                              prod of turbulence for the v2f
+!______________________________________________________________________________!
+
+
+subroutine resv2f &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    ckupdc , smacel ,                                              &
    prdv2f )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION DES EQUATIONS CONVECTION DIFFUSION TERME SOURCE
-!   POUR PHI ET DE DIFFUSION POUR F_BARRE DANS LE CADRE DU
-!   MODELE V2F PHI-MODEL
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! ivar             ! i  ! <-- ! variable number                                !
-! isou             ! e  ! <-- ! numero de passage                              !
-! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! prdv2f(ncelet    ! tr ! <-- ! tableau de stockage du terme de                !
-!                  !    !     ! prod de turbulence pour le v2f                 !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -147,7 +141,7 @@ double precision, dimension(:), pointer :: viscl, visct
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the turbulence resolution
@@ -192,7 +186,7 @@ if(iwarni(iphi).ge.1) then
 endif
 
 !===============================================================================
-! 2. CALCUL DU TERME EN GRAD PHI.GRAD K
+! 2. Calculation of term grad(phi).grad(k)
 !===============================================================================
 
 ! Allocate temporary arrays gradients calculation
@@ -225,7 +219,7 @@ enddo
 deallocate(gradp, gradk)
 
 !===============================================================================
-! 3. RESOLUTION DE L'EQUATION DE F_BARRE / ALPHA
+! 3. Resolution of the equation of f_barre / alpha
 !===============================================================================
 
 if(iturb.eq.50) then
@@ -240,7 +234,7 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1100) label
 endif
 
-!     S pour Source, V pour Variable
+!     S as Source, V as Variable
 thets  = thetst
 thetv  = thetav(ivar )
 
@@ -275,46 +269,49 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
-!     Si on extrapole les T.S.
+!     If we extrapolate the source terms
 if(isto2t.gt.0) then
   do iel = 1, ncel
-!       Sauvegarde pour echange
+    !       Save for exchange
     tuexpe = propce(iel,iptsta+2)
-!       Pour la suite et le pas de temps suivant
-!       On met un signe "-" car on résout en fait "-div(grad fb/alpha) = ..."
+    !       For the futur and the next step time
+    !       We put a mark "-" because in fact we solve
+    !       \f$-\div{\grad {\dfrac{\overline{f}}{\alpha}}} = ... \f$
     propce(iel,iptsta+2) = - smbr(iel)
-!       Second membre du pas de temps precedent
-!       on implicite le terme source utilisateur (le reste)
+    !       Second member of the previous step time
+    !       we implicit the user source term (the rest)
     smbr(iel) = - rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
-!       Diagonale
+    !       Diagonal
     rovsdt(iel) = thetv*rovsdt(iel)
   enddo
 else
   do iel = 1, ncel
-!       On met un signe "-" car on résout en fait "-div(grad fb/alpha) = ..."
-!       On resout par gradient conjugue, donc on n'impose pas le signe
-!          de ROVSDT
+  !       We put a mark "-" because in fact we solve
+  !       \f$-\div\{\grad{\dfrac{\overline{f}}{\alpha}}} = ...\f$
+  !       We solve by conjugated gradient, so we do not impose the mark
+  !       of rovsdt
     smbr(iel)   = -rovsdt(iel)*rtpa(iel,ivar) - smbr(iel)
-!          ROVSDT(IEL) =  ROVSDT(IEL)
+  !          rovsdt(iel) =  rovsdt(iel)
   enddo
 endif
 
 
 !===============================================================================
-! 3.2 TERME SOURCE DE F_BARRE/ALPHA
-!   Pour F_BARRE (PHI_FBAR)
-!     SMBR=1/L^2*(f_b + 1/T(C1-1)(phi-2/3) - C2*Pk/k/rho
-!     -2*nu/k*grad_phi*grad_k -nu*div(grad(phi)) )
-!   Pour ALPHA (BL-V2/K)
-!     SMBR=1/L^2*(alpha^3 - 1)
-!  En fait on met un signe "-" car l'eq resolue est
-!    -div(grad f_b/alpha) = SMBR
+! 3.2 Source term of f_barre/alpha
+!   For f_barre (phi_fbar)
+!     \f[ smbr =\dfrac{1}{L^2*(f_b + \dfrac{1}{T(C1-1)(phi-2/3)}
+!                                               - \dfrac{C2 Pk}{k \rho}
+!     -2 \dfrac{\nu}{k\grad{\phi}\cdot \grad{k} -\nu \div{\grad{\phi} )} \f]
+!   For alpha (BL-V2/K)
+!     \f$smbr = \dfrac{1}{L^2 (\alpha^3 - 1)} \f$
+!  In fact we put a mark "-" because the solved equation is
+!    \f[ -\div{\grad{ \dfrac{\overline{f}}{\alpha}}} = smbr \f]
 !===============================================================================
 
-!     On calcule le terme en -VOLUME*div(grad(phi)) par itrgrp,
-!     et on le stocke dans W2
-!     Attention, les VISCF et VISCB calcules ici servent a ITRGRP mais
-!     aussi a CODITS qui suit
+!     We calculate the term \f$ -VOLUME \div{\grad{\phi}} \f$ with itrgrp,
+!     and we store it in W2
+!     Warning, the viscf and viscb calculated here are of use for itrgr but
+!     for codits too
 
 do iel = 1, ncel
   w3(iel) = 1.d0
@@ -368,9 +365,10 @@ call itrgrp &
    w3     , w3     , w3     ,                                     &
    w2     )
 
-!      On stocke T dans W3 et L^2 dans W4
-!      Dans le cas de l'ordre 2 en temps, T est calcule en n
-!      (il sera extrapole) et L^2 en n+theta (meme si k et eps restent en n)
+!      We store T in W3 et L^2 in W4
+!      In this case of the second-order in time, T is calculated in n
+!      (it will be extrapolated) and L^2 in n+theta
+!      (even if k and eps stay in n)
 do iel=1,ncel
   xk = cvara_k(iel)
   xe = cvara_ep(iel)
@@ -395,9 +393,9 @@ do iel=1,ncel
   endif
 enddo
 
-!     Terme explicite, stocke temporairement dans W5
-!     W2 est deja multiplie par le volume et contient deja
-!     un signe "-" (issu de ITRGRP)
+!     Explicit term, stores ke temporarily in W5
+!     W2 is already multipicated by the volume which already contains
+!     a mark "-" (coming from itrgrp)
 do iel = 1, ncel
     xrom = cromo(iel)
     xnu  = propce(iel,ipcvlo)/xrom
@@ -412,7 +410,7 @@ do iel = 1, ncel
       w5(iel) = volume(iel)
     endif
 enddo
-!     Si on extrapole les T.S : PROPCE
+!     If we extrapolate the source term: propce
 if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
@@ -420,14 +418,14 @@ if(isto2t.gt.0) then
     propce(iel,iptsta+2) + w5(iel)
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+2)
   enddo
-!     Sinon : SMBR
+!     Otherwise: smbr
 else
   do iel = 1, ncel
     smbr(iel) = smbr(iel) + w5(iel)
   enddo
 endif
 
-!     Terme implicite
+!     Implicit term
 do iel = 1, ncel
   if(iturb.eq.50) then
     smbr(iel) = ( - volume(iel)*cvara_fb(iel) + smbr(iel) ) / w4(iel)
@@ -436,7 +434,7 @@ do iel = 1, ncel
   endif
 enddo
 
-! ---> Matrice
+! ---> Matrix
 
 if(isto2t.gt.0) then
   thetap = thetv
@@ -449,7 +447,7 @@ enddo
 
 
 !===============================================================================
-! 3.3 RESOLUTION EFFECTIVE DE L'EQUATION DE F_BARRE/ALPHA
+! 3.3 Effective resolution in the equation of f_barre / alpha
 !===============================================================================
 
 iconvp = iconv (ivar)
@@ -504,7 +502,7 @@ call codits &
    rvoid  , rvoid  )
 
 !===============================================================================
-! 4. RESOLUTION DE L'EQUATION DE PHI
+! 4. Resolution of the equation of phi
 !===============================================================================
 
 ivar = iphi
@@ -515,7 +513,7 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1100) label
 endif
 
-!     S pour Source, V pour Variable
+!     S as Source, V as Variable
 thets  = thetst
 thetv  = thetav(ivar )
 
@@ -545,18 +543,18 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
-!     Si on extrapole les T.S.
+!     If we extrapolate the source terms
 if(isto2t.gt.0) then
   do iel = 1, ncel
-!       Sauvegarde pour echange
+    !       Save for exchange
     tuexpe = propce(iel,iptsta+3)
-!       Pour la suite et le pas de temps suivant
+    !       For the future and the next time step
     propce(iel,iptsta+3) = smbr(iel)
-!       Second membre du pas de temps precedent
-!       On suppose -ROVSDT > 0 : on implicite
-!          le terme source utilisateur (le reste)
+    !       Second member of previous time step
+    !       We suppose -rovsdt > 0: we implicit
+    !       the user source term (the rest)
     smbr(iel) = rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
-!       Diagonale
+    !       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
@@ -567,16 +565,16 @@ else
 endif
 
 !===============================================================================
-! 4.2 TERME SOURCE DE MASSE
+! 4.2 Mass source term
 !===============================================================================
 
 
 if (ncesmp.gt.0) then
 
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
+  !       Integer equal to 1 (for navsto: nb of over-iter)
   iiun = 1
 
-!       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  !       We increment smbr by -Gamma rtpa ans rovsdt by Gamma (*theta)
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
@@ -584,13 +582,13 @@ if (ncesmp.gt.0) then
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbr   ,  rovsdt , w2 )
 
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  !       If we extrapolate the source term we put Gamma Pinj in propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+3) =                                      &
       propce(iel,iptsta+3) + w2(iel)
     enddo
-!       Sinon on le met directement dans SMBR
+  !       Otherwise we put it directly in smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w2(iel)
@@ -601,11 +599,11 @@ endif
 
 
 !===============================================================================
-! 4.3 TERME D'ACCUMULATION DE MASSE -(dRO/dt)*VOLUME
-!    ET TERME INSTATIONNAIRE
+! 4.3 Mass accumulation term \f$ -\dfrad{dRO}{dt}VOLUME \f$
+!    and unstable over time term
 !===============================================================================
 
-! ---> Ajout dans la diagonale de la matrice
+! ---> Adding the matrix diagonal
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                       &
@@ -613,16 +611,19 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 4.4 TERME SOURCE DE PHI
-!     PHI_FBAR:
-!     SMBR=rho*f_barre - phi/k*Pk +2/k*mu_t/sigmak*grad_phi*grad_k
+! 4.4 Source term of phi
+!     \f$ \phi_fbar\f$:
+!     \f[ smbr = \rho f_barre - \dfrac{\phi}{k} P_k +\dfrac{2}{k}
+!                         \dfrac{\mu_t}{\sigma_k} \grad{\phi} \cdot \grad{k} \f]
 !     BL-V2/K:
-!     SMBR=rho*alpha*f_h + rho*(1-alpha^p)*f_w - phi/k*Pk
-!          +2/k*mu_t/sigmak*grad_phi*grad_k
-!        with f_w=-ep/2*phi/k and f_h=1/T*(C1-1+C2*Pk/ep/rho)*(2/3-phi)
+!     \f[ smbr = \rho \alpha f_h + \rho (1-\alpha^p) f_w - \dfrac{\phi}{k} P_k
+!          +\dfrac{2}{k} \dfrac{\mu_t}{\sigma_k} \grad{\phi} \cdot \grad{k} \f]
+!        with \f$ f_w=-\dfrac{\epsilon}{2} \cdot \dfrac{\phi}{k} \f$ and
+!             \f$ f_h = \dfrac{1}{T} \cdot
+!                                (C1-1+C2 \dfrac{P_k}{\epsilon \rho} (2/3-\phi)
 !===============================================================================
 
-!     Terme explicite, stocke temporairement dans W2
+!     Exmplicit term, store temporarily in W2
 
 do iel = 1, ncel
   xk = cvara_k(iel)
@@ -630,9 +631,10 @@ do iel = 1, ncel
   xrom = cromo(iel)
   xnu  = propce(iel,ipcvlo)/xrom
   if(iturb.eq.50) then
-!     Le terme en f_barre est pris en RTP et pas en RTPA ... a priori meilleur
-!    Rq : si on reste en RTP, il faut modifier le cas de l'ordre 2 (qui
-!         necessite RTPA pour l'extrapolation).
+    !     The term in f_barre is taken in rtp and not in rtpa
+    !     ... a priori better
+    !     Remark: if we stay in rtp, we have to modify the case
+    !             of the second-ordre (which need rtpa for extrapolation).
     w2(iel)   =  volume(iel)*                                       &
          ( xrom*cvar_fb(iel)                                            &
            +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
@@ -649,7 +651,7 @@ do iel = 1, ncel
 
 enddo
 
-!     Si on extrapole les T.S : PROPCE
+!     If we extrapolate the source term: propce
 if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
@@ -657,14 +659,14 @@ if(isto2t.gt.0) then
     propce(iel,iptsta+3) + w2(iel)
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+3)
   enddo
-!     Sinon : SMBR
+!     Otherwise: smbr
 else
   do iel = 1, ncel
     smbr(iel) = smbr(iel) + w2(iel)
   enddo
 endif
 
-!     Terme implicite
+!     Implicit term
 do iel = 1, ncel
   xrom = cromo(iel)
   if(iturb.eq.50) then
@@ -678,7 +680,7 @@ do iel = 1, ncel
   endif
 enddo
 
-! ---> Matrice
+! ---> Matrix
 
 if(isto2t.gt.0) then
   thetap = thetv
@@ -699,18 +701,18 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 4.5 TERMES DE DIFFUSION
+! 4.5 Diffusion terms
 !===============================================================================
-! ---> Viscosite
-! Normalement, dans les equations du phi-model, seul la viscosite
-!  turbulente intervient dans la diffusion de phi (le terme en mu
-!  a disparu passant de f a f_barre). Mais tel
-!  quel, cela rend le calcul instable (car mu_t tend vers 0 a la paroi
-!  ce qui decouple phi de sa condition a la limite et le terme de diffusion
-!  moleculaire etant integre dans f_barre, c'est comme s'il etait traite
-!  en explicite).
-!  -> on rajoute artificiellement de la diffusion (sachant que comme k=0 a
-!  la paroi, on se moque de la valeur de phi).
+! ---> Viscosity
+! Normally, in the phi-model equations, only turbulent viscosity
+!  turbulente takes place in phi diffusion (the term with mu disappeared
+!  passing from \f$f\f$ to \f$ \overline{f})\f$. But as it stands,
+!  it makes the calculation unstable (because \f$\mu_t\f$ tends towards 0
+!  at the wall what decouples \f$ \phi \f$ of its boundary condition and
+!  the molecular diffusion term is integred in \f$ \overline{f} \f$, it is as if it
+!  was treated as explicit)
+!  -> we add artificially diffusion (knowing that as k=0, the phi value
+!  does not matter)
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -761,7 +763,7 @@ else
 endif
 
 !===============================================================================
-! 4.6 RESOLUTION EFFECTIVE DE L'EQUATION DE PHI
+! 4.6 Effective resolution of the phi equation
 !===============================================================================
 
 if(isto2t.gt.0) then
@@ -823,7 +825,7 @@ call codits &
    rvoid  , rvoid  )
 
 !===============================================================================
-! 10. CLIPPING
+! 5. Clipping
 !===============================================================================
 
    call clpv2f(ncelet, ncel, nvar, iwarni(iphi))
@@ -837,28 +839,27 @@ deallocate(w4, w5)
 deallocate(dpvar)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
  1000    format(/,                                         &
-'   ** RESOLUTION DU V2F (PHI ET F_BARRE/ALPHA)        ',/,&
+'   ** Resolution pour V2F (phi et f_bar/alpha)               ',/,&
 '      ----------------------------------------        ',/)
- 1100    format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+ 1100    format(/,'           Resolution pour la variable ',A8,/)
 
 #else
 
  1000    format(/,                                         &
-'   ** SOLVING V2F (PHI AND F_BAR/ALPHA)'               ,/,&
+'   ** Solving V2F (phi and f_bar/alpha)'               ,/,&
 '      ---------------------------------'               ,/)
- 1100    format(/,'           SOLVING VARIABLE ',A8                  ,/)
+ 1100    format(/,'           Solving variable ',A8                  ,/)
 
 #endif
 
-!12345678 : MAX: 12345678901234 MIN: 12345678901234 NORM: 12345678901234
 !----
-! FIN
+! End
 !----
 
 return

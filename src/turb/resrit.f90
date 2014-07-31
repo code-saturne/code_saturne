@@ -33,11 +33,11 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     iscal         number of the scalar used
-!> \param[in]     xcpp          Cp
+!> \param[in]     xcpp          \f$ C_p \f$
 !> \param[in,out] xut, xuta     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     dt            time step (per cell)
@@ -46,7 +46,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     gradv         mean velocity gradient
 !> \param[in]     gradt         mean temperature gradient
-!_______________________________________________________________________________
+!______________________________________________________________________________!
 
 subroutine resrit &
  ( nscal  ,                                                       &
@@ -227,13 +227,13 @@ if(isto2t.gt.0) then
       fimp(isou,isou,iel) = - thetv*fimp(isou,isou,iel)
     enddo
   enddo
-! Si on n'extrapole pas les TS :
+! If we do not extrapolate the source terms
 else
   do iel = 1, ncel
     do isou = 1, 3
-      ! Terme source utilisateur
+      ! User source term
       smbrut(isou,iel) = smbrut(isou,iel) + fimp(isou,isou,iel)*xuta(isou,iel)
-      ! Diagonale
+      ! Diagonal
       fimp(isou,isou,iel) = max(-fimp(isou,isou,iel),zero)
     enddo
   enddo

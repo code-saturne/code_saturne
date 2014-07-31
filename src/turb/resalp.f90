@@ -20,36 +20,30 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine resalp &
-!================
-
- ( nvar   ,                                                       &
-   rtp    , rtpa   )
 
 !===============================================================================
 ! Function :
 ! ----------
+!> \file resalp.f90
+!> \brief Solving the equation on alpha in the framwork of the Rij-EBRSM model.
+!>        (written from the equation of \f$ \overline{f})\f$
 
-! Solving the equation on Alpha in the framwork of the Rij-EBRSM model.
-! written from the equation of F_BARRE)
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
-! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           nom           role
+!______________________________________________________________________________!
+!> \param[in]     nvar          total numver of variables
+!> \param[in]     dt            step time
+!> \param[in]     rtp, rtpa     calculation variable in cell centers
+!>                              (current or previous instant)
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!-------------------------------------------------------------------------------
-!===============================================================================
+subroutine resalp &
+ ( nvar   ,                                                       &
+   rtp    , rtpa   )
 
 !===============================================================================
 ! Module files
@@ -112,7 +106,7 @@ double precision, dimension(:), pointer :: viscl, visct
 !===============================================================================
 
 !===============================================================================
-! 1. Initialisation
+! 1. Initialization
 !===============================================================================
 
 allocate(smbr(ncelet), rovsdt(ncelet), w1(ncelet))
@@ -139,13 +133,13 @@ d1s2 = 1.d0/2.d0
 d1s4 = 1.d0/4.d0
 d3s2 = 3.d0/2.d0
 
-!  test sur alpha qui ne doit pas etre superieur a 1
+!  test on alpha which must not be above 1
 if (iwarni(ial).ge.1) then
   write(nfecra,1000)
 endif
 
 !===============================================================================
-! 2. Resolution de l'equation de ALPHA
+! 2. Resolving the equation of alpha
 !===============================================================================
 
 ivar = ial
@@ -178,13 +172,13 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 2.2 Terme source de ALPHA
-!     SMBR=1/L^2*(alpha) - 1/L^2
-!  En fait on met un signe "-" car l'eq resolue est
-!    -div(grad ) alpha = SMBR
+! 2.2 Source term of alpha
+!     \f$ smbr = \dfrac{1}{L^2 (\alpha)} - \dfrac{1}{L^2}\f$
+!  In fact there is a mark "-" because the solved equation is
+!    \f$-\div{\grad {alpha}} = smbr \f$
 !===============================================================================
 
-! ---> Matrice
+! ---> Matrix
 
 if (isto2t.gt.0) then
   thetap = thetv
@@ -198,26 +192,26 @@ do iel=1,ncel
   xk = d1s2*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
   xnu  = viscl(iel)/crom(iel)
 
-  ! Echelle de longueur integrale
+  ! Integral length scale
   xllke = xk**d3s2/cvara_ep(iel)
 
-  ! Echelle de longueur de Kolmogorov
+  ! Kolmogorov length scale
   xllkmg = xceta*(xnu**3/cvara_ep(iel))**d1s4
 
-  ! Echelle de longueur de Durbin
+  ! Durbin length scale
   xlldrb = xcl*max(xllke,xllkmg)
 
   l2      = xlldrb**2
 
-! Terme explicite
+  ! Explicit term
   smbr(iel) = volume(iel)*(1.d0 -cvara_al(iel)) / l2
 
-! Terme implicite
+  ! Implicit term
   rovsdt(iel) = (rovsdt(iel) + volume(iel)*thetap) / l2
 
 enddo
 
-! Calcul de viscf et viscb pour codits
+! Calculation of viscf and viscb for codits
 
 do iel = 1, ncel
   w1(iel) = 1.d0
@@ -230,7 +224,7 @@ call viscfa                                                       &
    viscf  , viscb  )
 
 !===============================================================================
-! 2.3 Resolution effective de l'equation de ALPHA
+! 2.3 Effective resolution of the equation of alpha
 !===============================================================================
 
 iconvp = iconv (ivar)
@@ -292,16 +286,16 @@ deallocate(viscf, viscb)
 deallocate(dpvar)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  1000    format(/,                                                &
-'   ** RESOLUTION DU ALPHA                                    ',/,&
+'   ** Solving alpha                                          ',/,&
 '      -----------------------------------------------        ',/)
- 1100    format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+ 1100    format(/,'           Solving the variable ',A8,/)
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -19,37 +19,34 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!===============================================================================
+! Function :
+! --------
+!> \file cs_coal_htconvers1.f90
+!>
+!> \brief - Calculation of gas temperature
+!>          Function with gas enthalpy and concentrations
+!>          if mode = 1
+!>        - Calculation of gas enthalpy
+!>          Function with gas temperature and concentrations
+!>          if mode = -1
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in,out] eh            gas enthalpy
+!>                                   (\f$ j . kg^{-1} \f$ of mixed gas)
+!> \param[in]     xesp          mass fraction of species
+!> \param[in]     f1mc          average f1
+!> \param[in]     f2mc          average f2
+!> \param[in,out] tp            gas temperature (in kelvin)
+!______________________________________________________________________________!
 
 subroutine cs_coal_htconvers1 &
-!============================
  ( mode , eh , xesp , f1mc , f2mc , tp )
-!===============================================================================
-! FONCTION :
-! --------
-! CALCUL DE LA TEMPERATURE DU GAZ
-!  EN FONCTION DE L'ENTHALPIE DU GAZ ET DES CONCENTRATIONS
-!  SI MODE = 1
-! CALCUL DE L'ENTHALPIE DU GAZ
-!  EN FONCTION DE LA TEMPERATURE DU GAZ ET DES CONCENTRATIONS
-!  SI MODE = -1
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! eh               ! tr ! <-- ! enthalpie du gaz                               !
-!                  !    !     ! (j/kg de melange gazeux)                       !
-! xesp             ! tr ! <-- ! fraction massique des especes                  !
-! f1mc             ! tr ! <-- ! f1 moyen                                       !
-! f2mc             ! tr ! <-- ! f2 moyen                                       !
-! tp               ! tr ! --> ! temperature du gaz (kelvin)                    !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHAMNUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !==============================================================================
 ! Module files
@@ -78,7 +75,6 @@ integer          mode
 double precision eh,tp
 double precision xesp(ngazem)
 double precision f1mc(ncharm),f2mc(ncharm)
-
 ! Local variables
 
 integer          i , icha
@@ -86,17 +82,14 @@ integer          i , icha
 double precision ychx10 , ychx20 , ehchx1 , ehchx2
 double precision den1   , den2
 double precision eh0 , eh1
-
 !===============================================================================
-! 1. CALCUL DE LA TEMPERATURE A PARTIR DE l'ENTHALPIE
+! 1. Calculation of temperature from enthalpy
 !===============================================================================
-
 if ( mode .eq. 1 ) then
 
   i = npo
-
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m a TH(NPO)
+! --- Calculation of enthalpy of the gaseous species CHx1m
+!                                            and CHx2m at TH(NPO)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
@@ -137,9 +130,7 @@ if ( mode .eq. 1 ) then
   else
     ehchx2 = ehgaze(ichx2,i)
   endif
-
-! --- Clipping eventuel de TP a TH(NPO) si EH > EH1
-
+! --- Eventual clipping of temperature at TH(NPO) if EH > EH1
   eh1 = xesp(ichx1)*ehchx1                                         &
        + xesp(ichx2)*ehchx2                                        &
        + xesp(ico  )*ehgaze(ico  ,i)                               &
@@ -159,9 +150,8 @@ if ( mode .eq. 1 ) then
   endif
 
   i = 1
-
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m a TH(1)
+! --- Calculation of enthalpy of the gaseous species CHx1m
+!                                            and CHx2m at TH(1)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
@@ -202,9 +192,7 @@ if ( mode .eq. 1 ) then
   else
     ehchx2 = ehgaze(ichx2,i)
   endif
-
-! --- Clipping eventuel de TP a TH(1) si EH < EH0
-
+! --- Eventual clipping of temperature at TH(1) if EH < EH0
   eh0 = xesp(ichx1)*ehchx1                                        &
       + xesp(ichx2)*ehchx2                                        &
       + xesp(ico  )*ehgaze(ico  ,i)                               &
@@ -226,9 +214,8 @@ if ( mode .eq. 1 ) then
 
  500    continue
   i = i + 1
-
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m pour TH(I-1)
+! --- Calculation of enthalpy of the gaseous species CHx1m
+!                                            and CHx2m for TH(I-1)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
@@ -281,9 +268,8 @@ if ( mode .eq. 1 ) then
       + xesp(iso2 )*ehgaze(iso2 ,i-1)                               &
       + xesp(inh3 )*ehgaze(inh3 ,i-1)                               &
       + xesp(in2  )*ehgaze(in2  ,i-1)
-
-! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
-!                                            et CHx2m pour TH(I)
+! --- Calculation of the enthalpy of the gaseous species CHx1m
+!                                            and CHx2m at TH(I)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
@@ -345,17 +331,13 @@ if ( mode .eq. 1 ) then
   endif
   goto 500
  501    continue
-
 !===============================================================================
-! 1. CALCUL DE L'ENTHALPIE A PARTIR DE LA TEMPERATURE
+! 2. Calculation of the enthalpy from temperature
 !===============================================================================
-
 else if ( mode .eq. -1 ) then
 
   i = npo
-
-! --- Calcul en Max
-
+  ! --- Calculation at Max
   if ( tp .ge. th(i) ) then
     ehchx1 = zero
     ehchx2 = zero
@@ -411,9 +393,7 @@ else if ( mode .eq. -1 ) then
        + xesp(in2  )*ehgaze(in2  ,i)
     goto 601
   endif
-
-! Clipping en Min
-
+  ! Clipping at Min
   i = 1
   if ( tp .le. th(i) ) then
     ehchx1 = zero
@@ -456,9 +436,7 @@ else if ( mode .eq. -1 ) then
     else
       ehchx2 = ehgaze(ichx2,i)
     endif
-
-! --- Clipping eventuel de TP a TH(1) si EH < EH0
-
+    ! --- Eventual clipping of temperature at TH(1) if EH < EH0
     eh = xesp(ichx1)*ehchx1                                       &
        + xesp(ichx2)*ehchx2                                       &
        + xesp(ico  )*ehgaze(ico  ,i)                               &
@@ -473,16 +451,13 @@ else if ( mode .eq. -1 ) then
        + xesp(in2  )*ehgaze(in2  ,i)
     goto 601
   endif
-
-! Interpolation dans la table
-
+ ! Interpolation in the table
   i = 1
  600    continue
 
   i = i + 1
   if ( tp .le. th(i) ) then
-
-! --- Calcul de l'enthalpie de l'espece gazeuse TH(I-1)
+    ! --- Calculation of the enthalpy of the gaseous species TH(I-1)
     ehchx1 = zero
     ehchx2 = zero
     ychx10 = zero
@@ -536,9 +511,7 @@ else if ( mode .eq. -1 ) then
         + xesp(iso2 )*ehgaze(iso2 ,i-1)                           &
         + xesp(inh3 )*ehgaze(inh3 ,i-1)                           &
         + xesp(in2  )*ehgaze(in2  ,i-1)
-
-! --- Calcul de l'enthalpie de l'espece gazeuse TH(I)
-
+    ! --- Calculation of the enthalpy of the gaseous species TH(I)
     ehchx1 = zero
     ehchx2 = zero
     ychx10 = zero
@@ -592,7 +565,7 @@ else if ( mode .eq. -1 ) then
         + xesp(iso2 )*ehgaze(iso2 ,i)                            &
         + xesp(inh3 )*ehgaze(inh3 ,i)                            &
         + xesp(in2  )*ehgaze(in2  ,i)
-!
+
     eh =  eh0                                                    &
            + (eh1-eh0)*(tp-th(i-1))/(th(i)-th(i-1))
     goto 601
@@ -605,26 +578,23 @@ else
   write(nfecra,1000) mode
   call csexit(1)
 endif
-
 !--------
 ! Formats
 !--------
-
  1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR DANS CPTHP1                          ',/,&
+'@ @@ WARNING: Error in cpthp1                                ',/,&
 '@    =========                                               ',/,&
-'@    VALEUR INCORRECTE DE L''ARGUMENT MODE                   ',/,&
-'@    CE DOIT ETRE UN ENTIER EGAL A 1 OU -1                   ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
+'@    Incorrect value of argument mode                        ',/,&
+'@    it must be an integer equal to 1 or -1                  ',/,&
+'@    it worths here ',I10                                     ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calculation can not run.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
 !----
 ! End
 !----

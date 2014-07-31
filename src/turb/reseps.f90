@@ -27,14 +27,14 @@
 !> \file reseps.f90
 !>
 !> \brief This subroutine performs the solving of epsilon in
-!> \f$ R_{ij} - \varepsilon \f$ RANS turbulence model.
+!>        \f$ R_{ij} - \varepsilon \f$ RANS turbulence model.
 !>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
@@ -51,16 +51,16 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     gradv         tableau de travail pour terme grad
-!>                                 de vitesse     uniqt pour iturb=31
-!> \param[in]     produc        tableau de travail pour production
-!>                              (sans rho volume) uniqt pour iturb=30
-!> \param[in]     gradro        tableau de travail pour grad rom
+!> \param[in]     gradv         work array for the term grad
+!>                               of velocity only for iturb=31
+!> \param[in]     produc        work array for production (without
+!>                               rho volume) only for iturb=30
+!> \param[in]     gradro        work array for \f$ \grad{rom} \f$
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate (see \ref ustsma)
-!> \param[in]     viscf         visc*surface/dist aux faces internes
-!> \param[in]     viscb         visc*surface/dist aux faces de bord
+!> \param[in]     viscf         visc*surface/dist at internal faces
+!> \param[in]     viscb         visc*surface/dist at edge faces
 !> \param[in]     tslagr        coupling term for lagrangian
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
@@ -161,7 +161,7 @@ character(len=80) :: label
 !===============================================================================
 
 !===============================================================================
-! 1. Initialisation
+! 1. Initialization
 !===============================================================================
 
 ! Allocate work arrays
@@ -201,7 +201,7 @@ call field_get_coefb_s(ivarfl(ivar), coefbp)
 call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-! Constante Ce2, qui vaut CE2 pour ITURB=30 et CSSGE2 pour ITRUB=31
+! Constant Ce2, which worths Ce2 for iturb=30 and CSSGE2 for itrub=31
 if (iturb.eq.30) then
   ceps2 = ce2
 elseif (iturb.eq.31) then
@@ -210,7 +210,7 @@ else
   ceps2 = cebme2
 endif
 
-! S pour Source, V pour Variable
+! S as Source, V as Variable
 thets  = thetst
 thetv  = thetav(ivar )
 
@@ -244,18 +244,18 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
-!     Si on extrapole les T.S.
+!     If we extrapolate the source terms
 if(isto2t.gt.0) then
   do iel = 1, ncel
-!       Sauvegarde pour echange
+    !       Save for exchange
     tuexpe = propce(iel,iptsta+isou-1)
-!       Pour la suite et le pas de temps suivant
+    !       For the continuation and the next time step
     propce(iel,iptsta+isou-1) = smbr(iel)
-!       Second membre du pas de temps precedent
-!       On suppose -ROVSDT > 0 : on implicite
-!          le terme source utilisateur (le reste)
+    !       Second member of previous time step
+    !       We suppose -rovsdt > 0: we implicit
+    !          the user source term (the rest)
     smbr(iel) = rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
-!       Diagonale
+    !       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
@@ -269,15 +269,15 @@ endif
 ! 3. Lagrangian source terms
 !===============================================================================
 
-!     Ordre 2 non pris en compte
+!     Second order is not taken into account
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
   do iel = 1, ncel
-    ! Ts sur eps
+    ! Source terms with eps
     tseps = -0.5d0 * ( tslagr(iel,itsr11)                        &
                      + tslagr(iel,itsr22)                        &
                      + tslagr(iel,itsr33) )
-    ! rapport k/eps
+    ! quotient k/eps
     kseps = 0.5d0 * ( cvara_r11(iel)                           &
                     + cvara_r22(iel)                           &
                     + cvara_r33(iel) )                         &
@@ -295,10 +295,10 @@ endif
 
 if (ncesmp.gt.0) then
 
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
+  !       Integer equal to 1 (forr navsto: nb of sur-iter)
   iiun = 1
 
-!       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  !       We incremente smbr with -Gamma rtpa and rovsdt with Gamma (*theta)
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
@@ -306,13 +306,13 @@ if (ncesmp.gt.0) then
    volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   , rovsdt , w1 )
 
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  !       If we extrapolate the source terms, we put Gamma Pinj in propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
       propce(iel,iptsta+isou-1) + w1(iel)
     enddo
-!       Sinon on le met directement dans SMBR
+  !       Otherwise we put it directly in smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w1(iel)
@@ -341,8 +341,8 @@ else
   thetap = 1.d0
 endif
 
-! ---> Calcul de la trace de la production, suivant qu'on est en
-!     Rij standard ou en SSG (utilisation de PRODUC ou GRDVIT)
+! ---> Calculation the production trace, depending we are in standard
+!     Rij or in SSG (use of produc or grdvit)
 if (iturb.eq.30) then
   do iel = 1, ncel
     w9(iel) = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
@@ -366,10 +366,10 @@ endif
 if (iturb.eq.32) then
 
   do iel = 1, ncel
-    ! Demi-traces
+    ! Half-traces
     trprod = w9(iel)
     trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
-    ! Calcul de l echelle de temps de Durbin
+    ! Calculation of the Durbin time scale
     xttke  = trrij/cvara_ep(iel)
     xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvara_ep(iel))
     xttdrb = max(xttke,xttkmg)
@@ -395,7 +395,7 @@ if (iturb.eq.32) then
 else
 
   do iel = 1, ncel
-    ! Demi-traces
+    ! Half-traces
     trprod = w9(iel)
     trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
     xttke  = trrij/cvara_ep(iel)
@@ -564,11 +564,11 @@ deallocate(weighf, weighb)
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+ 1000 format(/,'           Resolution de la variable ',A8,/)
 
 #else
 
- 1000 format(/,'           SOLVING VARIABLE ',A8           ,/)
+ 1000 format(/,'           Solving variable ',A8           ,/)
 
 #endif
 

@@ -20,38 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vandri &
-!================
-
- (  itypfb , ifapat , visvdr , yplusc )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Function:
+! ---------
+!> \file vandri.f90
+!> \brief Imposition of an amortization of Van Driest type for the LES.
+!>        \f$ \nu_T \f$ is aborsorbed by \f$ (1-\exp(\dfrac{-y^+}{d^+}))^2 \f$
+!>        where \f$ d^+ \f$ is set at 26.
 
-! IMPOSITION D'UN AMORTISSEMENT DE TYPE VAN DRIEST POUR LA LES
-! nut est amortie par (1-exp(-y+/d+))**2 ou d+ est mis par defaut a 26
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
-! (ncelet)         !    !     !    (rij et echo de paroi      )                !
-! visvdr(ncelet)   ! tr ! <-- ! viscosite dynamique ds les cellules            !
-!                  !    !     !  de bord apres amortisst de v driest           !
-! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
-! (ncelet  )       !    !     !    dans le cas abs(icdpar).eq.1                !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+! modename        name          role
+!______________________________________________________________________________!
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     ifapat        number of the edge face code 5 the nearst
+!>                                 (R_{ij} and wall echo)
+!> \param[in]     visvdr        dynamic viscosity in edge cells after
+!>                               driest velocity amortization
+!> \param[in]     yplusc        \f$ y^+\f$ value in cells in the
+!>                                 case \c abs(icdpar).eq.1
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-
-!===============================================================================
+subroutine vandri &
+ (  itypfb , ifapat , visvdr , yplusc )
 
 !===============================================================================
 ! Module files
@@ -92,10 +87,11 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 
-!     Calcul direct de la distance a la paroi (non compatible parall/perio)
+!     Direst calculation of the distance to the wall
+!     (non compatible parall/perio)
 if(abs(icdpar).eq.2) then
 
-!     En sequentiel, RAS
+  !     In sequentiel, nothing to report
   if(irangp.lt.0) then
     do iel = 1, ncel
       ifac = ifapat(iel)
@@ -107,9 +103,9 @@ if(abs(icdpar).eq.2) then
       visct(iel) = visct(iel)*                                    &
            (1.0d0-exp(-yplus/cdries))**2
     enddo
-!     En parallele, on n'amortit que la premiere maille de paroi :
-!     dangereux mais a priori inutile (car l'utilisation de
-!     ICDPAR=+/-2 en parallele est bloque dans verini)
+  !     In parallel, we absorb only the first mesh of the wall:
+  !     dangereous but a priori useless (because the use of
+  !     icdpar=+/-2 in parallel is bloqued in verini)
   else
     write(nfecra,1000)
     do ifac = 1, nfabor
@@ -127,7 +123,7 @@ if(abs(icdpar).eq.2) then
     enddo
 endif
 
-!     Nouveau mode de calcul : c'est plus simple
+!     Nex calculation mode: it is simpler
 elseif(abs(icdpar).eq.1) then
   do iel = 1, ncel
     yplus = yplusc(iel)
@@ -136,16 +132,15 @@ elseif(abs(icdpar).eq.1) then
   enddo
 endif
 
-!     Pour les cellules de paroi on remet la viscosite turbulente
-!     qui avait ete amortie dans clptur et qui a servi a calculer
-!     les conditions aux limites
+!     For the wall cells we add the turbulent viscosity which was absorbed
+!     in clptur and which has served to calculate the boundary conditions
 do iel = 1, ncel
   if (visvdr(iel).gt.-900.d0)                                     &
        visct(iel) = visvdr(iel)
 enddo
 
 !--------
-! FORMATS
+! Formats
 !--------
 #if defined(_CS_LANG_FR)
 
@@ -153,10 +148,10 @@ enddo
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : DANS LE CAS DE LA LES AVEC AMORTISSEMENT    ',/,&
+'@ @@ Attention: Dans le cas de la LES avec amortissement     ',/,&
 '@    =========                                               ',/,&
-'@    L''AMORTISSEMENT DE VAN DRIEST N''EST FAIT QUE SUR LA   ',/,&
-'@    PREMIERE CELLULE A LA PAROI EN CAS DE PARALLELISME      ',/,&
+'@  L''amortissement de Van Driest n''est fait que            ',/,&
+'@  sur la premiere cellule a la paroi en cas de parallelisme ',/,&
 '@                                                            ',/,&
 '@  Le calcul se poursuit.                                    ',/,&
 '@                                                            ',/,&
@@ -169,10 +164,10 @@ enddo
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/,&
-'@ @@ WARNING: IN CASE OF LES WITH DAMPING'                    ,/,&
+'@ @@ WARNING: In case of LES with damping'                    ,/,&
 '@    ========'                                                ,/,&
-'@    VAN DRIEST DAMPING IS ONLY EFFECTIVE ON THE FIRST CELL'  ,/,&
-'@    OFF-WALL IN CASE OF PARALLELISM'                         ,/,&
+'@    Van Driest damping is only effective on the first cell'  ,/,&
+'@    off-wall in case of parallelism'                         ,/,&
 '@'                                                            ,/,&
 '@  The calculation will be run.'                              ,/,&
 '@'                                                            ,/,&
@@ -181,7 +176,7 @@ enddo
 
 #endif
 !----
-! FIN
+! End
 !----
 
 

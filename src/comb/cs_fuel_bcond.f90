@@ -20,43 +20,41 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_bcond &
-!=======================
 
+!===============================================================================
+! Function:
+! --------
+!> \file cs_fuel_bcond.f90
+!>
+!> \brief   Automatic boundary conditions
+!>          Fuel combustion
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     izfppp        zone number of the edge face
+!>                                for the specific physic module
+!> \param[in,out] rcodcl        boundary conditions value on edge faces
+!>                               rcodcl(1) = value of the Dirichlet
+!>                               rcodcl(2) = value of the extern exchange coef.
+!>                                (infinit if no exchange)
+!>                               rcodcl(3) = value of the flux density
+!>                                (negative if gain) \f$w \cdot m^{-2}\f$ or
+!>                                the rugosity high \f$m\f$ if  \c icodcl=6
+!>                               for velocity  \f$(vistl+visct)\cdot\grad{u}\f$
+!>                               for pressure  \f$dt \cdot \grad{p}\f$
+!>                               for scalar
+!>                                      \f$C_p(viscls+visct/sigmas) \grad{t}\f$
+!______________________________________________________________________________!
+
+subroutine cs_fuel_bcond &
  ( itypfb , izfppp ,                                              &
    rcodcl )
 
-!===============================================================================
-! FONCTION :
-! --------
-!    CONDITIONS AUX LIMITES AUTOMATIQUES
-!           COMBUSTION FUEL
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
-! izfppp(nfabor)   ! te ! <-- ! numero de zone de la face de bord              !
-!                  !    !     !  pour le module phys. part.                    !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -113,7 +111,7 @@ double precision, dimension(:), pointer :: viscl
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  Initializations
 !===============================================================================
 !
 call field_get_val_s(ibrom, brom)
@@ -122,19 +120,18 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 d2s3   = 2.d0 / 3.d0
 !
 !===============================================================================
-! 1.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
+! 1.  Parallel exchanges for the user data
 !===============================================================================
 
-!  En realite on pourrait eviter cet echange en modifiant uscpcl et en
-!    demandant a l'utilisateur de donner les grandeurs dependant de la
-!    zone hors de la boucle sur les faces de bord : les grandeurs
-!    seraient ainsi disponibles sur tous les processeurs. Cependant,
-!    ca rend le sous programme utilisateur un peu plus complique et
-!    surtout, si l'utilisateur le modifie de travers, ca ne marche pas.
-!  On suppose que toutes les grandeurs fournies sont positives, ce qui
-!    permet d'utiliser un max pour que tous les procs les connaissent.
-!    Si ce n'est pas le cas, c'est plus complique mais on peut s'en tirer
-!    avec un max quand meme.
+!  In reality we can avoid this exchange by modifying uspcl and by
+!  asking the user to provide the bulks which depend of the zone
+!  out of the loop on he edge faces: the bulks
+!  would be available on all processors. However, it makes the subroutine
+!  more complicated and mainly if the user modified it in a wrong way
+!  it will not work.
+!  We asume that all provided bulks are positive, it allows to use a max that
+!  all processors know. If it is not the case, it is more complicated but
+!  we can still find a max anyway.
 
 if(irangp.ge.0) then
   call parimx(nozapm,iqimp )
@@ -162,13 +159,12 @@ endif
 
 
 !===============================================================================
-! 2.  CORRECTION DES VITESSES (EN NORME) POUR CONTROLER LES DEBITS
-!     IMPOSES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 2.  Velocity correction (in norm) to control the imposed flows
+!     Loop on all input faces
 !                     =========================
 !===============================================================================
 
-! --- Debit calcule
+! --- Calculated outflow
 
 do izone = 1, nozppm
   qcalc(izone) = 0.d0
@@ -193,11 +189,11 @@ do izone = 1, nozapm
 enddo
 
 if ( ntcabs .gt. 1 ) then
-!
-! --- Correction des vitesses en norme :  on ne le fait qu'a la
-!     2eme iteration car pour la 1ere la masse vol au bord n'est
-!     pas encore connue
-!
+  !
+  ! --- Velocity correction in norm: we do it only at the
+  !     second iteration because the first one the mass density is not known yet
+
+
   iok = 0
   do ii = 1, nzfppp
     izone = ilzppp(ii)
@@ -223,49 +219,50 @@ if ( ntcabs .gt. 1 ) then
       rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
     endif
   enddo
-!
+
 else
-!
+
   do izone = 1, nozapm
     if ( iqimp(izone) .eq. 1 ) then
       qimpc(izone) = qimpat(izone) + qimpfl(izone)
     endif
   enddo
-!
+
 endif
-!
+
  2001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,&
-'@    =========                       FUEL                    ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
+'@ @@ WARNING: Specific physics modul                         ',/,&
+'@    =========                       fuel                    ',/,&
+'@    issue in boundary conditions                            ',/,&
 '@                                                            ',/,&
-'@  Le debit est impose sur la zone IZONE =     ', I10         ,/,&
-'@    puisque                IQIMP(IZONE) =     ', I10         ,/,&
-'@  Or, sur cette zone, le produit RHO D S integre est nul :  ',/,&
-'@    il vaut                             = ',E14.5            ,/,&
-'@    (D est la direction selon laquelle est impose le debit).',/,&
+'@  The outflow is imposed on the zone izone =  ', I10         ,/,&
+'@    because                iqimp(izone) =     ', I10         ,/,&
+'@  However, on this zone, the                                ',/,&
+'@      integred product rho D S is zero:                     ',/,&
+'@    it worths                           = ',E14.5            ,/,&
+'@    (D is the direction in which the outflow is imposed).   ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calcultaion can not run.                              ',/,&
 '@                                                            ',/,&
-'@  Verifier user_fuel_bconds, et en particulier  ',/,&
-'@    - que le vecteur  RCODCL(IFAC,IU,1),                    ',/,&
-'@                      RCODCL(IFAC,IV,1),                    ',/,&
-'@                      RCODCL(IFAC,IW,1) qui determine       ',/,&
-'@      la direction de la vitesse est non nul et n''est pas  ',/,&
-'@      uniformement perpendiculaire aux face d''entree       ',/,&
-'@    - que la surface de l''entree n''est pas nulle (ou que  ',/,&
-'@      le nombre de faces de bord dans la zone est non nul)  ',/,&
-'@    - que la masse volumique n''est pas nulle               ',/,&
+'@  Check user_fuel_bconds, and in particular that            ',/,&
+'@    - the vector rcodcl(ifac,IU,1),                         ',/,&
+'@                 rcodcl(ifac,IV,1),                         ',/,&
+'@                 rcodcl(ifac,IW,1) which determines         ',/,&
+'@      the velocity direction is not zero and is not         ',/,&
+'@      uniformly perpendicular to the input face             ',/,&
+'@    - the input surface is not zero (or that the number     ',/,&
+'@      of edge faces in the zone is not zero)                ',/,&
+'@    - the mass density is not zero                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 !===============================================================================
-! 3. VERIFICATIONS
-!        Somme des DISTributions FUel = 100% pour les zones IENTFL =1
+! 3. Verifications
+!        Sum of fuel distributions = 100% for the zones ientfl = 1
 !===============================================================================
 
 iok = 0
@@ -298,62 +295,62 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,&
-'@    =========                       FUEL                    ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
+'@ @@ WARNING: Specific physics modul                         ',/,&
+'@    =========                       fuel                    ',/,&
+'@    Issue in boundary conditions                            ',/,&
 '@                                                            ',/,&
-'@        Zone    Classe         Distfu(%)                    '  )
+'@        Zone    Class          Distfu(%)                    '  )
  2011 format(                                                           &
 '@  ',I10   ,' ',I10   ,'    ',E14.5                             )
  2012 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,&
-'@    =========                        FUEL                   ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
+'@ @@ WARNING; Specific physics modul                         ',/,&
+'@    =========                        fuel                   ',/,&
+'@    Issue in boundary conditions                            ',/,&
 '@                                                            ',/,&
-'@  On impose une entree fuel en IZONE = ', I10                ,/,&
-'@    puisque               IENTFL(IZONE) = ', I10            ,/, &
-'@  Or, sur cette zone, la somme des distributions            ',/,&
-'@    en pourcentage pour le fuel IFOL = ', I10                ,/,&
-'@    est differente de 100% : elle vaut TOTFOL = ', E14.5     ,/,&
-'@    avec                           TOTFOL-100 = ', E14.5     ,/,&
+'@  We impose a fuel inflow in izone = ', I10                  ,/,&
+'@    because               ientfl(izone) = ', I10            ,/, &
+'@  However, on this zone, the distribution sum               ',/,&
+'@    in percentage for the fuel ifol = ', I1 0                ,/,&
+'@    is different from 100%: it worths totfol = ', E14.5      ,/,&
+'@    with                           totfol-100 = ', E14.5     ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation can not run.                              ',/,&
 '@                                                            ',/,&
-'@  Verifier user_fuel_bconds.                    ',/,&
+'@  Check user_fuel_bconds.                                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 !===============================================================================
-! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 4.  Filling the boundary conditions table
+!       Loop on all input faces
 !                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LA TURBULENCE
+!         We determine the family and its properties
+!           We impose the boundary conditions
+!           for the turbulence
 
 !===============================================================================
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-!      ELEMENT ADJACENT A LA FACE DE BORD
+  !      Adjacent element to the edge face
 
   if ( itypfb(ifac).eq.ientre ) then
 
-! ----  Traitement automatique de la turbulence
+    ! ----  Automatic treatement for turbulence
 
     if ( icalke(izone).ne.0 ) then
 
-!       La turbulence est calculee par defaut si ICALKE different de 0
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference adaptes a l'entree courante si ICALKE = 1
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference et de l'intensite turvulente
-!            adaptes a l'entree courante si ICALKE = 2
+      !       The turbulence is calculated by default if icalke different from 0
+      !          - either from the hydrolic diameter, an reference velocity
+      !            adapted to current input if icalke = 1
+      !          - or from the hydrolic diameter, a reference velocity and
+      !            the turbulent intensity adapted to the current input
+      !            if icalke = 2
 
       uref2 = rcodcl(ifac,iu,1)**2                         &
             + rcodcl(ifac,iv,1)**2                         &
@@ -416,20 +413,20 @@ do ifac = 1, nfabor
 
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+! 2.  Filling the boundary conditions table
+!     Loop on all input faces
 !                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LES SCALAIRES
+!     We determine the family and its properties
+!     We impose the boundary conditions
+!     for the scalars
 !===============================================================================
 
 do ii = 1, nzfppp
 
   izone = ilzppp(ii)
 
-! Une entree IENTRE est forcement du type
-!         IENTAT = 1 ou IENTFL = 1
+  ! An input ientre must be of type
+  ! ientat = 1 or ientfl = 1
   if ( ientat(izone).eq.1 .or. ientfl(izone).eq.1) then
 
     x20t  (izone) = zero
@@ -437,8 +434,8 @@ do ii = 1, nzfppp
 
     do icla = 1, nclafu
 
-! ------ Calcul de X2 total par zone
-!         Petite retouche au cas ou l'entree est fermee
+      ! ------ Calculation of total X2 per zone
+      !        Small correction in case of an closed input
       if(abs(qimpc(izone)).le.epzero) then
         x20(izone,icla) = 0.d0
       else
@@ -447,7 +444,7 @@ do ii = 1, nzfppp
       endif
       x20t(izone)     = x20t(izone) +  x20(izone,icla)
     enddo
-! ------ Calcul de H2 , XMG0
+    ! ------ Calculation of H2, XMG0
     if ( ientfl(izone) .eq. 1 ) then
       t2        = timpfl(izone)
       xsolid(1) = 1.d0-fkc
@@ -455,7 +452,7 @@ do ii = 1, nzfppp
       mode      = -1
       call cs_fuel_htconvers2 (mode, h2(izone) , xsolid , t2)
 !     =======================
-!
+
       do icla = 1, nclafu
         xmg0(izone,icla) = pi/6.d0*(dinifl(icla)**3)*rho0fl
       enddo
@@ -468,59 +465,59 @@ do ii = 1, nzfppp
     x2h20t(izone) = x20t(izone)*h2(izone)
 
 
-! ------ Calcul de H1(IZONE)
+    ! ------ Calculation of H1(izone)
     do ige = 1, ngazem
       coefe(ige) = zero
     enddo
-!
+
     ioxy = inmoxy(izone)
     dmas = wmole(io2) *oxyo2(ioxy) +wmole(in2) *oxyn2(ioxy)    &
           +wmole(ih2o)*oxyh2o(ioxy)+wmole(ico2)*oxyco2(ioxy)
-!
+
     coefe(io2)  = wmole(io2 )*oxyo2(ioxy )/dmas
     coefe(ih2o) = wmole(ih2o)*oxyh2o(ioxy)/dmas
     coefe(ico2) = wmole(ico2)*oxyco2(ioxy)/dmas
     coefe(in2)  = wmole(in2 )*oxyn2(ioxy )/dmas
-!
+
     hlf = zero
     t1   = timpat(izone)
     mode = -1
     call cs_fuel_htconvers1 (mode, h1(izone) , coefe , t1)
 !   =======================
-!
+
   endif
 enddo
-!
-!
+
+
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-!      ELEMENT ADJACENT A LA FACE DE BORD
+  !      Adjacent element to the edge face
 
   if ( itypfb(ifac).eq.ientre ) then
 
-! ----  Traitement automatique des scalaires physiques particulieres
+    ! ----  Automatic treatment for specific physics scalars
 
     do icla = 1, nclafu
-! ------ CL pour Xfol
+      ! ------ Boundary conditions for Xfol
       rcodcl(ifac,isca(iyfol(icla)),1) = x20(izone,icla)
-! ------ CL pour Ng
+      ! ------ Boundary conditions for Ng
       rcodcl(ifac,isca(ing(icla)),1) = x20(izone,icla)            &
                                       /xmg0(izone,icla)
-! ------ CL pour X2HLF
+      ! ------ Boundary conditions for X2HLF
       rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)*h2(izone)
     enddo
-! ------ CL pour X1.FVAP
+    ! ------ Boundary conditions for X1.FVAP
     rcodcl(ifac,isca(ifvap),1) = zero
-! ------ CL pour X1.F7M
+    ! ------ Boundary conditions for X1.F7M
     rcodcl(ifac,isca(if7m),1) = zero
-! ------ CL pour X1.Variance
+    ! ------ Boundary conditions for X1.Variance
     rcodcl(ifac,isca(ifvp2m),1)   = zero
-! ------ CL pour HM
+    ! ------ Boundary conditions for HM
     rcodcl(ifac,isca(iscalt),1) = (1.d0-x20t(izone))*h1(izone)+x2h20t(izone)
-!
-! ------ CL pour X1.F4M (Oxyd 2)
+
+    ! ------ Boundary conditions for X1.F4M (Oxyd 2)
     if ( noxyd .ge. 2 ) then
       if ( inmoxy(izone) .eq. 2 ) then
         rcodcl(ifac,isca(if4m),1)   = (1.d0-x20t(izone))
@@ -528,7 +525,7 @@ do ifac = 1, nfabor
         rcodcl(ifac,isca(if4m),1)   = zero
       endif
     endif
-! ------ CL pour X1.F5M (Oxyd3)
+    ! ------ Boundary conditions for X1.F5M (Oxyd3)
     if ( noxyd .eq. 3 ) then
       if ( inmoxy(izone) .eq. 3 ) then
         rcodcl(ifac,isca(if5m),1)   = (1.d0-x20t(izone))
@@ -537,12 +534,12 @@ do ifac = 1, nfabor
       endif
     endif
 
-! ------ CL pour X1.YCO2
+    ! ------ Boundary conditions for X1.YCO2
     if ( ieqco2 .ge. 1 ) then
       rcodcl(ifac,isca(iyco2),1)   = zero
     endif
 
-! ------ CL pour X1.HCN et X1.NO
+    ! ------ Boundary conditions for X1.HCN and X1.NO
     if ( ieqnox .eq. 1 ) then
       rcodcl(ifac,isca(iyhcn),1)   = zero
       rcodcl(ifac,isca(iyno ),1)   = zero

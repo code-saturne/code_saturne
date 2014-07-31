@@ -20,33 +20,31 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! --------
+!> \file cs_coal_thfieldconv2.f90
+!> \brief Calculation of the particles temperature
+!>        Function with the solid enthalpy and concentrations
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!   mode          name          role
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     rtp           variables calculation in cell centers
+!>                               (current instant)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in,out] eh0           real work array
+!> \param[in,out] eh1           real work array
+!______________________________________________________________________________!
+
 subroutine cs_coal_thfieldconv2 &
-!================
  ( ncelet , ncel   ,                                              &
    rtp    , propce )
-
-!===============================================================================
-! FONCTION :
-! --------
-! CALCUL DE LA TEMPERATURE DES PARTICULES
-!  EN FONCTION DE L'ENTHALPIE DU SOLIDE ET DES CONCENTRATIONS
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! eh0              ! tr ! <-- ! tableau reel de travail                        !
-! eh1              ! tr ! <-- ! tableau reel de travail                        !
-!__________________!____!_____!________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHAMNUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !==============================================================================
 ! Module files
@@ -86,12 +84,12 @@ integer          iok1
 double precision , dimension ( : )     , allocatable :: eh0,eh1
 
 !===============================================================================
-! Methode de conversion
+! Conversion method
 !
 ihflt2 = 1
 !
 !===============================================================================
-! 1. CALCULS PRELIMINAIRES
+! 1. Preliminary calculations
 !===============================================================================
 
 !===============================================================================
@@ -106,11 +104,11 @@ if ( iok1 > 0 ) THEN
 endif
 !===============================================================================
 
-! --- Initialisation des tableaux
+! --- Tables initialization
 eh0( : ) = zero
 eh1( : ) = zero
 
-! --- Initialisation de T2 a T1
+! --- Initialization from T2 to T1
 
 ipcte1 = ipproc(itemp1)
 do icla = 1, nclacp
@@ -121,12 +119,12 @@ do icla = 1, nclacp
 enddo
 
 !===============================================================================
-! 2. CALCUL DE LA TEMPERATURE DES PARTICULES
+! 2. Particles temperature calculation
 !===============================================================================
 
 if ( ihflt2.eq.0 ) then
 
-! --> H2 fonction lineaire de T2
+! --> H2 linear function of T2
 
   do icla = 1, nclacp
     ipcte2 = ipproc(itemp2(icla))

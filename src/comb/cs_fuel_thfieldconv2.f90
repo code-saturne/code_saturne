@@ -20,34 +20,32 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_thfieldconv2 &
-!==============================
- ( ncelet , ncel   ,                  &
-   rtp    , propce )
 
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
-! CALCUL DE LA TEMPERATURE DES PARTICULES
-!  EN FONCTION DE L'ENTHALPIE DU FOL ET DES CONCENTRATIONS
-!
+!> \file cs_fuel_thfieldconv2.f90
+!> \brief Calculation of the particles temperature
+!>  Fonction with the fuel enthalpy and concentrations
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! eh0              ! tr ! <-- ! tableau reel de travail                        !
-! eh1              ! tr ! <-- ! tableau reel de travail                        !
-!__________________!____!_____!________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHAMNUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     rtp           calculation variables in cell centers
+!>                                 (current insatant)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     eh0           real work array
+!> \param[in]     eh1           real work array
+!______________________________________________________________________________!
+
+subroutine cs_fuel_thfieldconv2 &
+ ( ncelet , ncel   ,                  &
+   rtp    , propce )
 
 !==============================================================================
 ! Module files
@@ -84,9 +82,9 @@ double precision xsolid(2), mkfini , diamgt
 double precision masgut  , mfgout , mkgout , rhofol
 
 !===============================================================================
-! 1. CALCULS PRELIMINAIRES
+! 1. Preliminary calculations
 !===============================================================================
-! --- Initialisation de T2 a T1
+! --- Initialization of T2 as T1
 
 ipcte1 = ipproc(itemp1)
 do icla = 1, nclafu
@@ -97,17 +95,17 @@ do icla = 1, nclafu
 enddo
 
 !===============================================================================
-! 2. CALCUL DE LA TEMPERATURE DES PARTICULES
+! 2. Calculation of the particles temperature
 !===============================================================================
-!
+
 do icla=1,nclafu
-!
+
   ipcte2 = ipproc(itemp2(icla))
 
   mkfini = rho0fl*pi/6.d0*dinikf(icla)**3
 
   do icel = 1, ncel
-!
+
     rhofol = propce(icel,ipproc(irom2 (icla)))
     diamgt = propce(icel,ipproc(idiam2(icla)))
     masgut = rho0fl*pi/6.d0*(diamgt**3.d0)
@@ -125,16 +123,16 @@ do icla=1,nclafu
     endif
     xsolid(1) = min(1.d0,max(0.d0,xsolid(1)))
     xsolid(2) = min(1.d0,max(0.d0,xsolid(2)))
-!
+
     if ( rtp(icel,isca(iyfol(icla))) .gt. (3.d3*epsifl) ) then
-!
+
       eh2 =  rtp(icel,isca(ih2(icla)))/rtp(icel,isca(iyfol(icla)))
-!
+
       mode = 1
       call cs_fuel_htconvers2 &
-!     =======================
+     =======================
       (mode, eh2 , xsolid , propce(icel,ipcte2))
-!
+
     endif
 
   enddo
@@ -142,7 +140,7 @@ do icla=1,nclafu
 enddo
 
 !----
-! END
+! End
 !----
 return
 end subroutine

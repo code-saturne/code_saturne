@@ -35,7 +35,7 @@ Average of the Lagrangian volume statistical variables.
 Possible intervention of the user.
 
   
-   \section base_loc_var Local variables to be added
+   \section base_loc_var_lag Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:

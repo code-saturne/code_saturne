@@ -36,13 +36,12 @@
 !> - isou=4 for \f$ R_{12} \f$
 !> - isou=5 for \f$ R_{13} \f$
 !> - isou=6 for \f$ R_{23} \f$
-!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
@@ -59,16 +58,16 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     gradv         tableau de travail pour terme grad
-!>                                 de vitesse     uniqt pour iturb=31
-!> \param[in]     produc        tableau de travail pour production
-!> \param[in]     gradro        tableau de travail pour grad rom
-!>                              (sans rho volume) uniqt pour iturb=30
+!> \param[in]     gradv         work array for the velocity grad term
+!>                                 only for iturb=31
+!> \param[in]     produc        work array for production
+!> \param[in]     gradro        work array for grad rom
+!>                              (without rho volume) only for iturb=30
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate (see \ref ustsma)
-!> \param[in]     viscf         visc*surface/dist aux faces internes
-!> \param[in]     viscb         visc*surface/dist aux faces de bord
+!> \param[in]     viscf         visc*surface/dist at internal faces
+!> \param[in]     viscb         visc*surface/dist at edge faces
 !> \param[in]     tslagr        coupling term for lagrangian
 !> \param[in]     tslage        explicit source terms for the Lagrangian module
 !> \param[in]     tslagi        implicit source terms for the Lagrangian module
@@ -228,7 +227,7 @@ if(isou.gt.3) then
   deltij = 0.0d0
 endif
 
-!     S pour Source, V pour Variable
+!     S as Source, V as Variable
 thets  = thetst
 thetv  = thetav(ivar )
 
@@ -272,18 +271,18 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
-!     Si on extrapole les T.S.
+!     If we extrapolate the source terms
 if(isto2t.gt.0) then
   do iel = 1, ncel
-!       Sauvegarde pour echange
+    !       Save for exchange
     tuexpr = propce(iel,iptsta+isou-1)
-!       Pour la suite et le pas de temps suivant
+    !       For continuation and the next time step
     propce(iel,iptsta+isou-1) = smbr(iel)
-!       Second membre du pas de temps precedent
-!       On suppose -ROVSDT > 0 : on implicite
-!          le terme source utilisateur (le reste)
+    !       Second member of the previous time step
+    !       We suppose -rovsdt > 0: we implicite
+    !          the user source term (the rest)
     smbr(iel) = rovsdt(iel)*rtpa(iel,ivar)  - thets*tuexpr
-!       Diagonale
+    !       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
@@ -297,7 +296,7 @@ endif
 ! 3. Lagrangian source terms
 !===============================================================================
 
-!     Ordre 2 non pris en compte
+ !     2nd order is not taken into account
  if (iilagr.eq.2 .and. ltsdyn.eq.1) then
    do iel = 1,ncel
      smbr(iel)   = smbr(iel)   + tslage(iel)
@@ -311,10 +310,10 @@ endif
 
 if (ncesmp.gt.0) then
 
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
+  !       Integer equal to 1 (for navsto: nb of sur-iter)
   iiun = 1
 
-! On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  ! We incremente smbr with -Gamma rtpa and rovsdr with Gamma (*theta)
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
@@ -322,13 +321,13 @@ if (ncesmp.gt.0) then
    volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  !       If we extrapolate the source terms we put Gamma Pinj in propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
       propce(iel,iptsta+isou-1) + w1(iel)
     enddo
-!       Sinon on le met directement dans SMBR
+  !       Otherwise we put it directly in smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w1(iel)
@@ -341,7 +340,7 @@ endif
 ! 5. Non-stationary term
 !===============================================================================
 
-! ---> Ajout dans la diagonale de la matrice
+! ---> Added in the matrix diagonal
 
 do iel=1,ncel
   rovsdt(iel) = rovsdt(iel)                                       &
@@ -353,7 +352,7 @@ enddo
 ! 6. Production, Pressure-Strain correlation, dissipation, Coriolis
 !===============================================================================
 
-! ---> Terme source
+! ---> Source term
 !     -rho*epsilon*( Cs1*aij + Cs2*(aikajk -1/3*aijaij*deltaij))
 !     -Cr1*P*aij + Cr2*rho*k*sij - Cr3*rho*k*sij*sqrt(aijaij)
 !     +Cr4*rho*k(aik*sjk+ajk*sik-2/3*akl*skl*deltaij)
@@ -499,7 +498,7 @@ do iel=1,ncel
 
   trprod = d1s2 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
   trrij  = d1s2 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
-!-----> aII = aijaij
+  !-----> aII = aijaij
   aii    = 0.d0
   aklskl = 0.d0
   aiksjk = 0.d0
@@ -565,18 +564,17 @@ do iel=1,ncel
     aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
   enddo
 
-!     Si on extrapole les TS (rarissime), on met tout dans PROPCE.
-!     On n'implicite pas le terme en Cs1*aij ni le terme en Cr1*P*aij.
-!     Sinon, on met tout dans SMBR et on peut impliciter Cs1*aij
-!     et Cr1*P*aij. Ici on stocke le second membre et le terme implicite
-!     dans W1 et W2, pour eviter d'avoir un test IF(ISTO2T.GT.0)
-!     dans la boucle NCEL
-!     Dans le terme en W1, qui a vocation a etre extrapole, on utilise
-!     naturellement CROMO.
-!     L'implicitation des deux termes pourrait se faire aussi en cas
-!     d'extrapolation, en isolant ces deux termes et les mettant dans
-!     SMBR et pas PROPCE et en utilisant IPCROM ... a modifier si le
-!     besoin s'en fait vraiment sentir           !
+  !     If we extrapolate the source terms (rarely), we put all in propce.
+  !     We do not implicit the term with Cs1*aij neither the term with Cr1*P*aij.
+  !     Otherwise, we put all in smbr and we can implicit Cs1*aij
+  !     and Cr1*P*aij. Here we store the second member and the implicit term
+  !     in W1 and W2, to avoid the test(ISTO2T.GT.0)
+  !     in the ncel loop
+  !     In the term with W1, which is dedicated to be extrapolated, we use
+  !     cromo.
+  !     The implicitation of the two terms can also be done in the case of
+  !     extrapolation, by isolating those two terms and by putting it in
+  !     smbr but not in propce and by using ipcrom .... to be modified if needed
 
   if (iturb.eq.31) then
 
@@ -609,10 +607,10 @@ do iel=1,ncel
 
     ! Compute the explicit term
 
-    ! Calcul des termes de proches parois et quasi-homgene de phi et
-    ! epsilon
+    ! Calculation of the terms near the walls and et almost homogeneous
+    ! of phi and epsilon
 
-    ! Calcul du terme de proche paroi \Phi_{ij}^w --> W3
+    ! Calculation of the term near the wall \f$ \Phi_{ij}^w \f$ --> W3
     phiijw = 0.d0
     xnnd = d1s2*( xnal(iii)*xnal(jjj) + deltij )
     do kk = 1, 3
@@ -624,14 +622,14 @@ do iel=1,ncel
     enddo
     phiijw = -5.d0*cvara_ep(iel)/trrij * phiijw
 
-    ! Calcul du terme quasi-homogene \Phi_{ij}^h --> W4
+    ! Calculation of the almost homogeneous term \f$ \phi_{ij}^h \f$ --> W4
     phiij1 = -cvara_ep(iel)*cebms1*xaniso(iii,jjj)
     phiij2 = -cebmr1*trprod*xaniso(iii,jjj)                       &
                +trrij*xstrai(iii,jjj)*(cebmr2-cebmr3*sqrt(aii))   &
                +cebmr4*trrij   *(aiksjk-d2s3*deltij*aklskl)       &
                +cebmr5*trrij   * aikrjk
 
-    ! Calcul de \e_{ij}^w --> W5 (Rotta model)
+    ! Calculation of \f $\e_{ij}^w \f$ --> W5 (Rotta model)
     ! Rij/k*epsilon
     epsijw =  xrij(iii,jjj)/trrij   *cvara_ep(iel)
 
@@ -639,8 +637,8 @@ do iel=1,ncel
     epsij =  d2s3*cvara_ep(iel)*deltij
 
     ! Calcul du terme source explicite de l'equation des Rij
-    !   [ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
-    !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ] --> W1
+    !  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
+    !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ]\f$ --> W1
     alpha3 = cvar_al(iel)**3
 
     w1(iel) = volume(iel)*crom(iel)*(                             &
@@ -650,14 +648,14 @@ do iel=1,ncel
 
     !  Implicite term
 
-    ! le terme ci-dessous correspond a la partie implicitee du SSG
-    ! dans le cadre de la ponderation elliptique, il est multiplie par
-    ! \alpha^3
+    ! The term below corresponds to the implicit part of SSG
+    ! in the context of elliptical weighting, it is multiplied by
+    ! \f$ \alpha^3 \f$
     w2(iel) = volume(iel)*crom(iel)*(                             &
               cebms1*cvara_ep(iel)/trrij*alpha3                       &
              +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
-    ! Implicitation de epsijw
-    ! (le facteur 5 apparait lorsqu'on fait Phi_{ij}^w - epsijw)
+    ! Implicitation of epsijw
+    ! (the factor 5 appears when we calculate \f$ Phi_{ij}^w - epsijw\f$)
             + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
             +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
   endif
@@ -699,12 +697,12 @@ if (igrari.eq.1) then
   call rijthe(nscal, ivar, gradro, w7)
   !==========
 
-  ! Si on extrapole les T.S. : PROPCE
+  ! If we extrapolate the source terms: propce
   if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
     enddo
-  ! Sinon SMBR
+  ! Otherwise smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w7(iel)
@@ -833,11 +831,11 @@ deallocate(weighf, weighb)
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
+ 1000 format(/,'           Resolution pour la variable ',A8,/)
 
 #else
 
- 1000 format(/,'           SOLVING VARIABLE ',A8           ,/)
+ 1000 format(/,'           Solving variable ',A8           ,/)
 
 #endif
 

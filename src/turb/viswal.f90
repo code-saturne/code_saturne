@@ -31,8 +31,10 @@
 !> \f$ \mu_T = \rho (C_{wale} L)^2 * \dfrac{(\tens{S}:\tens{Sd})^{3/2}}
 !>                                         {(\tens{S} :\tens{S})^(5/2)
 !>                                         +(\tens{Sd}:\tens{Sd})^(5/4)} \f$
-!> with \f$ \tens{S}  = 1/2(\gradt \vect{u} + \transpose{\gradt \vect{u}})\f$
+!> with \f$ \tens{S}  = \frac{1}{2}(\gradt \vect{u} + \transpose{\gradt \vect{u}})\f$
 !> and  \f$ \tens{Sd} = \deviator{(\symmetric{(\tens{S}^2)})}\f$
+!-------------------------------------------------------------------------------
+
 !-------------------------------------------------------------------------------
 
 subroutine viswal

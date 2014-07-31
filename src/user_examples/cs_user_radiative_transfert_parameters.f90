@@ -22,22 +22,12 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usray2 &
-!================
-
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   icodcl , izfrdp , isothp ,                                     &
-   tmin   , tmax   , tx     ,                                     &
-   dt     , rcodcl ,                                              &
-   thwall , qincid , hfcnvp , flcnvp ,                            &
-   xlamp  , epap   , epsp   , textp  , tintp  )
 
 !===============================================================================
 ! Purpose:
 ! --------
-
-! User subroutine for input of radiative transfer parameters: boundary conditions
+!> \file cs_user_radiative_transfert_parameters.f90
+!> \brief User subroutine for input of radiative transfer parameters: boundary conditions
 
 ! Sketch of thermal flux in boundary wall
 
@@ -121,56 +111,60 @@ subroutine usray2 &
 ! Note: these usefull constants are defined
 !       TKELVI = 273.16D0
 !       SIG    = 5.6703D-8
-
+!------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
 ! Arguments
-!__________________________________________________________________________________________.
-! mode                      name            role                                           !
-! _________________________________________________________________________________________!
-!> \param[in]               nvar             total number of variables
-!> \param[in]               nscal            total number of scalars
-!> \param[in]               itypfb           boundary face types
-!> \param[in] icodcl                         boundary condition code
-!    (nfabor, nvar)                          = 1  -> Dirichlet
-!                                            = 2  -> convective outelet
-!                                            = 3  -> flux density
-!                                            = 4  -> sliding wall and u.n=0 (velocity)
-!                                            = 5  -> friction and u.n=0 (velocity)
-!                                            = 6  -> roughness and u.n=0 (velocity)
-!                                            = 9  -> free inlet/outlet (velocity)
-!                                            inflowing possibly blocked
-!> \param[in]               izfrdp(nfabor)   boundary faces -> zone number
-!> \param[in]               isothp(nfabor)   boundary face type for radative transfer
-!                                            = itpimp -> Gray wall with fixed inside temp
-!                                            = ipgrno -> Gray wall with fixed outside temp
-!                                            = iprefl -> Reflecting wall with fixed
-!                                                     outside temp
-!                                            = ifgrno -> Gray wall with fixed
-!                                                  conduction flux
-!                                            = ifrefl -> Reflecting wall with fixed
-!                                                  conduction flux
-!> \param[in] tmin                           min value of the wall temperature
-!> \param[in] tmax                           max value of the wall temperature
-!> \param[in]               dt(ncelet)       time step (per cell)
-!> \param[in]               rcodcl           boundary condition values
-!                                            rcodcl(3) = flux density value
-!                                            (negative for gain) in w/m2
-!> \param[in] thwall(nfabor)                 inside current wall temperature (K)
-!> \param[in] qincid(nfabor)                 radiative incident flux  (W/m2)
-!> \param[in] hfcnvp(nfabor)                 convective exchange coefficient (W/m2/K)
-!> \param[in] flcnvp(nfabor)                 convective flux (W/m2)
-!> \param[out] xlamp(nfabor)                 conductivity (W/m/K)
-!> \param[out] epap(nfabor)                  thickness (m)
-!> \param[out] epsp(nfabor)                  emissivity (>0)
-!> \param[out] textp(nfabor)                 outside temperature (K)
-!> \param[out] tintp(nfabor)                 initial inside temperature (K)
-! _________________________________________________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+! _____________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     icodcl             boundary condition code
+!>                                = 1  -> Dirichlet
+!>                                = 2  -> convective outelet
+!>                                = 3  -> flux density
+!>                                = 4  -> sliding wall and u.n=0 (velocity)
+!>                                = 5  -> friction and u.n=0 (velocity)
+!>                                = 6  -> roughness and u.n=0 (velocity)
+!>                                = 9  -> free inlet/outlet (velocity)
+!>                                inflowing possibly blocked
+!> \param[in]     izfrdp        boundary faces -> zone number
+!> \param[in]     isothp        boundary face type for radative transfer
+!>                                = itpimp -> Gray wall with fixed inside temp
+!>                                = ipgrno -> Gray wall with fixed outside temp
+!>                                = iprefl -> Reflecting wall with fixed
+!>                                         outside temp
+!>                                = ifgrno -> Gray wall with fixed
+!>                                      conduction flux
+!>                                = ifrefl -> Reflecting wall with fixed
+!>                                      conduction flux
+!> \param[in]     tmin               min value of the wall temperature
+!> \param[in]     tmax               max value of the wall temperature
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rcodcl        boundary condition values
+!>                                rcodcl(3) = flux density value
+!>                                (negative for gain) in w/m2
+!> \param[in]     thwall             inside current wall temperature (K)
+!> \param[in]     qincid             radiative incident flux  (W/m2)
+!> \param[in]     hfcnvp             convective exchange coefficient (W/m2/K)
+!> \param[in]     flcnvp             convective flux (W/m2)
+!> \param[out]    xlamp             conductivity (W/m/K)
+!> \param[out]    epap              thickness (m)
+!> \param[out]    epsp              emissivity (>0)
+!> \param[out]    textp             outside temperature (K)
+!> \param[out]    tintp             initial inside temperature (K)
+! _____________________________________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
+subroutine usray2 &
+ ( nvar   , nscal  ,                                              &
+   itypfb ,                                                       &
+   icodcl , izfrdp , isothp ,                                     &
+   tmin   , tmax   , tx     ,                                     &
+   dt     , rcodcl ,                                              &
+   thwall , qincid , hfcnvp , flcnvp ,                            &
+   xlamp  , epap   , epsp   , textp  , tintp  )
 !===============================================================================
 ! Module files
 !===============================================================================

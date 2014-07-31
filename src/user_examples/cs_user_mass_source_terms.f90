@@ -26,14 +26,15 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_mass_source_terms.f90 
+!> \file cs_user_mass_source_terms.f90
 !>
 !> \brief Mass source term example
 !>
 !-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !>           Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
@@ -51,7 +52,7 @@
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in,out] smacel        value associated to each variable in the mass
 !>                              source terms or mass rate
-!_______________________________________________________________________________
+!______________________________________________________________________________!
 
 subroutine ustsma &
  ( nvar   , nscal  , ncepdp ,                                     &

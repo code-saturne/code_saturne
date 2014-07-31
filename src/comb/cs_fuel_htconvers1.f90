@@ -20,35 +20,32 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_htconvers1 &
-!============================
- ( mode  , eh     , xesp   , tp  )
 
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
-! CALCUL DE LA TEMPERATURE DU GAZ
-!  EN FONCTION DE L'ENTHALPIE DU GAZ ET DES CONCENTRATIONS
-!  SI MODE = 1
-! CALCUL DE L'ENTHALPIE DU GAZ
-!  EN FONCTION DE LA TEMPERATURE DU GAZ ET DES CONCENTRATIONS
-!  SI MODE = -1
+!> \file cs_fuel_htconvers1.f90
+!> \brief - Calculation of the gas enthalpy.
+!>          Function with gaz enthalpy and concentrations,
+!>          if mode = 1
+!>        - Calculation of gas enthalpy.
+!>          Function with gas temperature and concentrations,
+!>          if mode = -1
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! eh               ! tr ! <-- ! enthalpie du gaz                               !
-!                  !    !     ! (j/kg de melange gazeux)                       !
-! xesp             ! tr ! <-- ! fraction massique des especes                  !
-! tp               ! tr ! --> ! temperature du gaz (kelvin)                    !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in,out] eh            gas enthalpy
+!>                              (\f$ j . kg^{-1}\f$ of gas mixture)
+!> \param[in]     xesp          mass fraction of the species
+!> \param[in,out] tp            gas temperature in \f$ kelvin \f$
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHAMNUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine cs_fuel_htconvers1 &
+ ( mode  , eh     , xesp   , tp  )
 
 !==============================================================================
 ! Module files
@@ -85,7 +82,7 @@ integer          ii
 double precision eh0 , eh1
 
 !===============================================================================
-! 1. CALCUL DE LA TEMPERATURE A PARTIR DE l'ENTHALPIE
+! 1. Calculation of temperature from enthalpy
 !===============================================================================
 
 if ( mode .eq. 1 ) then
@@ -93,7 +90,7 @@ if ( mode .eq. 1 ) then
   ii = npo
 
 
-! --- Clipping eventuel de TP a TH(NPO) si EH > EH1
+  ! --- Eventual clipping of temperature at TH(NPO) if EH > EH1
 
 
 
@@ -116,7 +113,7 @@ if ( mode .eq. 1 ) then
 
   ii = 1
 
-! --- Clipping eventuel de TP a TH(1) si EH < EH0
+  ! --- Eventual clipping of temperature at TH(1) if EH < EH0
 
   eh0 =  xesp(ifov )*ehgaze(ifov,ii)                               &
        + xesp(ico  )*ehgaze(ico ,ii)                               &
@@ -139,7 +136,7 @@ if ( mode .eq. 1 ) then
  500    continue
   ii = ii + 1
 
-! --- Clipping eventuel de TP a TH(II-1) si EH < EH0
+  ! --- Eventual clipping of temperature at TH(II-1) if EH < EH0
 
   eh0 =  xesp(ifov )*ehgaze(ifov,ii-1)                             &
        + xesp(ico  )*ehgaze(ico ,ii-1)                             &
@@ -174,14 +171,14 @@ if ( mode .eq. 1 ) then
  501    continue
 
 !===============================================================================
-! 1. CALCUL DE L'ENTHALPIE A PARTIR DE LA TEMPERATURE
+! 1. Calculation of enthalpy from temperature
 !===============================================================================
 
 else if ( mode .eq. -1 ) then
 
   ii = npo
 
-! --- Calcul en Max
+  ! --- Calculation at Max
 
   eh =  xesp(ifov )*ehgaze(ifov,ii)                               &
       + xesp(ico  )*ehgaze(ico ,ii)                               &
@@ -197,12 +194,12 @@ else if ( mode .eq. -1 ) then
 
   if (tp.gt.th(ii)) goto 601
 
-! Clipping en Min
+  ! Clipping at Min
 
   ii = 1
 
 
-! --- Clipping eventuel de TP a TH(1) si EH < EH0
+  ! --- Eventual clipping of temperature at TH(1) if EH < EH0
 
   eh =  xesp(ifov )*ehgaze(ifov,ii)                               &
       + xesp(ico  )*ehgaze(ico ,ii)                               &
@@ -218,7 +215,7 @@ else if ( mode .eq. -1 ) then
 
   if (tp.lt.th(ii)) goto 601
 
-! Interpolation dans la table
+  ! Interpolation in the table
 
   ii = 1
  600    continue
@@ -226,7 +223,7 @@ else if ( mode .eq. -1 ) then
   ii = ii + 1
   if ( tp .le. th(ii) ) then
 
-! --- Calcul de l'enthalpie de l'espece gazeuse TH(II-1)
+    ! --- Calculation of the gazeous species enthalpy TH(II-1)
 
     eh0 = xesp(ifov )*ehgaze(ifov,ii-1)                           &
         + xesp(ico  )*ehgaze(ico ,ii-1)                           &
@@ -240,7 +237,7 @@ else if ( mode .eq. -1 ) then
         + xesp(inh3 )*ehgaze(inh3,ii-1)                           &
         + xesp(in2  )*ehgaze(in2 ,ii-1)
 
-! --- Calcul de l'enthalpie de l'espece gazeuse TH(I)
+    ! --- Calculation of the gazeous species enthalpy TH(I)
 
     eh1 =  xesp(ifov )*ehgaze(ifov,ii)                            &
         + xesp(ico  )*ehgaze(ico ,ii)                             &
@@ -276,13 +273,13 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR DANS CS_FUEL_HTCONVERS1         ',/,&
+'@ @@ WARNING: Error in cs_fuel_htconvers1                    ',/,&
 '@    =========                                               ',/,&
-'@    VALEUR INCORRECTE DE L''ARGUMENT MODE                   ',/,&
-'@    CE DOIT ETRE UN ENTIER EGAL A 1 OU -1                   ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
+'@    Incorrect value of the argument mode                    ',/,&
+'@    it must be an integer equal to 1 or -1                  ',/,&
+'@    it worths here ',I10                                     ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calculation can not run.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

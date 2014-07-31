@@ -20,36 +20,32 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_physprop &
-!==========================
 
+!===============================================================================
+! Function:
+! --------
+!> \file cs_fuel_physprop.f90
+!>
+!> \brief Specific physic routine: pulverized coal combustion.
+!>        Calculation of \f$\rho\f$ of the mixture
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     mbrom         filling indicator of romb
+!> \param[in]     izfppp        zone number of the edge face for the
+!>                              specific physic modul
+!> \param[in]     rtp           calculated variables at cell centers
+!>                              (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!______________________________________________________________________________!
+
+subroutine cs_fuel_physprop &
  ( mbrom  , izfppp ,                                              &
    rtp    , propce )
-
-!===============================================================================
-! FONCTION :
-! --------
-! ROUTINE PHYSIQUE PARTICULIERE : COMBUSTION CHARBON PULVERISE
-! Calcul de RHO du melange
-!
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -108,13 +104,13 @@ double precision, dimension(:), pointer ::  brom, crom
 !===============================================================================
 !
 !===============================================================================
-! 0. ON COMPTE LES PASSAGES
+! 0. We count the passages
 !===============================================================================
 
 ipass = ipass + 1
 
 !===============================================================================
-! 1. INITIALISATIONS A CONSERVER
+! 1. Initializations to be kept
 !===============================================================================
 
 !===============================================================================
@@ -133,7 +129,7 @@ endif
 if ( ieqnox .eq. 1 ) then
 !----
   allocate(xoxyd(1:ncelet),enthox(1:ncelet),STAT=iok1)
-!----
+  !----
   if ( iok1 > 0 ) then
     write(nfecra,*) ' Memory allocation error inside:         '
     write(nfecra,*) '   cs_fuel_physprop for xoxyd and enthox '
@@ -141,64 +137,64 @@ if ( ieqnox .eq. 1 ) then
 endif
 !===============================================================================
 
-!     Pointeur sur masse volumique du gaz aux cellules
+!     Pointer on mass density of the cells gas
 iromf = ipproc(irom1)
 !
 !===============================================================================
-! 2. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
-!                    VALEURS CELLULES
-!                    ----------------
-!    FRACTION MASSIQUE DE SOLIDE
-!    DIAMETRE
-!    MASSE VOLUMIQUE
+! 2. Calculation of physic properties of the dispersed phase
+!                    cell values
+!                    -----------
+!    Mass fraction of the solid
+!    Diameter
+!    Mass density
 !===============================================================================
 !
 call cs_fuel_physprop2 ( ncelet , ncel , rtp , propce )
 !=====================
 
 !===============================================================================
-! 3. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE GAZEUSE
-!                    VALEURS CELLULES
-!                    ----------------
-!    TEMPERATURE
-!    MASSE VOLUMIQUE
-!    CONCENTRATIONS DES ESPECES GAZEUSES
+! 3. Calculation of physic properties of the gaseous phase
+!                    Cell values
+!                    -----------
+!    Temperature
+!    Mass density
+!    Concentraions of the gaseous species
 !===============================================================================
 
-! --- Calcul de l'enthalpie du gaz     enth1
-!        de F1M
-!        de F2M
-!        de F3M                    dans W3=1-F1M-F2M-F4M-F5M-F6M-F7M-F8M-F9M
-!        de F4M
-!        de F5M
-!        de F6M
-!        de F7M
-!        de F8M
-!        de F9M
-!        de FVP2M
+! --- Calculation of the gas enthalpy  enth1
+!        of F1M
+!        of F2M
+!        of F3M                      in W3=1-F1M-F2M-F4M-F5M-F6M-F7M-F8M-F9M
+!        of F4M
+!        of F5M
+!        of F6M
+!        of F7M
+!        of F8M
+!        of F9M
+!        of FVP2M
 !
-! Initialisation des fm et de x2 a 0
-! f1m est toujours egal zero. Dans lecontexte de la combustion fioul il y a qu'un
-! seul combustible gazeuse.
+! Initialization of fm and x2 at 0
+! f1m is always equal to zero. In the context of the fuel oil combustion there
+! is only one gaseous fuel.
 f1m( : ) = 0.d0
 ! f2m = ifvap
 f2m( : ) = 0.d0
-! f3m, f4m, f5m = Oxydants
+! f3m, f4m, f5m = Oxidizers
 f3m( : ) = 0.d0
 f4m( : ) = 0.d0
 f5m( : ) = 0.d0
-! Vapeur d'eau
+! Water vapour
 f6m( : ) = 0.d0
-! Combustion heterogene
+! Heterogeneous combustion
 f7m( : ) = 0.d0
-! f8m, f9m est toujours egal zero.
+! f8m, f9m is always equal to zero
 f8m( : ) = 0.d0
 f9m( : ) = 0.d0
-! fraction massique de la phase liquide.
+! Mass fraction of kiquid phase.
 x2 ( : ) = 0.d0
-!
+
 ! - nclacp = nclafu
-! - X2 est calcule directement en fonction de iyfol
+! - X2 is directly calculated in function with iyfol
 do icla = 1, nclafu
   do iel = 1, ncel
     x2(iel) =  x2(iel) + rtp(iel,isca(iyfol(icla)))
@@ -221,13 +217,13 @@ nbclip1= 0
 nbclip2= 0
 valmin = 1.d+20
 valmax =-1.d+20
-!
+
 do iel = 1, ncel
   uns1pw = 1.d0/(1.d0-x2(iel))
 
-! -Pour l'instant, la variable <noxyd> n'existe pas dans la version fioul car
-!  elle n'est pas declarer dans fulecd.f90. Il faut qu'on l'ajoute dans ce
-!  subroutine (mot clef: oxycombustion).
+   ! -At the moment, the variable <noxyd> does not exist in the fuel oil version
+   !  because it is not declared in fulecd.f90. We have to add it in this
+   !  subroutine (keyword: oxycombustion).
   if ( noxyd .ge. 2 ) then
     f4m(iel) = rtp(iel,isca(if4m))
     if ( noxyd .eq. 3 ) then
@@ -235,13 +231,13 @@ do iel = 1, ncel
     endif
   endif
 
-! - Scalaire relatif a la combustion heterogene.
+  ! - Relative scalar for the heterogeneous combustion.
   f7m(iel) =  rtp(iel,isca(if7m))
 
-! La variance transportee.
+  ! The transported variance.
   fvp2m(iel) = rtp(iel,isca(ifvp2m))
 
-! Unites: kg scalaires / kg gas
+  ! Units: [kg scalars / kg gas]
   f1m(iel)  = f1m(iel)    *uns1pw
   f2m(iel)  = f2m(iel)    *uns1pw
   f4m(iel)  = f4m(iel)    *uns1pw
@@ -259,13 +255,13 @@ do iel = 1, ncel
 
   ff3max = max(ff3max,f3m(iel))
   ff3min = min(ff3min,f3m(iel))
-!
+
   if ( ieqnox .eq. 1 ) then
     enthox(iel) = rtp(iel,isca(ihox))/xoxyd(iel)
   endif
-!
+
 enddo
-!
+
 if ( irangp .ge. 0 ) then
   call parmin(ff3min)
   call parmax(ff3max)
@@ -282,7 +278,7 @@ if ( nbclip2 .gt. 0 ) then
   write(nfecra,*) ' Clipping phase gas variance in max:',nbclip1,valmin
 endif
 
-! ---- Enthalpie du gaz H1
+! ---- Gas enthalpy H1
 enth1( : ) =0.D0
 do icla = 1, nclafu
   do iel = 1, ncel
@@ -302,28 +298,28 @@ call cs_fuel_physprop1                 &
    rtp    , propce , propce(1,iromf)   )
 
 !===============================================================================
-! 4. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
-!                    VALEURS CELLULES
-!                    ----------------
-!    TEMPERATURE
+! 4. Calculation of physics properties of the dispersed phase
+!                    Cell values
+!                    -----------
+!    Temperature
 !===============================================================================
 
-! --- Transport d'H2
+! --- Transport of H2
 
 call  cs_fuel_thfieldconv2 ( ncelet , ncel , rtp , propce )
 !=========================
 
 !===============================================================================
-! 5. CALCUL DES PROPRIETES PHYSIQUES DU MELANGE
-!                    VALEURS CELLULES
-!                    ----------------
-!    MASSE VOLUMIQUE
+! 5. Calculation of the mixture physic properties
+!                    Cell values
+!                    -----------
+!    Mass density
 !===============================================================================
-! --- Calcul de Rho du melange : 1/Rho = X1/Rho1 + Somme(X2/Rho2)
-!     On sous relaxe quand on a un rho n a disposition, ie
-!       a partir du deuxieme passage ou
-!       a partir du premier passage si on est en suite de calcul et
-!         qu'on a relu la masse volumique dans le fichier suite.
+! --- Calculation of Rho of the mixture: 1/Rho = X1/Rho1 + Sum(X2/Rho2)
+!     We under discharge when we have a rho n at our disposal, ie
+!       from the second passage or
+!       from the first one if we are in continuation of the calculation and
+!         we have reread the mass density in the file continuation.
 
 call field_get_val_s(icrom, crom)
 
@@ -341,31 +337,31 @@ do iel = 1, ncel
     x2sro2 = x2sro2 + rtp(iel,isca(iyfol(icla))) / propce(iel,ipcro2)
   enddo
   x1sro1 = (1.d0-x2(iel)) / propce(iel,iromf)
-! ---- Sous relaxation eventuelle a donner dans ppini1.F
+  ! ---- Under eventual relaxation to give in ppini1.F
   crom(iel) = srrom1*crom(iel)                  &
                      + (1.d0-srrom1)/(x1sro1+x2sro2)
 enddo
 
 
 !===============================================================================
-! 6. CALCUL DE RHO DU MELANGE
-!                      VALEURS FACETTES
-!                      ----------------
+! 6. Calculation of the rho of the mixture
+!                      Facet value
+!                      -----------
 !===============================================================================
 
 mbrom = 1
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, crom)
-! ---> Masse volumique au bord pour toutes les facettes
-!      Les facettes d'entree seront recalculees.
+! ---> Mass density at the edge for all facets
+!      The input facets will be recalculated.
 !
 do ifac = 1, nfabor
   iel = ifabor(ifac)
   brom(ifac) = crom(iel)
 enddo
 
-! ---> Masse volumique au bord pour les facettes d'entree UNIQUEMENT
-!     Le test sur IZONE sert pour les reprises de calcul
+! ---> Mass density at the edge for ONLY all input facets
+!     The test on izone serves with the calculation resumption
 
 if ( ipass.gt.1 .or. isuite.eq.1 ) then
   do ifac = 1, nfabor
@@ -415,7 +411,7 @@ endif
 if ( ieqnox .eq. 1 ) then
 !----
   deallocate(xoxyd,enthox)
-!----
+  !----
   IF ( iok1 > 0 ) THEN
     write(nfecra,*) ' Memory deallocation error inside:      '
     write(nfecra,*) '   cs_fuel_physprop for xoxyd and enthox'

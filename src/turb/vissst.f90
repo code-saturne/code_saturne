@@ -20,40 +20,40 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vissst
-
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
+!> \file vissst.f90
+!> \brief Calculation of turbulent viscosity for
+!>        the \f$ k - \omega \f$ SST model
+!>
+!> \f[ \mu_T = \rho A1 \dfrac{k}{\max(A1 \omega; \; S f_2)} \f]
+!> with
+!> \f[ S = \sqrt{  2 S_{ij} S_{ij}} \f]
+!> \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
+!>
+!> and \f$ f_2 = \tanh(arg2^2) \f$
+!> \f[ arg2^2 = \max(2 \dfrac{\sqrt{k}{C_\mu \omega y}; \;
+!>                   500 \dfrac{\nu}{\omega y^2}) \f]
+!> where \f$ y \f$ is the distance to the wall.
+!>
+!> \f$ \divs{\vect{u}} \f$ is calculated at the same time than \f$ S \f$
+!> for being reused in turbkm
+!>
+!> Edge faces types are available at the previous time step
+!> (except at the first time step, when the itypfb and itrifb tables
+!>  have not been filled).
+!>
+!-------------------------------------------------------------------------------
 
-! CALCUL DE LA VISCOSITE TURBULENTE POUR
-!          LE MODELE K-OMEGA SST
-
-! VISCT = ROM * A1 * K /MAX(A1*W ; SQRT(S2KW)*F2)
-! AVEC S2KW =  2 * Sij.Sij
-!       Sij = (DUi/Dxj + DUj/Dxi)/2
-
-! ET F2 = TANH(ARG2**2)
-! ARG2**2 = MAX(2*SQRT(K)/CMU/W/Y ; 500*NU/W/Y**2)
-
-! DIVU EST CALCULE EN MEME TEMPS QUE S2KW POUR ETRE REUTILISE
-! DANS TURBKW
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode            name         role
+!______________________________________________________________________________!
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine vissst
 
 !===============================================================================
 ! Module files
@@ -95,7 +95,7 @@ double precision, dimension(:), pointer :: cvara_k, cvara_omg
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1.  Initialization
 !===============================================================================
 
 call field_get_coefa_v(ivarfl(iu), coefau)
@@ -152,7 +152,7 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3.  CALCUL DE LA DISTANCE A LA PAROI
+! 3.  Calculation of the distance to the wall
 !===============================================================================
 
 ! Allocate a work array
@@ -177,7 +177,7 @@ else
 endif
 
 !===============================================================================
-! 4.  CALCUL DE LA VISCOSITE
+! 4.  Calculation of viscosity
 !===============================================================================
 
 do iel = 1, ncel

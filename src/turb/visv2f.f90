@@ -20,31 +20,27 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine visv2f
 
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
+!> \file visv2f.f90
+!> \brief Calculation of turbulent viscosity for
+!>         the V2F-BL model
+!>
+!> Edge faces types are vailable at the previous time step
+!>  (except at the first time step, when the itypfb anf itrifb tables
+!>  have not been filled)
+!-------------------------------------------------------------------------------
 
-! CALCUL DE LA VISCOSITE TURBULENTE POUR
-!          LE MODELE K-OMEGA V2F-BL
-
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine visv2f
 
 !===============================================================================
 ! Module files
@@ -87,13 +83,13 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1.  Initialization
 !===============================================================================
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
-! --- Memoire
+! --- Memory
 allocate(s2(ncelet))
 
 call field_get_val_s(iprpfl(iviscl), viscl)
@@ -105,7 +101,7 @@ call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_s(ivarfl(iphi), cvar_phi)
 
 !===============================================================================
-! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE
+! 2.  Calculation of velocity gradient and of
 !       S2 = 2* (S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
 !===============================================================================
 
@@ -140,7 +136,7 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3.  CALCUL DE LA VISCOSITE
+! 3.  Calculation of viscosity
 !===============================================================================
 
 do iel = 1, ncel
@@ -163,12 +159,12 @@ enddo
 deallocate(s2)
 
 !----
-! FORMAT
+! Format
 !----
 
 
 !----
-! FIN
+! End
 !----
 
 return

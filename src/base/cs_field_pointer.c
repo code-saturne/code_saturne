@@ -128,6 +128,8 @@ static bool  *_is_sublist = NULL;
 
 union cs_field_pointer_val_t  *cs_glob_field_pointers = NULL;
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/

@@ -20,86 +20,83 @@
 
 !-------------------------------------------------------------------------------
 
+
+!===============================================================================
+! Function:
+! --------
+!> \file cs_fuel_physprop1.f90
+!> \brief Calculation of physic properties of the gaseous phase
+!>
+!> Cell values
+!> -----------
+!> Temperature, mass density and average concentrations
+!> (use of a PDF RECTANGLE-DIRAC)
+!> ==> Fast chemistry model in 3 points
+!> Extension for 3 fuels for pulverized coal
+!>                                         --------------------
+!> Heterogeneous reactions
+!>   - Pyrolysis
+!>     Elementary composition of the mol of volatile materials
+!>     The reactive coal is written C(1)H(ALPHA)O(BETA)
+!>       -(k1)-> ALPHA/4 CH4  + BETA CO + (1-ALPHA/4-BETA)    Coke
+!>     Reactive coal
+!>       -(k2)-> ALPHA/Y CXHY + BETA CO + (1-ALPHA/RYSX-BETA) Coke
+!>       With RYSX = Y/X
+!>   - Heterogeneous combustion
+!>     Coke + 1/2 (O2 + XSI N2) -> CO + XSI/2 N2
+!>   - Reactions in gaaseous phase
+!> (4/(4-RYSX)) CH4 + (O2 + XSI N2)   -(1)->  4/X/(4-RYSX)*CXHY + 2 H2O
+!>                                           + XSI N2
+!> CXHY + X/4*(2+RYSX) (O2 + XSI N2)  -(2)->  X CO + Y/2 H2O
+!>                                           + X/4*(2+RYSX)*XSI N2
+!>           CO + 1/2 (O2 + XSI N2)  -(3)->  CO2 + XSI/2 N2
+!> Variables choice
+!> - f1 is the mass fractions of volatile materials: CH4  + CO
+!> - f2 is the mass fractions of volatile materials: CXHY + CO
+!> - f3 is the mass fraction of carbone coming from the heterogeneous
+!>    combustion
+!>
+!> Let Y  be the mass fractions and Z be the concentrations [moles/kg]
+!> index f before reaction, b final
+!>
+!> Joint PDF degenerated into a PDF 1D of type RECTANGLE - DIRAC
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     idbia0        number of first free position in ia
+!> \param[in]     idbra0        number of first free position in ra
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     nitbcp        size of the macro table \f$C_p\f$ integers
+!> \param[in]     nrtbcp        size of the macro table \f$C_p\f$ reals
+!> \param[in]     nitbmc        size of the macro table mc integers
+!> \param[in]     nrtbmc        size of the macro table mc reals
+!> \param[in]     nitbwo        size of the macro table work integers
+!> \param[in]     nrtbwo        size of the macro table work reals
+!> \param[in]     pa            absolute pressure in [pascals]
+!> \param[in]     f1m           average of tracer 1 mvl [chx1+CO]
+!> \param[in]     f2m           average of tracer 2 mvl [chx2+CO]
+!> \param[in]     f3m           average of tracer 3 (CO heterogeneous comb.)
+!> \param[in]     f4m           average of tracer 4 (air)
+!> \param[in]     f4m           average of tracer 5 (H2O)
+!> \param[in]     f4p2m         variance of tracer 4 (air)
+!> \param[in]     enth          enthalpy in \f$j . kg^{-1}\f$  either gaz
+!>                              or mixture
+!> \param[in]     rtp           calculation variables in cell centers
+!>                              (current instant)
+!> \param[in,out] propce        physical properties at cell centers
+!______________________________________________________________________________!
+
 subroutine cs_fuel_physprop1 &
-!===========================
  ( ncelet , ncel   ,                                      &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth   , enthox ,                                      &
    rtp    , propce , rom1   )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE GAZEUSE
-!  VALEURS CELLULES
-!  ----------------
-!  TEMPERATURE, MASSE VOLUMIQUE ET CONCENTRATIONS MOYENNES
-!  (UTILISATION D'UNE PDF RECTANGLE-DIRAC)
-! ==> CHIMIE RAPIDE MODELE EN 3 POINTS
-!     EXTENSION A TROIS COMBUSTIBLES POUR LE CHARBON PULVERISE
-!                                         --------------------
-! REACTIONS HETEROGENES
-!   - Pyrolyse
-!     Composition elementaire de la mole de matieres volatiles
-!     Le charbon reactif s'ecrit C(1)H(ALPHA)O(BETA)
-!       -(k1)-> ALPHA/4 CH4  + BETA CO + (1-ALPHA/4-BETA)    Coke
-!     Charbon reactif
-!       -(k2)-> ALPHA/Y CXHY + BETA CO + (1-ALPHA/RYSX-BETA) Coke
-!       Avec RYSX = Y/X
-!   - Combustion heterogene
-!     Coke + 1/2 (O2 + XSI N2) -> CO + XSI/2 N2
-!   - Reactions en phase gaz
-! (4/(4-RYSX)) CH4 + (O2 + XSI N2)   -(1)->  4/X/(4-RYSX)*CXHY + 2 H2O
-!                                           + XSI N2
-! CXHY + X/4*(2+RYSX) (O2 + XSI N2)  -(2)->  X CO + Y/2 H2O
-!                                           + X/4*(2+RYSX)*XSI N2
-!           CO + 1/2 (O2 + XSI N2)  -(3)->  CO2 + XSI/2 N2
-! CHOIX DES VARIABLES
-!  F1 est la fractions massique des matieres volatiles : CH4  + CO
-!  F2 est la fractions massique des matieres volatiles : CXHY + CO
-!  F3 est la fraction massique de carbone venant de la combustion
-!    heterogene
-
-!  Soit Y les fractions massiques et Z les concentrations (moles/kg)
-!    indice f avant reaction, b final
-
-! PDF CONJOINTE DEGENERE EN UNE PDF 1D DE TYPE RECTANGLE - DIRAC
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nitbcp           ! e  ! <-- ! taille du macro tableau cp entiers             !
-! nrtbcp           ! e  ! <-- ! taille du macro tableau cp reels               !
-! nitbmc           ! e  ! <-- ! taille du macro tableau mc entiers             !
-! nrtbmc           ! e  ! <-- ! taille du macro tableau mc reels               !
-! nitbwo           ! e  ! <-- ! taille du macro tableau work entiers           !
-! nrtbwo           ! e  ! <-- ! taille du macro tableau work reels             !
-! pa               ! tr ! <-- ! pression absolue en pascals                    !
-! f1m              ! tr ! <-- ! moyenne du traceur 1 mvl [chx1+co]             !
-! f2m              ! tr ! <-- ! moyenne du traceur 2 mvl [chx2+co]             !
-! f3m              ! tr ! <-- ! moyenne du traceur 3 (co c.het)                !
-! f4m              ! tr ! <-- ! moyenne du traceur 4 (air)                     !
-! f4m              ! tr ! <-- ! moyenne du traceur 5 (h2o)                     !
-! f4p2m            ! tr ! <-- ! variance du traceur 4 (air)                    !
-! enth             ! tr ! <-- ! enthalpie en j/kg  soit du gaz                 !
-!                  !    !     !                    soit du melange             !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -199,10 +196,10 @@ endif
 !===============================================================================
 !
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
-!
-! pointeur
+
+! pointer
 ipcyf1 = ipproc(iym1(ifo0))
 ipcyf2 = ipproc(iym1(ifov))
 ipcyf3 = ipproc(iym1(ico  ))
@@ -219,14 +216,14 @@ ipcyin = ipproc(iym1(in2  ))
 ipass = ipass + 1
 
 !===============================================================================
-! 2. DETERMINATION DU TYPE DE PDF
+! 2. Determining the type of pdf
 !===============================================================================
 !
 do iel = 1, ncel
-!  bornes min et max de la pdf
+  !  min et max border of the pdf
   fmini(iel) = 0
   fmaxi(iel) = 1.d0
-!  Somme de F1+F2 (pour le fuel, f1=0)
+  !  Sum of F1+F2 (for the fuel, f1=0)
   ffuel(iel)=f1m(iel)+f2m(iel)
 enddo
 
@@ -244,39 +241,39 @@ call pppdfr &
 deallocate(tpdf)
 
 !===============================================================================
-! 2.CALCUL DES CONCENTRATIONS MOYENNES
+! 2.Calculation of average concentrations
 !===============================================================================
-! - Les masses molaires des combustibles gazeuse sont calculées dans
+! - The molar masses of gas fuel are calculated in
 !   cs_fuel_readata.f90.
-!
+
 do iel = 1, ncel
   wmf1(iel) = wmole(ifo0)
   wmf2(iel) = wmole(ifov)
 enddo
-!
+
 x2( : ) = 0.d0
 do icla = 1, nclafu
   do iel = 1, ncel
     x2(iel) = x2(iel) + rtp(iel,isca(iyfol(icla)))
   enddo
 enddo
-!
+
 do iel=1,ncel
-!
+
   do ii=1,ngazg
     af1(iel,ii) = zero
     af2(iel,ii) = zero
   enddo
-!
+
   af2(iel,ifov) = chfov/wmole(ifov)
   af2(iel,ico ) = cofov/wmole(ico )
   af2(iel,ih2s) = hsfov/wmole(ih2s)
-!
+
   cx1m(iel) = 0.d0
   cx2m(iel) = nhcfov
-!
+
 enddo
-!
+
 call cs_gascomb &
 !==============
  ( ncelet , ncel   , ifo0 , ifov ,                                &
@@ -290,31 +287,31 @@ call cs_gascomb &
    propce(1,ipcyf7) , propce(1,ipcyox) , propce(1,ipcyp1) ,       &
    propce(1,ipcyp2) , propce(1,ipcyp3) , propce(1,ipcyin) ,       &
    fs3no , fs4no , yfs4no )
-!
-! --> Clipping eventuel des fractions massiques
-!
+
+! --> Eventual clipping of mass fractions
+
 do iel = 1, ncel
   do ice = 1, ngazg
     if ( propce(iel,ipproc(iym1(ice))) .lt. zero )  then
        propce(iel,ipproc(iym1(ice))) = zero
     endif
-!
+
     if ( propce(iel,ipproc(iym1(ice))) .gt. 1.d0 )  then
        propce(iel,ipproc(iym1(ice))) = 1.d0
     endif
-!
+
     if ( abs(propce(iel,ipproc(iym1(ice)))) .lt. epsicp )  then
        propce(iel,ipproc(iym1(ice))) = zero
     endif
   enddo
 enddo
-!
+
 !===============================================================================
-! 4. CALCUL DE LA TEMPERATURE ET DE LA MASSE VOLUMIQUE
+! 4. Calculation of temperature and mass density
 !===============================================================================
-!
+
 ipcte1 = ipproc(itemp1)
-!
+
 call cs_fuel_thfieldconv1 &
 !========================
  ( ncelet , ncel   ,                                              &
@@ -324,7 +321,7 @@ call cs_fuel_thfieldconv1 &
    propce(1,ipcyf7), propce(1,ipcyox), propce(1,ipcyp1),          &
    propce(1,ipcyp2), propce(1,ipcyp3), propce(1,ipcyin),          &
    propce(1,ipcte1) )
-!
+
 do iel = 1, ncel
   wmolme = propce(iel,ipcyf1)/wmole(ifo0)                         &
          + propce(iel,ipcyf2)/wmole(ifov)                         &
@@ -339,25 +336,25 @@ do iel = 1, ncel
          + propce(iel,ipcyp3)/wmole(iso2)                         &
          + propce(iel,ipcyin)/wmole(in2 )
 
-! stockage de la masse molaire du melange
+  ! storage of the mixture molar mass
 
   propce(iel,ipproc(immel)) = 1.d0 / wmolme
 
-! ---- On ne met pas la pression mecanique RTP(IEL,IPR)
-!      mais P0
+  ! ---- We do not include the mecanical pressure rtp(iel,ipr)
+  !      but P0
 
   rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
 enddo
 !
 !===============================================================================
-! 5. MODELE DE NOX
+! 5. Nox's model
 !===============================================================================
-!
-!
-! MODEL NOx : on y passe pas a la 1ere iter relatif
+
+
+! Nox's model: Not used at the first relative iteration
 
 if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
-!
+
   call cs_fuel_noxst &
  !==================
  ( ncelet , ncel   ,                                              &
@@ -366,19 +363,19 @@ if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,         &
    fs3no  , fs4no  , yfs4no , enthox ,                            &
    rtp    , propce  )
-!
+
 else if ( ieqnox .eq. 1 ) then
-!
+
   do iel = 1, ncel
     propce(iel,ipproc(ighcn1)) = 0.d0
     propce(iel,ipproc(ighcn2)) = 0.d0
     propce(iel,ipproc(ignoth)) = 0.d0
   enddo
-!
+
 endif
 
 !===============================================================================
-! 6. CALCUL DES BILANS en C , O et H
+! 6. Calculation of balances in C, O et H
 !===============================================================================
 !
 do iel=1,ncel
@@ -404,26 +401,26 @@ do iel=1,ncel
               +propce(iel,ipcyf6)*          wmolat(iath)/wmole(ihcn)   &
               +propce(iel,ipcyf7)*3.d0     *wmolat(iath)/wmole(inh3)   &
               +propce(iel,ipcyp2)*2.d0     *wmolat(iath)/wmole(ih2o) )
-!
+
 enddo
 
 do icla = 1, nclafu
   do iel = 1, ncel
-!
+
     somch = cfol + hfol + ofol
     cfolc  = cfol/somch
     cfolh  = hfol/somch
     cfolo  = ofol/somch
-!
+
     propce(iel,ipproc(ibcarbone )) = propce(iel,ipproc(ibcarbone ))    &
                                     +rtp(iel,isca(iyfol(icla)))*cfolc
-!
+
     propce(iel,ipproc(iboxygen )) = propce(iel,ipproc(iboxygen ))    &
                                    +rtp(iel,isca(iyfol(icla)))*cfolo
-!
+
     propce(iel,ipproc(ibhydrogen)) = propce(iel,ipproc(ibhydrogen))  &
                                     +rtp(iel,isca(iyfol(icla)))*cfolh
-!
+
   enddo
 enddo
 !----

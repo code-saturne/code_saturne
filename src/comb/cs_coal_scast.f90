@@ -20,64 +20,54 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_scast &
-!=======================
+!===============================================================================
+! Function:
+! ---------
+!> \file cs_coal_scast.f90
+!> \brief Specific physic routine: pulverized coal flame
+!>   Souce terms have to be precised for a scalar PP
+!>   on a step of time
+!>
+!> \warning  the treatement of source terms is different
+!> -------   from that of ustssc.f
+!>
+!> We solve: \f[ rovsdt D(var) = smbrs \f]
+!>
+!> rovsdt and smbrs already contain eventual user source terms.
+!> So they have to be incremented and not erased.
+!>
+!> For stability reasons, only positive terms can be added in rovsdt.
+!> There is no contraint for smbrs.
+!>
+!> In the case of a source term in \f$ cexp + cimp var \f$, it has to be written:
+!>        - \f$ smbrs  = smbrs  + cexp + cimp var \f$
+!>        - \f$ rovsdt = rovsdt + \max(-cimp,0) \f$
+!>
+!> Here are \f$ rovsdt \f$ and \f$ smbrs \f$ (they contain \f$ \rho volume\f$)
+!>    smbrs in kg variable/s :
+!>     \c i.e.: - for velocity            \f$ kg . m . s^{-2} \f$
+!>              - for temperature         \f$ kg . [degres] . s^{-1} \f$
+!>              - for enthalpy            \f$ J . s^{-1} \f$
+!>              - rovsdt                  \f$ kg . s^{-1} \f$
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+!                ARGUMENTS
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     iscal         scalar number
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in,out] propce        physic properties at cell centers
+!> \param[in,out] smbrs         explicit second member
+!> \param[in,out] rovsdt        implicit diagonal part
+!______________________________________________________________________________!
+
+subroutine cs_coal_scast &
  ( iscal  ,                                                       &
    rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! ROUTINE PHYSIQUE PARTICULIERE : FLAMME CHARBON PULVERISE
-!   ON PRECISE LES TERMES SOURCES POUR UN SCALAIRE PP
-!   SUR UN PAS DE TEMPS
-
-! ATTENTION : LE TRAITEMENT DES TERMES SOURCES EST DIFFERENT
-! ---------   DE CELUI DE USTSSC.F
-
-! ON RESOUT ROVSDT*D(VAR) = SMBRS
-
-! ROVSDT ET SMBRS CONTIENNENT DEJA D'EVENTUELS TERMES SOURCES
-!  UTILISATEUR. IL FAUT DONC LES INCREMENTER ET PAS LES
-!  ECRASER
-
-! POUR DES QUESTIONS DE STABILITE, ON NE RAJOUTE DANS ROVSDT
-!  QUE DES TERMES POSITIFS. IL N'Y A PAS DE CONTRAINTE POUR
-!  SMBRS
-
-! DANS LE CAS D'UN TERME SOURCE EN CEXP + CIMP*VAR ON DOIT
-! ECRIRE :
-!          SMBRS  = SMBRS  + CEXP + CIMP*VAR
-!          ROVSDT = ROVSDT + MAX(-CIMP,ZERO)
-
-! ON FOURNIT ICI ROVSDT ET SMBRS (ILS CONTIENNENT RHO*VOLUME)
-!    SMBRS en kg variable/s :
-!     ex : pour la vitesse            kg m/s2
-!          pour les temperatures      kg degres/s
-!          pour les enthalpies        Joules/s
-!    ROVSDT en kg /s
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! iscal            ! i  ! <-- ! scalar number                                  !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
-! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -116,7 +106,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character*80     string
 character*80     fname
 character*80     name
 integer          ivar , iel
@@ -170,48 +160,48 @@ double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cpro_cp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
 
-!LOCAL VARIABLES
+!Lacal variables
 !===============
 !
-! Pointers de variables d'etat
-! ----------------------------
-! (Temperatur d'une particule de iclas,
-!  Pointeur sur CHx1,
-!  Pointeur sur CHx2,
-!  Masse volumique de la pahse gaz,
-!  Masse volumique du melange)
+! Pointers of variables of state
+! ------------------------------
+! (Temperature of a particle of iclas,
+!  Pointer on CHx1,
+!  Pointer on CHx2,
+!  Mass density of the gaseous phase,
+!  Mass density of the mixture)
 integer ipctem, ipcyf1, ipcyf2, idgaz
 !
-! Constante cinetiques laminaires
-! -------------------------------
+! Kinetic laminar constant
+! ------------------------
 ! (NH3 + O2,
 !  NH3 + NO,
 !  reburning)
 integer iexp4,iexp5,iexprb
-! Variables auxiliaire
-! -------------------------------------
+! Auxiliary variables
+! -------------------
 double precision aux4,aux5,auxhet,auxrb1,auxrb2
 double precision core1,core2,core3,para2
 double precision ychx
-! Combustion heterogene
-! ---------------------
-! (Taux de reaction de la comb. het. du char 1,
-!  Taux de reaction de la comb. het. du char 2)
+! Heterogeneous combustion
+! ------------------------
+! (Reaction rate of the heterogeneous combustion of char 1,
+! reaction rate of the heterogeneous combustion of char 2)
 double precision mckcl1, mckcl2
 !
 !===============================================================================
 !
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
-! --- Numero du scalaire a traiter : ISCAL
-! --- Numero de la variable associee au scalaire a traiter ISCAL
+! --- Scalar number to treat: iscal
+! --- Number of the associated to the scalar to treat variable iscal
 ivar = isca(iscal)
 
-! --- Nom de la variable associee au scalaire a traiter ISCAL
+! --- Name of the variable associated to the scalar to treat iscal
 call field_get_label(ivarfl(ivar), chaine)
 
-! --- Numero des grandeurs physiques
+! --- Number of the physic quantity
 call field_get_val_s(icrom, crom)
 if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 ipcte1 = ipproc(itemp1)
@@ -240,11 +230,11 @@ endif
 !===============================================================================
 
 !===============================================================================
-! 2. PRISE EN COMPTE DES TERMES SOURCES POUR LES VARIABLES RELATIVES
-!    AUX CLASSES DE PARTICULES
+! 2. Consideration of the source terms for relative variables
+!    to the classes of particles
 !===============================================================================
 
-! --> Terme source pour la fraction massique de charbon reactif
+! --> Source term for the mass fraction of reactive coal
 
 if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 
@@ -256,11 +246,11 @@ if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 
   do iel = 1, ncel
 
-! ---- Calcul de  W1 = - rho.GMDCH > 0
+    ! ---- Calculation of W1 = - rho.GMDCH > 0
 
     xw1 = - crom(iel)*propce(iel,ipcgch)*volume(iel)
 
-! ---- Calcul des parties explicite et implicite du TS
+    ! ---- Calculation of explicit and implicit parts of source terms
 
     rovsdt(iel) = rovsdt(iel) + max(xw1,zero)
     smbrs (iel) = smbrs(iel)  - xw1*rtpa(iel,ivar)
@@ -270,7 +260,7 @@ if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 endif
 
 
-! --> Terme source pour la fraction massique de coke
+! --> Source term for the mass fraction of coke
 if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 
   if (iwarni(ivar).ge.1) then
@@ -293,30 +283,32 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 
   do iel = 1, ncel
 
-! ---- Calcul de W1 = - rho.Xch.GMDCH.Volume > 0
+    ! ---- Calculation of W1 = - rho.Xch.GMDCH.Volume > 0
 
     xw1=-crom(iel)*rtp(iel,ixchcl)*propce(iel,ipcgch)     &
                                            *volume(iel)
 
-! AE : On prend RTP(IEL,IXCHCL) et pas RTPA(IEL,IXCHCL) afin
-!      d'etre conservatif sur la masse
+    ! AE : We consider rtp(iel,ixchcl) and not rtpa(iel,ixchcl) to
+    !      preserve the mass.
 
-! ---- Calcul de W2 = rho.Xch.(GMDV1+GMDV2)Volume < 0
+    ! ---- Calculation of W2 = rho.Xch.(GMDV1+GMDV2)Volume < 0
 
     xw2 = crom(iel)*rtp(iel,ixchcl)                  &
          *(propce(iel,ipcgd1)+propce(iel,ipcgd2))*volume(iel)
 
     if ( rtpa(iel,ixckcl) .gt. epsicp ) then
 
-! Reaction C(s) + O2 ---> 0.5CO
-! =============================
+      ! Reaction C(s) + O2 ---> 0.5CO
+      ! =============================
 
-! ---- Calcul de la partie implicite  > 0 du TS relatif a GMHET
+      ! ---- Calculation of the implicit part > 0 of source terms
+      !      relative to gmhet
 
       xw3 = -2.d0/3.d0*crom(iel)*propce(iel,ipcght) &
            /(rtpa(iel,ixckcl))**(1.d0/3.d0)*volume(iel)
 
-! ---- Calcul de la partie explicite < 0 du TS relatif a GMHET
+      ! ---- Calculation of the explicit part < 0 of source terms
+      !      relative to gmhet
 
       xw4 = crom(iel)*propce(iel,ipcght)             &
                 * (rtpa(iel,ixckcl))**(2.d0/3.d0)*volume(iel)
@@ -326,7 +318,7 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
       xw4 = 0.d0
     endif
 
-! ---- Calcul des parties explicite et implicite du TS
+    ! ---- Calculation of the explicit and implicit parts of source terms
 
     rovsdt(iel) = rovsdt(iel) + max(xw3,zero)
     smbrs(iel)  = smbrs(iel)  + xw1 + xw2 + xw4
@@ -339,15 +331,17 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 
       if ( rtpa(iel,ixckcl) .gt. epsicp ) then
 
-! Reaction C(s) + CO2 ---> 2CO
-! =============================
+        ! Reaction C(s) + CO2 ---> 2CO
+        ! =============================
 
-! ---- Calcul de la partie implicite  > 0 du TS relatif a GMHET
+        ! ---- Calculation of the implicit part > 0 of source terms
+        !      relative to gmhet
 
         xw3 = -2.d0/3.d0*crom(iel)*propce(iel,ipghco2)     &
               /(rtpa(iel,ixckcl))**(1.d0/3.d0)*volume(iel)
 
-! ---- Calcul de la partie explicite < 0 du TS relatif a GMHET
+        ! ---- Calculation of the explicit part < 0 of source terms
+        !      relative to gmhet
 
         xw4 = crom(iel)*propce(iel,ipghco2)                 &
              *(rtpa(iel,ixckcl))**(2.d0/3.d0)*volume(iel)
@@ -357,7 +351,7 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
         xw4 = 0.d0
       endif
 
-! ---- Calcul des parties explicite et implicite du TS
+      ! ---- Calculation of explicit and implicit parts of source terms
 
       rovsdt(iel) = rovsdt(iel) + max(xw3,zero)
       smbrs(iel)  = smbrs(iel)  + xw4
@@ -365,22 +359,24 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
     enddo
 
   endif
-!
+
   if ( ihth2o .eq. 1 ) then
 
     do iel = 1, ncel
 
       if ( rtpa(iel,ixckcl) .gt. epsicp ) then
 
-! Reaction C(s) + CO2 ---> 2CO
-! =============================
+        ! Reaction C(s) + CO2 ---> 2CO
+        ! =============================
 
-! ---- Calcul de la partie implicite  > 0 du TS relatif a GMHET
+        ! ---- Calculation of the explicit part > 0 of source terms
+        !      relative to gmhet
 
         xw3 = -2.d0/3.d0*crom(iel)*propce(iel,ipghh2o)     &
               /(rtpa(iel,ixckcl))**(1.d0/3.d0)*volume(iel)
 
-! ---- Calcul de la partie explicite < 0 du TS relatif a GMHET
+        ! ---- Calculation of the explicit part < 0 of source terms
+        !      relative to gmhet
 
         xw4 = crom(iel)*propce(iel,ipghh2o)                &
              *(rtpa(iel,ixckcl))**(2.d0/3.d0)*volume(iel)
@@ -390,7 +386,7 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
         xw4 = 0.d0
       endif
 
-! ---- Calcul des parties explicite et implicite du TS
+      ! ---- Calculation of the explicit and implicit part of source terms
 
       rovsdt(iel) = rovsdt(iel) + max(xw3,zero)
       smbrs(iel)  = smbrs(iel)  + xw4
@@ -402,7 +398,7 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 endif
 
 
-! --> Terme source pour la fraction massique de d'eau
+! --> Source term for the mass fraction of water
 
 if ( ippmod(iccoal) .eq. 1 ) then
 
@@ -420,7 +416,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
     do iel = 1, ncel
 
-! ---- Calcul des parties explicite et implicite du TS
+     ! ---- Calculation of explicit and implicit parts of source term
 
      if ( rtpa(iel,ivar).gt. epsicp .and.                         &
           xwatch(numcha).gt. epsicp       ) then
@@ -444,7 +440,7 @@ if (i_coal_drift.eq.1) then
   ! Particle age source term
   if (fname(1:10).eq.'x_age_coal') then
 
-    ! index of the coal particle class
+    ! Index of the coal particle class
     call field_get_key_int(ivarfl(ivar), keyccl, icla)
 
     ! Array values at previous time step
@@ -458,42 +454,42 @@ if (i_coal_drift.eq.1) then
     write(name,'(a,i2.2)') 'm_transfer_v2_coal_', icla
     call field_get_val_s_by_name(name, gamvloi)
 
-    ! Fraction massique du charbon de icla
+    ! Coal mass fraction of icla
     write(name,'(a,i2.2)') 'x_coal_', icla
     call field_get_val_s_by_name(name, xchcpi)
 
-    ! Echelle temporelle de la combustion heter.
+    ! Heterogeneous combustion temporary scale
     write(name,'(a,i2.2)') 'het_ts_o2_coal_', icla
     call field_get_val_s_by_name(name, gaheto2i)
 
-    ! Fraction massique du char de icla
+    ! Char mass fraction of icla
     write(name,'(a,i2.2)') 'w_ck_coal_', icla
     call field_get_val_s_by_name(name, xckcpi)
 
-    ! Indicateur du charbon de classe icla
+    ! Coal indicator of class icla
     numcha = ichcor(icla)
 
-    ! Echelle temporelle de sechage
+    ! Dryer temporary scale
     if (ippmod(iccoal) .eq. 1) then
       write(name,'(a,i2.2)') 'dry_ts_coal_', icla
       call field_get_val_s_by_name(name, gaseci)
     endif
 
-    ! Fraction massique de la phase solide
+    ! Mass fraction of solid phase
     write(name,'(a,i2.2)') 'w_solid_coal_', icla
     call field_get_val_s_by_name(name, frmcpi)
 
-    ! L'age des particules par cellule
+    ! Particle age per cell
     write(name,'(a,i2.2)') 'age_coal_', icla
     call field_get_val_s_by_name(name, agei)
 
-    ! Echelle temporelle de la gazefication par CO2
+    ! Gazefiation temporary scale by CO2
     if (ihtco2 .eq. 1) then
       write(name,'(a,i2.2)') 'het_ts_co2_coal_', icla
       call field_get_val_s_by_name(name, gahetco2i)
     endif
 
-    ! Echelle temporelle de la gazefication par H2O
+    ! Gazefiation temporary scale by H2O
     if (ihth2o .eq. 1) then
       write(name,'(a,i2.2)') 'het_ts_h2o_coal_', icla
       call field_get_val_s_by_name(name, gaheth2oi)
@@ -505,15 +501,15 @@ if (i_coal_drift.eq.1) then
     endif
 
     do iel = 1, ncel
-      ! Flux de masse: Devolatilisation
+      ! Mass flux: Devolatilization
       auxdev =  -(gamvlei(iel)+gamvloi(iel))*xchcpi(iel)
-      ! Consommation de char par combustion heterogene
+      ! Coal consumpsion by heterogeneous combustion
       if (xckcpi(iel) .gt. epsicp) then
         auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)
       else
         auxht3 = 0.d0
       endif
-      ! Flux de masse: Gazefication par CO2
+      ! Mass flux: Gazefication by CO2
       if (ihtco2 .eq. 1) then
         if (xckcpi(iel) .gt. epsicp ) then
           auxco2 = -gahetco2i(iel)* (xckcpi(iel))**(2.d0/3.d0)
@@ -523,7 +519,7 @@ if (i_coal_drift.eq.1) then
       else
         auxco2 = 0.d0
       endif
-      ! Flux de masse: Gazefication par H2O
+      ! Mass flux: Gazefication by H2O
       if (ihth2o .eq. 1) then
         if (xckcpi(iel) .gt. epsicp) then
           auxh2o = -gaheth2oi(iel)*(xckcpi(iel))**(2.d0/3.d0)
@@ -533,7 +529,7 @@ if (i_coal_drift.eq.1) then
       else
         auxh2o = 0.d0
       endif
-      !  Flux de masse: Sechage
+      !  Mass flux: Drying
       if (ippmod(iccoal) .eq. 1) then
         if (xwtcpi(iel).gt.epsicp .and.xwatch(numcha).gt.epsicp) then
           auxwat = gaseci(iel)/(frmcpi(iel)*xwatch(numcha))
@@ -568,42 +564,42 @@ if (i_coal_drift.eq.1) then
       write(name,'(a,i2.2)') 'm_transfer_v2_coal_', icla
       call field_get_val_s_by_name(name, gamvloi)
 
-      ! Fraction massique du charbon de icla
+      ! Coal mass fraction of icla
       write(name,'(a,i2.2)') 'x_coal_', icla
       call field_get_val_s_by_name(name, xchcpi)
 
-      ! Echelle temporelle de la combustion heter.
+      ! Heterogeneous combustion temporary scale
       write(name,'(a,i2.2)') 'het_ts_o2_coal_', icla
       call field_get_val_s_by_name(name, gaheto2i)
 
-      ! Fraction massique du char de icla
+      ! Coal mass fraction of icla
       write(name,'(a,i2.2)') 'xck_cp_', icla
       call field_get_val_s_by_name(name, xckcpi)
 
-      ! Indicateur du charbon de classe icla
+      ! Coal indicator of class icla
       numcha = ichcor(icla)
 
-      ! Echelle temporelle de sechage
+      ! Drying temporary scale
       if (ippmod(iccoal) .eq. 1) then
         write(name,'(a,i2.2)') 'dry_ts_coal_', icla
         call field_get_val_s_by_name(name, gaseci)
       endif
 
-      ! Fraction massique de la phase solide
+      ! Mass fraction of the solid phase
       write(name,'(a,i2.2)') 'w_solid_coal_', icla
       call field_get_val_s_by_name(name, frmcpi)
 
-      ! L'age des particules par cellule
+      ! Particle age by cell
       write(name,'(a,i2.2)') 'age_coal_', icla
       call field_get_val_s_by_name(name, agei)
 
-      ! Echelle temporelle de la gazefication par CO2
+      ! Gazefication temporary scale by CO2
       if (ihtco2 .eq. 1) then
         write(name,'(a,i2.2)') 'het_ts_co2_coal_', icla
         call field_get_val_s_by_name(name, gahetco2i)
       endif
 
-      ! Echelle temporelle de la gazefication par H2O
+      ! Gazefication temporary scale by H2O
       if (ihth2o .eq. 1) then
         write(name,'(a,i2.2)') 'het_ts_h2o_coal_', icla
         call field_get_val_s_by_name(name, gaheth2oi)
@@ -615,15 +611,15 @@ if (i_coal_drift.eq.1) then
       endif
 
       do iel = 1, ncel
-        ! Flux de masse: Devolatilisation
+        ! Mass flux: Devolatilization
         auxdev = -(gamvlei(iel)+gamvloi(iel))*xchcpi(iel)
-        ! Consommation de char par combustion heterogene
+        ! Coal consumption by heterogeneous combustion
         if (xckcpi(iel) .gt. epsicp) then
           auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)
         else
           auxht3 = 0.d0
         endif
-        ! Flux de masse: Gazefication par CO2
+        ! Mass flux: Gazefication by CO2
         if (ihtco2 .eq. 1) then
           if (xckcpi(iel) .gt. epsicp ) then
             auxco2 = -gahetco2i(iel)* (xckcpi(iel))**(2.d0/3.d0)
@@ -633,7 +629,7 @@ if (i_coal_drift.eq.1) then
         else
           auxco2 = 0.d0
         endif
-        ! Flux de masse: Gazefication par H2O
+        ! Mass flux: Gazefication by H2O
         if (ihth2o .eq. 1) then
           if (xckcpi(iel) .gt. epsicp) then
             auxh2o = -gaheth2oi(iel)*(xckcpi(iel))**(2.d0/3.d0)
@@ -643,7 +639,7 @@ if (i_coal_drift.eq.1) then
         else
           auxh2o = 0.d0
         endif
-        !  Flux de masse: Sechage
+        !  Mass flux: Drying
         if (ippmod(iccoal) .eq. 1) then
           if (xwtcpi(iel).gt.epsicp .and.xwatch(numcha).gt.epsicp) then
             auxwat = gaseci(iel)/(frmcpi(iel)*xwatch(numcha))
@@ -665,7 +661,7 @@ if (i_coal_drift.eq.1) then
 
     ! Finalization
     do iel = 1, ncel
-      ! The formula is (1- SUM X2)
+      ! The formula is (1- Sum X2)
       smbrs(iel) =  smbrs(iel) + crom(iel) * volume(iel)
     enddo
 
@@ -673,7 +669,7 @@ if (i_coal_drift.eq.1) then
 
 endif
 
-! --> Terme source pour l'enthalpie du solide
+! --> Source term for the enthalpy of the solid
 
 if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
@@ -702,11 +698,11 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
   ixchcl = isca(ixch(numcla))
   ixckcl = isca(ixck(numcla))
 
-! ---- Contribution aux bilans explicite et implicite
-!        des echanges par diffusion moleculaire
-!        6 Lambda Nu / diam**2 / Rho2 * Rho * (T1-T2)
+  ! ---- Contribution to the explicit and implicit balance
+  !        exchanges by molecular distribution
+  !        6 Lambda Nu / diam**2 / Rho2 * Rho * (T1-T2)
 
-! ------ Calcul de lambda dans W1
+  ! ------ Calculation of lambda in W1
 
   xnuss = 2.d0
   do iel = 1, ncel
@@ -726,8 +722,8 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
     endif
   enddo
 
-! ------ Calcul du diametre des particules dans W2
-!        On calcule le d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
+  ! ------ Calculation of diameter of the particles in W2
+  !        d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
 
   do iel = 1, ncel
     w2(iel) = ( xashch(numcha)*diam20(numcla)**2 +                &
@@ -735,9 +731,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
               )**0.5
   enddo
 
-! ------ Contribution aux bilans explicite et implicite de
-!        des echanges par diffusion moleculaire
-!      Rq : on utilise PROPCE(IEL,IPCX2C) car on veut X2 a l'iteration n
+  ! ------ Contribution to the explicit and implicit balance
+  !        exchanges by molecular distribution
+  !      Remark : We use propce(iel,IPCX2C) because we want X2 at the iteration n
 
   do iel = 1, ncel
     if ( propce(iel,ipcx2c) .gt. epsicp ) then
@@ -753,13 +749,13 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
   enddo
 
 
-! ---- Contribution aux bilans explicite et implicite
-!        du terme echange d'energie entre les phases :
-!        GAMA(dev1) H(mv1,T2)+GAMA(dev2) H(mv2,T2)
+  ! ---- Contribution to the explicit and implicit balances
+  !        of exchange term of energy between phases:
+  !        gama(dev1) H(mv1,T2)+gama(dev2) H(mv2,T2)
 
   do iel = 1, ncel
 
-!        Gama Dev1 et Gama Dev2
+    !        Gama Dev1 et Gama Dev2
 
     gamdv1 = crom(iel)*rtp(iel,ixchcl)                   &
             *propce(iel,ipcgd1)
@@ -767,12 +763,12 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
     gamdv2 = crom(iel)*rtp(iel,ixchcl)                   &
             *propce(iel,ipcgd2)
 
-!        H(mv1,T2)
+    !        H(mv1,T2)
 
     do ige = 1, ngazem
       coefe(ige) = zero
     enddo
-!
+
     den = a1(numcha)*wmole(ichx1c(numcha))+b1(numcha)*wmole(ico)  &
          +c1(numcha)*wmole(ih2o)          +d1(numcha)*wmole(ih2s) &
          +e1(numcha)*wmole(ihcn)          +f1(numcha)*wmole(inh3)
@@ -795,7 +791,7 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
     !======================
     ( mode , xhdev1 , coefe , f1mc , f2mc , t2 )
 
-!        H(mv2,T2)
+    !        H(mv2,T2)
 
     do ige = 1, ngazem
       coefe(ige) = zero
@@ -819,21 +815,20 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
     mode      = -1
     call cs_coal_htconvers1 &
-    !======================
     ( mode , xhdev2 , coefe , f1mc , f2mc , t2 )
 
-!         Contribution aux bilans explicite et implicite
+    !         Contribution to explicit and implicit balances
 
     smbrs(iel) = smbrs(iel)+(gamdv1*xhdev1+gamdv2*xhdev2)*volume(iel)
 
   enddo
 
-! ------ combustion heterogene : C(s) + 02 ---> 0.5 C0
-!        GamHET * (28/12 H(CO,T2)-16/12 H(O2,T1) )
+  ! ------ Heterogeneous combustion: C(s) + 02 ---> 0.5 C0
+  !        GamHET * (28/12 H(CO,T2)-16/12 H(O2,T1) )
 
   do iel = 1, ncel
 
-!        Calcul de HCO(T2)
+    !        Calculation of HCO(T2)
 
     do ige = 1, ngazem
       coefe(ige) = zero
@@ -847,10 +842,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
     t2        = propce(iel,ipcte2)
     mode      = -1
     call cs_coal_htconvers1 &
-    !======================
     ( mode , xhco , coefe , f1mc , f2mc , t2 )
 
-!        Calcul de HO2(T1)
+    !        Calculation of HO2(T1)
 
     do ige = 1, ngazem
       coefe(ige) = zero
@@ -864,10 +858,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
     t1        = propce(iel,ipcte1)
     mode      = -1
     call cs_coal_htconvers1 &
-    !======================
     ( mode , xho2 , coefe , f1mc , f2mc , t1 )
 
-!         Contribution aux bilans explicite et implicite
+    !         Contribution to explicit and implicit balances
 
     if ( rtpa(iel,ixckcl) .gt. epsicp ) then
 
@@ -887,13 +880,13 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
   enddo
 
-! ------ combustion heterogene : C(s) + C02 ---> 2 C0
-!        GamHET * (56/12 H(CO,T2)-44/12 H(CO2,T1) )
+  ! ------ Heterogeneous combustion: C(s) + C02 ---> 2 C0
+  !        GamHET * (56/12 H(CO,T2)-44/12 H(CO2,T1) )
 
   if ( ihtco2 .eq. 1 ) then
     do iel = 1, ncel
 
-!        Calcul de HCO(T2)
+      !        Calculation of HCO(T2)
 
       do ige = 1, ngazem
         coefe(ige) = zero
@@ -907,10 +900,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
       t2        = propce(iel,ipcte2)
       mode      = -1
       call cs_coal_htconvers1 &
-      !======================
       ( mode , xhco , coefe , f1mc , f2mc , t2  )
 
-!        Calcul de HCO2(T1)
+      !        Calculation of HCO2(T1)
 
       do ige = 1, ngazem
         coefe(ige) = zero
@@ -927,7 +919,7 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
       !======================
       ( mode , xhco2 , coefe , f1mc , f2mc , t1    )
 
-!         Contribution aux bilans explicite et implicite
+      !         Contribution to explicit and implicit balances
 
       if ( rtpa(iel,ixckcl) .gt. epsicp ) then
 
@@ -948,13 +940,13 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
     enddo
 
   endif
-! ------ combustion heterogene : C(s) + H2O ---> CO + H2
-!        GamHET * (28/12 H(CO,T2)+2/12 H(HY,T2) -18/12 H(H2O,T1) )
+  ! ------ Heterogeneous combustion: C(s) + H2O ---> CO + H2
+  !        GamHET * (28/12 H(CO,T2)+2/12 H(HY,T2) -18/12 H(H2O,T1) )
 
   if ( ihth2o .eq. 1 ) then
     do iel = 1, ncel
 
-!        Calcul de HCO(T2)
+      !        Calculation of HCO(T2)
 
       do ige = 1, ngazem
         coefe(ige) = zero
@@ -968,10 +960,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
       t2        = propce(iel,ipcte2)
       mode      = -1
       call cs_coal_htconvers1 &
-      !======================
       ( mode , xhco , coefe , f1mc , f2mc , t2 )
 
-!        Calcul de HH2(T2)
+      !        Calculation of HH2(T2)
 
       do ige = 1, ngazem
         coefe(ige) = zero
@@ -985,10 +976,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
       t2        = propce(iel,ipcte2)
       mode      = -1
       call cs_coal_htconvers1 &
-      !======================
       ( mode , xhh2 , coefe , f1mc , f2mc , t2    )
 
-!        Calcul de HH2O(T1)
+      !        Calculation of HH2O(T1)
 
       do ige = 1, ngazem
         coefe(ige) = zero
@@ -1002,10 +992,9 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
       t1        = propce(iel,ipcte1)
       mode      = -1
       call cs_coal_htconvers1 &
-      !======================
       ( mode , xhh2o , coefe , f1mc , f2mc , t1    )
 
-!         Contribution aux bilans explicite et implicite
+      !         Contribution to explicit and implicit balances
 
       if ( rtpa(iel,ixckcl) .gt. epsicp ) then
 
@@ -1028,11 +1017,11 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
   endif
 
-!       --> Terme source sur H2 issu du sechage)
+  !       --> Source term on H2 (coming from drying)
 
   if ( ippmod(iccoal) .eq. 1 ) then
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+    ! ---- Contribution of source term interfacial to explicit and implicit balances
 
 
     ipcsec = ipproc(igmsec(numcla))
@@ -1040,7 +1029,7 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
     do iel = 1, ncel
 
-!          Calcul de H(H2O) a T2
+      !          Calculation of H(H2O) at T2
 
       do ige = 1, ngazem
         coefe(ige) = zero
@@ -1060,7 +1049,7 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
       !==========
       ( mode , hh2ov , coefe , f1mc , f2mc ,  t2  )
 
-!         Contribution aux bilans explicite
+!         Contribution to explicit balance
 
       if ( rtpa(iel,isca(ixwt(numcla))).gt. epsicp .and.          &
            xwatch(numcha) .gt. epsicp       ) then
@@ -1082,11 +1071,10 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 endif
 
 !===============================================================================
-! 3. PRISE EN COMPTE DES TERMES SOURCES POUR LES VARIABLES RELATIVES
-!    AU MELANGE GAZEUX
+! 3. Taking into account source terms for relative variables in the mixture
 !===============================================================================
 
-! --> Terme source pour les matieres volatiles legeres
+! --> Source term for light volatile materials
 
 if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
 
@@ -1094,7 +1082,7 @@ if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
     write(nfecra,1000) chaine(1:8)
   endif
 
-! ---- Calcul de GMDEV1 = - SOMME (rho.XCH.GMDV1) > 0  --> W1
+! ---- Calculation of GMDEV1 = - Sum (rho.XCH.GMDV1) > 0  --> W1
 
   numcha = ivar-isca(if1m(1))+1
   do iel = 1, ncel
@@ -1111,7 +1099,7 @@ if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
     endif
   enddo
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+! ---- Contribution of interfacial source term to explicit and implicit balances
 
   do iel = 1, ncel
     smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
@@ -1120,7 +1108,7 @@ if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
 endif
 
 
-! --> Terme source pour les matieres volatiles lourdes
+! --> Source terms for heavy volatil materials
 
 if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
 
@@ -1128,7 +1116,7 @@ if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
     write(nfecra,1000) chaine(1:8)
   endif
 
-! ---- Calcul de GMDEV2 = - SOMME (rho.XCH.GMDV2) >0 --> W1
+! ---- Calculation of GMDEV2 = - Sum (rho.XCH.GMDV2) > 0 --> W1
 
   numcha = ivar-isca(if2m(1))+1
   do iel = 1, ncel
@@ -1145,7 +1133,7 @@ if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
     endif
   enddo
 
-! ---- Contribution du TS interfacial pour le bilan explicite
+! ---- Contribution of interfacial source term to explicite balance
 
   do iel = 1, ncel
     smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
@@ -1154,12 +1142,12 @@ if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
 endif
 
 
-! --> Terme source pour le traceur 7 (O2) (C de la comb. het.)
+! --> Source term for the tracer 7 (O2) (heterogeneous combustion by C)
 
 if ( ivar.eq.isca(if7m) ) then
 
-! RQ IMPORTANTE :  On prend les meme TS que pour Xck
-!                  afin d'etre conservatif
+  ! Remark: We take the same source term than for Xck
+  !                  to be conservative
 
   if (iwarni(ivar).ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -1183,7 +1171,7 @@ if ( ivar.eq.isca(if7m) ) then
     enddo
   enddo
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+  ! ---- Contribution of interfacial source term to explicit and implicit balances
 
   do iel = 1, ncel
     smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
@@ -1193,13 +1181,13 @@ endif
 
 
 
-! --> Terme source pour le traceur 8 (CO2) (C de la comb. het.)
+! --> Source term for the tracer 8 (CO2) (heterogeneous combustion by C)
 
 if ( ihtco2 .eq. 1 ) then
   if ( ivar.eq.isca(if8m) ) then
 
-! RQ IMPORTANTE :  On prend les meme TS que pour Xck
-!                  afin d'etre conservatif
+    ! Remark: We take the same source term than for Xck
+    !                  to be conservative
 
     if (iwarni(ivar).ge.1) then
       write(nfecra,1000) chaine(1:8)
@@ -1223,7 +1211,7 @@ if ( ihtco2 .eq. 1 ) then
       enddo
     enddo
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+    ! ---- Contribution of interfacial source term to explicit and implicit balances
 
     do iel = 1, ncel
       smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
@@ -1233,18 +1221,19 @@ if ( ihtco2 .eq. 1 ) then
 
 endif
 
-! --> Terme source pour le traceur 9 (H2O) (comb. het. par h2O)
+! --> Source term for the tracer 9 (H2O) (heterogeneous combustion by H2O)
 
 if ( ihth2o .eq. 1 ) then
   if ( ivar.eq.isca(if9m) ) then
 
-! RQ IMPORTANTE :  On prend les meme TS que pour Xck
-!                  afin d'etre conservatif
+    ! Remark: We take the same source term than for Xck
+    !                  to be conservative
+
 
     if (iwarni(ivar).ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
-!
+
     do iel = 1, ncel
       w1(iel) = zero
     enddo
@@ -1263,7 +1252,7 @@ if ( ihth2o .eq. 1 ) then
       enddo
     enddo
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+    ! ---- Contribution of interfacial source term to explicit and implicit balances
 
     do iel = 1, ncel
       smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
@@ -1274,7 +1263,7 @@ if ( ihth2o .eq. 1 ) then
 endif
 
 
-! --> Terme source pour la variance du combustible
+! --> Source term for the fuel variance
 
 if ( ivar.eq.isca(ifvp2m) ) then
 
@@ -1290,7 +1279,7 @@ if ( ivar.eq.isca(ifvp2m) ) then
 
 endif
 
-! --> Terme source pour le traceur 6 (Eau issue du séchage)
+! --> Source term for the tracer 6 (Water coming from drying)
 
 if ( ippmod(iccoal) .eq. 1 ) then
 
@@ -1301,7 +1290,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
       write(nfecra,1000) chaine(1:8)
     endif
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+    ! ---- Contribution of interfacial source term to explicit and implicit balances
 
     do iel = 1, ncel
       w1(iel) = zero
@@ -1338,7 +1327,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
 endif
 
-! --> Terme source pour CO2
+! --> Source term for CO2
 
 if ( ieqco2 .eq. 1 ) then
 
@@ -1348,42 +1337,42 @@ if ( ieqco2 .eq. 1 ) then
       write(nfecra,1000) chaine(1:8)
     endif
 
-! ---- Contribution du TS interfacial aux bilans explicite et implicite
+    ! ---- Contribution of interfacial source term to explicit and implicit balances
 
-! Oxydation du CO
-! ===============
+    ! Oxydation of CO
+    ! ===============
 
-!  Dryer Glassman : XK0P en (moles/m3)**(-0.75) s-1
-!          XK0P = 1.26D10
-!           XK0P = 1.26D7 * (1.1)**(NTCABS)
-!           IF ( XK0P .GT. 1.26D10 ) XK0P=1.26D10
-!           T0P  = 4807.D0
-!  Howard : XK0P en (moles/m3)**(-0.75) s-1
-!             XK0P = 4.11D9
-!             T0P  = 15090.D0
-!  Westbrook & Dryer
+    !  Dryer Glassman : XK0P in (mol/m3)**(-0.75) s-1
+    !          XK0P = 1.26D10
+    !           XK0P = 1.26D7 * (1.1)**(NTCABS)
+    !           IF ( XK0P .GT. 1.26D10 ) XK0P=1.26D10
+    !           T0P  = 4807.D0
+    !  Howard : XK0P in (mol/m3)**(-0.75) s-1
+    !             XK0P = 4.11D9
+    !             T0P  = 15090.D0
+    !  Westbrook & Dryer
 
     lnk0p = 23.256d0
     t0p  = 20096.d0
-!
-!  Hawkin et Smith Purdue University Engeneering Bulletin, i
-!  Research series 108 vol 33, n 3n 1949
-!  Kp = 10**(4.6-14833/T)
-!  Constante d'equilibre en pression partielle (atm           !)
-!  XKOE est le log decimal de la constante pre-exponentielle
-!  TOE  n'est PAS une temerature d'activation  ... il reste un lg(e)
-!  pour repasser en Kc et utiliser des concetrations (moles/m3)
-!  Kc = (1/RT)**variation nb moles * Kp
-!  ici Kc = sqrt(0.082*T)*Kp
+
+    !  Hawkin et Smith Purdue University Engeneering Bulletin, i
+    !  Research series 108 vol 33, n 3n 1949
+    !  Kp = 10**(4.6-14833/T)
+    !  Equilibrum constant in partial pressure [atm]
+    !  XKOE is the decimal log of the pre-exponential constant
+    !  TOE is NOT an activation temperature ... there is a lg(e)
+    !  to return to Kc and to use concentrations (in mol/m3)
+    !  Kc = (1/RT)**variation nb moles * Kp
+    !  here Kc = sqrt(0.082*T)*Kp
 
     l10k0e = 4.6d0
     t0e  = 14833.d0
-! Dissociation du CO2 (Trinh Minh Chinh)
-! ===================
-!          XK0M = 5.D8
-!          T0M  = 4807.D0
-!          XK0M = 0.D0
-!  Westbrook & Dryer
+    ! Dissociation of CO2 (Trinh Minh Chinh)
+    ! ===================
+    !          XK0M = 5.D8
+    !          T0M  = 4807.D0
+    !          XK0M = 0.D0
+    !  Westbrook & Dryer
 
     lnk0m = 20.03d0
     t0m  = 20096.d0
@@ -1391,9 +1380,9 @@ if ( ieqco2 .eq. 1 ) then
     err1mx = 0.d0
     err2mx = 0.d0
 
-! Nombre d'iterations
+    ! Number of iterations
     itermx = 500
-! Nombre de points converges
+    ! Number of convergent points
 
    nbpauv = 0
    nbepau = 0
@@ -1402,11 +1391,11 @@ if ( ieqco2 .eq. 1 ) then
    nbpass = 0
    nbarre = 0
    nbimax = 0
-! Precision pour la convergence
+   ! Precision on the convergence
    errch = 1.d-8
-!
+
    do iel = 1, ncel
-!
+
      xxco  = propce(iel,ipproc(iym1(ico  )))/wmole(ico)           &
             *propce(iel,ipproc(irom1))
      xxo2  = propce(iel,ipproc(iym1(io2  )))/wmole(io2)           &
@@ -1415,21 +1404,21 @@ if ( ieqco2 .eq. 1 ) then
             *propce(iel,ipproc(irom1))
      xxh2o = propce(iel,ipproc(iym1(ih2o )))/wmole(ih2o)          &
             *propce(iel,ipproc(irom1))
-!
+
      xxco  = max(xxco ,zero)
      xxo2  = max(xxo2 ,zero)
      xxco2 = max(xxco2,zero)
      xxh2o = max(xxh2o,zero)
      sqh2o = sqrt(xxh2o)
-!
+
      xkp = exp(lnk0p-t0p/propce(iel,ipproc(itemp1)))
      xkm = exp(lnk0m-t0m/propce(iel,ipproc(itemp1)))
-!
+
      xkpequ = 10.d0**(l10k0e-t0e/propce(iel,ipproc(itemp1)))
      xkcequ = xkpequ                                              &
              /sqrt(8.32d0*propce(iel,ipproc(itemp1))/1.015d5)
 
-!        initialisation par l'état transporté
+     !        initialization by the transported state
 
      anmr  = xxco2
      xcom  = xxco + xxco2
@@ -1437,14 +1426,14 @@ if ( ieqco2 .eq. 1 ) then
 
      if ( propce(iel,ipproc(itemp1)) .gt. 1200.d0 ) then
 
-!           Recherche de l'état d'équilibre
-!           Recerche itérative sans controle de convergence
-!            (pour conserver la parallelisation sur les mailles)
-!           sur le nombre de moles de reaction séparant
-!           l'etat avant réaction (tel que calculé par Cpcym)
-!           de l'état d'équilibre
-!          ANMR doit etre borne entre 0 et Min(XCOM,2.*XO2M)
-!          on recherche la solution par dichotomie
+      !        Search for the equilibrum state
+      !        Iterative search without control of convergence
+      !         (to keep the parallelisation on meshes)
+      !        On the numver of moles of separating reaction
+      !         the state before reaction (such as calculated by Cpcym)
+      !         of the equilibrum state
+      !        anmr has to be the border between 0 and Min(XCOM,2.*XO2M)
+      !        We look for the solution by dichotomy
 
        anmr0 = 0.d0
        anmr1 = min(xcom,2.d0*xo2m)
@@ -1479,7 +1468,7 @@ if ( ieqco2 .eq. 1 ) then
            endif
            iterch = iterch + 1
          enddo
-!
+
          if ( iterch .ge. itermx) then
            nberic = nberic + 1
          else
@@ -1503,12 +1492,12 @@ if ( ieqco2 .eq. 1 ) then
        xcoeq  = xcom - xco2eq
 
      endif
-!
+
      if ( xco2eq.gt.xxco2 ) then
-!           oxydation
+           oxydation
        xden = xkp*sqh2o*(xxo2)**0.25d0
      else
-!           dissociation
+           dissociation
        xden = xkm
      endif
      if ( xden .ne. 0.d0 ) then
@@ -1521,14 +1510,14 @@ if ( ieqco2 .eq. 1 ) then
          x2 = x2 + propce(iel,ipproc(ix2(icla)))
        enddo
 
-!    On transporte CO2
+       !    We transport CO2
 
        smbrs(iel)  = smbrs(iel)                                   &
                     +wmole(ico2)/propce(iel,ipproc(irom1))        &
          * (xco2eq-xxco2)/(tauchi+tautur)                         &
          * (1.d0-x2)                                              &
          * volume(iel) * crom(iel)
-!
+
        w1(iel) = volume(iel)*crom(iel)/(tauchi+tautur)
        rovsdt(iel) = rovsdt(iel) +   max(w1(iel),zero)
 
@@ -1552,7 +1541,7 @@ if ( ieqco2 .eq. 1 ) then
    write(nfecra,*) ' no Points   ',NBERIC,NBARRE,NBPASS
    write(nfecra,*) ' Iter max number ',NBIMAX
 
-!     Terme source : combustion heterogene par le CO2
+   !     Source term: heterogeneous combustion by CO2
 
    if ( ihtco2 .eq. 1) then
 
@@ -1579,36 +1568,36 @@ if ( ieqco2 .eq. 1 ) then
   endif
 
 endif
-!
-! --> Terme source pour Enth_Ox
-!                       HCN et NO : uniquement a partir de la 2eme iters
-!
+
+! --> Source term for Enth_Ox
+!                       HCN and NO: only from the second iteration
+
 if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
-!
-! Termes sur l'enthalpie Oxydant
-!
+
+  ! Terms on Oxydant enthalpy
+
   if ( ivar .eq. isca(ihox) ) then
-!
-!  Calcul de T2 moy sur la particules
-!
+
+    !  Calculation of T2 average on particles
+
     tfuelmin = 1.d+20
     tfuelmax =-1.d+20
     do iel=1,ncel
-!
+
       xmx2 = 0.d0
       do icla = 1, nclacp
         xck  = rtp(iel,isca(ixck(icla)))
         xch  = rtp(iel,isca(ixch(icla)))
         xash = rtp(iel,isca(inp (icla)))*xmash(icla)
         xmx2   = xmx2 + xch + xck + xash
-!
-!        Prise en compte de l'humidite
-!
+
+        !   Taking into account humidity
+
         if ( ippmod(iccoal) .eq. 1 ) then
           xmx2 = xmx2+rtp(iel,isca(ixwt(icla)))
         endif
       enddo
-!
+
       if ( xmx2 .gt. 0.d0 ) then
         tfuel(iel) = 0.d0
         do icla=1,nclacp
@@ -1618,17 +1607,17 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
                         +rtp(iel,isca(ixch(icla)))                             &
                         +rtp(iel,isca(inp (icla)))*xmash(icla) )               &
                         *propce(iel,ipcte2)
-!
-!         Prise en compte de l'humidite
-!
+
+          !  Taking into account humidity
+
           if ( ippmod(iccoal) .eq. 1 ) then
             tfuel(iel) = tfuel(iel) + (rtp(iel,isca(ixwt(icla))))              &
                          *propce(iel,ipcte2)
           endif
         enddo
-!
+
         tfuel(iel) = tfuel(iel)/xmx2
-!
+
       else
         tfuel(iel) = propce(iel,ipcte1)
       endif
@@ -1640,13 +1629,13 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       call parmax(tfuelmax)
     endif
     write(nfecra,*) ' Min max de Tfuel pour Hoxy ',tfuelmin,tfuelmax
-!
-! Combustion heterogene : C + O2 ---> 0.5CO
-!
+
+    ! Heterogeneous combustion: C + O2 ---> 0.5 CO
+
     do iel=1,ncel
-!
-!   Calcul de HCO(T2)
-!
+
+      !   Calculation of HCO(T2)
+
       do ige = 1, ngazem
         coefe(ige) = zero
       enddo
@@ -1658,11 +1647,10 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         t2        = tfuel(iel)
       mode      = -1
       call cs_coal_htconvers1 &
-      !======================
     ( mode  , xhco    , coefe  , f1mc   , f2mc   ,  t2    )
-!
-!  Calcul de HO2(T1)
-!
+
+      !  Calculation of HO2(T1)
+
       do ige = 1, ngazem
         coefe(ige) = zero
       enddo
@@ -1674,9 +1662,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       t1        = propce(iel,ipcte1)
       mode      = -1
       call cs_coal_htconvers1 &
-      !======================
       ( mode  , xho2    , coefe  , f1mc   , f2mc   , t1    )
-!
+
       do icla=1,nclacp
         ixckcl = isca(ixck(icla))
         ipcght = ipproc(igmhet(icla))
@@ -1691,20 +1678,20 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         smbrs(iel) = smbrs(iel)                                        &
                     -gamhet                                            &
                      *(28.d0/12.d0*xhco-16.d0/12.d0*xho2)*volume(iel)
-!
+
       enddo
-!
+
     enddo
-!
-!   Combustion heterogene : C + CO2 --->2 CO
-!
-!     Calcul de HO2(T1)
-!
+
+    !  Heterogeneous combustion: C + CO2 ---> 2 CO
+
+    !  Calculation of HO2(T1)
+
     if ( ihtco2 .eq. 1 ) then
       do iel=1,ncel
-!
-!      Calcul de HCO(T2)
-!
+
+        !  Calculation of HCO(T2)
+
         do ige = 1, ngazem
           coefe(ige) = zero
         enddo
@@ -1717,12 +1704,11 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         t2        = tfuel(iel)
         mode      = -1
         call cs_coal_htconvers1 &
-        !======================
         ( mode  , xhco    , coefe  , f1mc   , f2mc   , t2    )
 
-!
-!       Calcul de HCO2(T1)
-!
+
+        !  Calculation of HCO2(T1)
+
         do ige = 1, ngazem
           coefe(ige) = zero
         enddo
@@ -1734,9 +1720,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         t1        = propce(iel,ipcte1)
         mode      = -1
         call cs_coal_htconvers1 &
-        !======================
         ( mode  , xhco2    , coefe  , f1mc   , f2mc   , t1    )
-!
+
         do icla=1,nclacp
           ixckcl  = isca(ixck(icla))
           ipghco2 = ipproc(ighco2(icla))
@@ -1751,23 +1736,23 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           smbrs(iel) = smbrs(iel)                                          &
                       -gamhet                                              &
                        *(56.d0/12.d0*xhco-44.d0/12.d0*xhco2) *volume(iel)
-!
+
         enddo
-!
+
       enddo
-!
+
     endif
-!
-!   Combustion heterogene : C + H2O ---> CO + H2
-!
-!     Calcul de HO2(T1)
-!
+
+    !   Heterogeneous combustion: C + H2O ---> CO + H2
+
+    !     Calculation of HO2(T1)
+
     if ( ihth2o .eq. 1 ) then
-!
+
       do iel=1,ncel
-!
-!      Calcul de HCO(T2)
-!
+
+        !      Calculation of HCO(T2)
+
         do ige = 1, ngazem
           coefe(ige) = zero
         enddo
@@ -1780,10 +1765,9 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         t2        = tfuel(iel)
         mode      = -1
         call cs_coal_htconvers1 &
-        !======================
         ( mode  , xhco    , coefe  , f1mc   , f2mc   ,  t2    )
 
-!      Calcul de HH2(T2)
+        !      Calculation of HH2(T2)
 
         do ige = 1, ngazem
           coefe(ige) = zero
@@ -1797,11 +1781,10 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         t2        = tfuel(iel)
         mode      = -1
         call cs_coal_htconvers1 &
-        !======================
         ( mode  , xhh2    , coefe  , f1mc   , f2mc   , t2    )
-!
-!       Calcul de HH2O(T1)
-!
+
+        !       Calculation of HH2O(T1)
+
         do ige = 1, ngazem
           coefe(ige) = zero
         enddo
@@ -1813,9 +1796,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         t1        = propce(iel,ipcte1)
         mode      = -1
         call cs_coal_htconvers1 &
-        !======================
       ( mode  , xhh2o    , coefe  , f1mc   , f2mc   , t1    )
-!
+
         do icla=1,nclacp
           ixckcl  = isca(ixck(icla))
           ipghh2o = ipproc(ighh2o(icla))
@@ -1831,28 +1813,28 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
                       -gamhet                                               &
                        *(28.d0/12.d0*xhco+ 2.d0/12.d0*xhh2                  &
                                          -18.d0/12.d0*xhh2o ) *volume(iel)
-!
+
         enddo
-!
+
       enddo
-!
+
     endif
-!
-!   Sechage
-!
+
+    !   Drying
+
     if ( ippmod(iccoal) .eq. 1 ) then
-!
+
       do icla=1,nclacp
-!
+
         numcha = ichcor(icla)
-!
+
         ipcsec = ipproc(igmsec(icla))
         ipcte2 = ipproc(itemp2(icla))
         ipcx2c = ipproc(ix2(icla))
 
         do iel = 1, ncel
 
-!          Calcul de H(H2O) a T2
+          !  Calculation of H(H2O) at T2
 
           do ige = 1, ngazem
             coefe(ige) = zero
@@ -1866,10 +1848,9 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           t2 = propce(iel,ipcte2)
           mode      = -1
           call cpthp1 &
-          !==========
           ( mode  , hh2ov    , coefe  , f1mc   , f2mc   ,t2    )
 
-!         Contribution aux bilans explicite
+          !  Contribution to explicit balance
 
           if ( rtpa(iel,isca(ixwt(icla))).gt. epsicp .and.          &
                xwatch(numcha) .gt. epsicp       ) then
@@ -1884,53 +1865,53 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           endif
 
           smbrs(iel) = smbrs(iel) - aux*volume(iel)
-!
+
         enddo
 
       enddo
 
     endif
-!
+
   endif
 endif
-!
+
 if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
-!
-! Termes soures sur Y_HCN et Y_NO
-!
+
+  ! Source terms on Y_HCN and Y_NO
+
   if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) ) then
-!
-! Pointeur Termes sources
-!
+
+    !  Pointer source terms
+
     iexp1  = ipproc(ighcn1)
     iexp2  = ipproc(ighcn2)
     iexp3  = ipproc(ignoth)
 
-!
-! Masse molaire
-!
+
+    !  Mass molar
+
     wmhcn = wmole(ihcn)
     wmno  = 0.030d0
     wmo2  = wmole(io2  )
 
     if ( ivar.eq.isca(iyhcn) ) then
-!
-!        Terme source HCN
-!
+
+    !  Source term HCN
+
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
-!
+
       do iel=1,ncel
         wmel=propce(iel,ipproc(immel))
         xo2= propce(iel,ipproc(iym1(io2)))*wmel/wmo2
-!
+
         aux = volume(iel)*crom(iel)                      &
              *(propce(iel,iexp2)+propce(iel,iexp1)                &
              *rtpa(iel,isca(iyno))                                &
              *propce(iel,ipproc(immel))                           &
              /wmno)
-!
+
         smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
         rovsdt(iel) = rovsdt(iel) + aux
 
@@ -1939,7 +1920,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
           gmdev2(icha)=0.d0
           gmhet (icha)=0.d0
         enddo
-!
+
         do icla=1,nclacp
 
           icha = ichcor(icla)
@@ -1960,8 +1941,8 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
         enddo
 
         do icha=1,ncharb
-!        % d'azote sur pur dans le charbon
-!
+          !  % of pure nitrogen in the coal
+
           aux = -volume(iel)*fn(icha)*wmhcn/(wmole(in2)/2.d0)        &
                             *(qpr(icha)*(gmdev1(icha)+gmdev2(icha)))
           if(xo2.gt.0.03d0) then
@@ -1972,21 +1953,21 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
           endif
           smbrs(iel)  = smbrs(iel) + aux
         enddo
-!
+
       enddo
-!
+
     endif
 
     if ( ivar.eq.isca(iyno) ) then
-!
-!        Terme source NO
-!
+
+      !  Source term NO
+
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
       do iel=1,ncel
-!
+
         wmel=propce(iel,ipproc(immel))
 
         aux1 = volume(iel)*crom(iel)                     &
@@ -2009,36 +1990,36 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
   endif
 
 endif
-!
+
 if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
-!
-! Termes soures sur Y_HCN et Y_NO
-!
+
+  ! Source terms on Y_HCN and Y_NO
+
   if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) .or. ivar.eq.isca(iynh3)    &
      ) then
-!
-! Pointeur Termes sources NO phase gaz
+
+    ! Pointer Source terms NO gas phase
     iexp1  = ipproc(ighcn1)
     iexp2  = ipproc(ighcn2)
     iexp3  = ipproc(ignoth)
     iexp4  = ipproc(ignh31)
     iexp5  = ipproc(ignh32)
     iexprb = ipproc(igrb)
-! Pointeur sur CHx1 et CHx2
+    ! Pointer on CHx1 and CHx2
     ipcyf1 = ipproc(iym1(1))
     ipcyf2 = ipproc(iym1(2))
     idgaz  = ipproc(irom1)
-!
-! Masse molaire
-!
+
+    ! Mass molar
+
     wmhcn = wmole(ihcn)
     wmno  = 0.030d0
     wmnh3 = wmole(inh3)
 
     if ( ivar.eq.isca(iyhcn) ) then
-!
+
     aux = 0.d0
-!
+
       do iel = 1,ncel
 
          propce(iel,ipproc(ifhcnr))  = zero
@@ -2046,32 +2027,32 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
          propce(iel,ipproc(ifhcnc)) = zero
 
       enddo
-!
-!        Terme source HCN
-!
+
+      !  Source term HCN
+
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
-!
+
       do iel=1,ncel
-!
-!       Masse molaire de la melange gazeuse
+
+        !  Mass molar of the gas mixture
         wmel=propce(iel,ipproc(immel))
 
-!
-!       Coefficient des reaction HCN + O2 et HCN + NO
+
+        !  Coefficient of reactions HCN + O2 et HCN + NO
         aux = volume(iel)*crom(iel)                                   &
              *(propce(iel,iexp2)+propce(iel,iexp1)                             &
              *rtpa(iel,isca(iyno))                                             &
              *wmel/wmno)
-!
+
         smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
         rovsdt(iel) = rovsdt(iel) + aux
-!
-!       Reburning ?
-!       Model de Chen
+
+        !  Reburning ?
+        !  Chen's model
         if(irb.eq.1) then
-!
+
           do icha = 1,ncharb
 
              ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
@@ -2082,30 +2063,30 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                  * ychx
 
              smbrs(iel)  = smbrs(iel)  + aux
-!
+
              propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
-!
+
           enddo
-!
-!       Model de Dimitiou
+
+        !  Dimitiou's model
         elseif(irb.eq.2) then
-!
+
           do icha = 1,ncharb
 
-!           Reburning par CHx1
+            !  Reburning by CHx1
             if(propce(iel,ipcyf1).gt.0.d0) then
-!
-!             Nombre de point de la discretisation de la temperature
+
+              !  Number of point of the temperature discretization
               do ii = 1,7
-!
-!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+
+                !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
                 if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
                    teno(ii+1)) then
 
-!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  !  JJ indicates the quotient H/C of the fuel (4=CH4;3=CH3,etc.)
                   do jj = 1,4
-!
-!                   On cherche l'intervall jj<chx1(icha)<jj+1
+
+                    !  We look for the interval jj < chx1(icha) < jj + 1
                     if(chx1(icha).ge.4.d0) then
 
                     core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
@@ -2158,26 +2139,27 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                   * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               endif
-!
+
               smbrs(iel)  = smbrs(iel)  + aux
-!
+
               propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
-!
+
             elseif(propce(iel,ipcyf2).gt.0.d0) then
 
-!           Reburning par CHx2
-!
-!             Nombre de point de la discretisation de la temperature
+              !  Reburning by CHx2
+
+              !  Number of points of the temperature discretization
               do ii = 1,7
-!
-!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+
+                !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
                 if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
                    teno(ii+1)) then
 
-!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  !  JJ indicates the quotient H/C of
+                  !           the fuel (4=CH4;3=CH3,etc.)
                   do jj = 1,4
-!
-!                   On cherche l'intervall jj<chx1(icha)<jj+1
+
+                    !  We look for the interval jj < chx1(icha) < jj + 1
                     if(chx2(icha).ge.4.d0) then
 
                     core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
@@ -2232,119 +2214,119 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               endif
 
               smbrs(iel)  = smbrs(iel)  + aux
-!
+
               propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
-!
+
             endif
-!
+
           enddo
-!
+
         endif
-!
-!       Initialisation des variables
+
+        !  Initialization of variables
         do icha=1,ncharb
-!
+
           gmdev1(icha)=0.d0
           gmdev2(icha)=0.d0
           gmhet (icha)=0.d0
-!
+
         enddo
-!
+
         do icla=1,nclacp
 
           icha   = ichcor(icla)
           ipctem = ipproc(itemp2(icla))
           ixckcl = isca(ixck(icla))
           ipcght = ipproc(igmhet(icla))
-!
+
           mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
                    *exp(-e1ch(icha)/(rr*propce(iel,ipctem)))
 
           mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)                                &
                    *exp(-e2ch(icha)/(rr*propce(iel,ipctem)))
-!
-!         Taux de formation de la premiere reaction de pyrolyse
+
+          !  Forming rate of the first pyrolisis reaction
           gmdev1(icha) = gmdev1(icha)                                          &
                +propce(iel,ipproc(igmdv1(icla)))                               &
                *crom(iel)                                             &
                *rtpa(iel,isca(ixch(icla)))
-!
-!         Taux de formation de la deuxieme reaction de pyrolyse
+
+          !  Forming rate of the second pyrolisis reaction
           gmdev2(icha) = gmdev2(icha)                                          &
                +propce(iel,ipproc(igmdv2(icla)))                               &
                *crom(iel)                                             &
                *rtpa(iel,isca(ixch(icla)))
-!
+
           if ( rtpa(iel,ixckcl) .gt. epsicp ) then
-!           Taux de reaction de la combustion heterogene
+            !  Reaction rate of the heterogeneous combustion
             gmhet(icha) = gmhet(icha)                                          &
                +propce(iel,ipcght)                                             &
                *crom(iel)                                             &
                *( rtpa(iel,ixckcl)*((1.d0/(mckcl2/mckcl1+1.d0))*yhcnc1(icha)   &
                    +(1.d0/(mckcl1/mckcl2+1.d0))*yhcnc2(icha)) )**(2.d0/3.d0)
           endif
-!
+
         enddo
-!
-!       Terme source modifie (nouveau model de NOx)
-!
+
+        !  Modified source term (new model of NOx)
+
         do icha=1,ncharb
 
-!          Liberation du HCN lors de la devotalisation
+           !  Release of HCN during devolatilization
            aux = -volume(iel)*(gmdev1(icha)*yhcnle(icha)                       &
                  +gmdev2(icha)*yhcnlo(icha))
-!
-!          Liberation du HCN lors de la reaction heterogene selon la valeur
-!          repnck(icha)
+
+           !   Release of HCN during the heterogeneous combustion according
+           !   to the value repnck(icha)
 
            aux = aux-volume(iel)*gmhet(icha)
-!
+
            smbrs(iel)  = smbrs(iel) + aux
 
-!          Affichage des termes sources
+           !  Source terms displaying
            propce(iel,ipproc(ifhcnd)) = propce(iel,ipproc(ifhcnd))             &
            -volume(iel)*(gmdev1(icha)*yhcnle(icha)+gmdev2(icha)*yhcnlo(icha))
-!
+
            propce(iel,ipproc(ifhcnc))= propce(iel,ipproc(ifhcnc))              &
            -volume(iel)*gmhet(icha)
 
         enddo
 
       enddo
-!
+
     endif
-!
-!
+
+
     if ( ivar.eq.isca(iynh3)) then
-!
+
        aux = 0.d0
-!
+
       do iel = 1, ncel
 
          propce(iel,ipproc(ifnh3d)) = zero
 
       enddo
-!
-!     Terme source NH3
-!
+
+      !  Source term NH3
+
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
-!
+
       do iel=1,ncel
-!
-!       Masse molaire de la melange gazeuse
+
+        !  Mass molar of the gaseous mixture
         wmel = propce(iel,ipproc(immel))
-!
-!       Coefficient des reaction NH3 + O2 et NH3 + NO
+
+        !  Coefficient of reactions NH3 + O2 and NH3 + NO
         aux  =   volume(iel)*crom(iel)                                &
              * ( propce(iel,iexp4) + propce(iel,iexp5)                         &
              *   rtpa(iel,isca(iyno))*wmel/wmno )
-!
+
         smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
         rovsdt(iel) = rovsdt(iel) + aux
-!
-!       Initialisation des variables
+
+        !  Initialization of variables
         do icha=1,ncharb
 
           gmdev1(icha)=0.d0
@@ -2352,110 +2334,108 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
           gmhet (icha)=0.d0
 
         enddo
-!
+
         do icla=1,nclacp
 
           icha = ichcor(icla)
-!
-!         Taux de formation de la premiere reaction de pyrolyse
+
+          !  Forming rate of the first pyrolisis reaction
           gmdev1(icha) = gmdev1(icha)                                          &
                +propce(iel,ipproc(igmdv1(icla)))                               &
                *crom(iel)                                             &
                *rtpa(iel,isca(ixch(icla)))
-!
-!         Taux de formation de la deuxieme reaction de pyrolyse
+
+          !  Forming rate of the second pyrolisis reaction
           gmdev2(icha) = gmdev2(icha)                                          &
                +propce(iel,ipproc(igmdv2(icla)))                               &
                *crom(iel)                                             &
                *rtpa(iel,isca(ixch(icla)))
-!
+
         enddo
-!
+
         do icha=1,ncharb
-!
-!        Liberation du NH3 lors de la devolatisation.
+
+           !  Release of NH3 during the devolatization.
            aux = -volume(iel)*(gmdev1(icha)*ynh3le(icha)                       &
                  +gmdev2(icha)*ynh3lo(icha))
-!
+
            smbrs(iel)  = smbrs(iel) + aux
 
-!        Affichage des termes source
+           !  Source terms displaying
            propce(iel,ipproc(ifnh3d)) = propce(iel,ipproc(ifnh3d))             &
            -volume(iel)*(gmdev1(icha)*ynh3le(icha)+gmdev2(icha)*ynh3lo(icha))
-!
+
            propce(iel,ipproc(ifnh3c)) = zero
-!
+
         enddo
 
 
 
       enddo
-!
+
     endif
-!
+
     if ( ivar.eq.isca(iyno) ) then
-!
+
       do iel = 1 ,ncel
 
         propce(iel,ipproc(icnorb))  = zero
         propce(iel,ipproc(ifnoch)) = zero
 
       enddo
-!
-!     Terme source NO
-!
+
+      !  Source term NO
+
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
       do iel=1,ncel
-!
-!       Masse molaire de la melange gazeuse
+
+        !  Mass molar of the gaseous mixture
         wmel=propce(iel,ipproc(immel))
-!
-!       Coefficient de la reaction HCN + NO
+
+        !  Coefficient of reaction HCN + NO
         aux1 = volume(iel)*crom(iel)                                  &
               *propce(iel,iexp1)*rtpa(iel,isca(iyhcn))                         &
               *wmel/wmhcn
-!
+
         propce(iel,ipproc(icnohc)) = aux1*rtpa(iel,ivar)
-!
-!       Coefficient de la reaction HCN + O2
+
+        !  Coefficient of reaction HCN + O2
         aux2 = volume(iel)*crom(iel)                                  &
               *propce(iel,iexp2)*rtpa(iel,isca(iyhcn))                         &
               *wmno/wmhcn
-!
+
         propce(iel,ipproc(ifnohc)) = aux2
-!
-!       Coefficient du NO thermique
+
+        !  Coefficient of thermal NO
         aux3 = volume(iel)*crom(iel)**1.5d0                           &
               *propce(iel,iexp3)                                               &
 !       Pourquoi la fraction massique d'azote n'a ete pas transforme dans une
 !       fraction molaire ?
               *propce(iel,ipproc(iym1(in2)))
-!
+
         propce(iel,ipproc(ifnoth)) = aux3
-!
-!       Coefficient de la reaction NH3 + O2 --> NO + ...
+
+        !  Coefficient of reaction NH3 + O2 --> NO + ...
         aux4 = volume(iel)*crom(iel)                                  &
               *propce(iel,iexp4)*rtpa(iel,isca(iynh3))                         &
               *wmno/wmnh3
-!
-!
+
         propce(iel,ipproc(ifnonh)) = aux4
-!
-!       Coefficient de la reaction NH3 + NO --> N2 + ...
+
+        !  Coefficient of reaction NH3 + NO --> N2 + ...
         aux5 = volume(iel)*crom(iel)                                  &
               *propce(iel,iexp5)*rtpa(iel,isca(iynh3))                         &
               *wmel/wmnh3
-!
-!
+
         propce(iel,ipproc(icnonh)) = aux5*rtpa(iel,ivar)
 
-!       Reburning ?
-!       Model de Chen
+        !  Reburning ?
+        !  Chen's model
         if(irb.eq.1) then
-!
+
           do icha = 1,ncharb
 
              ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
@@ -2465,30 +2445,30 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                  * rtpa(iel,isca(iyno)) * wmel/wmno  * ychx
 
              smbrs(iel)  = smbrs(iel)  - aux
-!
+
              propce(iel,ipproc(icnorb)) = propce(iel,ipproc(icnorb)) + aux
 
           enddo
 
-!       Model de Dimitiou
+        !  Dimitiou's model
         elseif(irb.eq.2) then
 
           do icha = 1,ncharb
-!
-!           Reburning par CHx1
+
+            !  Reburning by CHx1
             if (propce(iel,ipcyf1).gt.0.d0) then
 
-!             Nombre de point de la discretisation de la temperature
+              !  Number of point of the temperature discretization
               do ii = 1,7
-!
-!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+
+                !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
                 if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
                    teno(ii+1)) then
 
-!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  !  JJ indicates the quotient H/C of the fuel (4=CH4;3=CH3,etc.)
                   do jj = 1,4
-!
-!                   On cherche l'intervall jj<chx1(icha)<jj+1
+
+                    !  We look for the interval jj < chx1(icha) < jj + 1
                     if(chx1(icha).ge.4.d0) then
 
                     core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
@@ -2554,23 +2534,23 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               endif
 
               smbrs(iel)  = smbrs(iel)  - auxrb1
-!
+
               propce(iel,ipproc(icnorb)) = propce(iel,ipproc(icnorb)) + auxrb1
 
-!           Reburning par CHx2
+            !  Reburning by CHx2
             elseif(propce(iel,ipcyf2).gt.0.d0) then
-!
-!             Nombre de point de la discretisation de la temperature
+
+              !  Number of point of the temperature discretization
               do ii = 1,7
-!
-!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+
+                !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
                 if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
                    teno(ii+1)) then
 
-!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  !  JJ incates the quotient H/C of the fuel (4=CH4;3=CH3,etc.)
                   do jj = 1,4
-!
-!                   On cherche l'intervall jj<chx1(icha)<jj+1
+
+                    !  We look for the interval jj < chx1(icha) < jj + 1
                     if(chx2(icha).ge.4.d0) then
 
                     core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/               &
@@ -2640,36 +2620,36 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               endif
 
               smbrs(iel)  = smbrs(iel)  - auxrb2
-!
+
               propce(iel,ipproc(icnorb)) = propce(iel,ipproc(icnorb)) + auxrb2
-!
+
             endif
-!
+
           enddo
 
         endif
 
-!
-!       Initialisation
+
+        !  Initialization
         do icha=1,ncharb
-!
+
           gmhet (icha)=0.d0
-!
+
         enddo
-!
+
         do icla=1,nclacp
-!
+
           icha   = ichcor(icla)
           ipctem = ipproc(itemp2(icla))
           ixckcl = isca(ixck(icla))
-!
+
           mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
                    *exp(-e1ch(icha)/(rr*propce(iel,ipctem)))
 
           mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)                                &
                    *exp(-e2ch(icha)/(rr*propce(iel,ipctem)))
-!
-!         Taux de reaction de la combustion heterogene
+
+          !  Reaction rate of the heterogeneous combustion
           if ( rtpa(iel,ixckcl) .gt. epsicp ) then
           gmhet(icha) = gmhet(icha)                                            &
                +propce(iel,ipproc(igmhet(icla)))                               &
@@ -2677,11 +2657,11 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                *( rtpa(iel,ixckcl)*((1.d0/(mckcl2/mckcl1+1.d0))*ynoch1(icha)   &
                    +(1.d0/(mckcl1/mckcl2+1.d0))*ynoch2(icha)) )**(2.d0/3.d0)
           endif
-!
+
         enddo
-!
-!       Coefficient de NO libere lors de la combustion heterogene
-!
+
+        !  Coefficient of released NO during the heterogeneous combustion
+
         do icha=1,ncharb
 
           auxhet = -volume(iel)*gmhet(icha)
@@ -2708,7 +2688,7 @@ endif
 ! Formats
 !--------
 
- 1000 format(' TERMES SOURCES PHYSIQUE PARTICULIERE POUR LA VARIABLE '  &
+ 1000 format(' Specific physic source term for the variable '  &
        ,a8,/)
 
 !----

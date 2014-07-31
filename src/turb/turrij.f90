@@ -33,7 +33,7 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
@@ -288,15 +288,15 @@ else if (igrari.eq.1) then
   ! Allocate a temporary array for the gradient calculation
   allocate(gradro(ncelet,3))
 
-! Conditions aux limites : Dirichlet ROMB
-!   On utilise VISCB pour stocker le coefb relatif a ROM
-!   On impose en Dirichlet (COEFA) la valeur ROMB
+! Boundary conditions: Dirichlet romb
+!   We use viscb to store the relative coefficient of rom
+!   We impose in Dirichlet (coefa) the value romb
 
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
   enddo
 
-! Le choix ci dessous a l'avantage d'etre simple
+! The choice below has the advantage to be simple
 
   nswrgp = nswrgr(ir11)
   imligp = imligr(ir11)
@@ -307,7 +307,7 @@ else if (igrari.eq.1) then
 
   iivar = 0
 
-  ! Si on extrapole les termes sources et rho, on utilise cpdt rho^n
+  ! If we extrapolate the source terms and rho, we use cpdt rho^n
   if(isto2t.gt.0.and.iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
@@ -326,10 +326,10 @@ else if (igrari.eq.1) then
 endif
 
 !===============================================================================
-! 4.  Boucle sur les variables Rij (6 variables)
-!     L'ordre est R11 R22 R33 R12 R13 R23 (La place de ces variables
-!     est IR11.    ..
-!     On resout les equation dans une routine semblable a covofi.f90
+! 4.  Loop on the variables Rij (6 variables)
+!     The order is R11 R22 R33 R12 R13 R23 (The place of those variables
+!      is IR11.    ..
+!     We solve the equation in a routine similar to covofi.f90
 !===============================================================================
 
 do isou = 1, 6
@@ -437,25 +437,25 @@ deallocate(gradv)
 #if defined(_CS_LANG_FR)
 
  1000 format(/,                                      &
-'   ** RESOLUTION DU Rij-EPSILON LRR'             ,/,&
+'   ** Resolution du Rij-EPSILON LRR'                   ,/,&
 '      -----------------------------'             ,/)
  1001 format(/,                                      &
-'   ** RESOLUTION DU Rij-EPSILON SSG'             ,/,&
+'   ** Resolution du Rij-EPSILON SSG'                   ,/,&
 '      -----------------------------'             ,/)
  1002 format(/,                                      &
-'   ** RESOLUTION DU Rij-EPSILON EBRSM'           ,/,&
+'   ** Resolution du Rij-EPSILON EBRSM'                 ,/,&
 '      -------------------------------'           ,/)
 
 #else
 
  1000 format(/,                                      &
-'   ** SOLVING Rij-EPSILON LRR'                   ,/,&
+'   ** Solving Rij-EPSILON LRR'                   ,/,&
 '      -----------------------'                   ,/)
  1001 format(/,                                      &
-'   ** SOLVING Rij-EPSILON SSG'                   ,/,&
+'   ** Solving Rij-EPSILON SSG'                   ,/,&
 '      -----------------------'                   ,/)
  1002 format(/,                                      &
-'   ** SOLVING Rij-EPSILON EBRSM'                 ,/,&
+'   ** Solving Rij-EPSILON EBRSM'                 ,/,&
 '      -------------------------'                 ,/)
 
 #endif

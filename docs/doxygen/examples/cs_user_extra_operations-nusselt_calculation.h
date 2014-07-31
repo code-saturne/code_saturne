@@ -30,7 +30,7 @@
 
   \page cs_user_extra_operations-nusselt_calculation Calculation of a local Nusselt number
 
-  \brief This function is called at the end of each time step, and has a very general purpose ( \c i.e. anything that does not have another dedicated user subroutine)
+  \brief This function is called at the end of each time step, and has a very general purpose (\c i.e. anything that does not have another dedicated user subroutine)
 
 
   \section cs_f_user_extra_operations cs_f_user_extra_operations subroutine

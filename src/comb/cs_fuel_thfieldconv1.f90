@@ -20,43 +20,40 @@
 
 !-------------------------------------------------------------------------------
 
+
+!===============================================================================
+! Function:
+! --------
+!> \file cs_fuel_thfieldconv1.f90
+!> \brief Calculation of the gas temperature
+!>  Function with the gas enthalpy and concentrations
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     eh            gas enthalpy
+!>                              (\f$ j . kg \f$ of gaseous mixture)
+!> \param[in]     fuel1         mass fraction CHx1
+!> \param[in]     fuel2         mass fraction CHx2
+!> \param[in]     fuel3         mass fraction CO
+!> \param[in]     oxyd          mass fraction O2
+!> \param[in]     prod1         mass fraction CO2
+!> \param[in]     prod2         mass fraction H2O
+!> \param[in]     xiner         mass fraction N2
+!> \param[in,out] tp            gas temperature (in kelvin)
+!______________________________________________________________________________!
+
 subroutine cs_fuel_thfieldconv1 &
-!==============================
  ( ncelet , ncel   ,                                              &
    eh     ,                                                       &
    fuel1  , fuel2  , fuel3  , fuel4 , fuel5 , fuel6 , fuel7 ,     &
    oxyd   , prod1  , prod2  , prod3 , xiner ,                     &
    tp     )
-
-!===============================================================================
-! FONCTION :
-! --------
-! CALCUL DE LA TEMPERATURE DU GAZ
-!  EN FONCTION DE L'ENTHALPIE DU GAZ ET DES CONCENTRATIONS
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! eh               ! tr ! <-- ! enthalpie du gaz                               !
-!                  !    !     ! (j/kg de melange gazeux)                       !
-! fuel1            ! tr ! <-- ! fraction massique chx1                         !
-! fuel2            ! tr ! <-- ! fraction massique chx2                         !
-! fuel3            ! tr ! <-- ! fraction massique co                           !
-! oxyd             ! tr ! <-- ! fraction massique o2                           !
-! prod1            ! tr ! <-- ! fraction massique co2                          !
-! prod2            ! tr ! <-- ! fraction massique h2o                          !
-! xiner            ! tr ! <-- ! fraction massique n2                           !
-! tp               ! tr ! --> ! temperature du gaz (kelvin)                    !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHAMNUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !==============================================================================
 ! Module files
@@ -102,7 +99,7 @@ double precision eh0,eh1
 ii = npo-1
 do icel = 1, ncel
 
-! --- Clipping eventuel de TP a TH(NPO) si EH > EH1
+  ! --- Eventual clipping of temperature at TH(NPO) if EH > EH1
 
   eh1 = fuel1(icel)*ehgaze(ifo0,ii+1)                       &
        +fuel2(icel)*ehgaze(ifov,ii+1)                       &
@@ -122,7 +119,7 @@ enddo
 ii = 1
 do icel = 1, ncel
 
-! --- Clipping eventuel de TP a TH(1) si EH < EH0
+  ! --- Eventual clipping of temperature at TH(1) if EH < EH0
 
   eh0= fuel1(icel)*ehgaze(ifo0,ii)                         &
       +fuel2(icel)*ehgaze(ifov,ii)                         &

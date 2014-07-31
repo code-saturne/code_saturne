@@ -200,8 +200,7 @@ module cstphy
   !> \addtogroup csttur
   !> \{
 
-  !> Karman constant. (= 0.42)
-  !>
+  !> \f$ \kappa \f$ Karman constant. (= 0.42)
   !> Useful if and only if \ref iturb >= 10.
   !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
   !> LES, v2f or \f$k-\omega\f$)
@@ -210,8 +209,6 @@ module cstphy
   !> constant of logarithmic law function:
   !> \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
   !>  (\f$ cstlog = 5.2 \f$)
-
-
   !> constant of the logarithmic wall function.
   !> Useful if and only if \ref iturb >= 10
   !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,

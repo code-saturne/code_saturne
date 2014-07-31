@@ -20,35 +20,31 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_physprop &
-!==========================
+!===============================================================================
+!  Function :
+!  --------
+!
+!> \file cs_coal_physprop.f90
+!> \brief Specific physics routine: combustion of pulverized coal
+!>        Calculation of \f$ \rho  \f$ of the mixture
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     mbrom         filling indicator of romb
+!> \param[in]     izfppp        area number of the edge face
+!>                               for the specific physic module
+!> \param[in]     rtp           calculated variables at cell centers
+!>                               (at current time step)
+!> \param[in]     propce        physic properties at cell centers
+!______________________________________________________________________________!
+
+subroutine cs_coal_physprop &
  ( mbrom  , izfppp ,                                              &
    rtp    , propce )
-
-!===============================================================================
-! FONCTION :
-! --------
-! ROUTINE PHYSIQUE PARTICULIERE : COMBUSTION CHARBON PULVERISE
-! Calcul de RHO du melange
-!
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
-! izfppp(nfabor)   ! te ! <-- ! numero de zone de la face de bord              !
-!                  !    !     !  pour le module phys. part.                    !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -108,13 +104,13 @@ double precision, dimension(:), pointer ::  brom, crom
 !===============================================================================
 !
 !===============================================================================
-! 0. ON COMPTE LES PASSAGES
+! 0. Counting the passages
 !===============================================================================
 
 ipass = ipass + 1
 
 !===============================================================================
-! 1. INITIALISATIONS A CONSERVER
+! 1. Initializations to be kept
 !===============================================================================
 
 !===============================================================================
@@ -140,43 +136,43 @@ if ( ieqnox .eq. 1 ) then
   endif
 endif
 !===============================================================================
-!     Pointeur sur masse volumique du gaz aux cellules
+!     Pointer on masse density of the gas in cells
 iromf = ipproc(irom1)
 !
 !===============================================================================
-! 2. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
-!                    VALEURS CELLULES
+! 2. Calculation of the physic properties of the despersed phase
+!                    cells values
 !                    ----------------
-!    FRACTION MASSIQUE DE SOLIDE
-!    DIAMETRE
-!    MASSE VOLUMIQUE
+!    Mass fraction of solid
+!    Diameter
+!    Mass density
 !===============================================================================
 
 call cs_coal_physprop2 ( ncelet , ncel , rtp , propce )
 !=====================
 
 !===============================================================================
-! 3. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE GAZEUSE
-!                    VALEURS CELLULES
+! 3. Calculation of the physic properties of the gaseous phase
+!                    cells value
 !                    ----------------
-!    TEMPERATURE
-!    MASSE VOLUMIQUE
-!    CONCENTRATIONS DES ESPECES GAZEUSES
+!    Temperature
+!    Mass density
+!    Concentrations of the gaseous species
 !===============================================================================
 
-! --- Calcul de l'enthalpie du gaz     enth1
-!        de F1M
-!        de F2M
-!        de F3M                    dans W3=1-F1M-F2M-F4M-F5M-F6M-F7M-F8M-F9M
-!        de F4M
-!        de F5M
-!        de F6M
-!        de F7M
-!        de F8M
-!        de F9M
-!        de FVP2M
+! --- Calculation of the gas enthalpy     enth1
+!        of F1M
+!        of F2M
+!        of F3M                    in W3=1-F1M-F2M-F4M-F5M-F6M-F7M-F8M-F9M
+!        of F4M
+!        of F5M
+!        of F6M
+!        of F7M
+!        of F8M
+!        of F9M
+!        of FVP2M
 !
-! Initialisation des fm et de x2 a 0
+! Initialization of fm and of x2 at 0
 f1m( : ) = 0.d0
 f2m( : ) = 0.d0
 f3m( : ) = 0.d0
@@ -256,11 +252,11 @@ do iel = 1, ncel
 
   ff3max = max(ff3max,f3m(iel))
   ff3min = min(ff3min,f3m(iel))
-!
+
   if ( ieqnox .eq. 1 ) then
     enthox(iel) = rtp(iel,isca(ihox))/xoxyd(iel)
   endif
-!
+
 enddo
 
 if ( irangp .ge. 0 ) then
@@ -281,7 +277,7 @@ if ( nbclip2 .gt. 0 ) then
   write(nfecra,*) ' Clipping phase gas variance in max :',nbclip2,valmax
 endif
 
-! ---- Enthalpie du gaz H1
+! ---- Gas enthalpy H1
 enth1( : ) =0.D0
 do icla = 1, nclacp
   do iel = 1, ncel
@@ -301,28 +297,28 @@ call cs_coal_physprop1 &
    rtp    , propce , propce(1,iromf)   )
 
 !===============================================================================
-! 4. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE
-!                    VALEURS CELLULES
-!                    ----------------
-!    TEMPERATURE
+! 4. Calculation of the physic properties of the dispersed phase
+!                    cells value
+!                    -----------
+!    Temperature
 !===============================================================================
 
-! --- Transport d'H2
+! --- Transport of H2
 
 call  cs_coal_thfieldconv2  ( ncelet , ncel , rtp , propce )
 !=========================
 
 !===============================================================================
-! 5. CALCUL DES PROPRIETES PHYSIQUES DU MELANGE
-!                    VALEURS CELLULES
-!                    ----------------
-!    MASSE VOLUMIQUE
+! 5. Calculation of the physic properties of the mixture
+!                    cells value
+!                    -----------
+!    Mass density
 !===============================================================================
-! --- Calcul de Rho du melange : 1/Rho = X1/Rho1 + Somme(X2/Rho2)
-!     On sous relaxe quand on a un rho n a disposition, ie
-!       a partir du deuxieme passage ou
-!       a partir du premier passage si on est en suite de calcul et
-!         qu'on a relu la masse volumique dans le fichier suite.
+! --- Calculation of Rho of the mixture: 1/Rho = X1/Rho1 + Sum(X2/Rho2)
+!     We relax when we have a rho n available, ie
+!     from the second passage or
+!     from the first passage if we are in continuation of the calculation and
+!     that we have reread the mass density in the file suite.
 
 call field_get_val_s(icrom, crom)
 
@@ -340,32 +336,32 @@ do iel = 1, ncel
     x2sro2 = x2sro2 + propce(iel,ipcx2c) / propce(iel,ipcro2)
   enddo
   x1sro1 = (1.d0-x2(iel)) / propce(iel,iromf)
-! ---- Sous relaxation eventuelle a donner dans ppini1.F
+! ---- Eventual relaxation to give in ppini1.F
   crom(iel) = srrom1*crom(iel)                  &
                      + (1.d0-srrom1)/(x1sro1+x2sro2)
 enddo
 
 
 !===============================================================================
-! 6. CALCUL DE RHO DU MELANGE
-!                      VALEURS FACETTES
-!                      ----------------
+! 6. Calculation of rho of the mixture
+!                      facet values
+!                      ------------
 !===============================================================================
 
 mbrom = 1
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, crom)
 
-! ---> Masse volumique au bord pour toutes les facettes
-!      Les facettes d'entree seront recalculees.
+! ---> Mass density on edge for all facets
+!      The input facets are recalculated.
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
   brom(ifac) = crom(iel)
 enddo
 
-! ---> Masse volumique au bord pour les facettes d'entree UNIQUEMENT
-!     Le test sur IZONE sert pour les reprises de calcul
+! ---> Mass density on edge for all ONLY input facets
+!      The test on izone is used for the calculation
 
 if ( ipass.gt.1 .or. isuite.eq.1 ) then
   do ifac = 1, nfabor

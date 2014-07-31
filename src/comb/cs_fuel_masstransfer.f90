@@ -20,31 +20,31 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_masstransfer &
-!=============================
- ( ncelet , ncel   ,            &
-   rtpa   , propce )
 
 !===============================================================================
-! FONCTION :
+! Function:
 ! --------
-! CALCUL DES TERMES DE TRANSFERT DE MASSE ENTRE LA PHASE CONTINUE
-! ET LA PHASE DISPERSEE
+!> \file cs_fuel_masstransfert.f90
+!>
+!> \brief Calcultaion of mass transfert terms between the contineous phase
+!> and the dispersed phase
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant precedent)                !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     rtpa          calculation variables in cell centers
+!>                                 (previous instant)
+!> \param[in,out] propce        physic properties at cell centers
+!______________________________________________________________________________!
+
+subroutine cs_fuel_masstransfer &
+ ( ncelet , ncel   ,            &
+   rtpa   , propce )
 
 !===============================================================================
 ! Module files
@@ -96,9 +96,9 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cpro_cp
 
 !===============================================================================
-! 1. INITIALISATIONS ET CALCULS PRELIMINAIRES
+! 1. Initializations and preliminary calculations
 !===============================================================================
-! --- Initialisation des termes de transfert de masse
+! --- Initialization of mass transfert terms
 
 do icla = 1, nclafu
   ipcgev = ipproc(igmeva(icla))
@@ -111,7 +111,7 @@ do icla = 1, nclafu
   enddo
 enddo
 
-! --- Pointeur
+! --- Pointer
 
 call field_get_val_s(icrom, crom)
 ipcte1 = ipproc(itemp1)
@@ -119,11 +119,11 @@ ipcyox = ipproc(iym1(io2))
 !
   pref = 1.013d0
 !===============================================================================
-! 2. TERMES SOURCES POUR l'ENTHALPIE LIQUIDE
+! 2. Source terms for liquid enthalpy
 !===============================================================================
 !
-! Contribution aux bilans explicite et implicite
-! des echanges par diffusion moleculaire
+! Contribution to explicit and implicit balances
+! of exchanges by molecular diffusion
 ! 6 Lambda Nu / diam**2 / Rho2 * Rho * (T1-T2)
 !
 do icla = 1, nclafu
@@ -153,23 +153,23 @@ do icla = 1, nclafu
         lambda = visls0(iscalt) * cp0
       endif
     endif
-!
+
     if ( rtpa(iel,isca(iyfol(icla))) .gt. epsifl  .and.                    &
          propce(iel,ipcte1).gt. propce(iel,ipcte2)        ) then
-!
+
        propce(iel,ipchgl) = 6.d0*lambda*xnuss/propce(iel,ipcdia)**2        &
                            /propce(iel,ipcro2)*rtpa(iel,isca(iyfol(icla)))
-!
+
     endif
-!
+
   enddo
-!
+
 enddo
-!
+
 !===============================================================================
-! 3. TRANSFERTS DE MASSE FIOUL
+! 3. Fuel mass transfert
 !===============================================================================
-!
+
 do icla = 1, nclafu
 
   ipcro2 = ipproc(irom2 (icla))
@@ -178,78 +178,78 @@ do icla = 1, nclafu
   ipcgev = ipproc(igmeva(icla))
   ipchgl = ipproc(ih1hlf(icla))
   ipcght = ipproc(igmhtf(icla))
-!
+
   do iel = 1, ncel
-!
+
     propce(iel,ipcgev) = zero
     propce(iel,ipcght) = zero
-!
+
     if (rtpa(iel,isca(iyfol(icla))) .gt. epsifl ) then
-!
+
 !===============================================================================
-! EVAPORATION
+! Evaporation
 !===============================================================================
-! Verification sur la masse du fioul liquide.
-! a) Si deva1 < deva2 il ne reste plus de fioul liquide.
-!    Du coup pas d'evaporation.
-! b) Verification sur la plage des temperatures d'evaporation.
-! c) Verification sur la temperature de la phase gaz et de la goutte. Il faut
+! Checking of the liquid fuel mass.
+! a) If deva1 < deva2 there is no remaining liquid fuel.
+!    So there is no evaporation.
+! b) Checking of evaporation temperature range.
+! c) Checking of the gas phase and drop temperature. It is necessary to have
 !     Tgaz > Tgoutte
-!
+
     deva1 =  rtpa(iel,isca(iyfol(icla)))                                   &
              /(rtpa(iel,isca(ing(icla)))*rho0fl)
     deva2 =  (pi*(diniin(icla)**3)/6.d0)+(pi*(dinikf(icla)**3)/6.d0)
-!
+
       if ( propce(iel,ipcte2)    .gt. tevap1               .and.           &
            propce(iel,ipcte1)    .gt. propce(iel,ipcte2)   .and.           &
            deva1.gt.deva2                                          ) then
-!
-! La flux de masse evapore est determinee en fonction d'un profil
-!                    dMeva/dTgoutte supposé.
-!
+
+      ! The evaporated mass flux is determined evapore est determined according
+      !               to a supposed profil of dMeva/dTgoutte.
+
       propce(iel,ipcgev) = propce(iel,ipchgl)                              &
                           /( hrfvap + cp2fol*(tevap2-propce(iel,ipcte2)) )
-!
+
       endif
-!
+
 !===============================================================================
-! COMBUSTION HETEROGENE
+! Heterogeneous combustion
 !===============================================================================
-! Verification sur la masse du coke.
-! a) Si deva1.le.deva2 -> Il ne reste plus de fioul liquide. Du coup la particule
-!    est constituee de charbon et d'inertes.
-! b) Si dhet1.gt.dhet2 il reste du charbon. Si non la particule est constituee
-!    que des inertes.
-!
+! Checking of coke mass.
+! a) If deva1.le.deva2 -> There is no remaining liquid fuel. So the particle
+!    is composed of coal and inerts.
+! b) If dhet1.gt.dhet2 it remains coal. If not the particle is only composed of
+!    inerts.
+
     dhet1= rtpa(iel,isca(iyfol(icla)))                                     &
             /(rtpa(iel,isca(ing(icla)))*rho0fl)
     dhet2= pi*(diniin(icla)**3)/6.d0
-!
+
       if (deva1.le.deva2.and.dhet1.gt.dhet2 ) then
-!
-! On considere la masse du coke restant comme une particule spherique. Le
-!   diametre correspendant est dcoke.
+
+      ! We consider that the remaining coke mass as a spheric particle. The
+      !   correspondent diameter is dcoke.
       dcoke = ( ( rtpa(iel,isca(iyfol(icla)))                              &
               /(rtpa(iel,isca(ing(icla)))*rho0fl)                          &
               -pi*(diniin(icla)**3)/6.d0  )                                &
                *6.d0/pi )**(1.d0/3.d0)
-!
-! Calcul de la pression partielle en oxygene (atm)                                                 ---
-!   PO2 = RHO1*RR*T*YO2/MO2
-!
+
+      ! Calculation of the partial pressure of oxygene [atm]                                                 ---
+      !   PO2 = RHO1*RR*T*YO2/MO2
+
       pparo2 = propce(iel,ipproc(irom1))*rr*propce(iel,ipcte1)             &
               *propce(iel,ipcyox)/wmole(io2)
       pparo2 = pparo2 / prefth
-!
-! Coefficient de cinetique chimique de formation de CO
-!   en (kg.m-2.s-1.atm(-n))
+
+      ! Chemical kinetic coefficient of CO forming
+      !   in [kg.m-2.s-1.atm(-n)]
       xdffli = ahetfl*exp(-ehetfl*4185.d0                                  &
               /(rr*propce(iel,ipcte1)))
-!
-! Coefficient de diffusion en  (Kg/m2/s/atm) : XDFEXT
-! Coefficient global pour n=0.5 en (kg/m2/s) : XDFTOT0
-! Coefficient global pour n=1   en (Kg/m2/s) : XDFTOT1
-!
+
+      ! Coefficient of diffusion in kg/m2/s/[atm]: XDFEXT
+      ! Global coefficient for n=0.5 in kg/m2/s: XDFTOT0
+      ! Global coefficient for n=1 in Kg/m2/s: XDFTOT1
+
       diacka = dcoke/(dinikf(icla))
         if ( diacka .gt. epsifl ) then
         xdfext = 2.53d-7*((propce(iel,ipcte1))**0.75d0)                    &
@@ -261,14 +261,13 @@ do icla = 1, nclafu
         xdftot1 = xdffli*pparo2
         xdftot0 = xdffli*pparo2**0.5d0
         endif
-!
-! Surface de la particule spherique.
+
+      ! Spherical particle surface.
       surf = pi*(dcoke**2)
-!
-! Nombre des particules dans la cellule.
-!
+
+      ! Number of particles in the cell.
       xng   = rtpa(iel,isca(ing(icla)))
-!
+
         if (iofhet.eq.1) then
         propce(iel,ipcght) = - xdftot1*surf*xng
         else
@@ -278,11 +277,11 @@ do icla = 1, nclafu
       endif
 
     endif
-!
+
   enddo
-!
+
 enddo
-!
+
 !----
 ! End
 !----

@@ -27,8 +27,8 @@
 ! --------
 
 !>    User subroutine.
-!>
-!>    Define Head losses
+!> \file uskpdc.f90
+!> \brief Define Head losses
 !>
 !> The subroutine uskpdc is called at three different stages in the code
 !>  (iappel = 1, 2 or 3)
@@ -91,7 +91,7 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
