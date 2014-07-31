@@ -59,7 +59,7 @@
 !> For a distributed head loss,
 !>
 !>    let ksil = dhl/(0.5 rho u**2) given by the litterature
-!>    (dhl est is the head loss per unit length)
+!>    (dhl is the head loss per unit length)
 !>
 !>    the source term tspdc is equal to dhl = - ksil *(0.5 rho u**2)
 !>
@@ -69,13 +69,13 @@
 !> For a singular head loss,
 !>
 !>    let ksil = dhs/(0.5 rho u**2) given by the litterature
-!>    (dhs est is the singular head loss)
+!>    (dhs is the singular head loss)
 !>
 !>    the source term tspdc is equal to dhs/l = - ksil/l *(0.5 rho u**2)
 !>
 !>    we have ckupdc = 0.5 ksis/l abs(u)
 !>
-!>    where l is the length over whic we have chosen to represent the
+!>    where l is the length over which we have chosen to represent the
 !>    singular head loss
 !>
 !>
@@ -96,7 +96,7 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
-!> \param[in]     iappel        indique les donnes a renvoyer
+!> \param[in]     iappel        stage in the code
 !> \param[in]     icepd         numbers of ncepdp cells with head loss
 !> \param[in]     izcpdc        cells zone for head loss definition
 !> \param[in]     dt            time step (per cell)
@@ -126,8 +126,9 @@ use period
 use mesh
 use field
 
-!===============================================================================
+!==============================================================================
 
+!< [arg]
 implicit none
 
 ! Arguments
@@ -141,7 +142,8 @@ integer          izcpdc(ncel)
 
 double precision dt(ncelet)
 double precision ckupdc(ncepdp,6)
-
+!< [arg]
+!< [loc_var_dec]
 ! Local variables
 
 integer          iel, ielpdc, ikpdc
@@ -153,6 +155,7 @@ double precision alpha, cosalp, sinalp, vit, ck1, ck2
 double precision, dimension(:,:), pointer :: cvara_vel
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -166,16 +169,19 @@ if (1.eq.1) return
 
 
 !===============================================================================
-
+!< [map_field_array]
 ! Map field arrays
 call field_get_val_prev_v(ivarfl(iu), cvara_vel)
+!< [map_field_array]
 
+!< [allocate]
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
+!< [allocate]
 
-
+!< [start_1]
 if (iappel.eq.1.or.iappel.eq.2) then
-
+!< [start_1]
   !=============================================================================
 
   ! 2 calls:
@@ -198,17 +204,20 @@ if (iappel.eq.1.or.iappel.eq.2) then
   !=============================================================================
 
   ! To be completed by the user: cell selection
+
   ! -------------------------------------------
 
   ! Example 1: No head loss (default)
-
+!< [example_1]
   ielpdc = 0
+!< [example_1]
 
 
-  ! Example 2: head losses define by coodinates for zone
+  ! Example 2: head losses defined by coodinates for zone
   !            (4 <= x <=6; 2 <= y <= 8).
   !            No head losses else
 
+!< [example_2]
   if (1.eq.0) then ! This test allows deactivating the example
 
     izone = 0
@@ -216,7 +225,9 @@ if (iappel.eq.1.or.iappel.eq.2) then
 
     call getcel('X <= 6.0 and X >= 4.0 and Y >= 2.0 and'//      &
                 'Y <= 8.0',nlelt,lstelt)
+!< [example_2]
 
+!< [start_2]
     izone = izone + 1
 
     do ilelt = 1, nlelt
@@ -227,6 +238,8 @@ if (iappel.eq.1.or.iappel.eq.2) then
     enddo
 
   endif
+!< [start_2]
+
 
 
 ! Generic subsection that should not be modified
@@ -236,15 +249,22 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !    Define ncepdp, the number of cells with head losses
 !    This is valid for both examples above
 
+!< [generic_subsection_1]
   if (iappel.eq.1) then
     ncepdp = ielpdc
   endif
-
+!< [generic_subsection_1]
 !-------------------------------------------------------------------------------
 
+!< [generic_subsection_2]
 else if (iappel.eq.3) then
-
-  !=============================================================================
+  do ikpdc = 1, 6
+    do ielpdc = 1, ncepdp
+      ckupdc(ielpdc,ikpdc) = 0.d0
+    enddo
+  enddo
+!< [generic_subsection_2]
+!=============================================================================
 
   ! Third call, at each time step
 
@@ -282,6 +302,7 @@ else if (iappel.eq.3) then
   ! --- Diagonal tensor
   !     Example of head losses in direction x
 
+!< [example_3]
   if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
   do ielpdc = 1, ncepdp
@@ -291,6 +312,8 @@ else if (iappel.eq.3) then
     ckupdc(ielpdc,2) =  0.d0*vit
     ckupdc(ielpdc,3) =  0.d0*vit
   enddo
+!< [example_3]
+
 
   ! ---  3x3 tensor
   !      Example of head losses at alpha = 45 degres x,y
@@ -305,7 +328,7 @@ else if (iappel.eq.3) then
   !                   \ / ALPHA
   !                    \
   !                     \ x
-
+!< [example_4]
   if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
   alpha  = pi/4.d0
@@ -313,7 +336,9 @@ else if (iappel.eq.3) then
   sinalp = sin(alpha)
   ck1 = 10.d0
   ck2 =  0.d0
+!< [example_4]
 
+!< [filling]
   do ielpdc = 1, ncepdp
     iel = icepdc(ielpdc)
     vit = sqrt(cvara_vel(1,iel)**2 + cvara_vel(2,iel)**2 + cvara_vel(3,iel)**2)
@@ -328,9 +353,13 @@ else if (iappel.eq.3) then
   !-----------------------------------------------------------------------------
 
 endif
+!< [filling]
 
+
+!< [deallocate]
 ! Deallocate the temporary array
 deallocate(lstelt)
+!< [deallocate]
 
 return
 end subroutine uskpdc

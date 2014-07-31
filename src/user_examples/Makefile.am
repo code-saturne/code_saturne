@@ -87,6 +87,7 @@ cs_user_extra_operations-extract_1d_profile.f90 \
 cs_user_extra_operations-force_temperature.f90 \
 cs_user_extra_operations-global_efforts.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
+cs_user_head_losses.f90 \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-base.f90 \
 cs_user_initialization-compressible.f90 \
@@ -99,13 +100,16 @@ cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
+cs_user_lagrangian_particle_tracking_module.f90 \
 cs_user_les_inflow-base.f90 \
 cs_user_mesh-groups_from_free_faces.c \
+cs_user_porosity.f90 \
 cs_user_parameters-output.f90 \
 cs_user_parameters-cavitation.f90 \
 cs_user_physical_properties-scalar_drift.f90 \
 cs_user_physical_properties-coal_drift.f90 \
 cs_user_postprocess-sfc.c \
+cs_user_source_termes.f90 \
 usatch_4spe5reac.f90
 
 noinst_LTLIBRARIES = libcsexample.la

@@ -37,7 +37,15 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cavit
    - \subpage drift_coal_scalars
    - \subpage drift_scalars
-
+   - \subpage cs_porosity
+   - \subpage cs_head_losses
+   - \subpage cs_lagrangian_particle_tracking_module
+   - \subpage cs_user_source_terms
+   - \subpage cs_user_mass_source_terms
+   - \subpage cs_user_boundary_conditions_ale
+   - \subpage cs_user_radiative_transfert_parameters
+   - \subpage cs_user_extra_operations-nusselt_calculation
+   - \subpage cs_user_source_terms-scalar_in_a_channel 
 */
 // _____________________________________________________________________________
 /*!

@@ -28,7 +28,7 @@
 
 !> \file cs_user_boundary_conditions-advanced.f90
 !>
-!> Advanced example of cs_user_boundary_conditions.f90 subroutine
+!> \brief Advanced example of cs_user_boundary_conditions.f90 subroutine
 !>
 !-------------------------------------------------------------------------------
 
