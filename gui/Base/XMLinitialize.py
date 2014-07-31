@@ -820,13 +820,14 @@ class XMLinit(Variables):
 
         XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
         XMLAleMethod = XMLThermoPhysicalModel.xmlInitNode('ale_method')
-        for node in XMLAleMethod.xmlGetNodeList('formula'):
-            if node:
-                content = node.xmlGetTextNode()
-                content = content.replace("mesh_vi1", "mesh_viscosity_1")
-                content = content.replace("mesh_vi2", "mesh_viscosity_2")
-                content = content.replace("mesh_vi3", "mesh_viscosity_3")
-                node.xmlSetTextNode(content)
+        if XMLAleMethod:
+            for node in XMLAleMethod.xmlGetNodeList('formula'):
+                if node:
+                    content = node.xmlGetTextNode()
+                    content = content.replace("mesh_vi1", "mesh_viscosity_1")
+                    content = content.replace("mesh_vi2", "mesh_viscosity_2")
+                    content = content.replace("mesh_vi3", "mesh_viscosity_3")
+                    node.xmlSetTextNode(content)
 
         for node in self.case.xmlGetNodeList('time_average'):
             if node:
