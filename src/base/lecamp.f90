@@ -1046,13 +1046,15 @@ if (nscal.gt.0) then
     endif
     if (ityturt(iscal).eq.2 .or. ityturt(iscal).eq.3) then
 
-      ! Name of the previous scalar ivar
-      call field_get_name(ivarfl(iscold(iscal)), fname)
+      ! Assume name of the scalar in the previous computation has not changed,
+      ! so do do apply iscold() here (the restart file provides no information
+      ! on the scalar variable field names/ids relation, so we cannot do better
+      ! for existing restart files).
+      call field_get_name(ivarfl(ivar), fname)
       rubriq = trim(fname)//'_turbulent_flux_ce'
 
       ! Index of the corresponding turbulent flux
-      call field_get_name(ivarfl(ivar), fname)
-      call field_get_id(trim(fname)//'_turbulent_flux_ce', f_id)
+      call field_get_id(trim(fname)//'_turbulent_flux', f_id)
       call field_get_val_v(f_id, xut)
 
       itysup = 1
