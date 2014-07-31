@@ -2282,11 +2282,6 @@ _mat_vec_p_l_csr(bool                exclude_diag,
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
 
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
   /* Standard case */
 
   if (!exclude_diag) {
@@ -3383,11 +3378,6 @@ _mat_vec_p_l_msr(bool                exclude_diag,
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
 
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
   /* Standard case */
 
   if (!exclude_diag && mc->d_val != NULL) {
@@ -3454,11 +3444,6 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
   const cs_lnum_t  n_rows = ms->n_rows;
   const int *db_size = matrix->db_size;
 
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
-
   /* Standard case */
 
   if (!exclude_diag && mc->d_val != NULL) {
@@ -3469,11 +3454,6 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
       cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
       cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
       cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      /* Tell IBM compiler not to alias */
-#     if defined(__xlc__)
-#     pragma disjoint(*x, *y, *m_row, *col_id)
-#     endif
 
       _dense_b_ax(ii, db_size, mc->d_val, x, y);
 
@@ -3587,11 +3567,6 @@ _mat_vec_p_l_msr_pf(bool                exclude_diag,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*prefetch_p, *y, *m_row, *col_id)
-# endif
 
   /* Standard case */
 
