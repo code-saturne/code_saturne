@@ -5,6 +5,8 @@ Release 3.2.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix restart when using AFM or DFM turbulent flux model.
+
 - Fix GUI import of volume group names from preprocessor log.
 
 - Fix verbose logging of mesh joining in case of multiple joinings.
