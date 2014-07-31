@@ -1883,13 +1883,10 @@ Navier-Stokes}
 \bigskip
 
 \variabsize{npromx}{Maximum number of physical properties. They will
-be stored in the arrays \texttt{propce} or \texttt{propfb}}
+be stored in the array \texttt{propce}}
 
 \variabsize{nproce}{Number of properties defined at the
 cells. They will be stored in the array \texttt{propce}}
-
-\variabsize{nprofb}{Number of properties defined at the boundary
-faces. They will be stored in the array \texttt{propfb}}
 
 \variabsize{nvisls}{Number of scalars with variable diffusivity}
 
@@ -2076,10 +2073,6 @@ comprehension.
 \variab{propce}{propce(ncelet,nproce)}{ra}{Properties defined at the
 cell centres. For instance: density, viscosity, ...}
 
-\variab{propfb}{propfb(nfabor,nprofb)}{ra}{Properties defined at the
-boundary faces. For instance: mass flow across boundary faces, density
-at boundary faces, ...}
-
 \variab{rtp}{rtp(ncelet,nvar)}{ra}{Array storing the values of the solved
 variables at the current time step}
 
@@ -2200,12 +2193,12 @@ The variable corresponding to the mean value of the square of the
 
 \bigskip
 
-\underline{About \texttt{propce} and \texttt{propfb}}\\
+\underline{About \texttt{propce}}\\
 In \CS, the physical properties\footnote{other variables are stored in the
-arrays \texttt{propce} and \texttt{propfb}. They are not
+\texttt{propce} array. They are not
 ``physical properties'' strictly speaking, but it is convenient to have them
 in the same array as the proper physical properties} are stored in the
-\texttt{propce} and \texttt{propfb} arrays.
+\texttt{propce} array.
 Some properties, like the density, are only stored for cells and boundary
 faces. To avoid having different index numbers for a physical property,
 depending on the array it is used in, the following structure is used in \CS:
@@ -2223,19 +2216,13 @@ or the maximum number of variables).
 \variab{ipproc}{ipproc(npromx)}{ia}{Rank \texttt{i} in \texttt{propce(.,i)} of the
 properties defined at the cell centres}
 
-\variab{ipprob}{ipprob(npromx)}{ia}{Rank \texttt{i} in \texttt{propfb(.,i)} of the
-properties defined at the boundary faces}
-
 \end{list}
 
 For instance, the index number corresponding to the density is \texttt{irom}.\\
 In the list of the properties defined at the cell center, the density
 is therefore the \texttt{ipproc(irom)}$^{\text{th}}$
 property: its value at the center of the cell \texttt{iel} is given by \texttt{prop{\bf ce}(iel,ippro{\bf c}(irom))}.\\
-In the same way, in the list of the properties defined at the boundary
-faces, the density is the
-\texttt{ipprob(irom))}$^{\text{th}}$ property: its value at the boundary
-face is given by \texttt{prop{\bf fb}(iel,ippro{\bf b}(irom))}
+Stored at the cells}
 
 The list of properties accessible in the \texttt{propxx} arrays is given below (this does
 not include the properties linked to the specific physics modules):
@@ -2353,16 +2340,8 @@ taken as a diagonal tensor (depending on the value of the parameter
 Stored at the cells}
 
 \variab{icmome}{icmome(nbmomx)}{ia}{Property number corresponding to
-the time averages defined by the user. More precisely, it is not the time
-average that is stored, but a summation over time (the division by the cumulated
-duration is done just before the results are written).\\
+the time averages defined by the user.\\
 Stored at the cells}
-
-\variab{icdtmo}{icdtmo(nbmomx)}{ia}{Property number corresponding to the
-cumulated duration associated with each time average defined by the
-user, when this duration is not spatially uniform (see note below).\\
-Stored at the cells}
-
 
 \minititre{Note: Variable physical properties}\label{provar}
 Some physical properties such as specific heat or diffusivity are often
@@ -7049,7 +7028,7 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n+1}$\\
 To initialise or modify (in case of a continuation) values of transported
 variables and of the time step, the standard subroutine \texttt{cs\_user\_initialization} is used.
 
-Physical properties are stored in \texttt{propce} (cell center) and \texttt{propfb}. For instance, \texttt{propce(iel, ipproc(irom  ))} is \texttt{rom(iel)}, the mean density (in $kg.m^{-3}$).\\
+Physical properties are stored in \texttt{propce} (cell center). For instance, \texttt{propce(iel, ipproc(irom  ))} is \texttt{rom(iel)}, the mean density (in $kg.m^{-3}$).\\
 Physical properties (\texttt{rom, viscl, cp, ...}) are computed in \texttt{ppphyv} and are not to be modified here.
 
 The \texttt{cs\_user\_initialization-fuel.f90} example illustrates how the user
