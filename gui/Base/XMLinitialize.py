@@ -819,7 +819,7 @@ class XMLinit(Variables):
                 node['label'] = name
 
         XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
-        XMLAleMethod = XMLThermoPhysicalModel.xmlInitNode('ale_method')
+        XMLAleMethod = XMLThermoPhysicalModel.xmlInitChildNode('ale_method', 'status')
         if XMLAleMethod:
             for node in XMLAleMethod.xmlGetNodeList('formula'):
                 if node:
