@@ -106,9 +106,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character*80     string
-character*80     fname
-character*80     name
+character(len=80) :: string, fname, name
 integer          ivar , iel
 integer          numcla , numcha , icla
 integer          ipcgch , ipcgd1 , ipcgd2 , ipcght , ipcsec
@@ -199,7 +197,7 @@ double precision mckcl1, mckcl2
 ivar = isca(iscal)
 
 ! --- Name of the variable associated to the scalar to treat iscal
-call field_get_label(ivarfl(ivar), chaine)
+call field_get_label(ivarfl(ivar), string)
 
 ! --- Number of the physic quantity
 call field_get_val_s(icrom, crom)
@@ -239,7 +237,7 @@ endif
 if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) chaine(1:8)
+    write(nfecra,1000) string(1:8)
   endif
   numcla = ivar-isca(ixch(1))+1
   ipcgch = ipproc(igmdch(numcla))
@@ -264,7 +262,7 @@ endif
 if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) chaine(1:8)
+    write(nfecra,1000) string(1:8)
   endif
 
   numcla = ivar-isca(ixck(1))+1
@@ -406,7 +404,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
        ivar.le.isca(ixwt(nclacp)) ) then
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) chaine(1:8)
+      write(nfecra,1000) string(1:8)
     endif
     numcla = ivar-isca(ixwt(1))+1
     numcha = ichcor(numcla)
@@ -674,7 +672,7 @@ endif
 if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) chaine(1:8)
+    write(nfecra,1000) string(1:8)
   endif
 
   numcla = ivar-isca(ih2(1))+1
@@ -1079,7 +1077,7 @@ endif
 if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) chaine(1:8)
+    write(nfecra,1000) string(1:8)
   endif
 
 ! ---- Calculation of GMDEV1 = - Sum (rho.XCH.GMDV1) > 0  --> W1
@@ -1113,7 +1111,7 @@ endif
 if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) chaine(1:8)
+    write(nfecra,1000) string(1:8)
   endif
 
 ! ---- Calculation of GMDEV2 = - Sum (rho.XCH.GMDV2) > 0 --> W1
@@ -1150,7 +1148,7 @@ if ( ivar.eq.isca(if7m) ) then
   !                  to be conservative
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) chaine(1:8)
+    write(nfecra,1000) string(1:8)
   endif
 
   do iel = 1, ncel
@@ -1190,7 +1188,7 @@ if ( ihtco2 .eq. 1 ) then
     !                  to be conservative
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) chaine(1:8)
+      write(nfecra,1000) string(1:8)
     endif
 
     do iel = 1, ncel
@@ -1231,7 +1229,7 @@ if ( ihth2o .eq. 1 ) then
 
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) chaine(1:8)
+      write(nfecra,1000) string(1:8)
     endif
 
     do iel = 1, ncel
@@ -1268,7 +1266,7 @@ endif
 if ( ivar.eq.isca(ifvp2m) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) chaine(1:8)
+    write(nfecra,1000) string(1:8)
   endif
 
   call cs_coal_fp2st                                               &
@@ -1287,7 +1285,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) chaine(1:8)
+      write(nfecra,1000) string(1:8)
     endif
 
     ! ---- Contribution of interfacial source term to explicit and implicit balances
@@ -1334,7 +1332,7 @@ if ( ieqco2 .eq. 1 ) then
   if ( ivar.eq.isca(iyco2) ) then
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) chaine(1:8)
+      write(nfecra,1000) string(1:8)
     endif
 
     ! ---- Contribution of interfacial source term to explicit and implicit balances
@@ -1494,10 +1492,10 @@ if ( ieqco2 .eq. 1 ) then
      endif
 
      if ( xco2eq.gt.xxco2 ) then
-           oxydation
+       ! oxydation
        xden = xkp*sqh2o*(xxo2)**0.25d0
      else
-           dissociation
+       ! dissociation
        xden = xkm
      endif
      if ( xden .ne. 0.d0 ) then
@@ -1899,7 +1897,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
     !  Source term HCN
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) chaine(1:8)
+        write(nfecra,1000) string(1:8)
       endif
 
       do iel=1,ncel
@@ -1963,7 +1961,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
       !  Source term NO
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) chaine(1:8)
+        write(nfecra,1000) string(1:8)
       endif
 
       do iel=1,ncel
@@ -2031,7 +2029,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
       !  Source term HCN
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) chaine(1:8)
+        write(nfecra,1000) string(1:8)
       endif
 
       do iel=1,ncel
@@ -2310,7 +2308,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
       !  Source term NH3
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) chaine(1:8)
+        write(nfecra,1000) string(1:8)
       endif
 
       do iel=1,ncel
@@ -2379,7 +2377,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
       do iel = 1 ,ncel
 
-        propce(iel,ipproc(icnorb))  = zero
+        propce(iel,ipproc(icnorb)) = zero
         propce(iel,ipproc(ifnoch)) = zero
 
       enddo
@@ -2387,7 +2385,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
       !  Source term NO
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) chaine(1:8)
+        write(nfecra,1000) string(1:8)
       endif
 
       do iel=1,ncel

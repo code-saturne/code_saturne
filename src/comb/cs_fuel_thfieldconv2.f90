@@ -44,7 +44,7 @@
 !______________________________________________________________________________!
 
 subroutine cs_fuel_thfieldconv2 &
- ( ncelet , ncel   ,                  &
+ ( ncelet , ncel   ,            &
    rtp    , propce )
 
 !==============================================================================
@@ -129,9 +129,7 @@ do icla=1,nclafu
       eh2 =  rtp(icel,isca(ih2(icla)))/rtp(icel,isca(iyfol(icla)))
 
       mode = 1
-      call cs_fuel_htconvers2 &
-     =======================
-      (mode, eh2 , xsolid , propce(icel,ipcte2))
+      call cs_fuel_htconvers2(mode, eh2, xsolid, propce(icel,ipcte2))
 
     endif
 
