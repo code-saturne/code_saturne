@@ -70,6 +70,7 @@
 #include "cs_post.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_time_moment.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -465,9 +466,9 @@ _variable_post(int         f_id,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_property_output_status(const char *const name,
-                              const char *const child,
-                              int        *const keyword)
+_property_output_status(const char  *name,
+                        const char  *child,
+                        int         *keyword)
 {
   char *path = NULL;
 
@@ -479,15 +480,16 @@ cs_gui_property_output_status(const char *const name,
 }
 
 /*-----------------------------------------------------------------------------
- * Return probe number for sub balise "probe_recording" for property.
+ * Return probe number for sub tag "probe_recording" for property.
  *
  * parameters:
  *   property   <--  name of property
  *   num_probe  <-- number of <probe_recording> tags
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_property_probe_name(const char *const property,
-                                      const int   num_probe)
+static int
+_property_probe_name(const char  *property,
+                     int          num_probe)
 {
   char *path = NULL;
   char *strvalue = NULL;
@@ -514,10 +516,11 @@ static int cs_gui_property_probe_name(const char *const property,
 }
 
 /*-----------------------------------------------------------------------------
- * Return number of sub balises <probe_recording> for property.
+ * Return number of sub tags <probe_recording> for property.
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_property_number_probes(const char *const property)
+static int
+_property_number_probes(const char  *property)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -549,7 +552,8 @@ static int cs_gui_property_number_probes(const char *const property)
  *   property   <--  name of property
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_property_label(const char *const property)
+static char *
+_get_property_label(const char  *property)
 {
   char *path = NULL;
   char *label_name = NULL;
@@ -565,7 +569,6 @@ static char *cs_gui_get_property_label(const char *const property)
 
   return label_name;
 }
-
 
 /*-----------------------------------------------------------------------------
  * Post-processing options for properties
@@ -597,34 +600,218 @@ _property_post(int         f_id,
   const int k_log  = cs_field_key_id("log");
   const int k_lbl = cs_field_key_id("label");
 
-  /* EnSight outputs frequency */
-  cs_gui_property_output_status(f->name,
-                                "postprocessing_recording",
-                                &f_post);
+  /* Visualization outputs frequency */
+  _property_output_status(f->name,
+                          "postprocessing_recording",
+                          &f_post);
 
   /* Listing output frequency */
-  cs_gui_property_output_status(f->name,
-                                "listing_printing",
-                                &f_log);
+  _property_output_status(f->name,
+                          "listing_printing",
+                          &f_log);
 
   cs_field_set_key_int(f, k_post, f_post);
   cs_field_set_key_int(f, k_log, f_log);
 
   /* Activated probes */
-  nb_probes = cs_gui_property_number_probes(f->name);
+  nb_probes = _property_number_probes(f->name);
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
     for (iprob=0; iprob<nb_probes; iprob++){
-      num_probe = cs_gui_property_probe_name(f->name, iprob+1);
+      num_probe = _property_probe_name(f->name, iprob+1);
       ihisvr[(iprob + 1)*(*nvppmx) + (ipp - 1)] = num_probe;
+      if (f->dim > 1)
+        for (int idim = 1; idim < f->dim; idim++)
+          ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
     }
   }
 
   /* Take into account labels */
 
-  label = cs_gui_get_property_label(f->name);
+  label = _get_property_label(f->name);
+  if (label != NULL)
+    cs_field_set_key_str(f, k_lbl, label);
+
+  BFT_FREE(label);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return status of the moment for physical models
+ *
+ * parameters:
+ *   moment_id  <-- id of moment
+ *   child      <-- child markup
+ *   value_type <-- type of value (listing_printing, postprocessing ..)
+ *----------------------------------------------------------------------------*/
+
+static void
+_time_moment_output_status(int          moment_id,
+                           const char  *child,
+                           int         *keyword)
+{
+  char *path = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
+  cs_xpath_add_element(&path, child);
+  _attribute_value(path, child, keyword);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return probe number for sub tag "probe_recording" for moment.
+ *
+ * parameters:
+ *   moment_id  <-- id of moment
+ *   num_probe  <-- number of <probe_recording> tags
+ *----------------------------------------------------------------------------*/
+
+static int
+_time_moment_probe_name(int  moment_id,
+                        int  num_probe)
+{
+  char *path = NULL;
+  char *strvalue = NULL;
+  int   value;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
+  cs_xpath_add_attribute(&path, "name");
+
+  strvalue = cs_gui_get_attribute_value(path);
+
+  if (strvalue == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  value = atoi(strvalue);
+
+  BFT_FREE(path);
+  BFT_FREE(strvalue);
+
+  return value;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return number of sub tags <probe_recording> for moment.
+ *
+ * parameters:
+ *   moment_id  <-- id of moment
+ *----------------------------------------------------------------------------*/
+
+static int
+_time_moment_number_probes(int moment_id)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  int   nb_probes;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
+  cs_xpath_add_element(&path, "probes");
+  cs_xpath_add_attribute(&path, "choice");
+  choice = cs_gui_get_attribute_value(path);
+
+  if (choice) {
+    nb_probes = atoi(choice);
+    BFT_FREE(choice);
+  }
+  else
+    nb_probes = -1;
+
+  BFT_FREE(path);
+
+  return nb_probes;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the label model's property.
+ *
+ * parameters:
+ *   moment_id  <-- moment id
+ *----------------------------------------------------------------------------*/
+
+static char
+*_time_moment_label(int  moment_id)
+{
+  char *path = NULL;
+  char *label_name = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
+  cs_xpath_add_attribute(&path, "label");
+
+  label_name = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label_name;
+}
+
+/*-----------------------------------------------------------------------------
+ * Post-processing options for time moments
+ *
+ * parameters:
+ *   f_id               <-- field id
+ *   ihisvr             --> histo output
+ *   nvppmx             <-- number of printed variables
+ *----------------------------------------------------------------------------*/
+
+static void
+_time_moment_post(int         f_id,
+                  int         moment_id,
+                  int        *ihisvr,
+                  const int  *nvppmx)
+{
+  int nb_probes;
+  int iprob;
+  char *label = NULL;
+  int num_probe;
+
+  cs_field_t  *f = cs_field_by_id(f_id);
+  const int var_key_id = cs_field_key_id("post_id");
+  int ipp = cs_field_get_key_int(f, var_key_id);
+
+  if (ipp == -1) return;
+
+  int f_post = 0, f_log = 0;
+  const int k_post = cs_field_key_id("post_vis");
+  const int k_log  = cs_field_key_id("log");
+  const int k_lbl = cs_field_key_id("label");
+
+  /* Visualization outputs frequency */
+  _time_moment_output_status(moment_id,
+                             "postprocessing_recording",
+                             &f_post);
+
+  /* Listing output frequency */
+  _time_moment_output_status(moment_id,
+                             "listing_printing",
+                             &f_log);
+
+  cs_field_set_key_int(f, k_post, f_post);
+  cs_field_set_key_int(f, k_log, f_log);
+
+  /* Activated probes */
+  nb_probes = _time_moment_number_probes(moment_id);
+
+  ihisvr[0 + (ipp - 1)] = nb_probes;
+
+  if (nb_probes > 0) {
+    for (iprob=0; iprob<nb_probes; iprob++){
+      num_probe = _time_moment_probe_name(moment_id, iprob+1);
+      ihisvr[(iprob + 1)*(*nvppmx) + (ipp - 1)] = num_probe;
+      if (f->dim > 1)
+        for (int idim = 1; idim < f->dim; idim++)
+          ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
+    }
+  }
+
+  /* Take into account labels */
+
+  label = _time_moment_label(moment_id);
   if (label != NULL)
     cs_field_set_key_str(f, k_lbl, label);
 
@@ -639,8 +826,9 @@ _property_post(int         f_id,
  *   probe_coord          <--  one coordinate of the monitoring probe
  *----------------------------------------------------------------------------*/
 
-static double cs_gui_probe_coordinate(const int         num_probe,
-                                      const char *const probe_coord)
+static double
+_probe_coordinate(int          num_probe,
+                  const char  *probe_coord)
 {
   char  *path = NULL;
   double result = 0.0;
@@ -670,7 +858,8 @@ static double cs_gui_probe_coordinate(const int         num_probe,
  *   num                <--  number of a mesh
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_output_mesh_location(int  const num)
+static char
+*_output_mesh_location(int  num)
 {
   char *path = NULL;
   char *location = NULL;
@@ -693,7 +882,8 @@ static char *cs_gui_output_mesh_location(int  const num)
  *   num                <--  number of a mesh
  *----------------------------------------------------------------------------*/
 
-static double cs_gui_output_particle_density(int  const num)
+static double
+_output_particle_density(int  num)
 {
   char *path = NULL;
   double result = 1.;
@@ -719,7 +909,8 @@ static double cs_gui_output_particle_density(int  const num)
  *   num                <--  number of the writer
  *----------------------------------------------------------------------------*/
 
-static double cs_gui_output_writer_frequency(int  const num)
+static double
+_output_writer_frequency(int  num)
 {
   char *path = NULL;
   char *path_bis = NULL;
@@ -757,10 +948,11 @@ static double cs_gui_output_writer_frequency(int  const num)
  *   num                  <--  number of the mesh or the writer
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_output_type_options(const char *const type,
-                                        const char *const choice,
-                                        const char *const option,
-                                        int         const num)
+static char *
+_output_type_options(const char  *type,
+                     const char  *choice,
+                     const char  *option,
+                     int          num)
 {
   char *path = NULL;
   char *description = NULL;
@@ -796,8 +988,9 @@ static char *cs_gui_output_type_options(const char *const type,
  *   num_writer              <--  number of the associated writer
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_output_associate_mesh_writer(int  const num_mesh,
-                                               int  const num_writer)
+static int
+_output_associate_mesh_writer(int  num_mesh,
+                              int  num_writer)
 {
   char *path = NULL;
   char *id = NULL;
@@ -826,9 +1019,10 @@ static int cs_gui_output_associate_mesh_writer(int  const num_mesh,
  *   num                 <--   the number of the mesh or writer
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_output_type_choice(const char *const type,
-                                       const char *const choice,
-                                       int         const num)
+static char *
+_output_type_choice(const char  *type,
+                    const char  *choice,
+                    int          num)
 {
   char *path = NULL;
   char *description = NULL;
@@ -852,9 +1046,10 @@ static char *cs_gui_output_type_choice(const char *const type,
  *   symbol_size    -->  number of symbol in symbols
  *----------------------------------------------------------------------------*/
 
-static mei_tree_t *_init_mei_tree(const int        num,
-                                  const cs_int_t  *ntcabs,
-                                  const cs_real_t *ttcabs)
+static mei_tree_t *
+_init_mei_tree(const int        num,
+               const cs_int_t  *ntcabs,
+               const cs_real_t *ttcabs)
 {
   char *path = NULL;
   char *formula = NULL;
@@ -912,13 +1107,12 @@ void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
   nwriter = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
   for (i = 1; i <= nwriter; i++) {
     id = 0;
-    id_s = cs_gui_output_type_choice("writer","id",i);
+    id_s = _output_type_choice("writer","id",i);
     if (id_s != NULL) {
       id = atoi(id_s);
       BFT_FREE(id_s);
     }
-    frequency_choice
-      = cs_gui_output_type_options("writer", "period", "frequency", i);
+    frequency_choice = _output_type_options("writer", "period", "frequency", i);
     if (cs_gui_strcmp(frequency_choice, "formula")) {
       ev_formula = _init_mei_tree(i, ntcabs, ttcabs);
       mei_evaluate(ev_formula);
@@ -1012,20 +1206,41 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
 
   *ncapt = cs_gui_get_tag_number("/analysis_control/output/probe", 1);
   for (i = 0; i < *ncapt; i++) {
-    xyzcap[0 + i*3] = cs_gui_probe_coordinate(i+1, "probe_x");
-    xyzcap[1 + i*3] = cs_gui_probe_coordinate(i+1, "probe_y");
-    xyzcap[2 + i*3] = cs_gui_probe_coordinate(i+1, "probe_z");
+    xyzcap[0 + i*3] = _probe_coordinate(i+1, "probe_x");
+    xyzcap[1 + i*3] = _probe_coordinate(i+1, "probe_y");
+    xyzcap[2 + i*3] = _probe_coordinate(i+1, "probe_z");
+  }
+
+  const int n_fields = cs_field_n_fields();
+
+  /* temporary field -> moment ids */
+  int *moment_id = NULL;
+  const int n_moments = cs_time_moment_n_moments();
+  if (n_moments > 0) {
+    BFT_MALLOC(moment_id, n_fields, int);
+    for (int f_id = 0; f_id < n_fields; f_id++)
+      moment_id[f_id] = -1;
+    for (int m_id = 0; m_id < n_moments; m_id++) {
+      const cs_field_t *f = cs_time_moment_get_field(m_id);
+      if (f != NULL)
+        moment_id[f->id] = m_id;
+    }
   }
 
   /* variable output */
-  int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE)
       _variable_post(f->id, ihisvr, nvppmx);
     else if (f->type & CS_FIELD_PROPERTY)
       _property_post(f->id, ihisvr, nvppmx);
+    else if (moment_id != NULL) {
+      if (moment_id[f_id] > -1)
+        _time_moment_post(f->id, moment_id[f_id], ihisvr, nvppmx);
+    }
   }
+
+  BFT_FREE(moment_id);
 
 #if _XML_DEBUG_
   bft_printf("==>CSENSO\n");
@@ -1085,17 +1300,16 @@ cs_gui_postprocess_meshes(void)
   nmesh = cs_gui_get_tag_number("/analysis_control/output/mesh", 1);
 
   for (i = 1; i <= nmesh; i++) {
-    id_s = cs_gui_output_type_choice("mesh","id",i);
+    id_s = _output_type_choice("mesh","id",i);
     id = atoi(id_s);
-    label = cs_gui_output_type_choice("mesh","label",i);
-    all_variables
-      = cs_gui_output_type_options("mesh", "status", "all_variables",i);
+    label = _output_type_choice("mesh","label",i);
+    all_variables = _output_type_options("mesh", "status", "all_variables", i);
     if (cs_gui_strcmp(all_variables,"on"))
       auto_vars = true;
     else if (cs_gui_strcmp(all_variables, "off"))
       auto_vars = false;
-    location = cs_gui_output_mesh_location(i);
-    type = cs_gui_output_type_choice("mesh","type",i);
+    location = _output_mesh_location(i);
+    type = _output_type_choice("mesh","type",i);
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 2, "analysis_control", "output");
     cs_xpath_add_element_num(&path, "mesh", i);
@@ -1103,7 +1317,7 @@ cs_gui_postprocess_meshes(void)
     n_writers = cs_gui_get_nb_element(path);
     BFT_MALLOC(writer_ids, n_writers, int);
     for (j = 0; j <= n_writers-1; j++) {
-      id_writer = cs_gui_output_associate_mesh_writer(i,j+1);
+      id_writer = _output_associate_mesh_writer(i,j+1);
       writer_ids[j] = id_writer;
     }
     if (cs_gui_strcmp(type, "cells")) {
@@ -1124,7 +1338,7 @@ cs_gui_postprocess_meshes(void)
     } else if(   cs_gui_strcmp(type, "particles")
               || cs_gui_strcmp(type, "trajectories")) {
       bool trajectory = cs_gui_strcmp(type, "trajectories") ? true : false;
-      double density = cs_gui_output_particle_density(i);
+      double density = _output_particle_density(i);
       cs_post_define_particles_mesh(id, label, location,
                                     density, trajectory, auto_vars,
                                     n_writers, writer_ids);
@@ -1172,34 +1386,31 @@ cs_gui_postprocess_writers(void)
     cs_int_t time_step = -1;
     cs_real_t time_value = -1.0;
 
-    id_s = cs_gui_output_type_choice("writer", "id", i);
+    id_s = _output_type_choice("writer", "id", i);
     id = atoi(id_s);
-    label = cs_gui_output_type_choice("writer", "label", i);
-    directory = cs_gui_output_type_options("writer", "name", "directory", i);
-    frequency_choice
-      = cs_gui_output_type_options("writer", "period", "frequency", i);
-    output_end_s
-      = cs_gui_output_type_options("writer", "status", "output_at_end", i);
+    label = _output_type_choice("writer", "label", i);
+    directory = _output_type_options("writer", "name", "directory", i);
+    frequency_choice = _output_type_options("writer", "period", "frequency", i);
+    output_end_s = _output_type_options("writer", "status", "output_at_end", i);
     if (cs_gui_strcmp(frequency_choice, "none")) {
       time_step = -1;
       time_value = -1.;
     } else if (cs_gui_strcmp(frequency_choice, "time_step")) {
-      time_step = (int)cs_gui_output_writer_frequency(i);
+      time_step = (int)_output_writer_frequency(i);
       time_value = -1.;
     } else if (cs_gui_strcmp(frequency_choice, "time_value")) {
       time_step = -1;
-      time_value = cs_gui_output_writer_frequency(i);
+      time_value = _output_writer_frequency(i);
     } else if (cs_gui_strcmp(frequency_choice, "formula")) {
       time_step = -1;
       time_value = -1.;
     }
     if (cs_gui_strcmp(output_end_s, "off"))
       output_at_end = false;
-    format_name = cs_gui_output_type_options("writer", "name", "format",i);
-    format_options
-      = cs_gui_output_type_options("writer", "options", "format", i);
+    format_name = _output_type_options("writer", "name", "format",i);
+    format_options = _output_type_options("writer", "options", "format", i);
     time_dependency
-      = cs_gui_output_type_options("writer", "choice", "time_dependency", i);
+      = _output_type_options("writer", "choice", "time_dependency", i);
     if (cs_gui_strcmp(time_dependency, "fixed_mesh"))
       time_dep = FVM_WRITER_FIXED_MESH;
     else if(cs_gui_strcmp(time_dependency, "transient_coordinates"))

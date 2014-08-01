@@ -44,6 +44,7 @@ use alstru
 use cplsat
 use post
 use ppincl
+use cs_c_bindings
 
 !===============================================================================
 
@@ -54,11 +55,14 @@ implicit none
 
 ! Local variables
 
-integer          n_fields
-integer          ii, jj, ivar, iok, imom, ikw
+integer          n_fields, f_id, f_dim
+integer          ii, jj, ivar, imom, iok, ikw
 integer          icompt, ipp, nbccou, keyvar
 integer          nscacp, iscal
 integer          imrgrp
+
+logical          interleaved
+
 double precision relxsp
 double precision omgnrm, cosdto, sindto
 double precision ux, uy, uz
@@ -139,8 +143,12 @@ if (idtvar.lt.0) then
 endif
 if (nbmomt.gt.0) then
   do imom = 1, nbmomt
-    ipp = ipppro(ipproc(icmome(imom)))
-    if (ihisvr(ipp,1).eq.-999) ihisvr(ipp,1) = -1
+    f_id = time_moment_field_id(imom)
+    call field_get_dim(f_id, f_dim, interleaved)
+    call field_get_key_int(f_id, keyipp, ipp)
+    do ii = 1, f_dim
+      if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
+    enddo
   enddo
 endif
 

@@ -648,17 +648,7 @@ do iis = 1, nscal
 enddo
 
 !===============================================================================
-! 9.  INITIALISATION DES MOYENNES
-!===============================================================================
-
-do imom = 1, nbmomt
-  do iel = 1, ncel
-    propce(iel,ipproc(icmome(imom))) = 0.d0
-  enddo
-enddo
-
-!===============================================================================
-! 10.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE
+! 9.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE
 !===============================================================================
 
 if(iturb.eq.41) then
@@ -668,7 +658,7 @@ if(iturb.eq.41) then
 endif
 
 !===============================================================================
-! 11.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
+! 10.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
 !===============================================================================
 
 !     Si IFAPAT existe,
@@ -681,7 +671,7 @@ if(abs(icdpar).eq.2) then
 endif
 
 !===============================================================================
-! 12.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
+! 11.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
 !===============================================================================
 
 if(iphydr.eq.1) then
@@ -693,7 +683,7 @@ if(iphydr.eq.1) then
 endif
 
 !===============================================================================
-! 13.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
+! 12.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
 !===============================================================================
 
 if(iphydr.eq.2) then
@@ -703,7 +693,7 @@ if(iphydr.eq.2) then
 endif
 
 !===============================================================================
-! 14.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
+! 13.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
 !===============================================================================
 
 if (iale.eq.1) then

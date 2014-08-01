@@ -124,15 +124,20 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Read temporal moments checkpoint information.
+    !> \brief  Get field id associated with a given moment.
 
-    subroutine time_moment_field_id(m_id, f_id)  &
+    !> \param[in]   m_num   moment number (based on moment creation order,
+    !>                      1 to n numbering)
+
+    !> \return      f_id    associated field id
+
+    function time_moment_field_id(m_num) result(f_id)  &
       bind(C, name='cs_f_time_moment_field_id')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(in)  :: m_id
-      integer(c_int), intent(out) :: f_id
-    end subroutine time_moment_field_id
+      integer(c_int), value :: m_num
+      integer(c_int)        :: f_id
+    end function time_moment_field_id
 
     !---------------------------------------------------------------------------
 
@@ -855,6 +860,8 @@ contains
   !---------------------------------------------------------------------------
 
   !> \brief Define a moment of a product of existing fields components.
+
+  !> Moment ids are based on the moment creation order, starting at 0.
 
   !> Moments will involve the tensor products of their component fields,
   !> and only scalar, vector, or rank-2 tensors are handled (for

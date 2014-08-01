@@ -91,6 +91,7 @@ use period
 use mesh
 use field
 use post
+use cs_c_bindings
 
 !===============================================================================
 
@@ -112,7 +113,7 @@ integer          ntindp, f_id
 integer          iel, ifac, iloc, ivar
 integer          idimt, ii , jj
 logical          ientla, ivarpr
-integer          imom1, imom2, idtcm
+integer          imom1, imom2
 double precision pnd
 double precision rvoid(1)
 
@@ -279,8 +280,8 @@ if (ipart .eq. -1) then
     imom2 = 2
 
     ! Temporal accumulation for moments
-    call field_get_val_s(iprpfl(icmome(imom1)),cmom_1)
-    call field_get_val_s(iprpfl(icmome(imom2)),cmom_2)
+    call field_get_val_s(time_moment_field_id(imom1), cmom_1)
+    call field_get_val_s(time_moment_field_id(imom2), cmom_2)
 
     ! The temporal accumulation for moments must be divided by the accumulated
     ! time, which id an array of size ncel or a single real number:
@@ -294,7 +295,7 @@ if (ipart .eq. -1) then
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      scel(iloc) =    cmom_2(iel) - (cmom_1(iel))
+      scel(iloc) = cmom_2(iel) - (cmom_1(iel))
     enddo
 
     idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor

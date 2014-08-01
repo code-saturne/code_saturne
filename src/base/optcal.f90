@@ -812,17 +812,13 @@ module optcal
   !> number of moments
   integer, save ::          nbmomt
 
-  !> index of the initial time step for computing the moment
+  !> initial time step for computing the moment
   integer, save ::          ntdmom(nbmomx)
 
-  !> numero de l'ancien moment correspondant en cas de suite
+  !> number of the previous matching moment for restarts
   integer, save ::          imoold(nbmomx)
 
-  !> icmome : pointeur pour les moments (donne un numero de propriete)
-  !>           s'utilise ainsi propce(iel,ipproc(icmome(imom)))
-  integer, save ::          icmome(nbmomx)
-
-  !> numero des champs composant le moment idfmom(ic,jj,imom)
+  !> field and component ids whose product defines moment idfmom(ic,jj,imom)
   integer, save ::          idfmom(2,ndgmox,nbmomx)
 
   !> initial time for computing the moment

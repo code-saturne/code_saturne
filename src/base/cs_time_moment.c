@@ -253,9 +253,8 @@ cs_f_time_moment_define_by_field_ids(const char                *name,
                                      double                     t_start,
                                      int                        restart_id);
 
-void
-cs_f_time_moment_field_id(cs_int_t  *m_id,
-                          cs_int_t  *f_id);
+int
+cs_f_time_moment_field_id(int  m_num);
 
 void
 cs_f_time_moment_restart_write(int  r_num);
@@ -263,7 +262,7 @@ cs_f_time_moment_restart_write(int  r_num);
 void
 cs_f_time_moment_restart_read(int  r_num);
 
-/*! \endcond (end ignore by Doxygen) */
+ /*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Private function definitions
@@ -1777,17 +1776,18 @@ cs_f_time_moment_define_by_field_ids(const char                *name,
  * Return field id associated with a given moment
  *
  * parameters:
- *   m_id  <-- moment id
- *   f_id  --> field id
+ *   m_num <-- moment number (1 to n)
+ *
+ * returns:
+ *   field id
  *----------------------------------------------------------------------------*/
 
-void
-cs_f_time_moment_field_id(cs_int_t  *m_id,
-                          cs_int_t  *f_id)
+int
+cs_f_time_moment_field_id(int m_num)
 
 {
-  const cs_field_t *f = cs_time_moment_get_field(*m_id);
-  *f_id = f->id;
+  const cs_field_t *f = cs_time_moment_get_field(m_num - 1);
+  return f->id;
 }
 
 /*----------------------------------------------------------------------------
@@ -2305,7 +2305,7 @@ cs_time_moment_update_all(void)
           = cs_mesh_location_get_n_elts(mt->location_id)[0];
         const cs_lnum_t nd = n_elts * mt->dim;
 
-        BFT_MALLOC(x, n_elts, cs_real_t);
+        BFT_MALLOC(x, nd, cs_real_t);
 
         mt->data_func(mt->data_input, x);
 

@@ -1023,11 +1023,6 @@ enddo
 !       Nombre de moments
 nbmomt = 0
 
-do imom = 1, nbmomx
-  ! Pointeur sur les moments
-  icmome(imom) = 0
-enddo
-
 ! --- Calcul de la distance a la paroi
 !     Seules variables utilisateur : ICDPAR, IWARNY
 

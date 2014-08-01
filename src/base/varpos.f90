@@ -70,7 +70,7 @@ implicit none
 
 ! Local variables
 
-integer       iscal , iprop, id, f_dim, ityloc, itycat
+integer       iscal , id, f_dim, ityloc, itycat
 integer       ii    , jj
 integer       iok   , ippok
 integer       ivisph
@@ -526,13 +526,8 @@ if (iok.ne.0) then
 endif
 
 
-! 2.3 POSITIONNEMENT DANS PROPCE DES MOMENTS
-! ------------------------------------------
-
-! Reprise du dernier NPROCE (PROPCE et POST-TRAITEMENT)
-iprop                 = nproce
-
-! Positionnement
+! 2.3 Define moments and set associated postprocessing id
+! -------------------------------------------------------
 
 do imom = 1, nbmomt
 
@@ -552,33 +547,20 @@ do imom = 1, nbmomt
                                        mom_f_id, mom_c_id,                &
                                        0, ntdmom(imom), ttdmom(imom),     &
                                        imoold(imom), mom_id)
-  call time_moment_field_id(mom_id, id)
+  id = time_moment_field_id(mom_id+1)
 
   call field_set_key_int(id, keyvis, 1)
   call field_set_key_int(id, keylog, 1)
   call field_set_key_str(id, keylbl, trim(f_label))
 
-  ! Property number and mapping to field
+  ! Mapping to field
 
   call field_get_dim(id, m_dim, ilved)
 
-  iprop = nproce + 1
-  nproce = nproce + m_dim
-
-  call fldprp_check_nproce
-
-  iprpfl(iprop) = id
-  ipproc(iprop) = iprop
-  icmome(imom) = iprop
-
   ! Postprocessing slots
 
-  do ii = 1, m_dim
-    ipppro(iprop+ii-1) = nvpp + 1
-    nvpp = nvpp + 1
-  enddo
-
-  call field_set_key_int(id, keyipp, ipppro(iprop))
+  call field_set_key_int(id, keyipp, nvpp + 1)
+  nvpp = nvpp + m_dim
 
 enddo
 
