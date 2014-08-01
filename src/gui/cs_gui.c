@@ -127,7 +127,6 @@ extern xmlNodePtr node;               /* Pointer on the root node     */
 /* Pointer on the main variable structure */
 
 cs_var_t    *cs_glob_var = NULL;
-cs_label_t  *cs_glob_label = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -2137,12 +2136,6 @@ void CS_PROCF (uiinit, UIINIT) (void)
 
   cs_glob_var->model            = NULL;
   cs_glob_var->model_value      = NULL;
-
-  BFT_MALLOC(cs_glob_label, 1, cs_label_t);
-
-  cs_glob_label->_cs_gui_max_vars = 0;
-  cs_glob_label->_cs_gui_last_var = 0;
-  cs_glob_label->_cs_gui_var_name = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -5778,18 +5771,10 @@ cs_gui_parallel_io(void)
 void
 cs_gui_clean_memory(void)
 {
-  int i;
-
   /* clean memory for global private structure vars */
   BFT_FREE(cs_glob_var->model);
   BFT_FREE(cs_glob_var->model_value);
   BFT_FREE(cs_glob_var);
-
-  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
-    BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
-
-  BFT_FREE(cs_glob_label->_cs_gui_var_name);
-  BFT_FREE(cs_glob_label);
 
   mei_data_free();
 

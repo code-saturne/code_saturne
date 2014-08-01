@@ -243,7 +243,6 @@ _surfacic_variable_post(const char  *name,
   return active;
 }
 
-
 /*----------------------------------------------------------------------------
  * Get the attribute value from the xpath query.
  *
@@ -287,9 +286,9 @@ _attribute_value(char                *path,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_variable_attribute(const char *const name,
-                          const char *const child,
-                          int        *const keyword)
+_variable_attribute(const char  *name,
+                    const char  *child,
+                    int         *keyword)
 {
   char *path = NULL;
 
@@ -304,7 +303,8 @@ cs_gui_variable_attribute(const char *const name,
  * Return number of <probe recording> tags in the <variable> tag.
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_variable_number_probes(const char *const variable)
+static int
+_variable_number_probes(const char  *variable)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -336,8 +336,9 @@ static int cs_gui_variable_number_probes(const char *const variable)
  *   num_probe  <--  number of <probe_recording> tags
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_variable_probe_name(const char *const variable,
-                                      int               num_probe)
+static int
+_variable_probe_name(const char *variable,
+                     int         num_probe)
 {
   char *path = NULL;
   char *strvalue = NULL;
@@ -370,7 +371,8 @@ static int cs_gui_variable_probe_name(const char *const variable,
  *   variable   <-- name of variable
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_variable_label(const char *const variable)
+static char *
+_variable_label(const char *variable)
 {
   char *path = NULL;
   char *label = NULL;
@@ -388,58 +390,6 @@ static char *cs_gui_variable_label(const char *const variable)
 }
 
 /*-----------------------------------------------------------------------------
- * Copy a variable name to private variable names array.
- *
- * parameters:
- *   varname        <--  name or label of the variable/scalar/property
- *   ipp            <--  index from the fortran array associated to varname
- *----------------------------------------------------------------------------*/
-
-static void
-_gui_copy_varname(const char *varname, int ipp)
-{
-  int i;
-  size_t l;
-
-  if (varname == NULL)
-    return;
-
-  /* Resize array if necessary */
-
-  if (ipp > cs_glob_label->_cs_gui_max_vars) {
-
-    if (cs_glob_label->_cs_gui_max_vars == 0)
-      cs_glob_label->_cs_gui_max_vars = 16;
-
-    while (cs_glob_label->_cs_gui_max_vars <= ipp)
-      cs_glob_label->_cs_gui_max_vars *= 2;
-
-    BFT_REALLOC(cs_glob_label->_cs_gui_var_name,
-                cs_glob_label->_cs_gui_max_vars,
-                char *);
-    for (i = cs_glob_label->_cs_gui_last_var;
-         i < cs_glob_label->_cs_gui_max_vars;
-         i++)
-      cs_glob_label->_cs_gui_var_name[i] = NULL;
-  }
-
-  if (ipp < 2 || ipp > cs_glob_label->_cs_gui_max_vars)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Variable index %d out of bounds (1 to %d)"),
-              ipp, cs_glob_label->_cs_gui_last_var);
-
-  l = strlen(varname);
-
-  if (cs_glob_label->_cs_gui_var_name[ipp-1] == NULL)
-    BFT_MALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
-
-  else if (strlen(cs_glob_label->_cs_gui_var_name[ipp-1]) != l)
-    BFT_REALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
-
-  strcpy(cs_glob_label->_cs_gui_var_name[ipp-1], varname);
-}
-
-/*-----------------------------------------------------------------------------
  * Post-processing options for all variables (velocity, pressure, ...)
  *
  * parameters:
@@ -449,58 +399,60 @@ _gui_copy_varname(const char *varname, int ipp)
  *----------------------------------------------------------------------------*/
 
 static void
-_gui_variable_post(int         f_id,
-                   int        *ihisvr,
-                   const int  *nvppmx)
+_variable_post(int         f_id,
+               int        *ihisvr,
+               const int  *nvppmx)
 {
   int   nb_probes;
   int   iprob;
-  char *varname = NULL;
+  char *label = NULL;
   int   num_probe;
 
-  cs_field_t  *fi = cs_field_by_id(f_id);
+  cs_field_t  *f = cs_field_by_id(f_id);
   const int var_key_id = cs_field_key_id("post_id");
-  int ipp = cs_field_get_key_int(fi, var_key_id);
+  int ipp = cs_field_get_key_int(f, var_key_id);
 
   if (ipp == -1) return;
 
   int f_post = 0, f_log = 0;
   const int k_post = cs_field_key_id("post_vis");
   const int k_log  = cs_field_key_id("log");
+  const int k_lbl = cs_field_key_id("label");
 
-  cs_gui_variable_attribute(fi->name,
-                            "postprocessing_recording",
-                            &f_post);
+  _variable_attribute(f->name,
+                      "postprocessing_recording",
+                      &f_post);
 
-  cs_gui_variable_attribute(fi->name,
-                            "listing_printing",
-                            &f_log);
+  _variable_attribute(f->name,
+                      "listing_printing",
+                      &f_log);
 
-  cs_field_set_key_int(fi, k_post, f_post);
-  cs_field_set_key_int(fi, k_log, f_log);
+  cs_field_set_key_int(f, k_post, f_post);
+  cs_field_set_key_int(f, k_log, f_log);
 
-  nb_probes = cs_gui_variable_number_probes(fi->name);
+  nb_probes = _variable_number_probes(f->name);
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
-  if (fi->dim > 1)
-    for (int idim = 1; idim < fi->dim; idim++)
+  if (f->dim > 1)
+    for (int idim = 1; idim < f->dim; idim++)
       ihisvr[0 + (ipp - 1) + idim] = nb_probes;
 
   if (nb_probes > 0) {
     for (iprob = 0; iprob < nb_probes; iprob++) {
-      num_probe = cs_gui_variable_probe_name(fi->name, iprob+1);
+      num_probe = _variable_probe_name(f->name, iprob+1);
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
-      if (fi->dim > 1)
-        for (int idim = 1; idim < fi->dim; idim++)
+      if (f->dim > 1)
+        for (int idim = 1; idim < f->dim; idim++)
           ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
     }
   }
 
-  varname = cs_gui_variable_label(fi->name);
-  _gui_copy_varname(varname, ipp);
+  label = _variable_label(f->name);
+  if (label != NULL)
+    cs_field_set_key_str(f, k_lbl, label);
 
-  BFT_FREE(varname);
+  BFT_FREE(label);
 }
 
 /*-----------------------------------------------------------------------------
@@ -625,58 +577,59 @@ static char *cs_gui_get_property_label(const char *const property)
  *----------------------------------------------------------------------------*/
 
 static void
-_gui_property_post(int         f_id,
-                   int        *ihisvr,
-                   const int  *nvppmx)
+_property_post(int         f_id,
+               int        *ihisvr,
+               const int  *nvppmx)
 {
   int nb_probes;
   int iprob;
-  char *varname = NULL;
+  char *label = NULL;
   int num_probe;
 
-  cs_field_t  *fi = cs_field_by_id(f_id);
+  cs_field_t  *f = cs_field_by_id(f_id);
   const int var_key_id = cs_field_key_id("post_id");
-  int ipp = cs_field_get_key_int(fi, var_key_id);
+  int ipp = cs_field_get_key_int(f, var_key_id);
 
   if (ipp == -1) return;
 
   int f_post = 0, f_log = 0;
   const int k_post = cs_field_key_id("post_vis");
   const int k_log  = cs_field_key_id("log");
+  const int k_lbl = cs_field_key_id("label");
 
   /* EnSight outputs frequency */
-  cs_gui_property_output_status(fi->name,
+  cs_gui_property_output_status(f->name,
                                 "postprocessing_recording",
                                 &f_post);
 
   /* Listing output frequency */
-  cs_gui_property_output_status(fi->name,
+  cs_gui_property_output_status(f->name,
                                 "listing_printing",
                                 &f_log);
 
-  cs_field_set_key_int(fi, k_post, f_post);
-  cs_field_set_key_int(fi, k_log, f_log);
+  cs_field_set_key_int(f, k_post, f_post);
+  cs_field_set_key_int(f, k_log, f_log);
 
   /* Activated probes */
-  nb_probes = cs_gui_property_number_probes(fi->name);
+  nb_probes = cs_gui_property_number_probes(f->name);
 
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
     for (iprob=0; iprob<nb_probes; iprob++){
-      num_probe = cs_gui_property_probe_name(fi->name, iprob+1);
+      num_probe = cs_gui_property_probe_name(f->name, iprob+1);
       ihisvr[(iprob + 1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
   }
 
   /* Take into account labels */
 
-  varname = cs_gui_get_property_label(fi->name);
-  _gui_copy_varname(varname, ipp);
+  label = cs_gui_get_property_label(f->name);
+  if (label != NULL)
+    cs_field_set_key_str(f, k_lbl, label);
 
-  BFT_FREE(varname);
+  BFT_FREE(label);
 }
-
 
 /*-----------------------------------------------------------------------------
  * Return a single coordinate of a monitoring probe.
@@ -932,177 +885,6 @@ static mei_tree_t *_init_mei_tree(const int        num,
   return tree;
 }
 
-/*----------------------------------------------------------------------------
- * Copy variable labels from fields to GUI labels
- *----------------------------------------------------------------------------*/
-
-static void
-_field_labels_to_gui(void)
-{
-  int i;
-
-  const int n_fields = cs_field_n_fields();
-  const int k_post = cs_field_key_id("post_id");
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-
-    const cs_field_t *f = cs_field_by_id(f_id);
-    const int ipp = cs_field_get_key_int(f, k_post);
-
-    if (ipp < 2)
-      continue;
-
-    /* Loop on field components */
-
-    const int p_dim = CS_MIN(f->dim, 3);
-
-    for (int c_id = 0; c_id < p_dim; c_id++) {
-
-      int p_id = ipp - 1 + c_id;
-      char label[128];
-
-      /* Resize array if necessary */
-
-      if (p_id >= cs_glob_label->_cs_gui_max_vars) {
-
-        if (cs_glob_label->_cs_gui_max_vars == 0)
-          cs_glob_label->_cs_gui_max_vars = 16;
-        while (cs_glob_label->_cs_gui_max_vars <= p_id)
-          cs_glob_label->_cs_gui_max_vars *= 2;
-
-        BFT_REALLOC(cs_glob_label->_cs_gui_var_name,
-                    cs_glob_label->_cs_gui_max_vars,
-                    char *);
-        for (i = cs_glob_label->_cs_gui_last_var;
-             i < cs_glob_label->_cs_gui_max_vars;
-             i++)
-          cs_glob_label->_cs_gui_var_name[i] = NULL;
-
-      }
-
-      /* Build name */
-
-      const char *f_label = cs_field_get_label(f);
-
-      if (f->dim == 1)
-        strncpy(label, f_label, 127);
-      else if (f->dim == 3)
-        snprintf(label, 127, "%s%s", f_label, cs_glob_field_comp_name_3[c_id]);
-      else if (f->dim == 6)
-        snprintf(label, 127, "%s%s", f_label, cs_glob_field_comp_name_6[c_id]);
-      else if (f->dim == 9)
-        snprintf(label, 127, "%s%s", f_label, cs_glob_field_comp_name_9[c_id]);
-      else
-        snprintf(label, 127, "%s[%02d]", f_label, c_id);
-      label[127] = '\0';
-
-
-      BFT_REALLOC(cs_glob_label->_cs_gui_var_name[p_id],
-                  strlen(label) + 1,
-                  char);
-
-      strcpy(cs_glob_label->_cs_gui_var_name[p_id], label);
-
-      /* Update variable counter */
-
-      if (p_id + 1 > cs_glob_label->_cs_gui_last_var)
-        cs_glob_label->_cs_gui_last_var = p_id + 1;
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Copy variable labels to fields from GUI labels
- *----------------------------------------------------------------------------*/
-
-static void
-_field_labels_from_gui(void)
-{
-  int i;
-
-  const int n_fields = cs_field_n_fields();
-  const int k_post = cs_field_key_id("post_id");
-  const int k_lbl = cs_field_key_id("label");
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-
-    cs_field_t *f = cs_field_by_id(f_id);
-    const int ipp = cs_field_get_key_int(f, k_post);
-
-    if (ipp < 2)
-      continue;
-
-    /* Initial checks and label setup for a given field */
-
-    const int p_dim = CS_MIN(f->dim, 3);
-
-    int p_id = ipp - 1;
-    char label[128];
-
-    if (p_id > cs_glob_label->_cs_gui_max_vars)
-      continue;
-
-    if (cs_glob_label->_cs_gui_var_name[p_id] == NULL)
-      continue;
-
-    strcpy(label, cs_glob_label->_cs_gui_var_name[p_id]);
-
-    /* In case of multiple field components, keep common part */
-
-    for (int c_id = 1; c_id < p_dim; c_id++) {
-
-      p_id += 1;
-
-      if (p_id > cs_glob_label->_cs_gui_max_vars)
-        continue;
-      if (cs_glob_label->_cs_gui_var_name[p_id] == NULL)
-        continue;
-
-      for (i = 0;
-           (   label[i] == cs_glob_label->_cs_gui_var_name[p_id][i]
-            && label[i] != '\0'
-            && label[i] != '[');
-           i++);
-
-      if (i > 0)
-        label[i] = '\0';
-
-    }
-
-    /* Update field label */
-
-    cs_field_set_key_str(f, k_lbl, label);
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Clean memory for fortran name of variables
- *----------------------------------------------------------------------------*/
-
-static void
-_gui_free_labels(void)
-{
-  int i;
-#if _XML_DEBUG_
-  bft_printf("%s\n", __funct__);
-  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
-    if (cs_glob_label->_cs_gui_var_name[i])
-      bft_printf("-->label[%i] = %s\n", i, cs_glob_label->_cs_gui_var_name[i]);
-#endif
-
-  for (i = 0; i < cs_glob_label->_cs_gui_max_vars; i++)
-    BFT_FREE(cs_glob_label->_cs_gui_var_name[i]);
-
-  BFT_FREE(cs_glob_label->_cs_gui_var_name);
-
-  cs_glob_label->_cs_gui_max_vars = 0;
-  cs_glob_label->_cs_gui_last_var = 0;
-}
-
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -1192,8 +974,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
     }
   }
 
-  _field_labels_to_gui();
-
   _output_value("auxiliary_restart_file_writing", iecaux);
   _output_value("listing_printing_frequency", ntlist);
   _output_value("probe_recording_frequency", nthist);
@@ -1242,12 +1022,10 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE)
-      _gui_variable_post(f->id, ihisvr, nvppmx);
+      _variable_post(f->id, ihisvr, nvppmx);
     else if (f->type & CS_FIELD_PROPERTY)
-      _gui_property_post(f->id, ihisvr, nvppmx);
+      _property_post(f->id, ihisvr, nvppmx);
   }
-
-  _field_labels_from_gui();
 
 #if _XML_DEBUG_
   bft_printf("==>CSENSO\n");
@@ -1276,8 +1054,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
 #endif
 
   BFT_FREE(ippfld);
-
-  _gui_free_labels();
 }
 
 /*============================================================================

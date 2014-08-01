@@ -2903,7 +2903,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
  *   ncharb  <-- number of coals
  *----------------------------------------------------------------------------*/
 
-  void
+void
 cs_gui_boundary_conditions_free_memory(const int  *ncharb)
 {
   int izone;
