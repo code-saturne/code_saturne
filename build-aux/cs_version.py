@@ -482,11 +482,11 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         major, minor, release, extra = version_from_news(srcdir)
-        print(build_version_string(major, minor, release, extra))
+        sys.stdout.write(build_version_string(major, minor, release, extra))
 
     elif sys.argv[1] == '--short':
         major, minor, release, extra = version_from_news(srcdir)
-        print(build_version_string(major, minor, '', extra))
+        sys.stdout.write(build_version_string(major, minor, '', extra))
 
     # Call tools
 
@@ -510,11 +510,11 @@ if __name__ == '__main__':
         if sys.argv[1] == '--full':
             if modified:
                 revision += '-m'
-            print(build_version_string(major, minor, release, extra, revision))
+            sys.stdout.write(build_version_string(major, minor, release, extra, revision))
         elif sys.argv[1] == '--revision-only':
             if modified:
                 revision += '-m'
-            print(revision[1:]) # remove first '-' character
+            sys.stdout.write(revision[1:]) # remove first '-' character
         elif sys.argv[1] == '--verbose':
             print('major:    ' + major)
             print('minor:    ' + minor)
