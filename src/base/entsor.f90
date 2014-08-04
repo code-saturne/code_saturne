@@ -417,4 +417,92 @@ module entsor
 
   !=============================================================================
 
+
+contains
+
+  !=============================================================================
+
+  !> \brief Map a field to time plot (probes) activation array.
+  !> This will set the "post_id" keyword for the given field, if not
+  !> already set.
+
+  !> \param[in]  f_id  id of given field
+
+  !> \return  starting position of this field in the \ref ihisvr array.
+
+  function field_post_id(f_id) result(ipp)
+
+    use, intrinsic :: iso_c_binding
+    use field
+    implicit none
+
+    ! Arguments
+
+    integer(c_int), value :: f_id
+    integer(c_int)        :: ipp
+
+    ! Local variables
+
+    logical :: interleaved
+    integer :: f_dim
+    integer, save :: keypp = -1
+    integer, save :: nvpp = 1
+
+    if (keypp.lt.0) then
+      call field_get_key_id("post_id", keypp)
+    endif
+
+    call field_get_key_int(f_id, keypp, ipp)
+
+    ! Define if not already done
+
+    if (ipp.le.1) then
+
+      call field_get_dim(f_id, f_dim, interleaved)
+
+      ipp = nvpp + 1
+
+      nvpp = nvpp + f_dim
+
+      ! Check limit on NVPP
+
+      if (nvpp.gt.nvppmx) then
+        write(nfecra,1000) nvpp, nvppmx
+        call csexit (1)
+        !==========
+      endif
+
+      call field_set_key_int(f_id, keypp, ipp)
+
+    endif
+
+    !--------
+    ! Formats
+    !--------
+
+ 1000 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP AT THE INITIAL DATA VERIFICATION'          ,/,&
+'@    ======='                                                 ,/,&
+'@     Number of possible time plots too large'                ,/,&
+'@'                                                            ,/,&
+'@  The type of calcultion defined'                            ,/,&
+'@    leads to a number of potential time plots'               ,/,&
+'@    for active fields equal to ', i10                        ,/,&
+'@  The maximum number of time plots defined'                  ,/,&
+'@    in paramx.f90 is NVPPMX = ', i10                         ,/,&
+'@'                                                            ,/,&
+'@  The calculation will not be run.'                          ,/,&
+'@'                                                            ,/,&
+'@  Contact support, or rebuild code with increased NVPPMX.'   ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+  end function field_post_id
+
+  !=============================================================================
+
 end module entsor

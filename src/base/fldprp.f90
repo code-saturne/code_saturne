@@ -877,9 +877,7 @@ enddo
 
 ! Postprocessing slots
 
-ipppro(iprop) = nvpp + 1
-nvpp = nvpp + dim
-
+ipppro(iprop) = field_post_id(f_id)
 do ii = 2, dim
   ipppro(iprop+ii-1) = ipppro(iprop) -1 + ii
 enddo

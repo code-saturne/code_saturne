@@ -104,6 +104,19 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Return the number of temporal moments.
+
+    !> \return number of defined moments
+
+    function cs_time_moment_n_moments() result(n_moments)  &
+      bind(C, name='cs_time_moment_n_moments')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int) :: n_moments
+    end function cs_time_moment_n_moments
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Update temporal moments.
 
     subroutine time_moment_update_all()  &
@@ -207,6 +220,16 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_gui_user_variables
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Define time moments through the GUI.
+
+    subroutine cs_gui_time_moments()  &
+      bind(C, name='cs_gui_time_moments')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_time_moments
 
     !---------------------------------------------------------------------------
 
@@ -373,31 +396,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Define a moment of a product of existing fields components.
-
-    ! Moments will involve the tensor products of their component fields,
-    ! and only scalar, vector, or rank-2 tensors are handled (for
-    ! post-processing output reasons), so a moment may not involve more than
-    ! 2 vectors or 1 tensor, unless single components are specified.
-
-    function cs_f_time_moment_define_by_field_ids(name, n_fields,              &
-                                                  field_id, component_id,      &
-                                                  type, nt_start, t_start,     &
-                                                  restart_mode_or_id)          &
-      result(moment_id)                                                        &
-      bind(C, name='cs_f_time_moment_define_by_field_ids')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in) :: name
-      integer(c_int), value :: n_fields, restart_mode_or_id
-      integer(kind=c_int), dimension(*) :: field_id, component_id
-      integer(c_int), value :: type, nt_start
-      real(kind=c_double), value :: t_start
-      integer(c_int) :: moment_id
-    end function cs_f_time_moment_define_by_field_ids
-
-    !---------------------------------------------------------------------------
-
     ! Add terms from backward differentiation in time.
 
     subroutine cs_backward_differentiation_in_time(field_id,                  &
@@ -428,6 +426,16 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_user_model
+
+    !---------------------------------------------------------------------------
+
+    !> Interface to C user function for time moments
+
+    subroutine cs_user_time_moments()  &
+      bind(C, name='cs_user_time_moments')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_user_time_moments
 
     !---------------------------------------------------------------------------
 
@@ -856,70 +864,6 @@ contains
     call cs_restart_write_bc_coeffs(r)
 
   end subroutine restart_write_bc_coeffs
-
-  !---------------------------------------------------------------------------
-
-  !> \brief Define a moment of a product of existing fields components.
-
-  !> Moment ids are based on the moment creation order, starting at 0.
-
-  !> Moments will involve the tensor products of their component fields,
-  !> and only scalar, vector, or rank-2 tensors are handled (for
-  !> post-processing output reasons), so a moment may not involve more than
-  !> 2 vectors or 1 tensor, unless single components are specified.
-  !>
-  !> \param[in]   name          name of associated moment
-  !> \param[in]   n_fields      number of associated fields
-  !> \param[in]   field_id      ids of associated fields
-  !> \param[in]   component_id  ids of matching field components (-1 for all)
-  !> \param[in]   type          moment type
-  !> \param[in]   nt_start      starting time step (or -1 to use t_start)
-  !> \param[in]   t_start       starting time
-  !> \param[in]   restart_id    -2: automatic, -1: reset, >= 0: id of
-  !>                            matching moment in restart data
-  !> \param[out]  moment_id     id of new moment in case of success,
-  !>                            -1 in case of error.
-
-  subroutine time_moment_define_by_field_ids(name, n_fields,                   &
-                                             field_id, component_id,           &
-                                             type, nt_start, t_start,          &
-                                             restart_id,                       &
-                                             moment_id)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in)             :: name
-    integer, intent(in)                      :: n_fields
-    integer(c_int), intent(in), dimension(*) :: field_id, component_id
-    integer, intent(in)                      :: type, nt_start, restart_id
-    double precision, intent(in)             :: t_start
-    integer, intent(out)                     :: moment_id
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    integer(c_int) :: c_n_fields, c_type, c_nt_start, c_moment_id
-    integer(c_int) :: c_restart_id
-    real(c_double) :: c_t_start
-
-    c_name = trim(name)//c_null_char
-    c_n_fields = n_fields
-    c_type = type
-    c_nt_start = nt_start
-    c_t_start = t_start
-    c_restart_id = restart_id
-
-    c_moment_id = cs_f_time_moment_define_by_field_ids(c_name, c_n_fields,    &
-                                                       field_id,              &
-                                                       component_id, c_type,  &
-                                                       c_nt_start, c_t_start, &
-                                                       c_restart_id)
-
-    moment_id = c_moment_id
-
-  end subroutine time_moment_define_by_field_ids
 
   !=============================================================================
 

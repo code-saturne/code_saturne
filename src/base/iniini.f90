@@ -400,7 +400,6 @@ nscapp = 0
 nscasp = 0
 nvar   = 0
 nproce = 0
-nvpp   = 1
 
 !===============================================================================
 ! 5. POSITION DES VARIABLES DE numvar.f90
@@ -998,30 +997,7 @@ nctsmt = 0
 
 nfpt1t = 0
 
-! --- Calcul des moyennes temporelles
-
-
-do imom = 1, nbmomx
-  ! Pas de temps de depart (-1 : jamais)
-  ntdmom(imom) = -1
-  ! start time
-  ttdmom(imom) = 0.d0
-  !Ancien moment a relire ou -1 pour (re)initialisation
-  imoold(imom) = -2
-enddo
-
-!     Variables composant les moments
-do ii = 1, ndgmox
-  do imom = 1, nbmomx
-    idfmom(1,ii,imom) = -1
-    idfmom(2,ii,imom) = -1
-  enddo
-enddo
-
 !     Non utilisateur
-
-!       Nombre de moments
-nbmomt = 0
 
 ! --- Calcul de la distance a la paroi
 !     Seules variables utilisateur : ICDPAR, IWARNY

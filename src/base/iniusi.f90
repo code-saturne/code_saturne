@@ -86,7 +86,7 @@ implicit none
 
 ! Local variables
 
-integer          n_fields, nmodpp
+integer          n_fields, nmodpp, n_moments, imom, ipp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
@@ -407,9 +407,6 @@ if (iihmpr.eq.1) then
   call uiprop (ivisls, ismago, iale, icp)
   !==========
 
-  call uimoyt (ndgmox, ntdmom, ttdmom, imoold, idfmom)
-  !==========
-
   call uiipsu(iporos)
   !==========
 
@@ -441,9 +438,18 @@ endif
 call comcoc(imrgra)
 
 ! --- Varpos
-!      1er passage
 call varpos
 !==========
+
+call cs_gui_time_moments
+call cs_user_time_moments
+
+! Time moments
+
+n_moments = cs_time_moment_n_moments()
+do imom = 1, n_moments
+  ipp = field_post_id(time_moment_field_id(imom))
+enddo
 
 !===============================================================================
 ! 5. INITIALISATION DE PARAMETRES UTILISATEUR (entree sorties)

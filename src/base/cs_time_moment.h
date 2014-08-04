@@ -237,6 +237,25 @@ int
 cs_time_moment_n_moments_restart(void);
 
 /*----------------------------------------------------------------------------
+ * Define a moment restart mode and name by an id.
+ *
+ * This is a utility function, to allow simplification of automatic setups.
+ * It must be called just before defining a moment to work properly if
+ * restart_id < -1 (automatic mode).
+ *
+ * parameters:
+ *   restart_id   <--  -2: automatic, -1: reset, >= 0: id of
+ *                     matching moment in restart data
+ *   restart_mode -->  matching restart mode
+ *   restart_name -->  matching restart name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_restart_options_by_id(int                         restart_id,
+                                     cs_time_moment_restart_t   *restart_mode,
+                                     const char                **restart_name);
+
+/*----------------------------------------------------------------------------
  * Return name of a given time moments in the restart file, if any
  *   (check also \ref cs_time_moment_n_moments_restart).
  *

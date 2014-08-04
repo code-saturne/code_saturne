@@ -85,7 +85,7 @@ enddo
 
 !===============================================================================
 ! 2. ENTREE DES DONNEES PAR L'UTILISATEUR
-!      ET POSITIONNEMENT DES VARIABLES (VARPOS)
+!      ET POSITIONNEMENT DES VARIABLES
 !===============================================================================
 
 call iniusi

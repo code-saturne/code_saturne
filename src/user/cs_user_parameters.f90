@@ -101,6 +101,7 @@ use ppthch
 use ppincl
 use ppcpfu
 use coincl
+use cs_c_bindings
 
 !===============================================================================
 
@@ -804,7 +805,6 @@ endif
 ! Formats
 !----
 
-
 return
 end subroutine usipsc
 
@@ -1023,7 +1023,7 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, jj, imom, kscmin, kscmax
+integer ii, jj, kscmin, kscmax
 
 !===============================================================================
 
@@ -1603,50 +1603,6 @@ if (.false.) then
   almax = 0.5
 endif
 
-! --- Definition of moments
-!     (at the most nbmomx moments, correlations of maximum order ndgmox)
-
-!     We calculate temporal means of the type <f1*f2*f3*...*fn>
-!     The fi's are cell-defined variables.
-
-!        idfmom(1,i,imom) identifies the field id of moment imom
-!        idfmom(2,i,imom) identifies the matching field components
-!          (O to n-1 numbering, -1 for all)
-!        imoold(imom) defines in the case of a restart the number, in the
-!          previous calculation, of the moment to use to initialize moment
-!          imom of the new calculation (by default imoold(imom)=imom).
-!            Value -1 indicates the we must reinitialize moment imom.
-!        ntdmom(imom) defined the time step at which the moment calculation
-!          is started.
-!        ttdmom(imom) defines the time at which the moment calculation is started.
-
-!     We give below the example of the calculation of moments <u> and <rho u v>
-!       the moment <u> is reread in the restart file if we are restarting,
-!         the moment <rho u v> is reinitialized to zero.
-!       Moment <u> is calculated starting from time step 1000
-!         Moment <rho u v> is calculated from time step 10000.
-
-if (.false.) then
-
-  ! First moment: <u>
-  imom  = 1
-  idfmom(1,1,imom) =  ivarfl(iu)
-  idfmom(2,1,imom) =  0
-  ntdmom(imom)   =  1000
-  ttdmom(imom)   =  0.d0
-
-  ! Second moment: <rho u v>
-  ! imom  = 2
-  ! idfmom(1,1,imom) = iprpfl(irom)
-  ! idfmom(1,2,imom) = ivarfl(iu)
-  ! idfmom(2,2,imom) = 0
-  ! idfmom(1,3,imom) = ivarfl(iu)
-  ! idfmom(2,3,imom) = 1
-  ! ntdmom(imom)   =  10000
-  ! ttdmom(imom)   =  10.d0
-
-endif
-
 !----
 ! Formats
 !----
@@ -1713,7 +1669,7 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, ipp, imom, idirac, icla, icha, f_id
+integer ii, ipp, idirac, icla, icha, f_id
 integer idimve, iesp
 
 !===============================================================================
@@ -1740,7 +1696,7 @@ integer idimve, iesp
 !===============================================================================
 
 !===============================================================================
-! 1. Input-output (entsor)
+! 1. Logging
 !===============================================================================
 
 ! Frequency of log output
@@ -1765,6 +1721,10 @@ if (.false.) then
   iwarni(iw) = 2
 
 endif
+
+!===============================================================================
+! 2. Definition of probes
+!===============================================================================
 
 ! --- probes output step
 
@@ -1801,17 +1761,14 @@ if (.false.) then
 
 endif
 
-! Per variable output control
+!===============================================================================
+! 3. Fine control of variables output
+!===============================================================================
+
+! Per variable output control.
 ! Many more examples are provided in cs_user_parameters-output.f90
 
 ! User scalar variables.
-
-! We may modify here the arrays relative to user scalars, but scalars
-!   reserved for specific physics are handled automatically. This explains
-!   the tests on 'nscaus', which ensure that the targeted scalars are
-!   truly user scalars.
-! By specific physics, we mean only those which are handled in specific
-!   modules of the code, such as coal, combustion, electric arcs (see usppmo).
 
 if (.false.) then
 
@@ -1820,7 +1777,7 @@ if (.false.) then
     call field_set_key_str(f_id, keylbl, 'Scalar 1')
     call field_set_key_int(f_id, keyvis, 1)
     call field_set_key_int(f_id, keylog, 1)
-    ipp = ipprtp(isca(1))
+    ipp = field_post_id(f_id)
     ihisvr(ipp,1)= -1
   endif
 
@@ -1829,16 +1786,11 @@ if (.false.) then
     call field_set_key_str(f_id, keylbl, 'Scalar 2')
     call field_set_key_int(f_id, keyvis, 1)
     call field_set_key_int(f_id, keylog, 1)
-    ipp = ipprtp(isca(2))
+    ipp = field_post_id(f_id)
     ihisvr(ipp,1)= -1
   endif
 
 endif
-
-!----
-! Formats
-!----
-
 
 return
 end subroutine usipes

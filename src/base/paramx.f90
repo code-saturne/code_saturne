@@ -36,15 +36,9 @@ module paramx
 
   !=============================================================================
 
-  ! nprcmx : nombre max de proprietes physiques aux cellules (total) =
+  ! npromx : nombre max de proprietes physiques aux cellules (total) =
   !          nscamx (Lambda) + 7 (rho,Cp,viscl,visct,cou,fou,iprtot)
   !                          + 4 (estim)
-  ! nprfmx : nombre max de proprietes physiques aux faces internes =
-  !          nscamx (flumas) + 2*(flumas,alp)
-  ! nprbmx : nombre max de proprietes physiques aux faces de bord =
-  !          nscamx (flumab) + 3*(flumab,alp, romb)
-  ! npromx : nombre max de proprietes physiques tout confondu
-  !          majore par nprcmx+nprfmx+nprbmx
   ! ngrdmx : nombre max de grandeurs =
   !          nvarmx + npromx
   ! nsmamx : nombre max de cases pour les tableaux termes source de masse
@@ -64,19 +58,6 @@ module paramx
 
   !> maximal number of physical properties at cells.
   !> = nscamx (Lambda) + 7 (rho,Cp,viscl,visct,cou,fou,iprtot) + 4 (estim)
-  integer   nprcmx
-
-  !> maximal number of physical properties at internal faces.
-  !> = nscamx (flumas) + 2*(flumas,alp)
-  integer   nprfmx
-
-  !> maximal number of physical properties at external faces.
-  !> = nscamx (flumab) + 3*(flumab,alp, romb)
-  integer   nprbmx
-
-  !> maximal number of physical properties,
-  !> increased by nprcmx.
-  !> They will be stored in the arrays \c propce
   integer   npromx
 
   !> maximal number of physical quantities
@@ -93,12 +74,9 @@ module paramx
 
   parameter(nscamx=200)
   parameter(nvarmx=nscamx+12)
-  parameter(nprcmx=nscamx+11)
-  parameter(nprfmx=nscamx+ 2)
-  parameter(nprbmx=nscamx+ 3)
-  parameter(npromx=nprcmx+ nprfmx+nprbmx)
-  parameter(ngrdmx=nvarmx+ npromx)
-  parameter(nsmamx=nvarmx+ 1)
+  parameter(npromx=nscamx+11)
+  parameter(ngrdmx=nvarmx+npromx)
+  parameter(nsmamx=nvarmx+1)
   parameter(nvppmx=ngrdmx+20)
 
   !> Maximal possible boundary condition types
@@ -337,13 +315,6 @@ module paramx
   !> appears in its calculation and induces a weighting effect.
   integer   iestot
   parameter (iespre=1, iesder=2, iescor=3, iestot=4)
-
-  !> maximum number of calculated time-averages (default value: 50)
-  integer    nbmomx
-
-  !> maximum degree of the time-averages (default value: 5)
-  integer   ndgmox
-  parameter (nbmomx = 50, ndgmox = 5)
 
   ! conditions aux limites possibles pour la vitesse de maillage en ale
 

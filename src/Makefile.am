@@ -100,7 +100,7 @@ $(top_srcdir)/src/base/cstphy.f90: paramx.lo
 $(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo field.lo field_operator.lo
 $(top_srcdir)/src/base/cs_f_interfaces.f90: cs_c_bindings.lo paramx.lo dimens.lo mesh.lo optcal.lo field.lo lagdim.lo
 $(top_srcdir)/src/base/cs_field_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo
-$(top_srcdir)/src/base/entsor.f90: paramx.lo
+$(top_srcdir)/src/base/entsor.f90: paramx.lo field.lo
 $(top_srcdir)/src/base/mltgrd.f90: paramx.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo field.lo numvar.lo

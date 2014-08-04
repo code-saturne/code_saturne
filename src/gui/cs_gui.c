@@ -78,6 +78,7 @@
 #include "cs_partition.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
+#include "cs_time_moment.h"
 #include "cs_physical_properties.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
@@ -1269,6 +1270,30 @@ _get_time_average_n_variables(const int id)
   BFT_FREE(path);
 
   return number;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the label model's property.
+ *
+ * parameters:
+ *   moment_id  <-- moment id
+ *----------------------------------------------------------------------------*/
+
+static char
+*_get_time_average_label(int  moment_id)
+{
+  char *path = NULL;
+  char *label_name = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
+  cs_xpath_add_attribute(&path, "label");
+
+  label_name = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label_name;
 }
 
 /*----------------------------------------------------------------------------
@@ -3436,59 +3461,6 @@ void CS_PROCF (uiprop, UIPROP) (const int *ivisls,
 
 #if _XML_DEBUG_
   bft_printf("==>UIPROP %i\n",*iappel);
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Temporal averaging treatment
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uimoyt, UIMOYT) (const int    *ndgmox,
-                                      int    *ntdmom,
-                                      double *ttdmom,
-                                      int    *imoold,
-                                      int    *idfmom)
-{
-  int imom = 0;
-  int isuite = 0;
-  char *name = NULL;
-
-  int ntimaver = cs_gui_get_tag_number("/analysis_control/time_averages/time_average", 1);
-
-  /* for each average */
-  for (int i = 0; i < ntimaver; i++) {
-
-    imom = i + 1;
-
-    _get_time_average_data(imom, "time_step_start", &ntdmom[i]);
-
-    if (ntdmom[i] == -1)
-      _get_time_average_time_start(imom, "time_start", &ttdmom[i]);
-
-    /* test on isuite */
-    cs_gui_restart_parameters_status("restart", &isuite);
-
-    if (isuite != 0) {
-      _get_time_average_data(imom, "restart_from_time_average", &imoold[i]);
-      if (imoold[i] == imom) imoold[i] = -2;
-    }
-
-    for (int n = 0; n < _get_time_average_n_variables(imom); n++) {
-
-      name = _get_time_average_variable_name(imom, n + 1);
-      int idim = _get_time_average_component(imom, n + 1);
-
-      cs_field_t *f = cs_field_by_name_try(name);
-      idfmom[((imom-1)*(*ndgmox) + n)*2 + 0] = f->id;
-      idfmom[((imom-1)*(*ndgmox) + n)*2 + 1] = idim;
-      BFT_FREE(name);
-    }
-  }
-#if _XML_DEBUG_
-  bft_printf("==>UIMOYT\n");
-  for (i = 0; i < ntimaver; i++) {
-    bft_printf("-->ntdmom =  %i\n", ntdmom[i]);
-  }
 #endif
 }
 
@@ -5762,6 +5734,88 @@ cs_gui_parallel_io(void)
   }
 
 #endif /* defined(HAVE_MPI) */
+}
+
+/*----------------------------------------------------------------------------
+ * Time moments definition
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_time_moments(void)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  int imom = 0;
+  int isuite = 0;
+
+  int ntimaver
+    = cs_gui_get_tag_number("/analysis_control/time_averages/time_average", 1);
+
+  /* for each average */
+  for (int i = 0; i < ntimaver; i++) {
+
+    imom = i + 1;
+
+    const char *restart_name;
+    cs_time_moment_restart_t  restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
+    int nt_start = 0, restart_id = 0;
+    double t_start = -1;
+
+    char *m_name = _get_time_average_label(i);
+
+    _get_time_average_data(imom, "time_step_start", &nt_start);
+    _get_time_average_time_start(imom, "time_start", &t_start);
+
+    /* test on isuite */
+    cs_gui_restart_parameters_status("restart", &isuite);
+
+    if (isuite != 0) {
+      _get_time_average_data(imom, "restart_from_time_average", &restart_id);
+      if (restart_id == imom) restart_id = -2;
+      cs_time_moment_restart_options_by_id(restart_id,
+                                           &restart_mode,
+                                           &restart_name);
+    }
+
+    int n_m_fields = _get_time_average_n_variables(imom);
+    int *m_f_id, *m_c_id;
+
+    BFT_MALLOC(m_f_id, n_m_fields*2, int);
+    m_c_id = m_f_id + n_m_fields;
+
+    for (int j = 0; j < n_m_fields; j++) {
+
+      char *f_name = _get_time_average_variable_name(imom, j + 1);
+      int idim = _get_time_average_component(imom, j + 1);
+
+      cs_field_t *f = cs_field_by_name_try(f_name);
+
+      m_f_id[j] = f->id;
+      m_c_id[j] = idim;
+
+      BFT_FREE(f_name);
+    }
+
+    int m_id = cs_time_moment_define_by_field_ids(m_name,
+                                                  n_m_fields,
+                                                  m_f_id,
+                                                  m_c_id,
+                                                  CS_TIME_MOMENT_MEAN,
+                                                  nt_start,
+                                                  t_start,
+                                                  restart_mode,
+                                                  restart_name);
+
+    m_c_id = NULL;
+    BFT_FREE(m_f_id);
+    BFT_FREE(m_name);
+
+  }
+#if _XML_DEBUG_
+  bft_printf("==>UIMOYT\n");
+  }
+#endif
 }
 
 /*-----------------------------------------------------------------------------

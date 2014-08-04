@@ -80,7 +80,7 @@ if (ippmod(icompf).ge.0) then
                             'Specific_Heat_Const_Vol', &
                             icv)
     call hide_property(icv)
-    ihisvr(nvpp,1) = 0
+    ihisvr(field_post_id(iprpfl(icv)),1) = 0
   endif
 
   if (iviscv.ne.0) then
@@ -88,7 +88,7 @@ if (ippmod(icompf).ge.0) then
                             'Volume_Viscosity', &
                             iviscv)
     call hide_property(iviscv)
-    ihisvr(nvpp,1) = 0
+    ihisvr(field_post_id(iprpfl(iviscv)),1) = 0
   endif
 
 ! Nb algebraic (or state) variables

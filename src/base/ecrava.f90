@@ -107,9 +107,6 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
-integer          nbmom2
-parameter       (nbmom2=nbmomx*2)
-
 character*80     fname
 character        rubriq*64,car2*2,car4*4,car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
@@ -224,9 +221,6 @@ if (nscamx.gt.nfmtsc) then
 endif
 if (nvarmx.gt.nfmtfl) then
   write(nfecra,7002)nfmtfl,nvarmx
-endif
-if (nbmomx.gt.nfmtmo) then
-  write(nfecra,7003)nfmtmo,nbmomx
 endif
 if (ncharm.gt.nfmtch) then
   write(nfecra,7004)nfmtch,ncharm
@@ -1937,27 +1931,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7003 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      Le nombre de moments       max NBMOMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTMO = ',i10                                       ,/,&
-'@      On a ici un nombre de moments   maximal superieur     ',/,&
-'@        NBMOMX = ',i10                                       ,/,&
-'@      On ne pourra pas relire les moments   dont le numero  ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme ecrava.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7004 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2102,26 +2075,6 @@ return
 '@      The current maximum number of mass fluxes is greater. ',/,&
 '@        NVARMX = ',i10                                       ,/,&
 '@      The fluxes with a larger number will not be read.     ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@    Refer to the subroutine ecrava.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7003 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@      The maximum number of moments NBMOMX handled by the   ',/,&
-'@        restart file writing format is                      ',/,&
-'@        NFMTMO = ',i10                                       ,/,&
-'@      The current maximum number of moments is greater.     ',/,&
-'@        NBMOMX = ',i10                                       ,/,&
-'@      The moments with a larger number will not be read.    ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&

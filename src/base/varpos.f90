@@ -71,20 +71,15 @@ implicit none
 ! Local variables
 
 integer       iscal , id, f_dim, ityloc, itycat
-integer       ii    , jj
+integer       ii
 integer       iok   , ippok
 integer       ivisph
-integer       imom  , idgmom, mom_id, nfld, f_id, m_dim
-integer       idffin
-integer       inmfin
 integer       nprmax
 integer       idttur
-logical       ilved
 
 double precision gravn2
 
-character(len=80) :: f_label, f_name, s_label, s_name
-integer(c_int), dimension(ndgmox) :: mom_f_id, mom_c_id
+character(len=80) :: f_name, s_label, s_name
 
 !===============================================================================
 ! 0. INITIALISATIONS
@@ -454,128 +449,10 @@ if (nscal.ge.1) then
 endif
 
 !===============================================================================
-! 2. POSITIONNEMENT DES PROPRIETES POUR LES MOMENTS
+! 2. POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
 !===============================================================================
 
-! 2.2 CALCUL DE LA TAILLE DU TABLEAU DES TEMPS CUMULES POUR LES MOMENTS
-! ---------------------------------------------------------------------
-
-! Pour verification des definitions de moments
-iok = 0
-
-! Calcul du nombre de moments definis (et verif qu'il n y a pas de trous)
-nbmomt = 0
-inmfin = 0
-do imom = 1, nbmomx
-  ! Si on n'est pas a la fin de la liste
-  if (inmfin.eq.0) then
-    ! Si il y en a, ca en fait en plus
-    if (idfmom(1,1,imom).gt.-1) then
-      nbmomt = nbmomt + 1
-      ! Si il n'y en a pas, c'est la fin de la liste
-    else
-      inmfin = 1
-    endif
-    ! Si on est a la fin de la liste, il n'en faut plus
-  else
-    if (idfmom(1,1,imom).gt.-1) then
-      iok = iok + 1
-    endif
-  endif
-enddo
-
-if (iok.ne.0) then
-  write(nfecra,8200)nbmomt+1,idfmom(1,1,nbmomt+1),nbmomt,nbmomt
-  do imom = 1, nbmomx
-    write(nfecra,8201)imom,idfmom(1,1,imom)
-  enddo
-  write(nfecra,8202)
-endif
-
-! Verification de IDFMOM
-iok = 0
-call field_get_n_fields(nfld)
-do imom = 1, nbmomx
-  idffin = 0
-  do jj = 1, ndgmox
-    f_id = idfmom(1,jj,imom)
-    if (idffin.eq.0) then
-      if (f_id.ge.nfld) then
-        iok = iok + 1
-        write(nfecra,8210)jj,imom,f_id,nfld
-      else if (f_id.lt.0) then
-        idffin = 1
-      else
-        call field_get_dim(f_id, f_dim, ilved)
-        if (idfmom(2,jj,imom).ge.f_dim) then
-          write(nfecra,8211) imom, jj, idfmom(2,jj,imom), f_id, f_dim
-          iok = iok + 1
-        endif
-      endif
-    else
-      if (f_id.ne.-1) then
-        iok = iok + 1
-        write(nfecra,8213)imom,jj,f_id
-      endif
-    endif
-  enddo
-enddo
-
-if (iok.ne.0) then
-  call csexit(1)
-endif
-
-
-! 2.3 Define moments and set associated postprocessing id
-! -------------------------------------------------------
-
-do imom = 1, nbmomt
-
-  write(f_name, '(a, i3.3)') 'moment_', imom
-  write(f_label, '(a, i2.2)') 'TemporalMean', imom
-
-  idgmom = 0
-  do ii = 1, ndgmox
-    if (idfmom(1,ii,imom).ge.0) then
-      idgmom = idgmom + 1
-      mom_f_id(idgmom) = idfmom(1,ii,imom)
-      mom_c_id(idgmom) = idfmom(2,ii,imom)
-    endif
-  enddo
-
-  call time_moment_define_by_field_ids(f_name, idgmom,                    &
-                                       mom_f_id, mom_c_id,                &
-                                       0, ntdmom(imom), ttdmom(imom),     &
-                                       imoold(imom), mom_id)
-  id = time_moment_field_id(mom_id+1)
-
-  call field_set_key_int(id, keyvis, 1)
-  call field_set_key_int(id, keylog, 1)
-  call field_set_key_str(id, keylbl, trim(f_label))
-
-  ! Mapping to field
-
-  call field_get_dim(id, m_dim, ilved)
-
-  ! Postprocessing slots
-
-  call field_set_key_int(id, keyipp, nvpp + 1)
-  nvpp = nvpp + m_dim
-
-enddo
-
-
-! 2.4 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
-! ---------------------------------------------------------------
-
 ! Les pointeurs ont ete initialises a 1 (poubelle) dans iniini.
-
-! On posttraitera les variables localisees au centre des cellules.
-
-! ipppro(ipproc(ii)) pour propce a ete complete plus haut
-! au fur et a mesure (voir ppprop en particulier)
-
-! Le rang de la derniere propriete pour le post est IPPPST.
 
 ! Local time step
 
@@ -589,9 +466,7 @@ if (idtvar.gt.0) then
     call field_set_key_int(id, keylog, 1)
     call field_set_key_int(id, keyvis, 1)
   endif
-  ippdt = nvpp + 1
-  nvpp = nvpp + 1
-  call field_set_key_int(id, keyipp, ippdt)
+  ippdt = field_post_id(id)
 endif
 
 itycat = FIELD_INTENSIVE
@@ -603,19 +478,9 @@ if (ipucou.ne.0 .or. ncpdct.gt.0) then
   call field_create('dttens', itycat, ityloc, 6, .true., .false., idtten)
   call field_set_key_int(idtten, keyvis, 1)
   call field_set_key_int(idtten, keylog, 1)
-  ipptx = nvpp + 1
-  ippty = nvpp + 2
-  ipptz = nvpp + 3
-  nvpp  = nvpp + 3
-  call field_set_key_int(idtten, keyipp, ipptx)
-endif
-
-! Verification de la limite sur NVPP
-
-if (nvpp.gt.nvppmx) then
-  write(nfecra,8900)nvpp,nvppmx
-  call csexit (1)
-  !==========
+  ipptx = field_post_id(id)
+  ippty = ipptx + 1
+  ipptz = ippty + 1
 endif
 
 return
@@ -840,114 +705,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8200 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA VERIFICATION DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@      SUR LA LISTE DES MOYENNES TEMPORELLES                 ',/,&
-'@                                                            ',/,&
-'@    La valeur de IDFMOM(1,',I10   ,' est ',I10               ,/,&
-'@      ceci indique que l''on a defini ',I10   ,' moyennes   ',/,&
-'@      temporelles en renseignant les IMOM = ',I10            ,/,&
-'@      premieres cases du tableau IDFMOM(.,IMOM).            ',/,&
-'@    Les cases suivantes devraient etre nulles.              ',/,&
-'@                                                            ',/,&
-'@    Ce n''est cependant pas le cas :                        ',/,&
-'@                                                            ',/,&
-'@        IMOM    IDFMOM(1,IMOM)                              ',/,&
-'@  ----------------------------                              '  )
- 8201 format(                                                     &
-'@  ',I10   ,'        ',     I10                                 )
- 8202 format(                                                     &
-'@  ----------------------------                              ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas  execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier les parametres.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8210 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA VERIFICATION DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@      SUR LES VARIABLES COMPOSANT LES MOYENNES TEMPORELLES  ',/,&
-'@                                                            ',/,&
-'@    IDFMOM(1, ',I10   ,',',I10   ,') = ',I10                 ,/,&
-'@      Or il n y en a que ', I10, ' champs deja definis.'     ,/,&
-'@    La valeur de IDFMOM est donc erronee.                   ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier les parametres.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8211 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA VERIFICATION DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@      SUR LES VARIABLES COMPOSANT LES MOYENNES TEMPORELLES  ',/,&
-'@                                                            ',/,&
-'@    La valeur                                               ',/,&
-'@      IDFMOM(2, ',I10   ,',',I10   ,') = ', I10              ,/,&
-'@        mais le champ ', I10, ' a ', I10, ' composantes.    ',/,&
-'@    La valeur de IDFMOM est donc erronee.                   ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier les parametres.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8213 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA VERIFICATION DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@      SUR LES VARIABLES COMPOSANT LES MOYENNES TEMPORELLES  ',/,&
-'@                                                            ',/,&
-'@    Le tableau IDFMOM(1,JJ,IMOM) pour IMOM = ',I10           ,/,&
-'@      doit etre renseigne continuement. Or ici,             ',/,&
-'@      IDFMOM(1,',I10,',IMOM) est non nul (=',I10   ,')      ',/,&
-'@      alors qu il existe II < JJ pour lequel                ',/,&
-'@      IDFMOM(1,II,IMOM) est nul.                            ',/,&
-'@    La valeur de IDFMOM est donc erronee.                   ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier les parametres.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8900 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE VARIABLES A SUIVRE TROP GRAND                ',/,&
-'@                                                            ',/,&
-'@  Le type de calcul defini                                  ',/,&
-'@    correspond a un nombre de variables a suivre dans       ',/,&
-'@    le listing et le post-processing egal a      ',I10       ,/,&
-'@  Le nombre de variables a suivre maximal prevu             ',/,&
-'@                      dans paramx.h est NVPPMX = ',I10       ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@  Contacter l assistance.                                   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 #else
 
@@ -1162,113 +919,6 @@ return
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
 '@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8200 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE VERIFICATION OF DATA            ',/,&
-'@    =========                                               ',/,&
-'@      ON THE LIST OF TEMPORAL AVERAGES                      ',/,&
-'@                                                            ',/,&
-'@    The value of IDFMOM(1,',I10   ,' is  ',I10               ,/,&
-'@      this indicates that ',I10   ,' temporal averages have ',/,&
-'@      been defined to find out the   IMOM = ',I10            ,/,&
-'@      first locations of the array IDFMOM(.,IMOM).          ',/,&
-'@    The follwing locations should be zero.                  ',/,&
-'@                                                            ',/,&
-'@    This however, is not the case  :                        ',/,&
-'@                                                            ',/,&
-'@        IMOM    IDFMOM(1,IMOM)                              ',/,&
-'@  ----------------------------                              '  )
- 8201 format(                                                     &
-'@  ',I10   ,'        ',     I10                                 )
- 8202 format(                                                     &
-'@  ----------------------------                              ',/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@    Verify   parameters.                                    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8210 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE VERIFICATION OF DATA            ',/,&
-'@    =========                                               ',/,&
-'@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
-'@                                                            ',/,&
-'@    IDFMOM(1, ',I10   ,',',I10   ,') = ',I10                 ,/,&
-'@      but there are only ', I10, ' fields already defined.'  ,/,&
-'@    The value of IDFMOM is wrongly.                         ',/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@    Verify   parameters.                                    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8211 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE VERIFICATION OF DATA            ',/,&
-'@    =========                                               ',/,&
-'@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
-'@                                                            ',/,&
-'@    IDFMOM(2, ',I10   ,',',I10   ,') = ', I10                ,/,&
-'@      but field ', I10, ' has ', I10, ' components.         ',/,&
-'@    The value of IDFMOM is wrongly.                         ',/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@    Verify   parameters.                                    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8213 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE VERIFICATION OF DATA            ',/,&
-'@    =========                                               ',/,&
-'@    ON THE VARIABLES THAT CONSTITUTE THE TEMPORAL AVERAGES  ',/,&
-'@                                                            ',/,&
-'@    The array  IDFMOM(1,JJ,IMOM) for  IMOM = ',I10           ,/,&
-'@      must be assigned continuously.     Yet here,          ',/,&
-'@      IDFMOM(1,',I10,',IMOM) is not zero (=',I10   ,')      ',/,&
-'@      while it exists    II < JJ for which                  ',/,&
-'@      IDFMOM(1,II,IMOM) is zero.                            ',/,&
-'@    The value of IDFMOM is wrongly set.                     ',/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@    Verify   parameters.                                    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8900 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NAME OF THE VARIABLE TO BE CONTINUED TOO LARGE         ',/,&
-'@                                                            ',/,&
-'@  The type of calcultion defined                            ',/,&
-'@    corresponds to a number of variables to continue in     ',/,&
-'@    the listing and  post-processing equal to    ',I10       ,/,&
-'@  The maximum number of variables to continue in            ',/,&
-'@                           paramx.h is  NVPPMX = ',I10       ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@  Contact help.                                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

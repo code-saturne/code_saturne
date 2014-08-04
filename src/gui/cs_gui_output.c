@@ -727,30 +727,6 @@ _time_moment_number_probes(int moment_id)
 }
 
 /*-----------------------------------------------------------------------------
- * Return the label model's property.
- *
- * parameters:
- *   moment_id  <-- moment id
- *----------------------------------------------------------------------------*/
-
-static char
-*_time_moment_label(int  moment_id)
-{
-  char *path = NULL;
-  char *label_name = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
-  cs_xpath_add_attribute(&path, "label");
-
-  label_name = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label_name;
-}
-
-/*-----------------------------------------------------------------------------
  * Post-processing options for time moments
  *
  * parameters:
@@ -808,12 +784,6 @@ _time_moment_post(int         f_id,
           ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
     }
   }
-
-  /* Take into account labels */
-
-  label = _time_moment_label(moment_id);
-  if (label != NULL)
-    cs_field_set_key_str(f, k_lbl, label);
 
   BFT_FREE(label);
 }

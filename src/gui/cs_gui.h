@@ -338,16 +338,6 @@ void CS_PROCF (uiprop, UIPROP) (const int  *ivisls,
                                 const int  *icp);
 
 /*----------------------------------------------------------------------------
- * Temporal averaging treatment
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uimoyt, UIMOYT) (const int  *ndgmox,
-                                int        *ntdmom,
-                                double     *ttdmom,
-                                int        *imoold,
-                                int        *idfmom);
-
-/*----------------------------------------------------------------------------
  * Turbulence initialization parameters.
  *
  * Fortran Interface:
@@ -654,6 +644,13 @@ cs_gui_partition(void);
 
 void
 cs_gui_parallel_io(void);
+
+/*----------------------------------------------------------------------------
+ * Time moments definition
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_time_moments(void);
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables

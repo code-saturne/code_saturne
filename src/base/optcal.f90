@@ -801,32 +801,6 @@ module optcal
   !> \}
 
   !----------------------------------------------------------------------------
-  ! Temporal mean and moments calculation
-  !----------------------------------------------------------------------------
-
-  !> \defgroup mean_moments Temporal mean and moments calculation
-
-  !> \addtogroup mean_moments
-  !> \{
-
-  !> number of moments
-  integer, save ::          nbmomt
-
-  !> initial time step for computing the moment
-  integer, save ::          ntdmom(nbmomx)
-
-  !> number of the previous matching moment for restarts
-  integer, save ::          imoold(nbmomx)
-
-  !> field and component ids whose product defines moment idfmom(ic,jj,imom)
-  integer, save ::          idfmom(2,ndgmox,nbmomx)
-
-  !> initial time for computing the moment
-  double precision, save :: ttdmom(nbmomx)
-
-  !> \}
-
-  !----------------------------------------------------------------------------
   ! Additional source terms
   !----------------------------------------------------------------------------
 

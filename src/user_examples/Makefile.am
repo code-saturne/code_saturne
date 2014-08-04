@@ -104,8 +104,9 @@ cs_user_lagrangian_particle_tracking_module.f90 \
 cs_user_les_inflow-base.f90 \
 cs_user_mesh-groups_from_free_faces.c \
 cs_user_porosity.f90 \
-cs_user_parameters-output.f90 \
 cs_user_parameters-cavitation.f90 \
+cs_user_parameters-output.f90 \
+cs_user_parameters-time_moments.c \
 cs_user_physical_properties-scalar_drift.f90 \
 cs_user_physical_properties-coal_drift.f90 \
 cs_user_postprocess-sfc.c \

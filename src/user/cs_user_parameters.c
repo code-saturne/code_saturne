@@ -60,6 +60,7 @@
 #include "cs_gui_util.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
@@ -67,7 +68,9 @@
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_parameters.h"
+#include "cs_physical_constants.h"
 #include "cs_prototypes.h"
+#include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
@@ -161,6 +164,22 @@ cs_user_model(void)
                                1,
                                CS_MESH_LOCATION_BOUNDARY_FACES);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define time moments.
+ *
+ * This function is called at the setup stage, once user and most model-based
+ * fields are defined, and before fine control of field output options
+ * is defined.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_time_moments(void)
+{
+
 }
 
 /*----------------------------------------------------------------------------*/

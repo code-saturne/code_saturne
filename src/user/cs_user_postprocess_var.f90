@@ -273,7 +273,7 @@ if (ipart .eq. -1) then
   !   <uu> for imom=2
   ! We seek to plot <u'u'>=<uu>-<U>**2
 
-  if (nbmomt .ge. 2) then
+  if (cs_time_moment_n_moments() .ge. 2) then
 
     ! Moment numbers:
     imom1 = 1

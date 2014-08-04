@@ -129,7 +129,7 @@ integer          ierror, irtyp,  itysup, nbval
 integer          nberro, inierr, ivers
 integer          ilu   , ilecec, ideblu, iannul, ierrch
 integer          impamx
-integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
+integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
 integer          jturb , jtytur, jale, jcavit
 integer          f_id, nfld, iflmas, iflmab, iflvoi, iflvob
@@ -159,7 +159,6 @@ write(nfecra,1000)
 !     Nombre max pour les formats choisis
 nfmtsc = 9999
 nfmtfl = 9999
-nfmtmo = 9999
 nfmtch = 99
 nfmtcl = 9999
 
@@ -180,9 +179,6 @@ if(nscamx.gt.nfmtsc) then
 endif
 if(nvarmx.gt.nfmtfl) then
   write(nfecra,8002)nfmtfl,nvarmx
-endif
-if(nbmomx.gt.nfmtmo) then
-  write(nfecra,8003)nfmtmo,nbmomx
 endif
 
 !===============================================================================

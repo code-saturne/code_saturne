@@ -61,9 +61,6 @@ implicit none
   !> They will be stored in the array \ref propce
   integer, save :: nproce
 
-  !> number of displayed variables (for probes).
-  integer, save :: nvpp
-
   !> fake dimension for arrays coefa and coefb
   !> where \ref nfabor = 0 (to avoid issues with array bounds when
   !> multidimensional arrays have size nfabor in one dimension)

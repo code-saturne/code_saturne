@@ -652,11 +652,9 @@ nvar = nvar + dim
 call fldvar_check_nvar
 
 ivarfl(ivar) = id
-ipprtp(ivar) = nvpp + 1
-nvpp = nvpp + dim
+ipprtp(ivar) = field_post_id(id)
 
 call field_set_key_int(id, keyvar, ivar)
-call field_set_key_int(id, keyipp, ipprtp(ivar))
 
 if (dim .gt. 1) then
   call field_set_key_int(id, keycpl, 1)
@@ -787,12 +785,10 @@ do id = nfld1, nfld2 - 1
 
   isca(iscal) = nvar
   ivarfl(nvar) = id
-  ipprtp(nvar) = nvpp + 1
-  nvpp = nvpp + 1
+  ipprtp(nvar) = field_post_id(id)
 
   call field_set_key_int(id, keyvar, nvar)
   call field_set_key_int(id, keysca, iscal)
-  call field_set_key_int(id, keyipp, ipprtp(nvar))
 
 enddo
 
@@ -898,12 +894,10 @@ call fldvar_check_nscapp
 isca(iscal) = nvar
 iscapp(nscapp) = iscal
 ivarfl(isca(iscal)) = id
-ipprtp(nvar) = nvpp + 1
-nvpp = nvpp + 1
+ipprtp(nvar) = field_post_id(id)
 
 call field_set_key_int(id, keyvar, nvar)
 call field_set_key_int(id, keysca, iscal)
-call field_set_key_int(id, keyipp, ipprtp(nvar))
 
 return
 
@@ -1030,18 +1024,19 @@ nscapp = nscapp + dim
 call fldvar_check_nvar
 call fldvar_check_nscapp
 
-nvpp = nvpp + dim
-
 do ii = 1, dim
   isca(iscal + ii - 1) =  nvar - dim + ii
   ivarfl(isca(iscal + ii - 1)) = id
-  ipprtp(isca(iscal + ii - 1)) = nvpp - dim + ii
   iscapp(nscapp - dim + ii) = iscal + ii - 1
+enddo
+
+ipprtp(isca(iscal)) = field_post_id(id)
+do ii = 2, dim
+  ipprtp(isca(iscal + ii - 1)) = ipprtp(isca(iscal) + ii - 1)
 enddo
 
 call field_set_key_int(id, keyvar, nvar)
 call field_set_key_int(id, keysca, iscal)
-call field_set_key_int(id, keyipp, ipprtp(isca(iscal)))
 
 if (dim .gt. 1) then
   call field_set_key_int(id, keycpl, 1)

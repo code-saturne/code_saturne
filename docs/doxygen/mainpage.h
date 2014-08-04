@@ -157,9 +157,9 @@
   shared. For example, an fvm_nodal_t structure has 2 coordinate
   arrays:
 
-  <tt>const *fvm_coord_t  vertex_coords;</tt>
+  <tt>const *cs_coord_t  vertex_coords;</tt>
 
-  <tt>*fvm_coord_t       _vertex_coords;</tt>
+  <tt>*cs_coord_t       _vertex_coords;</tt>
 
   If coordinates are shared with the calling code (and owned by that
   code), we have  <tt>_vertex_coords = NULL</tt>, and \c vertex_coords

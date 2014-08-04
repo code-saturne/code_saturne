@@ -98,7 +98,7 @@ integer          iflid, nfld
 integer          ipcrom, ipcroa
 integer          f_id
 
-integer          ifvar(nvppmx)
+integer          ifvar(nvarmx)
 
 character*80     fname
 

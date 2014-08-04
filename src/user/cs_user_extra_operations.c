@@ -68,6 +68,7 @@
 #include "cs_log.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
+#include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"

@@ -82,7 +82,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
 
 ! Local variables
 
-integer          iis   , ivar  , iscal , imom
+integer          iis   , ivar  , iscal
 integer          iel   , ifac  , isou
 integer          iclip , ii    , jj    , idim
 integer          iivisa, iivism

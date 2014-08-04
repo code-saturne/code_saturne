@@ -464,7 +464,6 @@ subroutine cf_thermo_default_init(ncel, ncelet)
 !===============================================================================
 
 use paramx
-use dimens, only: nvar
 use cstphy
 use numvar
 use optcal
@@ -1770,7 +1769,6 @@ subroutine cf_thermo_wall_bc(wbfb, ifac)
 
 use cstnum
 use paramx
-use dimens, only: nvar
 use mesh
 use numvar
 use parall
@@ -1879,7 +1877,6 @@ subroutine cf_thermo_subsonic_outlet_bc(bval, ifac)
 
 use mesh
 use paramx
-use dimens, only: nvar
 use numvar
 use parall
 use ppincl
@@ -2126,7 +2123,6 @@ subroutine cf_thermo_ph_inlet_bc(bval, ifac)
 use paramx
 use mesh
 use numvar
-use dimens, only: nvar
 use optcal
 use parall
 use ppincl

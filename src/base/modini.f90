@@ -55,13 +55,13 @@ implicit none
 
 ! Local variables
 
-integer          n_fields, f_id, f_dim
+integer          n_fields, f_id, f_dim, n_moments
 integer          ii, jj, ivar, imom, iok, ikw
 integer          icompt, ipp, nbccou, keyvar
 integer          nscacp, iscal
 integer          imrgrp
 
-logical          interleaved
+logical          interleaved, is_set
 
 double precision relxsp
 double precision omgnrm, cosdto, sindto
@@ -141,16 +141,21 @@ if (idtvar.lt.0) then
   ihisvr(ipppro(ipproc(icour)),1) = 0
   ihisvr(ipppro(ipproc(ifour)),1) = 0
 endif
-if (nbmomt.gt.0) then
-  do imom = 1, nbmomt
-    f_id = time_moment_field_id(imom)
-    call field_get_dim(f_id, f_dim, interleaved)
-    call field_get_key_int(f_id, keyipp, ipp)
-    do ii = 1, f_dim
-      if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
-    enddo
+
+n_moments = cs_time_moment_n_moments()
+
+do imom = 1, n_moments
+  f_id = time_moment_field_id(imom)
+  call field_is_key_set(f_id, keyvis, is_set)
+  if (.not. is_set) call field_set_key_int(f_id, keyvis, 1)
+  call field_is_key_set(f_id, keylog, is_set)
+  if (.not. is_set) call field_set_key_int(f_id, keylog, 1)
+  ipp = field_post_id(f_id)
+  call field_get_dim(f_id, f_dim, interleaved)
+  do ii = 1, f_dim
+    if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
   enddo
-endif
+enddo
 
 do ii = 1, nvppmx
   if (ihisvr(ii,1).eq.-999) then

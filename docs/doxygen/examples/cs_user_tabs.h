@@ -33,6 +33,7 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cs_user_extra_operations_examples "User extra operations"
    - \subpage cs_user_initialization "Physical fields user initialization"
    - \subpage les_inflow
+   - \subpage f_parameters
    - \subpage parameters
    - \subpage cavit
    - \subpage drift_coal_scalars

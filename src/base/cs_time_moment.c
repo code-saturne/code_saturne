@@ -1745,21 +1745,9 @@ cs_f_time_moment_define_by_field_ids(const char                *name,
   cs_time_moment_restart_t   restart_mode;
   const char                *restart_name = NULL;
 
-  if (restart_id < -1) {
-    restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
-    if (_restart_info_checked == false)
-      _restart_info_read();
-    if (_restart_info != NULL) {
-      if (_restart_info->legacy_mode > 0)
-        restart_name = cs_time_moment_restart_name(_n_moments);
-    }
-  }
-  else if (restart_id == -1)
-    restart_mode = CS_TIME_MOMENT_RESTART_RESET;
-  else {
-    restart_name = cs_time_moment_restart_name(restart_id);
-    restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
-  }
+  cs_time_moment_restart_options_by_id(restart_id,
+                                       &restart_mode,
+                                       &restart_name);
 
   return cs_time_moment_define_by_field_ids(name,
                                             n_fields,
@@ -2112,6 +2100,43 @@ cs_time_moment_n_moments_restart(void)
     n_restart_moments = _restart_info->n_moments;
 
   return n_restart_moments;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a moment restart mode and name by an id.
+ *
+ * This is a utility function, to allow simplification of automatic setups.
+ * It must be called just before defining a moment to work properly if
+ * restart_id < -1 (automatic mode).
+ *
+ * \param[in]   restart_id    -2: automatic, -1: reset, >= 0: id of
+ *                            matching moment in restart data
+ * \param[out]  restart_mode  matching restart mode
+ * \param[out]  restart_name  matching restart name
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_restart_options_by_id(int                         restart_id,
+                                     cs_time_moment_restart_t   *restart_mode,
+                                     const char                **restart_name)
+{
+  if (restart_id < -1) {
+    *restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
+    if (_restart_info_checked == false)
+      _restart_info_read();
+    if (_restart_info != NULL) {
+      if (_restart_info->legacy_mode > 0)
+        *restart_name = cs_time_moment_restart_name(_n_moments);
+    }
+  }
+  else if (restart_id == -1)
+    *restart_mode = CS_TIME_MOMENT_RESTART_RESET;
+  else {
+    *restart_name = cs_time_moment_restart_name(restart_id);
+    *restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
