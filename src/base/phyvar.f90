@@ -107,7 +107,7 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten
-double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -693,17 +693,16 @@ if (nscal.ge.1) then
   do iscal = 1, nscal
 
     if (ivisls(iscal).gt.0) then
-      ipcvis = ipproc(ivisls(iscal))
-    else
-      ipcvis = 0
+      call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vis)
     endif
+
 
     vismax(iscal) = -grand
     vismin(iscal) =  grand
-    if (ipcvis.gt.0) then
+    if (ivisls(iscal).gt.0) then
       do iel = 1, ncel
-        vismax(iscal) = max(vismax(iscal),viscl(iel))
-        vismin(iscal) = min(vismin(iscal),viscl(iel))
+        vismax(iscal) = max(vismax(iscal),cpro_vis(iel))
+        vismin(iscal) = min(vismin(iscal),cpro_vis(iel))
       enddo
       if (irangp.ge.0) then
         call parmax (vismax(iscal))
