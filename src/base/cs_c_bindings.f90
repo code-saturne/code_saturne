@@ -117,6 +117,20 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Return if moment is active (1) or not (0).
+
+    !> \return 1 if moment is active, 0 if not
+
+    function cs_time_moment_is_active(m_id) result(is_active)  &
+      bind(C, name='cs_time_moment_is_active')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: m_id
+      integer(c_int) :: is_active
+    end function cs_time_moment_is_active
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Update temporal moments.
 
     subroutine time_moment_update_all()  &
