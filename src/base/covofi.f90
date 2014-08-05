@@ -41,6 +41,7 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     iscal         scalar number
 !> \param[in]     itspdv        indicator to compute production/dissipation
 !>                              terms for a variance:
@@ -48,7 +49,9 @@
 !>                               - 1: yes
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     itypsm        type of mass source term for the variables
+!> \param[in]     itypcd        type of condensation source term for the variables
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
@@ -58,6 +61,9 @@
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
+!> \param[in]     spcond        variable value associated to the condensation
+!>                              source term (for ivar=ipr, spcond is the flow rate
+!>                              \f$ \Gamma_{cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     dfrcxt        variation of the external forces
 !> \param[in]                    making the hydrostatic pressure
@@ -72,11 +78,11 @@
 !_______________________________________________________________________________
 
 subroutine covofi &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp , nfbpcd ,                   &
    iscal  , itspdv ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dt     , rtp    , rtpa   , propce , tslagr ,                   &
-   ckupdc , smacel ,                                              &
+   ckupdc , smacel , spcond ,                                     &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 
@@ -117,16 +123,18 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          ncepdp , ncesmp , nfbpcd
 integer          iscal  , itspdv
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
 
 double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision spcond(nfbpcd,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
@@ -136,7 +144,7 @@ double precision rovsdt(ncelet)
 logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
-integer          ifac  , iel
+integer          ii, ifac , iel
 integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
@@ -169,6 +177,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
 double precision, allocatable, dimension(:) :: srcmas
+double precision, allocatable, dimension(:) :: srccond
 
 double precision, dimension(:,:), pointer :: xut, visten
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -497,6 +506,34 @@ if (ncesmp.gt.0) then
   endif
 
 endif
+
+! Condensation source terms for the scalars
+if (nfbpcd.gt.0) then
+
+  allocate(srccond(nfbpcd))
+
+  ! When treating the Temperature, the equation is multiplied by Cp
+  do ii = 1, nfbpcd
+    ifac= ifbpcd(ii)
+    iel = ifabor(ifac)
+
+    if (spcond(ii,ipr).lt.0.d0 .and.itypcd(ii,ivar).eq.1) then
+      srccond(ii) = spcond(ii,ipr)*xcpp(iel)
+    else
+      srccond(ii) = 0.d0
+    endif
+  enddo
+
+  call condensation_source_terms &
+  !=============================
+  (ncelet , ncel , nfbpcd , ifbpcd , itypcd(1,ivar) ,     &
+   rtpa(1,ivar)  , spcond(1,ivar)  , srccond ,            &
+   smbrs         , rovsdt )
+
+  deallocate(srccond)
+
+endif
+
 
 ! If the current scalar is the variance of an other scalar,
 ! production and dissipation terms are added.

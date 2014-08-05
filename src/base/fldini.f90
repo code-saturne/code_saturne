@@ -87,12 +87,13 @@ integer          kdiftn
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv, lprev
 integer          f_id, kscavr, f_vis, f_log, f_dften
-integer          idfm
+integer          idfm, nfld
 
 character*80     name
 character*80     f_name
 
 type(var_cal_opt) vcopt
+type(severe_acc_species_prop) sasp
 
 !===============================================================================
 
@@ -130,6 +131,8 @@ call field_get_key_id("first_moment_id", kscavr)
 
 ! Key id for diffusivity tensor
 call field_get_key_id("diffusivity_tensor", kdiftn)
+
+call field_get_n_fields(nfld)
 
 !===============================================================================
 ! 2. Mapping for post-processing
@@ -188,36 +191,6 @@ do ii = 1, nscal
 
   endif
 
-enddo
-
-! Copy field calculation options into the field structure
-do ivar = 1, nvar
-  if (ivar.ne.iv.and.ivar.ne.iw) then
-    vcopt%iwarni= iwarni(ivar)
-    vcopt%iconv = iconv (ivar)
-    vcopt%istat = istat (ivar)
-    vcopt%idiff = idiff (ivar)
-    vcopt%idifft= idifft(ivar)
-    vcopt%idften= idften(ivar)
-    vcopt%iswdyn= iswdyn(ivar)
-    vcopt%ischcv= ischcv(ivar)
-    vcopt%isstpc= isstpc(ivar)
-    vcopt%nswrgr= nswrgr(ivar)
-    vcopt%nswrsm= nswrsm(ivar)
-    vcopt%imrgra= imrgra
-    vcopt%imligr= imligr(ivar)
-    vcopt%ircflu= ircflu(ivar)
-    vcopt%thetav= thetav(ivar)
-    vcopt%blencv= blencv(ivar)
-    vcopt%epsilo= epsilo(ivar)
-    vcopt%epsrsm= epsrsm(ivar)
-    vcopt%epsrgr= epsrgr(ivar)
-    vcopt%climgr= climgr(ivar)
-    vcopt%extrag= extrag(ivar)
-    vcopt%relaxv= relaxv(ivar)
-
-    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  endif
 enddo
 
 ! Density field
@@ -393,7 +366,84 @@ if (ipstdv(ipstyp).ne.0) then
   call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
 endif
 
+!===============================================================================
+! 3. Set some field keys
+!===============================================================================
 
+! Copy field calculation options into the field structure
+do ivar = 1, nvar
+  if (ivar.ne.iv.and.ivar.ne.iw) then
+    vcopt%iwarni= iwarni(ivar)
+    vcopt%iconv = iconv (ivar)
+    vcopt%istat = istat (ivar)
+    vcopt%idiff = idiff (ivar)
+    vcopt%idifft= idifft(ivar)
+    vcopt%idften= idften(ivar)
+    vcopt%iswdyn= iswdyn(ivar)
+    vcopt%ischcv= ischcv(ivar)
+    vcopt%isstpc= isstpc(ivar)
+    vcopt%nswrgr= nswrgr(ivar)
+    vcopt%nswrsm= nswrsm(ivar)
+    vcopt%imrgra= imrgra
+    vcopt%imligr= imligr(ivar)
+    vcopt%ircflu= ircflu(ivar)
+    vcopt%thetav= thetav(ivar)
+    vcopt%blencv= blencv(ivar)
+    vcopt%epsilo= epsilo(ivar)
+    vcopt%epsrsm= epsrsm(ivar)
+    vcopt%epsrgr= epsrgr(ivar)
+    vcopt%climgr= climgr(ivar)
+    vcopt%extrag= extrag(ivar)
+    vcopt%relaxv= relaxv(ivar)
+
+    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  endif
+enddo
+
+! Copy field physical properties of species into the field structure
+do f_id = 1, nfld
+
+  call field_get_name (f_id, name)
+
+  if (name.eq.'y_o2') then
+
+    sasp%mol_mas= 0.032d0
+    sasp%cp = 930.d0
+    sasp%vol_dif = 19.70d0
+    sasp%mu_a = 5.086522d-8
+    sasp%mu_b = 5.512391d-6
+    sasp%lambda_a = 6.2d-5
+    sasp%lambda_b = 8.1d-3
+
+    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+
+  else if (name.eq.'y_n2') then
+
+    sasp%mol_mas = 0.028d0
+    sasp%cp = 1042.d0
+    sasp%vol_dif = 19.70d0
+    sasp%mu_a = 4.210130d-8
+    sasp%mu_b = 5.494348d-6
+    sasp%lambda_a = 6.784141d-5
+    sasp%lambda_b = 5.564317d-3
+
+    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+
+  else if (name.eq.'y_h2o_g') then
+
+    sasp%mol_mas = 0.018d0
+    sasp%cp = 2060.d0
+    sasp%vol_dif = 13.10d0
+    sasp%mu_a = 3.8496d-8
+    sasp%mu_b = 8.2997d-6
+    sasp%lambda_a = 7.6209d-5
+    sasp%lambda_b = 0.016949d0
+
+    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+
+  endif
+
+enddo
 
 return
 

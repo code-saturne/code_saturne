@@ -57,7 +57,9 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     nfbpcd        number of faces with condensation source term
 !> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     ifbpcd        index of faces with condensation source term
 !> \param[in]     isostd        indicator of standard outlet and index
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
@@ -67,6 +69,9 @@
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
+!> \param[in]     spcond        variable value associated to the condensation
+!>                              source term (for ivar=ipr, spcond is the flow rate
+!>                              \f$ \Gamma_{cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     dfrcxt        variation of the external forces
 !> \param[in]                    making the hydrostatic pressure
@@ -82,12 +87,12 @@
 !_______________________________________________________________________________
 
 subroutine resopv &
- ( nvar   , ncesmp ,                                              &
-   icetsm , isostd ,                                              &
+ ( nvar   , ncesmp , nfbpcd ,                                     &
+   icetsm , ifbpcd , isostd ,                                     &
    dt     , vel    ,                                              &
    propce ,                                                       &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
-   smacel ,                                                       &
+   smacel , spcond ,                                              &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  ,                                              &
    drtp   , tslagr ,                                              &
@@ -127,14 +132,14 @@ implicit none
 ! Arguments
 
 integer          nvar
-integer          ncesmp
+integer          ncesmp, nfbpcd
 
-integer          icetsm(ncesmp)
+integer          icetsm(ncesmp), ifbpcd(nfbpcd)
 integer          isostd(nfabor+1)
 
 double precision, dimension (1:ncelet), target :: dt
 double precision propce(ncelet,*)
-double precision smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar), spcond(nfbpcd,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision, dimension (1:6,1:ncelet), target :: tpucou
 double precision trav(3,ncelet)
@@ -417,10 +422,20 @@ if(irnpnw.ne.1) then
     enddo
   endif
 
+  ! --- Volumic Gamma source term adding for volumic mass flow rate
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      res(iel) = res(iel) -volume(iel)*smacel(ii,ipr)
+      res(iel) = res(iel) - volume(iel)*smacel(ii,ipr)
+    enddo
+  endif
+
+  ! --- Surface Gamma source term adding for condensation modelling
+  if (nfbpcd.gt.0) then
+    do ii = 1, nfbpcd
+      ifac= ifbpcd(ii)
+      iel = ifabor(ifac)
+      res(iel) = res(iel) - surfbn(ifac)*spcond(ii,ipr)
     enddo
   endif
 
@@ -1356,13 +1371,23 @@ if (idilat.eq.4) then
 
 endif
 
-! --- Termes sources de masse
+! --- Masse source terms adding for volumic flow rate
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
     divu(iel) = divu(iel) -volume(iel)*smacel(ii,ipr)
   enddo
 endif
+
+! --- Source term adding for condensation modelling
+if (nfbpcd.gt.0) then
+  do ii = 1, nfbpcd
+    ifac= ifbpcd(ii)
+    iel = ifabor(ifac)
+    divu(iel) = divu(iel) - surfbn(ifac)*spcond(ii,ipr)
+  enddo
+endif
+
 
 ! --- Source term associated to the mass aggregation
 if (idilat.eq.2.or.idilat.eq.3) then

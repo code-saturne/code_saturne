@@ -81,7 +81,6 @@ character(len=80) :: chaine
 integer          ivar  , iscal
 integer          iel
 integer          iclip , iok   , ii
-integer          iiptot
 integer          imodif
 integer          kscmin, kscmax, keyvar, n_fields
 integer          f_id, f_id_prv, c_id, f_dim

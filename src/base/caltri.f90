@@ -217,7 +217,8 @@ if (iilagr.gt.0) then
 endif
 
 !===============================================================================
-! Zone definition for head-loss, mass source term and 1D-wall module
+! Zone definition for head-loss, mass sources term,
+!   condensation sources term and 1D-wall module
 !===============================================================================
 
 ! First pass for every subroutine
@@ -226,6 +227,7 @@ iappel = 1
 ! Allocate temporary arrays for zones definition
 allocate(izcpdc(ncel))
 allocate(izctsm(ncel))
+allocate(izftcd(ncel))
 allocate(izft1d(nfabor))
 
 ! ---------
@@ -295,6 +297,29 @@ if (nctsmt.gt.0) then
   write(nfecra,3000)
 endif
 
+
+! Condensation mass source terms
+! ------------------------------
+
+call cs_user_condensation_terms &
+!==============================
+( nvar   , nscal  ,                                              &
+  nfbpcd , iappel ,                                              &
+  ivoid  , ivoid  , izftcd ,                                     &
+  rvoid  , rvoid  , rvoid  )
+
+! Total number of cells with condensation source term
+nftcdt = nfbpcd
+if (irangp.ge.0) then
+  call parcpt(nftcdt)
+  !==========
+endif
+
+if (nftcdt.gt.0) then
+  write(nfecra,2003) nftcdt
+  write(nfecra,3000)
+endif
+
 ! --------------
 ! 1D-wall module
 ! --------------
@@ -315,7 +340,7 @@ if (irangp.ge.0) then
 endif
 
 if (nfpt1t.gt.0) then
-  write(nfecra,2003) nfpt1t, nfpt1d
+  write(nfecra,2004) nfpt1t, nfpt1d
   write(nfecra,3000)
 endif
 
@@ -329,6 +354,7 @@ call vert1d &
 ! Free memory if relevant
 if (ncpdct.eq.0) deallocate(izcpdc)
 if (nctsmt.eq.0) deallocate(izctsm)
+if (nftcdt.eq.0) deallocate(izftcd)
 if (nfpt1t.eq.0) deallocate(izft1d)
 
 ! Formats
@@ -339,7 +365,10 @@ if (nfpt1t.eq.0) deallocate(izft1d)
  2002 format(                                          &
  /,/,'TRAITEMENT DES SOURCES DE MASSE ACTIVE ',/,      &
    '                 SUR  UN TOTAL DE ',I10,' CELLULES')
- 2003 format(                                                     &
+ 2003 format(                                           &
+ /,/,'TRAITEMENT DES SOURCES DE CONDENSATION ACTIVE ',/,&
+   '                 SUR  UN TOTAL DE ',I10,' CELLULES')
+ 2004 format(                                                     &
     /,'TTES PHASES  : MODULE THERMIQUE 1D EN PAROI ACTIVE     ',/,&
       '   SUR UN TOTAL DE ',I10,' FACES DE BORD',/,               &
       '   (',I10,' FACES DE BORD EN LOCAL)',/)
@@ -350,7 +379,10 @@ if (nfpt1t.eq.0) deallocate(izft1d)
  2002 format(                                    &
  /,/,'MASS SOURCE TERMS TREATMENT ACTIVATED ',/, &
    '                 ON A TOTAL OF ',I10,' CELLS')
- 2003 format(                                               &
+ 2003 format(                                            &
+ /,/,'CONDENSATION SOURCE TERMS TREATMENT ACTIVATED ',/, &
+   '                 ON A TOTAL OF ',I10,' CELLS')
+ 2004 format(                                               &
  /,'ALL PHASES  : 1D-WALL THERMAL MODULE ACTIVATED ',/,     &
    '   ON A TOTAL OF ',I10,' BOUNDARY FACES',/,             &
    '   (',I10,' LOCAL BOUNDARY FACES)',/)
@@ -431,6 +463,12 @@ if (nctsmt.gt.0) then
   call init_tsma ( nvar )
   !=============
 endif
+
+if (nftcdt.gt.0) then
+  call init_pcond ( nvar )
+  !=============
+endif
+
 
 if (nfpt1t.gt.0) then
   call init_pt1d
@@ -722,6 +760,26 @@ if(nctsmt.gt.0) then
   ckupdc , smacel )
 
 endif
+
+! On appelle cs_user_condensation_terms lorqu'il y a sur un processeur
+! au moins des cellules avec terme source de condensation.
+! On ne fait que remplir le tableau d'indirection des cellules
+! On appelle cependant cs_user_condensation avec tous les processeurs,
+! au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
+
+if (nftcdt.gt.0) then
+
+  iappel = 2
+
+  call cs_user_condensation_terms &
+  !==============================
+( nvar   , nscal  ,                                              &
+  nfbpcd , iappel ,                                              &
+  ifbpcd , itypcd , izftcd ,                                     &
+  spcond , hpcond , rvoid )
+
+endif
+
 
 ! -- Methode des vortex pour la L.E.S.
 !    (dans verini on s'est deja assure que ITYTUR=4 si IVRTEX=1)
@@ -1268,6 +1326,10 @@ endif
 
 if (nctsmt.gt.0) then
   call finalize_tsma
+endif
+
+if(nftcdt.gt.0) then
+  call finalize_pcond
 endif
 
 if (nfpt1d.gt.0) then

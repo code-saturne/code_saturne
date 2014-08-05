@@ -73,6 +73,7 @@ userfiles = \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_coupling.c \
+cs_user_condensation_terms.f90 \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
@@ -104,7 +105,7 @@ usray2.f90 \
 usthht.f90 \
 ustsma.f90 \
 usvort.f90 \
-usvosy.f90 
+usvosy.f90
 
 # Special treatment to files existing both in f90 and C:
 cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90

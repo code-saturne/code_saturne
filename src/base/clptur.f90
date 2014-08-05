@@ -725,7 +725,7 @@ do ifac = 1, nfabor
       uetbor(ifac) = uet
     endif
 
-    ! Save yplus if post-processed
+    ! Save yplus if post-processed or condensation modelling
     if (ipstdv(ipstyp).ne.0) then
       yplbr(ifac) = yplus-dplus
     endif

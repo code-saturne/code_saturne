@@ -74,6 +74,17 @@ typedef struct {
   double  relaxv;
 } cs_var_cal_opt_t;
 
+typedef struct {
+  double  mol_mas;
+  double  cp;
+  double  vol_dif;
+  double  mu_a;
+  double  mu_b;
+  double  lambda_a;
+  double  lambda_b;
+} cs_severe_acc_species_prop_t;
+
+
 /*----------------------------------------------------------------------------
  * Boundary condition types
  *----------------------------------------------------------------------------*/

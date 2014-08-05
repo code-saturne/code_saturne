@@ -320,6 +320,15 @@ if (ixmlpu.eq.0) then
 
 endif
 
+! Handling condensation source terms
+!        if = -1   module not activated
+!        if =  0   condensation source terms activated
+!        if =  1   condensation source terms with metal structures activated
+
+if (.false.) then
+  ippmod(icond) = 0
+endif
+
 !===============================================================================
 ! 2.  Specific options related to herebefore modules
 !===============================================================================
@@ -1551,38 +1560,6 @@ if (.false.) then
 
 endif
 
-
-! --- Define scalar (among nscaus) which are species:
-!     If a user scalar isca represents the species Yk,
-!     iscasp(isca) is set to 1. By default, iscasp(isca)= 0.
-!
-!     To use the Low-Mach algorithm with a multi-species state law (idilat = 3),
-!     we also have to specify the molar mass associated (wmolsp(isca))
-!     to the species Yk.
-!
-!     WARNING: This algorithm assumes that the last species is deduced from
-!              the others thank to the relation Ym = 1 - Sum_k Yk.
-!              The molar mass associated to this species has to be
-!              specified in wmolsp(0).
-
-! The example set 4 species, the molar mass associated to the last one (not
-! computed) is stored in  wmolsp(0).
-
-if (.false.) then
-
-  iscasp(2) =  1
-  wmolsp(2) =  0.032d0
-
-  iscasp(3) =  1
-  wmolsp(3) =  0.016d0
-
-  iscasp(4) =  1
-  wmolsp(4) =  0.016d0
-
-  wmolsp(0) =  0.028d0
-
-endif
-
 ! --- Reference velocity for turbulence initialization (m2/s)
 !       (useful only with turbulence)
 
@@ -1669,8 +1646,7 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, ipp, idirac, icla, icha, f_id
-integer idimve, iesp
+integer ii, ipp, f_id
 
 !===============================================================================
 
@@ -2460,8 +2436,6 @@ use radiat
 !===============================================================================
 
 implicit none
-
-integer          ipp, idirac
 
 !===============================================================================
 

@@ -227,11 +227,21 @@ module ppincl
   ! - ippmod(iaeros) = 2 Merkel's model
   integer ::  iaeros
 
+  !> pointer to specify modelling of condensation
+  !> - ippmod(icond) =-1 module not activated
+  !> - ippmod(icond) = 0 condensation source terms activated
+  !> - ippmod(icond) = 1 condensation source terms with metal
+  !>                     structures activate
+  integer ::  icond
+
+
   parameter       (iphpar = 1 , icod3p = 2 , icodeq = 3 ,           &
                    icoebu = 4 , icobml = 5 , icolwc = 6 ,           &
                    icpl3c = 7 , icfuel = 8 , ieljou = 9 ,           &
                    ielarc = 10, ielion = 11, icompf = 12,           &
-                   iatmos = 13, iaeros = 14, iccoal = 15)
+                   iatmos = 13, iaeros = 14, iccoal = 15,           &
+                   icond  = 16)
+
   !> \}
 
   !--> NOMBRE DE VARIABLES ALGEBRIQUES OU D'ETAT

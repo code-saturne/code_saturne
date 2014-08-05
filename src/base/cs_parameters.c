@@ -206,6 +206,17 @@ int                      _n_user_properties = 0;
 cs_user_variable_def_t  *_user_variable_defs = NULL;
 cs_user_property_def_t  *_user_property_defs = NULL;
 
+static cs_severe_acc_species_prop_t _severe_acc_species_prop =
+{
+  -1.,         /* molar mass              */
+  -1.,          /* specific heat           */
+  -1.,          /* volume diffusion        */
+  -1.,   /* dynamic viscosity a     */
+  -1.,   /* dynamic viscosity b     */
+  -1.,        /* thermal condusctivity a */
+  -1.,        /* thermal condusctivity b */
+};
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
@@ -257,6 +268,19 @@ _log_func_var_opt_cal(const void *t)
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "climgr", _t->climgr);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "extrag", _t->extrag);
   cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "relaxv", _t->relaxv);
+}
+
+static void
+_log_func_severe_acc_species_prop(const void *t)
+{
+  const cs_severe_acc_species_prop_t *_t = (const void *)t;
+  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "molar mass             ", _t->mol_mas);
+  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "specific heat          ", _t->cp);
+  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "volume diffusion       ", _t->vol_dif);
+  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "dynamic viscosity a    ", _t->mu_a);
+  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "dynamic viscosity b    ", _t->mu_b);
+  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "thermal condusctivity a", _t->lambda_a);
+  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "thermal condusctivity b", _t->lambda_b);
 }
 
 /*============================================================================
@@ -360,6 +384,15 @@ cs_parameters_define_field_keys(void)
                              _log_func_var_opt_cal,
                              sizeof(cs_var_cal_opt_t),
                              CS_FIELD_VARIABLE);
+
+  /* Structure containing physical properties relative to
+     severe accident scalars */
+  cs_field_define_key_struct("severe_acc_species_prop",
+                             &_severe_acc_species_prop,
+                             _log_func_severe_acc_species_prop,
+                             sizeof(cs_severe_acc_species_prop_t),
+                             0);
+
 }
 
 /*----------------------------------------------------------------------------*/

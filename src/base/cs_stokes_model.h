@@ -100,12 +100,6 @@ typedef struct {
                                  pressure at outlets
                                  - 1: true
                                  - 0: false (default) */
-  int           icond;        /* handling condensation source terms
-                                 - 1: condensation source terms activated
-                                 - 2: condensation source terms with metal
-                                   structures activated
-                                 - 0: by default (without condensation source
-                                   terms) */
 
 } cs_stokes_model_t;
 

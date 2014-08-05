@@ -49,9 +49,12 @@
 !> \param[in]     iterns        index of the iteration on Navier-Stokes
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     itypsm        type of mass source term for the variables
+!> \param[in]     itypcd        type of condensation source terms for the variables
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     flumas        internal mass flux (depending on iappel)
@@ -60,6 +63,9 @@
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
+!> \param[in]     spcond        variable value associated to the condensation
+!>                              source term (for ivar=ipr, spcond is the flow rate
+!>                              \f$ \Gamma_{cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[in]     ximpa         idem
@@ -87,13 +93,13 @@
 
 subroutine predvv &
  ( iappel ,                                                       &
-   nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
-   icepdc , icetsm , itypsm ,                                     &
+   nvar   , nscal  , iterns , ncepdp , ncesmp , nfbpcd,           &
+   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dt     , vel    , vela   ,                                     &
    propce ,                                                       &
    flumas , flumab ,                                              &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
-   ckupdc , smacel , frcxt  , grdphd ,                            &
+   ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , xnormp )
@@ -138,16 +144,18 @@ implicit none
 
 integer          iappel
 integer          nvar   , nscal  , iterns
-integer          ncepdp , ncesmp
+integer          ncepdp , ncesmp , nfbpcd
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
 
 double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision spcond(nfbpcd,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(ncelet,3)
 double precision trava(ndim,ncelet)
@@ -537,13 +545,23 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   init = 1
   call divmas(init,viscf,viscb,xnormp)
 
-!     Ajout de -Gamma
+!-- Volumic Gamma source term adding for volumic mass flow rate
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      xnormp(iel) = xnormp(iel)-volume(iel)*smacel(ii,ipr)
+      xnormp(iel) = xnormp(iel) - volume(iel)*smacel(ii,ipr)
     enddo
   endif
+
+!-- Surface Gamma source term adding for condensation modelling
+  if (nfbpcd.gt.0) then
+    do ii = 1, nfbpcd
+      ifac= ifbpcd(ii)
+      iel = ifabor(ifac)
+      xnormp(iel) = xnormp(iel) - surfbn(ifac) * spcond(ii,ipr)
+    enddo
+  endif
+
 
   ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
   if (idilat.eq.4)then

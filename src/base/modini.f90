@@ -981,6 +981,11 @@ if (iscalt.le.0) then
   ipstdv(ipstnu) = 0
 endif
 
+! If condensation, yplus is needed
+if (ippmod(icond).ge.0) then
+  ipstdv(ipstyp) = 1
+endif
+
 !===============================================================================
 ! 4. TABLEAUX DE cstphy
 !===============================================================================

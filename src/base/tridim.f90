@@ -128,6 +128,7 @@ double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision cosdto, sindto, omgnrm, rrotgb(3,3)
 double precision hdls(6)
+double precision tpar
 
 integer          ipass
 data             ipass /0/
@@ -575,7 +576,6 @@ if (ncpdct.gt.0) then
 
 endif
 
-
 ! REMPLISSAGE DES COEFS DE TERME SOURCE DE MASSE
 
 !    ON Y PASSE MEME S'IL N'Y A PAS DE TSM SUR LE PROC COURANT AU CAS OU
@@ -600,6 +600,33 @@ if(nctsmt.gt.0) then
   icetsm , itypsm , izctsm ,                                     &
   dt     ,                                                       &
   ckupdc , smacel )
+
+endif
+
+!-----------------------------------------------------------------------
+!-- Fill the condensation array spcond for the sink term of condensation
+!-- and hpcond the thermal exchange coefficient associated to the phase
+!-- change (gas phase to liquid phase)
+!-----------------------------------------------------------------------
+if (nftcdt.gt.0) then
+
+  iappel = 3
+
+  !     Mise a zero du tableau de type de TS masse et source
+  do ii = 1, nfbpcd
+    do ivar = 1, nvar
+      itypcd(ii,ivar) = 0
+      spcond(ii,ivar) = 0.d0
+      hpcond(ii)      = 0.d0
+    enddo
+  enddo
+
+  call cs_user_condensation_terms &
+  !==============================
+( nvar   , nscal  ,                                              &
+  nfbpcd , iappel ,                                              &
+  ifbpcd , itypcd , izftcd ,                                     &
+  spcond , hpcond , tpar)
 
 endif
 
@@ -1005,6 +1032,26 @@ do while (iterns.le.nterup)
   rcodcl ,                                                       &
   visvdr , hbord  , theipb ,                                     &
   frcxt  )
+
+  if (nftcdt.gt.0) then
+
+    if (ippmod(icond).eq.0) then
+
+      ! Empiric laws used by COPAIN condensation model to
+      ! the compute of the condensation source term and
+      ! exchange coefficient of the heat transfer imposed
+      ! as boundary condition
+      !--------------------------------------------------
+
+      call condensation_copain_model &
+      !=============================
+  (   nvar   , nfbpcd , ifbpcd ,               &
+      tpar   ,                                 &
+      spcond(1, ipr)  , hpcond )
+
+    endif
+
+  endif
 
 !     ==============================================
 !     Appel de l'interface sol-atmosphere
@@ -1590,7 +1637,6 @@ call schtmp(nscal, iappel, propce)
                                                               /,/,&
  ' RESOLUTION DES TRANSFERTS THERMIQUES RADIATIFS             ',/,&
 '  ==============================================             ',/)
-
  4010 format(/,                                                   &
 ' ** TEMPS POUR LA DISTANCE A LA PAROI : ',E14.5               ,/,&
 '    ---------------------------------                        ',/)

@@ -38,16 +38,6 @@ subroutine ppvarp
 !   LE TYPE DE PHYSIQUE PARTICULIERE
 ! REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
 
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -72,6 +62,7 @@ use cs_fuel_incl
 use ppcpfu
 use atincl
 use ihmpre
+use field
 
 !===============================================================================
 
@@ -79,7 +70,18 @@ implicit none
 
 ! Arguments
 
+! Local variables
+
+integer          f_id
+integer          kscmin, kscmax
+
+double precision scmaxp, scminp
+
 !===============================================================================
+
+! Key ids for clipping
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
 ! 1. Gas combustion
 !------------------
@@ -162,6 +164,36 @@ if (ippmod(iaeros).ge.0) then
   call ctvarp
   !==========
 endif
+
+! 8. Condensation modelling
+!--------------------------
+
+if (ippmod(icond).ge.0) then
+
+  itherm = 2
+  call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+  iscalt = ihm
+  ivisls(iscalt) = 1
+
+  ! Clipping of mass fractions
+  scminp = 0.d0
+  scmaxp = 1.d0
+
+  call add_model_scalar_field('y_o2', 'Y_O2', iscasp(1))
+  ivisls(iscasp(1)) = 1
+  f_id = ivarfl(isca(iscasp(1)))
+  call field_set_key_double(f_id, kscmin, scminp)
+  call field_set_key_double(f_id, kscmax, scmaxp)
+
+  call add_model_scalar_field('y_n2', 'Y_N2', iscasp(2))
+  ivisls(iscasp(2)) = 1
+  f_id = ivarfl(isca(iscasp(2)))
+  call field_set_key_double(f_id, kscmin, scminp)
+  call field_set_key_double(f_id, kscmax, scmaxp)
+
+  nscasp = 2
+endif
+
 
 return
 end subroutine

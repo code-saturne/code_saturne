@@ -66,6 +66,8 @@ implicit none
 
 ! Local variables
 
+integer          f_id
+
 !===============================================================================
 
 ! ---> Physique particuliere : Combustion Gaz
@@ -121,6 +123,11 @@ endif
 if (ippmod(iatmos).ge.1) then
   call atprop
   !==========
+endif
+
+! Condensation modelling
+if (ippmod(icond).ge.0) then
+  call add_property_field('y_h2o_g', 'Y_H2O_g', f_id)
 endif
 
 end subroutine ppprop

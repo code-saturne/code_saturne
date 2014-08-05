@@ -131,11 +131,6 @@ BEGIN_C_DECLS
         conditions on the pressure at outlets
         - 1: true
         - 0: false (default)
-  \var  cs_stokes_model_t::icond
-        handling condensation source terms
-        - 1: condensation source terms activated
-        - 2: condensation source terms with metal structures activated
-        - 0: by default (without condensation source terms)
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -155,7 +150,7 @@ BEGIN_C_DECLS
 /* main Stokes equation model descriptor structure and associated pointer */
 
 static cs_stokes_model_t  _stokes_model = { 1, 0, 1, 1, 0, 1.0, 0, 0, 1, 1.e-12,
-                                            0, 0, 0,-1, 0};
+                                            0, 0, 0,-1};
 
 const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
 
@@ -178,8 +173,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **itbrrb,
                                  int     **iphydr,
                                  int     **iifren,
-                                 int     **icalhy,
-                                 int     **icond);
+                                 int     **icalhy);
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -214,7 +208,6 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   iphydr  --> pointer to cs_globe_stokes_model->iphydr
  *   iifren  --> pointer to cs_globe_stokes_model->iifren
  *   icalhy  --> pointer to cs_globe_stokes_model->icalhy
- *   icond   --> pointer to cs_globe_stokes_model->icond
  *----------------------------------------------------------------------------*/
 
 void
@@ -231,8 +224,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **itbrrb,
                                  int     **iphydr,
                                  int     **iifren,
-                                 int     **icalhy,
-                                 int     **icond)
+                                 int     **icalhy)
 {
   *ivisse = &(_stokes_model.ivisse);
   *irevmc = &(_stokes_model.irevmc);
@@ -248,7 +240,6 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *iphydr = &(_stokes_model.iphydr);
   *iifren = &(_stokes_model.iifren);
   *icalhy = &(_stokes_model.icalhy);
-  *icond  = &(_stokes_model.icond);
 }
 
 /*! \endcond (end ignore by Doxygen) */

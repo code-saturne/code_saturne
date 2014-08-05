@@ -183,6 +183,8 @@ clpsca.f90 \
 clptrg.f90 \
 clptur.f90 \
 clsyvt.f90 \
+copain_model.f90 \
+condensation_source_terms.f90 \
 condli.f90 \
 cou1di.f90 \
 cou1do.f90 \
@@ -209,6 +211,8 @@ csclli.f90 \
 cscloc.f90 \
 cspcev.f90 \
 cscpfb.f90 \
+cs_condensation_initialization.f90 \
+cs_condensation_physical_properties.f90 \
 cs_control.c \
 cs_coupling.c \
 cs_ext_neighborhood.c \

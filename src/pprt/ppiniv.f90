@@ -199,12 +199,22 @@ if ( ippmod(iaeros).ge.0 ) then
 
 endif
 
+! Condensation modelling
+
+if (ippmod(icond).ge.0) then
+
+  call cs_condensation_initialization &
+  ( nvar   , nscal  ,                                            &
+    dt     )
+
+endif
+
 !----
-! FORMATS
+! Formats
 !----
 
 !----
-! FIN
+! End
 !----
 
 return

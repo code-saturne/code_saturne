@@ -901,12 +901,17 @@ icavit = -1
 ! --- No Bernoulli free entrance faces
 iifren = 0
 
-! --- Handle the condensation source terms (not activate by default icond=0)
+! ---  Choice the way to compute the condensation exchange coefficient (hcond)
+!      associated to the condensation source term
+!      ( not activated by default icophc =0)
 
-!     icond = 1 : standard condensation source terms
-!             2 : condensation source terms with metal structures
+icophc = 0
 
-icond = 0
+! ---  Choice the way to compute the thermal exchange coefficient (hpcond)
+!      associated to the heat transfer of the condensation to the cooling wall
+!      ( not activated by default icophg =0)
+
+icophg = 0
 
 ! --- Champ de vitesse fige (non fige par defaut)
 
@@ -994,6 +999,10 @@ ncpdct = 0
 ! --- Somme de NCETSM (pour les calculs paralleles)
 
 nctsmt = 0
+
+! --- Somme de nfbpcd (pour les calculs paralleles)
+
+nftcdt= 0
 
 ! --- Somme de NFPT1D (pour les calculs paralleles)
 
@@ -1243,7 +1252,6 @@ do iscal = 1, nscamx
   iclvfl(iscal) = -1
   visls0(iscal) =-grand*10.d0
   sigmas(iscal) = 1.0d0
-  wmolsp(iscal) = 0.0d0
   rvarfl(iscal) = 0.8d0
 enddo
 

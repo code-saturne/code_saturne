@@ -287,11 +287,11 @@ if (nscapp.gt.0) then
       call covofi                                                 &
       !==========
  ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
+   ncepdc , ncetsm , nfbpcd ,                                     &
    iisc   , itspdv ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dtr    , rtp    , rtpa   , propce , tslagr ,                   &
-   ckupdc , smacel ,                                              &
+   ckupdc , smacel , spcond ,                                     &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 
@@ -445,11 +445,11 @@ if (nscaus.gt.0) then
     call covofi                                                   &
     !==========
  ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
+   ncepdc , ncetsm , nfbpcd ,                                     &
    iisc   , itspdv ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dtr    , rtp    , rtpa   , propce , tslagr ,                   &
-   ckupdc , smacel ,                                              &
+   ckupdc , smacel , spcond ,                                     &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 

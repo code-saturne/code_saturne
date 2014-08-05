@@ -767,12 +767,20 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: icalhy
 
-  !TODO doxygen
-  ! icond: Handling condensation source terms
-  !        1: condensation source terms activated
-  !        2: condensation source terms with metal structures activated
-  !        0: by default (without condensation source terms)
-  integer(c_int), pointer, save :: icond
+  !> choice the way to compute the exchange coefficient of the
+  !> condensation source term used by the copain model
+  !>    - 1: the turbulent exchange coefficient of the flow
+  !>    - 2: the exchange coefficient of the copain correlation
+  !>    - 3: the maximal value between the two previous exchange coefficients
+  integer, save :: icophc
+
+  !> choice the way to compute the thermal exchange coefficient associated
+  !> to the heat transfer to wall due to the condensation phenomenon
+  !>    - 2: the thermal exchange coefficient of the copain correlation
+  !>    - 3: the maximal value between the current and previous thermal
+  !>         exchange coefficient evaluated by the copain correlation
+  integer, save :: icophg
+
 
   !> compute error estimators
   !>    - 1: true
@@ -818,6 +826,10 @@ module optcal
   !> Indicateur termes sources de masse global (ie somme sur les processeurs
   !>   de ncetsm)
   integer, save :: nctsmt
+
+  !> Global indicator of condensation source terms (ie. sum on the processors
+  !> of nfbpcd) cells associated to the face with condensation phenomenon
+  integer, save :: nftcdt
 
   !> take the porosity fomulation into account
   !>    - 1: Taking porosity into account
@@ -954,8 +966,7 @@ module optcal
   !>          2 : clip variances to  max(zero,scamin) and scamax
   integer, save ::          iclvfl(nscamx)
 
-  !> iscasp : 0 : the associated scalar is not a species
-  !>          1 : the associated scalar is a species
+  !> iscasp(ii) : index of the ii^th species (0 if not a species)
   integer, save ::          iscasp(nscamx)
 
   !> visls0 : viscosity of scalars if constant
@@ -963,11 +974,6 @@ module optcal
 
   !> sigmas : prandtl of scalars
   double precision, save :: sigmas(nscamx)
-
-  !> molar fraction for multi-species scalars
-  !> \remarks
-  !> wmolsp(0) is associated to the deduced species.
-  double precision, save :: wmolsp(0:nscamx)
 
   !> rvarfl : coeff de dissipation des variances
   double precision, save :: rvarfl(nscamx)
@@ -1107,13 +1113,13 @@ module optcal
     subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco, irnpnw, &
                                                 rnormp, arak  ,ipucou, iccvfg, &
                                                 idilat, epsdp ,itbrrb, iphydr, &
-                                                iifren, icalhy, icond )        &
+                                                iifren, icalhy)        &
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ivisse, irevmc, iprco, irnpnw, rnormp, arak
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
-      type(c_ptr), intent(out) :: iifren, icalhy, icond
+      type(c_ptr), intent(out) :: iifren, icalhy
     end subroutine cs_f_stokes_options_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1341,12 +1347,12 @@ contains
 
     type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_irnpnw, c_rnormp, c_arak
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
-    type(c_ptr) :: c_iifren, c_icalhy, c_icond
+    type(c_ptr) :: c_iifren, c_icalhy
 
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
                                           c_irnpnw, c_rnormp, c_arak  , c_ipucou, c_iccvfg, &
                                           c_idilat, c_epsdp , c_itbrrb, c_iphydr, &
-                                          c_iifren, c_icalhy, c_icond)
+                                          c_iifren, c_icalhy)
 
     call c_f_pointer(c_ivisse, ivisse)
     call c_f_pointer(c_irevmc, irevmc)
@@ -1362,7 +1368,6 @@ contains
     call c_f_pointer(c_iphydr, iphydr)
     call c_f_pointer(c_iifren, iifren)
     call c_f_pointer(c_icalhy, icalhy)
-    call c_f_pointer(c_icond , icond )
 
   end subroutine stokes_options_init
 

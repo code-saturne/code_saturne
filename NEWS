@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add a condensation wall model.
+
 - Added cell and face renumbering options to try to improve performance.
 
 - User scalars are not declared in usinsc (in cs_user_parameters.f90) anymore,
