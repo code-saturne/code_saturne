@@ -70,7 +70,7 @@ implicit none
 
 ! Local variables
 
-integer       iscal , id, f_dim, ityloc, itycat
+integer       iscal , id, ityloc, itycat
 integer       ii
 integer       iok   , ippok
 integer       ivisph
@@ -400,28 +400,43 @@ endif
 !  si on extrapole aussi les termes sources de l equation sur le taux
 !  de vide pour le modele de cavitation.
 if (isno2t.gt.0) then
-  if (icavit.lt.0) then
-    call add_property_field_nd('navier_stokes_st_prev', '', 3, itsnsa)
-  else
-    call add_property_field_nd('navier_stokes_st_prev', '', 4, itsnsa)
+  call add_source_term_prev_field(ivarfl(iu))
+  if (icavit.ge.0) then
+    call add_property_field_nd(ivarfl(ivoidf))
   endif
 endif
 
 if (isto2t.gt.0) then
   ! The dimension of this array depends on turbulence model:
   if (itytur.eq.2) then
-    f_dim = 2
+    call add_source_term_prev_field(ivarfl(ik))
+    call add_source_term_prev_field(ivarfl(iep))
   else if (itytur.eq.3) then
-    f_dim = 7
+    call add_source_term_prev_field(ivarfl(ir11))
+    call add_source_term_prev_field(ivarfl(ir22))
+    call add_source_term_prev_field(ivarfl(ir33))
+    call add_source_term_prev_field(ivarfl(ir12))
+    call add_source_term_prev_field(ivarfl(ir13))
+    call add_source_term_prev_field(ivarfl(ir23))
+    call add_source_term_prev_field(ivarfl(iep))
     if (iturb.eq.32) then
-      f_dim = 8
+      call add_source_term_prev_field(ivarfl(ial))
     endif
-  else if (iturb.eq.50) then
-    f_dim = 4
+  else if (itytur.eq.5) then
+    call add_source_term_prev_field(ivarfl(ik))
+    call add_source_term_prev_field(ivarfl(iep))
+    call add_source_term_prev_field(ivarfl(iphi))
+    if (iturb.eq.50) then
+      call add_source_term_prev_field(ivarfl(ifb))
+    else if (iturb.eq.51) then
+      call add_source_term_prev_field(ivarfl(ial))
+    endif
+  else if (iturb.eq.60) then
+    call add_source_term_prev_field(ivarfl(ik))
+    call add_source_term_prev_field(ivarfl(iomg))
   else if (iturb.eq.70) then
-    f_dim = 1
+    call add_source_term_prev_field(ivarfl(inusa))
   endif
-  call add_property_field_nd('turbulence_st_prev', '', f_dim, itstua)
 endif
 
 ! Proprietes des scalaires : termes sources pour theta schema
@@ -429,10 +444,7 @@ endif
 if (nscal.ge.1) then
   do ii = 1, nscal
     if (isso2t(ii).gt.0) then
-      call field_get_name(ivarfl(isca(ii)), s_name)
-      f_name = trim(s_name) // '_st_prev'
-      call add_property_field(f_name, '', itssca(ii))
-      call hide_property(itssca(ii))
+      call add_source_term_prev_field(ivarfl(isca(ii)))
     endif
     if (ivisls(ii).ne.0) then
       if (ivsext(ii).gt.0) then
@@ -931,3 +943,67 @@ return
 
 return
 end subroutine varpos
+
+!===============================================================================
+
+!> \function add_source_term_prev_field
+!
+!> \brief add field defining previous source term values for a given field
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     f_id          base field id
+!_______________________________________________________________________________
+
+subroutine add_source_term_prev_field &
+ ( f_id )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer, intent(in) :: f_id
+
+! Local variables
+
+character(len=64) :: f_name
+
+integer :: type_flag, location_id, st_id, f_dim
+logical :: has_previous, interleaved
+
+!===============================================================================
+
+type_flag = FIELD_EXTENSIVE + FIELD_PROPERTY
+location_id = 1 ! variables defined on cells
+has_previous = .false.
+interleaved = .true.
+
+! Define asscociated field
+
+call field_get_dim(f_id, f_dim, interleaved)
+call field_get_name (f_id, f_name)
+
+call field_create(trim(f_name)//'_prev_st', type_flag,               &
+                  location_id, f_dim, interleaved, has_previous,     &
+                  st_id)
+
+call field_set_key_int(f_id, kstprv, st_id)
+
+return
+
+end subroutine add_source_term_prev_field

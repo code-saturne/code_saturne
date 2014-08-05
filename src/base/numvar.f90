@@ -195,15 +195,6 @@ module numvar
   !> specific heat \f$ C_p \f$ at the previous time-step
   integer, save :: icpa
 
-  !> Navier-Stokes source terms at the previous time-step
-  integer, save :: itsnsa
-
-  !> Turbulent source terms at the previous time-step
-  integer, save :: itstua
-
-  !> transported scalars source terms at the previous time-step
-  integer, save :: itssca(nscamx)
-
   !> error estimator for Navier-Stokes
   integer, save :: iestim(nestmx)
 
@@ -215,6 +206,9 @@ module numvar
 
   !> variable diffusivity field id key for scalars
   integer, save :: kivisl
+
+  !> source terms at previous time step for 2nd order
+  integer, save :: kstprv
 
   !> convective mass flux of the variables at the previous time-step
   integer, save :: ifluaa(nvarmx)

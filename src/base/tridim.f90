@@ -1429,7 +1429,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce ,                            &
+    dt     , rtp    , rtpa   ,                                     &
     tslagr ,                                                       &
     ckupdc , smacel )
 

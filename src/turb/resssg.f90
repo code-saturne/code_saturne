@@ -57,7 +57,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     gradv         work array for the velocity grad term
 !>                                 only for iturb=31
 !> \param[in]     produc        work array for production
@@ -79,7 +78,7 @@ subroutine resssg &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    gradv  , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -121,7 +120,6 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -138,7 +136,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          iptsta
+integer          st_prv_id
 integer          iprev , inc, iccocg, ll
 integer          imucpp, idftnp, iswdyp
 integer          indrey(3,3)
@@ -176,7 +174,7 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
-double precision, dimension(:), pointer :: viscl
+double precision, dimension(:), pointer :: viscl, c_st_prv
 
 !===============================================================================
 
@@ -223,7 +221,7 @@ d1s3   = 1.d0/3.d0
 d2s3   = 2.d0/3.d0
 
 deltij = 1.0d0
-if(isou.gt.3) then
+if (isou.gt.3) then
   deltij = 0.0d0
 endif
 
@@ -231,14 +229,17 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-if (isto2t.gt.0.and.iroext.gt.0) then
+call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
+if (st_prv_id .ge. 0) then
+  call field_get_val_s(st_prv_id, c_st_prv)
+else
+  c_st_prv=> null()
+endif
+
+if (st_prv_id.ge.0.and.iroext.gt.0) then
   call field_get_val_prev_s(icrom, cromo)
 else
   call field_get_val_s(icrom, cromo)
-endif
-iptsta = 0
-if (isto2t.gt.0) then
-  iptsta = ipproc(itstua)
 endif
 
 do iel = 1, ncel
@@ -272,12 +273,12 @@ call cs_user_turbulence_source_terms &
    smbr   , rovsdt )
 
 !     If we extrapolate the source terms
-if(isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   do iel = 1, ncel
     !       Save for exchange
-    tuexpr = propce(iel,iptsta+isou-1)
+    tuexpr = c_st_prv(iel)
     !       For continuation and the next time step
-    propce(iel,iptsta+isou-1) = smbr(iel)
+    c_st_prv(iel) = smbr(iel)
     !       Second member of the previous time step
     !       We suppose -rovsdt > 0: we implicite
     !          the user source term (the rest)
@@ -321,13 +322,12 @@ if (ncesmp.gt.0) then
    volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
-  !       If we extrapolate the source terms we put Gamma Pinj in propce
-  if(isto2t.gt.0) then
+  ! If we extrapolate the source terms we put Gamma Pinj in the previous st
+  if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+isou-1) =                                 &
-      propce(iel,iptsta+isou-1) + w1(iel)
+      c_st_prv(iel) = c_st_prv(iel) + w1(iel)
     enddo
-  !       Otherwise we put it directly in smbr
+  ! Otherwise we put it directly in the RHS
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w1(iel)
@@ -359,22 +359,22 @@ enddo
 !     +Cr5*rho*k*(aik*rjk + ajk*rik)
 !     -2/3*epsilon*deltaij
 
-if(isou.eq.1)then
+if (isou.eq.1)then
   iii = 1
   jjj = 1
-elseif(isou.eq.2)then
+elseif (isou.eq.2)then
   iii = 2
   jjj = 2
-elseif(isou.eq.3)then
+elseif (isou.eq.3)then
   iii = 3
   jjj = 3
-elseif(isou.eq.4)then
+elseif (isou.eq.4)then
   iii = 1
   jjj = 2
-elseif(isou.eq.5)then
+elseif (isou.eq.5)then
   iii = 1
   jjj = 3
-elseif(isou.eq.6)then
+elseif (isou.eq.6)then
   iii = 2
   jjj = 3
 endif
@@ -564,17 +564,17 @@ do iel=1,ncel
     aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
   enddo
 
-  !     If we extrapolate the source terms (rarely), we put all in propce.
+  !     If we extrapolate the source terms (rarely), we put all in the previous ST..
   !     We do not implicit the term with Cs1*aij neither the term with Cr1*P*aij.
   !     Otherwise, we put all in smbr and we can implicit Cs1*aij
   !     and Cr1*P*aij. Here we store the second member and the implicit term
-  !     in W1 and W2, to avoid the test(ISTO2T.GT.0)
+  !     in W1 and W2, to avoid the test(ST_PRV_ID.GE.0)
   !     in the ncel loop
   !     In the term with W1, which is dedicated to be extrapolated, we use
   !     cromo.
   !     The implicitation of the two terms can also be done in the case of
   !     extrapolation, by isolating those two terms and by putting it in
-  !     smbr but not in propce and by using ipcrom .... to be modified if needed
+  !     the RHS but not in the prev. ST and by using ipcrom .... to be modified if needed
 
   if (iturb.eq.31) then
 
@@ -666,10 +666,10 @@ if (iturb.eq.32) then
   deallocate(grad)
 endif
 
-if (isto2t.gt.0) then
+if (st_prv_id.ge.0) then
 
   do iel = 1, ncel
-    propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w1(iel)
+    c_st_prv(iel) = c_st_prv(iel) + w1(iel)
   enddo
 
 else
@@ -697,10 +697,10 @@ if (igrari.eq.1) then
   call rijthe(nscal, ivar, gradro, w7)
   !==========
 
-  ! If we extrapolate the source terms: propce
-  if(isto2t.gt.0) then
+  ! If we extrapolate the source terms: previous ST
+  if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
+      c_st_prv(iel) = c_st_prv(iel) + w7(iel)
     enddo
   ! Otherwise smbr
   else
@@ -761,10 +761,10 @@ endif
 ! 9. Solving
 !===============================================================================
 
-if (isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)
+    smbr(iel) = smbr(iel) + thetp1*c_st_prv(iel)
   enddo
 endif
 

@@ -110,7 +110,7 @@ integer          nswrgp, imligp, iwarnp, iphydp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          iptsta
+integer          istprv
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
@@ -135,8 +135,10 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvar_fb
-double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_al, cvara_phi, cvara_fb
+double precision, dimension(:), pointer :: cvara_k, cvara_ep
+double precision, dimension(:), pointer :: cvara_al, cvara_phi, cvara_fb
 double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: c_st_phi_p, c_st_a_p
 
 !===============================================================================
 
@@ -164,24 +166,40 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
-if(iturb.eq.50) then
+if (iturb.eq.50) then
   call field_get_val_s(ivarfl(ifb), cvar_fb)
   call field_get_val_prev_s(ivarfl(ifb), cvara_fb)
-elseif(iturb.eq.51) then
+elseif (iturb.eq.51) then
   call field_get_val_prev_s(ivarfl(ial), cvara_al)
 endif
 
-if(isto2t.gt.0) then
-  iptsta = ipproc(itstua)
-else
-  iptsta = 0
+! 2nd order previous source terms
+
+c_st_phi_p => null()
+c_st_a_p => null() ! either fb or alpha
+
+call field_get_key_int(ivarfl(iphi), kstprv, istprv)
+if (istprv.ge.0) then
+  call field_get_val_s(istprv, c_st_phi_p)
+  if (iturb.eq.50) then
+    call field_get_key_int(ivarfl(ifb), kstprv, istprv)
+    if (istprv.ge.0) then
+      call field_get_val_s(istprv, c_st_a_p)
+    endif
+  elseif (iturb.eq.51) then
+    call field_get_key_int(ivarfl(ial), kstprv, istprv)
+    if (istprv.ge.0) then
+      call field_get_val_s(istprv, c_st_a_p)
+    endif
+  endif
+  if (istprv.ge.0) istprv = 1
 endif
 
 d2s3 = 2.0d0/3.0d0
 d1s4 = 1.0d0/4.0d0
 d3s2 = 3.0d0/2.0d0
 
-if(iwarni(iphi).ge.1) then
+if (iwarni(iphi).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -222,14 +240,14 @@ deallocate(gradp, gradk)
 ! 3. Resolution of the equation of f_barre / alpha
 !===============================================================================
 
-if(iturb.eq.50) then
+if (iturb.eq.50) then
   ivar = ifb
-elseif(iturb.eq.51) then
+elseif (iturb.eq.51) then
   ivar = ial
 endif
 ipp    = ipprtp(ivar)
 
-if(iwarni(ivar).ge.1) then
+if (iwarni(ivar).ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1100) label
 endif
@@ -241,11 +259,11 @@ thetv  = thetav(ivar )
 ipcvlo = ipproc(iviscl)
 
 call field_get_val_s(icrom, cromo)
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvlo = ipproc(ivisla)
   endif
 endif
@@ -270,14 +288,14 @@ call cs_user_turbulence_source_terms &
    smbr   , rovsdt )
 
 !     If we extrapolate the source terms
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   do iel = 1, ncel
     !       Save for exchange
-    tuexpe = propce(iel,iptsta+2)
+    tuexpe = c_st_phi_p(iel)
     !       For the futur and the next step time
     !       We put a mark "-" because in fact we solve
     !       \f$-\div{\grad {\dfrac{\overline{f}}{\alpha}}} = ... \f$
-    propce(iel,iptsta+2) = - smbr(iel)
+    c_st_phi_p(iel) = - smbr(iel)
     !       Second member of the previous step time
     !       we implicit the user source term (the rest)
     smbr(iel) = - rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
@@ -374,20 +392,20 @@ do iel=1,ncel
   xe = cvara_ep(iel)
   xnu  = propce(iel,ipcvlo)/cromo(iel)
   ttke = xk / xe
-  if(iturb.eq.50) then
+  if (iturb.eq.50) then
     ttmin = cv2fct*sqrt(xnu/xe)
     w3(iel) = max(ttke,ttmin)
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     ttmin = cpalct*sqrt(xnu/xe)
     w3(iel) = sqrt(ttke**2 + ttmin**2)
   endif
 
   xnu  = viscl(iel)/crom(iel)
   llke = xk**d3s2/xe
-  if(iturb.eq.50) then
+  if (iturb.eq.50) then
     llmin = cv2fet*(xnu**3/xe)**d1s4
     w4(iel) = ( cv2fcl*max(llke,llmin) )**2
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     llmin = cpalet*(xnu**3/xe)**d1s4
     w4(iel) = cpalcl**2*(llke**2 + llmin**2)
   endif
@@ -401,22 +419,21 @@ do iel = 1, ncel
     xnu  = propce(iel,ipcvlo)/xrom
     xk = cvara_k(iel)
     xe = cvara_ep(iel)
-    if(iturb.eq.50) then
+    if (iturb.eq.50) then
       w5(iel) = - volume(iel)*                                    &
            ( (cv2fc1-1.d0)*(cvara_phi(iel)-d2s3)/w3(iel)              &
              -cv2fc2*prdv2f(iel)/xrom/xk                          &
              -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
-    elseif(iturb.eq.51) then
+    elseif (iturb.eq.51) then
       w5(iel) = volume(iel)
     endif
 enddo
 !     If we extrapolate the source term: propce
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    propce(iel,iptsta+2) =                                        &
-    propce(iel,iptsta+2) + w5(iel)
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+2)
+    c_st_phi_p(iel) = c_st_phi_p(iel) + w5(iel)
+    smbr(iel) = smbr(iel) + thetp1*c_st_phi_p(iel)
   enddo
 !     Otherwise: smbr
 else
@@ -427,16 +444,16 @@ endif
 
 !     Implicit term
 do iel = 1, ncel
-  if(iturb.eq.50) then
+  if (iturb.eq.50) then
     smbr(iel) = ( - volume(iel)*cvara_fb(iel) + smbr(iel) ) / w4(iel)
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     smbr(iel) = ( - volume(iel)*cvara_al(iel) + smbr(iel) ) / w4(iel)
   endif
 enddo
 
 ! ---> Matrix
 
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   thetap = thetv
 else
   thetap = 1.d0
@@ -508,7 +525,7 @@ call codits &
 ivar = iphi
 ipp  = ipprtp(ivar)
 
-if(iwarni(ivar).ge.1) then
+if (iwarni(ivar).ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1100) label
 endif
@@ -518,8 +535,8 @@ thets  = thetst
 thetv  = thetav(ivar )
 
 ipcvso = ipproc(ivisct)
-if(isto2t.gt.0) then
-  if(iviext.gt.0) then
+if (istprv.ge.0) then
+  if (iviext.gt.0) then
     ipcvso = ipproc(ivista)
   endif
 endif
@@ -544,12 +561,12 @@ call cs_user_turbulence_source_terms &
    smbr   , rovsdt )
 
 !     If we extrapolate the source terms
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   do iel = 1, ncel
     !       Save for exchange
-    tuexpe = propce(iel,iptsta+3)
+    tuexpe = c_st_a_p(iel)
     !       For the future and the next time step
-    propce(iel,iptsta+3) = smbr(iel)
+    c_st_a_p(iel) = smbr(iel)
     !       Second member of previous time step
     !       We suppose -rovsdt > 0: we implicit
     !       the user source term (the rest)
@@ -582,11 +599,10 @@ if (ncesmp.gt.0) then
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbr   ,  rovsdt , w2 )
 
-  !       If we extrapolate the source term we put Gamma Pinj in propce
-  if(isto2t.gt.0) then
+  ! If we extrapolate the source term we put Gamma Pinj in the prev. TS
+  if (istprv.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+3) =                                      &
-      propce(iel,iptsta+3) + w2(iel)
+      c_st_a_p(iel) = c_st_a_p(iel) + w2(iel)
     enddo
   !       Otherwise we put it directly in smbr
   else
@@ -630,7 +646,7 @@ do iel = 1, ncel
   xe = cvara_ep(iel)
   xrom = cromo(iel)
   xnu  = propce(iel,ipcvlo)/xrom
-  if(iturb.eq.50) then
+  if (iturb.eq.50) then
     !     The term in f_barre is taken in rtp and not in rtpa
     !     ... a priori better
     !     Remark: if we stay in rtp, we have to modify the case
@@ -638,7 +654,7 @@ do iel = 1, ncel
     w2(iel)   =  volume(iel)*                                       &
          ( xrom*cvar_fb(iel)                                            &
            +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     ttke = xk / xe
     ttmin = cpalct*sqrt(xnu/xe)
     tt = sqrt(ttke**2 + ttmin**2)
@@ -651,13 +667,12 @@ do iel = 1, ncel
 
 enddo
 
-!     If we extrapolate the source term: propce
-if(isto2t.gt.0) then
+! If we extrapolate the source term: prev. TS
+if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    propce(iel,iptsta+3) =                                          &
-    propce(iel,iptsta+3) + w2(iel)
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+3)
+    c_st_a_p(iel) = c_st_a_p(iel) + w2(iel)
+    smbr(iel) = smbr(iel) + thetp1*c_st_a_p(iel)
   enddo
 !     Otherwise: smbr
 else
@@ -669,10 +684,10 @@ endif
 !     Implicit term
 do iel = 1, ncel
   xrom = cromo(iel)
-  if(iturb.eq.50) then
+  if (iturb.eq.50) then
     smbr(iel) = smbr(iel)                                         &
          - volume(iel)*prdv2f(iel)*cvara_phi(iel)/cvara_k(iel)
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     smbr(iel) = smbr(iel)                                         &
          - volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
                                     *(1.d0-cvara_al(iel)**3))         &
@@ -682,17 +697,17 @@ enddo
 
 ! ---> Matrix
 
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   thetap = thetv
 else
   thetap = 1.d0
 endif
 do iel = 1, ncel
   xrom = cromo(iel)
-  if(iturb.eq.50) then
+  if (iturb.eq.50) then
     rovsdt(iel) = rovsdt(iel)                                     &
          + volume(iel)*prdv2f(iel)/cvara_k(iel)*thetap
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     rovsdt(iel) = rovsdt(iel)                                     &
          + volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
                                     *(1.d0-cvara_al(iel)**3))         &
@@ -721,9 +736,9 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 if (idiff(ivar).ge.1) then
   do iel = 1, ncel
-    if(iturb.eq.50) then
+    if (iturb.eq.50) then
       w2(iel) = viscl(iel)      + visct(iel)/sigmak
-    elseif(iturb.eq.51) then
+    elseif (iturb.eq.51) then
       w2(iel) = viscl(iel)/2.d0 + visct(iel)/sigmak !FIXME
     endif
   enddo
@@ -766,10 +781,10 @@ endif
 ! 4.6 Effective resolution of the phi equation
 !===============================================================================
 
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+3)
+    smbr(iel) = smbr(iel) + thetp1*c_st_a_p(iel)
   enddo
 endif
 

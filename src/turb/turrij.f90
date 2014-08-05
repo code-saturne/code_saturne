@@ -47,7 +47,6 @@
 !>                               (at the current time step)
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
@@ -58,7 +57,7 @@
 subroutine turrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    tslagr ,                                                       &
    ckupdc , smacel )
 
@@ -96,7 +95,6 @@ integer          icetsm(ncesmp)
 integer, dimension(ncesmp,nvar), target :: itypsm
 
 double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6)
 
 double precision, dimension(ncesmp,nvar), target ::  smacel
@@ -361,7 +359,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    produc , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -376,7 +374,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    gradv  , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -392,14 +390,13 @@ enddo
 
 ivar   = iep
 ipp    = ipprtp(ivar)
-isou   = 7
 
 call reseps &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   , isou   , ipp    ,                                     &
+   ivar   , ipp    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &

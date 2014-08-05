@@ -41,7 +41,6 @@
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
-!> \param[in]     isou          local variable number (7 here)
 !> \param[in]     ipp           index for writing
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
@@ -50,7 +49,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     gradv         work array for the term grad
 !>                               of velocity only for iturb=31
 !> \param[in]     produc        work array for production (without
@@ -68,9 +66,9 @@
 
 subroutine reseps &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   , isou   , ipp    ,                                     &
+   ivar   , ipp    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -105,13 +103,12 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          ivar   , isou   , ipp
+integer          ivar   , ipp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision produc(6,ncelet), gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -128,7 +125,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          iptsta
+integer          st_prv_id
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
@@ -154,7 +151,7 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
-double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: viscl, visct, c_st_prv
 
 character(len=80) :: label
 
@@ -172,7 +169,7 @@ allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
-if(iwarni(ivar).ge.1) then
+if (iwarni(ivar).ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1000) label
 endif
@@ -214,15 +211,17 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-if (isto2t.gt.0.and.iroext.gt.0) then
+call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
+if (st_prv_id.ge.0) then
+  call field_get_val_s(st_prv_id, c_st_prv)
+else
+  c_st_prv=> null()
+endif
+
+if (st_prv_id.ge.0.and.iroext.gt.0) then
   call field_get_val_prev_s(icrom, cromo)
 else
   call field_get_val_s(icrom, cromo)
-endif
-if(isto2t.gt.0) then
-  iptsta = ipproc(itstua)
-else
-  iptsta = 0
 endif
 
 do iel = 1, ncel
@@ -245,12 +244,12 @@ call cs_user_turbulence_source_terms &
    smbr   , rovsdt )
 
 !     If we extrapolate the source terms
-if(isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   do iel = 1, ncel
     !       Save for exchange
-    tuexpe = propce(iel,iptsta+isou-1)
+    tuexpe = c_st_prv(iel)
     !       For the continuation and the next time step
-    propce(iel,iptsta+isou-1) = smbr(iel)
+    c_st_prv(iel) = smbr(iel)
     !       Second member of previous time step
     !       We suppose -rovsdt > 0: we implicit
     !          the user source term (the rest)
@@ -307,10 +306,9 @@ if (ncesmp.gt.0) then
    smbr   , rovsdt , w1 )
 
   !       If we extrapolate the source terms, we put Gamma Pinj in propce
-  if(isto2t.gt.0) then
+  if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+isou-1) =                                 &
-      propce(iel,iptsta+isou-1) + w1(iel)
+      c_st_prv(iel) = c_st_prv(iel) + w1(iel)
     enddo
   !       Otherwise we put it directly in smbr
   else
@@ -335,7 +333,7 @@ enddo
 !    Dissipation (rho*Ce2.epsilon/k*epsilon)
 !===============================================================================
 
-if (isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   thetap = thetv
 else
   thetap = 1.d0
@@ -412,9 +410,9 @@ else
 endif
 
 ! Extrapolation of source terms (2nd order in time)
-if (isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   do iel = 1, ncel
-    propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w1(iel)
+    c_st_prv(iel) = c_st_prv(iel) + w1(iel)
   enddo
 else
   do iel = 1, ncel
@@ -439,9 +437,9 @@ if (igrari.eq.1) then
   !==========
 
   ! Extrapolation of source terms (2nd order in time)
-  if (isto2t.gt.0) then
+  if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
+      c_st_prv(iel) = c_st_prv(iel) + w7(iel)
     enddo
   else
     do iel = 1, ncel
@@ -499,10 +497,10 @@ endif
 ! 9. Solving
 !===============================================================================
 
-if (isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)
+    smbr(iel) = smbr(iel) + thetp1*c_st_prv(iel)
   enddo
 endif
 

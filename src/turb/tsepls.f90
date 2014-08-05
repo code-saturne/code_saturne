@@ -65,11 +65,10 @@ double precision w1(ncelet)
 ! Local variables
 
 integer          iel, ifac, inc, iprev
-integer          isou, ii, jj, nswrgp, imligp, iwarnp
+integer          isou, ii, jj
 
-double precision climgp, extrap
 double precision w1f, w2f, w3f
-double precision pnd, flux, somsur, epsrgp
+double precision pnd, flux, somsur
 
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:,:,:) :: gradv

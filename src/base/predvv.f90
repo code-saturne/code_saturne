@@ -178,7 +178,6 @@ integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
-integer          iptsna
 integer          iflmb0, nswrp
 integer          idtva0, icvflb
 integer          ippu  , ippv  , ippw  , jsou, ivisep
@@ -219,7 +218,7 @@ double precision, dimension(:,:), allocatable :: coefat
 double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, dimension(:,:), allocatable :: divt
-double precision, dimension(:,:), pointer :: forbr
+double precision, dimension(:,:), pointer :: forbr, c_st_vel
 double precision, dimension(:), pointer :: cvara_pr, cvara_k
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
@@ -295,10 +294,11 @@ if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
 
 ! Theta relatif aux termes sources explicites
 thets  = thetsn
-if(isno2t.gt.0) then
-  iptsna = ipproc(itsnsa)
+if (isno2t.gt.0) then
+  call field_get_key_int(ivarfl(iu), kstprv, f_id)
+  call field_get_val_v(f_id, c_st_vel)
 else
-  iptsna = 0
+  c_st_vel => null()
 endif
 
 ! Coefficient of the "Coriolis-type" term
@@ -730,27 +730,27 @@ deallocate(grad)
 !     A la premiere iter sur navsto
 if (iterns.eq.1) then
 
-    ! Si on   extrapole     les T.S. : -theta*valeur precedente
-    if(isno2t.gt.0) then
-      ! S'il n'y a qu'une    iter : TRAV  incremente
-      if(nterup.eq.1) then
+  ! Si on   extrapole     les T.S. : -theta*valeur precedente
+  if (isno2t.gt.0) then
+    ! S'il n'y a qu'une    iter : TRAV  incremente
+    if (nterup.eq.1) then
+      do iel = 1, ncel
         do ii = 1, ndim
-          do iel = 1, ncel
-            trav (ii,iel) = trav (ii,iel) - thets*propce(iel,iptsna+ii-1)
-          enddo
+          trav (ii,iel) = trav (ii,iel) - thets*c_st_vel(ii,iel)
         enddo
+      enddo
       ! S'il   y a plusieurs iter : TRAVA initialise
-      else
+    else
+      do iel = 1, ncel
         do ii = 1, ndim
-          do iel = 1, ncel
-            trava(ii,iel) = - thets*propce(iel,iptsna+ii-1)
-          enddo
+          trava(ii,iel) = - thets*c_st_vel(ii,iel)
+        enddo
       enddo
     endif
-    ! Et on initialise PROPCE pour le remplir ensuite
-    do ii = 1, ndim
-      do iel = 1, ncel
-        propce(iel,iptsna+ii-1) = 0.d0
+    ! Et on initialise le terme source pour le remplir ensuite
+    do iel = 1, ncel
+      do ii = 1, ndim
+        c_st_vel(ii,iel) = 0.d0
       enddo
     enddo
 
@@ -847,7 +847,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   endif
 
   ! Si on extrapole les termes source en temps : PROPCE
-  if(isno2t.gt.0) then
+  if (isno2t.gt.0) then
     ! Calcul de rho^n grad k^n      si rho non extrapole
     !           rho^n grad k^n      si rho     extrapole
 
@@ -855,9 +855,9 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
     call field_get_val_prev_s(icrom, croma)
     do iel = 1, ncel
       romvom = -croma(iel)*volume(iel)*d2s3
-      propce(iel,iptsna  )=propce(iel,iptsna  )+grad(1,iel)*romvom
-      propce(iel,iptsna+1)=propce(iel,iptsna+1)+grad(2,iel)*romvom
-      propce(iel,iptsna+2)=propce(iel,iptsna+2)+grad(3,iel)*romvom
+      do isou = 1, 3
+        c_st_vel(isou,iel) = c_st_vel(isou,iel)+grad(isou,iel)*romvom
+      enddo
     enddo
   ! Si on n'extrapole pas les termes sources en temps : TRAV ou TRAVA
   else
@@ -1191,31 +1191,32 @@ if(itytur.eq.3.and.iterns.eq.1) then
 
   deallocate(tflmas, tflmab)
 
-  do isou = 1, 3
-
-!     Si on extrapole les termes source en temps :
-!       PROPCE recoit les termes de divergence
-    if(isno2t.gt.0) then
-      do iel = 1, ncel
-        propce(iel,iptsna+isou-1 ) =                              &
-        propce(iel,iptsna+isou-1 ) - divt(isou,iel)
+!   Si on extrapole les termes source en temps :
+!     PROPCE recoit les termes de divergence
+  if (isno2t.gt.0) then
+    do iel = 1, ncel
+      do isou = 1, 3
+        c_st_vel(isou,iel) = c_st_vel(isou,iel) - divt(isou,iel)
       enddo
-!     Si on n'extrapole pas les termes source en temps :
-    else
-!       si on n'itere pas sur navsto : TRAV
-      if(nterup.eq.1) then
-        do iel = 1, ncel
+    enddo
+!   Si on n'extrapole pas les termes source en temps :
+  else
+!     si on n'itere pas sur navsto : TRAV
+    if (nterup.eq.1) then
+      do iel = 1, ncel
+        do isou = 1, 3
           trav(isou,iel) = trav(isou,iel) - divt(isou,iel)
         enddo
-!       si on itere sur navsto       : TRAVA
-      else
-        do iel = 1, ncel
+      enddo
+!     si on itere sur navsto       : TRAVA
+    else
+      do iel = 1, ncel
+        do isou = 1, 3
           trava(isou,iel) = trava(isou,iel) - divt(isou,iel)
         enddo
-      endif
+      enddo
     endif
-
-  enddo
+  endif
 
   deallocate(divt)
 
@@ -1496,7 +1497,7 @@ if (iterns.eq.1.and.iphydr.ne.1) then
   if (isno2t.gt.0) then
     do iel = 1, ncel
       do isou = 1, 3
-        propce(iel,iptsna+isou-1) = propce(iel,iptsna+isou-1) + tsexp(isou,iel)
+        c_st_vel(isou,iel) = c_st_vel(isou,iel) + tsexp(isou,iel)
       enddo
     enddo
 
@@ -1599,8 +1600,7 @@ if (ncesmp.gt.0) then
     if(isno2t.gt.0) then
       do iel = 1, ncel
         do isou = 1, 3
-          propce(iel,iptsna+isou-1 ) =                            &
-          propce(iel,iptsna+isou-1 ) + gavinj(isou,iel)
+          c_st_vel(isou,iel) = c_st_vel(isou,iel) + gavinj(isou,iel)
         enddo
       enddo
 
@@ -1636,7 +1636,7 @@ if (isno2t.gt.0) then
   if (nterup.eq.1) then
     do iel = 1, ncel
       do isou = 1, 3
-        smbr(isou,iel) = trav(isou,iel) + thetp1*propce(iel,iptsna+isou-1)
+        smbr(isou,iel) = trav(isou,iel) + thetp1*c_st_vel(isou,iel)
       enddo
     enddo
 
@@ -1644,7 +1644,7 @@ if (isno2t.gt.0) then
     do iel = 1, ncel
       do isou = 1, 3
         smbr(isou,iel) = trav(isou,iel) + trava(isou,iel)       &
-                       + thetp1*propce(iel,iptsna+isou-1)
+                       + thetp1*c_st_vel(isou,iel)
       enddo
     enddo
   endif
@@ -1679,7 +1679,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1)  then
 
   do iel = 1, ncel
     do isou = 1, 3
-      smbr(isou,iel)   = smbr(isou,iel) + tslagr(iel,itsvx+isou-1)
+      smbr(isou,iel) = smbr(isou,iel) + tslagr(iel,itsvx+isou-1)
     enddo
   enddo
   ! At the second call, fimp is unused

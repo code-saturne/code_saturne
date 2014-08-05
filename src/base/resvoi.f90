@@ -86,7 +86,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          ivar  , iel, ifac
+integer          ivar  , iel, ifac, f_id
 integer          init
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp, ireslp
@@ -99,7 +99,6 @@ integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 integer          kscmin, kscmax, iclmin, iclmax
-integer          iptvfa
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp, epsrsp, thetap
 
@@ -114,7 +113,7 @@ double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: dpvar, divu
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:), pointer :: porosi
+double precision, dimension(:), pointer :: porosi, c_st_voidf
 
 !===============================================================================
 
@@ -152,10 +151,11 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 
 ! Theta related to explicit source terms
 thets  = thetsn
-if(isno2t.gt.0) then
-  iptvfa = ipproc(itsnsa) + 3
+if (isno2t.gt.0) then
+  call field_get_key_int(ivarfl(ivoidf), kstprv, f_id)
+  call field_get_val_s(f_id, c_st_voidf)
 else
-  iptvfa = 0
+  c_st_voidf => null()
 endif
 
 ! Theta related to void fraction
@@ -241,9 +241,9 @@ enddo
 ! If source terms are extrapolated over time
 if (isno2t.gt.0) then
   do iel = 1, ncel
-    tsexp = propce(iel,iptvfa)
-    propce(iel,iptvfa) = smbrs(iel)
-    smbrs(iel) = -thets*tsexp + (1.d0+thets)*propce(iel,iptvfa) &
+    tsexp = c_st_voidf(iel)
+    c_st_voidf(iel) = smbrs(iel)
+    smbrs(iel) = -thets*tsexp + (1.d0+thets)*c_st_voidf(iel) &
                  + rovsdt(iel)*rtpa(iel,ivoidf)
     rovsdt(iel) = -thetv*rovsdt(iel)
   enddo

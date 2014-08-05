@@ -88,7 +88,6 @@ integer          iclip , ii    , jj    , idim
 integer          iivisa, iivism
 integer          iicpa
 integer          iiviss
-integer          iptsna, iptsta, iptsca
 integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          f_id, f_id_prv, f_dim
@@ -602,53 +601,7 @@ do ii = 1, nfld
 enddo
 
 !===============================================================================
-! 8.  INITIALISATION DES TERMES SOURCES SI EXTRAPOLES
-!===============================================================================
-
-!     les termes sources de Navier Stokes
-if(isno2t.gt.0) then
-  iptsna = ipproc(itsnsa)
-  do ii = 1, ndim
-    do iel = 1, ncel
-      propce(iel,iptsna+ii-1) = 0.d0
-    enddo
-  enddo
-  if (icavit.ge.0) then
-    do iel = 1, ncel
-      propce(iel,iptsna+3) = 0.d0
-    enddo
-  endif
-endif
-
-!     les termes sources turbulents
-if(isto2t.gt.0) then
-  if(itytur.eq.2) jj = 2
-  if(itytur.eq.3) jj = 7
-  if(iturb.eq.30.or.iturb.eq.31) jj = 7
-  if(iturb.eq.32) jj = 8
-  if(iturb.eq.50) jj = 4
-  if(iturb.eq.60) jj = 2
-  if(iturb.eq.70) jj = 1
-  iptsta = ipproc(itstua)
-  do ii = 1, jj
-    do iel = 1, ncel
-      propce(iel,iptsta+ii-1) = 0.d0
-    enddo
-  enddo
-endif
-
-!     les termes sources des scalaires
-do iis = 1, nscal
-  if(isso2t(iis).gt.0) then
-    iptsca = ipproc(itssca(iis))
-    do iel = 1, ncel
-      propce(iel,iptsca) = 0.d0
-    enddo
-  endif
-enddo
-
-!===============================================================================
-! 9.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE
+! 8.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE
 !===============================================================================
 
 if(iturb.eq.41) then
@@ -658,7 +611,7 @@ if(iturb.eq.41) then
 endif
 
 !===============================================================================
-! 10.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
+! 9.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
 !===============================================================================
 
 !     Si IFAPAT existe,
@@ -671,7 +624,7 @@ if(abs(icdpar).eq.2) then
 endif
 
 !===============================================================================
-! 11.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
+! 10.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
 !===============================================================================
 
 if(iphydr.eq.1) then
@@ -683,7 +636,7 @@ if(iphydr.eq.1) then
 endif
 
 !===============================================================================
-! 12.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
+! 11.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
 !===============================================================================
 
 if(iphydr.eq.2) then
@@ -693,7 +646,7 @@ if(iphydr.eq.2) then
 endif
 
 !===============================================================================
-! 13.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
+! 12.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
 !===============================================================================
 
 if (iale.eq.1) then

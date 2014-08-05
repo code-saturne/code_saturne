@@ -134,20 +134,20 @@ double precision rovsdt(ncelet)
 ! Local variables
 
 logical          lprev
-character*80     chaine
+character(len=80) :: chaine, fname
 integer          ivar
 integer          ifac  , iel
 integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
 integer          ipcvsl, iflmas, iflmab
-integer          ippvar, ipp   , iptsca, ipcvso
+integer          ippvar, ipp   , ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
-integer          iflid , f_id, keydri, iscdri
+integer          iflid , f_id, st_prv_id,  keydri, iscdri
 integer          icvflb
 
 integer          ivoid(1)
@@ -160,8 +160,6 @@ double precision smbexp
 double precision temp, idifftp
 
 double precision rvoid(1)
-
-character*80     fname
 
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: viscce
@@ -179,7 +177,7 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-double precision, dimension(:), pointer :: visct, cpro_cp
+double precision, dimension(:), pointer :: visct, cpro_cp, c_st_scal
 
 !===============================================================================
 
@@ -240,15 +238,16 @@ else
 endif
 
 ! --- Numero du terme source dans PROPCE si extrapolation
-if (isso2t(iscal).gt.0) then
-  iptsca = ipproc(itssca(iscal))
+call field_get_key_int(iflid, kstprv, st_prv_id)
+if (st_prv_id .ge.0) then
+  call field_get_val_s(st_prv_id, c_st_scal)
 else
-  iptsca = 0
+  c_st_scal => null()
 endif
 
 ! S pour Source, V pour Variable
 thets  = thetss(iscal)
-thetv  = thetav(ivar )
+thetv  = thetav(ivar)
 
 call field_get_name(ivarfl(ivar), chaine)
 
@@ -343,12 +342,12 @@ endif
 !     on implicite le terme (donc ROVSDT*RTPA va dans SMBRS)
 !   En std, on adapte le traitement au signe de ROVSDT, mais ROVSDT*RTPA va
 !     quand meme dans SMBRS (pas d'autre choix)
-if (isso2t(iscal).gt.0) then
+if (st_prv_id .ge. 0) then
   do iel = 1, ncel
     ! Stockage temporaire pour economiser un tableau
-    smbexp = propce(iel,iptsca)
+    smbexp = c_st_scal(iel)
     ! Terme source utilisateur explicite
-    propce(iel,iptsca) = smbrs(iel)
+    c_st_scal(iel) = smbrs(iel)
     ! Terme source du pas de temps precedent et
     ! On suppose -ROVSDT > 0 : on implicite
     !    le terme source utilisateur (le reste)
@@ -486,9 +485,9 @@ if (ncesmp.gt.0) then
   deallocate(srcmas)
 
   ! Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if (isso2t(iscal).gt.0) then
+  if (st_prv_id .ge. 0) then
     do iel = 1, ncel
-      propce(iel,iptsca) = propce(iel,iptsca) + w1(iel)
+      c_st_scal(iel) = c_st_scal(iel) + w1(iel)
     enddo
   ! Sinon on le met directement dans SMBRS
   else
@@ -534,7 +533,7 @@ if (itspdv.eq.1) then
     ! de scalaire avec un modele LES ... ce qui serait curieux mais n'est
     ! pas interdit par le code.
     !   Si extrapolation : dans PROPCE
-    if (isso2t(iscal).gt.0) then
+    if (st_prv_id .ge. 0) then
       ! On prend la viscosite a l'instant n, meme si elle est extrapolee
       ipcvso = ipproc(ivisct)
       if (iviext.gt.0) ipcvso = ipproc(ivista)
@@ -553,15 +552,15 @@ if (itspdv.eq.1) then
         call field_get_val_v(f_id, xut)
 
         do iel = 1, ncel
-          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*xcpp(iel)*volume(iel) &
-                                                  *(xut(1,iel)*grad(1,iel)    &
-                                                   +xut(2,iel)*grad(2,iel)    &
-                                                   +xut(3,iel)*grad(3,iel) )
+          c_st_scal(iel) = c_st_scal(iel) -2.d0*xcpp(iel)*volume(iel) &
+                                          *(xut(1,iel)*grad(1,iel)    &
+                                           +xut(2,iel)*grad(2,iel)    &
+                                           +xut(3,iel)*grad(3,iel) )
         enddo
       ! SGDH model
       else
         do iel = 1, ncel
-          propce(iel,iptsca) = propce(iel,iptsca)                             &
+          c_st_scal(iel) = c_st_scal(iel)                                     &
                + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                  &
                *volume(iel)/sigmas(iscal)                                     &
                *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
@@ -617,7 +616,7 @@ if (itspdv.eq.1) then
     deallocate(grad)
 
     ! Traitement de la dissipation
-    if (isso2t(iscal).gt.0) then
+    if (st_prv_id .ge. 0) then
       thetap = thetv
     else
       thetap = 1.d0
@@ -665,10 +664,10 @@ if (itspdv.eq.1) then
 
 endif
 
-if (isso2t(iscal).gt.0) then
+if (st_prv_id .ge. 0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel) + thetp1 * propce(iel,iptsca)
+    smbrs(iel) = smbrs(iel) + thetp1 * c_st_scal(iel)
   enddo
 endif
 
@@ -770,7 +769,7 @@ if (idiff(ivar).ge.1) then
     !==========
     ( nscal  ,                                                       &
       iscal  ,                                                       &
-      dt     , rtp    , rtpa   , propce ,                            &
+      dt     , rtp    , rtpa   ,                                     &
       xcpp   ,                                                       &
       smbrs  )
 

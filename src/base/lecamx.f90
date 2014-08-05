@@ -106,35 +106,32 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
-
 character        rubriq*64,car4*4,car2*2
 character        car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
 character        cphase*2
-character        nomflu(nvarmx)*18,nomcli(nvarmx)*18
+character        nomflu(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-logical          lprev
+logical          lprev , interleaved
 integer          iel   , ifac, ii, istr
 integer          ivar  , iscal , jphas , isco
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
 integer          jortvm, ipcvmx, ipcvmy, ipcvmz
-integer          iptsna, iptsta, iptsca
 integer          numero, ipcefj, ipcla1, ipcla2, ipcla3
 integer          inifok
 integer          ncelok, nfaiok, nfabok, nsomok
 integer          ierror, irtyp,  itysup, nbval
 integer          nberro, inierr, ivers
-integer          ilu   , ilecec, ideblu, iannul, ierrch
+integer          ilu   , ilecec, ierrch
 integer          impamx
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
 integer          jturb , jtytur, jale, jcavit
-integer          f_id, nfld, iflmas, iflmab, iflvoi, iflvob
+integer          f_id, f_dim, nfld, iflmas, iflmab, iflvoi, iflvob
 integer          ngbstr(2)
-double precision d2s3  , tsrii
 double precision tmpstr(27)
 
 integer, allocatable, dimension(:) :: mflnum
@@ -163,12 +160,12 @@ nfmtch = 99
 nfmtcl = 9999
 
 !     Indefini a 2 et 4 caracteres
-CINDFP='YY'
-CINDFS='YYYY'
-CINDFF='YYYY'
-CINDFM='YYYY'
-CINDFC='YY'
-CINDFL='YYYY'
+cindfp='YY'
+cindfs='YYYY'
+cindff='YYYY'
+cindfm='YYYY'
+cindfc='YY'
+cindfl='YYYY'
 
 !  Codage en chaine de caracteres du numero de la phase
 cphase='01'
@@ -209,7 +206,7 @@ write(nfecra,1100)
 itysup = 0
 nbval  = 1
 irtyp  = 1
-RUBRIQ = 'version_fichier_suite_auxiliaire'
+rubriq = 'version_fichier_suite_auxiliaire'
 call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
             ierror)
 
@@ -242,7 +239,7 @@ itysup = 0
 nbval  = 1
 irtyp  = 1
 
-RUBRIQ = 'nombre_phases'
+rubriq = 'nombre_phases'
 call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,jphas,   &
             ierror)
 nberro=nberro+ierror
@@ -250,7 +247,7 @@ nberro=nberro+ierror
 !  ---> On s'arrete si erreur
 !     Si on ne peut pas relire un entier, c'est que le fichier n'est pas bon
 if (nberro.ne.0) then
-  CAR54 ='ERREUR A lA LECTURE DES DIMENSIONS (NPHAS)            '
+  car54 = 'ERREUR A lA LECTURE DES DIMENSIONS (NPHAS)            '
   write(nfecra,9200)car54
   call csexit (1)
 endif
@@ -266,7 +263,7 @@ endif
 
 nberro = 0
 
-RUBRIQ = 'modele_turbulence_phase'//CPHASE
+rubriq = 'modele_turbulence_phase01'
 itysup = 0
 nbval  = 1
 irtyp  = 1
@@ -278,7 +275,7 @@ jtytur=jturb/10
 ! --->  Stop si erreur
 !     Si on ne peut pas relire un entier, c'est que le fichier n'est pas bon
 if (nberro.ne.0) then
-  CAR54 ='ERREUR A lA LECTURE DES MODELES DE TURBULENCE         '
+  car54 = 'ERREUR A lA LECTURE DES MODELES DE TURBULENCE         '
   write(nfecra,9200)car54
   call csexit (1)
 endif
@@ -287,7 +284,7 @@ endif
 
 nberro = 0
 
-RUBRIQ = 'methode_ALE'
+rubriq = 'methode_ALE'
 itysup = 0
 nbval  = 1
 irtyp  = 1
@@ -317,7 +314,7 @@ endif
 
 nberro = 0
 
-RUBRIQ = 'cavitation'
+rubriq = 'cavitation'
 itysup = 0
 nbval  = 1
 irtyp  = 1
@@ -336,7 +333,7 @@ endif
 if (iturb .ne. jturb)                             &
      write(nfecra,8220) iturb, jturb
 
-CAR54 =' Fin de la lecture des options                        '
+car54 = ' Fin de la lecture des options                        '
 write(nfecra,1110)car54
 
 !===============================================================================
@@ -351,7 +348,7 @@ nberro = 0
 !     On lit les coordonnees si l'utilisateur n'a rien specifie, i.e.
 !       si IXYZP0=-1, et on met IXYZP0 a 1 pour eviter de le changer ensuite.
 if (ixyzp0.eq.-1) then
-  RUBRIQ = 'ref_presstot'//CPHASE
+  rubriq = 'ref_presstot01'
   itysup = 0
   nbval  = 3
   irtyp  = 2
@@ -422,7 +419,7 @@ if (irovar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
 
   ! Masse volumique - faces de bord
   if (nfabok.eq.1) then
-    RUBRIQ = 'rho_fb_phase'//CPHASE
+    rubriq = 'rho_fb_phase01'
     itysup = 3
     nbval  = 1
     irtyp  = 2
@@ -456,7 +453,7 @@ if(iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
   !         Viscosite moleculaire - cellules
   !         Uniquement si elle est variable ou pour le modele de cavitation
   if (ivivar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
-    RUBRIQ = 'viscl_ce_phase'//CPHASE
+    rubriq = 'viscl_ce_phase01'
     itysup = 1
     nbval  = 1
     irtyp  = 2
@@ -468,7 +465,7 @@ if(iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
 
   !         Viscosite turbulente ou de sous-maille - cellules
   if (iviext.gt.0) then
-    RUBRIQ = 'visct_ce_phase'//CPHASE
+    rubriq = 'visct_ce_phase01'
     itysup = 1
     nbval  = 1
     irtyp  = 2
@@ -500,7 +497,7 @@ if((icpext.gt.0.and.icp.gt.0).or.                &
   inierr = 0
 
   !         Chaleur massique - cellules
-  RUBRIQ = 'cp_ce_phase'//CPHASE
+  rubriq = 'cp_ce_phase01'
   itysup = 1
   nbval  = 1
   irtyp  = 2
@@ -573,11 +570,11 @@ endif
 !       c'est discutable pour rho
 
 if (nberro.ne.0) then
-  CAR54 = 'LECTURE DES PROPRIETES PHYSIQUES                    '
+  car54 = 'LECTURE DES PROPRIETES PHYSIQUES                    '
   write(nfecra,8300)car54
 endif
 
-CAR54 = ' Fin de la lecture des proprietes physiques           '
+car54 = ' Fin de la lecture des proprietes physiques           '
 write(nfecra,1110)car54
 
 
@@ -587,7 +584,7 @@ write(nfecra,1110)car54
 
 
 !  ---> Indicateur de pas de temps variable
-RUBRIQ = 'indic_dt_variable'
+rubriq = 'indic_dt_variable'
 itysup = 0
 nbval  = 1
 irtyp  = 1
@@ -597,7 +594,7 @@ call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,jdtvar,  &
 !  ---> On s'arrete si erreur
 !     Si on ne peut pas relire un entier, c'est que le fichier n'est pas bon
 if (ierror.ne.0) then
-  CAR54 ='ERREUR A LA LECTURE DU MODE DE MARCHE EN TEMPS        '
+  car54 = 'ERREUR A LA LECTURE DU MODE DE MARCHE EN TEMPS        '
   write(nfecra,9200)car54
   call csexit(1)
 endif
@@ -612,7 +609,7 @@ if (idtvar.ne.jdtvar) then
   write(nfecra,8400)idtvar,jdtvar,dtref
 
 elseif (idtvar.eq.1) then
-  RUBRIQ = 'dt_variable_temps'
+  rubriq = 'dt_variable_temps'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -624,7 +621,7 @@ elseif (idtvar.eq.1) then
   enddo
 
 elseif (idtvar.eq.2) then
-  RUBRIQ = 'dt_variable_espace_ce'
+  rubriq = 'dt_variable_espace_ce'
   itysup = 1
   nbval  = 1
   irtyp  = 2
@@ -1130,78 +1127,6 @@ if (nfabok.eq.1) then
 
   nberro=0
 
-!     Nom de variable associe a la variable dans le calcul precedent
-  NOMCLI(IPR)='_p_phase'//CPHASE
-  NOMCLI(IU)='_u_phase'//CPHASE
-  NOMCLI(IV)='_v_phase'//CPHASE
-  NOMCLI(IW)='_w_phase'//CPHASE
-  !     Pour un calcul k-eps, on peut recuperer les CL d'un calcul k-eps
-  !     ou d'un calcul v2f
-  if (itytur.eq.2.and.                                   &
-       (jtytur.eq.2.or.jtytur.eq.5)) then
-    NOMCLI(IK)='_k_phase'//CPHASE
-    NOMCLI(IEP)='_eps_phase'//CPHASE
-  elseif (itytur.eq.3.and.jtytur.eq.3) then
-    NOMCLI(IR11)='_R11_phase'//CPHASE
-    NOMCLI(IR22)='_R22_phase'//CPHASE
-    NOMCLI(IR33)='_R33_phase'//CPHASE
-    NOMCLI(IR12)='_R12_phase'//CPHASE
-    NOMCLI(IR13)='_R13_phase'//CPHASE
-    NOMCLI(IR23)='_R23_phase'//CPHASE
-    NOMCLI(IEP)='_eps_phase'//CPHASE
-    if (iturb.eq.32.and.jturb.eq.32) then
-      nomcli(ial)='_alp_phase'//CPHASE
-    endif
-    if (iturb.eq.32.and.jturb.ne.32) then
-      nomcli(ial)='_eps_phase'//CPHASE
-    endif
-  elseif (itytur.eq.5.and.jtytur.eq.5) then
-    NOMCLI(IK)='_k_phase'//CPHASE
-    NOMCLI(IEP)='_eps_phase'//CPHASE
-    NOMCLI(IPHI)='_phi_phase'//CPHASE
-    if (iturb.eq.50 .and. jturb.eq.50) then
-      NOMCLI(IFB)='_fb_phase'//CPHASE
-    elseif (iturb.eq.51 .and. jturb.eq.51) then
-      NOMCLI(IAL)='_al_phase'//CPHASE
-    endif
-  elseif (iturb.eq.60.and.jturb.eq.60) then
-    NOMCLI(IK)='_k_phase'//CPHASE
-    NOMCLI(IOMG)='_omega_phase'//CPHASE
-  elseif (iturb.eq.70.and.jturb.eq.70) then
-    nomcli(inusa)='_nusa_phase'//CPHASE
-    !     On peut aussi recuperer les CL de k et eps pour un calcul v2f suite
-    !     d'un calcul k-eps
-  elseif (itytur.eq.5.and.jtytur.eq.2) then
-    NOMCLI(IK)='_k_phase'//CPHASE
-    NOMCLI(IEP)='_eps_phase'//CPHASE
-    !     On peut aussi recuperer les CL de k pour un calcul k-eps, v2f ou k-omega suite
-    !     d'un calcul k-eps, v2f ou k-omega et qui n'est pas deja un des cas ci-dessus.
-  elseif ( (itytur.eq.2 .or. itytur.eq.50          &
-       .or. iturb.eq.60)  .and. (jtytur.eq.2    &
-       .or. jtytur.eq.5 .or. jturb.eq.60) ) then
-    NOMCLI(IK)='_k_phase'//CPHASE
-  endif
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      if (iscold(iscal).gt.0) then
-        if(iscold(iscal).le.nfmtsc) then
-          write(car4,'(i4.4)')iscold(iscal)
-        else
-          car4 = cindfs
-        endif
-        nomcli(isca(iscal))='_scalaire'//car4
-      endif
-    enddo
-  endif
-  if (iale.eq.1) then
-    nomcli(iuma)='_vit_maillage_u'
-    nomcli(ivma)='_vit_maillage_v'
-    nomcli(iwma)='_vit_maillage_w'
-  endif
-  if (icavit.ge.0) then
-    nomcli(ivoidf)='_taux_vide'
-  endif
-
   ! Variable BC coefficients
 
   call restart_read_bc_coeffs(impamx)
@@ -1230,11 +1155,10 @@ if (ilu.eq.1) then
     write(nfecra,8300)car54
   endif
 
-  CAR54 = ' Fin de la lecture des conditions aux limites         '
+  car54 = ' Fin de la lecture des conditions aux limites         '
   write(nfecra,1110)car54
 
 endif
-
 
 !===============================================================================
 ! 7. TERMES SOURCES EXTRAPOLES et TERMES SOURCES SCHEMA EN TEMPS
@@ -1262,381 +1186,44 @@ if (ibdtso.gt.1) then
 
 endif
 
-
-! ---> Termes sources Navier-Stokes (plus taux de vide si cavitation)
-
-!     Si le terme est a l'ordre 2
-if(isno2t.gt.0) then
-
-  iptsna = ipproc(itsnsa)
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-
-  RUBRIQ = 'tsource_ns_ce_x_phase'//CPHASE
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       propce(1,iptsna  ),ierror)
-  nberro=nberro+ierror
-
-  RUBRIQ = 'tsource_ns_ce_y_phase'//CPHASE
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       propce(1,iptsna+1),ierror)
-  nberro=nberro+ierror
-
-  RUBRIQ = 'tsource_ns_ce_z_phase'//CPHASE
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       propce(1,iptsna+2),ierror)
-  nberro=nberro+ierror
-
-  if (icavit.ge.0) then
-    RUBRIQ = 'tsource_vf_ce_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-         propce(1,iptsna+3),ierror)
-    nberro=nberro+ierror
-  endif
-
-  ilu = ilu + 1
-
-endif
-
-! ---> Termes sources turbulence
-
-!     Si le terme est a l'ordre 2
-if(isto2t.gt.0) then
-
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-
-  !     Keps suite de keps ou v2f
-  if(itytur.eq.2.and.                                    &
-       (jtytur.eq.2.or.jtytur.eq.5)) then
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-
-    RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+1),ierror)
-    nberro=nberro+ierror
-
-    ilu = ilu + 1
-
-    !     Keps suite de Rij, on on utilise 1/2 de tsr11+tsr22+ts33
-  elseif(itytur.eq.2.and.jtytur.eq.3) then
-
-    !       Ici on veut lire tout ou rien, comme on fait des operations
-    !          pour reconstruire le terme source sur k (discutable...)
-    !          IDEBLU = 1 indique qu'on a commence a lire.
-    !          Si erreur quand on a commence a lire, on remet tout a zero
-    ideblu = 0
-    iannul = 0
-
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_R11_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-    if(ierror.eq.0) ideblu = 1
-
-    if(ideblu.eq.1) then
-      RUBRIQ = 'tsource_tu_ce_R22_phase'//CPHASE
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
-      if(ierror.ne.0) iannul = 1
-    endif
-
-    if(ideblu.eq.1.and.iannul.eq.0) then
-      do iel = 1, ncel
-        propce(iel,iptsta  ) =                                  &
-             propce(iel,iptsta  )+propce(iel,iptsta+1)
-      enddo
-      RUBRIQ = 'tsource_tu_ce_R33_phase'//CPHASE
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
-      if(ierror.ne.0) iannul = 1
-    endif
-
-    if(ideblu.eq.1.and.iannul.eq.0) then
-      do iel = 1, ncel
-        propce(iel,iptsta  ) = 0.5d0*(                          &
-             propce(iel,iptsta  )+propce(iel,iptsta+1))
-      enddo
-      RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
-      if(ierror.ne.0) iannul = 1
-    endif
-
-    if(iannul.eq.1) then
-      do iel = 1, ncel
-        propce(iel,iptsta  ) = 0.d0
-        propce(iel,iptsta+1) = 0.d0
-      enddo
-    endif
-
-    ilu = ilu + 1
-
-    !     Rij suite de keps ou de v2f, on utilise 2/3 de tsk
-  elseif(itytur.eq.3.and.                                &
-       (jtytur.eq.2.or.jtytur.eq.50)) then
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-
-    d2s3 = 2.d0/3.d0
-    do iel = 1, ncel
-      tsrii = d2s3*propce(iel,iptsta  )
-      propce(iel,iptsta  ) = tsrii
-      propce(iel,iptsta+1) = tsrii
-      propce(iel,iptsta+2) = tsrii
-      propce(iel,iptsta+3) = 0.d0
-      propce(iel,iptsta+4) = 0.d0
-      propce(iel,iptsta+5) = 0.d0
-    enddo
-
-    RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+6),ierror)
-    nberro=nberro+ierror
-    if (iturb.eq.32) then
-      do iel = 1, ncel
-        propce(iel,iptsta+7) = 0.d0
-      enddo
-    endif
-
-    ilu = ilu + 1
-
-    !     Rij suite de Rij
-  elseif(itytur.eq.3.and.jtytur.eq.3) then
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_R11_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-    RUBRIQ = 'tsource_tu_ce_R22_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+1),ierror)
-    nberro=nberro+ierror
-    RUBRIQ = 'tsource_tu_ce_R33_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+2),ierror)
-    nberro=nberro+ierror
-    RUBRIQ = 'tsource_tu_ce_R12_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+3),ierror)
-    nberro=nberro+ierror
-    RUBRIQ = 'tsource_tu_ce_R13_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+4),ierror)
-    nberro=nberro+ierror
-    RUBRIQ = 'tsource_tu_ce_R23_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+5),ierror)
-    nberro=nberro+ierror
-
-    RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+6),ierror)
-    nberro=nberro+ierror
-
-    if (iturb.eq.32.and.jturb.eq.32) then
-      RUBRIQ = 'tsource_tu_ce_alp_phase'//CPHASE
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                propce(1,iptsta+7),ierror)
-      nberro=nberro+ierror
-    endif
-
-    ilu = ilu + 1
-
-    !     v2f suite de keps : On ne relit que les TS de k et eps
-    !     on laisse 0 pour phi et f_barre (valeur mise dans iniva0)
-  elseif(itytur.eq.5.and.jtytur.eq.2) then
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-
-    RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+1),ierror)
-    nberro=nberro+ierror
-
-    ilu = ilu + 1
-
-    !     v2f suite de Rij : On ne relit que les TS de k et eps
-    !     on laisse 0 pour phi et f_barre (valeur mise dans iniva0)
-    !     on utilise 1/2 de tsr11+tsr22+ts33 pour le ts de k
-  elseif(iturb.eq.50.and.jtytur.eq.3) then
-
-    !       Ici on veut lire tout ou rien, comme on fait des operations
-    !          pour reconstruire le terme source sur k (discutable...)
-    !          IDEBLU = 1 indique qu'on a commence a lire.
-    !          Si erreur quand on a commence a lire, on remet tout a zero
-    ideblu = 0
-    iannul = 0
-
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_R11_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-    if(ierror.eq.0) ideblu = 1
-
-    if(ideblu.eq.1) then
-      RUBRIQ = 'tsource_tu_ce_R22_phase'//CPHASE
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
-      if(ierror.ne.0) iannul = 1
-    endif
-
-    if(ideblu.eq.1.and.iannul.eq.0) then
-      do iel = 1, ncel
-        propce(iel,iptsta  ) =                                  &
-             propce(iel,iptsta  )+propce(iel,iptsta+1)
-      enddo
-      RUBRIQ = 'tsource_tu_ce_R33_phase'//CPHASE
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
-      if(ierror.ne.0) iannul = 1
-    endif
-
-    if(ideblu.eq.1.and.iannul.eq.0) then
-      do iel = 1, ncel
-        propce(iel,iptsta  ) = 0.5d0*(                          &
-             propce(iel,iptsta  )+propce(iel,iptsta+1))
-      enddo
-      RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
-      if(ierror.ne.0) iannul = 1
-    endif
-
-    if(iannul.eq.1) then
-      do iel = 1, ncel
-        propce(iel,iptsta  ) = 0.d0
-        propce(iel,iptsta+1) = 0.d0
-      enddo
-    endif
-
-    ilu = ilu + 1
-
-  elseif(itytur.eq.5.and.jtytur.eq.5) then
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-
-    RUBRIQ = 'tsource_tu_ce_eps_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+1),ierror)
-    nberro=nberro+ierror
-
-    RUBRIQ = 'tsource_tu_ce_phi_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+2),ierror)
-    nberro=nberro+ierror
-
-    RUBRIQ = 'tsource_tu_ce_fb_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+3),ierror)
-    nberro=nberro+ierror
-
-    ilu = ilu + 1
-
-    !     k-omega suite de k-omega
-    !     Pour le k-omega, on ne relit les termes sources que
-    !     si on est deja en k-omega.
-    !     Il n'est en effet pas forcement tres judicieux de relire
-    !     le TS de k et de mettre 0 pour le TS de eps.
-    !     Quant a essayer de transformer le TS de omega en TS de eps...
-    !     no comment!
-  elseif(iturb.eq.60.and.jturb.eq.60) then
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-
-    RUBRIQ = 'tsource_tu_ce_omega_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta+1),ierror)
-    nberro=nberro+ierror
-
-    ilu = ilu + 1
-  elseif (iturb.eq.70.and.jturb.eq.70) then
-    iptsta = ipproc(itstua)
-
-    RUBRIQ = 'tsource_tu_ce_nusa_phase'//CPHASE
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsta  ),ierror)
-    nberro=nberro+ierror
-
-    ilu = ilu + 1
-
-  endif
-
-endif
-
-! ---> Termes sources scalaires
-
-!     Boucle sur les scalaires
-do iscal = 1, nscal
-  isco = iscold(iscal)
-!     Si il y a un correspondant
-  if(isco.gt.0) then
-!     Si ce correspondant est ok pour le format
-    if(isco.le.nfmtsc) then
-!     Si le terme est a l'ordre 2
-      if(isso2t(iscal).gt.0) then
-        iptsca = ipproc(itssca(iscal))
-        itysup = 1
-        nbval  = 1
-        irtyp  = 2
-        WRITE(CAR4,'(I4.4)')ISCO
-        RUBRIQ = 'tsource_sc_ce_scalaire'//CAR4
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,iptsca  ),ierror)
-        nberro=nberro+ierror
-        ilu = ilu + 1
-      endif
+! ---> Termes sources
+
+! Do not use iscold for scalars here, as we use field names and not
+! scalar numbers here, and names are assumed stable
+
+do ivar = 1, nvar
+  call field_get_key_int(ivarfl(ivar), kstprv, f_id)
+  if (f_id .ge. 0) then
+    call field_get_dim(f_id, f_dim, interleaved)
+    if (f_dim.gt.1) then
+      call field_get_val_v(f_id, val_vp)
+      call field_get_name(f_id, rubriq)
+      itysup = 1
+      nbval  = f_dim
+      irtyp  = 2
+      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,val_vp,ierror)
     else
-      nberro=nberro-1
-      ilu = ilu + 1
+      call field_get_val_s(f_id, sval)
+      call field_get_name(f_id, rubriq)
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
     endif
+    nberro=nberro+ierror
+    ilu = ilu + 1
   endif
 enddo
 
 !     Si erreur, on previent mais pas stop :
 !       (on n'a pas forcement les ts a l'ordre 2 avant)
 if (nberro.ne.0) then
-    car54 =                                                       &
-         'LECTURE DES TERMES SOURCES                            '
+    car54 = 'LECTURE DES TERMES SOURCES                            '
     write(nfecra,8300)car54
 endif
 
 if(ilu.ne.0) then
-  CAR54 =' Fin de la lecture des termes sources                 '
+  car54 = ' Fin de la lecture des termes sources                 '
   write(nfecra,1110)car54
 endif
 
@@ -1673,7 +1260,7 @@ if(abs(icdpar).eq.2) then
         itysup = 1
         nbval  = 1
         irtyp  = 1
-        RUBRIQ = 'num_fac_par_ce_phase'//CPHASE
+        rubriq = 'num_fac_par_ce_phase01'
         call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,   &
              irtyp,ifapat,ierror)
         nberro=nberro+ierror
@@ -1705,7 +1292,7 @@ elseif(abs(icdpar).eq.1) then
         itysup = 1
         nbval  = 1
         irtyp  = 2
-        RUBRIQ = 'dist_fac_par_ce_phase'//CPHASE
+        rubriq = 'dist_fac_par_ce_phase01'
         call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     dispar,ierror)
         nberro=nberro+ierror
@@ -1770,7 +1357,7 @@ if(iphydr.eq.2) then
   nbval  = 1
   irtyp  = 2
 
-  RUBRIQ = 'prhyd_pre_phase'//CPHASE
+  rubriq = 'prhyd_pre_phase01'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
        prhyd(1),ierror)
   nberro=nberro+ierror
@@ -1810,14 +1397,14 @@ if (iale.eq.1 .and. jale.eq.1) then
   endif
 
   nberro = 0
-  RUBRIQ = 'type_visc_mail'
+  rubriq = 'type_visc_mail'
   itysup = 0
   nbval  = 1
   irtyp  = 1
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
        jortvm,ierror)
 
-  RUBRIQ = 'visc_maillage_x'
+  rubriq = 'visc_maillage_x'
   itysup = 1
   nbval  = 1
   irtyp  = 2
@@ -1826,10 +1413,10 @@ if (iale.eq.1 .and. jale.eq.1) then
 
   if (iortvm.eq.1) then
     if (jortvm.eq.1) then
-      RUBRIQ = 'visc_maillage_y'
+      rubriq = 'visc_maillage_y'
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
            propce(1,ipproc(ivisma(2))),ierror)
-      RUBRIQ = 'visc_maillage_z'
+      rubriq = 'visc_maillage_z'
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
            propce(1,ipproc(ivisma(3))),ierror)
     else
@@ -1843,11 +1430,11 @@ if (iale.eq.1 .and. jale.eq.1) then
     endif
   endif
 
-  CAR54 =' Fin de la lecture des donnees ALE                    '
+  car54 =' Fin de la lecture des donnees ALE                    '
   write(nfecra,1110)car54
 
   nberro=0
-  RUBRIQ = 'nombre_structures'
+  rubriq = 'nombre_structures'
   itysup = 0
   nbval  = 2
   irtyp  = 1
@@ -1861,9 +1448,9 @@ if (iale.eq.1 .and. jale.eq.1) then
   if (nbstru.gt.0) then
 
     nfmtst = 99
-    CINDST='YY'
+    cindst= 'YY'
     do istr = 1, min(nbstru,nstrmx)
-      WRITE(CSTRUC(ISTR),'(I2.2)') ISTR
+      write(cstruc(istr),'(i2.2)') istr
     enddo
     do istr = min(nbstru,nfmtst)+1,nbstru
       cstruc(istr) = cindst
@@ -1874,13 +1461,13 @@ if (iale.eq.1 .and. jale.eq.1) then
 
     do istr = 1, nbstru
 
-      RUBRIQ = 'donnees_structure_'//CSTRUC(ISTR)
+      rubriq = 'donnees_structure_'//cstruc(istr)
       itysup = 0
       nbval  = 27
       irtyp  = 2
 
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           tmpstr,ierror)
+                  tmpstr,ierror)
       nberro=nberro+ierror
 
       do ii = 1, 3
@@ -1897,7 +1484,7 @@ if (iale.eq.1 .and. jale.eq.1) then
 
     enddo
 
-    CAR54 =' Fin de la lecture des donnees des structures ALE   '
+    CAR54 = ' Fin de la lecture des donnees des structures ALE   '
     write(nfecra,1110)car54
 
   endif
@@ -1922,7 +1509,7 @@ ilu = 0
 
 if ( ippmod(icod3p).ge.0 ) then
 
-  RUBRIQ = 'hinfue_cod3p'
+  rubriq = 'hinfue_cod3p'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -1934,7 +1521,7 @@ if ( ippmod(icod3p).ge.0 ) then
     write(nfecra,9400)
   endif
 
-  RUBRIQ = 'hinoxy_cod3p'
+  rubriq = 'hinoxy_cod3p'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -1947,7 +1534,7 @@ if ( ippmod(icod3p).ge.0 ) then
     write(nfecra,9400)
   endif
 
-  RUBRIQ = 'tinfue_cod3p'
+  rubriq = 'tinfue_cod3p'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -1960,7 +1547,7 @@ if ( ippmod(icod3p).ge.0 ) then
     write(nfecra,9400)
   endif
 
-  RUBRIQ = 'tinoxy_cod3p'
+  rubriq = 'tinoxy_cod3p'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -1984,7 +1571,7 @@ if ( ippmod(icod3p).ge.0 ) then
     itysup = 3
     nbval  = 1
     irtyp  = 1
-    RUBRIQ = 'num_zone_fb_cod3p'
+    rubriq = 'num_zone_fb_cod3p'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
     nberro=nberro+ierror
@@ -1993,7 +1580,7 @@ if ( ippmod(icod3p).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientfu_zone_bord_cod3p'
+    rubriq = 'ientfu_zone_bord_cod3p'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientfu, ierror)
     ierrch=ierrch+ierror
@@ -2003,7 +1590,7 @@ if ( ippmod(icod3p).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientox_zone_bord_cod3p'
+    rubriq = 'ientox_zone_bord_cod3p'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientox, ierror)
     ierrch=ierrch+ierror
@@ -2029,7 +1616,7 @@ endif
 
 if ( ippmod(icoebu).ge.0 ) then
 
-  RUBRIQ = 'temperature_gaz_frais_ebu'
+  rubriq = 'temperature_gaz_frais_ebu'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -2041,7 +1628,7 @@ if ( ippmod(icoebu).ge.0 ) then
     write(nfecra,9500)
   endif
 
-  RUBRIQ = 'frmel_ebu'
+  rubriq = 'frmel_ebu'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -2064,7 +1651,7 @@ if ( ippmod(icoebu).ge.0 ) then
     itysup = 3
     nbval  = 1
     irtyp  = 1
-    RUBRIQ = 'num_zone_fb_ebu'
+    rubriq = 'num_zone_fb_ebu'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
     nberro=nberro+ierror
@@ -2073,7 +1660,7 @@ if ( ippmod(icoebu).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientgb_zone_bord_ebu'
+    rubriq = 'ientgb_zone_bord_ebu'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientgb, ierror)
     ierrch=ierrch+ierror
@@ -2083,7 +1670,7 @@ if ( ippmod(icoebu).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientgf_zone_bord_ebu'
+    rubriq = 'ientgf_zone_bord_ebu'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientgf, ierror)
     ierrch=ierrch+ierror
@@ -2093,7 +1680,7 @@ if ( ippmod(icoebu).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'fment_zone_bord_ebu'
+    rubriq = 'fment_zone_bord_ebu'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 fment , ierror)
     ierrch=ierrch+ierror
@@ -2103,7 +1690,7 @@ if ( ippmod(icoebu).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'tkent_zone_bord_ebu'
+    rubriq = 'tkent_zone_bord_ebu'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 tkent, ierror)
     ierrch=ierrch+ierror
@@ -2129,7 +1716,7 @@ endif
 
 if ( ippmod(icolwc).ge.0 ) then
 
-  RUBRIQ = 'fmin_lwc'
+  rubriq = 'fmin_lwc'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -2141,7 +1728,7 @@ if ( ippmod(icolwc).ge.0 ) then
     write(nfecra,9600)
   endif
 
-  RUBRIQ = 'fmax_lwc'
+  rubriq = 'fmax_lwc'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -2153,7 +1740,7 @@ if ( ippmod(icolwc).ge.0 ) then
     write(nfecra,9600)
   endif
 
-  RUBRIQ = 'hmin_lwc'
+  rubriq = 'hmin_lwc'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -2165,7 +1752,7 @@ if ( ippmod(icolwc).ge.0 ) then
     write(nfecra,9600)
   endif
 
-  RUBRIQ = 'hmax_lwc'
+  rubriq = 'hmax_lwc'
   itysup = 0
   nbval  = 1
   irtyp  = 2
@@ -2188,7 +1775,7 @@ if ( ippmod(icolwc).ge.0 ) then
     itysup = 3
     nbval  = 1
     irtyp  = 1
-    RUBRIQ = 'num_zone_fb_lwc'
+    rubriq = 'num_zone_fb_lwc'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
     nberro=nberro+ierror
@@ -2197,7 +1784,7 @@ if ( ippmod(icolwc).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientgb_zone_bord_lwc'
+    rubriq = 'ientgb_zone_bord_lwc'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientgb, ierror)
     ierrch=ierrch+ierror
@@ -2207,7 +1794,7 @@ if ( ippmod(icolwc).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientgf_zone_bord_lwc'
+    rubriq = 'ientgf_zone_bord_lwc'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientgf, ierror)
     ierrch=ierrch+ierror
@@ -2217,7 +1804,7 @@ if ( ippmod(icolwc).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'fment_zone_bord_lwc'
+    rubriq = 'fment_zone_bord_lwc'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 fment , ierror)
     ierrch=ierrch+ierror
@@ -2227,7 +1814,7 @@ if ( ippmod(icolwc).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'tkent_zone_bord_lwc'
+    rubriq = 'tkent_zone_bord_lwc'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 tkent, ierror)
     ierrch=ierrch+ierror
@@ -2261,7 +1848,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
     else
       car2 = cindfc
     endif
-    RUBRIQ = 'masse_volumique_charbon'//CAR2
+    rubriq = 'masse_volumique_charbon'//CAR2
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 rhock(icha), ierror)
     ierrch = ierrch + ierror
@@ -2290,7 +1877,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
     itysup = 3
     nbval  = 1
     irtyp  = 1
-    RUBRIQ = 'num_zone_fb_charbon_pulverise'
+    rubriq = 'num_zone_fb_charbon_pulverise'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
     nberro = nberro + ierror
@@ -2299,7 +1886,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientat_zone_bord_charbon_pulverise'
+    rubriq = 'ientat_zone_bord_charbon_pulverise'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientat, ierror)
     ierrch = ierrch + ierror
@@ -2311,7 +1898,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
       itysup = 0
       nbval  = nozppm
       irtyp  = 1
-      RUBRIQ = 'ientcp_zone_bord_charbon_pulverise'
+      rubriq = 'ientcp_zone_bord_charbon_pulverise'
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   ientcp, ierror)
       ierrch = ierrch + ierror
@@ -2320,7 +1907,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
       itysup = 0
       nbval  = nozppm
       irtyp  = 1
-      RUBRIQ = 'inmoxy_zone_bord_charbon_pulverise'
+      rubriq = 'inmoxy_zone_bord_charbon_pulverise'
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   inmoxy, ierror)
       ierrch = ierrch + ierror
@@ -2341,7 +1928,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
             car2 = cindfc
             car4 = cindfl
           endif
-          RUBRIQ = 'x20_zone_bord_charbon'//CAR2//'_classe'//CAR4
+          rubriq = 'x20_zone_bord_charbon'//CAR2//'_classe'//CAR4
           call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,     &
                irtyp,x20(1,icla), ierror)
           ierrch = ierrch + ierror
@@ -2356,7 +1943,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'timpat_zone_bord_charbon_pulverise'
+    rubriq = 'timpat_zone_bord_charbon_pulverise'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 timpat, ierror)
     ierrch = ierrch + ierror
@@ -2393,7 +1980,7 @@ if ( ippmod(icfuel).ge.0 ) then
     itysup = 3
     nbval  = 1
     irtyp  = 1
-    RUBRIQ = 'num_zone_fb_fuel'
+    rubriq = 'num_zone_fb_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 izfppp, ierror)
     nberro=nberro+ierror
@@ -2402,7 +1989,7 @@ if ( ippmod(icfuel).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientat_zone_bord_fuel'
+    rubriq = 'ientat_zone_bord_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientat, ierror)
     ierrch=ierrch+ierror
@@ -2411,7 +1998,7 @@ if ( ippmod(icfuel).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'ientfl_zone_bord_fuel'
+    rubriq = 'ientfl_zone_bord_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientfl, ierror)
     ierrch=ierrch+ierror
@@ -2421,7 +2008,7 @@ if ( ippmod(icfuel).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
-    RUBRIQ = 'inmoxy_zone_bord_fuel'
+    rubriq = 'inmoxy_zone_bord_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 inmoxy, ierror)
     ierrch=ierrch+ierror
@@ -2432,7 +2019,7 @@ if ( ippmod(icfuel).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'timpat_zone_bord_fuel'
+    rubriq = 'timpat_zone_bord_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 timpat, ierror)
     ierrch=ierrch+ierror
@@ -2442,7 +2029,7 @@ if ( ippmod(icfuel).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'qimpat_zone_bord_fuel'
+    rubriq = 'qimpat_zone_bord_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 qimpat, ierror)
     ierrch=ierrch+ierror
@@ -2452,7 +2039,7 @@ if ( ippmod(icfuel).ge.0 ) then
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
-    RUBRIQ = 'qimpfl_zone_bord_fuel'
+    rubriq = 'qimpfl_zone_bord_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 qimpfl, ierror)
     ierrch=ierrch+ierror
@@ -2474,13 +2061,12 @@ if ( ippmod(icfuel).ge.0 ) then
 endif
 
 if (nberro.ne.0) then
-  car54 =                                                         &
-       'LECTURE DES INFORMATIONS COMBUSTION                   '
+  car54 = 'LECTURE DES INFORMATIONS COMBUSTION                   '
   write(nfecra,8300)car54
 endif
 
 if(ilu.ne.0) then
-  CAR54=' Fin de la lecture des informations combustion        '
+  CAR54= ' Fin de la lecture des informations combustion        '
   write(nfecra,1110)car54
 endif
 
@@ -2496,7 +2082,7 @@ ilu  = 0
 if ( ippmod(ieljou).ge.1       ) then
   if(ielcor.eq.1) then
     ilu = ilu + 1
-    RUBRIQ = 'coeff_recalage_joule'
+    rubriq = 'coeff_recalage_joule'
     itysup = 0
     nbval  = 1
     irtyp  = 2
@@ -2508,7 +2094,7 @@ endif
 if ( ippmod(ielarc).ge.1  .or. ippmod(ieljou).ge.1 ) then
   if(ielcor.eq.1) then
     ilu = 1
-    RUBRIQ = 'ddpot_recalage_arc_elec'
+    rubriq = 'ddpot_recalage_arc_elec'
     itysup = 0
     nbval  = 1
     irtyp  = 2
@@ -2529,7 +2115,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   nbval  = 1
   irtyp  = 2
 
-  RUBRIQ = 'tsource_sc_ce_joule'
+  rubriq = 'tsource_sc_ce_joule'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               propce(1,ipcefj  ),ierror)
   nberro=nberro+ierror
@@ -2546,19 +2132,19 @@ if( ippmod(ielarc).ge.1 ) then
   nbval  = 1
   irtyp  = 2
 
-  RUBRIQ = 'tsource_ns_ce_x_laplace'
+  rubriq = 'tsource_ns_ce_x_laplace'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               propce(1,ipcla1  ),ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
-  RUBRIQ = 'tsource_ns_ce_y_laplace'
+  rubriq = 'tsource_ns_ce_y_laplace'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               propce(1,ipcla2  ),ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
-  RUBRIQ = 'tsource_ns_ce_z_laplace'
+  rubriq = 'tsource_ns_ce_z_laplace'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               propce(1,ipcla3  ),ierror)
   nberro=nberro+ierror
@@ -2567,20 +2153,18 @@ if( ippmod(ielarc).ge.1 ) then
 endif
 
 if (nberro.ne.0) then
-  car54 =                                                         &
-       'LECTURE DES INFORMATIONS ELECTRIQUES                  '
+  car54 = 'LECTURE DES INFORMATIONS ELECTRIQUES                  '
   write(nfecra,8300)car54
 endif
 
-if(ilu.ne.0) then
-  CAR54=' Fin de la lecture des informations electriques       '
+if (ilu.ne.0) then
+  car54 = ' Fin de la lecture des informations electriques       '
   write(nfecra,1110)car54
 endif
 
 !===============================================================================
 ! 15.  FERMETURE DU FICHIER SUITE AUXILAIRE
 !===============================================================================
-
 
 !     Fermeture du fichier suite auxilaire
 call clssui(impamx,ierror)
@@ -2677,27 +2261,6 @@ return
 '@      On a ici un nombre de flux      maximal superieur     ',/,&
 '@        NVARMX = ',I10                                       ,/,&
 '@      On ne pourra pas relire les flux      dont le numero  ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme lecamx.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8003 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@      Le nombre de moments mx        NBMOMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTMO = ',I10                                       ,/,&
-'@      On a ici un nombre de moments   maximal superieur     ',/,&
-'@        NBMOMX = ',I10                                       ,/,&
-'@      On ne pourra pas relire les moments   dont le numero  ',/,&
 '@        est superieur                                       ',/,&
 '@                                                            ',/,&
 '@    Le calcul sera execute.                                 ',/,&
@@ -2912,27 +2475,6 @@ return
 '@      There is here a greater number of flux max            ',/,&
 '@        NVARMX = ',I10                                       ,/,&
 '@       It is not possible to read the fluxes which have     ',/,&
-'@        a greater number.                                   ',/,&
-'@                                                            ',/,&
-'@    The run will continue.                                  ',/,&
-'@                                                            ',/,&
-'@    Check the subroutine lecamx.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8003 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING:       WHEN READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      The max number of moments NBMOMX supported by         ',/,&
-'@        the writing format of the suite file is             ',/,&
-'@        NFMTMO = ',I10                                       ,/,&
-'@      There is here a greater number of moments             ',/,&
-'@        NVARMX = ',I10                                       ,/,&
-'@       It is not possible to read the moments which have    ',/,&
 '@        a greater number.                                   ',/,&
 '@                                                            ',/,&
 '@    The run will continue.                                  ',/,&

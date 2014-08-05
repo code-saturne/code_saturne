@@ -58,7 +58,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, iscal, iprop, iest, imom
+integer          ii, jj, iscal, iprop, iest
 integer          istr
 
 !===============================================================================
@@ -113,6 +113,8 @@ call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
 call field_get_key_id("scalar_diffusivity_id", kivisl)
 call field_get_key_id("scalar_diffusivity_ref", kvisl0)
+
+call field_get_key_id("source_term_prev_id", kstprv)
 
 icrom = -1
 ibrom = -1

@@ -43,7 +43,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     gradv         mean velocity gradient
 !> \param[in]     gradt         mean temperature gradient
 !______________________________________________________________________________!
@@ -51,7 +50,7 @@
 subroutine resrit &
  ( nscal  ,                                                       &
    iscal  , xcpp   , xut    , xuta   ,                            &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    gradv  , gradt  )
 
 !===============================================================================
@@ -80,7 +79,6 @@ implicit none
 integer          nscal , iscal
 
 double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
 double precision gradv(3,3,ncelet)
 double precision gradt(ncelet,3)
@@ -95,9 +93,8 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          iptsta
-integer          ivisep
-integer          ipcvsl
+integer          st_prv_id
+integer          ivisep, ifcvsl
 integer          isou, jsou
 integer          itt
 integer          idftnp, iswdyp, icvflb
@@ -128,11 +125,11 @@ double precision, allocatable, dimension(:,:,:) :: fimp
 double precision, dimension(:,:), pointer :: coefav, cofafv, visten
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom, cpro_beta
 double precision, dimension(:), pointer :: cvar_ep
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
-double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: viscl, visct, viscls, c_st_prv
 
 !===============================================================================
 
@@ -171,6 +168,10 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
+if (ibeta.gt.0) then
+  call field_get_val_s(iprpfl(ipproc(ibeta)), cpro_beta)
+endif
+
 call field_get_val_v(ivsten, visten)
 
 ivar = isca(iscal)
@@ -184,16 +185,16 @@ endif
 thets  = thetst
 thetv  = thetav(ivar)
 
-if (isto2t.gt.0) then
-  iptsta = ipproc(itstua)
+call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
+if (st_prv_id.ge.0) then
+  call field_get_val_s(st_prv_id, c_st_prv)
 else
-  iptsta = 0
+  c_st_prv=> null()
 endif
 
-if (ivisls(iscal).gt.0) then
-  ipcvsl = ipproc(ivisls(iscal))
-else
-  ipcvsl = 0
+call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
+if (ifcvsl .ge. 0) then
+  call field_get_val_s(ifcvsl, viscls)
 endif
 
 do iel = 1, ncelet
@@ -220,7 +221,7 @@ endif
 ! 2. Mass source terms FIXME
 !===============================================================================
 
-if(isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   do iel = 1, ncel
     do isou = 1,3
       smbrut(isou,iel) = fimp(isou,isou,iel)*xuta(isou,iel)
@@ -280,7 +281,7 @@ do iel = 1, ncel
                            -xrij(isou,3)*gradt(iel,3))
     if (itt.gt.0) then
       phiith(isou) = phiith(isou)                                              &
-             + c3trit*(propce(iel,ipproc(ibeta))*grav(isou)*rtp(iel,isca(itt)))
+             + c3trit*(cpro_beta(iel)*grav(isou)*rtp(iel,isca(itt)))
     endif
 
     ! Pressure/thermal fluctuation correlation term
@@ -310,7 +311,7 @@ do iel = 1, ncel
     if (itt.gt.0) then
       smbrut(isou,iel) = smbrut(isou,iel)                            &
                        + volume(iel)*crom(iel)*(            &
-               -grav(isou)*propce(iel,ipproc(ibeta))*rtpa(iel,isca(itt)))
+               -grav(isou)*cpro_beta(iel)*rtpa(iel,isca(itt)))
     endif
   enddo
 enddo
@@ -320,8 +321,9 @@ enddo
 !===============================================================================
 
 do iel = 1, ncel
-  if (ipcvsl.gt.0) then
-    prdtl = viscl(iel)*xcpp(iel)/propce(iel,ipproc(ivisls(iscal)))
+
+  if (ifcvsl.ge.0) then
+    prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
   else
     prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
   endif
@@ -346,11 +348,11 @@ call vistnv &
 ! 6. Vectorial solving of the turbulent thermal fluxes
 !===============================================================================
 
-if (isto2t.gt.0) then
+if (st_prv_id.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     do isou = 1, 3
-      smbrut(isou,iel) = smbrut(isou,iel) + thetp1*propce(iel,iptsta+isou-1) !FIXME
+      smbrut(isou,iel) = smbrut(isou,iel) + thetp1*c_st_prv(iel) !FIXME
     enddo
   enddo
 endif

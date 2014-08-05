@@ -107,22 +107,20 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
-character*80     fname
+character(len=80) :: fname
 character        rubriq*64,car2*2,car4*4,car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
 character        cphase*2 , cscal(nscamx)*4
 character        cflu  (nvarmx)*4
 character        nomflu(nvarmx)*18, nomrtp(nvarmx)*20
-character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-logical          lprev
+logical          lprev , interleaved
 integer          nphas
-integer          ivar  , iscal , f_id
+integer          ivar  , iscal , f_id  , f_dim
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers
-integer          iptsna, iptsta, iptsca
 integer          ierror, irtyp , itysup, nbval
 integer          ipcefj, ipcla1, ipcla2, ipcla3
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
@@ -168,7 +166,6 @@ double precision, dimension(:), pointer :: cpro_cp
 ! 1. INITIALISATION
 !===============================================================================
 
-
 !===============================================================================
 ! 1. VERIFICATIONS DE BASE ET CODAGE DES CHAINES DE CARACTERES
 !===============================================================================
@@ -186,13 +183,12 @@ nfmtcl = 9999
 
 !     Indefini (on met qqch de different de lecamo (pour generer une
 !       erreur a la lecture)
-CINDFP = 'XX'
-CINDFS = 'XXXX'
-CINDFF = 'XXXX'
-CINDFM = 'XXXX'
-CINDFC = 'XX'
-CINDFL = 'XXXX'
-
+cindfp = 'XX'
+cindfs = 'XXXX'
+cindff = 'XXXX'
+cindfm = 'XXXX'
+cindfc = 'XX'
+cindfl = 'XXXX'
 
 !     Codage en chaine de caracteres du numero de la phase
 write(cphase,'(I2.2)') 1
@@ -980,53 +976,6 @@ if (iecaux.eq.1) then
 
 ! ---> Conditions aux limites
 
-  nomcli(IPR)='_p_phase'//cphase
-  nomcli(IU)='_u_phase'//cphase
-  nomcli(IV)='_v_phase'//cphase
-  nomcli(IW)='_w_phase'//cphase
-  if (itytur.eq.2) then
-    nomcli(IK)='_k_phase'//cphase
-    nomcli(IEP)='_eps_phase'//cphase
-  elseif (itytur.eq.3) then
-    nomcli(IR11)='_R11_phase'//cphase
-    nomcli(IR22)='_R22_phase'//cphase
-    nomcli(IR33)='_R33_phase'//cphase
-    nomcli(IR12)='_R12_phase'//cphase
-    nomcli(IR13)='_R13_phase'//cphase
-    nomcli(IR23)='_R23_phase'//cphase
-    nomcli(IEP)='_eps_phase'//cphase
-    if (iturb.eq.32) then
-      nomcli(ial)='_alp_phase'//cphase
-    endif
-  elseif (itytur.eq.5) then
-    nomcli(IK)='_k_phase'//cphase
-    nomcli(IEP)='_eps_phase'//cphase
-    nomcli(IPHI)='_phi_phase'//cphase
-    if (iturb.eq.50) then
-      NOMCLI(IFB)='_fb_phase'//CPHASE
-    elseif (iturb.eq.51) then
-      nomcli(ial)='_al_phase'//cphase
-    endif
-  elseif (iturb.eq.60) then
-    nomcli(ik)='_k_phase'//cphase
-    nomcli(iomg)='_omega_phase'//cphase
-  elseif (iturb.eq.70) then
-    nomcli(inusa)='_nusa_phase'//cphase
-  endif
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      nomcli(isca(iscal))='_scalaire'//cscal(iscal)
-    enddo
-  endif
-  if (iale.eq.1) then
-    nomcli(iuma)='_vit_maillage_u'
-    nomcli(ivma)='_vit_maillage_v'
-    nomcli(iwma)='_vit_maillage_w'
-  endif
-  if (icavit.ge.0) then
-    nomcli(ivoidf)='_taux_vide'
-  endif
-
   call restart_write_bc_coeffs(impavx)
 
   ! Symmetry flag (used for least-squares gradients,
@@ -1067,158 +1016,28 @@ if (iecaux.eq.1) then
 
   iecr = 0
 
-! ---> Termes sources Navier-Stokes (plus taux de vide si cavitation)
-
-  !     Si les termes sont a l'ordre 2
-  if (isno2t.gt.0) then
-
-    iecr = 1
-
-    iptsna = ipproc(itsnsa)
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-
-    rubriq = 'tsource_ns_ce_x_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propce(1,iptsna))
-
-    rubriq = 'tsource_ns_ce_y_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propce(1,iptsna+1))
-
-    rubriq = 'tsource_ns_ce_z_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propce(1,iptsna+2))
-
-    if (icavit.ge.0) then
-      rubriq = 'tsource_vf_ce_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propce(1,iptsna+3))
-    endif
-
-  endif
-
-! ---> Termes sources turbulence
-
-  !        Si les termes sont a l'ordre 2
-  if (isto2t.gt.0) then
-
-    iecr = 1
-
-    iptsta = ipproc(itstua)
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-
-    !          En k-eps
-    if (itytur.eq.2) then
-
-      rubriq = 'tsource_tu_ce_k_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta))
-
-      rubriq = 'tsource_tu_ce_eps_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+1))
-
-      !          En Rij
-    elseif (itytur.eq.3) then
-
-      rubriq = 'tsource_tu_ce_R11_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta))
-      rubriq = 'tsource_tu_ce_R22_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+1))
-      rubriq = 'tsource_tu_ce_R33_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+2))
-      rubriq = 'tsource_tu_ce_R12_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+3))
-      rubriq = 'tsource_tu_ce_R13_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+4))
-      rubriq = 'tsource_tu_ce_R23_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+5))
-
-      rubriq = 'tsource_tu_ce_eps_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+6))
-
-      if (iturb.eq.32) then
-        rubriq = 'tsource_tu_ce_alp_phase'//cphase
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,iptsta+7))
-      endif
-
-      !          En v2f
-    elseif (itytur.eq.5) then
-
-      rubriq = 'tsource_tu_ce_k_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta))
-
-      rubriq = 'tsource_tu_ce_eps_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1))
-
-      rubriq = 'tsource_tu_ce_phi_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+2))
-
-      if (iturb.eq.50) then
-        rubriq = 'tsource_tu_ce_fb_phase'//cphase
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,iptsta+3))
-      elseif (iturb.eq.51) then
-        rubriq = 'tsource_tu_ce_al_phase'//cphase
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,iptsta+3))
-      endif
-
-      !          En k-omega
-    elseif (iturb.eq.60) then
-
-      rubriq = 'tsource_tu_ce_k_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta))
-
-      rubriq = 'tsource_tu_ce_omega_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta+1))
-      !          En Spalart Allmaras
-    elseif (iturb.eq.70) then
-
-      rubriq = 'tsource_tu_ce_nusa_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                  propce(1,iptsta))
-
-    endif
-  endif
-
-! ---> Termes sources scalaires
-
-!     Boucle sur les scalaires
-  do iscal = 1, nscal
-!     Si le terme est a l'ordre 2
-    if (isso2t(iscal).gt.0) then
-
+  do ivar = 1, nvar
+    call field_get_key_int(ivarfl(ivar), kstprv, f_id)
+    if (f_id .ge. 0) then
       iecr = 1
-
-      iptsca = ipproc(itssca(iscal))
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-      rubriq = 'tsource_sc_ce_scalaire'//cscal(iscal)
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  propce(1,iptsca))
-
+      call field_get_dim(f_id, f_dim, interleaved)
+      if (f_dim.gt.1) then
+        call field_get_val_v(f_id, val_vp)
+        call field_get_name(f_id, rubriq)
+        itysup = 1
+        nbval  = f_dim
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,val_vp)
+      else
+        call field_get_val_s(f_id, sval)
+        call field_get_name(f_id, rubriq)
+        itysup = 1
+        nbval  = 1
+        irtyp  = 2
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
+      endif
     endif
   enddo
-
 
   if (iecr.ne.0) then
 #if defined(_CS_LANG_FR)
@@ -1228,7 +1047,6 @@ if (iecaux.eq.1) then
 #endif
     write(nfecra,1110)car54
   endif
-
 
 ! ---> Moyennes (cumuls)
 

@@ -66,7 +66,7 @@ implicit none
 ! Local variables
 
 integer          iel, inc
-integer          ipcvst, iprev
+integer          iprev
 
 double precision coef, deux
 

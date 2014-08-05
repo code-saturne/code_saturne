@@ -323,15 +323,15 @@
 !>       entering the subroutine.
 !>
 !>
-!> \subsubsection cell_id Cells identification of some variables
+!> \subsubsection cell_id Cell values of some variables
 !>
-!> Cell values  (let \c iel = \c ifabor(ifac))
+!> Cell value field ids
 !>
-!> - Density:                               \c propce(iel, ipproc(irom))
-!> - Dynamic molecular viscosity:           \c propce(iel, ipproc(iviscl))
-!> - Turbulent viscosity:                   \c propce(iel, ipproc(ivisct))
-!> - Specific heat:                         \c propce(iel, ipproc(icp)
-!> - Diffusivity(lambda):                   \c propce(iel, ipproc(ivisls(iscal)))
+!> - Density:                               \c iprpfl(ipproc(irom))
+!> - Dynamic molecular viscosity:           \c iprpfl(ipproc(iviscl))
+!> - Turbulent viscosity:                   \c iprpfl(ipproc(ivisct))
+!> - Specific heat:                         \c iprpfl(ipproc(icp)
+!> - Diffusivity(lambda):                   \c iprpfl(ipproc(ivisls(iscal)))
 !>
 !>
 !> \subsubsection fac_id Faces identification

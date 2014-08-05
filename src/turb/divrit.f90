@@ -39,14 +39,13 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     xcpp          Cp
 !> \param[out]    smbrs         Right hand side to update
 !_______________________________________________________________________________
 
 subroutine divrit &
  ( nscal  , iscal  ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , rtp    , rtpa   ,                                     &
    xcpp   ,                                                       &
    smbrs )
 
@@ -75,7 +74,6 @@ implicit none
 integer          nscal
 integer          iscal
 double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision xcpp(ncelet)
 double precision smbrs(ncelet)
 
@@ -108,7 +106,7 @@ double precision, dimension(:,:), pointer :: cofarut
 double precision, dimension(:,:,:), pointer :: cofbrut
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:,:), pointer :: xuta
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: brom, crom, cpro_beta
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
@@ -130,6 +128,10 @@ allocate(gradt(ncelet,3), thflxf(nfac), thflxb(nfabor))
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
+
+if (ibeta.gt.0) then
+  call field_get_val_s(iprpfl(ipproc(ibeta)), cpro_beta)
+endif
 
 ! Compute scalar gradient
 ivar = isca(iscal)
@@ -247,7 +249,7 @@ if (ityturt(iscal).ne.3) then
       if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
         if (itt.gt.0) then
           temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
-                       etaafm*propce(iel,ipproc(ibeta))*grav(ii)*rtpa(iel,isca(itt))
+                       etaafm*cpro_beta(iel)*grav(ii)*rtpa(iel,isca(itt))
         endif
 
         do jj = 1, 3
@@ -331,7 +333,7 @@ else
   !==========
 ( nscal  ,                                               &
   iscal  , xcpp   , xut    , xuta   ,                    &
-  dt     , rtp    , rtpa   , propce ,                    &
+  dt     , rtp    , rtpa   ,                             &
   gradv  , gradt  )
 
   itypfl = 1

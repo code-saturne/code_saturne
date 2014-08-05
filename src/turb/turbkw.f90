@@ -110,7 +110,7 @@ integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iflmas, iflmab
 integer          iwarnp, ipp
-integer          iptsta
+integer          istprv
 integer          ipcvto, ipcvlo
 integer          imucpp, idftnp, iswdyp
 
@@ -150,6 +150,7 @@ double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
 double precision, dimension(:), pointer :: coefa_o, coefb_o, coefaf_o, coefbf_o
 double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_omg, cvara_omg
 double precision, dimension(:), pointer :: viscl, cvisct
+double precision, dimension(:), pointer :: c_st_k_p, c_st_omg_p
 
 !===============================================================================
 
@@ -200,26 +201,30 @@ call field_get_coefbf_s(ivarfl(iomg), coefbf_o)
 
 thets  = thetst
 
+call field_get_key_int(ivarfl(ik), kstprv, istprv)
+if (istprv.ge.0) then
+  call field_get_val_s(istprv, c_st_k_p)
+  call field_get_key_int(ivarfl(iep), kstprv, istprv)
+  if (istprv.ge.0) then
+    call field_get_val_s(istprv, c_st_omg_p)
+  endif
+  if (istprv.ge.0) istprv = 1
+endif
+
 ipcvto = ipproc(ivisct)
 ipcvlo = ipproc(iviscl)
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvto = ipproc(ivista)
     ipcvlo = ipproc(ivisla)
   endif
 endif
 
-if(isto2t.gt.0) then
-  iptsta = ipproc(itstua)
-else
-  iptsta = 0
-endif
-
-if(iwarni(ik).ge.1) then
+if (iwarni(ik).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -458,7 +463,7 @@ call cs_user_turbulence_source_terms &
    smbrw  , usimpw )
 
 ! If source terms are extrapolated over time
-if (isto2t.gt.0) then
+if (istprv.ge.0) then
 
   thetak = thetav(ik)
   thetaw = thetav(iomg)
@@ -466,12 +471,12 @@ if (isto2t.gt.0) then
   do iel = 1, ncel
 
     ! Recover the value at time (n-1)
-    tuexpk = propce(iel,iptsta)
-    tuexpw = propce(iel,iptsta+1)
+    tuexpk = c_st_k_p(iel)
+    tuexpw = c_st_omg_p(iel)
 
     ! Save the values for the next time-step
-    propce(iel,iptsta) = smbrk(iel)
-    propce(iel,iptsta+1) = smbrw(iel)
+    c_st_k_p(iel) = smbrk(iel)
+    c_st_omg_p(iel) = smbrw(iel)
 
     ! Explicit Part
     smbrk(iel) = - thets*tuexpk
@@ -609,10 +614,10 @@ if (ncesmp.gt.0) then
    smbrw  , tinstw , gamw )
 
   ! Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t.gt.0) then
+  if (istprv.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta  ) = propce(iel,iptsta  ) + gamk(iel)
-      propce(iel,iptsta+1) = propce(iel,iptsta+1) + gamw(iel)
+      c_st_k_p(iel) = c_st_k_p(iel) + gamk(iel)
+      c_st_omg_p(iel) = c_st_omg_p(iel) + gamw(iel)
     enddo
   !  Sinon on le met directement dans SMBR
   else
@@ -628,11 +633,11 @@ if (ncesmp.gt.0) then
 endif
 
 ! Finalisation des termes sources
-if (isto2t.gt.0) then
+if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
-    smbrw(iel) = smbrw(iel) + thetp1 * propce(iel,iptsta+1)
+    smbrk(iel) = smbrk(iel) + thetp1 * c_st_k_p(iel)
+    smbrw(iel) = smbrw(iel) + thetp1 * c_st_omg_p(iel)
   enddo
 endif
 
@@ -696,7 +701,7 @@ if (ikecou.eq.1) then
 
   call field_get_label(ivarfl(ivar), chaine)
 
-  if( idiff(ivar).ge. 1 ) then
+  if (idiff(ivar).ge. 1) then
 
     do iel = 1, ncel
       xxf1 = xf1(iel)
@@ -766,7 +771,7 @@ if (ikecou.eq.1) then
   ivar   = iomg
   call field_get_label(ivarfl(ivar), chaine)
 
-  if( idiff(ivar).ge. 1 ) then
+  if (idiff(ivar).ge. 1) then
     do iel = 1, ncel
       xxf1 = xf1(iel)
       sigma = xxf1*ckwsw1 + (1.d0-xxf1)*ckwsw2
@@ -844,7 +849,7 @@ endif
 !===============================================================================
 
 !  Ordre 2 non pris en compte
-if(ikecou.eq.1) then
+if (ikecou.eq.1) then
 
   ! Take into account, if necessary, the Spalart-Shur rotation/curvature
   ! correction of the production term
@@ -1076,9 +1081,9 @@ call codits &
 
 ! Calcul des Min/Max avant clipping, pour affichage
 do ii = 1, 2
-  if(ii.eq.1) then
+  if (ii.eq.1) then
     ivar = ik
-  elseif(ii.eq.2) then
+  elseif (ii.eq.2) then
     ivar = iomg
   endif
   ipp  = ipprtp(ivar)
@@ -1101,14 +1106,14 @@ do iel = 1, ncel
   if (abs(xk).le.epz2) then
     iclipk = iclipk + 1
     cvar_k(iel) = max(cvar_k(iel),epz2)
-  elseif(xk.le.0.d0) then
+  elseif (xk.le.0.d0) then
     iclipk = iclipk + 1
     cvar_k(iel) = -xk
   endif
   if (abs(xw).le.epz2) then
     iclipw = iclipw + 1
     cvar_omg(iel) = max(cvar_omg(iel),epz2)
-  elseif(xw.le.0.d0) then
+  elseif (xw.le.0.d0) then
     iclipw = iclipw + 1
     cvar_omg(iel) = -xw
   endif

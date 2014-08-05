@@ -107,7 +107,7 @@ integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iflmas, iflmab
 integer          iwarnp, ipp
-integer          iptsta
+integer          istprv
 integer          ipcvto, ipcvlo
 integer          ipatrg
 integer          imucpp, idftnp, iswdyp
@@ -140,6 +140,7 @@ double precision, dimension(:), pointer :: brom, crom, cromo
 double precision, dimension(:), pointer :: cvara_nusa
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: c_st_nusa_p
 
 !===============================================================================
 
@@ -173,28 +174,27 @@ call field_get_val_s(iflmab, bmasfl)
 ivar   = inusa
 thetv  = thetav(ivar)
 
+call field_get_key_int(ivarfl(inusa), kstprv, istprv)
+if (istprv.ge.0) then
+  call field_get_val_s(istprv, c_st_nusa_p)
+  istprv = 1
+endif
+
 call field_get_val_s(icrom, cromo)
 ipcvto = ipproc(ivisct)
 ipcvlo = ipproc(iviscl)
 
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvto = ipproc(ivista)
     ipcvlo = ipproc(ivisla)
   endif
 endif
 
-! If source terms are extrapolated
-if(isto2t.gt.0) then
-  iptsta = ipproc(itstua)
-else
-  iptsta = 0
-endif
-
-if(iwarni(inusa).ge.1) then
+if (iwarni(inusa).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -288,9 +288,9 @@ do ifac = 1, nfabor
   if (ipatrg.ne.0) exit
 enddo
 
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parcpt(ipatrg)
-  if(ipatrg.ne.0) then
+  if (ipatrg.ne.0) then
     call parsom(dsa0)
     dsa0=dsa0/ipatrg
   endif
@@ -326,7 +326,7 @@ endif
 !                                 visct is visct^n
 do iel = 1, ncel
 
-  if(isto2t.gt.0 .and. iviext.gt.0) then
+  if (istprv.ge.0 .and. iviext.gt.0) then
     visct = propce(iel,ipcvto)
   else
     visct = cvisct(iel)
@@ -340,7 +340,7 @@ do iel = 1, ncel
   nusa  = cvara_nusa(iel)
   chi   = nusa/nu0
   ! If we have a rough wall
-  if(ipatrg.ne.0) then
+  if (ipatrg.ne.0) then
     distbf = distbf + dsa0
     chi  = chi + 0.5d0* hssa/distbf
   endif
@@ -409,17 +409,17 @@ call cs_user_turbulence_source_terms &
 !===============================================================================
 
 ! If source terms are extrapolated
-if (isto2t.gt.0) then
+if (istprv.ge.0) then
 
   do iel = 1, ncel
 
      ! Ts^(n-1) (Term User EXPlicit Nusa)
-     tuexpn =propce(iel,iptsta)
+     tuexpn =c_st_nusa_p(iel)
 
     ! The explicit user source terms are stored for the next time step
     ! We store the explicit source terms of time n (model source terms + user
     ! source terms)
-    propce(iel,iptsta) = rhssa(iel) + tsexp(iel)
+    c_st_nusa_p(iel) = rhssa(iel) + tsexp(iel)
 
 
     ! --- Extrapolated explicit source terms
@@ -485,10 +485,10 @@ if (ncesmp.gt.0) then
    rhssa  , tinssa , w1 )
 
   ! --- Explicit part: Gamma*RTPAi
-  !     (if we extrapolate source terms, Gamma*RTPAi is stored in propce)
-  if(isto2t.gt.0) then
+  !     (if we extrapolate source terms, Gamma*RTPAi is stored in prev. TS)
+  if (istprv.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta) = propce(iel,iptsta) + w1(iel)
+      c_st_nusa_p(iel) = c_st_nusa_p(iel) + w1(iel)
     enddo
   else
     do iel = 1, ncel
@@ -499,10 +499,10 @@ if (ncesmp.gt.0) then
 endif
 
 ! Finalization of the extrapolated explicit source terms
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   thetp1 = 1.d0 + thetst
   do iel = 1, ncel
-    rhssa(iel) = rhssa(iel) + thetp1    * propce(iel,iptsta)
+    rhssa(iel) = rhssa(iel) + thetp1 * c_st_nusa_p(iel)
   enddo
 endif
 

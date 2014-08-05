@@ -110,7 +110,7 @@ integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iflmas, iflmab
 integer          iwarnp, ipp
-integer          iptsta
+integer          istprv
 integer          ipcvto, ipcvlo
 integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
@@ -154,6 +154,7 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k
 double precision, dimension(:), pointer :: cvara_ep, cvara_al, cvara_phi
 double precision, dimension(:), pointer :: viscl, cvisct
+double precision, dimension(:), pointer :: c_st_k_p, c_st_eps_p
 
 !===============================================================================
 
@@ -203,30 +204,34 @@ if (iturb.eq.51) call field_get_val_prev_s(ivarfl(ial), cvara_al)
 
 thets  = thetst
 
+call field_get_key_int(ivarfl(ik), kstprv, istprv)
+if (istprv.ge.0) then
+  call field_get_val_s(istprv, c_st_k_p)
+  call field_get_key_int(ivarfl(iep), kstprv, istprv)
+  if (istprv.ge.0) then
+    call field_get_val_s(istprv, c_st_eps_p)
+  endif
+  if (istprv.ge.0) istprv = 1
+endif
+
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ibrom, bromo)
 ipcvto = ipproc(ivisct)
 ipcvlo = ipproc(iviscl)
-if(isto2t.gt.0) then
+if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvto = ipproc(ivista)
     ipcvlo = ipproc(ivisla)
   endif
 endif
 
-if(isto2t.gt.0) then
-  iptsta = ipproc(itstua)
-else
-  iptsta = 0
-endif
-
-if(iwarni(ik).ge.1) then
+if (iwarni(ik).ge.1) then
   if (iturb.eq.20) then
     write(nfecra,1000)
   else if (iturb.eq.21) then
@@ -342,11 +347,11 @@ else
     do iel = 1, ncel
       ce2rc(iel) = ce2
     enddo
-  elseif(iturb.eq.50) then
+  elseif (iturb.eq.50) then
     do iel = 1, ncel
       ce2rc(iel) = cv2fe2
     enddo
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     do iel = 1, ncel
       ce2rc(iel) = ccaze2
     enddo
@@ -409,7 +414,7 @@ else if (igrake.eq.1) then
   ! Production term due to buoyancy
   !   smbrk = P+G
   !   smbre = P+(1-ce3)*G
-  if(iscalt.gt.0.and.nscal.ge.iscalt) then
+  if (iscalt.gt.0.and.nscal.ge.iscalt) then
     prdtur = sigmas(iscalt)
   else
     prdtur = 1.d0
@@ -734,7 +739,7 @@ call cs_user_turbulence_source_terms &
    w8     , usimpe )
 
 ! If source terms are extrapolated over time
-if (isto2t.gt.0) then
+if (istprv.ge.0) then
 
   thetak = thetav(ik)
   thetae = thetav(iep)
@@ -742,11 +747,11 @@ if (isto2t.gt.0) then
   do iel = 1, ncel
 
     ! Recover the value at time (n-1)
-    tuexpk = propce(iel,iptsta)
-    tuexpe = propce(iel,iptsta+1)
+    tuexpk = c_st_k_p(iel)
+    tuexpe = c_st_eps_p(iel)
     ! Save the values for the next time-step
-    propce(iel,iptsta) = smbrk(iel) + w7(iel)
-    propce(iel,iptsta+1) = smbre(iel) + w8(iel)
+    c_st_k_p(iel) = smbrk(iel) + w7(iel)
+    c_st_eps_p(iel) = smbre(iel) + w8(iel)
 
     ! Explicit Part
     smbrk(iel) = - thets*tuexpk
@@ -841,10 +846,10 @@ if (ncesmp.gt.0) then
    smbre  , w3     , w5 )
 
   ! If we extrapolate the source terms we put Gamma Pinj in propce
-  if(isto2t.gt.0) then
+  if (istprv.ge.0) then
     do iel = 1, ncel
-      propce(iel,iptsta  ) = propce(iel,iptsta  ) + w4(iel)
-      propce(iel,iptsta+1) = propce(iel,iptsta+1) + w5(iel)
+      c_st_k_p(iel)   = c_st_k_p(iel)   + w4(iel)
+      c_st_eps_p(iel) = c_st_eps_p(iel) + w5(iel)
     enddo
   ! Otherwise we put it directly in smbr
   else
@@ -1100,11 +1105,11 @@ endif
 ! 13. Finalization of the Right Hand Side when activating 2nd time order
 !===============================================================================
 
-if (isto2t.gt.0) then
+if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
-    smbre(iel) = smbre(iel) + thetp1 * propce(iel,iptsta+1)
+    smbrk(iel) = smbrk(iel) + thetp1 * c_st_k_p(iel)
+    smbre(iel) = smbre(iel) + thetp1 * c_st_eps_p(iel)
   enddo
 endif
 
