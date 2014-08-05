@@ -304,7 +304,7 @@ module paramx
   !> \f$ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})||
   !> _{{I\hspace{-.25em}L}^{2}(\Omega_i)} \f$
   !> - The mass flux in the convective term is recalculated from \f$\vect{u}^{n+1}\f$
-  !> expressed at the cell centres (and not taken from the updated mass flow at the
+  !> expressed at the cell centers (and not taken from the updated mass flow at the
   !> faces).
   !> - As for the prediction estimator:
   !>   - The first family, k=1, suppresses the

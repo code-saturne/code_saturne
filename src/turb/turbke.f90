@@ -283,7 +283,7 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3. Instationnary terms (stored in tinstk and tinste)
+! 3. Unsteady terms (stored in tinstk and tinste)
 !===============================================================================
 
 do iel = 1, ncel

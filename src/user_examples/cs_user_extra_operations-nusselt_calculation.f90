@@ -73,7 +73,6 @@ use ppincl
 use mesh
 use field
 use field_operator
-use setup
 
 !===============================================================================
 
@@ -104,6 +103,11 @@ double precision, allocatable, dimension(:) :: xnusselt
 double precision, allocatable, dimension(:) :: xabs, xabsg
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar, viscl
+
+double precision :: height, prandtl, qwall
+parameter (height = 1.0d0)
+parameter (prandtl = 1.0d0)
+parameter (qwall = 1.0d0)
 !< [loc_var_f_user]
 !***********************************************************************
 

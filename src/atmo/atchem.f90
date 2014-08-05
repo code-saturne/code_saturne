@@ -45,7 +45,7 @@ parameter (Mair = 28.9d-3)           ! Kg/mol
 
 !> Choice of chemistry resolution scheme
 !> - 0 --> no atmospheric chemistry
-!> - 1 --> quasi stationary equilibrium NOx scheme with 4 species and 5 reactions
+!> - 1 --> quasi steady equilibrium NOx scheme with 4 species and 5 reactions
 !> - 2 --> scheme with 20 species and 34 reactions
 !> - 3 --> scheme CB05 with 52 species and 155 reactions
 !> - 4 --> user defined schema

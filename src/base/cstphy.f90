@@ -72,7 +72,7 @@ module cstphy
   ! TODO
   double precision, save :: irot(3,3), prot(3,3), qrot(3,3), rrot(3,3)
 
-  !> Constantes physiques du fluide
+  !> Physical constants of the fluid
   !> filling \ref xyzp0 indicator
   integer(c_int), pointer, save ::          ixyzp0
 

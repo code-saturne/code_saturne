@@ -49,7 +49,7 @@
 
   Code_Saturne allows the calculation of temporal means or variances,
   either of expressions evaluated through a user function, or
-  of expressions of the type \f$f_1*f_2...*f_n\f$. The variables
+  of expressions of the type \f$<f_1*f_2...*f_n>\f$. The variables
   may be fields or field components. This is done calling either
   through the GUI, or in the user function \ref cs_user_time_moment.
   Each temporal mean is declared using either

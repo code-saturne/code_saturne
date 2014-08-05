@@ -290,7 +290,7 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 3. Instationnary terms (stored in tinstk and tinstw)
+! 3. Unsteady terms (stored in tinstk and tinstw)
 !===============================================================================
 
 do iel = 1, ncel

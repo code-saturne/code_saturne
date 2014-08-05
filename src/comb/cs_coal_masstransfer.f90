@@ -24,9 +24,9 @@
 !===============================================================================
 ! Function:
 ! --------
-!> \file cs_coal_masstransfert.f90
+!> \file cs_coal_masstransfer.f90
 !>
-!> \brief Calculation of the terms of mass transfert
+!> \brief Calculation of the terms of mass transfer
 !>        between the continous phase and the dispersed phase
 !>
 
@@ -39,8 +39,7 @@
 !______________________________________________________________________________!
 !> \param[in]      ncelet        number of extended (real + ghost) cells
 !> \param[in]      ncel          number of cells
-!> \param[in]      rtpa          calculation variables at the centre of cells
-!>                                 (previous instant)
+!> \param[in]      rtpa          calculation variables at cell centers
 !> \param[in,out]  propce        physic properties at cell centers
 !> \param[in]      volume        cell volumes
 !______________________________________________________________________________!

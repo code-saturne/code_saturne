@@ -1430,7 +1430,7 @@ if ( ieqco2 .eq. 1 ) then
       !        On the numver of moles of separating reaction
       !         the state before reaction (such as calculated by Cpcym)
       !         of the equilibrum state
-      !        anmr has to be the border between 0 and Min(XCOM,2.*XO2M)
+      !        anmr has to be the boundary between 0 and Min(XCOM,2.*XO2M)
       !        We look for the solution by dichotomy
 
        anmr0 = 0.d0

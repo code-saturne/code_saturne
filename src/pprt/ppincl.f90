@@ -120,7 +120,7 @@ module ppincl
   !> ippmod(iphpar) is a global indicator for the specific physics:
   !>  - 0: no specific physics
   !>  - 1: switch on the specific physics
-  !>  - 2: switch on the specific physics plus radiative transfert
+  !>  - 2: switch on the specific physics plus radiative transfer
   !>       with a parametric file
   integer :: iphpar
 
@@ -277,21 +277,21 @@ module ppincl
   integer, save :: icm
 
   ! TODO
-  !> tansported variable
+  !> transported variable
   integer, save :: icp2m
 
   ! TODO
-  !> tansported variable
+  !> transported variable
   integer, save :: ifpcpm
 
   ! TODO
-  !> tansported variable
+  !> transported variable
   integer, save :: iyfm
   ! TODO
-  !> tansported variable
+  !> transported variable
   integer, save :: iyfp2m
   ! TODO
-  !> tansported variable
+  !> transported variable
   integer, save :: icoyfp
 
   ! ---- Variables d'etat
@@ -794,7 +794,7 @@ module ppincl
   !> number of boundary zones on current process
   integer, save :: nzfppp
 
-  !> list of bondary zones index
+  !> list of boundary zones index
   integer, save :: ilzppp(nbzppm)
 
   !> \}

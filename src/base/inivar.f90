@@ -34,9 +34,8 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            valeur du pas de temps
-!> \param[in,out] rtp           variables de calcul au centre des
-!>                              cellules
+!> \param[in]     dt            value of time step
+!> \param[in,out] rtp           variables at cell centers
 !> \param[in,out] propce        physical properties at cell centers
 !______________________________________________________________________________
 

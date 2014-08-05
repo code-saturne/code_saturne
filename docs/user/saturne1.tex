@@ -3071,7 +3071,7 @@ arc module).
 
 It should be noted that, if the auxiliary restart file is read, it is
 possible to run calculation restarts with relaxation of the
-density\footnote{Such a relaxation only makes sense for a stationary
+density\footnote{Such a relaxation only makes sense for a steady
 calculation}(when it is variable), because this variable is stored in the
 restart file. On the other hand, it is generally not possible to do the
 same with the other physical properties (they are stored in the restart
@@ -7455,8 +7455,8 @@ The activation of the particle-tracking module is performed either:
 
 Except for cases in which the flow conditions depend on time, it is generally recommended to perform a first Lagrangian calculation whose aim is to reach a steady-state (i.e. to reach a time starting from which the relevant statistics do not depend on time anymore). In a second step, a calculation restart is done to calculate the statistics. When the single-phase flow is steady and the particle volume fraction is low enough to neglect the particles influence on the continuous phase behaviour, it is recommended to perform a Lagrangian calculation on a frozen field.\\
 
-It is then possible to calculate steady-state volumetric statistics and to give a statistical weight higher than 1 to the particles, in order to reduce the number of simulated (``numerical'') particles to treat while keeping the right concentrations. Otherwise, when the continuous phase flow is stationary, but the two-coupling coupling must be taken into consideration, it is still possible to activate stationary statistics. \\
-When the continuous phase flow is unsteady, it is no longer possible to use stationary statistics. To have correct statistics at every moment in the whole calculation domain, it is imperative to have an established particle seeding and it is recommended (when it is possible) not to impose statistical weights different from the unity. \\
+It is then possible to calculate steady-state volumetric statistics and to give a statistical weight higher than 1 to the particles, in order to reduce the number of simulated (``numerical'') particles to treat while keeping the right concentrations. Otherwise, when the continuous phase flow is steady, but the two-coupling coupling must be taken into consideration, it is still possible to activate steady statistics. \\
+When the continuous phase flow is unsteady, it is no longer possible to use steady statistics. To have correct statistics at every moment in the whole calculation domain, it is imperative to have an established particle seeding and it is recommended (when it is possible) not to impose statistical weights different from the unity. \\
 
 Finally, when the so-called complete model is used for turbulent dispersion modelling, the user must make sure that the volumetric statistics are directly used for the calculation of the locally undisturbed fluid flow field.\\
 
@@ -7785,9 +7785,9 @@ the listing or the post-processing.
 The volumetric statistics are calculated by means of the array \texttt{statis}. Two
 situations may happen:
 \begin{list}{-}{}
-\item the calculation of the statistics is non stationary: \texttt{statis} is
+\item the calculation of the statistics is unsteady: \texttt{statis} is
       reset at every Lagrangian iteration;
-\item the calculation of the statistics is stationary: the array
+\item the calculation of the statistics is steady: the array
       \texttt{statis} is used to store cumulated values of variables, which will
       be averaged at the end of the calculation in the subroutine
       \texttt{uslaen}.
@@ -7795,14 +7795,14 @@ situations may happen:
 
 According to the user parameter settings, it may happen that during the
 same calculation, the statistics will be unsteady in a first part and
-stationary in second part.
+steady in second part.
 
 \noindent
 In the subroutine \texttt{uslaen}, the variable whose volumetric statistic is wanted is
-stored in the array \texttt{statis}. In the framework of stationary statistics,
+stored in the array \texttt{statis}. In the framework of steady statistics,
 the average itself is calculated in the subroutine \texttt{uslaen}. This
 average is obtained through the division of the cumulated value by: \\
-\hspace*{1cm}- either the duration of the stationary statistics
+\hspace*{1cm}- either the duration of the steady statistics
      calculation stored in the variable \texttt{tstat\index{tstat}}, \\
 \hspace*{1cm}- or the number of particles in statistical weight. \\
 This method of averaging is applied to every piece in the listing and

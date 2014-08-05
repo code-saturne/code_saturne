@@ -138,11 +138,11 @@ module mesh
   double precision, dimension(:,:), pointer :: surfbo
 
   !> \anchor cdgfac
-  !> coordinates of the centres of the internal faces
+  !> coordinates of the centers of the internal faces
   double precision, dimension(:,:), pointer :: cdgfac
 
   !> \anchor cdgfbo
-  !> coordinates of the centres of the boundary faces
+  !> coordinates of the centers of the boundary faces
   double precision, dimension(:,:), pointer :: cdgfbo
 
   !> \anchor xyznod
@@ -164,7 +164,7 @@ module mesh
   !> \anchor dist
   !> for every internal face, dot product of the vectors
   !> \f$ \vect{IJ}\f$ and \f$\vect{n}\f$.  I and J are respectively
-  !> the centres of the first and the second neighbouring cell.
+  !> the centers of the first and the second neighboring cell.
   !> The vector \f$\vect{n}\f$ is the unit vector normal to the face
   !> and oriented from the first to the second cell
   double precision, dimension(:), pointer :: dist
@@ -172,7 +172,7 @@ module mesh
   !> \anchor distd
   !> For every boundary face, dot product between the vectors
   !> \f$\vect{IF}\f$ and \f$\vect{n}\f$.
-  !> I is the center of the neighbouring cell. F is the face center.
+  !> I is the center of the neighboring cell. F is the face center.
   !> The vector \f$\vect{n}\f$ is the unit vector normal to the face and
   !> oriented to the exterior of the domain
   double precision, dimension(:), pointer :: distb
@@ -188,8 +188,8 @@ module mesh
   !> vector I'J' for interior faces
   !> for every internal face, the three components of the vector
   !> \f$\vect{I'J'}\f$, where I' and J' are
-  !> respectively the orthogonal projections of the neighbouring cell
-  !> centres I and J on a straight line orthogonal to the face and passing
+  !> respectively the orthogonal projections of the neighboring cell
+  !> centers I and J on a straight line orthogonal to the face and passing
   !> through its center
   double precision, dimension(:,:), pointer :: dijpf
 
@@ -197,7 +197,7 @@ module mesh
   !> vector II' for interior faces
   !> for every boundary face, the three components of the vector
   !> \f$\vect{II'}\f$. I' is the orthogonal projection of I,
-  !> center of the neighbouring cell, on the
+  !> center of the neighboring cell, on the
   !> straight line perpendicular to the face and passign through its center
   double precision, dimension(:,:), pointer :: diipb
 
@@ -205,8 +205,8 @@ module mesh
   !> vector OF for interior faces
   !> for every internal face, the three components of the vector
   !> \f$\vect{OF}\f$. O is the intersection
-  !> point between the face and the straight line joining the centres
-  !> of the two neighbouring cells. F is the face center
+  !> point between the face and the straight line joining the centers
+  !> of the two neighboring cells. F is the face center
   double precision, dimension(:,:), pointer :: dofij
 
   !=============================================================================
@@ -216,7 +216,7 @@ contains
   !=============================================================================
 
   !> \anchor ifacel
-  !> Index-numbers of the two (only) neighbouring cells for each internal face
+  !> Index-numbers of the two (only) neighboring cells for each internal face
 
   elemental pure function ifacel(iside, ifac) result(icel)
 
@@ -236,7 +236,7 @@ contains
   !=============================================================================
 
   !> \anchor ifabor
-  !> index-number of the (unique) neighbouring cell for each boundary face
+  !> index-number of the (unique) neighboring cell for each boundary face
 
   elemental pure function ifabor(ifac) result(icel)
 

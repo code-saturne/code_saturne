@@ -33,7 +33,7 @@
 !> \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
 !>
 !> and \f$ f_2 = \tanh(arg2^2) \f$
-!> \f[ arg2^2 = \max(2 \dfrac{\sqrt{k}{C_\mu \omega y}; \;
+!> \f[ arg2^2 = \max(2 \dfrac{\sqrt{k}}{C_\mu \omega y}; \;
 !>                   500 \dfrac{\nu}{\omega y^2}) \f]
 !> where \f$ y \f$ is the distance to the wall.
 !>

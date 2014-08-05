@@ -49,14 +49,14 @@ module optcal
   !> \addtogroup equation_types
   !> \{
 
-  !> take non-stationary term into account:
-  !>    - 1 prise en compte du terme instationnaire
-  !>    - 0 prise en compte du terme instationnaire
+  !> take unsteady term into account:
+  !>    - 1 account for unsteady term
+  !>    - 0 ignore unsteady term
   integer, save :: istat(nvarmx)
 
   !> take convection into account:
-  !>    - 1 prise en compte de la convection
-  !>    - 0 non prise en compte de la convection
+  !>    - 1 account for convection
+  !>    - 0 ignore convection
   integer, save :: iconv(nvarmx)
 
   !> take diffusion into account:
@@ -146,13 +146,13 @@ module optcal
   !>    - 0: false (default)
   integer, save ::          ivsext(nscamx)
 
-  !> initvi : =1 si viscosite totale relue dans un suite
+  !> initvi : =1 if total viscosity read from checkpoint file
   integer, save ::          initvi
 
-  !> initro : =1 si masse volumique relue dans un suite
+  !> initro : =1 if density read from checkpoint file
   integer, save ::          initro
 
-  !> initcp : =1 si  chaleur specifique relue dans un suite
+  !> initcp : =1 if specific heat read from checkpoint file
   integer, save ::          initcp
 
   !> ibdtso : backward differential scheme in time order
@@ -160,7 +160,7 @@ module optcal
   ! updated to array of size nscamx.
   integer, save ::          ibdtso
 
-  !> initvs : =1 si  diffusivite scalaire relue dans un suite
+  !> initvs : =1 if scalar diffusivity read from checkpoint file
   integer, save ::          initvs(nscamx)
 
   !> \f$ \theta \f$-scheme for the main variables
@@ -249,7 +249,7 @@ module optcal
   double precision, save :: blencv(nvarmx)
 
   !> type of convective scheme
-  !>    - 1: centre
+  !>    - 1: centered
   !>    - 0: second order
   integer, save ::          ischcv(nvarmx)
 
@@ -271,10 +271,10 @@ module optcal
 
   !> type of gradient reconstruction
   !>    - 0: iterative process
-  !>    - 1: standard least square method
-  !>    - 2: least square method with extended neighbourhood
-  !>    - 3: least square method with reduced extended neighbourhood
-  !>    - 4: iterative precess initialized by the least square method
+  !>    - 1: standard least squares method
+  !>    - 2: least square method with extended neighborhood
+  !>    - 3: least square method with reduced extended neighborhood
+  !>    - 4: iterative precess initialized by the least squares method
   integer(c_int), pointer, save :: imrgra
 
   !> anomax : angle de non orthogonalite des faces en radian au dela duquel
@@ -437,14 +437,12 @@ module optcal
   !> indicator "zero time step"
   !>    - 0: standard calculation
   !>    - 1: to simulate no time step
-  !>         - pour les calculs non suite :
-  !>           on saute uniquement les resolutions (Navier-Stokes,
-  !>           turbulence, scalaires...)
-  !>         - pour les calculs suite :
-  !>           on saute les resolutions (navier-stokes,
-  !>           turbulence, scalaires...) et le calcul des proprietes
-  !>           physiques, les conditions aux limites (les grandeurs
-  !>           sont lues dans le fichier suite)
+  !>         - for non-restarted computations:
+  !>           only resolution (Navier-Stokes, turbulence, scalars) is skipped
+  !>         - for restarted computations:
+  !>           resolution, computation of physical properties, and definition
+  !>           of boundary conditions is skipped (values are read from
+  !>           checkpoint file)
   integer, save ::          inpdt0
 
   !> Clip the time step with respect to the buoyant effects
@@ -453,7 +451,7 @@ module optcal
   integer, save ::          iptlro
 
   !> option for a variable time step
-  !>    - -1: stationary algorithm
+  !>    - -1: steady algorithm
   !>    -  0: constant time step
   !>    -  1: time step constant in space but variable in time
   !>    -  2: variable time step in space and in time
@@ -491,7 +489,7 @@ module optcal
   !> relaxation of variables (1 stands fo no relaxation)
   double precision, save :: relaxv(nvarmx)
 
-  !> relaxation coefficient for the stationary algorithm
+  !> relaxation coefficient for the steady algorithm
   double precision, save :: relxst
 
   !> \}
@@ -951,19 +949,19 @@ module optcal
   !>          pas de temps precedent
   integer, save ::          ivissa(nscamx)
 
-  !> iclvfl : 0 : clipping des variances a zero
-  !>          1 : clipping des variances a zero et a f(1-f)
-  !>          2 : clipping des variances a max(zero,scamin) et scamax
+  !> iclvfl : 0 : clip variances to zero
+  !>          1 : clip variances to zero and to f(1-f)
+  !>          2 : clip variances to  max(zero,scamin) and scamax
   integer, save ::          iclvfl(nscamx)
 
-  !> iscasp : 0 : le scalaire associe n est pas une espece
-  !>          1 : le scalaire associe est une espece
+  !> iscasp : 0 : the associated scalar is not a species
+  !>          1 : the associated scalar is a species
   integer, save ::          iscasp(nscamx)
 
-  !> visls0 : viscosite des scalaires si constante
+  !> visls0 : viscosity of scalars if constant
   double precision, save :: visls0(nscamx)
 
-  !> sigmas : prandtl des scalaires
+  !> sigmas : prandtl of scalars
   double precision, save :: sigmas(nscamx)
 
   !> molar fraction for multi-species scalars

@@ -44,7 +44,7 @@
 !>                               -  coefficient (infinite if no exchange)
 !>                               -  rcodcl(3) value flux density
 !>                               -  (negative if gain) \f$w.m^{-2} \f$ or
-!>                               -  roughtness in \f$m\f$ if  icodcl=6
+!>                               -  roughness in \f$m\f$ if  icodcl=6
 !>                                -# for velocity:
 !>                                           \f$(\mu+\mu_T)\gradv \vect{u}\f$
 !>                                -# for pressure: \f$ \Delta \grad P

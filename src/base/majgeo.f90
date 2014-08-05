@@ -83,10 +83,10 @@ subroutine majgeo &
 ! srfan2           ! ra ! <-- ! interior face surfaces                         !
 ! srfbn2           ! ra ! <-- ! boundary face surfaces                         !
 ! dist2            ! ra ! <-- ! distance IJ.Nij                                !
-! distb2           ! ra ! <-- ! likewise for border faces                      !
+! distb2           ! ra ! <-- ! likewise for boundary faces                    !
 ! pond2            ! ra ! <-- ! weighting (Aij=pond Ai+(1-pond)Aj)             !
 ! dijpf2           ! ra ! <-- ! vector I'J'                                    !
-! diipb2           ! ra ! <-- ! likewise for border faces                      !
+! diipb2           ! ra ! <-- ! likewise for boundary faces                    !
 ! dofij2           ! ra ! <-- ! vector OF at interior faces                    !
 !__________________!____!_____!________________________________________________!
 

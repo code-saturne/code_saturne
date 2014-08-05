@@ -40,7 +40,7 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 5 smooth wall and
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rought wall and
+!>                               - 6 rough wall and
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
@@ -53,7 +53,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 (negative if gain) in w/m2 or roughness
 !>                                 in m if icodcl=6
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$

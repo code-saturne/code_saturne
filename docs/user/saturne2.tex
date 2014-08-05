@@ -3033,7 +3033,7 @@ between 1 and \texttt{nvls})}
 {indicates the steady (=1) or unsteady (=0) state of the
 continuous phase flow\\
 in particular, \texttt{isttio} = 1 is needed in order to: \\
-\hspace*{1cm}calculate stationary statistics in the volume or at the boundaries
+\hspace*{1cm}calculate steady statistics in the volume or at the boundaries
 (starting respectively from the Lagrangian iterations \texttt{nstist} and
 \texttt{nstbor}) \\
 \hspace*{1cm}calculate time-averaged two-way coupling source terms (from the
@@ -3217,7 +3217,7 @@ useful if \texttt{modcpl} $>$ 0}
 statistics related to the dispersed phase\\
 if \texttt{istala} = 1, the calculation of the statistics is activated
 starting from the absolute iteration (including the restarts) \texttt{idstnt}\\
-by default, the statistics are not stationary (reset to zero at every
+by default, the statistics are not steady (reset to zero at every
 Lagrangian iteration). But if \texttt{isttio}=1, since the flow is steady,
 the statistics will be averaged overt he different time steps\\
 the statistics represent the significant results on the particle cloud\\
@@ -3242,11 +3242,11 @@ useful if \texttt{istala} = 1}
 \motcleb{nstist}{i}{integer $\geqslant$ \texttt{idstnt}}{\texttt{idstnt}}{O}{L1}
 {absolute Lagrangian iteration number (including the restarts) after
 which the volume statistics are cumulated over time (they are then said to be
-stationary)\\
+steady)\\
 if the absolute Lagrangian iteration number is less than \texttt{nstist},
 or if the flow is unsteady (\texttt{isttio}=0), the statistics are reset
 to zero at each Lagrangian iteration (the volume statistics are then said
-to be non-stationary)\\
+to be unsteady)\\
 useful if \texttt{istala}=1 and \texttt{isttio}=1}
 
 \motcleb{nomlag}{ca}{string of less than 50 characters}{VarLagXXXX}{O}{L1}
@@ -3260,7 +3260,7 @@ calculations, then it will not be possible to read its value from the restart fi
 
 \motcleb{nvlsts}{i}{0 $\leqslant$ integer $\leqslant$ \texttt{nussta}=20}{0}{O}{L1}
 {number of additional user volume statistics\\
-the additional statistics (or their cumulated value in the stationary
+the additional statistics (or their cumulated value in the steady
 case) can be accessed in the array \texttt{statis} by means of the pointer
 \texttt{ilvu\index{ilvu}}: \texttt{statis(iel,ilvu(ii)\index{statis}})
 (\texttt{iel} is the cell index-number and \texttt{ii} an integer between
@@ -3268,7 +3268,7 @@ case) can be accessed in the array \texttt{statis} by means of the pointer
 useful if \texttt{istala} = 1}
 
 \motcle{npst}{i}{positive integer}{0}{O}{L3}
-{number of iterations during which stationary volume statistics have
+{number of iterations during which steady volume statistics have
 been cumulated\\
 useful if \texttt{istala}=1, \texttt{isttio}=1 and if \texttt{nstist} is
 less than or equal to the current Lagrangian iteration\\
@@ -3277,16 +3277,16 @@ value is not to be modified by the user}
 
 \motcle{npstt}{i}{positive integer}{0}{O}{L3}
 {number of iterations during which volume statistics have been
-calculated (the potential iterations during which non-stationary
+calculated (the potential iterations during which unsteady
 statistics have been calculated are counted in \texttt{npstt})\\
 useful if \texttt{istala}=1\\
 \texttt{npstt} is initialised and updated automatically by the code,
 its value is not to be modified by the user}
 
 \motcle{tstat}{r}{positive real number}{\texttt{dtp}}{O}{L3}
-{if the volume statistics are calculated in a stationary way, \texttt{tstat}
+{if the volume statistics are calculated in a steady way, \texttt{tstat}
 represents the physical time during which the statistics have been cumulated\\
-if the volume statistics are calculated in a non-stationary way,
+if the volume statistics are calculated in a unsteady way,
 then \texttt{tstat=dtp\index{dtp}} (it is the Lagrangian time step, because the
 statistics are reset to zero at every iteration)\\
 useful if \texttt{istala}=1\\
@@ -3360,19 +3360,19 @@ useful only if \texttt{iphyla} = 2}
 interactions in  \texttt{parbor\index{parbor}}, and of the calculation of the
 statistics at the corresponding boundaries, for post-processing
 (\textit{EnSight6} format)\\
-By default, the statistics are non-stationary (reset to zero at every
-Lagrangian iteration). They may be stationary if \texttt{isttio}=1 ({\em i.e.}
+By default, the statistics are unsteady (reset to zero at every
+Lagrangian iteration). They may be steady if \texttt{isttio}=1 ({\em i.e.}
 calculation of a cumulated value over time, and then calculation of an
 average over time or over the number of interactions with the boundary)\\
 always useful}
 
 \motcleb{nstbor}{i}{strictly positive integer}{1}{O}{L1}
 {number of absolute Lagrangian iterations (including the restarts)
-after which the statistics at the boundaries are considered stationary and are
+after which the statistics at the boundaries are considered steady and are
 averaged (over time or over the number of interactions)\\
 If the number of absolute Lagrangian iterations is less than \texttt{nstbor},
 or if \texttt{isttio}=0, the statistics are reset to zero at every
-Lagrangian iteration (non-stationary statistics)\\
+Lagrangian iteration (unsteady statistics)\\
 useful if \texttt{iensi3}=1 and \texttt{isttio}=1}
 
 \motcleb{seuilf}{r}{positive real number}{0}{O}{L1}
@@ -3437,14 +3437,14 @@ calculations, it will not be possible to read its value from the restart file}}
 \motcleb{imoybr}{ia}{0, 1, 2}{0 , 1 or 2}{O}{L1}
 {the recordings in \texttt{parbor} at every particle/boundary interaction are
 cumulated values (possibly reset to zero at every iteration in the
-non-stationary case). They must therefore be divided by a quantity to
+unsteady case). They must therefore be divided by a quantity to
 get boundary statistics. The user can choose between two average types:\\
 \hspace*{1.3cm} = 0: no average is applied to the recorded cumulated values\\
 \hspace*{1.3cm} = 1: a time-average is calculated. The cumulated value
-is divided by the physical duration in the case of stationary
+is divided by the physical duration in the case of steady
 averages (\texttt{isttio}=1). The cumulated value is divided by the value of
-the last time step in the case of non-stationary averages (\texttt{isttio}=0),
-and also in the case of stationary averages while the
+the last time step in the case of unsteady averages (\texttt{isttio}=0),
+and also in the case of steady averages while the
 absolute Lagrangian iteration number is inferior to \texttt{nstbor}\\
 \hspace*{1.3cm} = 2: a particulate average is calculated. The cumulated
 value is divided by the number of particle/boundary interactions (in terms of
@@ -3457,7 +3457,7 @@ only the cumulated value is recorded in the restart file\\
 useful if \texttt{iensi3}=1}
 
 \motcle{npstf}{i}{positive integer}{0}{O}{L3}
-{number of iterations during which stationary boundary statistics have
+{number of iterations during which steady boundary statistics have
 been cumulated\\
 useful if \texttt{iensi3}=1, \texttt{isttio}=1 and \texttt{nstbor} less than
 or equal to the current Lagrangian iteration\\
@@ -3467,17 +3467,17 @@ its value is not to be modified by the user}
 \motcle{npstft}{i}{positive integer}{0}{O}{L3}
 {number of iterations during which boundary statistics have
 been calculated
-(the potential iterations during which non-stationary
+(the potential iterations during which unsteady
 statistics have been calculated are counted in \texttt{npstft})\\
 useful if \texttt{iensi3}=1\\
 \texttt{npstft} is initialised and updated automatically by the code,
 its value is not to be modified by the user}
 
 \motcle{tstatp}{r}{positive real number}{\texttt{dtp}}{O}{L3}
-{if the recording of the boundary statistics is stationary, \texttt{tstatp}
+{if the recording of the boundary statistics is steady, \texttt{tstatp}
 contains the cumulated physical duration of the recording of the boundary
 statistics\\
-if the recording of the boundary statistics is non-stationary, then
+if the recording of the boundary statistics is unsteady, then
 \texttt{tstat=dtp\index{dtp}} (it is the Lagrangian time step, because the
 statistics are reset to zero at every time step)\\
 useful if \texttt{iensi3}=1}

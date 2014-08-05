@@ -220,7 +220,7 @@ ipass = ipass + 1
 !===============================================================================
 !
 do iel = 1, ncel
-  !  min et max border of the pdf
+  !  min et max boundary of the pdf
   fmini(iel) = 0
   fmaxi(iel) = 1.d0
   !  Sum of F1+F2 (for the fuel, f1=0)

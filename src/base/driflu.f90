@@ -42,7 +42,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] imasfl        scalar mass flux at interior face centers
 !> \param[in,out] bmasfl        scalar mass flux at boundary face centers
-!> \param[in,out] rovsdt        Non stationnary term and mass aggregation term
+!> \param[in,out] rovsdt        unsteady term and mass aggregation term
 !> \param[in,out] smbrs         right hand side for the scalar iscal
 !______________________________________________________________________________
 

@@ -44,11 +44,11 @@
 !>                              (cf. \ref ustsma)
 !> \param[in]     volume        cells volume
 !> \param[in]     vela          variable value at time step beginning
-!> \param[in]     smcelv        valeur de la variable associee a la
-!>                              source de masse NOT INTERLEAVED
+!> \param[in]     smcelv        value of the variable associated to the mass
+!>                              source; NOT INTERLEAVED
 !> \param[in]     gamma         mass flow value
 !> \param[in,out] tsexpv        explicit source term part linear in the variable
-!> \param[in,out] tsimpv        associated value withr \ref tsexp
+!> \param[in,out] tsimpv        associated value with \ref tsexp
 !>                              to be stored in the matrix
 !> \param[out]    gavinj        explicit source term part independant
 !>                              of the variable

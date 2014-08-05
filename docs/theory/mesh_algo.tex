@@ -285,7 +285,7 @@ two cells, and becomes an internal face. The joining is thus finalized.
 
 For a finite-volume code such as \CS, it is best that faces belonging
 to one same cell have neighboring sizes. This is hard to ensure
-when non-conforming border faces are split so as to be joined
+when non-conforming boundary faces are split so as to be joined
 in a conforming way. On figure \ref{fig:algo.join.simplif},
 we see that this can produce faces of highly varying sizes
 when splitting a face for conformal joining.
@@ -837,7 +837,7 @@ The obtained mesh is the result of the $(i-1)^{th}$ iteration.
 The algorithm stops after $N_{max}$ iterations ($51$ by default in \CS). 
 
 \subsection*{Specific treatment for boundary faces
-\label{sec:unwarping_border}}
+\label{sec:unwarping_boundary}}
 The unwarping algorithm may modify the mesh geometry. The function
 \texttt{fit\_by\_feature} allows to fix boundary faces according to a feature angle.
 The feature angle between a vertex and one of its adjacent faces is defined

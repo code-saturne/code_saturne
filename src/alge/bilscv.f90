@@ -55,7 +55,7 @@
 !> - blencp = 0: upwind scheme for the advection
 !> - blencp = 1: no upwind scheme except in the slope test
 !> - ischcp = 0: second order
-!> - ischcp = 1: centred
+!> - ischcp = 1: centered
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -67,21 +67,21 @@
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
 !>                               - 1 convection,
-!>                               - 0 sinon
+!>                               - 0 otherwise
 !> \param[in]     idiffp        indicator
 !>                               - 1 diffusion,
-!>                               - 0 sinon
+!>                               - 0 otherwise
 !> \param[in]     nswrgp        number of reconstruction sweeps for the
 !>                               gradients
 !> \param[in]     imligp        clipping gradient method
 !>                               - < 0 no clipping
-!>                               - = 0 thank to neighbooring gradients
-!>                               - = 1 thank to the mean gradient
+!>                               - = 0 by neighboring gradients
+!>                               - = 1 by the mean gradient
 !> \param[in]     ircflp        indicator
 !>                               - 1 flux reconstruction,
 !>                               - 0 otherwise
 !> \param[in]     ischcp        indicator
-!>                               - 1 centred
+!>                               - 1 centered
 !>                               - 0 2nd order
 !> \param[in]     isstpp        indicator
 !>                               - 1 without slope test
@@ -91,7 +91,7 @@
 !>                               - 1 otherwise
 !> \param[in]     imrgra        indicator
 !>                               - 0 iterative gradient
-!>                               - 1 least square gradient
+!>                               - 1 least squares gradient
 !> \param[in]     ivisep        indicator to take \f$ \divv
 !>                               \left(\mu \gradt \transpose{\vect{a}} \right)
 !>                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
@@ -105,17 +105,17 @@
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
-!> \param[in]     climgp        clipping coeffecient for the computation of
+!> \param[in]     climgp        clipping coefficient for the computation of
 !>                               the gradient
 !> \param[in]     relaxp        coefficient of relaxation
-!> \param[in]     thetap        weightening coefficient for the theta-schema,
+!> \param[in]     thetap        weighting coefficient for the theta-schema,
 !>                               - thetap = 0: explicit scheme
-!>                               - thetap = 0.5: time-centred
+!>                               - thetap = 0.5: time-centered
 !>                               scheme (mix between Crank-Nicolson and
 !>                               Adams-Bashforth)
 !>                               - thetap = 1: implicit scheme
-!> \param[in]     pvar          vitesse resolue (instant courant)
-!> \param[in]     pvara         vitesse resolue (instant precedent)
+!> \param[in]     pvar          solved velocity (current time step)
+!> \param[in]     pvara         solved velocity (previous time step)
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (Explicit part)
 !> \param[in]     coefbv        boundary condition array for the variable
@@ -129,7 +129,7 @@
 !> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
-!>                               at border faces for the r.h.s.
+!>                               at boundary faces for the r.h.s.
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
 !> \param[in]     icvflb        global indicator of boundary convection flux

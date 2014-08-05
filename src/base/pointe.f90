@@ -135,7 +135,7 @@ module pointe
   integer, allocatable, dimension(:) :: izfppp
 
   !> to identify boundary zones associated with boundary faces
-  !> (radiative transfert)
+  !> (radiative transfer)
   integer, allocatable, dimension(:) :: izfrad
 
   !> number of the wall face (type \c itypfb=iparoi or \c iparug)

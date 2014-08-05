@@ -790,7 +790,7 @@ endif
 ! Without porosity
 if (iporos.eq.0) then
 
-  ! --> Non stationnary term and mass aggregation term
+  ! --> Unsteady term and mass aggregation term
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel)                                                 &
                 + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)
@@ -805,7 +805,7 @@ else
     smbrs(iel) = smbrs(iel)*porosi(iel)
   enddo
 
-  ! --> Non stationnary term and mass aggregation term
+  ! --> Unsteady term and mass aggregation term
   do iel = 1, ncel
     rovsdt(iel) = ( rovsdt(iel)                                             &
                   + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)    &

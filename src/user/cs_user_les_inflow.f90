@@ -121,7 +121,7 @@ end subroutine cs_user_les_inflow_init
 !>       .
 !>
 !>    - nelent indicates the number of "entities" relative to the method
-!>       (usefull only for the Batten method and the SEM):
+!>       (useful only for the Batten method and the SEM):
 !>
 !>       - for Batten : number of Fourier modes of the turbulent fluctuations
 !>       - for SEM    : number of synthetic eddies building the fluctuations
@@ -147,7 +147,7 @@ end subroutine cs_user_les_inflow_init
 !>     - dspent   : reference dissipation rate
 !>
 !>       \remarks
-!>       - dspent usefull only for typent = 2 (Batten) or typent = 3 (SEM).
+!>       - dspent useful only for typent = 2 (Batten) or typent = 3 (SEM).
 !>       - Strictly positive values are required for enrent and dspent.
 !>       - Accurate specification of the statistics of the flow at LES inlet
 !>         can be made via the user subroutine cs_user_les_inflow_advanced.

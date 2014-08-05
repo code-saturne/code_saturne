@@ -1,7 +1,7 @@
 /*!
  * \file mei_parser_glob.c
  *
- * \brief Define global variables usefull for the mathematical expression parsing
+ * \brief Define global variables useful for the mathematical expression parsing
  */
 
 /*

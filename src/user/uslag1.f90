@@ -249,7 +249,7 @@ nvls = 0
 
 ! 5.2 Stationary or unsteady continuous phase
 
-! * if stationary: isttio = 1
+! * if steady: isttio = 1
 ! * if unsteady: isttio = 0
 ! * if iilagr = 3 then isttio = 1
 
@@ -264,9 +264,9 @@ if (iilagr.eq.2) then
 
   ! * number of absolute lagrangian iteration (i.e. with restart)
   !   from which a time average for two-way coupling source terms is
-  !   computed (stationary source terms)
+  !   computed (steady source terms)
   ! * if the Lagrangian iteration is lower than NSTITS, source terms are
-  !   unstationary: they are reset at each lagrangian iteration
+  !   unsteady: they are reset at each lagrangian iteration
   ! * useful only if ISTTIO = 1.
   ! * the min value for NSTITS is 1
 
@@ -331,7 +331,7 @@ if (istala.eq.1) then
   ! *  nstist is a  absolute number of Lagrangian iterations
   !   (i.e. including calculation restarts) from which the statistics
   !    are averaged in time.
-  ! *  useful if the calculation is stationary (isttio=1)
+  ! *  useful if the calculation is steady (isttio=1)
   ! *  if the number of Lagrangian iterations is lower than nstits,
   !    the transmitted source terms are unsteady (i.e. they are reset to
   !    zero ar each Lagrangian iteration)
@@ -727,12 +727,12 @@ endif
 
 iensi3 = 0
 
-! Stationary calculation of the boundary statistics from
+! Steady calculation of the boundary statistics from
 ! the absolute Lagrangian iteration nstbor.
 ! * nstbor is the absolute number of Lagrangian iterations
 !   (i.e. including restarts) from which the statistics are averaged
 !   (in time or by number of interactions)
-! * useful if the calculation is stationary (isttio=1)
+! * useful if the calculation is steady (isttio=1)
 ! * if the absolute number of Lagrangian iterations is inferior to
 !   nstbor, the statistics are unsteady (i.e. they are reset to zero at each
 !   Lagrangian iteration)

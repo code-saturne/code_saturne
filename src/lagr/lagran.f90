@@ -72,7 +72,7 @@ module lagran
   !> indicates the steady (=1) or unsteady (=0) state of the
   !> continuous phase flow
   !> in particular, \ref isttio = 1 is needed in order to:
-  !> calculate stationary statistics in the volume or at the boundaries
+  !> calculate steady statistics in the volume or at the boundaries
   !> (starting respectively from the Lagrangian iterations \ref nstist and
   !> \ref nstbor)
   !> and calculate time-averaged two-way coupling source terms (from the
@@ -540,7 +540,7 @@ module lagran
   !> \ref ruslag(iclas,izone,iuno).
   !> - if \ref iuslag(iclas,izone,ijuvw) = -1, the particle injection velocity
   !> is equal to the fluid velocity at the center of the cell
-  !> neighbouring the injection boundary face.
+  !> neighboring the injection boundary face.
   !> - \ref iuslag(iclas,izone,inuchl): when the particles are coal particles
   !> (\ref iphyla = 2), this part of the array contains the coal index-number,
   !> between 1 and \ref ncharb (defined by the user in the thermochemical
@@ -559,7 +559,7 @@ module lagran
   !> velocity condition type:
   !> - -1 imposed fluid velocity
   !> -  0 imposed fluid velocity along the normal of
-  !> the bondary face, with \ref iuno norm.
+  !> the boundary face, with \ref iuno norm.
   !> -  1 imposed velocity: \ref iupt \ref ivpt \ref iwpt must be given.
   !> -  2 velocity profile given by user.
   integer, save ::  ijuvw
@@ -690,9 +690,9 @@ module lagran
   !> statistics related to the dispersed phase.
   !> if \ref istala = 1, the calculation of the statistics is activated
   !> starting from the absolute iteration (including the restarts) \ref idstnt.
-  !> by default, the statistics are not stationary (reset to zero at every
+  !> by default, the statistics are not steady (reset to zero at every
   !> Lagrangian iteration). But if \ref isttio=1, since the flow is steady,
-  !> the statistics will be averaged overt he different time steps.
+  !> the statistics will be averaged over the different time steps.
   !> the statistics represent the significant results on the particle cloud
   integer, save ::  istala
 
@@ -704,7 +704,7 @@ module lagran
   integer, save ::  isuist
 
   !> number of additional user volume statistic
-  !> the additional statistics (or their cumulated value in the stationary
+  !> the additional statistics (or their cumulated value in the steady
   !> case) can be accessed in the array \ref statis by means of the pointer
   !> \ref ilvu: \ref statis (iel,ilvu(ii))
   !> (\ref iel is the cell index-number and \ref ii an integer between
@@ -719,15 +719,15 @@ module lagran
   !> \anchor nstist
   !> absolute Lagrangian iteration number (includings the restarts) after
   !> which the volume statistics are cumulated over time (they are then said
-  !> to be stationary).
+  !> to be steady).
   !> if the absolute Lagrangian iteration number is lower than \ref nstist,
   !> or if the flow is unsteady (\ref isttio=0), the statistics are reset
   !> to zero at every Lagrangian iteration (the volume statistics are then said
-  !> to be non-stationary).
+  !> to be non-steady).
   !> Useful if \ref istala=1 and \ref isttio=1
   integer, save ::  nstist
 
-  !> number of iterations during which stationary volume statistics have
+  !> number of iterations during which steady volume statistics have
   !> been cumulated.
   !> Useful if \ref istala=1, \ref isttio=1 and if \ref nstist is
   !> inferior or equal to the current Lagrangian iteration.
@@ -736,7 +736,7 @@ module lagran
   integer, save ::  npst
 
   !> number of iterations during which volume statistics have been
-  !> calculated (the potential iterations during which non-stationary
+  !> calculated (the potential iterations during which unsteady
   !> statistics have been calculated are counted in \ref npstt).
   !> Useful if \ref istala=1.
   !> \ref npstt is initialised and updated automatically by the code,
@@ -744,9 +744,9 @@ module lagran
   integer, save ::  npstt
 
 
-  !> if the volume statistics are calculated in a stationary way, \ref tstat
+  !> if the volume statistics are calculated in a steady way, \ref tstat
   !> represents the physical time during which the statistics have been cumulated.
-  !> if the volume statistics are calculated in a non-stationary way,
+  !> if the volume statistics are calculated in a unsteady way,
   !> then \ref tstat=dtp (it is the Lagrangian time step, because the
   !> statistics are reset to zero at every iteration).
   !> Useful if \ref istala=1.
@@ -1076,15 +1076,15 @@ module lagran
 
   !> \anchor nstbor
   !> number of absolute Lagrangian iterations (including the restarts)
-  !> after which the statistics at the boundaries are considered stationary
-  !> are veraged (over time or over the number of interactions).
+  !> after which the statistics at the boundaries are considered steady
+  !> are averaged (over time or over the number of interactions).
   !> If the number of absolute Lagrangian iterations is lower than \ref nstbor,
   !> or if \ref isttio=0, the statistics are reset to zero at every
-  !> Lagrangian iteration (non-stationary statistics).
+  !> Lagrangian iteration (unsteady statistics).
   !> Useful if \ref iensi3=1 and \ref isttio=1
   integer, save ::  nstbor
 
-  !> number of iterations during which stationary boundary statistics have
+  !> number of iterations during which steady boundary statistics have
   !> been cumulated.
   !> Useful if \ref iensi3=1, \ref isttio=1 and \ref nstbor inferior
   !> or equal to the current Lagrangian iteration.
@@ -1094,7 +1094,7 @@ module lagran
 
   !> number of iterations during which boundary statistics have
   !> been calculated
-  !> (the potential iterations during which non-stationary
+  !> (the potential iterations during which unsteady
   !> statistics have been calculated are counted in \ref npstft).
   !> Useful if \ref iensi3=1.
   !> \ref npstft is initialised and updated automatically by the code,
@@ -1168,14 +1168,14 @@ module lagran
 
   !> the recordings in \ref parbor at every particle/boundary interaction are
   !> cumulated values (possibly reset to zero at every iteration in the
-  !> non-stationary case). They must therefore be divided by a quantity to
+  !> unsteady case). They must therefore be divided by a quantity to
   !> get boundary statistics. The user can choose between two average types:
   !> - = 0: no average is applied to the recorded cumulated values.
   !> - = 1: a time-average is calculated. The cumulated value
-  !> is divided by the physical duration in the case of stationary
+  !> is divided by the physical duration in the case of steady
   !> averages (\ref isttio=1). The cumulated value is divided by the value of
-  !> the last time step in the case of non-stationary averages (\ref isttio=0),
-  !> and also in the case of stationary averages while the
+  !> the last time step in the case of unsteady averages (\ref isttio=0),
+  !> and also in the case of steady averages while the
   !> absolute Lagrangian iteration number is inferior to \ref nstbor.
   !> - = 2: a particulate average is calculated. The cumulated
   !> value is divided by the number of particle/boundary interactions (in terms
@@ -1193,10 +1193,10 @@ module lagran
   ! TODO
   integer, save ::  iscovc
 
-  !> if the recording of the boundary statistics is stationary, \ref tstatp
+  !> if the recording of the boundary statistics is steady, \ref tstatp
   !> contains the cumulated physical duration of the recording of the boundary
   !> statistics.
-  !> if the recording of the boundary statisticss is non-stationary, then
+  !> if the recording of the boundary statisticss is unsteady, then
   !> \ref tstat=dtp (it is the Lagrangian time step, because the
   !> statistics are reset to zero at every time step).
   !> Useful if \ref iensi3=1
@@ -1237,8 +1237,8 @@ module lagran
   !> interactions in  \ref parbor, and of the calculation of the
   !> statistics at the corresponding boundaries, for post-processing
   !> (EnSight6 format).
-  !> By default, the statistics are non-stationary (reset to zero at every
-  !> Lagrangian iteration). They may be stationary if \ref isttio=1 (i.e.
+  !> By default, the statistics are unsteady (reset to zero at every
+  !> Lagrangian iteration). They may be steady if \ref isttio=1 (i.e.
   !> calculation of a cumulated value over time, and then calculation of an
   !> average over time or over the number of interactions with the boundary).
   integer, save ::  iensi3

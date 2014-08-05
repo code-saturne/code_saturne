@@ -4,7 +4,7 @@
 /*!
  * \file mei_parser_glob.h
  *
- * \brief Define global variables usefull for the mathematical expression parsing
+ * \brief Define global variables useful for the mathematical expression parsing
  */
 
 /*

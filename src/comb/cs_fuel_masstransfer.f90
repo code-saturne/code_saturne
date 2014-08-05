@@ -24,9 +24,9 @@
 !===============================================================================
 ! Function:
 ! --------
-!> \file cs_fuel_masstransfert.f90
+!> \file cs_fuel_masstransfer.f90
 !>
-!> \brief Calcultaion of mass transfert terms between the contineous phase
+!> \brief Calcultaion of mass transfer terms between the contineous phase
 !> and the dispersed phase
 !-------------------------------------------------------------------------------
 

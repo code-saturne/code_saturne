@@ -265,7 +265,7 @@ endif
 !     xlmt1d(ii): lambda wall conductivity coefficient (W/m/C)
 !     rcpt1d(ii): wall coefficient rho*Cp (J/m3/C)
 !     dtpt1d(ii): time step resolution of the thermal equation to the
-!                 (ii)th border face with the 1-D thermal module (s)
+!                 (ii)th boundary face with the 1-D thermal module (s)
 !===============================================================================
 if (iappel.eq.3) then
   do ii = 1, nfpt1d

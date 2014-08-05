@@ -68,6 +68,7 @@ EXTRA_DIST =
 
 examplefiles = \
 cs_user_boundary_conditions-advanced.f90 \
+cs_user_boundary_conditions-ale.f90 \
 cs_user_boundary_conditions-atmospheric.f90 \
 cs_user_boundary_conditions-auto_inlet_profile.f90 \
 cs_user_boundary_conditions-base.f90 \
@@ -81,12 +82,13 @@ cs_user_boundary_conditions-gas_ebu.f90 \
 cs_user_boundary_conditions-gas_libby_williams.f90 \
 cs_user_boundary_conditions-pulverized_coal.f90 \
 cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 \
-cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-energy_balance.f90 \
 cs_user_extra_operations-extract_1d_profile.f90 \
 cs_user_extra_operations-force_temperature.f90 \
 cs_user_extra_operations-global_efforts.f90 \
+cs_user_extra_operations-nusselt_calculation.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
+cs_user_extra_operations-scalar_balance.c \
 cs_user_head_losses.f90 \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-base.f90 \
@@ -102,15 +104,18 @@ cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
 cs_user_lagrangian_particle_tracking_module.f90 \
 cs_user_les_inflow-base.f90 \
+cs_user_mass_source_terms.f90 \
 cs_user_mesh-groups_from_free_faces.c \
-cs_user_porosity.f90 \
 cs_user_parameters-cavitation.f90 \
 cs_user_parameters-output.f90 \
 cs_user_parameters-time_moments.c \
-cs_user_physical_properties-scalar_drift.f90 \
 cs_user_physical_properties-coal_drift.f90 \
+cs_user_physical_properties-scalar_drift.f90 \
+cs_user_porosity.f90 \
 cs_user_postprocess-sfc.c \
+cs_user_radiative_transfer_parameters.f90 \
 cs_user_source_terms.f90 \
+cs_user_source_terms-scalar_in_a_channel.f90 \
 usatch_4spe5reac.f90
 
 noinst_LTLIBRARIES = libcsexample.la

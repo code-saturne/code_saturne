@@ -114,7 +114,7 @@ in the coming sections. The detailed computation of $\int_{\vol{\celli}} \divv \
  %-----------------------------------------------
 \paragraph{Convection operator--mass flux terms:}
  Let us now focus on the convective term $\dive \left( \varia \rho \vect{u}\right)$. This term and the
- non-stationary term $ \der{ \left( \rho \varia \right) }{ t} $ will be treated
+ unsteady term $ \der{ \left( \rho \varia \right) }{ t} $ will be treated
  together. As a matter of fact, if the field $\varia$ is transported by the convective field $\rho \vect{u}$, the balance
  of the quantity $\rho \varia$ over a cell $\celli$ is written using Leibniz theorem as:
  %
@@ -128,7 +128,7 @@ in the coming sections. The detailed computation of $\int_{\vol{\celli}} \divv \
  \end{equation}
 the second line is obtained using Green relation. 
  
-Moreover, the non-stationary and convection terms are usually written in a \emph{non-conservative} form that is in continuous formalism:
+Moreover, the unsteady and convection terms are usually written in a \emph{non-conservative} form that is in continuous formalism:
 \begin{equation}\label{eq:spadis:non_conservative}
  \der{ \left( \rho\varia \right)}{t} + \dive \left(  \varia  \rho \vect{u}\right) = \rho \der{\varia }{t} + \grad \varia \cdot \left( \rho \vect{u}\right) + \Gamma \varia.
  \end{equation}

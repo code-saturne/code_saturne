@@ -118,7 +118,7 @@ subroutine usray2 &
 ! 'cs_user_boundary_conditions' subroutine,
 ! but a more thorough description can be found in the user guide.
 
-! Note: these usefull constants are defined
+! Note: these useful constants are defined
 !       TKELVI = 273.16D0
 !       SIG    = 5.6703D-8
 

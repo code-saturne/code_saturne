@@ -240,7 +240,7 @@ module numvar
   !> Fourier number
   integer, save :: ifour
 
-  !> Total pressure at cell centres
+  !> Total pressure at cell centers
   !> \f$ P_{tot} = P^\star +\rho \vect{g} \cdot (\vect{x}-\vect{x}_0) \f$
   integer, save :: iprtot
 

@@ -233,7 +233,7 @@ endif
 !===============================================================================
 !
 do iel = 1, ncel
-  !  min and max border of the pdf: F4CL = 1
+  !  min and max boundary of the pdf: F4CL = 1
   fmini(iel) = 0
   fmaxi(iel) = 1.d0
   ! Sum F1+F2

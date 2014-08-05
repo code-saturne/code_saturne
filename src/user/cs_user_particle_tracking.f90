@@ -1145,7 +1145,7 @@ subroutine uslast &
 !
 
 !   isttio = 0 : unsteady Lagrangian calculation
-!          = 1 : stationary Lagrangian calculation
+!          = 1 : steady Lagrangian calculation
 
 !   istala : calculation of the statistics if >= 1, else no stats
 
@@ -1153,14 +1153,14 @@ subroutine uslast &
 
 !   idstnt : Number of the time step for the start of the statistics calculation
 
-!   nstist : Number of the Lagrangian iteration of the start of the stationary computation
+!   nstist : Number of the Lagrangian iteration of the start of the steady computation
 
-!   npst   : Number of iterations of the computation of the stationary statistics
+!   npst   : Number of iterations of the computation of the steady statistics
 
 !   npstt  : Total number of iterations of the statistics calculation since the
 !            beginning of the calculation, including the unsteady part
 
-!   tstat  : Physical time of the recording of the stationary volume statistics
+!   tstat  : Physical time of the recording of the steady volume statistics
 !            (for the unsteady part, tstat = dtp the Lagrangian time step)
 !
 
@@ -1311,7 +1311,7 @@ endif
 !   From a general point of view, we carry out in this subroutine the cumulations of
 !   the variables about which we wish to perform statistics. The mean and the
 !   variance are calculated in the routine uslaen. This computation is most often
-!   carried out by dividing the cumulations by either the stationary cumulation time
+!   carried out by dividing the cumulations by either the steady cumulation time
 !   in the variable tstat, either by the number of particles in statistical weight.
 !   This division is applied in each writing in the listing and in
 !   the post-processing files.
@@ -1357,7 +1357,7 @@ if (1.eq.0) then
   zz(3) = 0.20d0
   zz(4) = 0.25d0
 
-! If we are in an unsteady case, or if the beginning of the stationary stats
+! If we are in an unsteady case, or if the beginning of the steady stats
 ! is not reached yet, all statistics are reset to zero at each time step before entering
 ! this subroutine.
 

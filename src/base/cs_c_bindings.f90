@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file cs_c_bindings.f90
-!> Definition of structure, subroutine, and function C bindings.
+!> Definition of C function and subroutine bindings.
 
 module cs_c_bindings
 

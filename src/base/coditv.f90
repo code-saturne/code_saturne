@@ -79,10 +79,10 @@
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
 !>                               - 1 convection,
-!>                               - 0 sinon
+!>                               - 0 otherwise
 !> \param[in]     idiffp        indicator
 !>                               - 1 diffusion,
-!>                               - 0 sinon
+!>                               - 0 otherwise
 !> \param[in]     ireslp        indicator
 !>                               - 0 conjugate gradient
 !>                               - 1 jacobi
@@ -92,14 +92,14 @@
 !>                               the iterative process
 !> \param[in]     imrgra        indicateur
 !>                               - 0 iterative gradient
-!>                               - 1 least square gradient
+!>                               - 1 least squares gradient
 !> \param[in]     nswrsp        number of reconstruction sweeps for the
 !>                               Right Hand Side
 !> \param[in]     nswrgp        number of reconstruction sweeps for the
 !>                               gradients
 !> \param[in]     imligp        clipping gradient method
 !>                               - < 0 no clipping
-!>                               - = 0 thank to neighbooring gradients
+!>                               - = 0 thank to neighboring gradients
 !>                               - = 1 thank to the mean gradient
 !> \param[in]     ircflp        indicator
 !>                               - 1 flux reconstruction,
@@ -110,7 +110,7 @@
 !>                               - 1 take into account,
 !>                               - 0 otherwise
 !> \param[in]     ischcp        indicator
-!>                               - 1 centred
+!>                               - 1 centered
 !>                               - 0 2nd order
 !> \param[in]     isstpp        indicator
 !>                               - 1 without slope test
@@ -140,12 +140,12 @@
 !> \param[in]     epsrsp        relative precision for the iterative process
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
-!> \param[in]     climgp        clipping coeffecient for the computation of
+!> \param[in]     climgp        clipping coefficient for the computation of
 !>                               the gradient
 !> \param[in]     relaxp        coefficient of relaxation
-!> \param[in]     thetap        weightening coefficient for the theta-schema,
+!> \param[in]     thetap        weighting coefficient for the theta-schema,
 !>                               - thetap = 0: explicit scheme
-!>                               - thetap = 0.5: time-centred
+!>                               - thetap = 0.5: time-centered
 !>                               scheme (mix between Crank-Nicolson and
 !>                               Adams-Bashforth)
 !>                               - thetap = 1: implicit scheme
@@ -169,11 +169,11 @@
 !> \param[in]     viscfm        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
 !>                               at interior faces for the matrix
 !> \param[in]     viscbm        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
-!>                               at border faces for the matrix
+!>                               at boundary faces for the matrix
 !> \param[in]     viscfs        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
-!>                               at border faces for the r.h.s.
+!>                               at boundary faces for the r.h.s.
 !> \param[in]     icvflb        global indicator of boundary convection flux
 !>                               - 0 upwind scheme at all boundary faces
 !>                               - 1 imposed flux at some boundary faces
@@ -360,7 +360,7 @@ elseif (iesize.eq.3) then
 
 endif
 
-! For stationary computations, the diagonal is relaxed
+! For steady computations, the diagonal is relaxed
 if (idtvar.lt.0) then
   !$omp parallel do private(isou, jsou)
   do iel = 1, ncel
@@ -709,7 +709,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
     !$omp parallel do private(isou)
     do iel = 1, ncel
-      ! smbini already contains instationnary terms and mass source terms
+      ! smbini already contains unsteady terms and mass source terms
       ! of the RHS updated at each sweep
       do isou = 1, 3
         smbini(isou,iel) = smbini(isou,iel)                 &
@@ -724,7 +724,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
     !$omp parallel do private(isou)
     do iel = 1, ncel
-      ! smbini already contains instationnary terms and mass source terms
+      ! smbini already contains unsteady terms and mass source terms
       ! of the RHS updated at each sweep
       do isou = 1, 3
         smbini(isou,iel) = smbini(isou,iel)                 &
@@ -739,7 +739,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
     !$omp parallel do private(isou)
     do iel = 1, ncel
-      ! smbini already contains instationnary terms and mass source terms
+      ! smbini already contains unsteady terms and mass source terms
       ! of the RHS updated at each sweep
       do isou = 1, 3
         smbini(isou,iel) = smbini(isou,iel)                                  &
@@ -810,7 +810,7 @@ if (iescap.gt.0) then
 
   ! ---> Computation of the estimator of the current component
 
-  ! smbini already contains instationnary terms and mass source terms
+  ! smbini already contains unsteady terms and mass source terms
   ! of the RHS updated at each sweep
 
   !$omp parallel do private(isou)

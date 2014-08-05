@@ -29,7 +29,7 @@
 !> \brief Translation of the boundary conditions given by cs_user_boundary_conditions
 !> in a form that fits to the solver.
 !>
-!> The values at a border face \f$ \fib \f$ stored in the face center
+!> The values at a boundary face \f$ \fib \f$ stored in the face center
 !> \f$ \centf \f$ of the variable \f$ P \f$ and its diffusive flux \f$ Q \f$
 !> are written as:
 !> \f[
@@ -40,7 +40,7 @@
 !> Q_\centf = A_P^f + B_P^f P_\centi
 !> \f]
 !> where \f$ P_\centi \f$ is the value of the variable \f$ P \f$ at the
-!> neighbooring cell.
+!> neighboring cell.
 !>
 !> Warning:
 !> - if we consider an increment of a variable, the boundary conditions
@@ -84,7 +84,7 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 5 smooth wall and
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rought wall and
+!>                               - 6 rough wall and
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
@@ -99,7 +99,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 (negative if gain) in w/m2 or roughness
 !>                                 in m if icodcl=6
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
