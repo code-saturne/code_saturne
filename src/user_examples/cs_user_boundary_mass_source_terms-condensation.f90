@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 
-!> \file cs_user_condensation.f90
+!> \file cs_user_boundary_mass_source_terms.f90
 !>
 !> \brief Source terms and thermal exchange coefficient associated at the
 !> cells and boundary faces with condensation.
@@ -143,7 +143,7 @@
 !>                              condensation occurs with phase change.
 !_______________________________________________________________________________
 
-subroutine cs_user_condensation_terms &
+subroutine cs_user_boundary_mass_source_terms &
  ( nvar   , nscal  ,                                              &
    nfbpcd , iappel ,                                              &
    ifbpcd , itypcd , izftcd ,                                     &
@@ -184,24 +184,20 @@ integer          izftcd(ncel)
 
 double precision spcond(nfbpcd,nvar)
 double precision hpcond(nfabor)
+double precision tpar
 
 ! Local variables
 
 integer          ieltcd
-integer          ifac, iel, iesp, iscal, ipass
+integer          ifac, iel, iesp, iscal
 integer          ivarh
 integer          ilelt, nlelt
 integer          izone
 integer          f_id
 
-double precision xgamma
-double precision vtot, flucel
-double precision tpar, hvap, tk
+double precision hvap, tk
 
 type(severe_acc_species_prop) s_h2o_g
-
-data    ipass/0/
-save    ipass
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cpro_cp
@@ -212,8 +208,9 @@ double precision, dimension(:), pointer :: cvar_h
 ! Allocate a temporary array for cells selection
 allocate(lstelt(nfabor))
 
-call field_get_id("y_h2o_g", f_id)
-call field_get_key_struct_severe_acc_species_prop(f_id, s_h2o_g)
+call field_get_id_try("y_h2o_g", f_id)
+if (f_id.ne.-1) &
+  call field_get_key_struct_severe_acc_species_prop(f_id, s_h2o_g)
 
 if (iappel.eq.1.or.iappel.eq.2) then
 
@@ -235,9 +232,8 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !===============================================================================
 
 
-!---------------------------------------------------
-!--To Select the cells with condensation source term
-!---------------------------------------------------
+  !--To Select the cells with condensation source term
+  !---------------------------------------------------
 
   izone = 0
   ieltcd = 0
@@ -255,15 +251,11 @@ if (iappel.eq.1.or.iappel.eq.2) then
     if (iappel.eq.2) ifbpcd(ieltcd) = ifac
   enddo
 
-  !-------------------------------------------
-  !-- For iappel = 1,
-  !-- Specification of nfbpcd.
-  !-------------------------------------------
+  ! For iappel = 1,
+  ! Specification of nfbpcd.
   if (iappel.eq.1) then
     nfbpcd = ieltcd
   endif
-
-!-------------------------------------------------------------------------------
 
 elseif (iappel.eq.3) then
 
@@ -285,7 +277,6 @@ elseif (iappel.eq.3) then
 
   if (ippmod(icond).eq.0) then
 
-      !-----------------------------------------------
     ! Turbulent law and empiric correlations used to
     ! define the exchange coefficients of the sink
     ! source term and heat transfer to the cooling
@@ -325,20 +316,16 @@ elseif (iappel.eq.3) then
     icophg = 3
 
     ! the wall temperature in unit [°C] of the copain model
-
     tpar = 26.57d0
+
   endif
 
-  !---------------------------------------
   ! To fill the spcond(nfbpcd,ivar) array
   ! if we want to specify a variable value
   !---------------------------------------
-
   do ieltcd = 1, nfbpcd
 
-    !----------------------------------------
     ! Compute the enthalpy value of vapor gas
-    !----------------------------------------
     if (ntcabs.le.1) then
       tk = t0
     else
@@ -346,9 +333,9 @@ elseif (iappel.eq.3) then
     endif
     hvap = s_h2o_g%cp*tk
 
-    !-- any condensation source term
-    !-- associated to each velocity component
-    !-- momentum equation in this case.
+    ! any condensation source term
+    ! associated to each velocity component
+    ! momentum equation in this case.
     !----------------------------------------
     itypcd(ieltcd,iu) = 0
     spcond(ieltcd,iu) = 0.d0
@@ -357,9 +344,9 @@ elseif (iappel.eq.3) then
     itypcd(ieltcd,iw) = 0
     spcond(ieltcd,iw) = 0.d0
 
-    !-- any condensation source term
-    !-- associated to each turbulent variables
-    !-- for (k -eps) standrad turbulence model
+    ! any condensation source term
+    ! associated to each turbulent variables
+    ! for (k -eps) standrad turbulence model
     !----------------------------------------
     if (itytur.eq.2) then
       itypcd(ieltcd,ik ) = 0
@@ -371,16 +358,14 @@ elseif (iappel.eq.3) then
       do iscal = 1, nscal
         if (iscal.eq.iscalt) then
 
-          !-- enthalpy value used for
-          !-- the explicit condensation term
-          !---------------------------------
+          ! enthalpy value used for
+          ! the explicit condensation term
           itypcd(ieltcd,isca(iscalt)) = 1
           spcond(ieltcd,isca(iscalt)) = hvap
         else
 
-          !-- scalar values used for
-          !-- the explicit condensation term
-          !---------------------------------
+          ! scalar values used for
+          ! the explicit condensation term
           itypcd(ieltcd,isca(iscal)) = 1
           spcond(ieltcd,isca(iscal)) = 0.d0
         endif
@@ -404,4 +389,4 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine cs_user_condensation_terms
+end subroutine cs_user_boundary_mass_source_terms

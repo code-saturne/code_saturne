@@ -304,11 +304,11 @@ module pointe
   double precision, allocatable, dimension(:) :: gamcav, dgdpca
 
   !> number of the \c nfbpcd faces in which a condensation source terms is imposed.
-  !> See \c ifbpcd and the user subroutine \ref cs_user_condensation_terms
+  !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
   integer, save :: nfbpcd
 
   !> number of the \c ifbpcd faces in which a condensation source terms is imposed.
-  !> See \c ifbpcd and the user subroutine \ref cs_user_condensation_terms}}
+  !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
   integer, allocatable, dimension(:) :: ifbpcd
 
   !> zone where a condensation source terms is imposed.
@@ -317,21 +317,21 @@ module pointe
   !> type of condensation source terms for each variable
   !> - 0 for an variable at ambient value,
   !> - 1 for an variable at imposed value.
-  !> See the user subroutine \ref cs_user_condensation_terms
+  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
   integer, allocatable, dimension(:,:) :: itypcd
 
   !> value of the condensation source terms for pressure.
   !> For the other variables, eventual imposed specific value.
-  !> See the user subroutine \ref cs_user_condensation_terms
+  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
   double precision, allocatable, dimension(:,:) :: spcond
 
   !> value of the thermal flux for the condensation model.
-  !> See the user subroutine \ref cs_user_condensation_terms
+  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
   double precision, allocatable, dimension(:) :: thermal_condensation_flux
 
   !> value of the thermal exchange coefficient associated to
   !> the condensation model used.
-  !> See the user subroutine \ref cs_user_condensation_terms
+  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
   double precision, allocatable, dimension(:) :: hpcond
 
   !> \}

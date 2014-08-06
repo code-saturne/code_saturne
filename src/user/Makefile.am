@@ -72,8 +72,8 @@ EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90 cs_user_extra_operations
 userfiles = \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.f90 \
+cs_user_boundary_mass_source_terms.f90 \
 cs_user_coupling.c \
-cs_user_condensation_terms.f90 \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \

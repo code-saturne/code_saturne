@@ -301,8 +301,7 @@ endif
 ! Condensation mass source terms
 ! ------------------------------
 
-call cs_user_condensation_terms &
-!==============================
+call cs_user_boundary_mass_source_terms &
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ivoid  , ivoid  , izftcd ,                                     &
@@ -761,7 +760,7 @@ if(nctsmt.gt.0) then
 
 endif
 
-! On appelle cs_user_condensation_terms lorqu'il y a sur un processeur
+! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
 ! au moins des cellules avec terme source de condensation.
 ! On ne fait que remplir le tableau d'indirection des cellules
 ! On appelle cependant cs_user_condensation avec tous les processeurs,
@@ -771,7 +770,7 @@ if (nftcdt.gt.0) then
 
   iappel = 2
 
-  call cs_user_condensation_terms &
+  call cs_user_boundary_mass_source_terms &
   !==============================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &

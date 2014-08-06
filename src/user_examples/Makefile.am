@@ -82,6 +82,7 @@ cs_user_boundary_conditions-gas_ebu.f90 \
 cs_user_boundary_conditions-gas_libby_williams.f90 \
 cs_user_boundary_conditions-pulverized_coal.f90 \
 cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 \
+cs_user_boundary_mass_source_terms-condensation.f90 \
 cs_user_extra_operations-energy_balance.f90 \
 cs_user_extra_operations-extract_1d_profile.f90 \
 cs_user_extra_operations-force_temperature.f90 \

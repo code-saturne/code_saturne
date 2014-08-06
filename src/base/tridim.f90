@@ -621,7 +621,7 @@ if (nftcdt.gt.0) then
     enddo
   enddo
 
-  call cs_user_condensation_terms &
+  call cs_user_boundary_mass_source_terms &
   !==============================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
