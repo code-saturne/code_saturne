@@ -402,7 +402,7 @@ endif
 if (isno2t.gt.0) then
   call add_source_term_prev_field(ivarfl(iu))
   if (icavit.ge.0) then
-    call add_property_field_nd(ivarfl(ivoidf))
+    call add_source_term_prev_field(ivarfl(ivoidf))
   endif
 endif
 
