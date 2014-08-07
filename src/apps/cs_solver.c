@@ -230,8 +230,6 @@ cs_run(void)
 
     CS_PROCF(initi1, INITI1)();
 
-    cs_field_pointer_map_base();
-
     CS_PROCF (haltyp, HALTYP) (&ivoset);
     if (ivoset)
       halo_type = CS_HALO_EXTENDED;
