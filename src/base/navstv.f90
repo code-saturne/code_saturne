@@ -1334,13 +1334,14 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     call predvv &
     !==========
  ( iappel ,                                                       &
-   nvar   , nscal  , iterns , ncepdc , ncetsm ,                   &
-   icepdc , icetsm , itypsm ,                                     &
+   nvar   , nscal  , iterns ,                                     &
+   ncepdc , ncetsm , nfbpcd ,                                     &
+   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dt     , vel    , vel    ,                                     &
    propce ,                                                       &
    esflum , esflub ,                                              &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , smacel , frcxt  , grdphd ,                            &
+   ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
    trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , w10    )

@@ -183,7 +183,7 @@ integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
 integer          izftcd(ncel)
 
 double precision spcond(nfbpcd,nvar)
-double precision hpcond(nfabor)
+double precision hpcond(nfbpcd)
 double precision tpar
 
 ! Local variables
