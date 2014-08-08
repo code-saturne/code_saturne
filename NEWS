@@ -4,6 +4,8 @@ Release 3.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in iswdyn option for scalars and velocity (introduced by a unwanted merge).
+
 - Fix restart when using AFM or DFM turbulent flux model.
 
 - Fix GUI import of volume group names from preprocessor log.
