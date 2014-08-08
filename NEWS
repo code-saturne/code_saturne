@@ -5,6 +5,8 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in iswdyn option (introduced by a unwanted merge).
+
 - Fix restart when using AFM or DFM turbulent flux model.
 
 - Fix bug in halo synchronization for ALE with multigrid solver.

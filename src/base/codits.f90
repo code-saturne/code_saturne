@@ -260,7 +260,7 @@ integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          itenso,iinvpe, iinvpp
 integer          idtva0
-integer          incp, lvar
+integer          lvar
 integer          nagmax, npstmg
 integer          ibsize, iesize
 integer          insqrt
@@ -578,7 +578,6 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   if (iswdyp.ge.1) then
 
     ! Computation of the variable relaxation coefficient
-    incp = 0
     lvar = 0
 
     !$omp parallel do
@@ -590,7 +589,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     call bilsca &
     !==========
    ( idtvar , lvar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , incp   , imrgra , iccocg ,                   &
+     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
      iwarnp , imucpp , idftnp ,                                     &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      dpvar  , dpvar  , coefap , coefbp , cofafp , cofbfp ,          &
