@@ -337,9 +337,9 @@
 !> \subsubsection fac_id Faces identification
 !>
 !> - Density:                               \c field id \c ibrom
-!> - Mass flux (for convecting \c ivar):
+!> - Boundary mass flux (for convecting \c ivar):
 !>     field id \c iflmab
-!>     using \c field_get_key_int(ivarfl(ivar), kimasf, iflmab)
+!>     using \c field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
 !> - For other values: take as an approximation the value in the adjacent cell
 !>                     i.e. as above with \c iel = ifabor(ifac).
 !-------------------------------------------------------------------------------
