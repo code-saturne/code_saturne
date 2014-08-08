@@ -36,9 +36,6 @@
 
   \section cs_user_physical_properties-scalar_drift Physical properties
 
-
-  \subsection energy_balance Energy balance 
-
   \subsubsection loc_var Local variables to be added
 
   The following local variables need to be defined for the examples

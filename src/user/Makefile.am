@@ -85,6 +85,7 @@ cs_user_performance_tuning.c \
 cs_user_physical_properties.f90 \
 cs_user_postprocess.c \
 cs_user_postprocess_var.f90 \
+cs_user_porosity.f90 \
 cs_user_radiative_transfer.f90 \
 cs_user_solver.c \
 cs_user_source_terms.f90 \
@@ -98,7 +99,6 @@ uskpdc.f90 \
 uslaen.f90 \
 uslag1.f90 \
 uslag2.f90 \
-usporo.f90 \
 uspt1d.f90 \
 usray1.f90 \
 usray2.f90 \

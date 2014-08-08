@@ -636,7 +636,7 @@ module ppincl
   !>  - 0 indicates that the volume viscosity is constant and equal to
   !> the reference volume viscosity \ref viscv0.
   !>  - 1 indicates that the volume viscosity is variable: its
-  !> variation law must be specified in the user subroutine \ref uscfpv.
+  !> variation law must be specified in the user subroutine \ref usphyv.
   !>
   !> Always useful.
   !> The volume viscosity \f$\kappa\f$ is defined by the formula expressing the stress:
@@ -677,7 +677,7 @@ module ppincl
   !> reference volume viscosity (noted \f$\kappa\f$ in the equation
   !> expressing \f$\tens{\sigma}\f$ in the paragraph dedicated to \ref iviscv)
   !> always useful, it is the used value, unless the user specifies the volume
-  !> viscosity in the user subroutine \ref uscfpv
+  !> viscosity in the user subroutine \ref usphyv
   double precision, save :: viscv0
 
   !> pressure predicion by an evolution equation

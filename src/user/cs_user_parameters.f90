@@ -2725,7 +2725,7 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
   visls0(itempk) = 3.d-2
 
 !       If the molecular thermal conductivity is variable, its values
-!         must be provided in the user subroutine 'uscfpv'
+!         must be provided in the user subroutine 'usphyv'
 
 ! --> Volumetric molecular viscosity
 
@@ -2736,7 +2736,7 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
   viscv0 = 0.d0
 
 !       If the volumetric molecular viscosity is variable, its values
-!         must be provided in the user subroutine 'uscfpv'
+!         must be provided in the user subroutine 'usphyv'
 
 ! --> Molar mass of the gas (kg/mol)
 

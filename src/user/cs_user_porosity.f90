@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 
-!> \file usporo.f90
+!> \file cs_user_porosity.f90
 !>
 !> \brief This function computes the porosity (volume factor \f$ \epsilon \f$
 !> when porosity module is activated (iporos = 1 in cs_user_parameters.f90).
@@ -64,8 +64,7 @@ implicit none
 
 ! Local variables
 
-integer          iel, ii, jj
-double precision x, pormin, pormax, hc, ll, dhc
+! INSERT_VARIABLE_DEFINITIONS_HERE
 
 double precision, dimension(:), pointer :: cpro_porosi
 
@@ -82,31 +81,7 @@ if (1.eq.1) return
 ! Retrieve porosity field
 call field_get_val_s(ipori, cpro_porosi)
 
-! Example: fixe a linear by part porosity profile
-
-do iel = 1, ncel
-  x = xyzcen(1,iel)
-  if (x.le.(ll/2.d0)) then
-    hc = 1.d0 - 2.d0*dhc*x/ll
-  else
-    hc = 1.d0 - dhc + dhc*(2.d0*x-ll)/ll
-  endif
-
-  cpro_porosi(iel) = hc
-
-  pormin = min(pormin,cpro_porosi(iel))
-  pormax = max(pormax,cpro_porosi(iel))
-enddo
-
-! Periodicity and parallelism treatment
-if (irangp.ge.0) then
-  call parmax (pormax)
-  call parmin (pormin)
-endif
-
-if (iperio.eq.1.or.irangp.ge.0) then
-  call synsca(cpro_porosi)
-endif
+! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
 
 return
 end subroutine usporo

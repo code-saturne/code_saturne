@@ -37,7 +37,7 @@
 !> imposed at the boundary face where the condensation phenomenon occurs.
 !>
 !> Some user subroutines are called which allows the setting of
-!> \f$ \gam_{\mbox{cond}} \f$ and \f$ h_{\mbox{p,cond}} \f$.
+!> \f$ \gamma_{\mbox{cond}} \f$ and \f$ h_{\mbox{p,cond}} \f$.
 !>
 !> This function fills the condensation source term array gamma_cond adding
 !> to the following equations:

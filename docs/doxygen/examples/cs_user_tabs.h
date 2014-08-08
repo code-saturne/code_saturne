@@ -29,13 +29,13 @@
 
 Here is a list of user examples. Thorougly documented snippets are provided.
 
-   - \subpage cs_user_boundary_conditions_examples "User boundary conditions definitions"
-   - \subpage cs_user_extra_operations_examples "User extra operations"
    - \subpage cs_user_initialization "Physical fields user initialization"
+   - \subpage cs_user_boundary_conditions_examples "User boundary conditions definitions"
    - \subpage les_inflow
    - \subpage f_parameters
    - \subpage parameters
    - \subpage cavit
+   - \subpage physical_properties 
    - \subpage drift_coal_scalars
    - \subpage drift_scalars
    - \subpage cs_porosity
@@ -45,6 +45,7 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cs_user_mass_source_terms
    - \subpage cs_user_boundary_conditions_ale
    - \subpage cs_user_radiative_transfert_parameters
+   - \subpage cs_user_extra_operations_examples "User extra operations"
    - \subpage cs_user_extra_operations-nusselt_calculation
    - \subpage cs_user_source_terms-scalar_in_a_channel
 */

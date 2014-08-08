@@ -902,11 +902,11 @@ endif
 '@  En compressible la viscosite moleculaire est constante par',/,&
 '@     defaut (IVIVAR=0) et la valeur de IVIVAR n''a',   /,&
 '@     pas ete modifiee dans uscfx2. Pourtant, on a modifie',   /,&
-'@     les valeurs de la viscosite moleculaire dans uscfpv.',   /,&
+'@     les valeurs de la viscosite moleculaire dans usphyv.',   /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Verifier uscfx2 et uscfpv.',                                /,&
+'@  Verifier uscfx2 et usphyv.',                                /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1102,11 +1102,11 @@ endif
 '@  In the compressible module, the molecular viscosity is',    /,&
 '@     constant by default (IVIVAR=0) and the value',    /,&
 '@     of IVIVAR  has not been modified in uscfx2. Yet, its',   /,&
-'@     value has been modified in uscfpv.',                     /,&
+'@     value has been modified in usphyv.',                     /,&
 '@',                                                            /,&
 '@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
-'@  Verify uscfx2 and uscfpv.',                                 /,&
+'@  Verify uscfx2 and usphyv.',                                 /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

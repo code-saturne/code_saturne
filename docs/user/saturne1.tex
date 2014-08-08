@@ -612,7 +612,7 @@ physics)
 %            \item \texttt{cs\_user\_boundary\_conditions} to manage the
 %                  boundary conditions
 
-           \item \texttt{uscfpv} (in \texttt{cs\_user\_physical\_properties}
+           \item \texttt{usphyv} (in \texttt{cs\_user\_physical\_properties}
                   to manage the variable physical properties
 
         \end{list}
@@ -7996,7 +7996,7 @@ calculated automatically by giving the right value to the variable
 
 Without the GUI, all of the laws governing the physical properties of the fluid
 (molecular viscosity, molecular volumetric viscosity, molecular thermal conductivity and
-molecular diffusivity of the user-defined scalars) can be specified in the subroutine \texttt{uscfpv} of
+molecular diffusivity of the user-defined scalars) can be specified in the subroutine \texttt{usphyv} of
 the \texttt{cs\_user\_physical\_properties} file,
 which is then called at each time step. This subroutine replaces and is similar to \texttt{usphyv}.
 

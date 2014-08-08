@@ -2943,7 +2943,7 @@ with $M = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}$, internal
 the volume viscosity is constant and equal to the reference volume viscosity
 \texttt{viscv0}.\\
 \texttt{iviscv}=1 indicates that the volume viscosity is variable: its
-variation law must be specified in the user subroutine \texttt{uscfpv}.\\
+variation law must be specified in the user subroutine \texttt{usphyv}.\\
 always useful\\
 The volume viscosity $\kappa$ is defined by the formula expressing the stress:
 \begin{equation}
@@ -2957,7 +2957,7 @@ The volume viscosity $\kappa$ is defined by the formula expressing the stress:
 viscosity (noted $\kappa$ in the equation expressing $\tens{\sigma}$ in the
 paragraph dedicated to \texttt{iviscv})\\
 always useful, it is the used value, unless the user specifies the volume
-viscosity in the user subroutine \texttt{uscfpv}}
+viscosity in the user subroutine \texttt{usphyv}}
 
 \motcle{igrdpp}{i}{0 or 1}{1}{O}{L3}
 {indicates whether the pressure should be updated (=1) or not (=0) after the
