@@ -474,6 +474,19 @@ if (nscal.ge.1) then
   enddo
 endif
 
+! Porosity
+ityloc = 1 ! cells
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+
+if (iporos.ge.1) then
+  f_name = 'porosity'
+  call field_create(f_name, itycat, ityloc, 1, .true., .false., ipori)
+  if (iporos.eq.2) then
+    f_name = 'tensorial_porosity'
+    call field_create(f_name, itycat, ityloc, 6, .true., .false., iporf)
+  endif
+endif
+
 !===============================================================================
 ! 2. POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
 !===============================================================================

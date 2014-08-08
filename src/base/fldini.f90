@@ -321,26 +321,6 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
                     ilved, inoprv, ivsten)
 endif
 
-!===============================================================================
-
-! Porosity
-!---------
-
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-ityloc = 1 ! cells
-ilved = .true.
-
-if (iporos.ge.1) then
-  name = 'porosity'
-  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ipori)
-  if (iporos.eq.2) then
-    name = 'tensorial_porosity'
-    call field_create(name, itycat, ityloc, idim6, ilved, inoprv, iporf)
-  endif
-endif
-
-!===============================================================================
-
 ! Additional fields
 !------------------
 
