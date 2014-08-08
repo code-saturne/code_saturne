@@ -94,20 +94,6 @@ integer          iappel
 double precision relaxp, extrap
 
 !===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine cs_field_pointer_map_base()  &
-    bind(C, name='cs_field_pointer_map_base')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_field_pointer_map_base
-
-end interface
-
-!===============================================================================
 
 ! Check for restart and read matching time steps
 
@@ -350,10 +336,6 @@ if (ialgce.ne.-999) call algcen(ialgce)
 
 call fldprp
 !==========
-
-! Map to field pointers
-
-call cs_field_pointer_map_base()
 
 !===============================================================================
 ! 4. INITIALISATION DE PARAMETRES UTILISATEUR SUPPLEMENTAIRES

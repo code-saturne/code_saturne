@@ -82,6 +82,20 @@ double precision gravn2
 character(len=80) :: f_name, s_label, s_name
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_field_pointer_map_base()  &
+    bind(C, name='cs_field_pointer_map_base')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_field_pointer_map_base
+
+end interface
+
+!===============================================================================
 ! 0. INITIALISATIONS
 !===============================================================================
 
@@ -494,6 +508,10 @@ if (ipucou.ne.0 .or. ncpdct.gt.0) then
   ippty = ipptx + 1
   ipptz = ippty + 1
 endif
+
+! Map to field pointers
+
+call cs_field_pointer_map_base()
 
 return
 
