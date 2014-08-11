@@ -20,29 +20,20 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cfvarp
-!================
-
-
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-!              INIT DES POSITIONS DES VARIABLES
-!            POUR LE COMPRESSIBLE SANS CHOC SELON
-! REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
+!> \file cfvarp.f90
+!> \brief Variables location initialization for the compressible module,
+!> according to calculation type selected by the user.
+!>
+!------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!-------------------------------------------------------------------------------
+!   mode          name          role
+!-------------------------------------------------------------------------------
+!______________________________________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine cfvarp
 
 !===============================================================================
 ! Module files
@@ -63,6 +54,8 @@ use ihmpre
 !===============================================================================
 
 implicit none
+
+! Arguments
 
 ! Local variables
 
@@ -89,14 +82,13 @@ interface
 end interface
 
 !===============================================================================
-! 1. DEFINITION DES POINTEURS
-!===============================================================================
-
 
 if (ippmod(icompf).ge.0) then
 
-  ! Total energy
 
+  ! Pointers and reference values definition
+
+  ! Total energy
   itherm = 3
   call add_model_scalar_field('total_energy', 'EnergieT', ienerg)
   iscalt = ienerg
@@ -107,40 +99,37 @@ if (ippmod(icompf).ge.0) then
   ! Temperature (post)
   call add_model_scalar_field('temperature', 'TempK', itempk)
 
-! ---- Viscosite dynamique de reference relative au scalaire ITEMPK
+  ! Pointer and reference value for conductivity of temperature scalar
+  ! TODO itempk should be a property
   ivisls(itempk) = 0
   visls0(itempk) = epzero
 
-! ---- Viscosite dynamique de reference relative au scalaire IENERG
+  ! Pointer and reference value for diffusivity of total energy scalar
   ivisls(ienerg) = 0
   visls0(ienerg) = epzero
 
-! ---- Initialisation par defaut de la viscosite en volume (cste)
+  ! Pointer and reference value for volumetric molecular viscosity
+  ! (constant by default)
   iviscv = 0
   viscv0 = 0.d0
 
-! MAP to C API
-call cs_field_pointer_map_compressible
+  ! MAP to C API
+  call cs_field_pointer_map_compressible
 
-! Mapping for GUI
-if (iihmpr.eq.1) then
-  call cs_gui_labels_compressible
-endif
+  ! Mapping for GUI
+  if (iihmpr.eq.1) then
+    call cs_gui_labels_compressible
+  endif
 
-!===============================================================================
-! 2. OPTIONS DE CALCUL
-!===============================================================================
+  ! Computation parameters
 
-! --> Cv constant ou variable (par defaut : constant)
+  ! Variability of pecific heat at constant volume Cv (constant by default)
   icv = 0
   cv0 = 0.d0
-
   call cf_set_thermo_options
 
-!===============================================================================
-! 3. ON REDONNE LA MAIN A L'UTILISATEUR
-!===============================================================================
 
+  ! Variability of volumetric molecular viscosity (gui setting)
   if (iihmpr.eq.1) then
     call csvvva(iviscv)
   endif
