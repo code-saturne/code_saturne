@@ -100,7 +100,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          iel   , ifac  , inc   , iprev,  iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt

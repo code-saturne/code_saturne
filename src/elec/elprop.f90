@@ -73,7 +73,7 @@ implicit none
 
 ! Local variables
 
-character*80  f_name, f_label
+character(len=80) :: f_name, f_label
 integer       idimve
 integer       ipropp
 

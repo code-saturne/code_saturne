@@ -1888,7 +1888,7 @@ void CS_PROCF(resmgr, RESMGR)
 {
   char *var_name;
 
-  cs_sles_type_t res_type[3] = {*iresds, *iresas, *ireslp};
+  int res_type[3] = {*iresds, *iresas, *ireslp};
 
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 

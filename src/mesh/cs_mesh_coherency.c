@@ -174,7 +174,7 @@ cs_mesh_coherency_check(void)
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
-  const cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
+  const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
   const cs_lnum_t  *b_face_cells = mesh->b_face_cells;
   const cs_real_t  *vtx_coord = mesh->vtx_coord;
 

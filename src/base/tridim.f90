@@ -1257,7 +1257,7 @@ do while (iterns.le.nterup)
       ! otherwise it is done in navstv.f90
       if (itrale.eq.0) then
 
-        call alelav(rtp, rtpa, propce)
+        call alelav(propce)
         !==========
 
       endif

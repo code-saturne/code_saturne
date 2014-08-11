@@ -3082,11 +3082,6 @@ cs_mesh_create_group_classes(cs_mesh_t  *mesh)
 void
 cs_mesh_init_group_classes(cs_mesh_t  *mesh)
 {
-  int  i, j;
-  int  grp_nbr, grp_num, grp_idx;
-
-  char **group = NULL;
-
   if (mesh->class_defs != NULL)
     mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
 

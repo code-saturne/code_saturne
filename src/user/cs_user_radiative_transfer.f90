@@ -135,12 +135,11 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET RAYONNEMENT                           ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usray3 DOIT ETRE COMPLETE',/,&
+'@ @@ WARNING: stopped by radiative module                    ',/,&
+'@    ========                                                ',/,&
+'@     User subroutine usray3 must be completed               ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -245,12 +244,12 @@ endif
 '@    This does not seem to be the case here.                 ',/,&
 '@                                                            ',/,&
 '@    The minimum absorption coefficient to ensure this       ',/,&
-'@      optical length is XKmin = ', e10.4                     ,/,&
-'@    This value is not reached for ', e10.4,'%               ',/,&
+'@      optical length is XKmin = ', e11.4                     ,/,&
+'@    This value is not reached for ', e11.4,'%               ',/,&
 '@      of the meshe''s cells.                                ',/,&
 '@    The percentage of mesh cells for which we allow this    ',/,&
 '@      condition not to be respected is set by default in    ',/,&
-'@      cs_user_parameters.f90 to xnp1mx = ', e10.4,'%        ',/,&
+'@      cs_user_parameters.f90 to xnp1mx = ', e11.4,'%        ',/,&
 '@                                                            ',/,&
 '@    The calculation is interrupted.                         ',/,&
 '@                                                            ',/,&

@@ -275,6 +275,23 @@ void CS_PROCF(synvin, SYNVIN)
 
 /*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity,
+ * using an extended halo.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synvie, SYNVIE)
+(
+ cs_real_t  var[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity,
  * ignoring periodicity of rotation.
  *
  * Fortran interface:

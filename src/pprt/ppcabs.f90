@@ -374,30 +374,30 @@ endif
 ! FORMAT
 ! -------
 
- 1000 format(                                                           &
+ 1000 format(                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT APPROXIMATION P-1 (PPCABS)      ',/,&
-'@    =========                                               ',/,&
+'@ @@ WARNING: Radiative module with P-1 approximation        ',/,&
+'@    ========                                                ',/,&
 '@                                                            ',/,&
-'@    LA LONGUEUR OPTIQUE DU MILIEU SEMI-TRANSPARENT          ',/,&
-'@      DOIT AU MOINS ETRE DE L''ORDRE DE L''UNITE POUR ETRE  ',/,&
-'@      DANS LE DOMAINE D''APPLICATION DE L''APPROXIMATION P-1',/,&
-'@    CELA NE SEMBLE PAS ETRE LE CAS ICI.                     ',/,&
+'@    The optical length of the semi-transparent medium       ',/,&
+'@      must be at least approximately 1 so as to be in the   ',/,&
+'@      application domain of the P-1 approximation.          ',/,&
+'@    This does not seem to be the case here.                 ',/,&
 '@                                                            ',/,&
-'@    LE COEFFICIENT D''ABSORPTION MINIMUM POUR ASSURER CETTE ',/,&
-'@      LONGUEUR OPTIQUE EST XKMIN = ',E10.4                   ,/,&
-'@    CETTE VALEUR N''EST PAS ATTEINTE POUR ', E10.4,'%       ',/,&
-'@      DES CELLULES DU MAILLAGE.                             ',/,&
-'@    LE POURCENTAGE DE CELLULES DU MAILLAGE POUR LESQUELLES  ',/,&
-'@      ON ADMET QUE CETTE CONDITION SOIT VIOLEE EST IMPOSE   ',/,&
-'@      PAR DEFAUT OU DANS USINI1 A XNP1MX = ', E10.4,'%      ',/,&
+'@    The minimum absorption coefficient to ensure this       ',/,&
+'@      optical length is xkmin = ',e11.4                     ,/,&
+'@    This value is not reached for ', e11.4,'%               ',/,&
+'@      of the meshe''s cells.                                ',/,&
+'@    The percentage of mesh cells for which we allow this    ',/,&
+'@      condition to be violated is fixed by defaul or in     ',/,&
+'@      cs_user_parameters.f90 to xnp1mx = ', e11.4,'%        ',/,&
 '@                                                            ',/,&
-'@    Le calcul est interrompu.                               ',/,&
+'@    The computation will not be run.                        ',/,&
 '@                                                            ',/,&
-'@    Verifier les valeurs du coefficient d''absorption CK    ',/,&
-'@      dans PPCABS, USRAY3 ou Fichier thermochimie.          ',/,&
+'@    Check the values of the absorption coefficent Ck        ',/,&
+'@      in ppcabs, usray3, or the thermochemistry file.       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

@@ -91,7 +91,7 @@ double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
 double precision grav(3),xrij(3,3), temp(3)
 
-character*80     fname
+character(len=80) :: fname
 
 double precision, dimension(:), pointer :: coefap, coefbp
 double precision, allocatable, dimension(:,:,:) :: gradv

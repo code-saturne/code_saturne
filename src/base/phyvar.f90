@@ -89,7 +89,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct, idfm
 integer          nn

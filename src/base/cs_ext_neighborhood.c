@@ -191,7 +191,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
   const cs_lnum_t  n_faces = mesh->n_i_faces;
   const cs_lnum_t  *face_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t  *face_vtx_lst = mesh->i_face_vtx_lst;
-  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
+  const cs_lnum_2_t  *face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
 
   cs_lnum_t  vtx_cells_estimated_connect_size = 3 * n_vertices;
 
@@ -737,7 +737,7 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
-  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
+  const cs_lnum_2_t  *face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
   const cs_lnum_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
 
@@ -983,7 +983,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
   const cs_lnum_t  n_faces = mesh->n_i_faces;
   const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
+  const cs_lnum_2_t  *face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
 
   const cs_real_t  cos_ij_fn_min = cos(non_ortho_max);
   const cs_real_t  *cell_cen = mesh_quantities->cell_cen;

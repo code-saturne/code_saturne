@@ -63,7 +63,7 @@ integer infecr, isuppr, ierror
 
 ! Local variables
 
-character*64     name
+character(len=64) :: name
 
 !===============================================================================
 

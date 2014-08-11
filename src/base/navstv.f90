@@ -833,7 +833,7 @@ endif
 if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
-    call alelav(rtp, rtpa, propce)
+    call alelav(propce)
     !==========
   endif
 
@@ -1179,7 +1179,7 @@ if (icavit.ge.0) then
 
   ! Void fraction solving
 
-  call resvoi(dt, rtp, rtpa, propce)
+  call resvoi(dt, rtp, rtpa)
   !==========
 
   ! Halo synchronization

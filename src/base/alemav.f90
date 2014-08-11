@@ -39,8 +39,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     impale        indicator of node displacement
 !> \param[in]     ialtyb        ALE Boundary type
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in,out] depale        nodes displacements
 !> \param[in,out] xyzno0        nodes coordinates of the initial mesh
 !_______________________________________________________________________________
@@ -48,7 +46,7 @@
 subroutine alemav &
  ( itrale ,                                                       &
    impale , ialtyb ,                                              &
-   dt     , rtpa   , rtp    ,                                     &
+   dt     ,                                                       &
    depale , xyzno0 )
 
 !===============================================================================
@@ -81,7 +79,7 @@ integer          itrale
 
 integer          impale(nnod), ialtyb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision depale(3,nnod), xyzno0(3,nnod)
 
 ! Local variables

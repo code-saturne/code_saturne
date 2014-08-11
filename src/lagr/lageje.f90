@@ -27,7 +27,7 @@ subroutine lageje &
    tempf , depint,                                                &
    dtp   , tstruc , vstruc , lvisq ,                              &
    dx    , vvue   , vpart  , taup  , yplus ,                      &
-   unif1 , unif2  , dintrf, gnorm, vnorm, grpn, piiln)
+   unif1 , unif2  , dintrf, gnorm, vnorm)
 
 !===============================================================================
 !
@@ -66,8 +66,6 @@ subroutine lageje &
 ! dintrf           ! r  ! <-- ! extern-intern interface location               !
 ! gnorm            ! r  ! <-- ! wall-normal gravity component                  !
 ! vnorm            ! r  ! <-- ! wall-normal fluid (Eulerian) velocity          !
-! grpn             ! r  ! <-- ! wall-normal pressure gradient                  !
-! piiln            ! r  ! <-- ! SDE integration auxiliary term                 !
 !-------------------------------------------------------------------------------
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
@@ -94,7 +92,7 @@ double precision dtp, lvisq
 double precision vpart  , vvue  , dx
 
 double precision unif1 , unif2 , dintrf, depint
-double precision taup  , yplus, gnorm, vnorm, grpn, piiln
+double precision taup  , yplus, gnorm, vnorm
 
 ! Local variables
 

@@ -114,7 +114,7 @@ double precision d1s2
 
 double precision rvoid(1)
 
-character*80     fname, name
+character(len=80) :: fname, name
 
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:) :: viscb

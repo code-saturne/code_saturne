@@ -89,8 +89,7 @@ logical          ilved, iprev, inoprv, lprev
 integer          f_id, kscavr, f_vis, f_log, f_dften
 integer          idfm, nfld
 
-character*80     name
-character*80     f_name
+character(len=80) :: name, f_name
 
 type(var_cal_opt) vcopt
 type(severe_acc_species_prop) sasp

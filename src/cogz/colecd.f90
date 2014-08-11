@@ -67,8 +67,8 @@ implicit none
 
 ! Local variables
 
-character*150    chain1,chain2
-character*12     nomcoe(ngazem)
+character(len=150) :: chain1,chain2
+character(len=12) :: nomcoe(ngazem)
 
 integer          it, igg, ir, ige, iat, ios
 integer          ncgm, nrgm

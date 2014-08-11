@@ -23,7 +23,7 @@
 subroutine lagnpr &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   ,                                     &
    npt    , nptnew , new    ,                                     &
    izone  ,                                                       &
    ifrlag , isorti , iworkp ,                                     &
@@ -51,8 +51,6 @@ subroutine lagnpr &
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
@@ -96,7 +94,7 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax , nvp    , nvp1
 integer          npt    , nptnew , new
 integer          izone
 

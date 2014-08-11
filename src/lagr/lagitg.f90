@@ -205,7 +205,7 @@ double precision aux1 , aux2 , ter1 , ter2 , ter3
 '@      NUMERO ',I10 ,'UNE VALEUR NON PERMISE (LAGITG).       ',/,&
 '@                                                            ',/,&
 '@    TCARAC DEVRAIT ETRE UN ENTIER STRICTEMENT POSITIF       ',/,&
-'@       IL VAUT ICI TCARAC = ', E10.4                         ,/,&
+'@       IL VAUT ICI TCARAC = ', e11.4                         ,/,&
 '@       POUR LA PARTICULE NUMERO ',I10                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&

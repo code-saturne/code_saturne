@@ -773,10 +773,10 @@ module lagran
   !> restart file (\ref isuist =1).
   !> If the name of a variable is changed between two calculations,
   !> it will not be possible to read its value from the restart file
-  character*32, save ::      nomlag(nvplmx)
+  character(len=32), save ::      nomlag(nvplmx)
 
   ! TODO
-  character*32, save ::      nomlav(nvplmx)
+  character(len=32), save ::      nomlav(nvplmx)
 
   !> historic statistics options
   integer, save ::           ihslag(nvplmx)
@@ -1218,7 +1218,7 @@ module lagran
   !> Warning: this name is also used to reference information in the restart file
   !> (\ref isuist =1). If the name of a variable is changed between two
   !> calculations, it will not be possible to read its value from the restart file
-  character*50, save ::      nombrd(nvplmx)
+  character(len=50), save ::      nombrd(nvplmx)
 
   !> ifrlag pointer in ia to identify boundary zones and faces
   integer, save ::           iifrla

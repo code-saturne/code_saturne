@@ -78,13 +78,13 @@ integer itp, ii, ios, k
 integer sjday,minute
 double precision second
 integer year, month, quant, hour, day, jday
-character*80     ccomnt, label
-character*1      csaute
+character(len=80) :: ccomnt, label
+character(len=1) :: csaute
 
 ! altitudes and concentrations of every nespgi species
 double precision  zconctemp(nespgi+1)
 ! names of species defined in the file in case of a user defined chemical scheme
-character*80, allocatable, dimension(:) ::      namespg
+character(len=80), allocatable, dimension(:) ::      namespg
 
 !===============================================================================
 

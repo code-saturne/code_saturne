@@ -352,10 +352,6 @@ endif
 ! FORMATS
 !--------
 
- 1001  format(/, ' Courant impose= ',E14.5, /,                    &
-              ' Dpot= ',E14.5,/,                            &
-              ' Somje= ',E14.5)
-
  1008  format(/,' Cpmx   = ',E14.5,/,                             &
           ' COEPOA = ',E14.5,/,                             &
           ' COEPOT = ',E14.5)

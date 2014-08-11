@@ -24,7 +24,7 @@ subroutine lagcli &
 !================
 
  ( marko  ,                                                       &
-   tempf  , romf , ustar , lvisq  , tvisq  ,                      &
+   tempf  , lvisq  , tvisq  ,                                     &
    vpart  , vvue , dx    ,                                        &
    diamp  , romp , taup  , yplus  , dintrf , enertur , gnorm ,    &
    vnorm  , grpn , piiln , depint )
@@ -47,8 +47,6 @@ subroutine lagcli &
 !__________________!____!_____!________________________________________________!
 ! marko            ! i  ! <-> ! state of the jump process                      !
 ! tempf            ! r  ! <-- ! temperature of the fluid                       !
-! romf             ! r  ! <-- ! fluid density                                  !
-! ustar            ! r  ! <-- ! friction velocity                              !
 ! lvisq            ! r  ! <-- ! wall-unit lenghtscale                          !
 ! tvisq            ! r  ! <-- ! wall-unit timescale                            !
 ! vpart            ! r  ! <-- ! particle wall-normal velocity                  !
@@ -89,7 +87,7 @@ implicit none
 
 integer          marko
 
-double precision tempf, romf
+double precision tempf
 double precision vpart , vvue , vnorm, grpn, piiln
 double precision diamp , romp , taup ,yplus , dx   , dintrf, gnorm, depint
 
@@ -98,7 +96,7 @@ double precision diamp , romp , taup ,yplus , dx   , dintrf, gnorm, depint
  integer          indint
 
  double precision vstruc,tlag2,kdif,kdifcl,rpart
- double precision tstruc,tdiffu,ttotal, ustar, lvisq, tvisq
+ double precision tstruc,tdiffu,ttotal, lvisq, tvisq
  double precision unif(2),unif1(1), enertur, ectype, paux
  double precision rapkvp
 
@@ -224,7 +222,7 @@ elseif (marko.eq.3) then
   tempf  ,  depint,                                         &
   dtp    , tstruc , vstruc , lvisq ,                        &
   dx     , vvue   , vpart  , taup  , yplus ,                &
-  unif(1), unif(2), dintrf , gnorm , vnorm , grpn, piiln )
+  unif(1), unif(2), dintrf , gnorm , vnorm )
 
 elseif (marko.eq.0) then
 

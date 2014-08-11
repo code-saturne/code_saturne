@@ -107,7 +107,7 @@ double precision vela  (3  ,ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt , ii, jj

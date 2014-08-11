@@ -102,7 +102,7 @@ double precision smacel(ncesmp,nvar)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          lchain
 integer          iccocg, inc   , init  , isym  , ipol  , isqrt
 integer          ii, iel   , ifac

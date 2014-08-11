@@ -80,7 +80,7 @@ double precision dt(ncelet), volume(ncelet)
 integer          ic, icel, ivar, ipp, f_id, f_id_prv, c_id, f_dim
 integer          ippf, kval
 logical          interleaved
-character*200    chain, chainc
+character(len=200) :: chain, chainc
 
 double precision, dimension(:), pointer :: field_s_v, field_s_vp
 double precision, dimension(:,:), pointer :: field_v_v, field_v_vp

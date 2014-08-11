@@ -178,7 +178,7 @@ _1scale_power_law(cs_real_t   l_visc,
 
   /* Compute the friction velocity ustar */
 
-  *ustar = pow((vel/(apow * pow(ydvisc, bpow))), dpow);
+  *ustar = pow((vel/(cs_turb_apow * pow(ydvisc, cs_turb_bpow))), cs_turb_dpow);
   *uk = *ustar;
   *yplus = *ustar * ydvisc;
 
@@ -197,9 +197,11 @@ _1scale_power_law(cs_real_t   l_visc,
 
   /* In the log layer */
   } else {
-    *ypup = pow(vel, 2. * dpow-1.) / pow(apow, 2. * dpow);
-    *cofimp = 1. + bpow * pow(*ustar, bpow + 1. - 1./dpow)
-                 * (pow(2., bpow - 1.) - 2.);
+    *ypup =   pow(vel, 2. * cs_turb_dpow-1.)
+            / pow(cs_turb_apow, 2. * cs_turb_dpow);
+    *cofimp = 1. + cs_turb_bpow
+                   * pow(*ustar, cs_turb_bpow + 1. - 1./cs_turb_dpow)
+                   * (pow(2., cs_turb_bpow - 1.) - 2.);
 
     /* Count the cell in the log layer */
     *nlogla += 1;
@@ -274,18 +276,19 @@ _1scale_log_law(cs_lnum_t    ifac,
   } else {
 
     /* The initial value is Wener or the minimun ustar to ensure convergence */
-    ustarwer = pow(fabs(vel) / apow / pow(ydvisc, bpow), dpow);
-    ustarmin = exp(-cstlog * xkappa)/ydvisc;
+    ustarwer = pow(fabs(vel) / cs_turb_apow / pow(ydvisc, cs_turb_bpow),
+                   cs_turb_dpow);
+    ustarmin = exp(-cs_turb_cstlog * cs_turb_xkappa)/ydvisc;
     ustaro = CS_MAX(ustarwer, ustarmin);
-    *ustar = (xkappa * vel + ustaro)
-           / (log(ydvisc * ustaro) + xkappa * cstlog + 1.);
+    *ustar = (cs_turb_xkappa * vel + ustaro)
+           / (log(ydvisc * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
 
     /* Iterative solving */
     for (iter = 0;   iter < niter_max
                   && fabs(*ustar - ustaro) >= eps * ustaro; iter++) {
       ustaro = *ustar;
-      *ustar = (xkappa * vel + ustaro)
-             / (log(ydvisc * ustaro) + xkappa * cstlog + 1.);
+      *ustar = (cs_turb_xkappa * vel + ustaro)
+             / (log(ydvisc * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
     }
 
     if (iter >= niter_max) {
@@ -297,8 +300,8 @@ _1scale_log_law(cs_lnum_t    ifac,
 
     *uk = *ustar;
     *yplus = *ustar * ydvisc;
-    *ypup = *yplus / (log(*yplus) / xkappa + cstlog);
-    *cofimp = 1. - *ypup / xkappa * 1.5 / *yplus;
+    *ypup = *yplus / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    *cofimp = 1. - *ypup / cs_turb_xkappa * 1.5 / *yplus;
 
     /* Count the cell in the log layer */
     *nlogla += 1;
@@ -352,7 +355,7 @@ _2scales_log_law(cs_real_t   l_visc,
   Re = sqrt(kinetic_en) * y / l_visc;
   g = exp(-Re/11.);
 
-  *uk = sqrt( (1.-g) * cmu025 * cmu025 * kinetic_en
+  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
             + g * l_visc * vel / y);
 
   *yplus = *uk * y / l_visc;
@@ -360,12 +363,12 @@ _2scales_log_law(cs_real_t   l_visc,
   /* log layer */
   if (*yplus > ypluli) {
 
-    *ustar = vel / (log(*yplus) / xkappa + cstlog);
-    *ypup = *yplus / (log(*yplus) / xkappa + cstlog);
+    *ustar = vel / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    *ypup = *yplus / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
     /* Mixing length viscosity */
-    ml_visc = xkappa * l_visc * *yplus;
-    rcprod = CS_MIN(xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
-    *cofimp = 1. - *ypup / xkappa * ( 2. * rcprod - 1. / (2. * *yplus));
+    ml_visc = cs_turb_xkappa * l_visc * *yplus;
+    rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
+    *cofimp = 1. - *ypup / cs_turb_xkappa * ( 2. * rcprod - 1. / (2. * *yplus));
 
     *nlogla += 1;
 
@@ -433,13 +436,13 @@ _2scales_scalable_wallfunction(cs_real_t   l_visc,
   Re = sqrt(kinetic_en) * y / l_visc;
   g = exp(-Re/11.);
 
-  *uk = sqrt( (1.-g) * cmu025 * cmu025 * kinetic_en
+  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
             + g * l_visc * vel / y);
 
   *yplus = *uk * y / l_visc;
 
   /* Compute the friction velocity ustar */
-  *uk = cmu025 * sqrt(kinetic_en);
+  *uk = cs_turb_cmu025 * sqrt(kinetic_en);
   *yplus = *uk * y / l_visc;
 
   /* Log layer */
@@ -461,12 +464,13 @@ _2scales_scalable_wallfunction(cs_real_t   l_visc,
   }
 
   /* Mixing length viscosity */
-  ml_visc = xkappa * l_visc * *yplus;
-  rcprod = CS_MIN(xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
+  ml_visc = cs_turb_xkappa * l_visc * *yplus;
+  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
 
-  *ustar = vel / (log(*yplus) / xkappa + cstlog);
-  *ypup = (*yplus - *dplus) / (log(*yplus) / xkappa + cstlog);
-  *cofimp = 1. - *ypup / xkappa * (2. * rcprod - 1. / (2. * *yplus - *dplus));
+  *ustar = vel / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+  *ypup = (*yplus - *dplus) / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+  *cofimp = 1. - *ypup
+                 / cs_turb_xkappa * (2. * rcprod - 1. / (2. * *yplus - *dplus));
 }
 
 /*----------------------------------------------------------------------------

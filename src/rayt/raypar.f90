@@ -790,67 +790,64 @@ if(indtpm.gt.0) then
 endif
 
 ! -------
-! FORMATS
+! Formats
 ! -------
 
- 1000 FORMAT (/, 3X,'** INFORMATIONS SUR LA TEMPERATURE DES PAROIS',/,  &
-           3X,'   ------------------------------------------')
+ 1000 format (/, 3x,'** Information on wall temperature',/,  &
+                 3x,'   -------------------------------')
 
- 1010 format('------------------------------------'                     &
-         ,'-----------------------------------')
+ 1010 format('------------------------------------'              &
+             ,'-----------------------------------')
 
- 2010 format('ATTENTION, temperature de paroi relaxee a ',G7.2,'%'      &
-      ,' en (',I8,' points)')
+ 2010 format('WARNING: wall temperature relaxed to ',g7.2,'%',   &
+             ' at (',i8,' points)')
 
- 2020 format('ATTENTION, temperature de paroi CLIPPE AU MIN-MAX :')
+ 2020 format('WARNING, wall temperature CLIPPED at MIN-MAX:')
 
- 2030 format('NOMBRE DE POINTS CLIPPE AU MINIMUM : ',I8)
+ 2030 format('Number of points clipped to minimum: ',I8)
 
- 2040 format('NOMBRE DE POINTS CLIPPE AU MAXIMUM : ',I8)
+ 2040 format('Number of points clipped to maximum: ',I8)
 
- 2050 format('Variation maximale : ',G9.4,'%')
+ 2050 format('Maximum variation: ',g9.4,'%')
 
- 2060 format('Temperature de paroi diminuant  : ',I8,' faces de bord')
+ 2060 format('Diminishing wall temperature: ',i8,' wall faces')
 
- 2070 format('Temperature de paroi augmentant : ',I8,' faces de bord')
+ 2070 format('Increasing wall temperature:  ',i8,' wall faces')
 
- 3000 format(i10,8x,e10.4,4x,e10.4,4x,e10.4,4x,e10.4)
+ 3000 format(i10,8x,e11.4,4x,e11.4,4x,e11.4,4x,e11.4)
 
- 3010 format('Grises ou noires Temp max (C)  '                          &
-      ,'Temp min (C)  Temp moy (C)  Flux Net (W)')
+ 3010 format('Gray or black    Temp max (C)   '                         &
+      ,'Temp min (C)   Temp mean (C)  Net flux (W)')
 
- 3020 format('Profils imposes  Temp max (C)  '                          &
-      ,'Temp min (C)  Temp moy (C)  Flux Net (W)')
+ 3020 format('Fixed profiles   Temp max (C)   '                         &
+      ,'Temp min (C)   Temp mean (C)  Net flux (W)')
 
- 3030 format('Parois a EPS=0   Temp max (C)  '                          &
-      ,'Temp min (C)  Temp moy (C)  Flux Net (W)')
+ 3030 format('Walls at EPS=0   Temp max (C)   '                         &
+      ,'Temp min (C)   Temp mean (C)  Net flux (W)')
 
- 3040 format('Flux imp EPS!=0  Temp max (C)  '                          &
-      ,'Temp min (C)  Temp moy (C)  Flux Net (W)')
+ 3040 format('Fix flux EPS!=0  Temp max (C)   '                         &
+      ,'Temp min (C)   Temp mean (C)  Net flux (W)')
 
- 3050 format('Flux imp EPS=0   Temp max (C)  '                          &
-      ,'Temp min (C)  Temp moy (C)  Flux Net (W)')
+ 3050 format('Fix flux EPS=0   Temp max (C)   '                         &
+      ,'Temp min (C)   Temp mean (C)  Net flux (W)')
 
- 5010 format(/,12X,'TEMPERATURE PAROI MAXIMALE (Degre celsius) = ',     &
-         g15.7)
- 5020 format(15X,' AU POINT X Y Z =  ',E10.4,2X,E10.4,2X,E10.4)
+ 5010 format(/,12X,'Maximum wall temperature (degrees Celsius) = ', g15.7)
+ 5020 format(15X,' at point x y z =  ',e11.4,2X,e11.4,2X,e11.4)
 
- 5030 format(15X,' FLUX CONVECTIF  = ',G15.7)
+ 5030 format(15X,' Convective flux = ',g15.7)
 
- 5040 format(15X,' FLUX RADIATIF  = ',G15.7)
+ 5040 format(15X,' Radiative flux = ',g15.7)
 
- 5050 format(/,12X,'TEMPERATURE PAROI MINIMALE (Degre celsius) = ',     &
-         g15.7)
+ 5050 format(/,12X,'Minimum wall temperature (degrees Celsius) = ',g15.7)
 
- 5060 format(15X,' AU POINT X Y Z =  ',E10.4,2X,E10.4,2X,E10.4)
+ 5060 format(15X,' at point x y z =  ',e11.4,2X,e11.4,2X,e11.4)
 
- 5070 format(15X,' FLUX CONVECTIF  = ',G15.7)
+ 5070 format(15X,' Convective flux = ',g15.7)
 
- 5080 format(15X,' FLUX RADIATIF  = ',G15.7,/)
-
+ 5080 format(15X,' Radiative flux = ',g15.7,/)
 
 ! ---
-! FIN
+! End
 ! ---
 
 return

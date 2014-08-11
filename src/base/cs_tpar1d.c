@@ -63,7 +63,7 @@ BEGIN_C_DECLS
 
 struct par1d
 {
-  cs_int_t    n;     /* Number of discretization points on the coupled face */
+  cs_lnum_t   n;     /* Number of discretization points on the coupled face */
   cs_real_t  *z;     /* Discretization points coordinates                   */
   cs_real_t   e;     /* Thickness associated to the coupled face            */
   cs_real_t  *t;     /* Temperature at each point of discretization         */
@@ -91,11 +91,11 @@ static cs_restart_t *cs_glob_tpar1d_suite = NULL;
  *----------------------------------------------------------------------------*/
 
 static void
-cs_loc_tpar1d_cree(cs_int_t         nfpt1d,
-                   const cs_int_t  *nppt1d)
+cs_loc_tpar1d_cree(cs_lnum_t        nfpt1d,
+                   const cs_lnum_t *nppt1d)
 {
-  cs_int_t   nb_pts_tot;
-  cs_int_t   i;
+  cs_lnum_t  nb_pts_tot;
+  cs_lnum_t  i;
 
   if (nfpt1d == 0)
     return;
@@ -137,7 +137,7 @@ cs_loc_tpar1d_cree(cs_int_t         nfpt1d,
 
 static void
 cs_loc_tpar1d_opnsuite(const char              *nomsui,
-                       const cs_int_t          *lngnom,
+                       const cs_lnum_t         *lngnom,
                        const cs_restart_mode_t  ireawr)
 {
   char            *nombuf;
@@ -172,14 +172,14 @@ cs_loc_tpar1d_opnsuite(const char              *nomsui,
 
 void CS_PROCF (mait1d,MAIT1D)
 (
- cs_int_t   *nf,
- cs_int_t    n[],
+ cs_lnum_t  *nf,
+ cs_lnum_t   n[],
  cs_real_t   e[],
  cs_real_t   r[],
  cs_real_t   tp[]
 )
 {
-  cs_int_t i, k;
+  cs_lnum_t i, k;
   cs_real_t m, rr;
   cs_real_t *zz;
 
@@ -252,8 +252,8 @@ void CS_PROCF (mait1d,MAIT1D)
 
 void CS_PROCF (tpar1d, TPAR1D)
 (
- cs_int_t *ii,
- cs_int_t *icdcle,
+ cs_lnum_t*ii,
+ cs_lnum_t*icdcle,
  cs_real_t *tf,
  cs_real_t *hf,
  cs_real_t *te,
@@ -265,7 +265,7 @@ void CS_PROCF (tpar1d, TPAR1D)
  cs_real_t *tp
 )
 {
-  cs_int_t k;
+  cs_lnum_t k;
 
   cs_real_t a1; /* extrapolation coefficient for temperature1 */
   cs_real_t h2; /* thermal exchange coefficient on T(1) */
@@ -279,7 +279,7 @@ void CS_PROCF (tpar1d, TPAR1D)
 
   cs_real_t *al, *bl, *cl, *dl;
   cs_real_t *zz;
-  cs_int_t n;
+  cs_lnum_t n;
 
   n = cs_glob_par1d[*ii].n;
 
@@ -407,9 +407,8 @@ void CS_PROCF (lect1d,LECT1D)
 )
 {
   bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
-  cs_int_t            nbvent;
-  cs_int_t            i, j, ifac, indfac, ierror;
-  cs_int_t            version;    /* Not used at the moment */
+  cs_lnum_t           nbvent;
+  cs_lnum_t           i, j, ifac, indfac, ierror;
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
@@ -450,7 +449,7 @@ void CS_PROCF (lect1d,LECT1D)
 
   { /* Read the header */
     char       nomrub[] = "version_fichier_suite_module_1d";
-    cs_int_t   *tabvar;
+    cs_lnum_t  *tabvar;
 
     BFT_MALLOC(tabvar, 1, cs_int_t);
 
@@ -479,17 +478,15 @@ void CS_PROCF (lect1d,LECT1D)
                   "restart file for the 1D-wall thermal module.\n"),
                 nomsui);
 
-    version = *tabvar;
-
     BFT_FREE(tabvar);
   }
 
   { /* Read the number of discretiaztion points and coherency checks
        with the input data of USPT1D */
     char       nomrub[] = "nb_pts_discretis";
-    cs_int_t   *tabvar;
-    cs_int_t   mfpt1d, mfpt1t;
-    cs_int_t   iok;
+    cs_lnum_t  *tabvar;
+    cs_lnum_t  mfpt1d, mfpt1t;
+    cs_lnum_t  iok;
 
     BFT_MALLOC(tabvar, *nfabor, cs_int_t);
 
@@ -577,7 +574,7 @@ void CS_PROCF (lect1d,LECT1D)
   { /* Read the wall thickness and check the coherency with USPT1D*/
     char        nomrub[] = "epaisseur_paroi";
     cs_real_t   *tabvar;
-    cs_int_t    iok;
+    cs_lnum_t   iok;
 
     BFT_MALLOC(tabvar, *nfabor, cs_real_t);
 
@@ -663,8 +660,8 @@ void CS_PROCF (lect1d,LECT1D)
 
   { /* Read the 1D-mesh coordinates */
     char        nomrub[] = "coords_maillages_1d";
-    cs_int_t    nptmx;
-    cs_int_t    iok;
+    cs_lnum_t   nptmx;
+    cs_lnum_t   iok;
     cs_real_t   *tabvar;
     cs_real_t   zz1, zz2, rrgpt1;
 
@@ -730,7 +727,7 @@ void CS_PROCF (lect1d,LECT1D)
 
   { /* Read the wall temperature */
     char        nomrub[] = "temperature_interne";
-    cs_int_t    nptmx;
+    cs_lnum_t   nptmx;
     cs_real_t   *tabvar;
 
     nptmx = (*nfabor) * (*nmxt1d);
@@ -801,15 +798,12 @@ void CS_PROCF (ecrt1d,ECRT1D)
  CS_ARGF_SUPP_CHAINE
 )
 {
-  cs_int_t            nbvent, ierror;
-  cs_int_t            i, j, ifac;
+  cs_lnum_t            nbvent;
+  cs_lnum_t            i, j, ifac;
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
   cs_restart_val_type_t     typ_val;
-
-
-  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
   cs_loc_tpar1d_opnsuite(nomsui,
@@ -829,7 +823,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
   { /* Write the header */
     char       nomrub[] = "version_fichier_suite_module_1d";
-    cs_int_t   *tabvar;
+    cs_lnum_t  *tabvar;
 
     BFT_MALLOC(tabvar, 1, cs_int_t);
 
@@ -851,7 +845,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
   { /* Write the number of discretization points */
     char       nomrub[] = "nb_pts_discretis";
-    cs_int_t   *tabvar;
+    cs_lnum_t  *tabvar;
 
     BFT_MALLOC(tabvar, *nfabor, cs_int_t);
 
@@ -935,7 +929,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
   { /* Write the 1D-mesh coordinates */
     char        nomrub[] = "coords_maillages_1d";
-    cs_int_t    nptmx;
+    cs_lnum_t   nptmx;
     cs_real_t   *tabvar;
 
     nptmx = (*nfabor) * (*nmxt1d);
@@ -970,7 +964,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
   { /* Write the wall-interior temperature */
     char        nomrub[] = "temperature_interne";
-    cs_int_t    nptmx;
+    cs_lnum_t   nptmx;
     cs_real_t   *tabvar;
 
     nptmx = (*nfabor) * (*nmxt1d);

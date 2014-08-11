@@ -208,13 +208,13 @@ cs_user_property_def_t  *_user_property_defs = NULL;
 
 static cs_severe_acc_species_prop_t _severe_acc_species_prop =
 {
-  -1.,         /* molar mass              */
-  -1.,          /* specific heat           */
-  -1.,          /* volume diffusion        */
-  -1.,   /* dynamic viscosity a     */
-  -1.,   /* dynamic viscosity b     */
-  -1.,        /* thermal condusctivity a */
-  -1.,        /* thermal condusctivity b */
+  -1.,   /* molar mass             */
+  -1.,   /* specific heat          */
+  -1.,   /* volume diffusion       */
+  -1.,   /* dynamic viscosity a    */
+  -1.,   /* dynamic viscosity b    */
+  -1.,   /* thermal conductivity a */
+  -1.,   /* thermal conductivity b */
 };
 
 /*============================================================================
@@ -245,42 +245,45 @@ cs_f_piso_get_pointers(int     **nterup,
 static void
 _log_func_var_opt_cal(const void *t)
 {
+  const char fmt_i[] = N_("      %-19s  %-4d\n");
+  const char fmt_r[] = N_("      %-19s  %-12.3g\n");
   const cs_var_cal_opt_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "iwarni", _t->iwarni);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "iconv ", _t->iconv );
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "istat ", _t->istat );
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "idiff ", _t->idiff );
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "idifft", _t->idifft);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "idften", _t->idften);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "iswdyn", _t->iswdyn);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "ischcv", _t->ischcv);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "isstpc", _t->isstpc);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "nswrgr", _t->nswrgr);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "nswrsm", _t->nswrsm);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "imrgra", _t->imrgra);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "imligr", _t->imligr);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-4d\n"),    "ircflu", _t->ircflu);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "thetav", _t->thetav);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "blencv", _t->blencv);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "epsilo", _t->epsilo);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "epsrsm", _t->epsrsm);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "epsrgr", _t->epsrgr);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "climgr", _t->climgr);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "extrag", _t->extrag);
-  cs_log_printf(CS_LOG_SETUP, _("      %-19s  %-12.3g\n"), "relaxv", _t->relaxv);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwarni", _t->iwarni);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iconv ", _t->iconv );
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "istat ", _t->istat );
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idiff ", _t->idiff );
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idifft", _t->idifft);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idften", _t->idften);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iswdyn", _t->iswdyn);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ischcv", _t->ischcv);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "isstpc", _t->isstpc);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrgr", _t->nswrgr);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrsm", _t->nswrsm);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imrgra", _t->imrgra);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imligr", _t->imligr);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ircflu", _t->ircflu);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "thetav", _t->thetav);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "blencv", _t->blencv);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsilo", _t->epsilo);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrsm", _t->epsrsm);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrgr", _t->epsrgr);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "climgr", _t->climgr);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "extrag", _t->extrag);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "relaxv", _t->relaxv);
 }
 
 static void
 _log_func_severe_acc_species_prop(const void *t)
 {
+  const char fmt[] = N_("      %-23s  %-12.3g\n");
   const cs_severe_acc_species_prop_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "molar mass             ", _t->mol_mas);
-  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "specific heat          ", _t->cp);
-  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "volume diffusion       ", _t->vol_dif);
-  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "dynamic viscosity a    ", _t->mu_a);
-  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "dynamic viscosity b    ", _t->mu_b);
-  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "thermal condusctivity a", _t->lambda_a);
-  cs_log_printf(CS_LOG_SETUP, _("      %-23s  %-12.3g\n"), "thermal condusctivity b", _t->lambda_b);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "molar mass             ", _t->mol_mas);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "specific heat          ", _t->cp);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "volume diffusion       ", _t->vol_dif);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity a    ", _t->mu_a);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity b    ", _t->mu_b);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity a", _t->lambda_a);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity b", _t->lambda_b);
 }
 
 /*============================================================================
@@ -370,7 +373,7 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("scalar_id", -1, 0); /* inverse of isca(iscal) */
   cs_field_define_key_int("drift_scalar_model", 0, 0);
   cs_field_define_key_int("scalar_class", 0, 0);
-  cs_field_define_key_int("first_moment_id", -1, 0); // old iscavr(iscal)
+  cs_field_define_key_int("first_moment_id", -1, 0); /* old iscavr(iscal) */
 
   cs_field_define_key_int("source_term_prev_id", -1, CS_FIELD_VARIABLE);
 
@@ -392,7 +395,6 @@ cs_parameters_define_field_keys(void)
                              _log_func_severe_acc_species_prop,
                              sizeof(cs_severe_acc_species_prop_t),
                              0);
-
 }
 
 /*----------------------------------------------------------------------------*/

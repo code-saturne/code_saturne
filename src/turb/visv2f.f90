@@ -49,7 +49,6 @@ subroutine visv2f
 use paramx
 use numvar
 use optcal
-use dimens, only: nvar
 use cstphy
 use entsor
 use mesh
@@ -65,7 +64,7 @@ implicit none
 ! Local variables
 
 integer          iel, inc
-integer          ipcvis, ipcvst, iprev
+integer          iprev
 
 double precision s11, s22, s33
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy

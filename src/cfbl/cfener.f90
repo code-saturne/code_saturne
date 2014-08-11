@@ -115,7 +115,7 @@ double precision rovsdt(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii

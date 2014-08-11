@@ -1202,13 +1202,13 @@ deallocate(flurds, flurdb)
  5010 format('Zone         Flux net radiatif (Watt) (normale',          &
           ' unitaire sortante)')
 
- 5020 format(i6,13x,e10.4)
+ 5020 format(i6,13x,e11.4)
 
  5030 format('Flux net radiatif sur toutes les frontieres  Fnet = ',    &
-           E10.4,' Watt')
+           e11.4,' Watt')
 
  5040 format('Integrale volumique du terme source radiatif Srad = ',    &
-           E10.4,' Watt')
+           e11.4,' Watt')
 
  5050 format('(Si IDIVER = 1 ou 2 alors on doit avoir Srad = -Fnet)')
 
@@ -1225,12 +1225,12 @@ deallocate(flurds, flurdb)
 '@    CELA NE SEMBLE PAS ETRE LE CAS ICI.                     ',/,&
 '@                                                            ',/,&
 '@    LE COEFFICIENT D''ABSORPTION MINIMUM POUR ASSURER CETTE ',/,&
-'@      LONGUEUR OPTIQUE EST XKMIN = ',E10.4                   ,/,&
-'@    CETTE VALEUR N''EST PAS ATTEINTE POUR ', E10.4,'%       ',/,&
+'@      LONGUEUR OPTIQUE EST XKMIN = ',e11.4                   ,/,&
+'@    CETTE VALEUR N''EST PAS ATTEINTE POUR ', e11.4,'%       ',/,&
 '@      DES CELLULES DU MAILLAGE.                             ',/,&
 '@    LE POURCENTAGE DE CELLULES DU MAILLAGE POUR LESQUELLES  ',/,&
 '@      ON ADMET QUE CETTE CONDITION SOIT VIOLEE EST IMPOSE   ',/,&
-'@      PAR DEFAUT OU DANS USINI1 A XNP1MX = ', E10.4,'%      ',/,&
+'@      PAR DEFAUT OU DANS USINI1 A XNP1MX = ', e11.4,'%      ',/,&
 '@                                                            ',/,&
 '@    Verifier les valeurs du coefficient d''absorption CK    ',/,&
 '@      dans l''interface ou le modifier dans USRAY3.         ',/,&

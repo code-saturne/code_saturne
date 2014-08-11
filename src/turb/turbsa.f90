@@ -242,6 +242,8 @@ allocate(grad(3,ncelet))
 
 ! Compute the gradient of nusa
 
+iccocg = 1
+
 call field_gradient_scalar(ivarfl(inusa), iprev, imrgra, inc,       &
                            iccocg,                                  &
                            grad)
@@ -635,7 +637,7 @@ call codits &
 ! 10. Clipping
 !===============================================================================
 
-call clipsa(ncelet, ncel, nvar)
+call clipsa(ncel)
 !==========
 
 ! Free memory

@@ -98,8 +98,8 @@ integer eau,foret,divers,minral,diffus,mixte,dense,bati
 integer n
 double precision codinv
 integer inityp
-character*50 raison
-character*10 inicat
+character(len=50) :: raison
+character(len=10) :: inicat
 
 ! initialisation
 

@@ -100,7 +100,7 @@ double precision prdv2f(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt

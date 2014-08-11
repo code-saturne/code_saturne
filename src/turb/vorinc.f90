@@ -145,7 +145,7 @@ module vorinc
   ! xmax,...    : dimensions max de l'entree dans le repere local
   ! llz,lly,lld : dimensions de l'entree dans le calcul
 
-  character*50, save :: ficvor(nentmx)
+  character(len=50), save :: ficvor(nentmx)
 
   ! ficvor : nom du fichier de donnee
   !=============================================================================

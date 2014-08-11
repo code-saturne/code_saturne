@@ -3501,8 +3501,9 @@ cs_join_intersect_update_struct(int                      verbosity,
 
       if (e_id == -1)
         bft_error(__FILE__, __LINE__, 0,
-                  _("  The received edge global number (%u) is unknown"
-                    " on the current rank.\n"),  _inter_edges->edge_gnum[i]);
+                  _("  The received edge global number (%llu) is unknown"
+                    " on the current rank.\n"),
+                  (unsigned long long)_inter_edges->edge_gnum[i]);
 
       o_id = edge_order[e_id];
       new_inter_edges->edge_gnum[o_id] = e_gnum;

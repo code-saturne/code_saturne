@@ -155,7 +155,7 @@ double precision coefb_dp(ndimfb)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          lchain
 integer          iccocg, inc   , iprev, init  , isym  , ipol  , isqrt
 integer          ii, iel   , ifac  , ifac0 , iel0

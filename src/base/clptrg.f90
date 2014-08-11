@@ -120,7 +120,6 @@ use optcal
 use cstphy
 use cstnum
 use pointe
-use dimens, only: nvar
 use entsor
 use albase
 use parall

@@ -62,7 +62,6 @@ use numvar
 use entsor
 use cstphy
 use mesh
-use dimens, only: nvar
 use field
 
 !===============================================================================

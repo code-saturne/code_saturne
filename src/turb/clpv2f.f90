@@ -23,7 +23,7 @@
 subroutine clpv2f &
 !================
 
- ( ncelet , ncel   , nvar   ,                                     &
+ ( ncel   ,                                                       &
    iwaphi )
 
 !===============================================================================
@@ -38,9 +38,7 @@ subroutine clpv2f &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
-! nvar             ! e  ! <-- ! nombre de variables                            !
 ! iwaphi           ! e  ! <-- ! niveau d'impression                            !
 !__________________!____!_____!________________________________________________!
 
@@ -69,7 +67,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel
+integer          ncel
 integer          iwaphi
 
 ! Local variables

@@ -48,7 +48,6 @@ subroutine viswal
 use paramx
 use numvar
 use optcal
-use dimens, only: nvar
 use cstphy
 use entsor
 use parall
@@ -65,7 +64,7 @@ implicit none
 ! Local variables
 
 integer          iel, inc
-integer          ipcvst, ipcvis, iprev
+integer          iprev
 integer          i, j, k
 
 double precision coef, delta, third

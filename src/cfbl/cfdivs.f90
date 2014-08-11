@@ -60,7 +60,6 @@ use paramx
 use cstphy
 use entsor
 use numvar
-use dimens, only: nvar
 use optcal
 use parall
 use period

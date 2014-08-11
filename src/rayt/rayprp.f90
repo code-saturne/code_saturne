@@ -69,8 +69,8 @@ implicit none
 
 ! Local variables
 
-character*80  f_label, f_name
-character*16  e_label, e_name
+character(len=80) :: f_label, f_name
+character(len=16) :: e_label, e_name
 integer       irphas
 integer       ippok
 integer       nprayc, nprprv

@@ -2724,10 +2724,9 @@ cs_restart_check_section(cs_restart_t           *restart,
   cs_int_t   n_ents;
   cs_gnum_t n_glob_ents;
 
-  size_t rec_id, rec_id_tmp;
+  size_t rec_id;
   cs_io_sec_header_t header;
 
-  cs_int_t _n_location_vals = n_location_vals;
   size_t index_size = 0;
 
   index_size = cs_io_get_index_size(restart->fh);
@@ -2739,7 +2738,6 @@ cs_restart_check_section(cs_restart_t           *restart,
   if (location_id == 0) {
     n_glob_ents = n_location_vals;
     n_ents  = n_location_vals;
-    _n_location_vals = 1;
   }
 
   else {
@@ -2773,7 +2771,6 @@ cs_restart_check_section(cs_restart_t           *restart,
 
   if (header.location_id != (size_t)location_id) {
 
-    rec_id_tmp = rec_id;
     rec_id++;
 
     while (rec_id < index_size) {

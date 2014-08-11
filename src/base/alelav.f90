@@ -36,13 +36,11 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine alelav &
- ( rtp    , rtpa   , propce )
+ ( propce )
 
 !===============================================================================
 
@@ -70,12 +68,11 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          iel   , isou  , jsou  , ifac
 integer          ipcvmx, ipcvmy, ipcvmz, ippu  , ippv  , ippw
 integer          iflmas, iflmab

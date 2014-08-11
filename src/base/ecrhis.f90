@@ -75,8 +75,8 @@ double precision, dimension(:,:), allocatable :: xyztmp
 double precision, dimension(:,:), pointer :: val_v
 double precision, dimension(:), pointer :: val_s
 
-character*3, dimension(3), save :: nomext3 = (/'[X]', '[Y]', '[Z]'/)
-character*4, dimension(3), save :: nomext63 = (/'[11]', '[22]', '[33]'/)
+character(len=3), dimension(3), save :: nomext3 = (/'[X]', '[Y]', '[Z]'/)
+character(len=4), dimension(3), save :: nomext63 = (/'[11]', '[22]', '[33]'/)
 integer, save :: keypp = -1
 
 ! Time plot number shift (in case multiple routines define plots)

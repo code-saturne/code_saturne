@@ -67,7 +67,6 @@ subroutine rotcor &
 use paramx
 use numvar
 use optcal
-use dimens, only: nvar
 use entsor
 use cstphy
 use cstnum

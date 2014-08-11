@@ -702,8 +702,6 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
   if (halo == NULL)
     return;
 
-  const cs_lnum_t n_elts = halo->n_send_elts[CS_HALO_EXTENDED];
-
   /* Reverse update from distant cells */
 
   cs_lnum_t *send_buf, *recv_buf;

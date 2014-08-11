@@ -1117,7 +1117,6 @@ cs_join_perio_split_back(cs_join_t          *this_join,
   cs_lnum_t  n_final_faces, n1_faces, n2_faces;
   cs_lnum_t  shift1, shift2, shift3, shift4;
   cs_lnum_t  n_sub_ori, n_sub_per, n_contrib, n_couples;
-  cs_gnum_t  n2_g_faces;
 
   cs_lnum_t  n_vertices_to_add = 0, n_g_vertices_to_add = 0;
   cs_lnum_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL;
@@ -1283,7 +1282,6 @@ cs_join_perio_split_back(cs_join_t          *this_join,
   for (i = 0; i < jmesh->n_faces; i++)
     if (f_tag[i] < 0)
       n2_faces++;
-  n2_g_faces = n2_faces;
 
   BFT_MALLOC(f2_gnum, n2_faces, cs_gnum_t);
 
@@ -1302,8 +1300,6 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
     for (i = 0; i < n2_faces; i++)
       f2_gnum[i] = jmesh->n_g_faces + io_gnum[i];
-
-    n2_g_faces = fvm_io_num_get_global_count(io_num);
 
     fvm_io_num_destroy(io_num);
 

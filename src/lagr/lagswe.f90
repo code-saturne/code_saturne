@@ -174,7 +174,7 @@ else if (yplusa.lt.dintrf) then
     tempf , depint ,                                        &
     dtp1  , tstruc , vstruc , lvisq ,                       &
     dx    , vvue   , vpart  , taup  , yplus,                &
-    unif1 , unif2  , dintrf , gnorm , vnorm, grpn , piiln)
+    unif1 , unif2  , dintrf , gnorm , vnorm )
 
     dx = dx + dxaux
 

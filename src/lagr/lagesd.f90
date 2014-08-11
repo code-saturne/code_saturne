@@ -88,7 +88,6 @@ use numvar
 use cstphy
 use cstnum
 use optcal
-use dimens, only: nvar
 use entsor
 use lagpar
 use lagran
@@ -336,7 +335,7 @@ call lagcli                                                       &
 !==========
    ( itepa(ip,jimark),                                            &
      tempf        ,                                               &
-     romf, ustar, lvisq, tvisq,                                   &
+     lvisq, tvisq,                                                &
      vpart(1)     , vvue(1)   , depl(1) ,                         &
      ettp(ip,jdp) , romp(ip)  , taup(ip),                         &
      tepa(ip,jryplu),tepa(ip,jrinpf), enertur, ggp(1), vflui(1),  &

@@ -75,16 +75,16 @@ implicit none
 
 integer          ncoel
 
-character*12     nomcoe(ngazem)
+character(len=12) :: nomcoe(ngazem)
 
 double precision ehcoel(ngazem,npot) , cpcoel(ngazem)
 double precision wmolce (ngazem)
 
 ! Local variables
 
-character*256    pathdatadir
-character*40     dummy
-character*12     nomesp
+character(len=256) :: pathdatadir
+character(len=40) :: dummy
+character(len=12) :: nomesp
 
 integer          ind , iches , indtp , inicff , injcff, impjnf
 integer          ne   , nt  , nc , iok

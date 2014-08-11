@@ -94,12 +94,10 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 integer          ifac, izone
-integer          icke, iel
 integer          ii
 integer jsp, isc
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
-double precision dhy, rhomoy, uref2, ustar2, viscla, xiturb
 double precision xcent
 double precision, dimension(:), pointer ::  brom
 
@@ -111,13 +109,10 @@ double precision , dimension(:),allocatable :: eps_bord
 double precision , dimension(:),allocatable :: theta_bord
 double precision , dimension(:),allocatable :: qw_bord
 double precision , dimension(:),allocatable :: nc_bord
-integer stat
 
-!===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
-
 
 d2s3 = 2.d0/3.d0
 

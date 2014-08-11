@@ -94,7 +94,7 @@ implicit none
 
 ! Arguments
 
-character*16     cnom
+character(len=16) :: cnom
 integer          isym   , ipol   , ireslp , nitmap , ibsize , iesize
 integer          imgrp  , ncymxp , nitmfp
 integer          iwarnp

@@ -159,11 +159,11 @@ endif
 
 ! ---> Compressible
 
-if ( ippmod(icompf).ge.0 ) then
+if (ippmod(icompf).ge.0) then
   call cfiniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 endif
 
 ! ---> Version electrique

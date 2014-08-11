@@ -85,7 +85,7 @@ double precision, save ::  lat, lon
 !> logical unit of the concentration profiles file
 integer, save         ::  impmec
 !> name of the concentration profiles file
-character*10, save    ::  ficmec
+character(len=10), save    ::  ficmec
 !> number of time steps for the concentration profiles file
 integer, save         ::  nbchim
 !> number of altitudes for the concentration profiles file

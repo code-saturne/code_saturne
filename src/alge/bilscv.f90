@@ -97,7 +97,6 @@
 !>                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
 !>                               - 1 take into account,
 !>                               - 0 otherwise
-!> \param[in]     ippu          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     idftnp        indicator
 !>                               - 1 scalar diffusivity
@@ -144,7 +143,7 @@
 subroutine bilscv &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , iwarnp , idftnp ,                                     &
+   iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -179,7 +178,7 @@ integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , ivisep
 integer          idftnp , icvflb
-integer          iwarnp , ippu
+integer          iwarnp
 integer          icvfli(nfabor)
 
 double precision blencp , epsrgp , climgp, relaxp , thetap

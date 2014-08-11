@@ -74,7 +74,7 @@ use entsor
 use cstphy
 use optcal
 use lagran
-use pointe, only: ivoid1, rvoid1
+use pointe, only: rvoid1
 use ppincl
 use mesh
 use field

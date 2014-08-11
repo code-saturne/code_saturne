@@ -78,7 +78,7 @@ double precision phi(ncelet), alphal(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          idtva0, ivar
 integer          ifac, iel
 integer          ipp

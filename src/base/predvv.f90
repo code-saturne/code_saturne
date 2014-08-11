@@ -1905,7 +1905,7 @@ elseif (iappel.eq.2) then
   !==========
  ( idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisse ,                   &
-   ippu   , iwarnp , idftnp ,                                     &
+   iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &

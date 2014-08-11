@@ -49,11 +49,10 @@
 !>                               (at the current time step)
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine resvoi &
- ( dt     , rtp    , rtpa   , propce )
+ ( dt     , rtp    , rtpa   )
 
 !===============================================================================
 
@@ -71,7 +70,6 @@ use mesh
 use field
 use cavitation
 use parall
-use pointe, only: itypfb
 use cs_c_bindings
 
 !===============================================================================
@@ -82,7 +80,6 @@ implicit none
 
 double precision dt(ncelet)
 double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 
 ! Local variables
 

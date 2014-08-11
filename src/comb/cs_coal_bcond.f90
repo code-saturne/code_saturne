@@ -93,7 +93,7 @@ integer          izfppp(nfabor)
 double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
-character*80     name
+character(len=80) :: name
 
 integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icha, iclapc, isol, icla

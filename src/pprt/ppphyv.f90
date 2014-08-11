@@ -188,7 +188,7 @@ double precision propce(ncelet,*)
 
   if (ippmod(icompf).ge.0) then
 
-     call cfphyv(nvar, nscal, dt, propce)
+     call cfphyv(propce)
      !==========
 
    endif

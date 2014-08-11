@@ -882,7 +882,7 @@ _write_map(const char             *name,
 {
   if (w->rank < 1) {
 
-    cs_ccm_num_t start_id, end_id, i, j, block_size;
+    cs_ccm_num_t start_id, end_id, i, j;
     cs_ccm_num_t *map_data = NULL;
     CCMIOError error = kCCMIONoErr, *err = &error;
 
@@ -900,8 +900,6 @@ _write_map(const char             *name,
         start_id = n_g_elts;
       if (end_id > n_g_elts)
         end_id = n_g_elts;
-
-      block_size = end_id - start_id;
 
       for (i = start_id, j = 0; i <= end_id; i++, j++)
         map_data[j] = i + map_num_shift;
@@ -1049,7 +1047,7 @@ _count_faces_perio_g(const cs_mesh_t      *b_mesh,
 
   if (b_mesh->periodicity != NULL) {
 
-    const cs_lnum_2_t *face_cells = b_mesh->i_face_cells;
+    const cs_lnum_2_t *face_cells = (const cs_lnum_2_t *)(b_mesh->i_face_cells);
 
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       if (   cell_gnum[face_cells[i][0]] == 0
@@ -1320,7 +1318,6 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
 
   cs_lnum_t n_faces = 0, face_connect_size = 0;
   cs_ccm_num_t block_size = 0;
-  cs_ccm_num_t n_g_faces = 0;
 
   cs_ccm_num_t *_face_connect_g_s = NULL;
 
@@ -1332,14 +1329,12 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
   if (entity == kCCMIOInternalFaces) {
     n_faces = b_mesh->n_i_faces;
     face_connect_size = b_mesh->i_face_vtx_connect_size;
-    n_g_faces = b_mesh->n_g_i_faces;
     face_vtx_idx = b_mesh->i_face_vtx_idx;
     face_vtx_lst = b_mesh->i_face_vtx_lst;
   }
   else if (entity == kCCMIOBoundaryFaces) {
     n_faces = b_mesh->n_b_faces;
     face_connect_size = b_mesh->b_face_vtx_connect_size;
-    n_g_faces = b_mesh->n_g_b_faces;
     face_vtx_idx = b_mesh->b_face_vtx_idx;
     face_vtx_lst = b_mesh->b_face_vtx_lst;
   }
@@ -1459,9 +1454,8 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
 
   cs_lnum_t n_cells_per_face = 0;
   cs_lnum_t n_faces = 0;
-  cs_ccm_num_t n_g_faces = 0;
 
-  cs_lnum_t *face_cells = NULL;
+  const cs_lnum_t *face_cells = NULL;
   cs_ccm_num_t *face_cell_g = NULL, *_face_cell_g = NULL;
   cs_ccm_num_t *_face_cell_g_s = NULL;
   cs_file_serializer_t *s = NULL;
@@ -1472,13 +1466,11 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
   if (entity == kCCMIOInternalFaces) {
     n_cells_per_face = 2;
     n_faces = b_mesh->n_i_faces;
-    n_g_faces = b_mesh->n_g_i_faces;
     face_cells = (const cs_lnum_t *)(b_mesh->i_face_cells);
   }
   else if (entity == kCCMIOBoundaryFaces) {
     n_cells_per_face = 1;
     n_faces = b_mesh->n_b_faces;
-    n_g_faces = b_mesh->n_g_b_faces;
     face_cells = b_mesh->b_face_cells;
   }
 

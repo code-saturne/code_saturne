@@ -68,12 +68,12 @@ parameter (noptions_aer = 14)
 integer, save :: options_aer(noptions_aer)
 
 !> Names of particular species in SIREAM
-character*10, dimension(nesp_aer) :: esp_siream
+character(len=10), dimension(nesp_aer) :: esp_siream
 
 !> logical unit of the aerosol concentration profiles file
 integer, save         ::  impmea
 !> name of the aerosol concentration profiles file
-character*10, save    ::  ficmea
+character(len=10), save    ::  ficmea
 
 !> Aerosol diameters at bin bounds
 double precision, save :: bin_bound_aer(nbin_aer + 1)

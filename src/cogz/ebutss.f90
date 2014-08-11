@@ -111,7 +111,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar, iel
 
 double precision, allocatable, dimension(:) :: w1, w2, w3

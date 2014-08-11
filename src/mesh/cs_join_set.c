@@ -1961,7 +1961,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
   int  block_id;
   int  rank, local_rank, n_ranks, n_recv_elts, shift;
   cs_lnum_t i, j, n_sub_elts;
-  cs_gnum_t g_ent_num, _n_ranks;
+  cs_gnum_t g_ent_num;
   cs_block_dist_info_t  bi;
 
   cs_lnum_t block_size = 0;
@@ -1978,7 +1978,6 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
-  _n_ranks = n_ranks;
 
   bi = cs_block_dist_compute_sizes(local_rank,
                                    n_ranks,
@@ -2150,7 +2149,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   int  shift, block_id;
   int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
   cs_lnum_t i, j, k, start, end;
-  cs_gnum_t g_ent_num, _n_ranks;
+  cs_gnum_t g_ent_num;
   cs_block_dist_info_t  bi;
 
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
@@ -2169,7 +2168,6 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
-  _n_ranks = n_ranks;
 
   bi = cs_block_dist_compute_sizes(local_rank,
                                    n_ranks,

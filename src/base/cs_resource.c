@@ -245,7 +245,7 @@ cs_resource_get_max_timestep(int   ts_cur,
   double t_margin = -1., tmoy00 = -1., t_it_prev = -1., t_it_sup = -1.;
 
   static int r_time_method = -1, ntcab0 = -1;
-  static double trest0 = -1., trestp = -1., tcpupr = -1.;
+  static double trest0 = -1., tcpupr = -1.;
 
   if (ts_cur == *ts_max)
     return;
@@ -283,7 +283,6 @@ cs_resource_get_max_timestep(int   ts_cur,
 
     if (r_time_method > 0) {
       ntcab0 = ts_cur;
-      trestp = trest0;
       tcpupr = cs_timer_wtime();
     }
 
@@ -324,7 +323,6 @@ cs_resource_get_max_timestep(int   ts_cur,
       /* Remaining time and CPU time at current iteration
          (which will become the previous one) */
 
-      trestp = trestc;
       tcpupr = tcpuco;
 
       /* Time required for an additional iteration.

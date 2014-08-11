@@ -108,7 +108,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
-character*8      cnom
+character(len=8) :: cnom
 
 integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym, flid
 integer          modntl

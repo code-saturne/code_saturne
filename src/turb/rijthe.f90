@@ -56,7 +56,6 @@ use paramx
 use numvar
 use entsor
 use optcal
-use dimens, only: nvar
 use cstphy
 use mesh
 use field

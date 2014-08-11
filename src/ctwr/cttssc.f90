@@ -55,7 +55,6 @@ use paramx
 use numvar
 use entsor
 use optcal
-use dimens, only: nvar
 use cstphy
 use cstnum
 use period
@@ -78,7 +77,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar
 
 !===============================================================================

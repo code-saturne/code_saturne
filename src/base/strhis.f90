@@ -66,8 +66,8 @@ integer          modhis
 
 integer          nbname
 parameter        (nbname=12)
-character        nompre*300, nenvar*300
-character*80     namevr(nbname)
+character(len=300) :: nompre, nenvar
+character(len=80) :: namevr(nbname)
 integer          ii, jj, ii1, ii2, lpre, lnam, tplnum
 double precision, dimension(:), allocatable :: vartmp
 

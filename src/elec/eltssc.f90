@@ -86,7 +86,7 @@ double precision smbrs(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar , iel
 integer          ipcdc1, ipcdc2, ipcdc3
 integer          ipcefj

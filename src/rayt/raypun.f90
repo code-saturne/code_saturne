@@ -122,7 +122,7 @@ double precision ckmel(ncelet)
 
 ! Local variables
 
-character*80     cnom
+character(len=80) :: cnom
 
 integer          ifac  , iel
 integer          iconv1, idiff1, ndirc1, ireso1

@@ -66,7 +66,6 @@ use paramx
 use optcal
 use numvar
 use pointe
-use dimens, only: nvar
 use albase, only: nalimx
 use alstru
 use alaste

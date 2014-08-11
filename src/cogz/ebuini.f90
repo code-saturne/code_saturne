@@ -99,7 +99,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          iel, mode, igg, izone
 integer          iscal, ivar, ii
 double precision hinit, coefg(ngazgm), hair, tinitk

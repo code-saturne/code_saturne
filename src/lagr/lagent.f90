@@ -941,7 +941,7 @@ do ii = 1,nfrtot
 
                call lagnew                                                   &
                !==========
-             ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+             ( nbpmax , nvp    , nvp1   ,                                    &
                npt    , nlocnew ,      iusloc(nc,nb,ijnbp)  ,                &
                nb     ,                                                      &
                ifrlag , itepa(:,jisor)  , iwork  ,                           &
@@ -953,7 +953,7 @@ do ii = 1,nfrtot
 
             call lagnpr                                                      &
             !==========
-           ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                    &
+           ( nbpmax , nvp    , nvp1   ,                                      &
              npt    , nlocnew ,  iusloc(nc,nb,ijnbp)   ,                     &
              nb     ,                                                        &
              ifrlag , itepa(:,jisor)  , iwork  ,                             &

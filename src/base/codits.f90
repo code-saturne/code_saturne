@@ -254,8 +254,8 @@ double precision xcpp(ncelet)
 
 ! Local variables
 
-character*80     chaine
-character*16     cnom
+character(len=80) :: chaine
+character(len=16) :: cnom
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          itenso,iinvpe, iinvpp

@@ -100,7 +100,7 @@ integer          f_id
 
 integer          ifvar(nvarmx)
 
-character*80     fname
+character(len=80) :: fname
 
 integer, save :: ipass = 0
 

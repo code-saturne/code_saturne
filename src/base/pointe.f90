@@ -399,7 +399,7 @@ contains
     integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
-    integer                ivar, iscal, ifac
+    integer                ifac
     integer                kdiftn
 
     ! Key id for diffusivity tensor

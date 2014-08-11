@@ -257,8 +257,8 @@ double precision eswork(3,ncelet)
 
 ! Local variables
 
-character*80     chaine
-character*16     cnom
+character(len=80) :: chaine
+character(len=16) :: cnom
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iel,icycle,nswmod
 integer          iinvpe
@@ -413,7 +413,7 @@ if (abs(thetex).gt.epzero) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , iwarnp , idftnp ,                                     &
+   iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetex ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -465,7 +465,7 @@ call bilscv &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , iwarnp , idftnp ,                                     &
+   iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -606,7 +606,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     !==========
    ( idtvar , lvar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-     ippu   , iwarnp , idftnp ,                                     &
+     iwarnp , idftnp ,                                              &
      blencp , epsrgp , climgp , relaxp , thetap ,                   &
      dpvar  , dpvar  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
@@ -754,7 +754,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , iwarnp , idftnp ,                                     &
+   iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -829,7 +829,7 @@ if (iescap.gt.0) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , iwarnp , idftnp ,                                     &
+   iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &

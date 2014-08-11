@@ -92,8 +92,7 @@ double precision rugdij,rugtij,albeij,emisij
 double precision vegeij,c1wij,c2wij,csolij
 double precision r1ij,r2ij
 double precision solmax(10),solmea(10),solmin(10)
-character*12     solnom(10)
-
+character(len=12) ::    solnom(10)
 
 !  ================================================================
 !     1) initialisations

@@ -85,8 +85,6 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
-
-
 !===============================================================================
 
 !===============================================================================
@@ -112,7 +110,6 @@ dnpencall = dnpenc
 dnbpnwall = dnbpnw
 dnbresall = dnbres
 
-
 if (irangp.ge.0) then
 
    call parcpt(nbpartall)
@@ -132,7 +129,6 @@ if (irangp.ge.0) then
 
 endif
 
-
 !===============================================================================
 ! 2. OUVERTURE DU FICHIER DE STOCKAGE
 !===============================================================================
@@ -142,8 +138,10 @@ if (irangp.le.0) then
 
   if (ipass.eq.1 ) then
 
+    write(implal,999)
+
     if ( iroule .ge. 1 .and.                                      &
-         (iphyla.eq.2 .and. iencra.eq.1) ) then
+        (iphyla.eq.2 .and. iencra.eq.1) ) then
       write(implal,1000)
     elseif ( iroule .ge. 1 .and.                                  &
            (iphyla.ne.2 .or. iencra.ne.1) ) then
@@ -159,14 +157,9 @@ if (irangp.le.0) then
 
   endif
 
-
-
 !===============================================================================
 ! 2 - Ecriture des INFORMATIONS
 !===============================================================================
-
-
-
 
   if (nbptot.gt.0) then
     dnbpr = (nbpert*100.d0)/dble(nbptot)
@@ -244,163 +237,86 @@ endif
 
 !===============================================================================
 
-
 !--------
-! FORMATS
+! Formats
 !--------
 
- 1000 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     '      ,/, &
-       '#                                              '      ,/, &
-       '# colonne  1 : numero de pas de temps          '      ,/, &
-       '# colonne  2 : temps physique                  '      ,/, &
-       '# colonne  3 : nbre inst. de part.             '      ,/, &
-       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
-       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
-       '# colonne  6 : nbre inst. de part. injectees   '      ,   &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
-       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  9 : nbre inst. de part. deposees '         ,/, &
-       '# colonne 10 : nbre inst. de part. deposees '         ,   &
-       ' (avec poids)'                                        ,/, &
-       '# colonne 11 : nbre inst. de part. perdues (reperage)',/, &
-       '# colonne 12 : nbre inst. de part. perdues'           ,   &
-       ' (reperage, avec poids)'                              ,/, &
-       '# colonne 13 : % de part. perdues'                    ,/, &
-       '# colonne 14 : nbre inst. de part. qui ont subi le'   ,   &
-       ' clonage'                                             ,/, &
-       '# colonne 15 : nbre inst. de part. qui ont subi le'   ,   &
-       ' clonage (avec poids)'                                ,/, &
-       '# colonne 16 : nbre inst. de nouvel. part. par clonage',/,&
-       '# colonne 17 : nbre inst. de nouvel. part. par clonage',  &
-       ' (avec poids)'                                        ,/, &
-       '# colonne 18 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe '                                     ,/, &
-       '# colonne 19 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe (avec poids)'                         ,/, &
-       '# colonne 20 : nbre inst. de part encrassees'         ,   &
-       ' (Charbon) '                                          ,/, &
-       '# colonne 21 : nbre inst. de part encrassees'         ,   &
-       ' (Charbon, avec poids)'                               ,/, &
+ 999  format( &
+       '# ** Information on Lagrangian computation'                       ,/, &
+       '#    --------------------------------------'                      ,/, &
+       '#'                                                                ,/, &
+       '# column  1: time step number'                                    ,/, &
+       '# column  2: physical time'                                       ,/, &
+       '# column  3: inst. number of particles'                           ,/, &
+       '# column  4: inst. number of particles (weighted)'                ,/, &
+       '# column  5: inst. number of injected particles'                  ,/, &
+       '# column  6: inst. number of injected particles (weighted)'       ,/, &
+       '# column  7: inst. number of exited, or deposited and ',              &
+                                                 'removed particles'      ,/, &
+       '# column  8: inst. number of exited, or deposited and ',              &
+                                     'removed particles (weighthed)'      ,/, &
+       '# column  9: inst. number of deposited particles'                 ,/, &
+       '# column 10: inst. number of deposited particles (weighted)')
+
+ 1000 format( &
+       '# column 11: inst. number of lost particles (spotting)'           ,/, &
+       '# column 12: inst. number of lost particles (spotting, weighted)' ,/, &
+       '# column 13: % of lost particles'                                 ,/, &
+       '# column 14: inst. number of particles cloned'                    ,/, &
+       '# column 15: inst. number of particles cloned (weighted)'         ,/, &
+       '# column 16: inst. number of new particles by cloning'            ,/, &
+       '# column 17: inst. number of new particles by cloning (weighted)' ,/, &
+       '# column 18: inst. number of particles eliminated by roulette'    ,/, &
+       '# column 19: inst. number of particles eliminated by roulette ',      &
+                                                             '(weighted)' ,/, &
+       '# column 20: inst. number of fouled particles (coal)'             ,/, &
+       '# column 21: inst. number of fouled particles (coal, weighted)'   ,/, &
        '# ')
 
- 1001 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     '      ,/, &
-       '#                                              '      ,/, &
-       '# colonne  1 : numero de pas de temps          '      ,/, &
-       '# colonne  2 : temps physique                  '      ,/, &
-       '# colonne  3 : nbre inst. de part.             '      ,/, &
-       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
-       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
-       '# colonne  6 : nbre inst. de part. injectees   '        , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
-       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  9 : nbre inst. de part. deposees    '      ,/, &
-       '# colonne 10 : nbre inst. de part. deposees    '        , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne 11 : nbre inst. de part. perdues (reperage) ',/,&
-       '# colonne 12 : nbre inst. de part. perdues'             , &
-       ' (reperage, avec poids)'                              ,/, &
-       '# colonne 13 : % de part. perdues'                    ,/, &
-       '# colonne 14 : nbre inst. de part. qui ont subi le'     , &
-       ' clonage'                                             ,/, &
-       '# colonne 15 : nbre inst. de part. qui ont subi le'     , &
-       ' clonage (avec poids)'                                ,/, &
-       '# colonne 16 : nbre inst. de nouvel. part. par clonage',/,&
-       '# colonne 17 : nbre inst. de nouvel. part. par clonage'  ,&
-       ' (avec poids)'                                        ,/, &
-       '# colonne 18 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe '                                     ,/, &
-       '# colonne 19 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe (avec poids) '                        ,/, &
+ 1001 format( &
+       '# column 11: inst. number of lost particles (spotting)'           ,/, &
+       '# column 12: inst. number of lost particles (spotting, weighted)' ,/, &
+       '# column 13: % of lost particles'                                 ,/, &
+       '# column 14: inst. number of particles cloned'                    ,/, &
+       '# column 15: inst. number of particles cloned (weighted)'         ,/, &
+       '# column 16: inst. number of new particles by cloning'            ,/, &
+       '# column 17: inst. number of new particles by cloning (weighted)' ,/, &
+       '# column 18: inst. number of particles eliminated by roulette'    ,/, &
+       '# column 19: inst. number of particles eliminated by roulette ',      &
+                                                             '(weighted)' ,/, &
        '# ')
 
- 1002 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     '      ,/, &
-       '#                                              '      ,/, &
-       '# colonne  1 : numero de pas de temps          '      ,/, &
-       '# colonne  2 : temps physique                  '      ,/, &
-       '# colonne  3 : nbre inst. de part.             '      ,/, &
-       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
-       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
-       '# colonne  6 : nbre inst. de part. injectees   '        , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
-       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  9 : nbre inst. de part. deposees'          ,/, &
-       '# colonne 10 : nbre inst. de part. deposees'            , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne 11 : nbre inst. de part. perdues (reperage)',/, &
-       '# colonne 12 : nbre inst. de part. perdues'             , &
-       ' (reperage, avec poids)'                              ,/, &
-       '# colonne 13 : % de part. perdues'                    ,/, &
-       '# colonne 14 : nbre inst. de part. encrassees'          , &
-       ' (Charbon) '                                          ,/, &
-       '# colonne 15 : nbre inst. de part. encrassees'          , &
-       ' (Charbon, avec poids)'                               ,/, &
+ 1002 format( &
+       '# column 11: inst. number of lost particles (spotting)'           ,/, &
+       '# column 12: inst. number of lost particles (spotting, weighted)' ,/, &
+       '# column 13: % of lost particles'                                 ,/, &
+       '# column 14: inst. number of fouled particles (coal)'             ,/, &
+       '# column 15: inst. number of fouled particles (coal, weighted)'   ,/, &
        '# ')
 
- 1003 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     '      ,/, &
-       '#                                              '      ,/, &
-       '# colonne  1 : numero de pas de temps          '      ,/, &
-       '# colonne  2 : temps physique                  '      ,/, &
-       '# colonne  3 : nbre inst. de part.             '      ,/, &
-       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
-       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
-       '# colonne  6 : nbre inst. de part. injectees   '        , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
-       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  9 : nbre inst. de part. deposees'          ,/, &
-       '# colonne 10 : nbre inst. de part. deposees'            , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne 11 : nbre inst. de part. perdues (reperage) ',/,&
-       '# colonne 12 : nbre inst. de part. perdues'             , &
-        ' (reperage, avec poids)'                             ,/, &
-       '# colonne 13 : % de part. perdues'                    ,/, &
+ 1003 format( &
+       '# column 11: inst. number of lost particles (spotting)'           ,/, &
+       '# column 12: inst. number of lost particles (spotting, weighted)' ,/, &
+       '# column 13: % of lost particles'                                 ,/, &
        '# ')
 
 
- 1004 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     '      ,/, &
-       '#                                              '      ,/, &
-       '# colonne  1 : numero de pas de temps          '      ,/, &
-       '# colonne  2 : temps physique                  '      ,/, &
-       '# colonne  3 : nbre inst. de part.             '      ,/, &
-       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
-       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
-       '# colonne  6 : nbre inst. de part. injectees   '        , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
-       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
-       ' (avec poids)'                                        ,/, &
-       '# colonne  9 : nbre inst. de part. deposees'          ,/, &
-       '# colonne 10 : nbre inst. de part. deposees'            , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne 11 : nbre inst. de part. resuspendues'      ,/, &
-       '# colonne 12 : nbre inst. de part. resuspendues'        , &
-       ' (avec poids)'                                        ,/, &
-       '# colonne 13 : nbre inst. de part. perdues (reperage) ',/,&
-       '# colonne 14 : nbre inst. de part. perdues'             , &
-        ' (reperage, avec poids)'                             ,/, &
-       '# colonne 15 : % de part. perdues'                    ,/, &
+ 1004 format( &
+       '# column 11: inst. number of resuspended particles'               ,/, &
+       '# column 12: inst. number of resuspended particles (weighted)'    ,/, &
+       '# column 13: inst. number of lost particles (spotting)'           ,/, &
+       '# column 14: inst. number of lost particles (spotting, weighted)' ,/, &
+       '# column 15: % of lost particles'                                 ,/, &
        '# ')
 
- 2000 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,4(i8,2x,e10.4))
- 2001 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,3(i8,2x,e10.4))
- 2002 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,1(i8,2x,e10.4))
- 2003 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4)
- 2004 format(1x,i8,2x,e10.4,2x,6(i8,2x,e10.4),2x,e10.4)
+ 2000 format(1x,i8,2x,e11.4,2x,5(i8,2x,e11.4),2x,e11.4,4(i8,2x,e11.4))
+ 2001 format(1x,i8,2x,e11.4,2x,5(i8,2x,e11.4),2x,e11.4,3(i8,2x,e11.4))
+ 2002 format(1x,i8,2x,e11.4,2x,5(i8,2x,e11.4),2x,e11.4,1(i8,2x,e11.4))
+ 2003 format(1x,i8,2x,e11.4,2x,5(i8,2x,e11.4),2x,e11.4)
+ 2004 format(1x,i8,2x,e11.4,2x,6(i8,2x,e11.4),2x,e11.4)
 
 !====
-! FIN
+! End
 !====
 
 return

@@ -24,7 +24,7 @@ subroutine laglis &
 !================
 
  ( nvlsta , nvisbr ,                                                           &
-   statis , stativ , parbor )
+   statis , parbor )
 
 !===============================================================================
 ! Purpose:
@@ -44,9 +44,6 @@ subroutine laglis &
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! statis           ! tr ! <-- ! cumul pour les moyennes des                    !
 !  (ncelet,nvlsta) !    !     !   statistiques volumiques                      !
-! stativ           ! tr ! <-- ! cumul pour les variances des                   !
-!  (ncelet,        !    !     !    statistiques volumiques                     !
-!   nvlsta-1)      !    !     !                                                !
 ! parbor           ! tr ! <-- ! infos sur interaction des particules           !
 !  (nfabor,nvisbr) !    !     !   aux faces de bord                            !
 !__________________!____!_____!________________________________________________!
@@ -80,7 +77,6 @@ implicit none
 integer          nvlsta , nvisbr
 
 double precision statis(ncelet,nvlsta)
-double precision stativ(ncelet,nvlsta-1)
 double precision parbor(nfabor,nvisbr)
 
 ! Local variables
@@ -457,7 +453,7 @@ endif
 1038 format('ln  coal particles fouled                    ',I8,3X,E14.5)
 1039 format('ln  deposited                                ',I8,3X,E14.5)
 1040 format('ln  resuspended                              ',I8,3X,E14.5)
-1050 format('% of lost particles (restart(s) included) :  ',E10.4)
+1050 format('% of lost particles (restart(s) included) :  ',e11.4)
 
 2000 format('   Volume statistics :')
 

@@ -68,7 +68,7 @@ module entsor
   integer, save :: impdvo
 
   !> name of file, see usvort module.
-  character*13, save :: ficdat
+  character(len=13), save :: ficdat
 
   !> saving period of the restart filesy5
   !>   - -2: no restart at all
@@ -98,7 +98,7 @@ module entsor
   !> properly.  Should the value of \ref ficfpp be changed, the launch script
   !> would have to be adapted.
   !> Useful in case of gas or pulverised coal combustion.
-  character*32, save :: ficfpp
+  character(len=32), save :: ficfpp
 
   !> logical unit of the thermochemical data file.
   !> Useful in case of gas or pulverised coal combustion or electric arcs;
@@ -109,7 +109,7 @@ module entsor
 
   !> Input files for the atmospheric specific physics
   !> (name of the meteo profile file)
-  character*32, save :: ficmet
+  character(len=32), save :: ficmet
   !> logical unit of the meteo profile file
   integer, save :: impmet
 
@@ -131,10 +131,10 @@ module entsor
   !> the launch script to copy the files in the alternate destination directory
   !> - useful if and only if chronological record files are generated
   !> (i.e. there is \ref n for which \ref ihisvr "ihisvr(n, 1)" \f$\ne\f$ 0)
-  character*80, save :: emphis
+  character(len=80), save :: emphis
 
   !> prefix of history files
-  character*80, save :: prehis
+  character(len=80), save :: prehis
 
   !> units of the user chronological record files.
   !> Useful if and only if the subroutine \ref ushist is used.
@@ -152,7 +152,7 @@ module entsor
   !>  - ush001.n_0002, ush002.n_0002, ush003.n_0002...
   !> The opening, closing, format and location of these files must be managed
   !> by the user. Useful if and only if the subroutine \ref ushist is used
-  character*13, save :: ficush(nushmx)
+  character(len=13), save :: ficush(nushmx)
 
   !> sytock file and mobile structure varibles output unit
   integer, save :: impsth(2)
@@ -264,7 +264,7 @@ module entsor
   !> \{
 
   !> name of Lagrange listing
-  character*6, save :: ficlal
+  character(len=6), save :: ficlal
 
   !> logical unit of Lagrange listing
   integer, save :: implal
@@ -317,7 +317,7 @@ module entsor
   !> from \f$ \texttt{usrf01.n\_0002} \f$ to \f$ \texttt{usrf10.n\_0002} \f$ . The opening,
   !> closing, format and location of these files must be managed by the user.
   !> useful if and only if the user needs files (therefore always useful, by security)
-  character*13, save :: ficusr(nusrmx)
+  character(len=13), save :: ficusr(nusrmx)
 
   !> \}
 
@@ -328,7 +328,7 @@ module entsor
 
   !> temporary variable name for some algebraic operations
 
-  character*80, save :: nomva0
+  character(len=80), save :: nomva0
 
   !> locator pointer for variables output
   integer, save :: ipprtp(nvarmx)

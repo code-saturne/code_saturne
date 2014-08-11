@@ -347,7 +347,7 @@ if (itsqdm.ne.0) then
   !==========
 ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
   ischcp , isstpp , inc    , imrgra , ivisse ,                   &
-  ippu   , iwarnp , idftnp ,                                     &
+  iwarnp , idftnp ,                                              &
   blencp , epsrgp , climgp , relaxp , thetap ,                   &
   vela   , vela   ,                                              &
   coefau , coefbu , cofafu , cofbfu ,                            &

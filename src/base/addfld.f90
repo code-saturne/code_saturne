@@ -88,8 +88,7 @@ integer          keyccl, keydri, kdiftn
 logical          ilved, iprev, inoprv
 integer          f_id
 
-character*80     name
-character*80     f_name
+character(len=80) :: name, f_name
 
 !===============================================================================
 

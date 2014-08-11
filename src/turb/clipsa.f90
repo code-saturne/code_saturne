@@ -23,7 +23,7 @@
 subroutine clipsa &
 !================
 
- ( ncelet , ncel   , nvar   )
+ ( ncel )
 
 !===============================================================================
 ! Purpose:
@@ -36,10 +36,7 @@ subroutine clipsa &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! e  ! <-- ! nombre de variables                            !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-!(ncelet,*         !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -67,7 +64,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel
+integer          ncel
 
 ! Local variables
 

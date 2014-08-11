@@ -985,7 +985,7 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
     !==========
   ( itrale ,                                               &
     impale , ialtyb ,                                      &
-    dt     , rtpa   , rtp    ,                             &
+    dt     ,                                               &
     depale , xyzno0 )
 
   endif
@@ -1182,7 +1182,7 @@ if (modntl.eq.0) then
     call laglis                                                   &
     !==========
     ( nvlsta , nvisbr ,                                           &
-      statis , stativ , parbor )
+      statis , parbor )
   endif
 
 endif

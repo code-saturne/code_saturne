@@ -109,7 +109,7 @@ double precision relaxp
 
 double precision rvoid(1)
 
-character*80     fname
+character(len=80) :: fname
 
 double precision, dimension(:), allocatable :: w1, viscce
 double precision, dimension(:), allocatable :: coefap, coefbp
@@ -388,7 +388,7 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
   !==========
  ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , iwarnp , idftnp ,                                     &
+   iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &

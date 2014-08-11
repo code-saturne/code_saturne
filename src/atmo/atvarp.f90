@@ -73,9 +73,9 @@ implicit none
 
 integer        ii, jj, isc, f_id
 integer        kscmin, kscmax
-character*80   name, label
-character*2 :: nbin
-character*10, dimension(nesp_aer) :: f_esp_siream
+character(len=80) :: name, label
+character(len=2) :: nbin
+character(len=10), dimension(nesp_aer) :: f_esp_siream
 
 integer(c_int) :: n_chem_species
 integer(c_int), dimension(65) :: species_f_id
