@@ -1949,8 +1949,7 @@ void CS_PROCF(lecsyn, LECSYN)
   }
 
   /* Close the restart file and free structures */
-  cs_restart_destroy(cs_glob_inflow_suite);
-  cs_glob_inflow_suite = NULL;
+  cs_restart_destroy(&cs_glob_inflow_suite);
 
   bft_printf(_(" ...completed\n"));
 }
@@ -2235,8 +2234,7 @@ void CS_PROCF(ecrsyn, ECRSYN)
   }
 
   /* Close the restart file and free structures */
-  cs_restart_destroy(cs_glob_inflow_suite);
-  cs_glob_inflow_suite = NULL;
+  cs_restart_destroy(&cs_glob_inflow_suite);
 
   bft_printf(_(" ...completed\n"));
 

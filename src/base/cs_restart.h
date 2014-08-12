@@ -621,14 +621,11 @@ cs_restart_create(const char         *name,
  * Destroy structure associated with a restart file (and close the file).
  *
  * parameters:
- *   restart <-- pointer to restart file structure
- *
- * returns:
- *   NULL pointer
+ *   restart <-- pointer to restart file structure pointer
  *----------------------------------------------------------------------------*/
 
-cs_restart_t *
-cs_restart_destroy(cs_restart_t  *restart);
+void
+cs_restart_destroy(cs_restart_t  **restart);
 
 /*----------------------------------------------------------------------------
  * Check the locations associated with a restart file.

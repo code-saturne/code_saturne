@@ -765,8 +765,7 @@ void CS_PROCF (lect1d,LECT1D)
   }
 
   /* Close the restart file and free structures */
-  cs_restart_destroy(cs_glob_tpar1d_suite);
-  cs_glob_tpar1d_suite = NULL;
+  cs_restart_destroy(&cs_glob_tpar1d_suite);
 }
 
 /*----------------------------------------------------------------------------
@@ -999,8 +998,7 @@ void CS_PROCF (ecrt1d,ECRT1D)
   }
 
   /* Close the restart file and free structures */
-  cs_restart_destroy(cs_glob_tpar1d_suite);
-  cs_glob_tpar1d_suite = NULL;
+  cs_restart_destroy(&cs_glob_tpar1d_suite);
 
 }
 

@@ -146,7 +146,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                             2,         /* value type */
                             t_old);    /* buffer */
 
-    cs_restart_destroy(restart);
+    cs_restart_destroy(&restart);
   }
 
   /* --------------- */
@@ -215,7 +215,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                            2,           /* value type */
                            t);          /* buffer */
 
-  cs_restart_destroy(checkpoint);
+  cs_restart_destroy(&checkpoint);
 
   /* --------------- */
   /* Post-processing */

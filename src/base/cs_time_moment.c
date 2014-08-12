@@ -638,7 +638,7 @@ _restart_info_read(void)
     r = cs_restart_create("main", "restart", CS_RESTART_MODE_READ);
     cs_restart_read_time_step_info(r);
     if (_restart_uses_main == false)
-      r = cs_restart_destroy(r);
+      cs_restart_destroy(&r);
   }
 
   /* Now read time-moment specific data */
@@ -652,7 +652,7 @@ _restart_info_read(void)
 
   _restart_info_read_auxiliary(r);
 
-  r = cs_restart_destroy(r);
+  cs_restart_destroy(&r);
 
   /* Now change checked status */
 

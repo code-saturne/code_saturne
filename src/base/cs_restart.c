@@ -1389,7 +1389,7 @@ void CS_PROCF (clssui, CLSSUI)
 
   /* Close file */
 
-  cs_restart_destroy(_restart_pointer[r_id]);
+  cs_restart_destroy(_restart_pointer + r_id);
 
   _free_restart_id(r_id);
 }
@@ -2469,16 +2469,15 @@ cs_restart_create(const char         *name,
  * Destroy structure associated with a restart file (and close the file).
  *
  * parameters:
- *   restart <-- pointer to restart file structure
- *
- * returns:
- *   NULL pointer
+ *   restart <-- pointer to restart file structure pointer
  *----------------------------------------------------------------------------*/
 
-cs_restart_t *
-cs_restart_destroy(cs_restart_t  *restart)
+void
+cs_restart_destroy(cs_restart_t  **restart)
 {
   cs_restart_mode_t   mode;
+
+  cs_restart_t *r = *restart;
 
   double timing[2];
 
@@ -2486,32 +2485,31 @@ cs_restart_destroy(cs_restart_t  *restart)
 
   assert(restart != NULL);
 
-  mode = restart->mode;
+  mode = r->mode;
 
-  if (restart->fh != NULL)
-    cs_io_finalize(&(restart->fh));
+  if (r->fh != NULL)
+    cs_io_finalize(&(r->fh));
 
   /* Free locations array */
 
-  if (restart->n_locations > 0) {
+  if (r->n_locations > 0) {
     size_t loc_id;
-    for (loc_id = 0; loc_id < restart->n_locations; loc_id++) {
-      BFT_FREE((restart->location[loc_id]).name);
-      BFT_FREE((restart->location[loc_id])._ent_global_num);
+    for (loc_id = 0; loc_id < r->n_locations; loc_id++) {
+      BFT_FREE((r->location[loc_id]).name);
+      BFT_FREE((r->location[loc_id])._ent_global_num);
     }
   }
-  if (restart->location != NULL)
-    BFT_FREE(restart->location);
+  if (r->location != NULL)
+    BFT_FREE(r->location);
 
   /* Free remaining memory */
 
-  BFT_FREE(restart->name);
-  BFT_FREE(restart);
+  BFT_FREE(r->name);
+
+  BFT_FREE(*restart);
 
   timing[1] = cs_timer_wtime();
   _restart_wtime[mode] += timing[1] - timing[0];
-
-  return NULL;
 }
 
 /*----------------------------------------------------------------------------

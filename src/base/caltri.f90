@@ -590,7 +590,7 @@ endif
 
 !===============================================================================
 ! Initializations (user and additional)
-!    rtp dt rom romb viscl visct viscls (tpucou with periodicite)
+!    rtp dt rom romb viscl visct viscls (tpucou with periodicity)
 !===============================================================================
 
 call inivar(nvar, nscal, dt, rtp, propce)

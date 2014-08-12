@@ -595,8 +595,7 @@ void CS_PROCF (ecrctw, ECRCTW)
   }
 
   /* Close the restart file and free structures */
-  cs_restart_destroy(cs_glob_ctwr_suite);
-  cs_glob_ctwr_suite = NULL;
+  cs_restart_destroy(&cs_glob_ctwr_suite);
 }
 
 /*----------------------------------------------------------------------------
@@ -915,8 +914,7 @@ void CS_PROCF (lecctw, LECCTW)
   }
 
   /* Close the restart file and free structures */
-  cs_restart_destroy(cs_glob_ctwr_suite);
-  cs_glob_ctwr_suite = NULL;
+  cs_restart_destroy(&cs_glob_ctwr_suite);
 }
 
 /*----------------------------------------------------------------------------
