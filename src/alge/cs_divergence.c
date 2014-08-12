@@ -1634,11 +1634,11 @@ cs_tensor_flux(const cs_mesh_t          *m,
 
   /* Local variables */
 
-  cs_real_3_t **tens;
-  cs_real_3_t **coefat;
-  cs_real_33_t **coefbt;
-  cs_real_t **i_massflux_t;
-  cs_real_t **b_massflux_t;
+  cs_real_3_t *tens[3];
+  cs_real_3_t *coefat[3];
+  cs_real_33_t *coefbt[3];
+  cs_real_t *i_massflux_t[3];
+  cs_real_t *b_massflux_t[3];
 
   /*==========================================================================
     1. Initialisation
@@ -1646,25 +1646,20 @@ cs_tensor_flux(const cs_mesh_t          *m,
 
   /* Allocate working arrays */
 
-  BFT_MALLOC(tens, 3, cs_real_3_t*);
   for (int isou = 0; isou < 3; isou++) {
     BFT_MALLOC(tens[isou], n_cells_ext, cs_real_3_t);
   }
 
-  BFT_MALLOC(coefat, m->n_b_faces, cs_real_3_t*);
   for (int isou = 0; isou < 3; isou++) {
     BFT_MALLOC(coefat[isou], m->n_b_faces, cs_real_3_t);
   }
-  BFT_MALLOC(coefbt, m->n_b_faces, cs_real_33_t*);
   for (int isou = 0; isou < 3; isou++) {
     BFT_MALLOC(coefbt[isou], m->n_b_faces, cs_real_33_t);
   }
 
-  BFT_MALLOC(i_massflux_t, 3, cs_real_t*);
   for (int isou = 0; isou < 3; isou++) {
     BFT_MALLOC(i_massflux_t[isou], m->n_i_faces, cs_real_t);
   }
-  BFT_MALLOC(b_massflux_t, 3, cs_real_t*);
   for (int isou = 0; isou < 3; isou++) {
     BFT_MALLOC(b_massflux_t[isou], m->n_b_faces, cs_real_t);
   }
@@ -1761,23 +1756,18 @@ cs_tensor_flux(const cs_mesh_t          *m,
   for (int isou = 0; isou < 3; isou++) {
     BFT_FREE(tens[isou]);
   }
-  BFT_FREE(tens);
   for (int isou = 0; isou < 3; isou++) {
     BFT_FREE(coefat[isou]);
   }
-  BFT_FREE(coefat);
   for (int isou = 0; isou < 3; isou++) {
     BFT_FREE(coefbt[isou]);
   }
-  BFT_FREE(coefbt);
   for (int isou = 0; isou < 3; isou++) {
     BFT_FREE(i_massflux_t[isou]);
   }
-  BFT_FREE(i_massflux_t);
   for (int isou = 0; isou < 3; isou++) {
     BFT_FREE(b_massflux_t[isou]);
   }
-  BFT_FREE(b_massflux_t);
 
 }
 

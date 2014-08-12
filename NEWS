@@ -5,6 +5,9 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix incorrect allocation, leading to crash when less than 3 boundary faces are
+  present on a given rank (bug #84).
+
 - Fix bug in iswdyn option (introduced by a unwanted merge).
 
 - Fix restart when using AFM or DFM turbulent flux model.
