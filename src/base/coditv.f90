@@ -266,7 +266,7 @@ integer          idtva0
 integer          nagmax, npstmg
 integer          isou , jsou
 integer          ibsize, iesize
-integer          lvar, incp, insqrt
+integer          lvar, insqrt
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex
@@ -596,7 +596,6 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   if (iswdyp.ge.1) then
 
     ! Computation of the variable relaxation coefficient
-    incp = 0
     lvar = 0
 
     !$omp parallel do private(isou)
@@ -610,7 +609,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     call bilscv &
     !==========
    ( idtvar , lvar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , incp   , imrgra , ivisep ,                   &
+     ischcp , isstpp , inc    , imrgra , ivisep ,                   &
      ippu   , iwarnp , idftnp ,                                     &
      blencp , epsrgp , climgp , relaxp , thetap ,                   &
      dpvar  , dpvar  ,                                              &
