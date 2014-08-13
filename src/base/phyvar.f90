@@ -151,6 +151,17 @@ endif
 
 mbrom = 0
 
+! First computation of physical properties for specific physics
+! BEFORE the user
+if (ippmod(iphpar).ge.1) then
+
+  call cs_physical_properties1 &
+ ( nvar   , nscal  ,                                              &
+   mbrom  ,                                                       &
+   dt     , rtp    , propce )
+
+endif
+
 
 ! - Interface Code_Saturne
 !   ======================
@@ -169,14 +180,18 @@ call usphyv &
   mbrom  ,                                                       &
   dt     )
 
+
+! Finalization of physical properties for specific physics
+! AFTER the user
 if (ippmod(iphpar).ge.1) then
-  call ppphyv &
-  !==========
+
+  call cs_physical_properties2 &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
    dt     , rtp    , propce )
 
 endif
+
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 

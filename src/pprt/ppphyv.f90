@@ -26,8 +26,9 @@
 
 !> \file ppphyv.f90
 !>
-!> \brief This subroutine fills physical properties which are variable in time
-!>        for the dedicated physics modules.
+!> \brief These subroutineS fill physical properties which are variable in time
+!>        for the dedicated physics modules
+!>        (BEFORE and AFTER the user surbroutines).
 !>
 !> \warning:
 !>  - it is forbidden to modify the turbulent viscosity here.
@@ -68,7 +69,7 @@
 !_______________________________________________________________________________
 
 
-subroutine ppphyv &
+subroutine cs_physical_properties1 &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
    dt     , rtp    , propce )
@@ -162,14 +163,6 @@ double precision propce(ncelet,*)
     call cs_fuel_physprop(mbrom, izfppp, rtp, propce)
   endif
 
-! ---> Compressible
-
-  if (ippmod(icompf).ge.0) then
-
-    call cfphyv(propce)
-
-  endif
-
 ! ---> Physique particuliere : Versions electriques
 !          Effet Joule
 !          Arc electrique
@@ -204,18 +197,93 @@ if (ippmod(iatmos).ge.1) then
    call atphyv(rtp, propce )
 endif
 
-! Condensation modelling
-
-if (ippmod(icond).ge.0) then
-
-  call cs_condensation_physical_properties
-
-endif
-
 
 !----
 ! End
 !----
 
 return
-end subroutine
+end subroutine cs_physical_properties1
+
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     mbrom         indicator of prescribed density at the boundary
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp           calculated variables at cell centers
+!>                               (at current time steps)
+!> \param[in]     propce        physical properties at cell centers
+!_______________________________________________________________________________
+
+subroutine cs_physical_properties2 &
+ ( nvar   , nscal  ,                                              &
+   mbrom  ,                                                       &
+   dt     , rtp    , propce )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use entsor
+use pointe
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use mesh
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nvar   , nscal
+
+integer          mbrom
+
+double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision propce(ncelet,*)
+
+! Local variables
+
+!===============================================================================
+
+!===============================================================================
+! 1. Initializations
+!===============================================================================
+
+!===============================================================================
+! 2. Fill properties depending on the model
+!===============================================================================
+
+! Compressible
+if (ippmod(icompf).ge.0) then
+
+  call cfphyv(propce)
+
+endif
+
+! Condensation modelling
+if (ippmod(icond).ge.0) then
+
+  call cs_condensation_physical_properties
+
+endif
+
+!----
+! End
+!----
+
+return
+end subroutine cs_physical_properties2
