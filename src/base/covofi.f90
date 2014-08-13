@@ -153,7 +153,7 @@ double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
-double precision smbexp
+double precision smbexp, drtp
 double precision trrij , csteps
 
 double precision rvoid(1)
@@ -385,6 +385,15 @@ if (iirayo.ge.1) then
     !==========
   ( iscalt,ncelet,ncel,     &
     smbrs, rovsdt,volume,propce )
+
+    ! Store the explicit radiative source term
+    if (idilat.eq.4) then
+      do iel = 1, ncel
+        propce(iel,ipproc(iustdy(ihm))) = &
+        propce(iel,ipproc(iustdy(ihm)))   &
+        + propce(iel,ipproc(itsre(1)))*volume(iel)
+      enddo
+    endif
   endif
 
   !-> Charbon pulverise
@@ -640,11 +649,6 @@ if (itspdv.eq.1) then
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
       ! SMBRS recoit la dissipation
       smbrs(iel) = smbrs(iel) - rhovst*rtpa(iel,ivar)
-      ! Dissipation term for a variance
-      if (idilat.eq.4) then
-        propce(iel,ipproc(iustdy(iscal))) =                               &
-          propce(iel,ipproc(iustdy(iscal))) - xcpp(iel)*rhovst*rtpa(iel,ivar)
-      endif
     enddo
 
   endif
@@ -859,6 +863,41 @@ call clpsca &
  ( ncelet , ncel   , nvar   , nscal  , iscal  ,                   &
    propce , rtp(1,iii)      , rtp    )
 
+! Store the dissipation term for a variance
+if (idilat.eq.4.and.itspdv.eq.1) then
+
+  do iel = 1, ncel
+
+    if (itytur.eq.2 .or. itytur.eq.5) then
+      xk = rtpa(iel,ik)
+      xe = rtpa(iel,iep)
+    elseif (itytur.eq.3) then
+      xk = 0.5d0*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
+      xe = rtpa(iel,iep)
+    elseif(iturb.eq.60) then
+      xk = rtpa(iel,ik)
+      xe = cmu*xk*rtpa(iel,iomg)
+    endif
+
+    rhovst = xcpp(iel)*propce(iel,ipcrom)*xe/(xk * rvarfl(iscal))     &
+           *volume(iel)
+    propce(iel,ipproc(iustdy(iscal))) =                               &
+      propce(iel,ipproc(iustdy(iscal))) - rhovst*rtp(iel,ivar)
+
+  enddo
+
+endif
+
+! Store the implicit part of the radiative source term
+if (idilat.eq.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
+  do iel = 1, ncel
+    ivar = isca(iscalt)
+    drtp = rtp(iel,ivar)-rtpa(iel,ivar)
+    propce(iel,ipproc(iustdy(ihm))) = &
+    propce(iel,ipproc(iustdy(ihm)))   &
+    - propce(iel,ipproc(itsri(1)))*drtp*volume(iel)
+  enddo
+endif
 
 ! BILAN EXPLICITE (VOIR CODITS : ON ENLEVE L'INCREMENT)
 ! Ceci devrait etre valable avec le theta schema sur les Termes source

@@ -97,7 +97,7 @@ double precision fm, fp2m
 double precision dtsmdf  , dd1df  , dd2df  , df1df  , df2df  , dhrecdf
 double precision dtsmdfp2, dd1dfp2, dd2dfp2, df1dfp2, df2dfp2, dhrecdfp2
 double precision dtsmdd1, dtsmdd2, dtsmdf1, dtsmdf2, dtsmdhrec, dtsmdhs
-double precision dadhs, dbdhs, cotshs
+double precision dadhs, dbdhs, yprod
 
 
 !===============================================================================
@@ -314,7 +314,6 @@ do iel = 1, ncel
     if (idilat.eq.4) then
       dtsmdhrec = 0.d0
       dtsmdhs   = 0.d0
-      cotshs    = 0.d0
     endif
 
     do while ( (ffin(iel)-f2).gt.epzero )
@@ -442,22 +441,6 @@ do iel = 1, ncel
       ! Weakly compressible algorithm: d T/M /d f1
       dtsmdf2 = hrec(iel) * ( a*c +(c*b+a*d)*ffin(iel) + b*d*ffin(iel)**2 )
 
-      ! Weakly compressible algorithm: factor for Hs source term
-      if (iirayo.ge.1) then
-
-        cotshs = 0.d0
-        if( ffin(iel).lt.fsir) then
-          cotshs = hrec(iel)/2.d0*(ffin(iel)**2-fdeb(iel)**2)/fsir
-        elseif( fdeb(iel).gt.fsir) then
-          cotshs = hrec(iel)/2.d0 * ( (ffin(iel)-fdeb(iel))          &
-                 *(2.d0-(ffin(iel)+fdeb(iel))/(1.d0-fsir)))
-        else
-          cotshs = hrec(iel)/2.d0 * ( (fsir**2-fdeb(iel)**2)/fsir       &
-                 + (ffin(iel)-fsir)*(2.d0-(ffin(iel)+fsir))/(1.d0-fsir))
-        endif
-
-      endif
-
     endif
 
   else
@@ -546,12 +529,6 @@ do iel = 1, ncel
         dbdhs = (bb2-bb1)/(hh(ih+1)-hh(ih))
 
         dtsmdhs = (c + d * fm) * ( dadhs + fm * dbdhs )
-
-        if (fm.le.fsir) then
-          cotshs = fm/fsir
-        else
-          cotshs = (1.d0-fm)/(1.d0-fsir)
-        endif
 
       endif
 
@@ -650,19 +627,19 @@ do iel = 1, ncel
     endif
 
     ! Scalar contribution is computed and add to the total source term
+    ! Sources terms are stored in covofi.f90
     propce(iel,iptsro) =                                                &
            (-rr/p0 * dtsmdf)   * propce(iel,ipproc(iustdy(ifm)))        &
          + (-rr/p0 * dtsmdfp2) * propce(iel,ipproc(iustdy(ifp2m)))
 
-    if( ippmod(icod3p).eq.1 ) then
-    propce(iel,iptsro) = propce(iel,iptsro)                             &
-         + (-rr/p0 * dtsmdhs)  * propce(iel,ipproc(iustdy(ihm)))
+    yprod = propce(iel,ipproc(iym(3)))
 
-      if( iirayo.ge.1 .and. abs(cotshs).gt.epzero ) then
-        propce(iel,iptsro) = propce(iel,iptsro)                         &
-        + (-rr/p0 * dtsmdhs) / cotshs                                   &
-                   * propce(iel,ipproc(itsre(1)))*volume(iel)
-      endif
+    ! Note that h*=hm/Yp
+    if (ippmod(icod3p).eq.1.and.abs(yprod).gt.epzero) then
+
+      propce(iel,iptsro) = propce(iel,iptsro)                           &
+         + (-rr/p0 * dtsmdhs)/yprod * propce(iel,ipproc(iustdy(ihm)))
+
     endif
 
     ! D(rho)/Dt = 1/rho d(rho)/dz Diff(z) = -rho d(1/rho)/dz Diff(z)
@@ -673,9 +650,7 @@ do iel = 1, ncel
     ! arrays are re-initialize for source terms of next time step
     propce(iel,ipproc(iustdy(ifm  ))) = 0.d0
     propce(iel,ipproc(iustdy(ifp2m))) = 0.d0
-    ! array fo ihm is used to store enthalpy gap from adiabatic Hs
-    ! to compute its diffusive term in tridim
-    if (ippmod(icod3p).ge.1) propce(iel,ipproc(iustdy(ihm  ))) = w1(iel)
+    if (ippmod(icod3p).ge.1) propce(iel,ipproc(iustdy(ihm  ))) = 0.d0
 
   endif
 
