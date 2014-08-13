@@ -660,6 +660,8 @@ use parall
 use period
 use mesh
 use field
+use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 
@@ -682,6 +684,8 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 integer          iel
 double precision ff, tau
+
+type(var_cal_opt) vcopt
 
 character*80     fname
 
@@ -714,7 +718,10 @@ call field_get_val_s(icrom, cpro_rom)
 call field_get_val_s(f_id, cvar_var)
 call field_get_name(f_id, fname)
 
-if (iwarni(inusa).ge.1) then
+! --- Get variable calculation options
+call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
