@@ -55,13 +55,13 @@ Architectural changes
 Bug fixes:
 ----------
  - Fix bug introduced in rev. 4491:
-   
-    - in rev 4491, the call to specific physics laws was moved 
-      from BEFORE user call to AFTER user call, which was only needed 
+
+    - in rev 4491, the call to specific physics laws was moved
+      from BEFORE user call to AFTER user call, which was only needed
       for the compressible module, whereas it impinge ALL the
       specifics physics.
     - therefore ppphyv is splitted into two.
-    - WARNING: this commit MAY impige all the specific physics 
+    - WARNING: this commit MAY impige all the specific physics
       (Atmospheric, Electric Arcs, Combustion, etc.)
 
 
