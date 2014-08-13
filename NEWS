@@ -5,6 +5,10 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix initialization of k-omega when the reference velocity is 0.
+
+- Fix cs_user_source_terms.f90 turbulence example.
+
 - Fix incorrect allocation, leading to crash when less than 3 boundary faces are
   present on a given rank (bug #84).
 
