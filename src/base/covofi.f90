@@ -164,7 +164,7 @@ double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
-double precision smbexp
+double precision smbexp, drtp
 double precision temp, idifftp
 
 double precision rvoid(1)
@@ -415,6 +415,15 @@ if (iirayo.ge.1) then
     !==========
   ( iscalt,ncelet,ncel,     &
     smbrs, rovsdt,volume,propce )
+
+    ! Store the explicit radiative source term
+    if (idilat.eq.4) then
+      do iel = 1, ncel
+        propce(iel,ipproc(iustdy(iscalt))) = &
+        propce(iel,ipproc(iustdy(iscalt)))   &
+        + propce(iel,ipproc(itsre(1)))*volume(iel)
+      enddo
+    endif
   endif
 
   !-> Charbon pulverise
@@ -690,11 +699,6 @@ if (itspdv.eq.1) then
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
       ! SMBRS recoit la dissipation
       smbrs(iel) = smbrs(iel) - rhovst*rtpa(iel,ivar)
-      ! Dissipation term for a variance
-      if (idilat.eq.4) then
-        propce(iel,ipproc(iustdy(iscal))) =                               &
-          propce(iel,ipproc(iustdy(iscal))) - xcpp(iel)*rhovst*rtpa(iel,ivar)
-      endif
     enddo
 
   endif
@@ -932,6 +936,40 @@ endif
 
 call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 !==========
+
+if (idilat.eq.4.and.itspdv.eq.1) then
+
+  do iel = 1, ncel
+    if (itytur.eq.2 .or. itytur.eq.5) then
+      xk = cvara_k(iel)
+      xe = cvara_ep(iel)
+    elseif (itytur.eq.3) then
+      xk = 0.5d0*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
+      xe = cvara_ep(iel)
+    elseif(iturb.eq.60) then
+      xk = cvara_k(iel)
+      xe = cmu*xk*cvara_omg(iel)
+    endif
+    rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
+           *volume(iel)
+
+    propce(iel,ipproc(iustdy(iscal))) =                               &
+      propce(iel,ipproc(iustdy(iscal))) - rhovst*rtp(iel,ivar)
+
+  enddo
+
+endif
+
+! Store the implicit part of the radiative source term
+if (idilat.eq.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
+  do iel = 1, ncel
+    ivar = isca(iscalt)
+    drtp = rtp(iel,ivar)-rtpa(iel,ivar)
+    propce(iel,ipproc(iustdy(iscalt))) = &
+    propce(iel,ipproc(iustdy(iscalt)))   &
+    - propce(iel,ipproc(itsri(1)))*drtp*volume(iel)
+  enddo
+endif
 
 ! BILAN EXPLICITE (VOIR CODITS : ON ENLEVE L'INCREMENT)
 ! Ceci devrait etre valable avec le theta schema sur les Termes source
