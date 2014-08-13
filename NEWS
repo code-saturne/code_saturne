@@ -4,7 +4,8 @@ Release 3.0.5 (unreleased)
 Bug fixes:
 ----------
 
-- Fix bug in iswdyn option for scalars and velocity (introduced by a unwanted merge).
+- Fix bug in iswdyn option for scalars and velocity (previously already broken for
+  velocity, broken for scalars by incorrect fix in version 3.0.4).
 
 - Fix restart when using AFM or DFM turbulent flux model.
 
