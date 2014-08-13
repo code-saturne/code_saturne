@@ -163,7 +163,7 @@ enddo
 if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0) then
   call field_current_to_previous(icrom)
 endif
-if (icavit.ge.0) then
+if (icavit.ge.0.or.idilat.eq.4) then
   call field_get_val_s(icroaa, crom_prev2)
   do iel = 1, ncelet
     crom_prev2(iel) = crom(iel)

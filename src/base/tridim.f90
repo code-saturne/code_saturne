@@ -434,7 +434,7 @@ do ivar = 1, nvar
 enddo
 
 ! If required, the density at time step n-2 is updated
-if (icavit.ge.0) then
+if (icavit.ge.0.or.idilat.eq.4) then
   call field_get_val_prev_s(icrom, crom_prev)
   call field_get_val_s(icroaa, crom_prev2)
   do iel = 1, ncelet

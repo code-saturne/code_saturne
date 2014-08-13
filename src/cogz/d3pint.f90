@@ -99,7 +99,8 @@ double precision dtsmdf  , dd1df  , dd2df  , df1df  , df2df  , dhrecdf
 double precision dtsmdfp2, dd1dfp2, dd2dfp2, df1dfp2, df2dfp2, dhrecdfp2
 double precision dtsmdd1, dtsmdd2, dtsmdf1, dtsmdf2, dtsmdhrec, dtsmdhs
 double precision dadhs, dbdhs, cotshs
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer ::  cpro_rho
+double precision, dimension(:), pointer ::  cproaa_rho
 
 !===============================================================================
 
@@ -260,8 +261,11 @@ if ( iirayo.gt.0 ) then
   ipct3  = ipproc(it3m)
 endif
 
-call field_get_val_s(icrom, crom)
-if (idilat.eq.4) iptsro = ipproc(iustdy(itsrho))
+call field_get_val_s(icrom, cpro_rho)
+if (idilat.eq.4) then
+  iptsro = ipproc(iustdy(itsrho))
+  call field_get_val_s(icroaa, cproaa_rho)
+endif
 
 do iel = 1, ncel
 
@@ -496,7 +500,7 @@ do iel = 1, ncel
 !         On termine cote riche (en commencant avec f1=fs)
       c = (  -fsir/wmolg(1)+1.d0/wmolg(3))/(1.d0-fsir)
       d = (   1.d0/wmolg(1)-1.d0/wmolg(3))/(1.d0-fsir)
-     endif
+    endif
 
     if (iirayo.gt.0) then
       if (fm.lt.fsir) then
@@ -560,9 +564,9 @@ do iel = 1, ncel
 ! ---> Calcul de la masse volumique
 
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
-    crom(iel) = srrom*crom(iel)               &
-                        + (1.d0-srrom)*                         &
-                        ( p0/(rr*temsmm) )
+    cpro_rho(iel) = srrom*cpro_rho(iel)               &
+                  + (1.d0-srrom)*                         &
+                  ( p0/(rr*temsmm) )
   endif
 
   ! Weakly compressible algorithm: Derivative calculation of pdf parameters
@@ -665,7 +669,8 @@ do iel = 1, ncel
 
     ! D(rho)/Dt = 1/rho d(rho)/dz Diff(z) = -rho d(1/rho)/dz Diff(z)
     ! iptsro contains -d(1/rho)/dz Diff(z) > x rho
-    propce(iel,iptsro) = propce(iel,iptsro) * crom(iel)
+    propce(iel,iptsro) = propce(iel,iptsro) * cpro_rho(iel)**2              &
+                                            / cproaa_rho(iel)
 
     ! arrays are re-initialize for source terms of next time step
     propce(iel,ipproc(iustdy(ifm  ))) = 0.d0
