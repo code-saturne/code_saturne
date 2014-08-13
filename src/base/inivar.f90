@@ -440,7 +440,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
     endif
 
     !     En k-omega on clippe seulement a 0
-    if(xekmin.lt.0.d0 .or. xomgmn.lt.0.d0) then
+    if(xekmin.lt.0.d0 .or. xomgmn.le.0.d0) then
       write(nfecra,3031) xekmin,xomgmn
       iok = iok + 1
     endif
