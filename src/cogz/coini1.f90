@@ -138,7 +138,6 @@ do isc = 1, nscapp
 ! ---- Informations relatives a la resolution des scalaires
 
 !       - Facteur multiplicatif du pas de temps
-
   cdtvar(ii) = 1.d0
 
 !         - Schema convectif % schema 2ieme ordre
@@ -212,7 +211,7 @@ ivivar = 0
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-if ( ippmod(icoebu).ge.0 ) then
+if (ippmod(icoebu).ge.0) then
   if (iihmpr.eq.1) then
     call uicpi1 (srrom, diftl0)
     cebu   = 2.5d0

@@ -97,14 +97,14 @@ double precision x2min  , x2max  , dckmin , dckmax
 double precision dchmin , dchmax , romin  , romax , coedmi
 double precision ro2ini , roh2o
 
-double precision, dimension(:), pointer :: xagcpi, agecpi, frmcpi
+double precision, dimension(:), pointer :: nagcpi, agecpi
 
 !===============================================================================
 
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
-!
+
 d1s3 = 1.d0/3.d0
 !
 ! --> Coefficient relating to the coke diameter
@@ -135,16 +135,13 @@ do icla = 1, nclacp
   romin  =  grand
   romax  = -grand
 
-  if (i_coal_drift.eq.1) then
-    write(name,'(a,i2.2)') 'x_age_coal_', icla
-    call field_get_val_s_by_name(name,xagcpi)
+  if (i_coal_drift.ge.1) then
+    write(name,'(a,i2.2)') 'n_p_age_', icla
+    call field_get_val_s_by_name(name,nagcpi)
 
-    write(name,'(a,i2.2)') 'age_coal_', icla
+    write(name,'(a,i2.2)') 'age_p_', icla
     call field_get_val_s_by_name(name,agecpi)
   endif
-
-  write(name,'(a,i2.2)') 'w_solid_coal', icla
-  call field_get_val_s_by_name(name,frmcpi)
 
   do iel = 1, ncel
 
@@ -249,9 +246,13 @@ do icla = 1, nclacp
       endif
     endif
 
-    ! Particle age per class
-    if (i_coal_drift.eq.1.and.frmcpi(iel).gt.epsicp) then
-      agecpi(iel) = xagcpi(iel)/frmcpi(iel)
+    ! Particles' age of each particle class
+    if(i_coal_drift.ge.1) then
+      if (xnp.ge.epsicp) then
+        agecpi(iel) = nagcpi(iel)/xnp
+      else
+        agecpi(iel) = 0.d0
+      endif
     endif
   enddo
 

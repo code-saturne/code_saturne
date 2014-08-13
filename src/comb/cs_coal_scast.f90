@@ -91,6 +91,7 @@ use ppcpfu
 use cs_coal_incl
 use mesh
 use field
+use radiat
 
 !===============================================================================
 
@@ -106,7 +107,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character(len=80) :: string, fname, name
+character(len=80) :: chaine, fname, name
 integer          ivar , iel
 integer          numcla , numcha , icla
 integer          ipcgch , ipcgd1 , ipcgd2 , ipcght , ipcsec
@@ -120,7 +121,7 @@ integer          itermx,nbpauv,nbrich,nbepau,nberic,ipghc2
 integer          iterch,nbpass,nbarre,nbimax
 integer          iexp1 , iexp2 , iexp3
 integer          iok1
-integer          keyccl
+integer          keyccl, f_id
 
 double precision xnuss
 double precision aux, rhovst
@@ -141,26 +142,26 @@ double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ
 
-double precision xw1,xw2,xw3,xw4
+double precision xw1,char_formation,exp_st,imp_st
 double precision xo2,wmel,wmhcn,wmno,wmo2,wmnh3
 double precision gmdev1(ncharm),gmdev2(ncharm),gmhet(ncharm)
 double precision aux1 , aux2 , aux3
 double precision xch,xck,xash,xmx2
 double precision tfuelmin,tfuelmax
-double precision auxdev,auxht3,auxco2,auxh2o,auxwat
-
+double precision smbrs1
 double precision, dimension (:), allocatable :: w1,w2,w3,w4,w5
 double precision, dimension (:), allocatable :: tfuel
-double precision, dimension(:), pointer :: gamvlei, gamvloi, xchcpi, gaheto2i, xckcpi
-double precision, dimension(:), pointer :: gaseci, frmcpi, agei, gahetco2i
-double precision, dimension(:), pointer :: gaheth2oi, xwtcpi, xacpip
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: vp_x, vp_y, vp_z
+double precision, dimension(:,:), pointer :: vdc
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cpro_cp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
+double precision, dimension(:), pointer :: cvara_coke
+double precision, dimension(:), pointer :: taup
+double precision, dimension(:), pointer :: smbrsh1, rovsdth1
+double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer ::  vg_lim_pi
 
-!Lacal variables
-!===============
-!
 ! Pointers of variables of state
 ! ------------------------------
 ! (Temperature of a particle of iclas,
@@ -197,7 +198,7 @@ double precision mckcl1, mckcl2
 ivar = isca(iscal)
 
 ! --- Name of the variable associated to the scalar to treat iscal
-call field_get_label(ivarfl(ivar), string)
+call field_get_label(ivarfl(ivar), chaine)
 
 ! --- Number of the physic quantity
 call field_get_val_s(icrom, crom)
@@ -206,9 +207,14 @@ ipcte1 = ipproc(itemp1)
 
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+call field_get_val_v(ivarfl(iu), vel)
 
 ! Key id of the coal scalar class
 call field_get_key_id("scalar_class", keyccl)
+
+! source term for gas enthalpy due to inter-phase fluxes
+call field_get_val_s_by_name('x_h_c_exp_st',smbrsh1)
+call field_get_val_s_by_name('x_h_c_imp_st',rovsdth1)
 
 !===============================================================================
 ! Deallocation dynamic arrays
@@ -237,9 +243,12 @@ endif
 if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) string(1:8)
+    write(nfecra,1000) chaine(1:8)
   endif
-  numcla = ivar-isca(ixch(1))+1
+
+  ! index of the coal particle class
+  call field_get_key_int(ivarfl(ivar), keyccl, numcla)
+
   ipcgch = ipproc(igmdch(numcla))
 
   do iel = 1, ncel
@@ -257,15 +266,19 @@ if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 
 endif
 
+!===============================================================================
+! 2.1 Source term for the mass fraction of coke
+!===============================================================================
 
-! --> Source term for the mass fraction of coke
 if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) string(1:8)
+    write(nfecra,1000) chaine(1:8)
   endif
 
-  numcla = ivar-isca(ixck(1))+1
+  ! index of the coal particle class
+  call field_get_key_int(ivarfl(ivar), keyccl, numcla)
+
   ipcgch = ipproc(igmdch(numcla))
   ipcgd1 = ipproc(igmdv1(numcla))
   ipcgd2 = ipproc(igmdv2(numcla))
@@ -279,124 +292,44 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
     ipghh2o = ipproc(ighh2o(numcla))
   endif
 
+!
   do iel = 1, ncel
+    exp_st = 0.d0
+    ! volatile formation minus coal consuming = char formation
+    ! (Coke formation in French)
+    ! NB: we take rtp and not rtpa to be conservative in mass
+    char_formation = crom(iel)*rtp(iel,ixchcl)*volume(iel)                     &
+                   *(propce(iel,ipcgd1)+propce(iel,ipcgd2)-propce(iel,ipcgch))
 
-    ! ---- Calculation of W1 = - rho.Xch.GMDCH.Volume > 0
-
-    xw1=-crom(iel)*rtp(iel,ixchcl)*propce(iel,ipcgch)     &
-                                           *volume(iel)
-
-    ! AE : We consider rtp(iel,ixchcl) and not rtpa(iel,ixchcl) to
-    !      preserve the mass.
-
-    ! ---- Calculation of W2 = rho.Xch.(GMDV1+GMDV2)Volume < 0
-
-    xw2 = crom(iel)*rtp(iel,ixchcl)                  &
-         *(propce(iel,ipcgd1)+propce(iel,ipcgd2))*volume(iel)
-
-    if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+    ! Compute the implict part of the Source term
+    if (rtpa(iel,ixckcl) .gt. epsicp) then
 
       ! Reaction C(s) + O2 ---> 0.5CO
-      ! =============================
+      exp_st = propce(iel,ipcght)
 
-      ! ---- Calculation of the implicit part > 0 of source terms
-      !      relative to gmhet
+      ! Reaction C(s) + CO2 ---> 2CO
+      if (ihtco2 .eq. 1) exp_st = exp_st + propce(iel,ipghco2)
 
-      xw3 = -2.d0/3.d0*crom(iel)*propce(iel,ipcght) &
-           /(rtpa(iel,ixckcl))**(1.d0/3.d0)*volume(iel)
+      ! Reaction C(s) + H2O ---> CO + H2
+      if (ihth2o .eq. 1) exp_st = exp_st + propce(iel,ipghh2o)
 
-      ! ---- Calculation of the explicit part < 0 of source terms
-      !      relative to gmhet
-
-      xw4 = crom(iel)*propce(iel,ipcght)             &
-                * (rtpa(iel,ixckcl))**(2.d0/3.d0)*volume(iel)
-
-    else
-      xw3 = 0.d0
-      xw4 = 0.d0
+      exp_st = -2.d0/3.d0 * crom(iel) * exp_st * volume(iel) / rtpa(iel,ixckcl)**(1.d0/3.d0)
     endif
 
-    ! ---- Calculation of the explicit and implicit parts of source terms
+    ! Compute the explicit part of the Source term
+    imp_st = -3.d0/2.d0 * exp_st * rtpa(iel,ixckcl)
 
-    rovsdt(iel) = rovsdt(iel) + max(xw3,zero)
-    smbrs(iel)  = smbrs(iel)  + xw1 + xw2 + xw4
+    rovsdt(iel) = rovsdt(iel) + max(exp_st, 0.d0)
+    smbrs(iel) = smbrs(iel) + char_formation + imp_st
 
   enddo
 
-  if ( ihtco2 .eq. 1 ) then
-
-    do iel = 1, ncel
-
-      if ( rtpa(iel,ixckcl) .gt. epsicp ) then
-
-        ! Reaction C(s) + CO2 ---> 2CO
-        ! =============================
-
-        ! ---- Calculation of the implicit part > 0 of source terms
-        !      relative to gmhet
-
-        xw3 = -2.d0/3.d0*crom(iel)*propce(iel,ipghco2)     &
-              /(rtpa(iel,ixckcl))**(1.d0/3.d0)*volume(iel)
-
-        ! ---- Calculation of the explicit part < 0 of source terms
-        !      relative to gmhet
-
-        xw4 = crom(iel)*propce(iel,ipghco2)                 &
-             *(rtpa(iel,ixckcl))**(2.d0/3.d0)*volume(iel)
-
-      else
-        xw3 = 0.d0
-        xw4 = 0.d0
-      endif
-
-      ! ---- Calculation of explicit and implicit parts of source terms
-
-      rovsdt(iel) = rovsdt(iel) + max(xw3,zero)
-      smbrs(iel)  = smbrs(iel)  + xw4
-
-    enddo
-
-  endif
-
-  if ( ihth2o .eq. 1 ) then
-
-    do iel = 1, ncel
-
-      if ( rtpa(iel,ixckcl) .gt. epsicp ) then
-
-        ! Reaction C(s) + CO2 ---> 2CO
-        ! =============================
-
-        ! ---- Calculation of the explicit part > 0 of source terms
-        !      relative to gmhet
-
-        xw3 = -2.d0/3.d0*crom(iel)*propce(iel,ipghh2o)     &
-              /(rtpa(iel,ixckcl))**(1.d0/3.d0)*volume(iel)
-
-        ! ---- Calculation of the explicit part < 0 of source terms
-        !      relative to gmhet
-
-        xw4 = crom(iel)*propce(iel,ipghh2o)                &
-             *(rtpa(iel,ixckcl))**(2.d0/3.d0)*volume(iel)
-
-      else
-        xw3 = 0.d0
-        xw4 = 0.d0
-      endif
-
-      ! ---- Calculation of the explicit and implicit part of source terms
-
-      rovsdt(iel) = rovsdt(iel) + max(xw3,zero)
-      smbrs(iel)  = smbrs(iel)  + xw4
-
-    enddo
-
-  endif
 
 endif
 
-
-! --> Source term for the mass fraction of water
+!===============================================================================
+! 2.2 Source term for the mass fraction of water
+!===============================================================================
 
 if ( ippmod(iccoal) .eq. 1 ) then
 
@@ -404,9 +337,12 @@ if ( ippmod(iccoal) .eq. 1 ) then
        ivar.le.isca(ixwt(nclacp)) ) then
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) string(1:8)
+      write(nfecra,1000) chaine(1:8)
     endif
-    numcla = ivar-isca(ixwt(1))+1
+
+    ! index of the coal particle class
+    call field_get_key_int(ivarfl(ivar), keyccl, numcla)
+
     numcha = ichcor(numcla)
 
     ipcsec = ipproc(igmsec(numcla))
@@ -414,7 +350,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
     do iel = 1, ncel
 
-     ! ---- Calculation of explicit and implicit parts of source term
+     ! ---- Calculation of explicit and implicit parts of source terms
 
      if ( rtpa(iel,ivar).gt. epsicp .and.                         &
           xwatch(numcha).gt. epsicp       ) then
@@ -431,235 +367,30 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
 endif
 
-if (i_coal_drift.eq.1) then
+!===============================================================================
+! 2.3 Particle age source term
+!===============================================================================
+
+if (i_coal_drift.ge.1) then
 
   call field_get_name(ivarfl(ivar), fname)
 
+  ! index of the coal particle class
+  call field_get_key_int(ivarfl(ivar), keyccl, icla)
+
   ! Particle age source term
-  if (fname(1:10).eq.'x_age_coal') then
-
-    ! Index of the coal particle class
-    call field_get_key_int(ivarfl(ivar), keyccl, icla)
-
-    ! Array values at previous time step
-    call field_get_val_prev_s_by_name(fname, xacpip)
-
-    ! Light volatile's source term
-    write(name,'(a,i2.2)') 'm_transfer_v1_coal_', icla
-    call field_get_val_s_by_name(name, gamvlei)
-
-    ! Heavy volatile's source term
-    write(name,'(a,i2.2)') 'm_transfer_v2_coal_', icla
-    call field_get_val_s_by_name(name, gamvloi)
-
-    ! Coal mass fraction of icla
-    write(name,'(a,i2.2)') 'x_coal_', icla
-    call field_get_val_s_by_name(name, xchcpi)
-
-    ! Heterogeneous combustion temporary scale
-    write(name,'(a,i2.2)') 'het_ts_o2_coal_', icla
-    call field_get_val_s_by_name(name, gaheto2i)
-
-    ! Char mass fraction of icla
-    write(name,'(a,i2.2)') 'w_ck_coal_', icla
-    call field_get_val_s_by_name(name, xckcpi)
-
-    ! Coal indicator of class icla
-    numcha = ichcor(icla)
-
-    ! Dryer temporary scale
-    if (ippmod(iccoal) .eq. 1) then
-      write(name,'(a,i2.2)') 'dry_ts_coal_', icla
-      call field_get_val_s_by_name(name, gaseci)
-    endif
-
-    ! Mass fraction of solid phase
-    write(name,'(a,i2.2)') 'w_solid_coal_', icla
-    call field_get_val_s_by_name(name, frmcpi)
-
-    ! Particle age per cell
-    write(name,'(a,i2.2)') 'age_coal_', icla
-    call field_get_val_s_by_name(name, agei)
-
-    ! Gazefiation temporary scale by CO2
-    if (ihtco2 .eq. 1) then
-      write(name,'(a,i2.2)') 'het_ts_co2_coal_', icla
-      call field_get_val_s_by_name(name, gahetco2i)
-    endif
-
-    ! Gazefiation temporary scale by H2O
-    if (ihth2o .eq. 1) then
-      write(name,'(a,i2.2)') 'het_ts_h2o_coal_', icla
-      call field_get_val_s_by_name(name, gaheth2oi)
-    endif
-
-    if (ippmod(iccoal).eq.1) then
-      write(name,'(a,i2.2)') 'xwt_coal_', icla
-      call field_get_val_s_by_name(name, xwtcpi)
-    endif
+  if (fname(1:7).eq.'n_p_age') then
 
     do iel = 1, ncel
-      ! Mass flux: Devolatilization
-      auxdev =  -(gamvlei(iel)+gamvloi(iel))*xchcpi(iel)
-      ! Coal consumpsion by heterogeneous combustion
-      if (xckcpi(iel) .gt. epsicp) then
-        auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)
-      else
-        auxht3 = 0.d0
-      endif
-      ! Mass flux: Gazefication by CO2
-      if (ihtco2 .eq. 1) then
-        if (xckcpi(iel) .gt. epsicp ) then
-          auxco2 = -gahetco2i(iel)* (xckcpi(iel))**(2.d0/3.d0)
-        else
-          auxco2 = 0.d0
-        endif
-      else
-        auxco2 = 0.d0
-      endif
-      ! Mass flux: Gazefication by H2O
-      if (ihth2o .eq. 1) then
-        if (xckcpi(iel) .gt. epsicp) then
-          auxh2o = -gaheth2oi(iel)*(xckcpi(iel))**(2.d0/3.d0)
-        else
-          auxh2o = 0.d0
-        endif
-      else
-        auxh2o = 0.d0
-      endif
-      !  Mass flux: Drying
-      if (ippmod(iccoal) .eq. 1) then
-        if (xwtcpi(iel).gt.epsicp .and.xwatch(numcha).gt.epsicp) then
-          auxwat = gaseci(iel)/(frmcpi(iel)*xwatch(numcha))
-        else
-          auxwat = 0.d0
-        endif
-      else
-        auxwat = 0.d0
-      endif
-
-      if (frmcpi(iel).gt.epsicp) then
-         smbrs(iel) =  smbrs(iel) + (crom(iel) * volume(iel) *          &
-                       (frmcpi(iel)                                    -          &
-                       ((auxdev+auxht3+auxco2+auxh2o+auxwat)*xacpip(iel))) )
-         rovsdt(iel) = rovsdt(iel) + max(((auxdev+auxht3+auxco2+auxh2o+auxwat)/   &
-                                         frmcpi(iel)), zero)
-      endif
-
+      smbrs(iel) = smbrs(iel) + crom(iel) * volume(iel)*rtp(iel,isca(inp(icla)))
     enddo
+
   endif
 
-  ! Gas age source term
-  if (fname(1:9).eq.'x_age_gas') then
+  ! Age of the bulk source term
+  if (fname(1:3).eq.'age') then
 
-    ! Loop over particle classes
-    do icla = 1, nclacp
-      ! Light volatile's source term
-      write(name,'(a,i2.2)') 'm_transfer_v1_coal_', icla
-      call field_get_val_s_by_name(name, gamvlei)
-
-      ! Heavy volatile's source term
-      write(name,'(a,i2.2)') 'm_transfer_v2_coal_', icla
-      call field_get_val_s_by_name(name, gamvloi)
-
-      ! Coal mass fraction of icla
-      write(name,'(a,i2.2)') 'x_coal_', icla
-      call field_get_val_s_by_name(name, xchcpi)
-
-      ! Heterogeneous combustion temporary scale
-      write(name,'(a,i2.2)') 'het_ts_o2_coal_', icla
-      call field_get_val_s_by_name(name, gaheto2i)
-
-      ! Coal mass fraction of icla
-      write(name,'(a,i2.2)') 'xck_cp_', icla
-      call field_get_val_s_by_name(name, xckcpi)
-
-      ! Coal indicator of class icla
-      numcha = ichcor(icla)
-
-      ! Drying temporary scale
-      if (ippmod(iccoal) .eq. 1) then
-        write(name,'(a,i2.2)') 'dry_ts_coal_', icla
-        call field_get_val_s_by_name(name, gaseci)
-      endif
-
-      ! Mass fraction of the solid phase
-      write(name,'(a,i2.2)') 'w_solid_coal_', icla
-      call field_get_val_s_by_name(name, frmcpi)
-
-      ! Particle age by cell
-      write(name,'(a,i2.2)') 'age_coal_', icla
-      call field_get_val_s_by_name(name, agei)
-
-      ! Gazefication temporary scale by CO2
-      if (ihtco2 .eq. 1) then
-        write(name,'(a,i2.2)') 'het_ts_co2_coal_', icla
-        call field_get_val_s_by_name(name, gahetco2i)
-      endif
-
-      ! Gazefication temporary scale by H2O
-      if (ihth2o .eq. 1) then
-        write(name,'(a,i2.2)') 'het_ts_h2o_coal_', icla
-        call field_get_val_s_by_name(name, gaheth2oi)
-      endif
-
-      if (ippmod(iccoal).eq.1) then
-        write(name,'(a6,i2.2)') 'xwt_coal_', icla
-        call field_get_val_s_by_name(name, xwtcpi)
-      endif
-
-      do iel = 1, ncel
-        ! Mass flux: Devolatilization
-        auxdev = -(gamvlei(iel)+gamvloi(iel))*xchcpi(iel)
-        ! Coal consumption by heterogeneous combustion
-        if (xckcpi(iel) .gt. epsicp) then
-          auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)
-        else
-          auxht3 = 0.d0
-        endif
-        ! Mass flux: Gazefication by CO2
-        if (ihtco2 .eq. 1) then
-          if (xckcpi(iel) .gt. epsicp ) then
-            auxco2 = -gahetco2i(iel)* (xckcpi(iel))**(2.d0/3.d0)
-          else
-            auxco2 = 0.d0
-          endif
-        else
-          auxco2 = 0.d0
-        endif
-        ! Mass flux: Gazefication by H2O
-        if (ihth2o .eq. 1) then
-          if (xckcpi(iel) .gt. epsicp) then
-            auxh2o = -gaheth2oi(iel)*(xckcpi(iel))**(2.d0/3.d0)
-          else
-            auxh2o = 0.d0
-          endif
-        else
-          auxh2o = 0.d0
-        endif
-        !  Mass flux: Drying
-        if (ippmod(iccoal) .eq. 1) then
-          if (xwtcpi(iel).gt.epsicp .and.xwatch(numcha).gt.epsicp) then
-            auxwat = gaseci(iel)/(frmcpi(iel)*xwatch(numcha))
-          else
-            auxwat = 0.d0
-          endif
-        else
-          auxwat = 0.d0
-        endif
-
-        smbrs(iel) = smbrs(iel) + crom(iel)*volume(iel)               &
-                                *( ( auxdev+auxht3+auxco2+auxh2o+auxwat)       &
-                                   * agei(iel)                                 &
-                                 - frmcpi(iel)                                 &
-                                 )
-      enddo
-
-    enddo
-
-    ! Finalization
     do iel = 1, ncel
-      ! The formula is (1- Sum X2)
       smbrs(iel) =  smbrs(iel) + crom(iel) * volume(iel)
     enddo
 
@@ -667,15 +398,160 @@ if (i_coal_drift.eq.1) then
 
 endif
 
-! --> Source term for the enthalpy of the solid
+!===============================================================================
+! 2.4 Particle velocity source terms
+!===============================================================================
 
-if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
+if (i_coal_drift.eq.1) then
 
-  if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) string(1:8)
+  call field_get_name(ivarfl(ivar), fname)
+
+  ! index of the coal particle class
+  call field_get_key_int(ivarfl(ivar), keyccl, icla)
+
+  if (icla.ge.1) then
+
+    numcha = ichcor(icla)
+
+    ipcght = ipproc(igmhet(icla))
+    if (ihtco2 .eq. 1) then
+      ipghco2 = ipproc(ighco2(icla))
+    endif
+    if (ihth2o .eq. 1) then
+      ipghh2o = ipproc(ighh2o(icla))
+    endif
+
+    call field_get_val_prev_s(ivarfl(isca(ixck(icla))) , cvara_coke)
+    ! Taup
+    write(name,'(a,i2.2)')'n_p_' ,icla
+    call field_get_id('drift_tau_'//trim(name), f_id)
+    call field_get_val_s(f_id, taup)
+
+
+    if (fname(1:6).eq.'v_x_p_') then
+
+      write(name,'(a,i2.2)')'v_x_p_' ,icla
+      call field_get_val_s_by_name(name, vp_x)
+
+      write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+      call field_get_val_v_by_name(name, vg_lim_pi)
+
+      ! Vitesse de deviation de la phase continue
+      name='vd_c'
+      call field_get_val_v_by_name(name, vdc)
+
+      do iel = 1, ncel
+        ! Drying and Devolatilization have no effect on Vp
+        ! (mass flux is only exiting the particle)
+        ! During Heterogeneous reactions gas molecules, with the velocity Vc, are absorbed
+        ! and the product, with the velocity Vp, is released.
+        ! For Oxygen oxydation one O2 comes in and two CO go out
+        ! For CO2 gasification,one  CO2 comes inxg and two CO get out
+        ! For H2O gasification, one H2O comes in and one CO and one H2 get out
+        smbrs1 = 0.d0
+        if (cvara_coke(iel).gt.epsicp) then
+          smbrs1                 = smbrs1 + wmole(io2 )/wmolat(iatc)*propce(iel,ipcght)
+          if (ihtco2.eq.1) smbrs1 = smbrs1 + wmole(ico2)/wmolat(iatc)*propce(iel,ipghco2)
+          if (ihth2o.eq.1) smbrs1 = smbrs1 + wmole(ih2o)/wmolat(iatc)*propce(iel,ipghh2o)
+          smbrs1                 = smbrs1 * cvara_coke(iel)**(2.d0/3.d0)
+        endif
+
+        ! relaxation to drop velocity
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                           &
+               *(vel(1,iel)+vdc(1,iel)+vg_lim_pi(1, iel)-vp_x(iel))
+
+        smbrs(iel) = smbrs(iel) + smbrs1
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+
+      enddo !sur iel
+
+    elseif (fname(1:6).eq.'v_y_p_') then
+
+      write(name,'(a,i2.2)')'v_y_p_' ,icla
+      call field_get_val_s_by_name(name, vp_y)
+
+      write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+      call field_get_val_v_by_name(name, vg_lim_pi)
+
+      ! Vitesse de deviation de la phase continue
+      name='vd_c'
+      call field_get_val_v_by_name(name, vdc)
+
+      do iel = 1, ncel
+        smbrs1 = 0.d0
+        if (cvara_coke(iel).gt.epsicp) then
+                        smbrs1 = smbrs1 + wmole(io2 )/wmolat(iatc)*propce(iel,ipcght)
+        if(ihtco2.eq.1) smbrs1 = smbrs1 + wmole(ico2)/wmolat(iatc)*propce(iel,ipghco2)
+        if(ihth2o.eq.1) smbrs1 = smbrs1 + wmole(ih2o)/wmolat(iatc)*propce(iel,ipghh2o)
+        smbrs1 = smbrs1 * cvara_coke(iel)**(2.d0/3.d0)
+        endif
+
+        ! relaxation to drop velocity
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                           &
+               *(vel(2,iel)+vdc(2, iel)+vg_lim_pi(2, iel)-vp_y(iel))
+        smbrs(iel) = smbrs(iel) + smbrs1
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+
+      enddo !sur iel
+
+
+    elseif (fname(1:6).eq.'v_z_p_') then
+
+      write(name,'(a,i2.2)')'v_z_p_' ,icla
+      call field_get_val_s_by_name(name, vp_z)
+
+      write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+      call field_get_val_v_by_name(name, vg_lim_pi)
+
+      ! Vitesse de deviation de la phase continue
+      name='vd_c'
+      call field_get_val_v_by_name(name, vdc)
+
+      do iel = 1, ncel
+        smbrs1 = 0.d0
+        if (cvara_coke(iel).gt.epsicp) then
+                        smbrs1 = smbrs1 + wmole(io2 )/wmolat(iatc)*propce(iel,ipcght)
+        if(ihtco2.eq.1) smbrs1 = smbrs1 + wmole(ico2)/wmolat(iatc)*propce(iel,ipghco2)
+        if(ihth2o.eq.1) smbrs1 = smbrs1 + wmole(ih2o)/wmolat(iatc)*propce(iel,ipghh2o)
+        smbrs1 = smbrs1 * cvara_coke(iel)**(2.d0/3.d0)
+        endif
+
+        ! relaxation to drop velocity
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                           &
+               *(vel(3,iel)+vdc(3, iel)+vg_lim_pi(3, iel)-vp_z(iel))
+
+        smbrs(iel) = smbrs(iel) + smbrs1
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+
+      enddo !on iel
+
+    endif !on fname
+
   endif
 
-  numcla = ivar-isca(ih2(1))+1
+endif !on icoal drift
+
+!===============================================================================
+! 2.5 Source term for the enthalpies
+!===============================================================================
+
+if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
+
+  ! Initialization of the exchange terms for gas enthalpy
+  if (ivar.eq.isca(ih2(1))) then
+    do iel = 1, ncel
+      smbrsh1(iel) = 0.d0
+      rovsdth1(iel) = 0.d0
+    enddo
+  endif
+
+  if (iwarni(ivar).ge.1) then
+    write(nfecra,1000) chaine(1:8)
+  endif
+
+  ! index of the coal particle class
+  call field_get_key_int(ivarfl(ivar), keyccl, numcla)
+
   numcha = ichcor(numcla)
   ixchcl = isca(ixch(numcla))
   ixckcl = isca(ixck(numcla))
@@ -722,7 +598,6 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
   ! ------ Calculation of diameter of the particles in W2
   !        d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
-
   do iel = 1, ncel
     w2(iel) = ( xashch(numcha)*diam20(numcla)**2 +                &
                 (1.d0-xashch(numcha))*propce(iel,ipcdia)**2       &
@@ -731,19 +606,20 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
   ! ------ Contribution to the explicit and implicit balance
   !        exchanges by molecular distribution
-  !      Remark : We use propce(iel,IPCX2C) because we want X2 at the iteration n
+  !      Remark: We use propce(iel,IPCX2C) because we want X2 at the iteration n
 
   do iel = 1, ncel
-    if ( propce(iel,ipcx2c) .gt. epsicp ) then
-      aux         = 6.d0 * w1(iel) * xnuss / w2(iel)**2           &
-                  / propce(iel,ipcro2) * crom(iel)       &
-                  * propce(iel,ipcx2c) * volume(iel)
-      rhovst      = aux / cp2ch(numcha) /propce(iel,ipcx2c)
+    !FIXME useless clipping
+    if (propce(iel,ipcx2c) .gt. epsicp) then
+      aux = 6.d0 * w1(iel) * xnuss / w2(iel)**2           &
+          / propce(iel,ipcro2) * crom(iel)       &
+          * propce(iel,ipcx2c) * volume(iel)
 
       smbrs(iel)  = smbrs(iel)-aux*(propce(iel,ipcte2)-propce(iel,ipcte1))
-      rovsdt(iel) = rovsdt(iel)+ max(zero,rhovst)
-    endif
+      smbrsh1(iel) = smbrsh1(iel)+aux*(propce(iel,ipcte2)-propce(iel,ipcte1))
+      rovsdt(iel) = rovsdt(iel) + aux / cp2ch(numcha) /propce(iel,ipcx2c)
 
+    endif
   enddo
 
 
@@ -817,8 +693,8 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
 
     !         Contribution to explicit and implicit balances
 
-    smbrs(iel) = smbrs(iel)+(gamdv1*xhdev1+gamdv2*xhdev2)*volume(iel)
-
+     smbrs(iel)   = smbrs(iel)   + (gamdv1*xhdev1+gamdv2*xhdev2)*volume(iel)
+     smbrsh1(iel) = smbrsh1(iel) - (gamdv1*xhdev1+gamdv2*xhdev2)*volume(iel)
   enddo
 
   ! ------ Heterogeneous combustion: C(s) + 02 ---> 0.5 C0
@@ -871,11 +747,10 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
       gamhet = 0.d0
     endif
 
-   smbrs(iel) = smbrs(iel)                                        &
-                 +gamhet                                          &
-                  *(28.d0/12.d0*xhco-16.d0/12.d0*xho2)            &
-                  *volume(iel)
+    gamhet = gamhet *(wmole(ico)*xhco-wmolat(iato)*xho2)/wmolat(iatc) * volume(iel)
 
+    smbrs(iel) = smbrs(iel)     + gamhet
+    smbrsh1(iel) = smbrsh1(iel) - gamhet
   enddo
 
   ! ------ Heterogeneous combustion: C(s) + C02 ---> 2 C0
@@ -930,11 +805,10 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
         gamhet = 0.d0
       endif
 
-     smbrs(iel) = smbrs(iel)                                      &
-                   +gamhet                                        &
-                    *(56.d0/12.d0*xhco-44.d0/12.d0*xhco2)         &
-                    *volume(iel)
+      gamhet = gamhet*(2.d0*wmole(ico)*xhco-wmole(ico2)*xhco2)/wmolat(iatc) * volume(iel)
 
+      smbrs(iel)   = smbrs(iel)   + gamhet
+      smbrsh1(iel) = smbrsh1(iel) - gamhet
     enddo
 
   endif
@@ -1005,12 +879,12 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
         gamhet = 0.d0
       endif
 
-     smbrs(iel) = smbrs(iel)                                    &
-                 +gamhet                                        &
-                  *(28.d0/12.d0*xhco+ 2.d0/12.d0*xhh2           &
-                                    -18.d0/12.d0*xhh2o )        &
-                    *volume(iel)
+      gamhet = gamhet * (wmole(ico)*xhco+wmole(ihy)*xhh2   &
+                        -wmole(ih2o)*xhh2o)/wmolat(iatc)   &
+                      *volume(iel)
 
+      smbrs(iel)   = smbrs(iel)   + gamhet
+      smbrsh1(iel) = smbrsh1(iel) - gamhet
     enddo
 
   endif
@@ -1061,23 +935,46 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
         aux = 0.d0
       endif
 
-      smbrs(iel) = smbrs(iel) + aux*volume(iel)
+      smbrs(iel)   = smbrs(iel)   - aux*volume(iel)
+      smbrsh1(iel) = smbrsh1(iel) + aux*volume(iel)
 
     enddo
 
-  endif
-endif
+  endif  ! if : sechage
+endif    ! enthalpies des particules
 
 !===============================================================================
 ! 3. Taking into account source terms for relative variables in the mixture
 !===============================================================================
+!
+if (ivar .eq. isca(ihgas)) then
+
+  ! source terms from particles (convection and enthalpy drived by mass fluxes)
+  do iel = 1,ncel
+    smbrs(iel) = smbrs(iel) + smbrsh1(iel)
+    rovsdt(iel) = rovsdt(iel) + rovsdth1(iel)
+  enddo
+
+  ! terme source de rayonnement pour l'enthalpie du gaz
+  ! serait mieux dans ... raysca
+  if (iirayo.ge.1) then
+    do iel = 1,ncel
+
+      smbrs(iel) = smbrs(iel)+volume(iel)*propce(iel,ipproc(itsre(1)))
+      do icla = 1, numcla
+        smbrs(iel) = smbrs(iel)-volume(iel)*propce(iel,ipproc(itsre(icla+1))) &
+                                           *propce(iel,ipproc(ix2(icla)))
+      enddo
+    enddo
+  endif
+endif
 
 ! --> Source term for light volatile materials
 
 if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) string(1:8)
+    write(nfecra,1000) chaine(1:8)
   endif
 
 ! ---- Calculation of GMDEV1 = - Sum (rho.XCH.GMDV1) > 0  --> W1
@@ -1111,7 +1008,7 @@ endif
 if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) string(1:8)
+    write(nfecra,1000) chaine(1:8)
   endif
 
 ! ---- Calculation of GMDEV2 = - Sum (rho.XCH.GMDV2) > 0 --> W1
@@ -1148,7 +1045,7 @@ if ( ivar.eq.isca(if7m) ) then
   !                  to be conservative
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) string(1:8)
+    write(nfecra,1000) chaine(1:8)
   endif
 
   do iel = 1, ncel
@@ -1178,7 +1075,6 @@ if ( ivar.eq.isca(if7m) ) then
 endif
 
 
-
 ! --> Source term for the tracer 8 (CO2) (heterogeneous combustion by C)
 
 if ( ihtco2 .eq. 1 ) then
@@ -1188,7 +1084,7 @@ if ( ihtco2 .eq. 1 ) then
     !                  to be conservative
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) string(1:8)
+      write(nfecra,1000) chaine(1:8)
     endif
 
     do iel = 1, ncel
@@ -1227,9 +1123,8 @@ if ( ihth2o .eq. 1 ) then
     ! Remark: We take the same source term than for Xck
     !                  to be conservative
 
-
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) string(1:8)
+      write(nfecra,1000) chaine(1:8)
     endif
 
     do iel = 1, ncel
@@ -1266,7 +1161,7 @@ endif
 if ( ivar.eq.isca(ifvp2m) ) then
 
   if (iwarni(ivar).ge.1) then
-    write(nfecra,1000) string(1:8)
+    write(nfecra,1000) chaine(1:8)
   endif
 
   call cs_coal_fp2st                                               &
@@ -1285,7 +1180,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) string(1:8)
+      write(nfecra,1000) chaine(1:8)
     endif
 
     ! ---- Contribution of interfacial source term to explicit and implicit balances
@@ -1332,7 +1227,7 @@ if ( ieqco2 .eq. 1 ) then
   if ( ivar.eq.isca(iyco2) ) then
 
     if (iwarni(ivar).ge.1) then
-      write(nfecra,1000) string(1:8)
+      write(nfecra,1000) chaine(1:8)
     endif
 
     ! ---- Contribution of interfacial source term to explicit and implicit balances
@@ -1675,8 +1570,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         endif
         smbrs(iel) = smbrs(iel)                                        &
                     -gamhet                                            &
-                     *(28.d0/12.d0*xhco-16.d0/12.d0*xho2)*volume(iel)
-
+                     *(wmole(ico)*xhco-wmolat(iato)*xho2)/wmolat(iatc)*volume(iel)
+!
       enddo
 
     enddo
@@ -1733,7 +1628,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           endif
           smbrs(iel) = smbrs(iel)                                          &
                       -gamhet                                              &
-                       *(56.d0/12.d0*xhco-44.d0/12.d0*xhco2) *volume(iel)
+                       *(2.d0*wmole(ico)*xhco-wmole(ico2)*xhco2)/wmolat(iatc) *volume(iel)
 
         enddo
 
@@ -1809,8 +1704,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           endif
           smbrs(iel) = smbrs(iel)                                           &
                       -gamhet                                               &
-                       *(28.d0/12.d0*xhco+ 2.d0/12.d0*xhh2                  &
-                                         -18.d0/12.d0*xhh2o ) *volume(iel)
+                       *(wmole(ico)*xhco+ wmole(ihy)*xhh2                  &
+                                         -wmole(ih2o)*xhh2o )/wmolat(iatc) *volume(iel)
 
         enddo
 
@@ -1897,7 +1792,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
     !  Source term HCN
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) string(1:8)
+        write(nfecra,1000) chaine(1:8)
       endif
 
       do iel=1,ncel
@@ -1961,7 +1856,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
       !  Source term NO
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) string(1:8)
+        write(nfecra,1000) chaine(1:8)
       endif
 
       do iel=1,ncel
@@ -2029,7 +1924,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
       !  Source term HCN
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) string(1:8)
+        write(nfecra,1000) chaine(1:8)
       endif
 
       do iel=1,ncel
@@ -2308,7 +2203,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
       !  Source term NH3
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) string(1:8)
+        write(nfecra,1000) chaine(1:8)
       endif
 
       do iel=1,ncel
@@ -2385,7 +2280,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
       !  Source term NO
 
       if (iwarni(ivar).ge.1) then
-        write(nfecra,1000) string(1:8)
+        write(nfecra,1000) chaine(1:8)
       endif
 
       do iel=1,ncel
@@ -2693,23 +2588,21 @@ endif
 ! End
 !----
 
-!===============================================================================
+
 ! Deallocation dynamic arrays
-!----
-deallocate(w1,w2,w3,w4,w5,STAT=iok1)
-!----
-if ( iok1 > 0 ) THEN
+deallocate(w1,w2,w3,w4,w5,stat=iok1)
+
+if (iok1 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '      cs_coal_scast                '
   call csexit(1)
 endif
-deallocate(tfuel,STAT=iok1)
-if ( iok1 > 0 ) THEN
+deallocate(tfuel, stat=iok1)
+if (iok1 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '      cs_coal_scast                '
   call csexit(1)
 endif
-!===============================================================================
 
 return
 

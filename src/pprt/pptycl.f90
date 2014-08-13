@@ -264,7 +264,7 @@ elseif (ippmod(icolwc).ge.0) then
 
 elseif ( ippmod(iccoal).ge.0 ) then
 
-  call cs_coal_bcond(itypfb, izfppp, rcodcl)
+  call cs_coal_bcond(itypfb, izfppp, icodcl, rcodcl)
   !=================
 
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC

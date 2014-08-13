@@ -101,7 +101,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 
 character*80     name
 
-integer          iel, ige, mode, icla, icha
+integer          iel, ige, mode, icla, icha, ifac
 
 double precision t1init, h1init, coefe(ngazem)
 double precision t2init
@@ -115,6 +115,7 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: x1, b_x1
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -122,11 +123,13 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
-double precision, dimension(:), pointer :: xagecpi, xagegas
-
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
+
+! Massic fraction of gas
+call field_get_val_s_by_name("x_c", x1)
+call field_get_val_s_by_name("b_x_c", b_x1)
 
 ipass = ipass + 1
 
@@ -220,11 +223,6 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   do icla = 1, nclacp
     icha = ichcor(icla)
 
-    if (i_coal_drift.eq.1) then
-      write(name,'(a,i2.2)')'x_age_coal_' ,icla
-      call field_get_val_s_by_name(name, xagecpi)
-    endif
-
     do iel = 1, ncel
 
       rtp(iel,isca(ixch(icla))) = zero
@@ -235,9 +233,6 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
         rtp(iel,isca(ixwt(icla))) = zero
       endif
 
-      if (i_coal_drift.eq.1) then
-        xagecpi(iel) = zero
-      endif
     enddo
   enddo
 
@@ -275,10 +270,6 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
 ! ------ Variables de transport relatives au melange gazeux
 !        (scalaires passifs et variances associees)
-
-  if (i_coal_drift.eq.1) then
-    call field_get_val_s_by_name('x_age_gas', xagegas)
-  endif
 
   do iel = 1, ncel
 !
@@ -328,9 +319,15 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       rtp(iel,isca(iyno )) = zero
       rtp(iel,isca(ihox )) = h1init
     endif
-    if (i_coal_drift.eq.1) then
-      xagegas(iel) = zero
-    endif
+
+    ! Initialization of the continuous mass fraction
+    x1(iel) = 1.d0
+
+  enddo
+
+  ! Initialization of the continuous mass fraction AT the BCs
+  do ifac = 1, nfabor
+    b_x1(ifac) = 1.d0
   enddo
 
 endif

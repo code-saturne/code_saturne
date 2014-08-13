@@ -66,7 +66,7 @@ implicit none
 ! Local variables
 
 integer          icla
-integer          f_id, itycat, ityloc, idim1, nprini
+integer          f_id, itycat, ityloc, idim1, idim3, nprini
 integer          keyccl
 integer          iopchr
 
@@ -79,7 +79,8 @@ character(len=80) :: f_name, f_label
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 1 ! variables defined on cells
 idim1  = 1
-ilved  = .false.   ! not interleaved by default
+idim3  = 3
+ilved  = .true.    ! interleaved by default
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! postprocessing level for variables
@@ -136,59 +137,77 @@ if (ieqnox .eq. 1) then
 endif
 
 ! Dispersed phase (particle classes)
+
+! NB: 'c' stands for continuous <> 'p' stands for particles
+
+! Temperature of particle class icla
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 't_coal', icla
-  write(f_label, '(a,i2.2)') 'T_Coal', icla
+  write(f_name,  '(a,i2.2)') 't_p_', icla
+  write(f_label, '(a,i2.2)') 'Tp_', icla
   call add_property_field(f_name, f_label, itemp2(icla))
 enddo
 
+! Temperature of particle class icla
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 'w_solid_coal', icla
-  write(f_label, '(a,i2.2)') 'w_solid_coal', icla
+  write(f_name,  '(a,i2.2)') 'x_p_', icla
+  write(f_label, '(a,i2.2)') 'Xp_', icla
   call add_property_field(f_name, f_label, ix2(icla))
 enddo
 
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 'rho_coal', icla
-  write(f_label, '(a,i2.2)') 'Rho_Coal', icla
+  write(f_name,  '(a,i2.2)') 'rho_p_', icla
+  write(f_label, '(a,i2.2)') 'Rhop_', icla
   call add_property_field(f_name, f_label, irom2(icla))
 enddo
 
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 'diameter_coal', icla
-  write(f_label, '(a,i2.2)') 'Diam_Coal', icla
+  write(f_name,  '(a,i2.2)') 'diam_p_', icla
+  write(f_label, '(a,i2.2)') 'Diamp_', icla
   call add_property_field(f_name, f_label, idiam2(icla))
 enddo
 
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 'dissapear_rate_coal', icla
+  write(f_name,  '(a,i2.2)') 'dissapear_rate_p_', icla
   write(f_label, '(a,i2.2)') 'D_Rate_Coal', icla
   call add_property_field(f_name, f_label, igmdch(icla))
 enddo
 
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 'm_transfer_v1_coal', icla
+  write(f_name,  '(a,i2.2)') 'm_transfer_v1_p_', icla
   write(f_label, '(a,i2.2)') 'D_V1_Coal', icla
   call add_property_field(f_name, f_label, igmdv1(icla))
 enddo
 
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 'm_transfer_v2_coal', icla
+  write(f_name,  '(a,i2.2)') 'm_transfer_v2_p_', icla
   write(f_label, '(a,i2.2)') 'D_V2_Coal', icla
   call add_property_field(f_name, f_label, igmdv2(icla))
 enddo
 
 do icla = 1, nclacp
-  write(f_name,  '(a,i2.2)') 'het_ts_o2_coal', icla
+  write(f_name,  '(a,i2.2)') 'het_ts_o2_p_', icla
   write(f_label, '(a,i2.2)') 'Het_TS_O2_Coal', icla
   call add_property_field(f_name, f_label, igmhet(icla))
 enddo
 
-if (i_coal_drift.eq.1) then
+if (i_coal_drift.ge.1) then
   do icla = 1, nclacp
-    write(f_name,'(a,i2.2)') 'age_coal', icla
-    write(f_name,'(a,i2.2)') 'Age_Coal', icla
+
+    ! Age of the particle class
+    write(f_name,'(a,i2.2)') 'age_p_', icla
+    write(f_label,'(a,i2.2)') 'Agep_', icla
     call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+
+    ! Limit velocity
+    write(f_name,'(a,i2.2)')'vg_lim_p_' ,icla
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -196,52 +215,99 @@ if (i_coal_drift.eq.1) then
     call field_set_key_int(f_id, keyvis, iopchr)
     ! For log in the listing
     call field_set_key_int(f_id, keylog, 1)
+
+    write(f_name,'(a,i2.2)')'vg_p_' ,icla
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+    ! For log in the listing
+    call field_set_key_int(f_id, keylog, 1)
+
+    ! Additional drift velocity for the particle class
+    write(f_name,'(a,i2.2)')'vd_p_' ,icla
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+    ! For log in the listing
+    call field_set_key_int(f_id, keylog, 1)
+
   enddo
 endif
 
 if (ihtco2 .eq. 1) then
   do icla = 1, nclacp
-    write(f_name,  '(a,i2.2)') 'het_ts_co2_coal', icla
-    write(f_label, '(a,i2.2)') 'Het_TS_CO2_Coal', icla
+    write(f_name,  '(a,i2.2)') 'het_ts_co2_p', icla
+    write(f_label, '(a,i2.2)') 'Het_TS_CO2_p', icla
     call add_property_field(f_name, f_label, ighco2(icla))
   enddo
 endif
 
 if (ihth2o .eq. 1) then
   do icla = 1, nclacp
-    write(f_name,  '(a,i2.2)') 'het_ts_h2o_coal',  icla
-    write(f_label, '(a,i2.2)') 'Het_TS_H2O_Coal', icla
+    write(f_name,  '(a,i2.2)') 'het_ts_h2o_p',  icla
+    write(f_label, '(a,i2.2)') 'Het_TS_H2O_p', icla
     call add_property_field(f_name, f_label, ighh2o(icla))
   enddo
 endif
 
 if (ippmod(iccoal) .ge. 1) then
   do icla = 1, nclacp
-    write(f_name,  '(a,i2.2)') 'dry_ts_coal',  icla
-    write(f_label, '(a,i2.2)') 'Dry_TS_Coal', icla
+    write(f_name,  '(a,i2.2)') 'dry_ts_p',  icla!FIXME is it a Source term?
+    write(f_label, '(a,i2.2)') 'Dry_TS_p', icla
     call add_property_field(f_name, f_label, igmsec(icla))
   enddo
 endif
 
-if (i_coal_drift.eq.1) then
-  icla = -1
-  f_name = 'Age_Gas'
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
-  call field_set_key_str(f_id, keylbl, f_name)
-  ! Set the index of the scalar class in the field structure
-  call field_set_key_int(f_id, keyccl, icla)
+! Continuous phase variables
+!---------------------------
 
+! NB: 'c' stands for continuous <> 'p' stands for particles
+
+if (i_coal_drift.ge.1) then
+
+  ! Additional fields for drift velocity for the gas
+
+  f_name= 'vd_c'
+  call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
   ! For post-processing
   call field_set_key_int(f_id, keyvis, iopchr)
   ! For log in the listing
   call field_set_key_int(f_id, keylog, 1)
+
 endif
 
-! Balance: C, O and H
+! Mass fraction of the continuous phase (X1)
+f_name= 'x_c'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+call field_set_key_str(f_id, keylbl, f_name)
 
-call add_property_field('balance_c', 'Balance_C', ibcarbone)
-call add_property_field('balance_o', 'Balance_O', iboxygen)
-call add_property_field('balance_h', 'Balance_H', ibhydrogen)
+! Mass fraction of the continuous phase (X1) BOUNDARY VALUE
+f_name= 'b_x_c'
+call field_create(f_name, itycat, 3, idim1, ilved, inoprv, f_id)
+call field_set_key_str(f_id, keylbl, f_name)
+
+! Explicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
+f_name= 'x_h_c_exp_st'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+
+! Implicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
+f_name= 'x_h_c_imp_st'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+
+! Bulk
+!-----
+
+! Mass fraction of elements: C,  O,  H (used in balances)
+call add_property_field('x_carbone', 'Z_Carbone', ibcarbone)
+call add_property_field('x_oxygen', 'Z_Oxygen', iboxygen)
+call add_property_field('x_hydrogen', 'Z_Hydrogen', ibhydrogen)
 
 ! Nb algebraic (or state) variables
 !   specific to specific physic: nsalpp

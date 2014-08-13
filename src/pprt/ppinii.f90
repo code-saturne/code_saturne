@@ -143,14 +143,14 @@ if9m   = 0
 if4p2m = 0
 ifvp2m = 0
 iyco2  = 0
-iaggas_temp = 0
+iage = 0
 do icla = 1, nclcpm
   ixck(icla)   = 0
   ixch(icla)   = 0
   inp(icla)    = 0
   ih2(icla)    = 0
   ixwt(icla)   = 0
-  iagecp_temp(icla) = 0
+  inagecp(icla) = 0
 enddo
 !
 !       Variables algebriques ou d'etat

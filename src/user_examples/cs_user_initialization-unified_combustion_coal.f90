@@ -277,12 +277,22 @@ if (isuite.eq.0) then
     enddo
   enddo
 
-  call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
-  call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
-  call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
+  if (noxyd .ge. 2) then
+    call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
+  endif
+  if (noxyd .ge. 3) then
+    call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
+  endif
+  if (ippmod(iccoal) .ge. 1) then
+    call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
+  endif
   call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
-  call field_get_val_s(ivarfl(isca(if8m)), cvar_f8m)
-  call field_get_val_s(ivarfl(isca(if9m)), cvar_f9m)
+  if (ihtco2 .eq. 1) then
+    call field_get_val_s(ivarfl(isca(if8m)), cvar_f8m)
+  endif
+  if (ihth2o .eq. 1) then
+    call field_get_val_s(ivarfl(isca(if9m)), cvar_f9m)
+  endif
   call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
   call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
   call field_get_val_s(ivarfl(isca(iyhcn)), cvar_yhcn)
@@ -291,24 +301,24 @@ if (isuite.eq.0) then
 
   do iel = 1, ncel
 
-    if ( noxyd .ge. 2 ) then
+    if (noxyd .ge. 2) then
       cvar_f4m(iel) = zero
     endif
-    if ( noxyd .ge. 3 ) then
+    if (noxyd .ge. 3) then
       cvar_f5m(iel) = zero
     endif
 
-    if ( ippmod(iccoal) .ge. 1 ) then
+    if (ippmod(iccoal) .ge. 1) then
       cvar_f6m(iel) = zero
     endif
 
     cvar_f7m(iel) = zero
 
-    if ( ihtco2 .eq. 1 ) then
+    if (ihtco2 .eq. 1) then
       cvar_f8m(iel) = zero
     endif
 
-    if ( ihth2o .eq. 1 ) then
+    if (ihth2o .eq. 1) then
       cvar_f9m(iel) = zero
     endif
 

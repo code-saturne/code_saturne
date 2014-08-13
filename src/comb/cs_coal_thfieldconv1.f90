@@ -56,7 +56,7 @@
 
 subroutine cs_coal_thfieldconv1 &
  ( ncelet , ncel   ,                                              &
-   eh     , x2     , rtp    ,                                     &
+   eh     ,          rtp    ,                                     &
    fuel1  , fuel2  , fuel3  , fuel4 , fuel5 , fuel6 , fuel7 ,     &
    oxyd   , prod1  , prod2  , prod3 , xiner ,                     &
    tp     )
@@ -78,6 +78,7 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use field
 
 !===============================================================================
 
@@ -87,7 +88,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision eh(ncelet)   , x2(ncelet)   , rtp(ncelet,nflown:nvar)
+double precision eh(ncelet)   , rtp(ncelet,nflown:nvar)
 double precision fuel1(ncelet), fuel2(ncelet), fuel3(ncelet)
 double precision fuel4(ncelet), fuel5(ncelet), fuel6(ncelet) , fuel7(ncelet)
 double precision oxyd(ncelet), xiner(ncelet)
@@ -103,9 +104,13 @@ double precision den1   , den2 , eh0 , eh1
 
 integer          iok
 double precision , dimension ( : , : )     , allocatable :: f1mc,f2mc
+double precision, dimension(:), pointer :: x1
 
 !===============================================================================
-!
+
+! Massic fraction of gas
+call field_get_val_s_by_name("x_c", x1)
+
 !===============================================================================
 ! Deallocation dynamic arrays
 !----
@@ -120,8 +125,8 @@ endif
 
 do icel = 1, ncel
   do icha = 1, ncharb
-    f1mc(icel,icha) = rtp(icel,isca(if1m(icha))) /(1.d0-x2(icel))
-    f2mc(icel,icha) = rtp(icel,isca(if2m(icha))) /(1.d0-x2(icel))
+    f1mc(icel,icha) = rtp(icel,isca(if1m(icha))) / x1(icel)
+    f2mc(icel,icha) = rtp(icel,isca(if2m(icha))) / x1(icel)
   enddo
 enddo
 

@@ -36,6 +36,20 @@
 !> \param[in]     itypfb        boundary face types
 !> \param[in,out] izfppp        zone number for the edge face for
 !>                                      the specific physic module
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in,out] rcodcl        value of the boundary conditions to edge faces
 !>
 !>                              boundary condition values:
@@ -56,7 +70,7 @@
 
 subroutine cs_coal_bcond &
  ( itypfb , izfppp ,                                              &
-   rcodcl )
+   icodcl , rcodcl )
 
 !===============================================================================
 
@@ -73,6 +87,7 @@ use entsor
 use parall
 use ppppar
 use ppthch
+use ppcpfu
 use coincl
 use cpincl
 use ppincl
@@ -89,6 +104,7 @@ implicit none
 
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
+integer          icodcl(nfabor,nvarcl)
 
 double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
@@ -99,7 +115,7 @@ integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icha, iclapc, isol, icla
 integer          icke, idecal
 integer          nbrval, ioxy
-integer          f_id, iaggas, keyvar
+integer          f_id, keyvar
 
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent, t1, t2, totcp , dmas
@@ -110,7 +126,7 @@ double precision coefe (ngazem)
 double precision xsolid(nsolim)
 double precision f1mc  (ncharm) , f2mc (ncharm)
 double precision wmh2o,wmco2,wmn2,wmo2
-double precision, dimension(:), pointer ::  brom
+double precision, dimension(:), pointer :: brom, b_x1
 integer, dimension (:), allocatable :: iagecp
 double precision, dimension(:), pointer :: viscl
 !===============================================================================
@@ -118,20 +134,19 @@ double precision, dimension(:), pointer :: viscl
 !===============================================================================
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s_by_name("b_x_c", b_x1)
+
 
 d2s3 = 2.d0/3.d0
 
 call field_get_key_id("variable_id", keyvar)
 
-call field_get_id_try('x_age_gas', f_id)
-
-if (f_id.ne.-1) then
-  call field_get_key_int(f_id, keyvar, iaggas)
+if (iage.ge.1) then
 
   allocate (iagecp(nclacp))
 
   do icla = 1, nclacp
-    write(name,'(a8,i2.2)')'x_age_coal', icla
+    write(name,'(a,i2.2)')'n_p_age_', icla
     call field_get_id(name, f_id)
     call field_get_key_int(f_id, keyvar, iagecp(icla))
   enddo
@@ -547,8 +562,15 @@ do ifac = 1, nfabor
 
         rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)          &
                                         *h2(izone,icla)
+
+        ! Boundary conditions for particle age
+        if (i_coal_drift.ge.1) then
+          rcodcl(ifac, iagecp(icla), 1) = 0.d0
+        endif
         if (i_coal_drift.eq.1) then
-          rcodcl(ifac, iagecp(icla), 1) = zero
+          rcodcl(ifac, isca(iv_p_x(icla)), 1) = rcodcl(ifac,iu,1)
+          rcodcl(ifac, isca(iv_p_y(icla)), 1) = rcodcl(ifac,iv,1)
+          rcodcl(ifac, isca(iv_p_z(icla)), 1) = rcodcl(ifac,iw,1)
         endif
       enddo
 
@@ -560,13 +582,19 @@ do ifac = 1, nfabor
       rcodcl(ifac,isca(if2m(icha)),1) = zero
 
     enddo
-    if (i_coal_drift.eq.1) then
-      rcodcl(ifac, iaggas, 1) = zero
+    ! Boundary condition for the age
+    if (iage.ge.1) then
+      rcodcl(ifac, isca(iage), 1) = zero
     endif
 
     ! ------ Boundary conditions for HM
     rcodcl(ifac,isca(iscalt),1) = (1.d0-x20t(izone))*h1(izone)    &
                                  +x2h20t(izone)
+    ! Boundary condition for x1*h1
+    rcodcl(ifac,isca(ihgas),1) = (1.d0-x20t(izone))*h1(izone)
+
+    ! Store the Boundary value of X1
+    b_x1(ifac) = (1.d0-x20t(izone))
     ! ------ Boundary conditions for X1.F4M (Oxyd 2)
     if ( noxyd .ge. 2 ) then
       if ( inmoxy(izone) .eq. 2 ) then
@@ -630,6 +658,29 @@ do ifac = 1, nfabor
 
   endif
 
+  ! Wall BCs on the particle velocity: zero Dirichlet
+  if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
+
+    idecal = 0
+
+    do icha = 1, ncharb
+
+      do iclapc = 1, nclpch(icha)
+
+        icla = iclapc + idecal
+
+        if (i_coal_drift.eq.1) then
+          icodcl(ifac, isca(iv_p_x(icla))) = 1
+          icodcl(ifac, isca(iv_p_y(icla))) = 1
+          icodcl(ifac, isca(iv_p_z(icla))) = 1
+          rcodcl(ifac, isca(iv_p_x(icla)), 1) = 0.d0
+          rcodcl(ifac, isca(iv_p_y(icla)), 1) = 0.d0
+          rcodcl(ifac, isca(iv_p_z(icla)), 1) = 0.d0
+        endif
+      enddo
+
+    enddo
+  endif
 enddo
 
 ! Free memory

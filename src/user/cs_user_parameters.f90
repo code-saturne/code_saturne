@@ -227,15 +227,19 @@ endif
 !        if = 0    module activated
 !        if = 1    with drying
 
-!     Activate the drift for the coal scalars
-!        i_coal_drift = 0  not activated (default)
-!        i_coal_drift = 1  activated
-
 if (ixmlpu.eq.0) then
 
   ippmod(iccoal) = -1
 
 endif
+
+! Activate the drift: 0 (no activation),
+!                     1 (transported particle velocity)
+!                     2 (limit drop particle velocity)
+if (.false.) then
+  i_coal_drift = 1
+endif
+
 
 ! --- cpl3c: Pulverized coal with Lagrangian reciprocal approach
 ! ==========

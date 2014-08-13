@@ -171,6 +171,9 @@ module ppcpfu
 
   integer, save :: inmoxy(nozppm)
 
+  ! The gas enthalpy is transported (x1 h1 to be correct)
+  integer, save :: ihgas
+
   !=============================================================================
 
 end module ppcpfu

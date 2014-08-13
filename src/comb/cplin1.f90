@@ -72,11 +72,11 @@ use ppcpfu
 
 implicit none
 
-integer          ii , jj , iok
+! Local variables
+
+integer          ii , jj, iok
 integer          icha , isc , is
 double precision wmolme
-
-!===============================================================================
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -102,18 +102,18 @@ do isc = 1, nscapp
 
   if ( iscavr(jj).le.0 ) then
 
-!        En combustion on considere que la viscosite turbulente domine
-!        ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
+! ---- En combustion on considere que la viscosite turbulente domine
+!      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
     visls0(jj) = viscl0
 
   endif
 
-! ------ Schmidt ou Prandtl turbulent
+! ---- Schmidt ou Prandtl turbulent
 
   sigmas(jj) = 0.7d0
 
-! ------ Coeff dissipation des fluctuations
+! ---- Coeff dissipation des fluctuations
 
   rvarfl(jj) = 0.8d0
 
@@ -126,9 +126,9 @@ do isc = 1, nscapp
     iwarni(ii) = 1
   endif
 
-! ------ Informations relatives a la resolution des scalaires
+! ---- Informations relatives a la resolution des scalaires
 
-!         - Facteur multiplicatif du pas de temps
+!       - Facteur multiplicatif du pas de temps
   cdtvar(ii) = 1.d0
 
 !         - Schema convectif % schema 2ieme ordre
@@ -142,7 +142,7 @@ do isc = 1, nscapp
   ischcv(ii) = 1
 
 !         - Test de pente pour basculer d'un schema centre vers l'upwind
-!           = 0 : utlisation automatique du test de pente
+!           = 0 : utilisation automatique du test de pente
 !           = 1 : calcul sans test de pente
   isstpc(ii) = 0
 
@@ -229,7 +229,6 @@ if(iok.gt.0) then
 else
   write(nfecra,9998)
 endif
-
 
  9998 format(                                                     &
 '                                                             ',/,&

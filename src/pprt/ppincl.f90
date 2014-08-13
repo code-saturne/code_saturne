@@ -411,11 +411,20 @@ module ppincl
   !> transported variable of dispersed phase (particle class)
   integer, save :: ixwt(nclcpm)
 
-  !> Pointer to x2*age(particles) and x1*age(gas phase)
-  integer, save :: iagecp_temp(nclcpm)
+  !> Pointer to Np*age(particles)
+  integer, save :: inagecp(nclcpm)
 
-  !> Pointer to x2*age(particles) and x1*age(gas phase)
-  integer, save :: iaggas_temp
+  !> Pointer to age of bulk
+  integer, save :: iage
+
+  !>
+  integer, save :: iv_p_x(nclcpm)
+
+  !>
+  integer, save :: iv_p_y(nclcpm)
+
+  !>
+  integer, save :: iv_p_z(nclcpm)
 
   ! ---- Variables d'etat
   !        Phase continue (melange gazeux)

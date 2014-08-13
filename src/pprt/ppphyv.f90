@@ -69,13 +69,9 @@
 
 
 subroutine ppphyv &
-!================
-
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
    dt     , rtp    , propce )
-
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -116,52 +112,40 @@ double precision propce(ncelet,*)
 !===============================================================================
 
 !===============================================================================
-! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
+! 2. Fill properties depending on the model
 !===============================================================================
 
 ! ---> Flamme de diffusion chimie 3 points
 
-  if ( ippmod(icod3p).ge.0 ) then
-
+  if (ippmod(icod3p).ge.0) then
     call d3pphy(mbrom, izfppp, rtp, propce)
-
   endif
 
 ! ---> Flamme de diffusion chimie equilibre
 
-!        IF ( IPPMOD(ICODEQ).GE.0 )
-
+!        if ( ippmod(icodeq).ge.0 )
 
 ! ---> Flamme de premelange : Modele EBU
 
-  if ( ippmod(icoebu).ge.0 ) then
-
+  if (ippmod(icoebu).ge.0) then
     call ebuphy(mbrom, izfppp, rtp, propce)
-    !==========
-
   endif
 
 ! ---> Flamme de premelange : Modele BML
 
-!        IF ( IPPMOD(ICOBML).GE.0 )
-!     &     CALL BMLPHY
+!        if ( ippmod(icobml).ge.0 )
+!     &     call bmlphy
 
 ! ---> Flamme de premelange : Modele LWC
 
   if (ippmod(icolwc).ge.0) then
-
     call lwcphy(mbrom, izfppp, rtp, propce)
-    !==========
-
   endif
 
 ! ---> Flamme charbon pulverise
 
    if (ippmod(iccoal).ge.0) then
-
      call cs_coal_physprop(mbrom, izfppp, rtp, propce)
-     !====================
-
    endif
 
 
@@ -169,29 +153,22 @@ double precision propce(ncelet,*)
 !      des particules de charbon
 
   if (ippmod(icpl3c).ge.0) then
-
     call cplphy(mbrom, izfppp, rtp, propce)
-    !==========
-
   endif
 
 ! ---> Flamme fuel
 
-  if ( ippmod(icfuel).ge.0 ) then
-
+  if (ippmod(icfuel).ge.0) then
     call cs_fuel_physprop(mbrom, izfppp, rtp, propce)
-    !====================
-
   endif
 
 ! ---> Compressible
 
   if (ippmod(icompf).ge.0) then
 
-     call cfphyv(propce)
-     !==========
+    call cfphyv(propce)
 
-   endif
+  endif
 
 ! ---> Physique particuliere : Versions electriques
 !          Effet Joule
@@ -207,7 +184,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
 !        Des exemples physiques sont fournis dans uselph.
 !     En arc electrique, on lit un fichier de donnees et on interpole.
 
-  call elphyv                                                     &
+  call elphyv &
   !==========
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
@@ -217,20 +194,14 @@ endif
 
 ! ---> Aerorefrigerants
 
-if ( ippmod(iaeros).ge.0 ) then
-
+if (ippmod(iaeros).ge.0) then
    call ctphyv(rtp)
-   !==========
-
 endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
 
 if (ippmod(iatmos).ge.1) then
-
    call atphyv(rtp, propce )
-   !==========
-
 endif
 
 ! Condensation modelling

@@ -150,12 +150,12 @@ double precision somch , somck , chxc , chxh , chxo , ckxc , ckxh , ckxo
 integer          , dimension ( : )     , allocatable :: intpdf
 double precision , dimension ( : )     , allocatable :: fmini,fmaxi,ffuel
 double precision , dimension ( : )     , allocatable :: dfuel,doxyd,pdfm1,pdfm2,hrec
-double precision , dimension ( : )     , allocatable :: x2,cx1m,cx2m,wmchx1,wmchx2
+double precision , dimension ( : )     , allocatable :: cx1m,cx2m,wmchx1,wmchx2
 double precision , dimension ( : , : ) , allocatable :: af1    , af2
 double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
 double precision, allocatable, dimension(:) :: tpdf
-double precision, dimension(:), pointer :: xagepg, agepgc
+double precision, dimension(:), pointer :: x1
 
 integer          ipass
 data ipass / 0 /
@@ -163,7 +163,9 @@ data ipass / 0 /
 !===============================================================================
 ! 0. Memory allocation
 !===============================================================================
-!
+
+! Massic fraction of gas
+call field_get_val_s_by_name("x_c", x1)
 
 !===============================================================================
 ! Deallocation dynamic arrays
@@ -172,7 +174,7 @@ allocate(intpdf(1:ncel)                                 ,stat=iok1)
 allocate(fmini(1:ncel)      ,fmaxi(1:ncel),ffuel(1:ncel),stat=iok2)
 allocate(dfuel(1:ncel)      ,doxyd(1:ncel),pdfm1(1:ncel),stat=iok3)
 allocate(pdfm2(1:ncel)      ,hrec(1:ncel)               ,stat=iok3)
-allocate(x2(1:ncel)         ,cx1m(1:ncel) ,cx2m(1:ncel) ,stat=iok4)
+allocate(cx1m(1:ncel) ,cx2m(1:ncel) ,stat=iok4)
 allocate(wmchx1(1:ncel)     ,wmchx2(1:ncel)             ,stat=iok4)
 allocate(af1(1:ncel,1:ngazg),af2(1:ncel,1:ngazg)        ,stat=iok5)
 !----
@@ -218,15 +220,8 @@ ipcyp1 = ipproc(iym1(ico2 ))
 ipcyp2 = ipproc(iym1(ih2o ))
 ipcyp3 = ipproc(iym1(iso2 ))
 ipcyin = ipproc(iym1(in2  ))
-!
-ipass = ipass + 1
 
-if (i_coal_drift.eq.1) then
-  ! Mass weighted age of the gas phase
-  call field_get_val_s_by_name('x_age_gas_',xagepg)
-  ! Age of the gas phase
-  call field_get_val_s_by_name('age_gas_',agepgc)
-endif
+ipass = ipass + 1
 
 !===============================================================================
 ! 2. Determination of the type of PDF
@@ -256,31 +251,9 @@ deallocate(tpdf)
 !===============================================================================
 ! 2.Calculation of average concentrations
 !===============================================================================
-!
-! preliminary calculations
-!
-! Calculation of X2
-!
-do iel = 1, ncel
-  x2(iel)= zero
-enddo
-do icla = 1, nclacp
-  do iel = 1, ncel
-    xck  = rtp(iel,isca(ixck(icla)))
-    xch  = rtp(iel,isca(ixch(icla)))
-    xash = rtp(iel,isca(inp (icla)))*xmash(icla)
-    if ( ippmod(iccoal) .eq. 1 ) then
-      xwat = rtp(iel,isca(ixwt(icla)))
-    else
-      xwat = 0.d0
-    endif
-    x2(iel)   = x2(iel) + xch + xck + xash + xwat
-  enddo
-enddo
-!
+
 ! Calculation of F8MC = sum(F8M(icha))
 ! Calculation of F9MC = sum(F9M(icha))
-!
 do iel=1,ncel
 
   do ii=1,ngazg
@@ -299,8 +272,8 @@ do iel=1,ncel
 
   do icha = 1, ncharb
 
-    f1mc = rtp(iel,isca(if1m(icha))) /(1.d0-x2(iel))
-    f2mc = rtp(iel,isca(if2m(icha))) /(1.d0-x2(iel))
+    f1mc = rtp(iel,isca(if1m(icha))) / x1(iel)
+    f2mc = rtp(iel,isca(if2m(icha))) / x1(iel)
 
     den1 = 1.d0                                                    &
           / ( a1(icha)*wmole(ichx1c(icha))+b1(icha)*wmole(ico)     &
@@ -379,7 +352,7 @@ call cs_gascomb &
 !==============
  ( ncelet , ncel   , ichx1 , ichx2 ,                              &
    intpdf ,                                                       &
-   rtp    , x2  ,                                                 &
+   rtp    ,                                                       &
    f1m    , f2m , f3m , f4m , f5m , f6m , f7m , f8m , f9m ,       &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                   &
    af1    , af2    , cx1m     , cx2m   , wmchx1   , wmchx2 ,      &
@@ -417,13 +390,13 @@ ipcte1 = ipproc(itemp1)
 call cs_coal_thfieldconv1 &
 !========================
  ( ncelet , ncel   ,                                              &
-   enth   , x2     , rtp ,                                        &
+   enth   ,          rtp ,                                        &
    propce(1,ipcyf1), propce(1,ipcyf2), propce(1,ipcyf3),          &
    propce(1,ipcyf4), propce(1,ipcyf5), propce(1,ipcyf6),          &
    propce(1,ipcyf7), propce(1,ipcyox), propce(1,ipcyp1),          &
    propce(1,ipcyp2), propce(1,ipcyp3), propce(1,ipcyin),          &
    propce(1,ipcte1) )
-!
+
 do iel = 1, ncel
   wmolme = propce(iel,ipcyf1)/wmchx1(iel)                         &
          + propce(iel,ipcyf2)/wmchx2(iel)                         &
@@ -497,21 +470,21 @@ endif
 !===============================================================================
 
 do iel=1,ncel
-  propce(iel,ipproc(ibcarbone )) = (1.d0-x2(iel))                 &
+  propce(iel,ipproc(ibcarbone )) = x1(iel)                        &
             *( propce(iel,ipcyf1)*wmolat(iatc)/wmchx1(iel)        &
               +propce(iel,ipcyf2)*wmolat(iatc)/wmchx2(iel)        &
               +propce(iel,ipcyf3)*wmolat(iatc)/wmole(ico )        &
               +propce(iel,ipcyf6)*wmolat(iatc)/wmole(ihcn)        &
               +propce(iel,ipcyp1)*wmolat(iatc)/wmole(ico2) )
 
-  propce(iel,ipproc(iboxygen  )) = (1.d0-x2(iel))                 &
+  propce(iel,ipproc(iboxygen  )) = x1(iel)                        &
             *( propce(iel,ipcyf3)*     wmolat(iato)/wmole(ico )   &
               +propce(iel,ipcyox)*2.d0*wmolat(iato)/wmole(io2 )   &
               +propce(iel,ipcyp1)*2.d0*wmolat(iato)/wmole(ico2)   &
               +propce(iel,ipcyp2)*     wmolat(iato)/wmole(ih2o)   &
               +propce(iel,ipcyp3)*2.d0*wmolat(iato)/wmole(iso2) )
 
-   propce(iel,ipproc(ibhydrogen)) = (1.d0-x2(iel))                     &
+   propce(iel,ipproc(ibhydrogen)) = x1(iel)                            &
             *( propce(iel,ipcyf1)*cx1m(iel)*wmolat(iath)/wmchx1(iel)   &
               +propce(iel,ipcyf2)*cx2m(iel)*wmolat(iath)/wmchx2(iel)   &
               +propce(iel,ipcyf4)*2.d0     *wmolat(iath)/wmole(ih2s)   &
@@ -550,31 +523,22 @@ do icla = 1, nclacp
       ckxo  = 0.d0
     endif
 
-  propce(iel,ipproc(ibcarbone )) = propce(iel,ipproc(ibcarbone ))  &
-          +xch*chxc                                                &
-          +xck*ckxc
+    propce(iel,ipproc(ibcarbone )) = propce(iel,ipproc(ibcarbone ))  &
+            +xch*chxc                                                &
+            +xck*ckxc
 
-  propce(iel,ipproc(iboxygen )) = propce(iel,ipproc(iboxygen ))    &
-          +xch*chxo                                                &
-          +xck*ckxo                                                &
-          +xwat            *wmolat(iato)/wmole(ih2o)
+    propce(iel,ipproc(iboxygen )) = propce(iel,ipproc(iboxygen ))    &
+            +xch*chxo                                                &
+            +xck*ckxo                                                &
+            +xwat            *wmolat(iato)/wmole(ih2o)
 
-  propce(iel,ipproc(ibhydrogen)) = propce(iel,ipproc(ibhydrogen))  &
-          +xch*chxh                                                &
-          +xck*ckxh                                                &
-          +xwat*2.d0       *wmolat(iath)/wmole(ih2o)
+    propce(iel,ipproc(ibhydrogen)) = propce(iel,ipproc(ibhydrogen))  &
+            +xch*chxh                                                &
+            +xck*ckxh                                                &
+            +xwat*2.d0       *wmolat(iath)/wmole(ih2o)
 
   enddo
 enddo
-
-!===============================================================================
-! 7. Age of the gas phase
-!===============================================================================
-if (i_coal_drift.eq.1) then
-  do iel = 1, ncel
-    agepgc(iel) = xagepg(iel)/(1.d0-x2(iel))
-  enddo
-endif
 
 !--------
 ! Formats
@@ -586,7 +550,7 @@ endif
 deallocate(intpdf,stat=iok1)
 deallocate(fmini,fmaxi,ffuel,stat=iok2)
 deallocate(dfuel,doxyd,pdfm1,pdfm2,hrec,stat=iok3)
-deallocate(x2,cx1m,cx2m,wmchx1,wmchx2,stat=iok4)
+deallocate(cx1m,cx2m,wmchx1,wmchx2,stat=iok4)
 deallocate(af1, af2,stat=iok5)
 !----
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then

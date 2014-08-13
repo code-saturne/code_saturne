@@ -85,6 +85,11 @@ double precision propce(ncelet,*)
 integer          iel, icha, icla, ipcro2
 integer          izone, ifac
 integer          ipcx2c, iromf , ioxy , nbclip1,nbclip2
+integer          iscdri, keydri, iflid, nfld, keyccl
+integer          f_id
+integer          iok1,iok2,iok3
+
+character*80     fname, name
 
 double precision x1sro1, x2sro2, srrom1, uns1pw
 double precision x2tot, wmolme, unsro1
@@ -94,12 +99,22 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
-integer          iok1,iok2,iok3
-double precision , dimension ( : )     , allocatable :: f1m,f2m,f3m,f4m,f5m
-double precision , dimension ( : )     , allocatable :: f6m,f7m,f8m,f9m
-double precision , dimension ( : )     , allocatable :: enth1 , x2 ,fvp2m
-double precision , dimension ( : )     , allocatable :: xoxyd,enthox
-double precision, dimension(:), pointer ::  brom, crom
+double precision, dimension (:), allocatable :: f1m,f2m,f3m,f4m,f5m
+double precision, dimension (:), allocatable :: f6m,f7m,f8m,f9m
+double precision, dimension (:), allocatable :: enth1 , fvp2m
+double precision, dimension (:), allocatable :: xoxyd,enthox
+double precision, dimension(:), pointer :: cpro_taup
+double precision, dimension(:), pointer :: cpro_x1
+double precision, dimension(:), pointer :: cpro_x2
+double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2
+double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:,:), pointer :: cvar_vel
+double precision, dimension(:,:), pointer :: vg_lim_pi
+double precision, dimension(:,:), pointer :: vdc
+double precision, dimension(:), pointer :: v_x_pi,v_y_pi,v_z_pi
+double precision, dimension(:,:), pointer :: vdp_i
+double precision, dimension(:,:), pointer :: vg_pi
+
 
 !===============================================================================
 !
@@ -110,8 +125,14 @@ double precision, dimension(:), pointer ::  brom, crom
 ipass = ipass + 1
 
 !===============================================================================
-! 1. Initializations to be kept
+! 1. Initializations
 !===============================================================================
+
+! Massic fraction of gas
+call field_get_val_s_by_name("x_c", cpro_x1)
+
+! Number of fields
+call field_get_n_fields(nfld)
 
 !===============================================================================
 ! Deallocation dynamic arrays
@@ -119,18 +140,18 @@ ipass = ipass + 1
 allocate(f1m(1:ncelet), f2m(1:ncelet), f3m(1:ncelet), STAT=iok1)
 allocate(f4m(1:ncelet), f5m(1:ncelet), STAT=iok1)
 allocate(f6m(1:ncelet), f7m(1:ncelet), f8m(1:ncelet), f9m(1:ncelet), STAT=iok2)
-allocate(enth1(1:ncel), x2(1:ncel)   , fvp2m(1:ncel), STAT=iok3)
+allocate(enth1(1:ncel), fvp2m(1:ncel), STAT=iok3)
 !----
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) THEN
   write(nfecra,*) ' Memory allocation error inside: '
   write(nfecra,*) '     cs_coal_physprop             '
   call csexit(1)
-ENDIF
-if ( ieqnox .eq. 1 ) then
-  !----
+endif
+if (ieqnox .eq. 1) then
+
   allocate(xoxyd(1:ncelet),enthox(1:ncelet),STAT=iok1)
-  !----
-  if ( iok1 > 0 ) then
+
+  if (iok1 > 0) then
     write(nfecra,*) ' Memory allocation error inside:         '
     write(nfecra,*) '   cs_coal_physprop for xoxyd and enthox '
   endif
@@ -182,15 +203,14 @@ f6m( : ) = 0.d0
 f7m( : ) = 0.d0
 f8m( : ) = 0.d0
 f9m( : ) = 0.d0
-x2 ( : ) = 0.d0
-!
-do icla = 1, nclacp
-  ipcx2c = ipproc(ix2(icla))
-  do iel = 1, ncel
-    x2(iel) =  x2(iel) + propce(iel,ipcx2c)
+
+do iel = 1, ncel
+  cpro_x1(iel) = 1.d0
+  do icla = 1, nclacp
+    cpro_x1(iel) = cpro_x1(iel) - propce(iel,ipproc(ix2(icla)))
   enddo
 enddo
-!
+
 do icha = 1, ncharb
   do iel = 1, ncel
     f1m(iel) =  f1m(iel) + rtp(iel,isca(if1m(icha)))
@@ -198,9 +218,9 @@ do icha = 1, ncharb
   enddo
 enddo
 
-if ( ieqnox .eq. 1 ) then
+if (ieqnox .eq. 1) then
   do iel = 1, ncel
-    xoxyd(iel)= (1.d0-x2(iel))-f1m(iel)-f2m(iel)
+    xoxyd(iel)= cpro_x1(iel)-f1m(iel)-f2m(iel)
   enddo
 endif
 
@@ -211,7 +231,7 @@ nbclip2= 0
 valmin = 1.d+20
 valmax =-1.d+20
 do iel = 1, ncel
-  uns1pw = 1.d0/(1.d0-x2(iel))
+  uns1pw = 1.d0/ cpro_x1(iel)
   if ( noxyd .ge. 2 ) then
     f4m(iel) = rtp(iel,isca(if4m))
     if ( noxyd .eq. 3 ) then
@@ -259,33 +279,26 @@ do iel = 1, ncel
 
 enddo
 
-if ( irangp .ge. 0 ) then
-  !--
+if (irangp .ge. 0) then
   call parmin(ff3min)
   call parmax(ff3max)
   call parcpt(nbclip1)
   call parcpt(nbclip2)
   call parmin(valmin)
   call parmax(valmax)
-  !--
 endif
-WRITE(NFECRA,*) ' Values of F3 min and max: ',FF3MIN,FF3MAX
-if ( nbclip1 .gt. 0 ) then
+
+write(nfecra,*) ' Values of F3 min and max: ',ff3min,ff3max
+if (nbclip1 .gt. 0) then
   write(nfecra,*) ' Clipping phase gas variance in min :',nbclip1,valmin
 endif
-if ( nbclip2 .gt. 0 ) then
+if (nbclip2 .gt. 0) then
   write(nfecra,*) ' Clipping phase gas variance in max :',nbclip2,valmax
 endif
 
-! ---- Gas enthalpy H1
-enth1( : ) =0.D0
-do icla = 1, nclacp
-  do iel = 1, ncel
-    enth1(iel) =  enth1(iel) + rtp(iel,isca(ih2(icla)))
-  enddo
-enddo
+! ---- Gas Enthalpy h1 (cpro_x1 h1 is transported)
 do iel = 1, ncel
-  enth1(iel) = (rtp(iel,isca(iscalt))-enth1(iel))/ ( 1.d0-x2(iel) )
+  enth1(iel) = rtp(iel,isca(ihgas)) / cpro_x1(iel)
 enddo
 
 call cs_coal_physprop1 &
@@ -329,16 +342,16 @@ else
 endif
 
 do iel = 1, ncel
-  x2sro2 = zero
+  x2sro2 = 0.d0
   do icla = 1, nclacp
     ipcro2 = ipproc(irom2(icla))
     ipcx2c = ipproc(ix2(icla))
     x2sro2 = x2sro2 + propce(iel,ipcx2c) / propce(iel,ipcro2)
   enddo
-  x1sro1 = (1.d0-x2(iel)) / propce(iel,iromf)
-! ---- Eventual relaxation to give in ppini1.F
+  x1sro1 = cpro_x1(iel) / propce(iel,iromf)
+  ! ---- Eventual relaxation to give in ppini1.f90
   crom(iel) = srrom1*crom(iel)                  &
-                     + (1.d0-srrom1)/(x1sro1+x2sro2)
+            + (1.d0-srrom1)/(x1sro1+x2sro2)
 enddo
 
 
@@ -369,8 +382,8 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
     izone = izfppp(ifac)
     if(izone.gt.0) then
       if ( ientat(izone).eq.1 .or. ientcp(izone).eq.1 ) then
-        x2sro2 = zero
-        x2tot  = zero
+        x2sro2 = 0.d0
+        x2tot  = 0.d0
         do icla = 1, nclacp
           x2sro2 = x2sro2 + x20(izone,icla)/rho20(icla)
           x2tot  = x2tot  + x20(izone,icla)
@@ -393,6 +406,181 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
   enddo
 endif
 
+!===============================================================================
+! 7. Compute the drift velocity if needed
+!===============================================================================
+if (i_coal_drift.ge.1) then
+
+  ! Get all needed fields
+  call field_get_val_v(ivarfl(iu), cvar_vel)
+
+  ! Key id for drift scalar
+  call field_get_key_id("drift_scalar_model", keydri)
+
+  ! Key id of the coal scalar class
+  call field_get_key_id("scalar_class", keyccl)
+
+  ! 1. Compute the limit velocity
+  !------------------------------
+
+
+  ! Loop over coal particle classes
+  ! We only handle here coal class with a drift
+  !--------------------------------------------
+
+  do iflid = 0, nfld-1
+
+    ! Index of the scalar class (<0 if the scalar belongs to the gas phase)
+    call field_get_key_int(iflid, keyccl, icla)
+
+    call field_get_key_int(iflid, keydri, iscdri)
+
+    ! We only handle here one scalar with a drift per particle class
+    if (icla.ge.1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
+
+      call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
+      call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
+      call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+
+      ! Position of variables, coefficients
+      ! -----------------------------------
+
+      ! Name of the drift scalar
+      call field_get_name(iflid, fname)
+
+      ! Index of the corresponding relaxation time (cpro_taup)
+      call field_get_id('drift_tau_'//trim(fname), f_id)
+      call field_get_val_s(f_id, cpro_taup)
+
+      write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+      call field_get_val_v_by_name(name, vg_lim_pi)
+
+      do iel = 1, ncel
+        vg_lim_pi(1, iel) = cpro_taup(iel)*gx
+        vg_lim_pi(2, iel) = cpro_taup(iel)*gy
+        vg_lim_pi(3, iel) = cpro_taup(iel)*gz
+      enddo
+
+    endif ! test icla
+
+  enddo ! loop on iflid
+
+
+  ! 2. Init of the drift velocity of the continuous phase (gas)
+  !------------------------------------------------------------
+  call field_get_val_v_by_name('vd_c', vdc)
+  call field_get_val_s_by_name('x_c', cpro_x1)
+  do iel = 1, ncel
+    vdc(1, iel) = 0.d0
+    vdc(2, iel) = 0.d0
+    vdc(3, iel) = 0.d0
+  enddo
+
+endif
+
+! 3. Transported particle velocity
+!---------------------------------
+if (i_coal_drift.eq.1) then
+
+  do icla = 1, nclacp
+
+    write(name,'(a,i2.2)')'v_x_p_' ,icla
+    call field_get_val_s_by_name(name, v_x_pi)
+
+    write(name,'(a,i2.2)')'v_y_p_' ,icla
+    call field_get_val_s_by_name(name, v_y_pi)
+
+    write(name,'(a,i2.2)')'v_z_p_' ,icla
+    call field_get_val_s_by_name(name, v_z_pi)
+
+    write(name,'(a,i2.2)')'vd_p_' ,icla
+    call field_get_val_v_by_name(name, vdp_i)
+
+    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+    do iel = 1,ncel
+      ! Vdi = Vpi-Vs
+      if (cpro_x2(iel).gt. 1.d-7 ) then
+        vdp_i(1, iel) = v_x_pi(iel)-cvar_vel(1,iel)
+        vdp_i(2, iel) = v_y_pi(iel)-cvar_vel(2,iel)
+        vdp_i(3, iel) = v_z_pi(iel)-cvar_vel(3,iel)
+      else
+        vdp_i(1, iel) = 0.d0
+        vdp_i(2, iel) = 0.d0
+        vdp_i(3, iel) = 0.d0
+      endif
+      vdc(1, iel) = vdc(1, iel) - cpro_x2(iel)*vdp_i(1, iel)
+      vdc(2, iel) = vdc(2, iel) - cpro_x2(iel)*vdp_i(2, iel)
+      vdc(3, iel) = vdc(3, iel) - cpro_x2(iel)*vdp_i(3, iel)
+    enddo
+
+  enddo
+
+  do iel = 1, ncel
+    vdc(1, iel) = vdc(1, iel)/cpro_x1(iel)
+    vdc(2, iel) = vdc(2, iel)/cpro_x1(iel)
+    vdc(3, iel) = vdc(3, iel)/cpro_x1(iel)
+  enddo
+
+  do icla = 1 , nclacp
+
+    write(name,'(a,i2.2)')'vd_p_' ,icla
+    call field_get_val_v_by_name(name, vdp_i)
+
+    write(name,'(a,i2.2)')'vg_p_' ,icla
+    call field_get_val_v_by_name(name, vg_pi)
+
+    do iel = 1, ncel
+     vg_pi(1, iel) = vdp_i(1, iel) - vdc(1, iel)
+     vg_pi(2, iel) = vdp_i(2, iel) - vdc(2, iel)
+     vg_pi(3, iel) = vdp_i(3, iel) - vdc(3, iel)
+    enddo
+
+  enddo
+
+! Prescribed drift
+!-----------------
+elseif (i_coal_drift.gt.1) then
+
+  do icla = 1, nclacp
+
+    write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+    call field_get_val_v_by_name(name, vg_lim_pi)
+
+    write(name,'(a,i2.2)')'vg_p_' ,icla
+    call field_get_val_v_by_name(name, vg_pi)
+
+    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+
+    do iel = 1, ncel
+
+      ! FIXME vg_ is useless!
+      vg_pi(1, iel) = vg_lim_pi(1, iel)
+      vg_pi(2, iel) = vg_lim_pi(2, iel)
+      vg_pi(3, iel) = vg_lim_pi(3, iel)
+      vdc(1, iel) = vdc(1, iel) -cpro_x2(iel) * vg_pi(1, iel)
+      vdc(2, iel) = vdc(2, iel) -cpro_x2(iel) * vg_pi(2, iel)
+      vdc(3, iel) = vdc(3, iel) -cpro_x2(iel) * vg_pi(3, iel)
+    enddo
+  enddo
+
+  do icla = 1, nclacp
+    write(name,'(a,i2.2)')'vg_p_' ,icla
+    call field_get_val_v_by_name(name, vg_pi)
+
+    write(name,'(a,i2.2)')'vd_p_' ,icla
+    call field_get_val_v_by_name(name, vdp_i)
+
+    do iel = 1, ncel
+
+      vdp_i(1, iel) = vdc(1, iel) + vg_pi(1, iel)
+      vdp_i(2, iel) = vdc(2, iel) + vg_pi(2, iel)
+      vdp_i(3, iel) = vdc(3, iel) + vg_pi(3, iel)
+
+    enddo
+
+  enddo
+endif
+
 !----
 ! Formats
 !----
@@ -402,25 +590,25 @@ endif
 !----
 deallocate(f1m,f2m,f3m,f4m,f5m,STAT=iok1)
 deallocate(f6m,f7m,f8m,f9m,    STAT=iok2)
-deallocate(enth1,x2,fvp2m,     STAT=iok3)
-!----
-IF ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 ) THEN
+deallocate(enth1,fvp2m,     STAT=iok3)
+
+if (iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '     cs_coal_physprop              '
   call csexit(1)
-ENDIF
-if ( ieqnox .eq. 1 ) then
-  !--
+endif
+
+if (ieqnox .eq. 1) then
+
   deallocate(xoxyd,enthox)
-  !--
-  IF ( iok1 > 0 ) THEN
+
+  if (iok1 > 0) then
     write(nfecra,*) ' Memory deallocation error inside:       '
     write(nfecra,*) '   cs_coal_physprop for xoxyd and enthox '
     call csexit(1)
   endif
 endif
-!===============================================================================
-!
+
 !----
 ! End
 !----

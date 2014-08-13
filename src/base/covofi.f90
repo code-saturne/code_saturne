@@ -856,7 +856,7 @@ endif
 
 call field_get_key_int(iflid, keydri, iscdri)
 
-if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
+if (iscdri.ge.1) then
  call driflu &
  !=========
  ( iflid  ,                                                       &

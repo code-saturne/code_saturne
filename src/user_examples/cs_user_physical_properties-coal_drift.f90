@@ -83,7 +83,6 @@ double precision dt(ncelet)
 
 !< [loc_var_dec]
 integer          ivart, iel, ifac
-integer          ipccp
 integer          ivar
 integer          f_id
 integer          icla
@@ -99,19 +98,16 @@ double precision aa6, bb6, cc6, dd6
 double precision aa7, bb7, cc7, dd7
 double precision visco_O2, visco_CO, visco_H2, visco_N2
 double precision visco_SO2, visco_NH3, visco_CO2
-double precision g
 
 character*80     fname
 
-double precision, allocatable, dimension(:) :: x1, visco
+double precision, allocatable, dimension(:) :: visco
 
 double precision, dimension(:), pointer :: cpro_rom1, cpro_rom2, cpro_diam2
-double precision, dimension(:), pointer :: cpro_viscl
-double precision, dimension(:), pointer :: cpro_temp1, cpro_x2
+double precision, dimension(:), pointer :: cpro_temp1, cpro_x2, cpro_x1
 double precision, dimension(:), pointer :: cpro_ym1_3, cpro_ym1_5, cpro_ym1_7
 double precision, dimension(:), pointer :: cpro_ym1_8
 double precision, dimension(:), pointer :: cpro_ym1_9, cpro_ym1_11, cpro_ym1_12
-
 double precision, dimension(:), pointer :: cpro_taup
 double precision, dimension(:), pointer :: cpro_taupg
 !< [loc_var_dec]
@@ -123,8 +119,7 @@ double precision, dimension(:), pointer :: cpro_taupg
 !===============================================================================
 
 !< [init]
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
-allocate(x1(ncelet), visco(ncelet))
+allocate(visco(ncelet))
 
 call field_get_val_s(iprpfl(iym1(3)), cpro_ym1_3)
 call field_get_val_s(iprpfl(iym1(5)), cpro_ym1_5)
@@ -157,8 +152,6 @@ call field_get_n_fields(nfld)
 !  ===================================================================
 
 !< [example_1]
-
-g = sqrt(gx**2 + gy**2 + gz**2)
 
 ! Temperature
 call field_get_val_s(iprpfl(itemp1), cpro_temp1)
@@ -246,25 +239,16 @@ if (ntcabs.gt.1) then
                  + cpro_ym1_11(iel)* visco_SO2                    &
                  + cpro_ym1_7(iel) * visco_NH3                    &
                  + cpro_ym1_9(iel) * visco_CO2 )/                 &
-                 ( cpro_ym1_8(iel) + cpro_ym1_3(iel)                   &
-                 + cpro_ym1_5(iel) + cpro_ym1_12(iel)                  &
-                 + cpro_ym1_11(iel)+ cpro_ym1_7(iel)                   &
+                 ( cpro_ym1_8(iel) + cpro_ym1_3(iel)              &
+                 + cpro_ym1_5(iel) + cpro_ym1_12(iel)             &
+                 + cpro_ym1_11(iel)+ cpro_ym1_7(iel)              &
                  + cpro_ym1_9(iel))
 
   enddo
 endif
 
-! Compute x1 = 1 - sum cpro_x2
-do iel = 1, ncel
-
-  x1(iel) = 1.d0
-
-  do icla = 1, nclacp
-    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
-    x1(iel) = x1(iel) - cpro_x2(iel) !FIXME is x2(iel) initialized ?
-  enddo
-
-enddo
+! get x1 = 1 - sum cpro_x2
+call field_get_val_s_by_name("x_c", cpro_x1)
 
 ! All gas scalars have the same drift as if1m(1)
 !-----------------------------------------------
@@ -304,7 +288,7 @@ enddo
 
 do iflid = 0, nfld-1
 
-  ! index of the coal particle class
+  ! Index of the scalar class (<0 if the scalar belongs to the gas phase)
   call field_get_key_int(iflid, keyccl, icla)
 
   call field_get_key_int(iflid, keydri, iscdri)
@@ -333,9 +317,9 @@ do iflid = 0, nfld-1
     do iel = 1, ncel
 
       ! Simple model for Low Reynolds Numbers
-      cpro_taup(iel) = x1(iel) * cpro_rom2(iel)                               &
-                          * cpro_diam2(iel)**2                           &
-                          / (18.d0*visco(iel))
+      cpro_taup(iel) = cpro_x1(iel) * cpro_rom2(iel)                &
+                     * cpro_diam2(iel)**2                           &
+                     / (18.d0*visco(iel))
 
     enddo
 
@@ -344,17 +328,18 @@ do iflid = 0, nfld-1
     do iel = 1, ncel
 
       cpro_taupg(iel) = cpro_taupg(iel)                                  &
-                 - ( cpro_taup(iel) * cpro_x2(iel) )
+                      - ( cpro_taup(iel) * cpro_x2(iel) )
 
     enddo
 
-  endif
-enddo
+  endif ! test icla
+
+enddo ! loop on iflid
 
 !< [example_1]
 
 !Free memory
-deallocate(x1, visco)
+deallocate(visco)
 
 !===============================================================================
 
