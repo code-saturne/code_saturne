@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-07-24 18:15+0200\n"
+"POT-Creation-Date: 2014-08-13 15:19+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3026,7 +3026,7 @@ msgstr ""
 "   facteur minimum = %14.5e ; facteur maximum = %14.5e\n"
 
 #, c-format
-msgid " %s: isweep = %d, residue norm: %e, norm: %e, var: %s\n"
+msgid " %s: isweep = %d, normed residual: %e, norm: %e, var: %s\n"
 msgstr " %s: isweep = %d, norme du résidu : %e, norme : %e, var = %s\n"
 
 #, c-format
@@ -5523,6 +5523,10 @@ msgid "      %-19s  %-12.3g\n"
 msgstr ""
 
 #, c-format
+msgid "      %-23s  %-12.3g\n"
+msgstr ""
+
+#, c-format
 msgid ""
 "Only user variables of dimension 1 are currently handled,\n"
 "but %s is defined with dimension %d."
@@ -6162,14 +6166,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Restart file number <%d> can not be accessed\n"
-"(file closed or invalid number)."
-msgstr ""
-"Le fichier de reprise de calcul numéro <%d> n'est pas accessible\n"
-"(fichier déjà fermé ou numéro invalide)."
-
-#, c-format
-msgid ""
 "Value type <%d> given for a restart file section\n"
 "is invalid using the Fortran API."
 msgstr ""
@@ -6179,35 +6175,6 @@ msgstr ""
 #, c-format
 msgid "  %s: section \"%s\" not present.\n"
 msgstr ""
-
-#, c-format
-msgid ""
-"The access mode of the restart file <%s>\n"
-"must be equal to 1 (read) or 2 (write) and not <%d>."
-msgstr ""
-"Le mode d'ouverture du fichier de reprise de calcul <%s>\n"
-"doit être égal à 1 (lecture) ou 2 (écriture) et non <%d>."
-
-#, c-format
-msgid ""
-"Restart file number <%d> can not be closed\n"
-"(file already closed or invalid number)."
-msgstr ""
-"Le fichier de reprise de calcul numéro <%d> ne peut être fermé\n"
-"(fichier déjà fermé ou numéro invalide)."
-
-#, c-format
-msgid ""
-"Information on the restart file number <%d> unavailable\n"
-"(file already closed or invalid number)."
-msgstr ""
-"Infomation sur le fichier de reprise de calcul numéro <%d> indisponible\n"
-"(fichier déjà fermé ou numéro invalide)."
-
-#, c-format
-msgid "Restart file number <%d> does not match an open file."
-msgstr ""
-"Le fichier de reprise numéro <%d> ne correspond pas à un fichier ouvert."
 
 #, c-format
 msgid "The %s directory cannot be created"
@@ -6302,6 +6269,125 @@ msgstr ""
 "  Temps écoulé pour la lecture :    %12.3f\n"
 "  Temps écoulé pour l'écriture :    %12.3f\n"
 
+#, c-format
+msgid "Error reading variable information in restart file \"%s\"."
+msgstr ""
+"Erreur à la lecture des informations sur les variables\n"
+"dans le fichier de reprise \"%s\"."
+
+msgid ""
+"\n"
+"Remark: the thermal scalar was treated as a user scalar\n"
+"          in the restart file, and is moved to a model scalar\n"
+"          in the current computation.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"  Warning: the number of variables or scalars has been changed\n"
+"           relative to the restart file.\n"
+"\n"
+"  currently  %d variables, of which %d scalars\n"
+"  previously %d variables, of which %d scalars\n"
+"\n"
+"  The computation continues, with a partial restart.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Field \"%s\" has user-defined key \"old_scalar_num\" value %d,\n"
+"but the number of available scalars in restart is %d."
+msgstr ""
+
+#, c-format
+msgid "Error %d reading \"%s\" in restart file \"%s\"."
+msgstr "Erreur %d à la lecture de \"%s\" dans le fichier de reprise \"%s\"."
+
+#, c-format
+msgid ""
+"\n"
+"  Warning: the turbulent flux model has been changed\n"
+"           for %d fields relative to the restart file\n"
+"\n"
+"  The computation continues, with a partial restart.\n"
+msgstr ""
+
+#, c-format
+msgid "Error reading turbulence model info from restart file \"%s\"."
+msgstr ""
+"Erreur à la lecture du modèle de turbulence dans le fichier de reprise \"%s"
+"\"."
+
+#, c-format
+msgid ""
+"\n"
+"  Warning: the turbulence model has been changed\n"
+"           relative to the restart file.\n"
+"\n"
+"  current model:  %d\n"
+"  previous model: %d\n"
+"\n"
+"  The computation continues, with a partial an/or adapted restart.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error reading turbulence variables from previous model\n"
+"in restart file \"%s\"."
+msgstr ""
+"Erreur à la lecture des variables turbulentes d'un modèle précédent\n"
+"dans le fichier de reprise \"%s\"."
+
+#, c-format
+msgid ""
+"\n"
+"  Warning: the number of variables or properties has been changed\n"
+"           relative to the restart file.\n"
+"\n"
+"  current:  %d model and %d user variables\n"
+"            %d model and %d user properties\n"
+"  previous: %d model and %d user variables\n"
+"            %d model and %d user properties\n"
+"\n"
+"  The computation continues, with a partial restart.\n"
+msgstr ""
+
+#, c-format
+msgid "  Wrote field names and types to checkpoint: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Error reading velocity/pressure values in restart file \"%s\"."
+msgstr ""
+"Erreur à la lecture des valeurs de vitess/pression\n"
+"dans le fichier de reprise \"%s\"."
+
+#, c-format
+msgid ""
+"\n"
+"  Warning: the following variables could not be found or read\n"
+"           in restart file \"%s\", so default initializations\n"
+"           will be used:\n"
+"\n"
+msgstr ""
+
+#, c-format
+msgid "  Read variables from restart: %s\n"
+msgstr "  Variables lues dans le fichier de reprise : %s\n"
+
+#, c-format
+msgid "  Wrote main variables to checkpoint: %s\n"
+msgstr "  Variables principales écrites dans le fichier de reprise : %s\n"
+
+#, c-format
+msgid "  %s: no matching data for field \"%s\"\n"
+msgstr "  %s : pas de données correspondantes au champ \"%s\"\n"
+
+#, c-format
+msgid "      (was named \"%s\")\n"
+msgstr "      (anciennement nommé \"%s\")\n"
+
 msgid ""
 "\n"
 "Some boundary condition coefficients could not be read from a restart file;\n"
@@ -6312,6 +6398,10 @@ msgstr ""
 "Certains coefficients de conditions aux limites n'ont pu être lus depuis le\n"
 "fichier de reprise ; ils seront initialisés avec des valeurs par défaut.\n"
 "\n"
+
+#, c-format
+msgid "  Wrote boundary condition coefficients to checkpoint: %s\n"
+msgstr "  Coefficients de C.L. écrits dans le fichier de reprise : %s\n"
 
 #, c-format
 msgid ""
@@ -8688,10 +8778,6 @@ msgid "Formula is null for %s %s"
 msgstr ""
 
 #, c-format
-msgid "Variable index %d out of bounds (1 to %d)"
-msgstr ""
-
-#, c-format
 msgid ""
 "Coordinate %s of the monitoring probe number %i not found.\n"
 "Xpath: %s\n"
@@ -9409,7 +9495,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"  The received edge global number (%u) is unknown on the current rank.\n"
+"  The received edge global number (%llu) is unknown on the current rank.\n"
 msgstr ""
 
 #, c-format
@@ -10959,3 +11045,35 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid ""
+#~ "Restart file number <%d> can not be accessed\n"
+#~ "(file closed or invalid number)."
+#~ msgstr ""
+#~ "Le fichier de reprise de calcul numéro <%d> n'est pas accessible\n"
+#~ "(fichier déjà fermé ou numéro invalide)."
+
+#~ msgid ""
+#~ "The access mode of the restart file <%s>\n"
+#~ "must be equal to 1 (read) or 2 (write) and not <%d>."
+#~ msgstr ""
+#~ "Le mode d'ouverture du fichier de reprise de calcul <%s>\n"
+#~ "doit être égal à 1 (lecture) ou 2 (écriture) et non <%d>."
+
+#~ msgid ""
+#~ "Restart file number <%d> can not be closed\n"
+#~ "(file already closed or invalid number)."
+#~ msgstr ""
+#~ "Le fichier de reprise de calcul numéro <%d> ne peut être fermé\n"
+#~ "(fichier déjà fermé ou numéro invalide)."
+
+#~ msgid ""
+#~ "Information on the restart file number <%d> unavailable\n"
+#~ "(file already closed or invalid number)."
+#~ msgstr ""
+#~ "Infomation sur le fichier de reprise de calcul numéro <%d> indisponible\n"
+#~ "(fichier déjà fermé ou numéro invalide)."
+
+#~ msgid "Restart file number <%d> does not match an open file."
+#~ msgstr ""
+#~ "Le fichier de reprise numéro <%d> ne correspond pas à un fichier ouvert."
