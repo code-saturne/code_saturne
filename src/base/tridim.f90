@@ -134,7 +134,7 @@ integer          ntrela
 
 integer          isvhb , isvtb
 integer          ii    , jj    , ippcp , ientha, ippcv
-integer          ipcrom, ipcroa, ipbrom, ipbroa
+integer          ipcrom, ipcroa, ipcraa, ipbrom, ipbroa
 integer          iflua , iflub
 integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
@@ -390,7 +390,9 @@ enddo
 if (icalhy.eq.1.or.idilat.gt.1) then
   ipcrom = ipproc(irom  )
   ipcroa = ipproc(iroma )
+  ipcraa = ipproc(iromaa)
   do iel = 1, ncelet
+    propce(iel,ipcraa) = propce(iel,ipcroa)
     propce(iel,ipcroa) = propce(iel,ipcrom)
   enddo
 endif

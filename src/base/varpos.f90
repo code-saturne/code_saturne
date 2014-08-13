@@ -1209,6 +1209,9 @@ if(ipass.eq.3) then
   if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
     iprop         = iprop + 1
     iroma  = iprop
+    ! Density at the step before the previous time step
+    iprop         = iprop + 1
+    iromaa = iprop
   endif
   !     Dans le cas d'une extrapolation de la viscosite totale
   if(iviext.gt.0) then
@@ -1335,6 +1338,9 @@ if(ipass.eq.3) then
   if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
     iprop                 = iprop  + 1
     ipproc(iroma ) = iprop
+    ! Density at the step before the previous time step
+    iprop                 = iprop  + 1
+    ipproc(iromaa) = iprop
   endif
   if(iviext.gt.0) then
     iprop                 = iprop  + 1

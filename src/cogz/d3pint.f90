@@ -88,7 +88,7 @@ double precision rtp(ncelet,*), propce(ncelet,*), w1(ncelet)
 ! Local variables
 
 integer          iel, icg, iscal
-integer          ih, if, jh, jf, ipcrom, iptsro
+integer          ih, if, jh, jf, ipcrom, ipcraa, iptsro
 integer          ipcsca, ipctem, ipckab, ipct4, ipct3
 double precision aa1, bb1, aa2, bb2, f1, f2, a, b, fmini, fmaxi
 double precision u, v, c, d, temsmm, fsir
@@ -260,7 +260,10 @@ if ( iirayo.gt.0 ) then
 endif
 
 ipcrom = ipproc(irom)
-if (idilat.eq.4) iptsro = ipproc(iustdy(itsrho))
+if (idilat.eq.4) then
+  iptsro = ipproc(iustdy(itsrho))
+  ipcraa = ipproc(iromaa)
+endif
 
 do iel = 1, ncel
 
@@ -495,7 +498,7 @@ do iel = 1, ncel
 !         On termine cote riche (en commencant avec f1=fs)
       c = (  -fsir/wmolg(1)+1.d0/wmolg(3))/(1.d0-fsir)
       d = (   1.d0/wmolg(1)-1.d0/wmolg(3))/(1.d0-fsir)
-     endif
+    endif
 
     if (iirayo.gt.0) then
       if (fm.lt.fsir) then
@@ -664,7 +667,8 @@ do iel = 1, ncel
 
     ! D(rho)/Dt = 1/rho d(rho)/dz Diff(z) = -rho d(1/rho)/dz Diff(z)
     ! iptsro contains -d(1/rho)/dz Diff(z) > x rho
-    propce(iel,iptsro) = propce(iel,iptsro) * propce(iel,ipcrom)
+    propce(iel,iptsro) = propce(iel,iptsro) * propce(iel,ipcrom)**2     &
+                                            / propce(iel,ipcraa)
 
     ! arrays are re-initialize for source terms of next time step
     propce(iel,ipproc(iustdy(ifm  ))) = 0.d0

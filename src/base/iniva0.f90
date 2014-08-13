@@ -104,7 +104,7 @@ integer          iis   , ivar  , iscal , imom
 integer          iel   , ifac  , isou  , jsou
 integer          iclip , ii    , jj    , idim
 integer          iiflum, iiflua
-integer          iirom , iiromb, iiroma
+integer          iirom , iiromb, iiroma, iiroaa
 integer          iivisl, iivist, iivisa, iivism
 integer          iicp  , iicpa
 integer          iiviss, iiptot
@@ -166,8 +166,11 @@ do iel = 1, ncel
 enddo
 if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
   iiroma = ipproc(iroma )
+  ! Density at time n-2
+  iiroaa = ipproc(iromaa)
   do iel = 1, ncel
     propce(iel,iiroma) = propce(iel,iirom)
+    propce(iel,iiroaa) = propce(iel,iirom)
   enddo
 endif
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)
