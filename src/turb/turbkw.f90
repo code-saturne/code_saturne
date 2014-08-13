@@ -1086,7 +1086,6 @@ do ii = 1, 2
   elseif (ii.eq.2) then
     ivar = iomg
   endif
-  ipp  = ipprtp(ivar)
 
   vrmin(ii) =  grand
   vrmax(ii) = -grand

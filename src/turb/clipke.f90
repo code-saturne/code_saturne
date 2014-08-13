@@ -82,7 +82,7 @@ double precision rtp(ncelet,nflown:nvar)
 ! Local variables
 
 integer          iclpke,iel,iclpk2,iclpe2
-integer          ivar,ipp,ii
+integer          ivar,ii
 integer          iclpmn(2)
 double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
 double precision vmin(2), vmax(2)
@@ -120,8 +120,6 @@ do ii = 1, 2
   elseif(ii.eq.2) then
     ivar = iep
   endif
-
-  ipp  = ipprtp(ivar)
 
   vmin(ii) =  grand
   vmax(ii) = -grand
