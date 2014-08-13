@@ -34,24 +34,13 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     ncelet        number of extended (real + ghost) cells
-!> \param[in]     ncel          number of cells
-!> \param[in]     nfac          number of inner faces
-!> \param[in]     nfabor        number of boundary faces
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[out]    dt            time step (per cell)
-!> \param[out]    rtp           calculated variables at cell centers
-!> \param[out]    propce        physical properties at cell centers
 !> \param[out]    frcxt         external forces making hydrostatic pressure
 !> \param[out]    prhyd         predicted hydrostatic pressure
 !_______________________________________________________________________________
 
 
 subroutine lecamo &
- ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
-   dt     , rtp    , propce ,                                     &
-   frcxt  , prhyd  )
+ ( frcxt  , prhyd  )
 
 !===============================================================================
 
@@ -67,6 +56,8 @@ use optcal
 use pointe
 use numvar
 use parall
+use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -74,18 +65,13 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel   , nfac   , nfabor
-integer          nvar   , nscal
-
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
+type(c_ptr)      oflmap
 
 !===============================================================================
-
 
 
 !===============================================================================
@@ -94,36 +80,25 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 
 write(nfecra,1000)
 
-
 !===============================================================================
-! 2. LECTURE DU FICHIER SUITE PRINCIPAL
+! 2. Read main restart file
 !===============================================================================
 
-call lecamp &
-!==========
-( ncelet , ncel   ,                                    &
-  nvar   , nscal  ,                                    &
-  rtp    )
-
+call lecamp(oflmap)
 
 !===============================================================================
 ! 3. LECTURE DU FICHIER SUITE AUXILIAIRE
 !===============================================================================
 
 if (ileaux.eq.1) then
-
-  call lecamx &
-  !==========
-( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  , &
-  dt     , propce ,                                     &
-  frcxt  , prhyd  )
-
+  call lecamx(oflmap, frcxt, prhyd)
 endif
-
 
 !===============================================================================
 ! 4. SORTIE
 !===============================================================================
+
+call cs_map_name_to_id_destroy(oflmap)
 
 write(nfecra,2000)
 

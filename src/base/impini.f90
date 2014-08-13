@@ -2354,15 +2354,6 @@ write(nfecra,7000)
 !   - Suite de calcul
 
 write(nfecra,7010) isuite, ileaux, iecaux
-if(isuite.eq.1.and.nscal.ge.1) then
-  write(nfecra,7020)
-  do ii = 1, nscal
-    f_id = ivarfl(isca(ii))
-    call field_get_label(f_id, chaine)
-    write(nfecra,7030) chaine(1:16),ii,iscold(ii)
-  enddo
-  write(nfecra,7040)
-endif
 
 !   - Duree du calcul
 
@@ -2387,36 +2378,6 @@ write(nfecra,9900)
 '       ILEAUX = ',4x,i10,    ' (1 : lecture  de restart/auxiliary)',/,&
 '       IECAUX = ',4x,i10,    ' (1 : ecriture de checkpoint/auxiliary)',/,&
                                                                 /)
- 7020 format(                                                     &
-'       ISCOLD(I) : Dans le calcul precedent, numero du',       /,&
-'                   scalaire correspondant au scalaire I du',   /,&
-'                   calcul courant :',                          /,&
-                                                                /,&
-'-----------------------------------------------------------',  /,&
-' Scalaire         Numero   <-   Numero de l''ancien scalaire', /,&
-'-----------------------------------------------------------  '  )
- 7030 format(                                                     &
- 1x,    a16,    i7,    7x,    i7                                 )
- 7040 format(                                                     &
-'---------------------------------------------------',          /,&
-                                                                /,&
-'   La table precedente (ISCOLD) donne la correspondance des',  /,&
-'     scalaires du calcul courant avec ceux du calcul',         /,&
-'     precedent apres intervention eventuelle de l utilisateur',/,&
-'   Il s''agit de numeros de 1 a NSCAL qui reperent le',        /,&
-'     scalaire dans la liste de tous les scalaires',            /,&
-'     utilisateur+physique particuliere.',                      /,&
-'     .-999 est la valeur par defaut si l utilisateur n est',   /,&
-'           intervenu. Le numero des correspondant sera',       /,&
-'           complete a la lecture du fichier suite, selon',     /,&
-'           le nombre de scalaires disponibles, en utilisant',  /,&
-'           la loi (nouveau scalaire ii <- ancien scalaire ii)',/,&
-'     .   0 si l utilisateur souhaite que le scalaire du',      /,&
-'           calcul courant n ait pas de correspondant (i.e.',   /,&
-'           soit un nouveau scalaire).',                        /,&
-'     .   n > 0 si l utilisateur souhaite que le scalaire du',  /,&
-'           calcul courant ait pour correspondant le scalaire', /,&
-'           n du calcul precedent.',                            /)
  7110 format(                                                     &
 ' --- Duree du calcul',                                         /,&
 '     La numerotation des pas de temps et la mesure du temps',  /,&
@@ -2440,35 +2401,6 @@ write(nfecra,9900)
 '       ILEAUX = ',4x,i10,    ' (1: read  restart/auxiliary  )',/,&
 '       IECAUX = ',4x,i10,    ' (1: write checkpoint/auxiliary)',/,&
                                                                 /)
- 7020 format(                                                     &
-'       ISCOLD(I): In the previous calculation, number of',     /,&
-'                  the scalar corresponding to scalar I in',    /,&
-'                  the current calculation:',                   /,&
-                                                                /,&
-'-----------------------------------------------------------',  /,&
-' Scalar           Number   <-   Old scalar number',            /,&
-'-----------------------------------------------------------'    )
- 7030 format(                                                     &
- 1x,    a16,    i7,    7x,    i7                                 )
- 7040 format(                                                     &
-'---------------------------------------------------',          /,&
-                                                                /,&
-'   The preceding array (ISCOLD) defines the correspondance',   /,&
-'     of scalars in the current calculation with those of the', /,&
-'     previous calculation after possible user intervention.',  /,&
-'   It consists of numbers 1 to NSCAL which locate the scalar', /,&
-'     in the list of all user+specific physics scalars.',       /,&
-'     .-999 is the default value if the user has not',          /,&
-'           intervened. The correspondant''s numbers will',     /,&
-'           be completed when reading the restart file, based', /,&
-'           on the number of available scalars, using the',     /,&
-'           rule (new scalar ii <- old scalar ii)',             /,&
-'     .   0 if the user does not want the scalar of the',       /,&
-'           current calculation to have a correspondant (i.e.', /,&
-'           it is a new scalar).',                              /,&
-'     .   n > 0 if the user wants the scalar of the current',   /,&
-'           calculation to correspond to scalar n in the',      /,&
-'           previous calculation.',                             /)
  7110 format(                                                     &
 ' --- Calculation time',                                        /,&
 '     The numbering of time steps and the measure of simulated',/,&
@@ -2568,8 +2500,7 @@ write(nfecra,9900)
 '       NTSUIT = ',4x,i10,    ' (Periode de sauvegarde)',       /)
  7520 format(                                                     &
 ' --- Variables post-traitees',                                 /,&
-                                                                /,&
-'       Numero Nom'                                              )
+                                                                /)
  7521 format(A                                                   )
  7522 format(                                                     &
 '         --           --',                                     /)
@@ -2610,8 +2541,7 @@ write(nfecra,9900)
 '       NTSUIT = ',4x,i10,    ' (Checkpoint frequency )',       /)
  7520 format(                                                     &
 ' --- Post-processed variables',                                /,&
-                                                                /,&
-'       Number Name'                                             )
+                                                                /)
  7521 format(A                                                   )
  7522 format(                                                     &
 '         --           --',                                     /)

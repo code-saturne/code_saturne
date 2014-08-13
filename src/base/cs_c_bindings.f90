@@ -40,6 +40,8 @@ module cs_c_bindings
   integer :: MESH_LOCATION_VERTICES, MESH_LOCATION_PARTICLES
   integer :: MESH_LOCATION_OTHER
 
+  integer :: RESTART_VAL_TYPE_INT_T, RESTART_VAL_TYPE_REAL_T
+
   parameter (MESH_LOCATION_NONE=0)
   parameter (MESH_LOCATION_CELLS=1)
   parameter (MESH_LOCATION_INTERIOR_FACES=2)
@@ -47,6 +49,9 @@ module cs_c_bindings
   parameter (MESH_LOCATION_VERTICES=4)
   parameter (MESH_LOCATION_PARTICLES=5)
   parameter (MESH_LOCATION_OTHER=6)
+
+  parameter (RESTART_VAL_TYPE_INT_T=1)
+  parameter (RESTART_VAL_TYPE_REAL_T=3)
 
     !---------------------------------------------------------------------------
 
@@ -97,13 +102,26 @@ module cs_c_bindings
     ! Interface to C function logging field and other array statistics
     ! at relevant time steps.
 
-    !> \brief Log field and other array statistics for a given time step.
+    ! \brief Log field and other array statistics for a given time step.
 
     subroutine log_iteration()  &
       bind(C, name='cs_log_iteration')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine log_iteration
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Destroy name to id map structure.
+
+    !> \param[in, out] m pointer to map structure
+
+    subroutine cs_map_name_to_id_destroy(m)  &
+      bind(C, name='cs_map_name_to_id_destroy')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(inout) :: m
+    end subroutine cs_map_name_to_id_destroy
 
     !---------------------------------------------------------------------------
 
@@ -114,6 +132,98 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine parameters_read_restart_info
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Destroy structure associated with a restart file
+    !>         (and close the file).
+
+    !> \param[in, out] r pointer to map structure
+
+    subroutine restart_destroy(r)  &
+      bind(C, name='cs_restart_destroy')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(inout) :: r
+    end subroutine restart_destroy
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Check the locations associated with a restart file.
+
+    !> For each type of entity, return .true. if the associated number
+    !> of entities matches the current value (and so that we consider the
+    !> mesh locations, false otherwise.
+
+    !> \param[in]   r     restart structure pointer
+    !> \param[out]  lcel  match for cells
+    !> \param[out]  lfac  match for interior faces
+    !> \param[out]  lfbr  match for boundary faces
+    !> \param[out]  lsom  match for vertices
+
+    subroutine restart_check_base_location(r, lcel, lfac, lfbr, lsom)  &
+      bind(C, name='cs_restart_check_base_location')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      logical(kind=c_bool), intent(out) :: lcel, lfac, lfbr, lsom
+    end subroutine restart_check_base_location
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Read field metadata from checkpoint.
+
+    !> \param[in]   r              restart structure pointer
+    !> \param[in]   old_field_map  old field map pointer
+
+    subroutine restart_read_field_info(r, old_field_map)  &
+      bind(C, name='cs_restart_read_field_info')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      type(c_ptr), intent(out) :: old_field_map
+    end subroutine restart_read_field_info
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Write field metadata to checkpoint.
+
+    !> \param[in]   r  restart structure pointer
+
+    subroutine restart_write_field_info(r)  &
+      bind(C, name='cs_restart_write_field_info')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+    end subroutine restart_write_field_info
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Read boundary condition coefficients for all fields from
+    !>        checkpoint.
+
+    !> \param[in]   r  pointer to restart structure
+
+    subroutine restart_read_bc_coeffs(r)  &
+      bind(C, name='cs_restart_read_bc_coeffs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+    end subroutine restart_read_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Write boundary condition coefficients for all fields to
+    !>        checkpoint.
+
+    !> \param[in]   r  pointer to restart structure
+
+    subroutine restart_write_bc_coeffs(r)  &
+      bind(C, name='cs_restart_write_bc_coeffs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+    end subroutine restart_write_bc_coeffs
 
     !---------------------------------------------------------------------------
 
@@ -183,22 +293,22 @@ module cs_c_bindings
 
     !> \brief  Read temporal moments checkpoint information.
 
-    subroutine time_moment_restart_read(r_num)  &
-      bind(C, name='cs_f_time_moment_restart_read')
+    subroutine time_moment_restart_read(r)  &
+      bind(C, name='cs_time_moment_restart_read')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: r_num
+      type(c_ptr), value :: r
     end subroutine time_moment_restart_read
 
     !---------------------------------------------------------------------------
 
     !> \brief  Checkpoint temporal moments.
 
-    subroutine time_moment_restart_write(r_num)  &
-      bind(C, name='cs_f_time_moment_restart_write')
+    subroutine time_moment_restart_write(r)  &
+      bind(C, name='cs_time_moment_restart_write')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: r_num
+      type(c_ptr), value :: r
     end subroutine time_moment_restart_write
 
     !---------------------------------------------------------------------------
@@ -322,45 +432,129 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function reading a cs_int_t vector section from a
-    ! restart file, when that section may have used a different name and
-    ! been non-interleaved in a previous version.
+    ! Interface to C function initializing a restart file
 
-    subroutine cs_f_restart_read_int_t_compat(file_num, sec_name,            &
-                                              old_name, location_id,         &
-                                              n_location_vals,               &
-                                              val, ierror)                   &
-      bind(C, name='cs_f_restart_read_int_t_compat')
+    function cs_restart_create(name, path, mode) result(r) &
+      bind(C, name='cs_restart_create')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: file_num
-      character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
-      character(kind=c_char, len=1), dimension(*), intent(in) :: old_name
-      integer(c_int), value :: location_id, n_location_vals
-      integer(kind=c_int), dimension(*) :: val
-      integer(c_int) :: ierror
-    end subroutine cs_f_restart_read_int_t_compat
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name, path
+      integer(c_int), value :: mode
+      type(c_ptr) :: r
+    end function cs_restart_create
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function reading a cs_real_t vector section from a
-    ! restart file, when that section may have used a different name and
-    ! been non-interleaved in a previous version.
+    ! Interface to C function reading base particle info from restart
 
-    subroutine cs_f_restart_read_real_t_compat(file_num, sec_name,           &
-                                               old_name, location_id,        &
-                                               n_location_vals,              &
-                                               val, ierror)                  &
-      bind(C, name='cs_f_restart_read_real_t_compat')
+    function cs_restart_read_particles_info(r, name, n_particles) result(l_id) &
+      bind(C, name='cs_restart_read_particles_info')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: file_num
+      type(c_ptr), value :: r
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      integer(c_int), intent(out) :: n_particles
+      integer(c_int) l_id
+    end function cs_restart_read_particles_info
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading main particle info from restart
+
+    function cs_restart_read_particles(r, p_loc_id, p_cell_num, p_coords)   &
+      result(ierror)                                                        &
+      bind(C, name='cs_restart_read_particles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(c_int), value :: p_loc_id
+      integer(kind=c_int), dimension(*) :: p_cell_num
+      real(kind=c_double), dimension(3,*) :: p_coords
+      integer(c_int) :: ierror
+    end function cs_restart_read_particles
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading a section from a restart file.
+
+    function cs_restart_read_section(r, sec_name,                           &
+                                     location_id, n_location_vals,          &
+                                     val_type, val) result(error)           &
+      bind(C, name='cs_restart_read_section')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
+      integer(c_int), value :: location_id, n_location_vals, val_type
+      type(c_ptr), value :: val
+      integer(c_int) :: error
+    end function cs_restart_read_section
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading a section from a restart file, when
+    ! that section may have used a different name in a previous version.
+
+    function cs_restart_read_section_compat(r, sec_name, old_name,          &
+                                            location_id, n_location_vals,   &
+                                            val_type, val) result(error)    &
+      bind(C, name='cs_restart_read_section_compat')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
       character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
       character(kind=c_char, len=1), dimension(*), intent(in) :: old_name
-      integer(c_int), value :: location_id, n_location_vals
-      real(kind=c_double), dimension(*) :: val
-      integer(c_int) :: ierror
-    end subroutine cs_f_restart_read_real_t_compat
+      integer(c_int), value :: location_id, n_location_vals, val_type
+      type(c_ptr), value :: val
+      integer(c_int) :: error
+    end function cs_restart_read_section_compat
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function writing a section to a checkpoint file.
+
+    subroutine cs_restart_write_section(r, sec_name,                        &
+                                        location_id, n_location_vals,       &
+                                        val_type, val)                      &
+      bind(C, name='cs_restart_write_section')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
+      integer(c_int), value :: location_id, n_location_vals, val_type
+      type(c_ptr), value :: val
+      integer(c_int) :: error
+    end subroutine cs_restart_write_section
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading variables
+
+    subroutine cs_restart_read_variables(r, old_field_map,                   &
+                                         t_id_flag, read_flag)               &
+      bind(C, name='cs_restart_read_variables')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      type(c_ptr), value :: old_field_map
+      integer(kind=c_int), value :: t_id_flag
+      type(c_ptr), value :: read_flag
+      ! integer(kind=c_int), dimension(*) :: read_flag ! (swap below to use)
+    end subroutine cs_restart_read_variables
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function writing variables
+
+    subroutine cs_restart_write_variables(r, t_id_flag, write_flag)          &
+      bind(C, name='cs_restart_write_variables')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(kind=c_int), value :: t_id_flag
+      type(c_ptr), value :: write_flag
+      ! integer(kind=c_int), dimension(*) :: write_flag ! (swap below to use)
+    end subroutine cs_restart_write_variables
 
     !---------------------------------------------------------------------------
 
@@ -368,14 +562,14 @@ module cs_c_bindings
     ! restart file, when that section may have used a different name and
     ! been non-interleaved in a previous version.
 
-    subroutine cs_f_restart_read_real_3_t_compat(file_num, sec_name,           &
-                                                 old_name_x, old_name_y,       &
-                                                 old_name_z, location_id,      &
-                                                 val, ierror)                  &
-      bind(C, name='cs_f_restart_read_real_3_t_compat')
+    function cs_restart_read_real_3_t_compat(r, sec_name,                     &
+                                             old_name_x, old_name_y,          &
+                                             old_name_z, location_id,         &
+                                             val) result(ierror)              &
+      bind(C, name='cs_restart_read_real_3_t_compat')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: file_num
+      type(c_ptr), value :: r
       character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
       character(kind=c_char, len=1), dimension(*), intent(in) :: old_name_x
       character(kind=c_char, len=1), dimension(*), intent(in) :: old_name_y
@@ -383,43 +577,66 @@ module cs_c_bindings
       integer(c_int), value :: location_id
       real(kind=c_double), dimension(*) :: val
       integer(c_int) :: ierror
-    end subroutine cs_f_restart_read_real_3_t_compat
+    end function cs_restart_read_real_3_t_compat
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function reading a cs_real_3_t vector section from a
-    ! restart file, when that section may have used a different name and
+    ! Interface to C function reading field values from a restart file,
+    ! when that section may have used a different name and
     ! been non-interleaved in a previous version.
 
-    function cs_f_restart_ptr(file_num) result(r)  &
-      bind(C, name='cs_f_restart_ptr')
+    function cs_restart_read_field_vals(r, f_id, t_id) result(ierr)  &
+      bind(C, name='cs_restart_read_field_vals')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: file_num
-      type(c_ptr)           :: r
-    end function cs_f_restart_ptr
+      type(c_ptr), value    :: r
+      integer(c_int), value :: f_id, t_id
+      integer(c_int)        :: ierr
+    end function cs_restart_read_field_vals
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function reading BC coefficeints for all fields.
+    ! Interface to C function writing field values to a restart file.
 
-    subroutine cs_restart_read_bc_coeffs(restart)  &
-      bind(C, name='cs_restart_read_bc_coeffs')
+    subroutine cs_restart_write_field_vals(r, f_id, t_id)  &
+      bind(C, name='cs_restart_write_field_vals')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), value :: restart
-    end subroutine cs_restart_read_bc_coeffs
+      type(c_ptr), value    :: r
+      integer(c_int), value :: f_id, t_id
+    end subroutine cs_restart_write_field_vals
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function writing BC coefficeints for all fields.
+    ! Interface to C function reading fields depending on others from checkpoint
 
-    subroutine cs_restart_write_bc_coeffs(restart)  &
-      bind(C, name='cs_restart_write_bc_coeffs')
+    function cs_restart_read_linked_fields(r, old_field_map, key, read_flag) &
+      result(n)  &
+      bind(C, name='cs_restart_read_linked_fields')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), value :: restart
-    end subroutine cs_restart_write_bc_coeffs
+      type(c_ptr), value :: r
+      type(c_ptr), value :: old_field_map
+      character(kind=c_char, len=1), dimension(*), intent(in) :: key
+      ! integer(kind=c_int), dimension(*) :: read_flag ! (swap below to use)
+      type(c_ptr), value :: read_flag
+      integer(c_int)     :: n
+    end function cs_restart_read_linked_fields
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function writing fields depending on others to a checkpoint
+
+    function cs_restart_write_linked_fields(r, key, write_flag) result(n)  &
+      bind(C, name='cs_restart_write_linked_fields')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      character(kind=c_char, len=1), dimension(*), intent(in) :: key
+      ! integer(kind=c_int), dimension(*) :: write_flag ! (swap below to use)
+      type(c_ptr), value :: write_flag
+      integer(c_int)     :: n
+    end function cs_restart_write_linked_fields
 
     !---------------------------------------------------------------------------
 
@@ -556,7 +773,6 @@ contains
 
   end subroutine field_set_key_struct_severe_acc_species_prop
 
-
   !=============================================================================
 
   !> \brief Return a pointer to the var_cal_opt structure for cs_var_cal_opt key
@@ -600,8 +816,8 @@ contains
 
   !=============================================================================
 
-  !> \brief Return a pointer to the severe_acc_species_prop structure for cs_severe_acc_species_prop_t key
-  !> associated with a field.
+  !> \brief Return a pointer to the severe_acc_species_prop structure for
+  !>        cs_severe_acc_species_prop_t key associated with a field.
 
   !> If the field category is not compatible, a fatal error is provoked.
 
@@ -638,7 +854,6 @@ contains
     return
 
   end subroutine field_get_key_struct_severe_acc_species_prop
-
 
   !=============================================================================
 
@@ -770,20 +985,188 @@ contains
 
   !=============================================================================
 
+  !> \brief Initialize a restart file
+
+  !> \param[in]   name  file name
+  !> \param[in]   path  optional directory name for output
+  !>                    (automatically created if necessary)
+  !> \param[in]   mode  read (0) or write (1)
+  !> \param[out]  r     pointer to restart structure
+
+  subroutine restart_create(name, path, mode, r)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name, path
+    integer, intent(in)          :: mode
+    type(c_ptr), intent(out)     :: r
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    character(len=len_trim(path)+1, kind=c_char) :: c_path
+    integer(c_int) :: c_mode
+
+    c_name = trim(name)//c_null_char
+    c_path = trim(path)//c_null_char
+    c_mode = mode
+
+    r = cs_restart_create(c_name, c_path, c_mode)
+
+  end subroutine restart_create
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read particle info from a restart file
+
+  !> \param[in]   r             pointer to restart structure
+  !> \param[in]   name          name of particles set
+  !> \param[in]   n_particles   number of particles
+  !> \param[out]  location_id   id of associated mesh location
+
+  subroutine restart_read_particles_info(r, name, n_particles, location_id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in)           :: r
+    character(len=*), intent(in)      :: name
+    integer, intent(out)              :: n_particles, location_id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: c_n_p, c_l_id
+
+    c_name = trim(name)//c_null_char
+
+    c_l_id = cs_restart_read_particles_info(r, c_name, c_n_p)
+
+    n_particles = c_n_p
+    location_id = c_l_id
+
+  end subroutine restart_read_particles_info
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read variables from checkpoint.
+
+  !> \param[in]   r              pointer to restart structure
+  !> \param[in]   old_field_map  old field map pointer
+  !> \param[in]   t_id_flag      -1: all time values; 0: current values;
+  !>                             > 0: previous values
+
+  subroutine restart_read_variables(r, old_field_map, t_id_flag)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in) :: r
+    integer, intent(in)     :: t_id_flag
+    type(c_ptr), intent(in) :: old_field_map
+
+    ! Local variables
+
+    integer(c_int) :: c_t_id_flag
+
+    c_t_id_flag = t_id_flag
+
+    call cs_restart_read_variables(r, old_field_map, c_t_id_flag, c_null_ptr)
+
+  end subroutine restart_read_variables
+
+  !-----------------------------------------------------------------------------
+
+  !> \brief Write variables to checkpoint
+
+  !> \param[in]   r          pointer to restart structure
+  !> \param[in]   t_id_flag  -1: all time values; 0: current values;
+  !>                         > 0: previous values
+
+  subroutine restart_write_variables(r, t_id_flag)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in) :: r
+    integer, intent(in)     :: t_id_flag
+
+    ! Local variables
+
+    integer(c_int) :: c_t_id_flag
+
+    c_t_id_flag = t_id_flag
+
+    call cs_restart_write_variables(r, c_t_id_flag, c_null_ptr)
+
+  end subroutine restart_write_variables
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read a section of integers from a restart file.
+
+  !> \param[in]   r             pointer to restart structure
+  !> \param[in]   sec_name      name of section
+  !> \param[in]   location_id   id of associated mesh location
+  !> \param[in]   n_loc_vals    number of values per location
+  !> \param[out]  val           values array
+  !> \param[out]  ierror        0: success, < 0: error code
+
+  subroutine restart_read_section_int_t(r, sec_name,                       &
+                                        location_id, n_loc_vals, val,      &
+                                        ierror)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in)           :: r
+    character(len=*), intent(in)      :: sec_name
+    integer, intent(in)               :: location_id, n_loc_vals
+    integer, dimension(*), target     :: val
+    integer, intent(out)              :: ierror
+
+    ! Local variables
+
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
+    integer(c_int) :: c_loc_id, c_n_l_vals, c_val_type, c_ierror
+    type(c_ptr) :: c_val
+
+    c_s_n = trim(sec_name)//c_null_char
+    c_loc_id = location_id
+    c_n_l_vals = n_loc_vals
+    c_val_type = RESTART_VAL_TYPE_INT_T
+    c_val = c_loc(val)
+
+    c_ierror = cs_restart_read_section(r, c_s_n, c_loc_id,         &
+                                       c_n_l_vals, c_val_type,     &
+                                       c_val)
+
+    ierror = c_ierror
+
+  end subroutine restart_read_section_int_t
+
   !---------------------------------------------------------------------------
 
   !> \brief Read a section of integers from a restart file,
   !> when that section may have used a different name in a previous version.
 
-  !> \param[in]   f_num         restart file number
+  !> \param[in]   r             pointer to restart structure
   !> \param[in]   sec_name      name of section
   !> \param[in]   old_name      old name of section
   !> \param[in]   location_id   id of associated mesh location
-  !> \param[in]   n_loc_vals    number of valeus per location
-  !> \param[out]  val           min local value prior to clip
+  !> \param[in]   n_loc_vals    number of values per location
+  !> \param[out]  val           values array
   !> \param[out]  ierror        0: success, < 0: error code
 
-  subroutine restart_read_int_t_compat(f_num, sec_name, old_name,            &
+  subroutine restart_read_int_t_compat(r, sec_name, old_name,                &
                                        location_id, n_loc_vals, val,         &
                                        ierror)
 
@@ -792,28 +1175,30 @@ contains
 
     ! Arguments
 
-    integer, intent(in)               :: f_num
+    type(c_ptr), intent(in)           :: r
     character(len=*), intent(in)      :: sec_name
     character(len=*), intent(in)      :: old_name
     integer, intent(in)               :: location_id, n_loc_vals
-    integer, dimension(*)             :: val
+    integer, dimension(*), target     :: val
     integer, intent(out)              :: ierror
 
     ! Local variables
 
     character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
-    character(len=len_trim(old_name)+1, kind=c_char) :: c_o_n
-    integer(c_int) :: c_f_num, c_loc_id, c_n_l_vals, c_ierror
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_o
+    integer(c_int) :: c_loc_id, c_n_l_vals, c_val_type, c_ierror
+    type(c_ptr) :: c_val
 
-    c_f_num = f_num
     c_s_n = trim(sec_name)//c_null_char
-    c_o_n = trim(old_name)//c_null_char
+    c_s_o = trim(old_name)//c_null_char
     c_loc_id = location_id
     c_n_l_vals = n_loc_vals
+    c_val_type = RESTART_VAL_TYPE_INT_T
+    c_val = c_loc(val)
 
-    call cs_f_restart_read_int_t_compat(c_f_num, c_s_n, c_o_n,      &
-                                        c_loc_id, c_n_l_vals, val,  &
-                                        c_ierror)
+    c_ierror = cs_restart_read_section_compat(r, c_s_n, c_s_o,        &
+                                              c_loc_id, c_n_l_vals,   &
+                                              c_val_type, c_val)
 
     ierror = c_ierror
 
@@ -821,18 +1206,105 @@ contains
 
   !---------------------------------------------------------------------------
 
+  !> \brief Write a section of integers to a checkpoint file.
+
+  !> \param[in]   r             pointer to restart structure
+  !> \param[in]   sec_name      name of section
+  !> \param[in]   location_id   id of associated mesh location
+  !> \param[in]   n_loc_vals    number of values per location
+  !> \param[in]   val           values array
+
+  subroutine restart_write_section_int_t(r, sec_name,                      &
+                                         location_id, n_loc_vals, val)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in)           :: r
+    character(len=*), intent(in)      :: sec_name
+    integer, intent(in)               :: location_id, n_loc_vals
+    integer, dimension(*), intent(in), target :: val
+
+    ! Local variables
+
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
+    integer(c_int) :: c_loc_id, c_n_l_vals, c_val_type
+    type(c_ptr) :: c_val
+
+    c_s_n = trim(sec_name)//c_null_char
+    c_loc_id = location_id
+    c_n_l_vals = n_loc_vals
+    c_val_type = RESTART_VAL_TYPE_INT_T
+    c_val = c_loc(val)
+
+    call cs_restart_write_section(r, c_s_n, c_loc_id,         &
+                                  c_n_l_vals, c_val_type,     &
+                                  c_val)
+
+  end subroutine restart_write_section_int_t
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read a section of doubles from a restart file.
+
+  !> \param[in]   r             pointer to restart structure
+  !> \param[in]   sec_name      name of section
+  !> \param[in]   location_id   id of associated mesh location
+  !> \param[in]   n_loc_vals    number of values per location
+  !> \param[out]  val           values array
+  !> \param[out]  ierror        0: success, < 0: error code
+
+  subroutine restart_read_section_real_t(r, sec_name,                      &
+                                         location_id, n_loc_vals, val,     &
+                                         ierror)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in)                   :: r
+    character(len=*), intent(in)              :: sec_name
+    integer, intent(in)                       :: location_id, n_loc_vals
+    real(kind=c_double), dimension(*), target :: val
+    integer, intent(out)                      :: ierror
+
+    ! Local variables
+
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
+    integer(c_int) :: c_loc_id, c_n_l_vals, c_val_type, c_ierror
+    type(c_ptr) :: c_val
+
+    c_s_n = trim(sec_name)//c_null_char
+    c_loc_id = location_id
+    c_n_l_vals = n_loc_vals
+    c_val_type = RESTART_VAL_TYPE_REAL_T
+    c_val = c_loc(val)
+
+    c_ierror = cs_restart_read_section(r, c_s_n, c_loc_id,   &
+                                       c_n_l_vals, c_val_type,     &
+                                       c_val)
+
+    ierror = c_ierror
+
+  end subroutine restart_read_section_real_t
+
+  !---------------------------------------------------------------------------
+
   !> \brief Read a section of double precision reals from a restart file,
   !> when that section may have used a different name in a previous version.
 
-  !> \param[in]   f_num         restart file number
+  !> \param[in]   r             pointer to restart structure
   !> \param[in]   sec_name      name of section
   !> \param[in]   old_name      old name of section
   !> \param[in]   location_id   id of associated mesh location
-  !> \param[in]   n_loc_vals    number of valeus per location
-  !> \param[out]  val           min local value prior to clip
+  !> \param[in]   n_loc_vals    number of values per location
+  !> \param[out]  val           values array
   !> \param[out]  ierror        0: success, < 0: error code
 
-  subroutine restart_read_real_t_compat(f_num, sec_name, old_name,           &
+  subroutine restart_read_real_t_compat(r, sec_name, old_name,               &
                                         location_id, n_loc_vals, val,        &
                                         ierror)
 
@@ -841,28 +1313,30 @@ contains
 
     ! Arguments
 
-    integer, intent(in)               :: f_num
+    type(c_ptr), intent(in)           :: r
     character(len=*), intent(in)      :: sec_name
     character(len=*), intent(in)      :: old_name
     integer, intent(in)               :: location_id, n_loc_vals
-    real(kind=c_double), dimension(*) :: val
+    real(kind=c_double), dimension(*), target :: val
     integer, intent(out)              :: ierror
 
     ! Local variables
 
     character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
-    character(len=len_trim(old_name)+1, kind=c_char) :: c_o_n
-    integer(c_int) :: c_f_num, c_loc_id, c_n_l_vals, c_ierror
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_o
+    integer(c_int) :: c_loc_id, c_n_l_vals, c_val_type, c_ierror
+    type(c_ptr) :: c_val
 
-    c_f_num = f_num
     c_s_n = trim(sec_name)//c_null_char
-    c_o_n = trim(old_name)//c_null_char
+    c_s_o = trim(old_name)//c_null_char
     c_loc_id = location_id
     c_n_l_vals = n_loc_vals
+    c_val_type = RESTART_VAL_TYPE_REAL_T
+    c_val = c_loc(val)
 
-    call cs_f_restart_read_real_t_compat(c_f_num, c_s_n, c_o_n,      &
-                                         c_loc_id, c_n_l_vals, val,  &
-                                         c_ierror)
+    c_ierror = cs_restart_read_section_compat(r, c_s_n, c_s_o,        &
+                                              c_loc_id, c_n_l_vals,   &
+                                              c_val_type, c_val)
 
     ierror = c_ierror
 
@@ -874,16 +1348,16 @@ contains
   !> restart file, when that section may have used a different name and
   !> been non-interleaved in a previous version.
 
-  !> \param[in]   f_num         restart file number
+  !> \param[in]   r             pointer to restart structure
   !> \param[in]   sec_name      name of section
   !> \param[in]   old_name_x    old name of component x of section
   !> \param[in]   old_name_y    old name of component y of section
   !> \param[in]   old_name_z    old name of component z of section
   !> \param[in]   location_id   id of associated mesh location
-  !> \param[out]  val           min local value prior to clip
+  !> \param[out]  val           values array
   !> \param[out]  ierror        0: success, < 0: error code
 
-  subroutine restart_read_real_3_t_compat(f_num, sec_name,                     &
+  subroutine restart_read_real_3_t_compat(r, sec_name,                         &
                                           old_name_x, old_name_y, old_name_z,  &
                                           location_id, val, ierror)
 
@@ -892,7 +1366,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in)               :: f_num
+    type(c_ptr), intent(in)           :: r
     character(len=*), intent(in)      :: sec_name
     character(len=*), intent(in)      :: old_name_x, old_name_y, old_name_z
     integer, intent(in)               :: location_id
@@ -905,17 +1379,16 @@ contains
     character(len=len_trim(old_name_x)+1, kind=c_char) :: c_o_n_x
     character(len=len_trim(old_name_y)+1, kind=c_char) :: c_o_n_y
     character(len=len_trim(old_name_z)+1, kind=c_char) :: c_o_n_z
-    integer(c_int) :: c_f_num, c_loc_id, c_ierror
+    integer(c_int) :: c_loc_id, c_ierror
 
-    c_f_num = f_num
     c_s_n = trim(sec_name)//c_null_char
     c_o_n_x = trim(old_name_x)//c_null_char
     c_o_n_y = trim(old_name_y)//c_null_char
     c_o_n_z = trim(old_name_z)//c_null_char
     c_loc_id = location_id
 
-    call cs_f_restart_read_real_3_t_compat(c_f_num, c_s_n, c_o_n_x, c_o_n_y,   &
-                                           c_o_n_z, c_loc_id, val, c_ierror)
+    c_ierror = cs_restart_read_real_3_t_compat(r, c_s_n, c_o_n_x, c_o_n_y,     &
+                                               c_o_n_z, c_loc_id, val)
 
     ierror = c_ierror
 
@@ -923,57 +1396,178 @@ contains
 
   !---------------------------------------------------------------------------
 
-  !> \brief Read boundary condition coefficients for all fields from
-  !>        checkpoint.
+  !> \brief write a section of doubles to a checkpoint file.
 
-  !> \param[in]   f_num     restart file number
+  !> \param[in]   r             pointer to restart structure
+  !> \param[in]   sec_name      name of section
+  !> \param[in]   location_id   id of associated mesh location
+  !> \param[in]   n_loc_vals    number of values per location
+  !> \param[in]   val           values array
+  !> \param[out]  ierror        0: success, < 0: error code
 
-  subroutine restart_read_bc_coeffs(f_num)
+  subroutine restart_write_section_real_t(r, sec_name,                     &
+                                          location_id, n_loc_vals, val)
+
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    integer, intent(in)   :: f_num
+    type(c_ptr), intent(in)                       :: r
+    character(len=*), intent(in)                  :: sec_name
+    integer, intent(in)                           :: location_id, n_loc_vals
+    real(kind=c_double), dimension(*), target, intent(in) :: val
 
     ! Local variables
 
-    integer(c_int) :: c_f_num
-    type(c_ptr) :: r
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
+    integer(c_int) :: c_loc_id, c_n_l_vals, c_val_type
+    type(c_ptr) :: c_val
 
-    c_f_num = f_num
-    r = cs_f_restart_ptr(c_f_num)
+    c_s_n = trim(sec_name)//c_null_char
+    c_loc_id = location_id
+    c_n_l_vals = n_loc_vals
+    c_val_type = RESTART_VAL_TYPE_REAL_T
+    c_val = c_loc(val)
 
-    call cs_restart_read_bc_coeffs(r)
+    call cs_restart_write_section(r, c_s_n, c_loc_id,         &
+                                  c_n_l_vals, c_val_type,     &
+                                  c_val)
 
-  end subroutine restart_read_bc_coeffs
+  end subroutine restart_write_section_real_t
 
   !---------------------------------------------------------------------------
 
-  !> \brief Write boundary condition coefficients for all fields to
-  !>        checkpoint.
+  !> \brief Read field values from checkpoint.
 
-  !> \param[in]   f_num     restart file number
+  !> If the values are not found using the default rules based on the
+  !> field's name, its name itself, or a "restart_rename" keyed string value,
+  !> an old name may be used for compatibility with older files.
+  !> For cell-based fields, the old name base is appended automatically with
+  !> "_ce_phase01", except for scalars, where the name uses a different scheme,
+  !> based on "scalaire_ce_%04" % s_num;
 
-  subroutine restart_write_bc_coeffs(f_num)
+  !> \param[in]   r       pointer to restart structure
+  !> \param[in]   f_id    field id
+  !> \param[in]   t_id    time id (0 for current, 1 for previous, ...)
+  !> \param[out]  ierror  return code
+
+  subroutine restart_read_field_vals(r, f_id, t_id, ierror)
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    integer, intent(in)   :: f_num
+    type(c_ptr), intent(in) :: r
+    integer, intent(in)     :: f_id, t_id
+    integer, intent(out)    :: ierror
 
     ! Local variables
 
-    integer(c_int) :: c_f_num
-    type(c_ptr) :: r
+    integer(c_int) :: c_f_id, c_t_id, c_retcode
+    c_f_id = f_id
+    c_t_id = t_id
 
-    c_f_num = f_num
-    r = cs_f_restart_ptr(c_f_num)
+    c_retcode = cs_restart_read_field_vals(r, c_f_id, c_t_id)
+    ierror = c_retcode
 
-    call cs_restart_write_bc_coeffs(r)
+  end subroutine restart_read_field_vals
 
-  end subroutine restart_write_bc_coeffs
+  !---------------------------------------------------------------------------
+
+  !> \brief Write field values to checkpoint.
+
+  !> \param[in]   r       pointer to restart structure
+  !> \param[in]   f_id    field id
+  !> \param[in]   t_id    time id (0 for current, 1 for previous, ...)
+  !> \param[out]  ierror  return code
+
+  subroutine restart_write_field_vals(r, f_id, t_id)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in) :: r
+    integer, intent(in)     :: f_id, t_id
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_t_id
+    c_f_id = f_id
+    c_t_id = t_id
+
+    call cs_restart_write_field_vals(r, c_f_id, c_t_id)
+
+  end subroutine restart_write_field_vals
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read fields depending on others from checkpoint.
+
+  !> \param[in]   r              pointer to restart structure
+  !> \param[in]   old_field_map  pointer to old field map
+  !> \param[in]   key            key for field association
+  !> \param[out]  n_w            number of fields read
+
+    ! Interface to C function writing
+
+  subroutine restart_read_linked_fields(r, old_field_map, key, n_w)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in)      :: r
+    type(c_ptr), intent(in)      :: old_field_map
+    character(len=*), intent(in) :: key
+    integer, intent(out)         :: n_w
+
+    ! Local variables
+
+    integer(c_int) :: c_n_w
+    character(len=len_trim(key)+1, kind=c_char) :: c_key
+
+    c_key = trim(key)//c_null_char
+
+    c_n_w = cs_restart_read_linked_fields(r, old_field_map, c_key, c_null_ptr)
+
+    n_w = c_n_w
+
+  end subroutine restart_read_linked_fields
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Write fields depending on others to checkpoint.
+
+  !> \param[in]   r    pointer to restart structure
+  !> \param[in]   key  key for field association
+  !> \param[out]  n_w  number of fields written
+
+    ! Interface to C function writing
+
+  subroutine restart_write_linked_fields(r, key, n_w)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr), intent(in)      :: r
+    character(len=*), intent(in) :: key
+    integer, intent(out)         :: n_w
+
+    ! Local variables
+
+    integer(c_int) :: c_n_w
+    character(len=len_trim(key)+1, kind=c_char) :: c_key
+
+    c_key = trim(key)//c_null_char
+
+    c_n_w = cs_restart_write_linked_fields(r, c_key, c_null_ptr)
+
+    n_w = c_n_w
+
+  end subroutine restart_write_linked_fields
 
   !=============================================================================
 

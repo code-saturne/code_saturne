@@ -166,220 +166,6 @@ void CS_PROCF (indsui, INDSUI)
 );
 
 /*----------------------------------------------------------------------------
- * Open a restart file
- *
- * Fortran interface
- *
- * subroutine opnsui (nomsui, lngnom, ireawr, numsui, ierror)
- * *****************
- *
- * character*       nomsui      : <-- : Restart file name
- * integer          lngnom      : <-- : Restart file name length
- * integer          ireawr      : <-- : 1: read; 2: write
- * integer          numsui      : --> : Number of opened restart file
- * integer          ierror      : --> : 0: success; < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (opnsui, OPNSUI)
-(
- const char       *nomsui,
- const cs_int_t   *lngnom,
- const cs_int_t   *ireawr,
-       cs_int_t   *numsui,
-       cs_int_t   *ierror
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Close a restart file
- *
- * Fortran interface
- *
- * subroutine clssui (numsui)
- * *****************
- *
- * integer          numsui      : <-> : Number of restart file to close
- * integer          ierror      : --> : 0: success; < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (clssui, CLSSUI)
-(
- const cs_int_t   *numsui,
-       cs_int_t   *ierror
-);
-
-/*----------------------------------------------------------------------------
- * Check the locations associated with a restart file.
- *
- * For each type of entity, return 1 if the associated number of entities
- * matches the current value (and so that we consider the mesh locations are
- * the same), 0 otherwise.
- *
- * Fortran interface
- *
- * subroutine tstsui (numsui, indcel, indfac, indfbr, indsom)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * integer          indcel      : --> : Matching cells flag
- * integer          indfac      : --> : Matching interior faces flag
- * integer          indfbr      : --> : Matching boundary faces flag
- * integer          indsom      : --> : Matching vertices flag
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (tstsui, TSTSUI)
-(
- const cs_int_t  *numsui,
-       cs_int_t  *indcel,
-       cs_int_t  *indfac,
-       cs_int_t  *indfbr,
-       cs_int_t  *indsom
-);
-
-/*----------------------------------------------------------------------------
- * Print index associated with a restart file in read mode
- *
- * Fortran interface
- *
- * SUBROUTINE INFSUI (NUMSUI)
- * *****************
- *
- * INTEGER          NUMSUI      : <-- : Restart file number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (infsui, INFSUI)
-(
- const cs_int_t  *numsui
-);
-
-/*----------------------------------------------------------------------------
- * Read a section from a restart file
- *
- * Fortran interface
- *
- * subroutine lecsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * character*       nomrub      : <-- : Section name
- * integer          lngnom      : <-- : Section name length
- * integer          itysup      : <-- : Location type:
- *                              :     :  0: scalar (no location)
- *                              :     :  1: cells
- *                              :     :  2: interior faces
- *                              :     :  3: boundary faces
- *                              :     :  4: vertices (if available)
- * integer          nbvent      : <-- : N. values per location entity
- * integer          irtype      : <-- : 1 for integers, 2 for double precision
- * (?)              tabvar      : <-> : Array of values to read
- * integer          ierror      : --> : 0: success, < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lecsui, LECSUI)
-(
- const cs_int_t   *numsui,
- const char       *nomrub,
- const cs_int_t   *lngnom,
- const cs_int_t   *itysup,
- const cs_int_t   *nbvent,
- const cs_int_t   *irtype,
-       void       *tabvar,
-       cs_int_t   *ierror
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Write a section to a restart file
- *
- * Fortran interface
- *
- * subroutine ecrsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * character*       nomrub      : <-- : Section name
- * integer          lngnom      : <-- : Section name length
- * integer          itysup      : <-- : Location type:
- *                              :     :  0: scalar (no location)
- *                              :     :  1: cells
- *                              :     :  2: interior faces
- *                              :     :  3: boundary faces
- *                              :     :  4: vertices (if available)
- * integer          nbvent      : <-- : N. values per location entity
- * integer          irtype      : <-- : 1 for integers, 2 for double precision
- * (?)              tabvar      : <-- : Array of values to write
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ecrsui, ECRSUI)
-(
- const cs_int_t   *numsui,
- const char       *nomrub,
- const cs_int_t   *lngnom,
- const cs_int_t   *itysup,
- const cs_int_t   *nbvent,
- const cs_int_t   *irtype,
- const void       *tabvar
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
- *
- * Fortran interface
- *
- * subroutine lipsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * character*       nomrub      : <-- : Particles location name
- * integer          lngnom      : <-- : Particles location name length
- * integer          nbpart      : --> : Number of particles
- * integer          itysup      : --> : Particles location id,
- *                                      or -1 in case of error
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lipsui, LIPSUI)
-(
- const cs_int_t   *numsui,
- const char       *nomrub,
- const cs_int_t   *lngnom,
-       cs_int_t   *nbpart,
-       cs_int_t   *itysup
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
- *
- * Fortran interface
- *
- * subroutine lepsui (numsui, nomrub, lngnom, inmcoo, nbpart, ipcell,
- * *****************
- *                    coopar, itysup, ierror)
- *
- * integer          numsui      : <-- : Restart file number
- * integer          ipcell      : --> : Particle -> cell number
- * double precision coopar      : --> : Particle coordinate
- * integer          ipsup       : <-- : Particles location id
- * integer          ierror      : --> : 0: success, < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lepsui, LEPSUI)
-(
- const cs_int_t   *numsui,
-       cs_int_t   *ipcell,
-       cs_real_t  *coopar,
- const cs_int_t   *itysup,
-       cs_int_t   *ierror
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
  * Write basic particles information to a restart file.
  *
  * This includes defining a matching location and associated global numbering,
@@ -391,7 +177,7 @@ void CS_PROCF (lepsui, LEPSUI)
  * *****************
  *                    coopar, itysup, ierror)
  *
- * integer          numsui      : <-- : Restart file number
+ * type(c_ptr)      restart     : <-- : associated restart file pointer
  * character*       nomrub      : <-- : Particles location name
  * integer          lngnom      : <-- : Particles location name length
  * integer          inmcoo      : <-- : Number by coords
@@ -403,7 +189,7 @@ void CS_PROCF (lepsui, LEPSUI)
 
 void CS_PROCF (ecpsui, ECPSUI)
 (
- const cs_int_t   *numsui,
+ cs_restart_t    **restart,
  const char       *nomrub,
  const cs_int_t   *lngnom,
  const cs_int_t   *inmcoo,
@@ -427,11 +213,11 @@ void CS_PROCF (ecpsui, ECPSUI)
  *
  * Fortran interface
  *
- * subroutine leisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * subroutine leisui (restart, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
  * *****************
  *                    ierror)
  *
- * integer          numsui      : <-- : Restart file number
+ * type(c_ptr)      restart     : <-- : associated restart file pointer
  * character*       nomrub      : <-- : Section name
  * integer          lngnom      : <-- : Section name length
  * integer          itysup      : <-- : Location type:
@@ -454,7 +240,7 @@ void CS_PROCF (ecpsui, ECPSUI)
 
 void CS_PROCF (leisui, LEISUI)
 (
- const cs_int_t   *numsui,
+ cs_restart_t    **restart,
  const char       *nomrub,
  const cs_int_t   *lngnom,
  const cs_int_t   *itysup,
@@ -474,11 +260,11 @@ void CS_PROCF (leisui, LEISUI)
  *
  * Fortran interface
  *
- * subroutine ecisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * subroutine ecisui (restart, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
  * *****************
  *                    ierror)
  *
- * integer          numsui      : <-- : Restart file number
+ * type(c_ptr)      restart     : <-- : associated restart file pointer
  * character*       nomrub      : <-- : Section name
  * integer          lngnom      : <-- : Section name length
  * integer          itysup      : <-- : Location type:
@@ -501,7 +287,7 @@ void CS_PROCF (leisui, LEISUI)
 
 void CS_PROCF (ecisui, ECISUI)
 (
- const cs_int_t   *numsui,
+ cs_restart_t    **restart,
  const char       *nomrub,
  const cs_int_t   *lngnom,
  const cs_int_t   *itysup,
@@ -669,6 +455,19 @@ cs_restart_add_location(cs_restart_t      *restart,
                         cs_gnum_t          n_glob_ents,
                         cs_lnum_t          n_ents,
                         const cs_gnum_t   *ent_global_num);
+
+/*----------------------------------------------------------------------------
+ * Return name of restart file
+ *
+ * parameters:
+ *   restart <-- associated restart file pointer
+ *
+ * returns:
+ *   base name of restart file
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_restart_get_name(const cs_restart_t  *restart);
 
 /*----------------------------------------------------------------------------
  * Print the index associated with a restart file in read mode
@@ -947,19 +746,6 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
 
 void
 cs_restart_print_stats(void);
-
-/*----------------------------------------------------------------------------
- * Return pointer to restart file based on Fortran id
- *
- * parameters:
- *   r_num  <-- associated fortran restart number
- *
- * returns:
- *   pointer to restart file, or NULL
- *----------------------------------------------------------------------------*/
-
-cs_restart_t *
-cs_restart_by_fortran_id(int  r_num);
 
 /*----------------------------------------------------------------------------*/
 

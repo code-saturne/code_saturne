@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine rayout &
+subroutine rayout
 !================
-
- ( propce )
 
 !===============================================================================
 ! FONCTION :
@@ -33,26 +31,24 @@ subroutine rayout &
 !   --------------------------------------
 
 !  1) ECRITURE FICHIER SUITE,
-!  2) Ecriture des fichiers Ensight pour les sorties sur les
-!     frontieres du domaine de calcul
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -69,39 +65,32 @@ use ppincl
 use radiat
 use mesh
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
-double precision, dimension(:), pointer :: f_val
 ! Local variables
 
 character        rubriq*64
-character        ficsui*32
-integer          ierror , irtyp , itysup , nbval
-integer          ivers  , ilecec
-integer          impavr
+integer          itysup, nbval
+integer          ival(1)
+double precision rval(1)
+
+type(c_ptr) :: rp
 
 !===============================================================================
 ! 1. ECRITURE DU FICHIER SUITE DU MODULE DE RAYONNEMENT
 !===============================================================================
 
-! ---> Ouverture (et on saute si erreur)
-!     ILECEC = 2 : ecriture
+! Open output
 
 write(nfecra,6010)
 
-ilecec = 2
-ficsui = 'radiative_transfer'
-call opnsui(ficsui, len(ficsui), ilecec, impavr, ierror)
-!==========
-if (ierror.ne.0) then
-  write(nfecra,9020)
-  goto 9998
-endif
+call restart_create('radiative_transfer', '', 1, rp)
 
 write(nfecra,6011)
 
@@ -110,16 +99,11 @@ write(nfecra,6011)
 !       d'un autre fichier suite
 !     Pour le moment, IVERS n'est pas utilise
 
-ivers  = 111
 itysup = 0
 nbval  = 1
-irtyp  = 1
 rubriq = 'version_fichier_suite_rayonnement'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
-
-itysup = 0
-nbval  = 1
-irtyp  = 1
+ival(1) = 400000
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 write(nfecra,6012)
 
@@ -128,122 +112,54 @@ write(nfecra,6012)
 rubriq = 'nbre_pas_de_temps'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs)
+ival(1) = ntcabs
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 rubriq = 'instant_precedent'
 itysup = 0
 nbval  = 1
-irtyp  = 2
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ttcabs)
+rval(1) = ttcabs
+call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
-! Donnees
+! Boundary values
 
-!     Aux faces de bord
+call restart_write_field_vals(rp, itparo, 0)
+call restart_write_field_vals(rp, iqinci, 0)
+call restart_write_field_vals(rp, ihconv, 0)
+call restart_write_field_vals(rp, ifconv, 0)
 
-itysup = 3
-nbval  = 1
-irtyp  = 2
+! Cell values
 
-rubriq = 'tparoi_fb'
-call field_get_val_s(itparo, f_val)
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
-
-rubriq = 'qincid_fb'
-call field_get_val_s(iqinci, f_val)
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
-
-rubriq = 'hfconv_fb'
-call field_get_val_s(ihconv, f_val)
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
-
-rubriq = 'flconv_fb'
-call field_get_val_s(ifconv, f_val)
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
-
-!     Aux cellules
-
-itysup = 1
-nbval  = 1
-irtyp  = 2
-
-rubriq = 'rayimp_ce'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            propce(1,ipproc(itsri(1))))
-
-rubriq = 'rayexp_ce'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            propce(1,ipproc(itsre(1))))
-
-rubriq = 'luminance'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            propce(1,ipproc(ilumin)))
+call restart_write_field_vals(rp, iprpfl(itsri(1)), 0)
+call restart_write_field_vals(rp, iprpfl(itsre(1)), 0)
+call restart_write_field_vals(rp, iprpfl(ilumin), 0)
 
 write(nfecra,6013)
 
-! ---> Fermeture du fichier suite
-call clssui(impavr,ierror)
+! Close file
 
-if (ierror.ne.0) then
-  write(nfecra,8011) ficsui
-endif
+call restart_destroy(rp)
 
 write(nfecra,6014)
 
-! ---> En cas d'erreur, on continue quand meme
- 9998 continue
-
-
 return
-
 
 !--------
 ! Formats
 !--------
 
- 6010 FORMAT (/, 3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT ',/,  &
-           3X,'   ------------------------------------------',/,  &
-           3X,' Ecriture d''un fichier suite                ',/)
+ 6010 format (/, &
+           3X,'** Information on the radiative module',/,  &
+           3X,'   -----------------------------------',/,  &
+           3X,' Writing a restart file', /)
 
- 6011 FORMAT (   3X,'   Debut de l''ecriture                      ',/)
- 6012 FORMAT (   3X,'   Fin de l''ecriture des dimensions         ',/)
- 6013 FORMAT (   3X,'   Fin de l''ecriture des donnees            ',/)
- 6014 FORMAT (   3X,' Fin de l''ecriture du fichier suite         ',/)
-
- 9020 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION: A L''ECRITURE DU FICHIER SUITE RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@    ERREUR A L''OUVERTURE DU FICHIER SUITE RAYONNEMENT      ',/,&
-'@                                                            ',/,&
-'@  Le calcul continue mais                                   ',/,&
-'@            ne fournira pas de fichier suite rayonnement.   ',/,&
-'@                                                            ',/,&
-'@  Verifier que le repertoire de travail est accessible en   ',/,&
-'@    ecriture et que le fichier suite peut y etre cree.      ',/,&
-'@  Voir le sous-programme rayout.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 8011 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
-'@    =========                              AVAL RAYONNMEMENT',/,&
-'@                                                            ',/,&
-'@    Probleme sur le fichier de nom (',A13,')                ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+ 6011 format (   3x,'   Write start',                   /)
+ 6012 format (   3x,'   End of output for dimensions',  /)
+ 6013 format (   3x,'   End of output for data',        /)
+ 6014 format (   3x,' End of output to restart file',   /)
 
 !----
 ! End
 !----
 
-end subroutine
+end subroutine rayout

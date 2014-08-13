@@ -1202,32 +1202,6 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
   cs_glob_inflow_n_inlets++;
 }
 
-/*----------------------------------------------------------------------------
- * Open the restart file associated to cs_les_inflow
- * Allocate cs_glob_inflow_suite
- *
- * parameters:
- *   nomsui <- name of the restart file
- *   lngnom <- name length
- *   ireawr <- 1 for reading, 2 for writing
- *----------------------------------------------------------------------------*/
-
-static void
-cs_loc_inflow_opnsuite(const char              *nomsui,
-                       const cs_int_t          *lngnom,
-                       const cs_restart_mode_t  ireawr)
-{
-  char *nombuf;
-
-  /* Name treatment for the C API */
-  nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
-
-  cs_glob_inflow_suite = cs_restart_create(nombuf, NULL, ireawr);
-
-  /* Free the memory if necessary */
-  cs_base_string_f_to_c_free(&nombuf);
-}
-
 /*============================================================================
  *  Public function definitions for Fortran API
  *============================================================================*/
@@ -1540,16 +1514,13 @@ void CS_PROCF(synthe, SYNTHE)
  * SUBROUTINE LECSYN
  * *****************
  *
- * CHARACTER        FILNAM : <-- : Name of the restart file
- * INTEGER          LNGNAM : <-- : Name length
+ * character(kind=c_char)  filename : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(lecsyn, LECSYN)
-     (
-      const char       *const filnam,
-      const cs_int_t   *const lngnam
-      CS_ARGF_SUPP_CHAINE
-      )
+(
+ const char  *filename
+)
 {
   bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
   cs_int_t            nbvent;
@@ -1565,16 +1536,15 @@ void CS_PROCF(lecsyn, LECSYN)
   ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
-  cs_loc_inflow_opnsuite(filnam,
-                         lngnam,
-                         CS_RESTART_MODE_READ);
+  cs_glob_inflow_suite
+    = cs_restart_create(filename, NULL, CS_RESTART_MODE_READ);
 
   if (cs_glob_inflow_suite == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Abort while opening the LES inflow module restart file "
                 "in read mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              filnam);
+              filename);
 
   /* Pointer to the global restart structure */
   suite = cs_glob_inflow_suite;
@@ -1620,7 +1590,7 @@ void CS_PROCF(lecsyn, LECSYN)
                   "\n"
                   "Verify that the restart file corresponds to a\n"
                   "restart file for the LES inflow module.\n"),
-                filnam);
+                filename);
 
     version = *tabvar;
 
@@ -1962,16 +1932,13 @@ void CS_PROCF(lecsyn, LECSYN)
  * SUBROUTINE ECRSYN
  * *****************
  *
- * CHARACTER        FILNAM : <-- : Name of the restart file
- * INTEGER          LNGNAM : <-- : Name length
+ * character(kind=c_char)  filename : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(ecrsyn, ECRSYN)
-     (
-      const char       *const filnam,
-      const cs_int_t   *const lngnam
-      CS_ARGF_SUPP_CHAINE
-      )
+(
+ const char  *filename
+)
 {
   int   inlet_id;
 
@@ -1989,16 +1956,15 @@ void CS_PROCF(ecrsyn, ECRSYN)
   ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
-  cs_loc_inflow_opnsuite(filnam,
-                         lngnam,
-                         CS_RESTART_MODE_WRITE);
+  cs_glob_inflow_suite
+    = cs_restart_create(filename, NULL, CS_RESTART_MODE_WRITE);
 
   if (cs_glob_inflow_suite == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Abort while opening the LES inflow module restart "
                 "file in write mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              filnam);
+              filename);
 
   /* Pointer to the global restart structure */
   suite = cs_glob_inflow_suite;

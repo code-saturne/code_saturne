@@ -115,36 +115,9 @@ cs_lnum_t  *  cs_chain_ct = NULL;
 
 static cs_restart_t *cs_glob_ctwr_suite = NULL;
 
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Open the restart file associated to cs_tpar1d
- * Allocate cs_glob_ctwr_suite
- *
- * parameters:
- *   nomsui <- name of the restart file
- *   lngnom <- name length
- *   ireawr <- 1 for reading, 2 for writing
- *----------------------------------------------------------------------------*/
-
-static void
-cs_loc_ctwr_opnsuite(const char              *nomsui,
-                     const cs_int_t          *lngnom,
-                     const cs_restart_mode_t  ireawr)
-{
-  char            *nombuf;
-
-  /* Name treatment for the C API */
-  nombuf = cs_base_string_f_to_c_create(nomsui, *lngnom);
-
-  cs_glob_ctwr_suite = cs_restart_create(nombuf, NULL, ireawr);
-
-  /* Free the memory if necessary */
-  cs_base_string_f_to_c_free(&nombuf);
-}
 
 /*============================================================================
  *  Fonctions publiques pour API Fortran
@@ -169,8 +142,8 @@ cs_loc_ctwr_opnsuite(const char              *nomsui,
 void CS_PROCF (defct1, DEFCT1)
 (
   const cs_int_t   *const idimct,   /* Dimemsion du probleme 2:2D  3:3D       */
-  const char  *ze_name,             /* Name of Ct area */
-  cs_int_t    *ze_n_len,            /* lenght of Name of Ct area */
+  const char       *ze_name,        /* Name of Ct area */
+  cs_int_t         *ze_n_len,       /* lenght of Name of Ct area */
   const cs_int_t   *const imctch,   /* 1: Modele de Poppe
                                        2: Merkel 0: Rien                      */
   const cs_int_t   *const ntypct,   /* 1: Contre courant  2: Courant croises
@@ -185,7 +158,7 @@ void CS_PROCF (defct1, DEFCT1)
   const cs_real_t  *const xap,      /* coefficient lambda de la loi d'echange */
   const cs_real_t  *const xnp,      /* exposant n de la loi d'echange         */
   const cs_real_t  *const surface,  /* Surface totale arrivee d eau de la ct  */
-  const cs_real_t   *const   dgout  /* Diametre de goutte pour
+  const cs_real_t  *const   dgout   /* Diametre de goutte pour
                                        les zones de pluie                     */
 )
 {
@@ -300,7 +273,6 @@ void CS_PROCF (aeteau, AETEAU)
   cs_ctwr_aeteau(temp,xa,rho,vitx,vity,vitz);
 }
 
-
 /*----------------------------------------------------------------------------
  * Calcul des termes sources pour l'air
  *
@@ -326,9 +298,6 @@ void CS_PROCF (aetssc, AETSSC)
   cs_ctwr_aetssc(*iscal, temp,xa,rho,utsim,utsex,vitx,vity,vitz);
 }
 
-
-
-
 /*----------------------------------------------------------------------------
  * Calcul des PdC induites dans les zones de pluie
  *
@@ -350,10 +319,7 @@ void CS_PROCF (aetsvi, AETSVI)
 )
 {
   cs_ctwr_aetsvi(*idim,rho,vitx,vity,vitz,xair,utsex);
-
 }
-
-
 
 /*----------------------------------------------------------------------------
  * Bilan dans les ct
@@ -424,18 +390,15 @@ void CS_PROCF(pstict, PSTICT)
  *
  * Fortran interface:
  *
- * SUBROUTINE LECT1D
+ * subroutine ecrctw
  * *****************
  *
- * CHARACTER        NOMSUI : <-- : Name of the restart file
- * INTEGER          LNGNOM : <-- : Name length
-
+ * character(kind=c_char)  nomsui : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrctw, ECRCTW)
 (
- const char       *const nomsui,
- const cs_int_t   *const lngnom
+ const char  *nomsui
 )
 {
   int  nbvent;
@@ -454,7 +417,8 @@ void CS_PROCF (ecrctw, ECRCTW)
 
   /* Open the restart file */
 
-  cs_loc_ctwr_opnsuite(nomsui, lngnom, CS_RESTART_MODE_WRITE);
+  cs_glob_ctwr_suite
+    = cs_restart_create(nomsui, NULL, CS_RESTART_MODE_WRITE);
 
   /* Pointer to the global restart structure */
   suite = cs_glob_ctwr_suite;
@@ -605,12 +569,13 @@ void CS_PROCF (ecrctw, ECRCTW)
  *
  * SUBROUTINE LECTWR
  * *****************
+ *
+ * character(kind=c_char)  nomsui : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lecctw, LECCTW)
 (
- const char       *const nomsui,
- const cs_int_t   *const lngnom
+ const char  *nomsui
 )
 {
   bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
@@ -633,8 +598,8 @@ void CS_PROCF (lecctw, LECCTW)
 
   /* Open the restart file */
 
-  cs_loc_ctwr_opnsuite(nomsui, lngnom, CS_RESTART_MODE_READ);
-
+  cs_glob_ctwr_suite
+    = cs_restart_create(nomsui, NULL, CS_RESTART_MODE_READ);
 
   if (cs_glob_ctwr_suite == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -680,7 +645,7 @@ void CS_PROCF (lecctw, LECCTW)
                                           location_name,
                                           n_g_elements,
                                           n_elements,
-                                          g_elt_num );
+                                          g_elt_num);
 
 
     {
@@ -719,17 +684,17 @@ void CS_PROCF (lecctw, LECCTW)
                      "\n"
                      "The model is different \n"
                      "PREVIOUS: %d \n"
-                     "CURRENT:  %d \n" ), tabvar[ 0 ], ct->imctch);
+                     "CURRENT:  %d \n"), tabvar[ 0 ], ct->imctch);
 
       if (tabvar[ 1 ] != ct->ntypct) /* Type*/
-        bft_error(   __FILE__, __LINE__, 0,
+        bft_error(  __FILE__, __LINE__, 0,
                      _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                        "********               cooling tower MODULE\n"
                        "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
                        "\n"
                        "The type is different \n"
                        "PREVIOUS: %d \n"
-                       "CURRENT:  %d \n" ), tabvar[ 1 ], ct->ntypct);
+                       "CURRENT:  %d \n"), tabvar[ 1 ], ct->ntypct);
 
       if (tabvar[ 2 ] != ct->nelect) /* nb of node per segment*/
         bft_error(__FILE__, __LINE__, 0,
@@ -789,16 +754,16 @@ void CS_PROCF (lecctw, LECCTW)
                      "\n"
                      "The Water entry temperature  is different \n"
                      "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n" ), tabvar[ 0 ], ct->cl_teau );
+                     "CURRENT:  %f \n"), tabvar[ 0 ], ct->cl_teau);
 
-      if (CS_ABS( tabvar[ 1 ] - ct->cl_fem) > 1e-10)
+      if (CS_ABS(tabvar[ 1 ] - ct->cl_fem) > 1e-10)
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                      "********               cooling tower MODULE\n"
                      "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
                      "\n"
                      "The Water entry flow is different \n"
                      "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n" ), tabvar[ 1 ], ct->cl_fem);
+                     "CURRENT:  %f \n"), tabvar[ 1 ], ct->cl_fem);
 
       if (CS_ABS(tabvar[ 2 ] - ct->xap) > 1e-10)
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -807,7 +772,7 @@ void CS_PROCF (lecctw, LECCTW)
                      "\n"
                      "The value of Exchange law lambda coefficient is different \n"
                      "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n" ), tabvar[ 2 ], ct->xap);
+                     "CURRENT:  %f \n"), tabvar[ 2 ], ct->xap);
 
       if (CS_ABS(tabvar[ 3 ] - ct->xnp) > 1e-10)
         bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -816,7 +781,7 @@ void CS_PROCF (lecctw, LECCTW)
                      "\n"
                      "The value of Exchange law lambda coefficient is different \n"
                      "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n" ), tabvar[ 3 ], ct->xnp);
+                     "CURRENT:  %f \n"), tabvar[ 3 ], ct->xnp);
 
       BFT_FREE(tabvar);
     }
@@ -1188,7 +1153,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
 
   norme_g = sqrt( pow(gravite[0],2.)
                   +pow(gravite[1],2.)
-                  +pow(gravite[2],2.) );
+                  +pow(gravite[2],2.));
 
   gravite[0] /= norme_g;
   gravite[1] /= norme_g;
@@ -1203,7 +1168,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
 
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
 
-    if ((ct->ntypct>=2) && ( ct->idimct==2) )
+    if ((ct->ntypct>=2) && (ct->idimct==2))
      gravite[2] = 1.0;
 
     cpa    = ct_prop->cpa;
@@ -1238,12 +1203,12 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
      *--------------------------------------------*/
     nb_dist_water = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
 
-    BFT_MALLOC( tai_inter  , nb_dist_water, cs_real_t);
-    BFT_MALLOC( xai_inter  , nb_dist_water, cs_real_t);
-    BFT_MALLOC( rhoai_inter, nb_dist_water, cs_real_t);
-    BFT_MALLOC( vx_inter   , nb_dist_water, cs_real_t);
-    BFT_MALLOC( vy_inter   , nb_dist_water, cs_real_t);
-    BFT_MALLOC( vz_inter   , nb_dist_water, cs_real_t);
+    BFT_MALLOC(tai_inter  , nb_dist_water, cs_real_t);
+    BFT_MALLOC(xai_inter  , nb_dist_water, cs_real_t);
+    BFT_MALLOC(rhoai_inter, nb_dist_water, cs_real_t);
+    BFT_MALLOC(vx_inter   , nb_dist_water, cs_real_t);
+    BFT_MALLOC(vy_inter   , nb_dist_water, cs_real_t);
+    BFT_MALLOC(vz_inter   , nb_dist_water, cs_real_t);
 
     for (ieau= 0; ieau < nb_dist_water; ieau++) {
        tai_inter[ieau]   = 0.;
@@ -1261,12 +1226,12 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
         vz_inter[ieau]   += ct->coefeau[i] * vitz[ct->voiseau[i]];
       }
     }
-    BFT_MALLOC( tai  , ct->nnpsct*ct->nelect, cs_real_t );
-    BFT_MALLOC( xai  , ct->nnpsct*ct->nelect, cs_real_t );
-    BFT_MALLOC( rhoai, ct->nnpsct*ct->nelect, cs_real_t );
-    BFT_MALLOC( vx   , ct->nnpsct*ct->nelect, cs_real_t );
-    BFT_MALLOC( vy   , ct->nnpsct*ct->nelect, cs_real_t );
-    BFT_MALLOC( vz   , ct->nnpsct*ct->nelect, cs_real_t );
+    BFT_MALLOC(tai  , ct->nnpsct*ct->nelect, cs_real_t);
+    BFT_MALLOC(xai  , ct->nnpsct*ct->nelect, cs_real_t);
+    BFT_MALLOC(rhoai, ct->nnpsct*ct->nelect, cs_real_t);
+    BFT_MALLOC(vx   , ct->nnpsct*ct->nelect, cs_real_t);
+    BFT_MALLOC(vy   , ct->nnpsct*ct->nelect, cs_real_t);
+    BFT_MALLOC(vz   , ct->nnpsct*ct->nelect, cs_real_t);
 
     ple_locator_exchange_point_var(ct->locat_air_water,
                                    tai_inter, tai, NULL, sizeof(cs_real_t),1,0);
@@ -1281,12 +1246,12 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
     ple_locator_exchange_point_var(ct->locat_air_water,
                                    vz_inter,vz, NULL, sizeof(cs_real_t),1,0);
 
-    BFT_FREE( tai_inter  );
-    BFT_FREE( xai_inter  );
-    BFT_FREE( rhoai_inter);
-    BFT_FREE( vx_inter  );
-    BFT_FREE( vy_inter  );
-    BFT_FREE( vz_inter  );
+    BFT_FREE(tai_inter);
+    BFT_FREE(xai_inter);
+    BFT_FREE(rhoai_inter);
+    BFT_FREE(vx_inter);
+    BFT_FREE(vy_inter);
+    BFT_FREE(vz_inter);
     /*--------------------------------------------*
      *  end interpolation  air->eau               *
      *--------------------------------------------*/
@@ -1297,36 +1262,38 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
     * Calcul pour la face superieure ,           *
     * Introduction des conditions aux limites ct *
     *--------------------------------------------*/
-    BFT_MALLOC( lst_par_fac_sup_ct , ct->nnpsct, cs_lnum_t );
+    BFT_MALLOC(lst_par_fac_sup_ct , ct->nnpsct, cs_lnum_t);
 
     fvm_nodal_get_parent_num(ct->face_sup_mesh,
                                       2,lst_par_fac_sup_ct);
     ind = 0;
     for (j=0; j < cs_glob_ct_nbr; j++)
-      if(cs_stack_ct[cs_chain_ct[ict]*cs_glob_ct_nbr + cs_chain_ct[j]] == 1){
+      if (cs_stack_ct[cs_chain_ct[ict]*cs_glob_ct_nbr + cs_chain_ct[j]] == 1) {
         ct_upw = cs_glob_ct_tab[ cs_chain_ct[j]];
 
         nb_dist_upw =
               (int)ple_locator_get_n_dist_points(ct->locat_cell_ct_upwind[ind]);
 
-        BFT_MALLOC( teau_upw_send  , nb_dist_upw, cs_real_t);
-        BFT_MALLOC( fem_upw_send  , nb_dist_upw, cs_real_t);
-        BFT_MALLOC( lst_par_fac_inf_ct_upw , (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_lnum_t );
+        BFT_MALLOC(teau_upw_send, nb_dist_upw, cs_real_t);
+        BFT_MALLOC(fem_upw_send, nb_dist_upw, cs_real_t);
+        BFT_MALLOC(lst_par_fac_inf_ct_upw,
+                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict),
+                   cs_lnum_t);
 
         fvm_nodal_get_parent_num(ct_upw->face_inf_mesh,
-                                      2,lst_par_fac_inf_ct_upw);
-        locat_cel_upw =
-                  ple_locator_get_dist_locations(ct->locat_cell_ct_upwind[ind]);
+                                 2, lst_par_fac_inf_ct_upw);
+        locat_cel_upw
+          = ple_locator_get_dist_locations(ct->locat_cell_ct_upwind[ind]);
 
-        for (i=0; i < nb_dist_upw; i++){
+        for (i=0; i < nb_dist_upw; i++) {
           teau_upw_send[i] =  ct_upw->teau[(cs_lnum_t) locat_cel_upw[i]-1];
           fem_upw_send[i]  =  ct_upw->fem[(cs_lnum_t) locat_cel_upw[i]-1];
         }
 
-        BFT_MALLOC( teau_upw_rec,
-                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_real_t );
-        BFT_MALLOC( fem_upw_rec,
-                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_real_t );
+        BFT_MALLOC(teau_upw_rec,
+                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_real_t);
+        BFT_MALLOC(fem_upw_rec,
+                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_real_t);
 
         ple_locator_exchange_point_var(ct->locat_cell_ct_upwind[ind],
                                        teau_upw_send,
@@ -1341,10 +1308,10 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
                                        sizeof(cs_real_t),
                                        1,0);
 
-        for (i=0; i < ct->nnpsct; i++){
+        for (i=0; i < ct->nnpsct; i++) {
           ii = 0;
-          while (ii < (ct_upw->nbfac_ict+ct_upw->nbfbr_ict) ){
-            if( lst_par_fac_sup_ct[i] == lst_par_fac_inf_ct_upw[ii]){
+          while (ii < (ct_upw->nbfac_ict+ct_upw->nbfbr_ict)) {
+            if (lst_par_fac_sup_ct[i] == lst_par_fac_inf_ct_upw[ii]) {
               ct->teau[i*ct->nelect] = teau_upw_rec[ii];
               ct->fem[i*ct->nelect]  = fem_upw_rec[ii];
               ii = ct_upw->nbfac_ict+ct_upw->nbfbr_ict;
@@ -1352,15 +1319,15 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
             ii++;
           }
         }
-        BFT_FREE( teau_upw_rec );
-        BFT_FREE( teau_upw_send );
-        BFT_FREE( fem_upw_rec );
-        BFT_FREE( fem_upw_send );
-        BFT_FREE( lst_par_fac_inf_ct_upw );
+        BFT_FREE(teau_upw_rec);
+        BFT_FREE(teau_upw_send);
+        BFT_FREE(fem_upw_rec);
+        BFT_FREE(fem_upw_send);
+        BFT_FREE(lst_par_fac_inf_ct_upw);
         ind++;
       }
 
-    BFT_FREE( lst_par_fac_sup_ct );
+    BFT_FREE(lst_par_fac_sup_ct);
 
     /* Pas d'espace */
     dhi = -(ct->hmax-ct->hmin)/(ct->nelect-1);
@@ -1400,12 +1367,12 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
               faxn=rhoai[ieau]*vhai;
             }
             bxan=ct->xap*ct->fem[ieau]*pow((faxn/ct->fem[ieau]),ct->xnp);
-            if ( xai[ieau]>xsata ) {
+            if (xai[ieau]>xsata) {
               aux=xsata;
             }else{
               aux=xai[ieau];
             }
-            cfen=bxan*(xsate- aux )/(ct->fem[ieau]);
+            cfen=bxan*(xsate- aux)/(ct->fem[ieau]);
             ct->fem[ieau]=ct->fem[ieau-1]/(1.0-cfen*dhi);
           }
           /* Fin de resolution de Fe */
@@ -1461,7 +1428,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
       /*--------------------------------------------*/
       /* zone de pluie                              */
       /*--------------------------------------------*/
-      else if (ct->ntypct==3){
+      else if (ct->ntypct==3) {
         for (iseg = 0; iseg < ct->nnpsct; iseg++) {
           /*--------------------------------------------*/
           /* Resolution Fe                              */
@@ -1471,7 +1438,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
             ieau = iseg*ct->nelect + iloc;
             vgin=ct->vgoutte[ieau];
 
-            if (CS_ABS(vgin)>=0.1){
+            if (CS_ABS(vgin)>=0.1) {
 
               vvai = sqrt( pow((vx[ieau]*gravite[0]),2.)
                           +pow((vy[ieau]*gravite[1]),2.)
@@ -1495,7 +1462,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
               anu  = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
               bxan = 6.*conduc*anu*ct->fem[ieau]
                     /(0.92*rhoe*vgin*pow(dgout,2.)*cpx);
-              if (xai[ieau]>xsata ) {
+              if (xai[ieau]>xsata) {
                 aux = xsata;
               }else{
                 aux = xai[ieau];
@@ -1519,7 +1486,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
 
             vgin=ct->vgoutte[ieau];
 
-            if (CS_ABS(vgin)>=0.1){
+            if (CS_ABS(vgin)>=0.1) {
 
               vvai = sqrt(pow((vx[ieau]*gravite[0]),2.)
                          +pow((vy[ieau]*gravite[1]),2.)
@@ -1616,7 +1583,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
       } /* fin sur iseg */
     } /* fin if pour le ntypct<=2 */
 
-    else if (ct->ntypct==3){ /* zone de pluie */
+    else if (ct->ntypct==3) { /* zone de pluie */
 
       for (iseg = 0; iseg < ct->nnpsct; iseg++) {
 
@@ -1625,7 +1592,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
           ct->fem[ieau]=ct->fem[ieau-1];
           vgin=ct->vgoutte[ieau];
 
-          if (CS_ABS(vgin)>=0.1){
+          if (CS_ABS(vgin)>=0.1) {
 
             vvai = sqrt( pow((vx[ieau]*gravite[0]),2.)
                         +pow((vy[ieau]*gravite[1]),2.)
@@ -1661,12 +1628,12 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
     /* Fin du modele de Merkel                    */
     /*--------------------------------------------*/
 
-    BFT_FREE( tai  );
-    BFT_FREE( xai  );
-    BFT_FREE( rhoai );
-    BFT_FREE( vx  );
-    BFT_FREE( vy  );
-    BFT_FREE( vz  );
+    BFT_FREE(tai);
+    BFT_FREE(xai);
+    BFT_FREE(rhoai);
+    BFT_FREE(vx);
+    BFT_FREE(vy);
+    BFT_FREE(vz);
 
   }
   /*--------------------------------------------*/
@@ -1712,9 +1679,9 @@ void cs_ctwr_aetssc
   gravite[1] = -ct_prop->gravy;
   gravite[2] = -ct_prop->gravz;
 
-  norme_g = sqrt( pow(gravite[0],2.)
+  norme_g = sqrt(  pow(gravite[0],2.)
                   +pow(gravite[1],2.)
-                  +pow(gravite[2],2.) );
+                  +pow(gravite[2],2.));
 
   gravite[0] /= norme_g;
   gravite[1] /= norme_g;
@@ -1738,7 +1705,7 @@ void cs_ctwr_aetssc
 
     dgout  = ct->dgout;
 
-    if (ct->ntypct==3){
+    if (ct->ntypct==3) {
       /*--------------------------------------------*
       * synchronisation   Halo                            *
       *--------------------------------------------*/
@@ -1761,12 +1728,12 @@ void cs_ctwr_aetssc
       *--------------------------------------------*/
       nb_dist_water = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
 
-      BFT_MALLOC( tai_inter  , nb_dist_water, cs_real_t);
-      BFT_MALLOC( xai_inter  , nb_dist_water, cs_real_t);
-      BFT_MALLOC( rhoai_inter, nb_dist_water, cs_real_t);
-      BFT_MALLOC( vx_inter   , nb_dist_water, cs_real_t);
-      BFT_MALLOC( vy_inter   , nb_dist_water, cs_real_t);
-      BFT_MALLOC( vz_inter   , nb_dist_water, cs_real_t);
+      BFT_MALLOC(tai_inter  , nb_dist_water, cs_real_t);
+      BFT_MALLOC(xai_inter  , nb_dist_water, cs_real_t);
+      BFT_MALLOC(rhoai_inter, nb_dist_water, cs_real_t);
+      BFT_MALLOC(vx_inter   , nb_dist_water, cs_real_t);
+      BFT_MALLOC(vy_inter   , nb_dist_water, cs_real_t);
+      BFT_MALLOC(vz_inter   , nb_dist_water, cs_real_t);
 
       for (ieau= 0; ieau < nb_dist_water; ieau++) {
         tai_inter[ieau]   = 0.;
@@ -1784,12 +1751,12 @@ void cs_ctwr_aetssc
           vz_inter[ieau]   += ct->coefeau[i] * vitz[ct->voiseau[i]];
         }
       }
-      BFT_MALLOC( tai  , ct->nnpsct*ct->nelect, cs_real_t );
-      BFT_MALLOC( xai  , ct->nnpsct*ct->nelect, cs_real_t );
-      BFT_MALLOC( rhoai, ct->nnpsct*ct->nelect, cs_real_t );
-      BFT_MALLOC( vx   , ct->nnpsct*ct->nelect, cs_real_t );
-      BFT_MALLOC( vy   , ct->nnpsct*ct->nelect, cs_real_t );
-      BFT_MALLOC( vz   , ct->nnpsct*ct->nelect, cs_real_t );
+      BFT_MALLOC(tai  , ct->nnpsct*ct->nelect, cs_real_t);
+      BFT_MALLOC(xai  , ct->nnpsct*ct->nelect, cs_real_t);
+      BFT_MALLOC(rhoai, ct->nnpsct*ct->nelect, cs_real_t);
+      BFT_MALLOC(vx   , ct->nnpsct*ct->nelect, cs_real_t);
+      BFT_MALLOC(vy   , ct->nnpsct*ct->nelect, cs_real_t);
+      BFT_MALLOC(vz   , ct->nnpsct*ct->nelect, cs_real_t);
 
       ple_locator_exchange_point_var(ct->locat_air_water,
                                    tai_inter, tai, NULL, sizeof(cs_real_t),1,0);
@@ -1812,8 +1779,8 @@ void cs_ctwr_aetssc
 
       nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
 
-      BFT_MALLOC( lst_par_cel , nb, cs_lnum_t );
-      fvm_nodal_get_parent_num( ct->cell_mesh, 3, lst_par_cel);
+      BFT_MALLOC(lst_par_cel , nb, cs_lnum_t);
+      fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
 
       for (iseg = 0; iseg < ct->nnpsct; iseg++) {
 
@@ -1841,19 +1808,19 @@ void cs_ctwr_aetssc
           ct->vgoutte[ieau] = sqrt((pow(ct->vgoutte[ieau-1],2.)-ff1));
         }
       }
-      BFT_FREE( lst_par_cel);
-      BFT_FREE( tai  );
-      BFT_FREE( xai  );
-      BFT_FREE( rhoai );
-      BFT_FREE( vx  );
-      BFT_FREE( vy  );
-      BFT_FREE( vz  );
-      BFT_FREE( tai_inter  );
-      BFT_FREE( xai_inter  );
-      BFT_FREE( rhoai_inter );
-      BFT_FREE( vx_inter  );
-      BFT_FREE( vy_inter  );
-      BFT_FREE( vz_inter  );
+      BFT_FREE(lst_par_cel);
+      BFT_FREE(tai);
+      BFT_FREE(xai);
+      BFT_FREE(rhoai);
+      BFT_FREE(vx);
+      BFT_FREE(vy);
+      BFT_FREE(vz);
+      BFT_FREE(tai_inter);
+      BFT_FREE(xai_inter);
+      BFT_FREE(rhoai_inter);
+      BFT_FREE(vx_inter);
+      BFT_FREE(vy_inter);
+      BFT_FREE(vz_inter);
     }
 
   }  /* fin boucle ict sur les ct */
@@ -1866,7 +1833,7 @@ void cs_ctwr_aetssc
   for (ict=0; ict < cs_glob_ct_nbr; ict++) {
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
 
-    if ((ct->ntypct >= 2) && ( ct->idimct==2) )
+    if ((ct->ntypct >= 2) && (ct->idimct==2))
      gravite[2] = 1.0;
 
     cpa    = ct_prop->cpa;
@@ -1893,16 +1860,16 @@ void cs_ctwr_aetssc
     }
 
 
-    BFT_MALLOC( lst_par_cel , nb, cs_lnum_t );
-    fvm_nodal_get_parent_num( ct->cell_mesh, 3, lst_par_cel);
+    BFT_MALLOC(lst_par_cel , nb, cs_lnum_t);
+    fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
     /*--------------------------------------------*
      * interpolation  eau->air                    *
      *--------------------------------------------*/
     nb_dist_air = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
 
-    BFT_MALLOC( tei_inter   , nb_dist_air, cs_real_t );
-    BFT_MALLOC( femei_inter , nb_dist_air, cs_real_t );
-    BFT_MALLOC( vgin_inter  , nb_dist_air, cs_real_t );
+    BFT_MALLOC(tei_inter   , nb_dist_air, cs_real_t);
+    BFT_MALLOC(femei_inter , nb_dist_air, cs_real_t);
+    BFT_MALLOC(vgin_inter  , nb_dist_air, cs_real_t);
 
     for (iair= 0; iair < nb_dist_air; iair++) {
        tei_inter  [ iair ] = 0.;
@@ -1915,9 +1882,9 @@ void cs_ctwr_aetssc
         vgin_inter[iair]   += ct->coefair[ i ]* ct->vgoutte[ ct->voisair[i] ];
       }
     }
-    BFT_MALLOC( tei   , ct->nbevct, cs_real_t );
-    BFT_MALLOC( femei , ct->nbevct, cs_real_t );
-    BFT_MALLOC( vgin  , ct->nbevct, cs_real_t );
+    BFT_MALLOC(tei   , ct->nbevct, cs_real_t);
+    BFT_MALLOC(femei , ct->nbevct, cs_real_t);
+    BFT_MALLOC(vgin  , ct->nbevct, cs_real_t);
 
     ple_locator_exchange_point_var(ct->locat_water_air,
                                    tei_inter,     tei, NULL, sizeof(cs_real_t),1,0);
@@ -1940,7 +1907,7 @@ void cs_ctwr_aetssc
        * courant-croise ou contre-courant           *
        *--------------------------------------------*/
       if (ct->ntypct<=2) {
-        for (iloc = 0; iloc < ct->nbevct; iloc++){
+        for (iloc = 0; iloc < ct->nbevct; iloc++) {
           iair = lst_par_cel[iloc]-1;
           /* fin interpolation eau->air */
 
@@ -1999,12 +1966,12 @@ void cs_ctwr_aetssc
           iair = lst_par_cel[iloc]-1;
 
           if (CS_ABS(vgin[iloc])>=0.1) {
-            vvai = sqrt(pow(( vitx[iair]*gravite[0]),2.)
-                       +pow(( vity[iair]*gravite[1]),2.)
-                       +pow(( vitz[iair]*gravite[2]),2.));
-            vhai = sqrt(pow(( vitx[iair]*(1.-gravite[0])),2.)
-                       +pow(( vity[iair]*(1.-gravite[1])),2.)
-                       +pow(( vitz[iair]*(1.-gravite[2])),2.));
+            vvai = sqrt(pow((vitx[iair]*gravite[0]),2.)
+                       +pow((vity[iair]*gravite[1]),2.)
+                       +pow((vitz[iair]*gravite[2]),2.));
+            vhai = sqrt(pow((vitx[iair]*(1.-gravite[0])),2.)
+                       +pow((vity[iair]*(1.-gravite[1])),2.)
+                       +pow((vitz[iair]*(1.-gravite[2])),2.));
             dvg = sqrt(pow((vvai+vgin[iloc]),2.)+pow(vhai,2.));
 
             bxa = ct->xap*femei[iloc]*pow((fax/femei[iloc]),ct->xnp);
@@ -2036,12 +2003,12 @@ void cs_ctwr_aetssc
               xim = 0.;
             }
             /* termes sources pour T */
-            if (iscal==1){
+            if (iscal==1) {
               utsex[iair] = bxa*tex;
               utsim[iair] = bxa*tim;
             }
             /* termes sources pour x */
-            if (iscal==2){
+            if (iscal==2) {
               utsex[iair] = bxa*xex;
               utsim[iair] = bxa*xim;
             }
@@ -2058,16 +2025,16 @@ void cs_ctwr_aetssc
     /* Modele de Merkel                           */
     /*--------------------------------------------*/
     if (ct->imctch==2)  {
-      if (ct->ntypct<=2){
-        for (iloc = 0; iloc < ct->nbevct; iloc++){
+      if (ct->ntypct<=2) {
+        for (iloc = 0; iloc < ct->nbevct; iloc++) {
           iair = lst_par_cel[iloc]-1;
           if (femei[iloc]>1.e-6) {
-            vvai = sqrt(pow(( vitx[iair]*gravite[0]),2.)
-                       +pow(( vity[iair]*gravite[1]),2.)
-                       +pow(( vitz[iair]*gravite[2]),2.));
-            vhai = sqrt(pow(( vitx[iair]*(1.-gravite[0])),2.)
-                       +pow(( vity[iair]*(1.-gravite[1])),2.)
-                       +pow(( vitz[iair]*(1.-gravite[2])),2.));
+            vvai = sqrt(pow((vitx[iair]*gravite[0]),2.)
+                       +pow((vity[iair]*gravite[1]),2.)
+                       +pow((vitz[iair]*gravite[2]),2.));
+            vhai = sqrt(pow((vitx[iair]*(1.-gravite[0])),2.)
+                       +pow((vity[iair]*(1.-gravite[1])),2.)
+                       +pow((vitz[iair]*(1.-gravite[2])),2.));
 
             if (ct->ntypct==1) {
               fax=rho[iair]*vvai;
@@ -2092,19 +2059,19 @@ void cs_ctwr_aetssc
         }
       } /*Fin du ntypct<=2 */
 
-      else if (ct->ntypct==3){ /* zone de pluie */
+      else if (ct->ntypct==3) { /* zone de pluie */
 
-        for (iloc = 0; iloc < ct->nbevct; iloc++){
+        for (iloc = 0; iloc < ct->nbevct; iloc++) {
           iair = lst_par_cel[iloc]-1;
 
           if (CS_ABS(vgin[iloc])>=0.1) {
 
-            vvai = sqrt(pow(( vitx[iair]*gravite[0]),2.)
-                       +pow(( vity[iair]*gravite[1]),2.)
-                       +pow(( vitz[iair]*gravite[2]),2.));
-            vhai = sqrt(pow(( vitx[iair]*(1.-gravite[0])),2.)
-                       +pow(( vity[iair]*(1.-gravite[1])),2.)
-                       +pow(( vitz[iair]*(1.-gravite[2])),2.));
+            vvai = sqrt(pow((vitx[iair]*gravite[0]),2.)
+                       +pow((vity[iair]*gravite[1]),2.)
+                       +pow((vitz[iair]*gravite[2]),2.));
+            vhai = sqrt(pow((vitx[iair]*(1.-gravite[0])),2.)
+                       +pow((vity[iair]*(1.-gravite[1])),2.)
+                       +pow((vitz[iair]*(1.-gravite[2])),2.));
 
             dvg = sqrt(pow((vvai+vgin[iloc]),2.)+pow(vhai,2.));
             xsata = cs_ctwr_xsath(temp[iair]);
@@ -2115,7 +2082,7 @@ void cs_ctwr_aetssc
             anu = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
             bxa = (6.*conduc*anu*femei[iloc])/(0.92*rhoe*vgin[iloc]*pow(dgout,2.)*cpx);
             fx0 = (xsate-xsata)*(cpv*tei[iloc]+hv0);
-            if (iscal==1){
+            if (iscal==1) {
               utsex[iair] = bxa*tei[iloc]*(cpa+cpv*xsata)+bxa*fx0;
               utsim[iair] = bxa*(cpa+cpv*xsata);
             }
@@ -2130,13 +2097,13 @@ void cs_ctwr_aetssc
     /*--------------------------------------------*/
     /* Fin pour le modele de Merkel */
     /*--------------------------------------------*/
-    BFT_FREE( lst_par_cel);
-    BFT_FREE( tei_inter );
-    BFT_FREE( femei_inter );
-    BFT_FREE( vgin_inter );
-    BFT_FREE( tei );
-    BFT_FREE( femei );
-    BFT_FREE( vgin );
+    BFT_FREE(lst_par_cel);
+    BFT_FREE(tei_inter);
+    BFT_FREE(femei_inter);
+    BFT_FREE(vgin_inter);
+    BFT_FREE(tei);
+    BFT_FREE(femei);
+    BFT_FREE(vgin);
   }
   /*--------------------------------------------*/
   /* Fin  calcul des termes sources pour T et x*/
@@ -2194,15 +2161,15 @@ void cs_ctwr_aetsvi
 
     nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
 
-    BFT_MALLOC( lst_par_cel , (nb*3), cs_lnum_t );
-    fvm_nodal_get_parent_num( ct->cell_mesh, 3, lst_par_cel);
+    BFT_MALLOC(lst_par_cel , (nb*3), cs_lnum_t);
+    fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
     /*--------------------------------------------*
      * interpolation  eau->air                    *
      *--------------------------------------------*/
     nb_dist_air = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
 
-    BFT_MALLOC( femei_inter  , nb_dist_air, cs_real_t);
-    BFT_MALLOC( vgin_inter  , nb_dist_air, cs_real_t);
+    BFT_MALLOC(femei_inter  , nb_dist_air, cs_real_t);
+    BFT_MALLOC(vgin_inter  , nb_dist_air, cs_real_t);
 
     for (iair= 0; iair < nb_dist_air; iair++) {
 
@@ -2216,8 +2183,8 @@ void cs_ctwr_aetsvi
       }
     }
 
-    BFT_MALLOC( femei , ct->nbevct, cs_real_t );
-    BFT_MALLOC( vgin , ct->nbevct, cs_real_t );
+    BFT_MALLOC(femei , ct->nbevct, cs_real_t);
+    BFT_MALLOC(vgin , ct->nbevct, cs_real_t);
 
     ple_locator_exchange_point_var(ct->locat_water_air,
                                    femei_inter, femei, NULL, sizeof(cs_real_t),1,0);
@@ -2234,17 +2201,17 @@ void cs_ctwr_aetsvi
         vginu  = -ct_prop->gravx/ absgrv * vgin[iloc];
         vginv  = -ct_prop->gravy/ absgrv * vgin[iloc];
         vginw  = -ct_prop->gravz/ absgrv * vgin[iloc];
-        dvg = sqrt( pow((vitx[iair]+vginu ),2.)
-              + pow((vity[iair]+vginv ),2.)
-              + pow((vitz[iair]+vginw ),2.) );
+        dvg = sqrt(pow((vitx[iair]+vginu),2.)
+              + pow((vity[iair]+vginv),2.)
+              + pow((vitz[iair]+vginw),2.));
         if (vgin[iloc] > 0.1) {
           qer = femei[iloc]/rhoe;
           rre = dvg*rho[iair]*(1 + xair[iair])*dgout/visc;
           cdd1 = (1.+0.15*pow(rre,0.687));
           cff0 = 18.*cdd1*visc*qer/(vgin[iloc]*pow(dgout,2.));
-          if (idim==1){ utsex[iair] = -cff0 *( vitx[iair]+vginu ); }
-          if (idim==2){ utsex[iair] = -cff0 *( vity[iair]+vginv ); }
-          if (idim==3){ utsex[iair] = -cff0 *( vitz[iair]+vginw ); }
+          if (idim==1) {utsex[iair] = -cff0 *(vitx[iair]+vginu);}
+          if (idim==2) {utsex[iair] = -cff0 *(vity[iair]+vginv);}
+          if (idim==3) {utsex[iair] = -cff0 *(vitz[iair]+vginw);}
         }
       }
     }
@@ -2326,12 +2293,12 @@ void cs_ctwr_bilanct
     nbr_fbr_air[2][0] = ct->nbfbr_lct + ct->nbfac_lct;
     nbr_fbr_air[2][1] = ct->nbfbr_lct;
 
-    BFT_MALLOC( face_sup ,(ct->nbfac_sct + ct->nbfbr_sct) ,cs_lnum_t );
-    fvm_nodal_get_parent_num( ct->face_sup_mesh, 2, face_sup);
-    BFT_MALLOC( face_inf ,(ct->nbfac_ict + ct->nbfbr_ict) ,cs_lnum_t );
-    fvm_nodal_get_parent_num( ct->face_inf_mesh, 2, face_inf);
-    BFT_MALLOC( face_lat ,(ct->nbfbr_lct + ct->nbfac_lct) ,cs_lnum_t );
-    fvm_nodal_get_parent_num( ct->face_lat_mesh, 2, face_lat);
+    BFT_MALLOC(face_sup ,(ct->nbfac_sct + ct->nbfbr_sct) ,cs_lnum_t);
+    fvm_nodal_get_parent_num(ct->face_sup_mesh, 2, face_sup);
+    BFT_MALLOC(face_inf ,(ct->nbfac_ict + ct->nbfbr_ict) ,cs_lnum_t);
+    fvm_nodal_get_parent_num(ct->face_inf_mesh, 2, face_inf);
+    BFT_MALLOC(face_lat ,(ct->nbfbr_lct + ct->nbfac_lct) ,cs_lnum_t);
+    fvm_nodal_get_parent_num(ct->face_lat_mesh, 2, face_lat);
 
     ct->fem_e   = 0.0;
     ct->fem_s   = 0.0;
@@ -2411,29 +2378,29 @@ void cs_ctwr_bilanct
 
     for (j = 0; j < 3; j++)
     for (i = 0; i < nbr_fbr_air[j][0]; i++) {
-      if( i< nbr_fbr_air[j][1] ){
-        if( j==0) ifac = (cs_lnum_t) face_sup[i]-1;
-        if( j==1) ifac = (cs_lnum_t) face_inf[i]-1;
-        if( j==2) ifac = (cs_lnum_t) face_lat[i]-1;
+      if (i< nbr_fbr_air[j][1]) {
+        if (j==0) ifac = (cs_lnum_t) face_sup[i]-1;
+        if (j==1) ifac = (cs_lnum_t) face_inf[i]-1;
+        if (j==2) ifac = (cs_lnum_t) face_lat[i]-1;
         icel = mesh->b_face_cells[ifac];
-        for (idim = 0; idim<3; idim++ )
+        for (idim = 0; idim<3; idim++)
           n_sortant[idim] =  mesh_quantities->b_face_normal[ifac*3+idim];
         debit = CS_ABS(flux_masse_fbr[ifac]);
         surf  = CS_LOC_MODULE((b_face_normal + 3*ifac));
-      }else{
-        if( j==0) ifac = (cs_lnum_t) face_sup[i] - mesh->n_b_faces - 1;
-        if( j==1) ifac = (cs_lnum_t) face_inf[i] - mesh->n_b_faces - 1;
-        if( j==2) ifac = (cs_lnum_t) face_lat[i] - mesh->n_b_faces - 1;
+      } else {
+        if (j==0) ifac = (cs_lnum_t) face_sup[i] - mesh->n_b_faces - 1;
+        if (j==1) ifac = (cs_lnum_t) face_inf[i] - mesh->n_b_faces - 1;
+        if (j==2) ifac = (cs_lnum_t) face_lat[i] - mesh->n_b_faces - 1;
         icel_1 = mesh->i_face_cells[ifac][0];
         icel_2 = mesh->i_face_cells[ifac][1];
-        if ( ct->mark_ze[icel_1] == 1 ) {
+        if (ct->mark_ze[icel_1] == 1) {
 
           icel = icel_2;
           for (idim = 0; idim < 3; idim++) {
             n_sortant[idim] =  coo_cen[icel_2*3 + idim] - coo_cen[icel_1*3 + idim];
           }
         }
-        if ( ct->mark_ze[icel_2] == 1 ) {
+        if (ct->mark_ze[icel_2] == 1) {
 
           icel = icel_1;
           for (idim = 0; idim < 3; idim++) {
@@ -2466,52 +2433,50 @@ void cs_ctwr_bilanct
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
 
-
       MPI_Allreduce (&ct->tair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->tair_e = aux;
 
       MPI_Allreduce (&ct->xair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->xair_e = aux;
 
       MPI_Allreduce (&ct->debit_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->debit_e = aux;
 
       MPI_Allreduce (&ct->hair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->hair_e = aux;
 
       MPI_Allreduce (&ct->tair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->tair_s = aux;
 
       MPI_Allreduce (&ct->xair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->xair_s = aux;
 
       MPI_Allreduce (&ct->debit_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->debit_s = aux;
 
       MPI_Allreduce (&ct->hair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
+                     cs_glob_mpi_comm);
       ct->hair_s = aux;
 
     }
 #endif
 
-    if (CS_ABS( ct->debit_e )> 1e-10 ){
+    if (CS_ABS(ct->debit_e) > 1e-10) {
       ct->tair_e /= ct->debit_e;
       ct->xair_e /= ct->debit_e;
     }
 
-    if (CS_ABS( ct->debit_s )> 1e-10 ){
+    if (CS_ABS(ct->debit_s) > 1e-10) {
       ct->tair_s /= ct->debit_s;
       ct->xair_s /= ct->debit_s;
     }
-
 
     fem_entree[ict]   = ct->fem_e;
     fem_sortie[ict]   = ct->fem_s;
@@ -2532,14 +2497,12 @@ void cs_ctwr_bilanct
     debit_entree[ict] = ct->debit_e;
     debit_sortie[ict] = ct->debit_s;
 
-
-
     if (cs_glob_rank_id <= 0) {
       length = strlen("bltctc.") + 3;
       BFT_MALLOC(file_name, length, char);
       sprintf(file_name, "bltctc.%02d", ct->num);
 
-      if (CS_ABS(ct->heau_e-ct->heau_s)> 1.e-6){
+      if (CS_ABS(ct->heau_e-ct->heau_s)> 1.e-6) {
         f = fopen(file_name, "a");
 
         aux = CS_ABS((ct->hair_s - ct->hair_e)/(ct->heau_e - ct->heau_s));

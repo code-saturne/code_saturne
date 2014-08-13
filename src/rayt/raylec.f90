@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine raylec &
+subroutine raylec
 !================
-
- ( ncelet , propce )
 
 !===============================================================================
 ! Purpose:
@@ -40,8 +38,6 @@ subroutine raylec &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -52,6 +48,8 @@ subroutine raylec &
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -65,31 +63,27 @@ use cpincl
 use ppincl
 use radiat
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ncelet
-
-double precision propce(ncelet,*)
-!
 ! Local variables
 
 character        rubriq*64
 character        ficsui*32
 integer          iok
 
-integer          ncelok , nfaiok , nfabok , nsomok
-integer          ierror , irtyp  , itysup , nbval
-integer          ilecec , nberro , ivers
-integer          impamr
-double precision, dimension(:), pointer :: f_val
+integer          ierror , itysup , nbval
+integer          nberro , ivers
+integer          ival(1)
 
-!===============================================================================
-! 0 - GESTION MEMOIRE
-!===============================================================================
+logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
+
+type(c_ptr) :: rp
 
 !===============================================================================
 ! 1. LECTURE DU FICHIER SUITE
@@ -97,50 +91,42 @@ double precision, dimension(:), pointer :: f_val
 
 if (isuird.eq.1) then
 
-  !  ---> Ouverture
+  ! Ouverture
 
   write(nfecra,6000)
 
-  ! (ILECEC=1:lecture)
-  ilecec = 1
   ficsui = 'radiative_transfer'
-  call opnsui(ficsui,len(ficsui),ilecec,impamr,ierror)
-  !==========
-  if (ierror.ne.0) then
-    write(nfecra,9011) ficsui
-    call csexit (1)
-  endif
+  call restart_create(ficsui, '', 0, rp)
 
   write(nfecra,6010)
 
-!  ---> Type de fichier suite
-!        Pourrait porter le numero de version si besoin.
-!        On ne se sert pas de IVERS pour le moment
+  ! Type de fichier suite
+  !    Pourrait porter le numero de version si besoin.
+  !    On ne se sert pas de IVERS pour le moment
 
   itysup = 0
   nbval  = 1
-  irtyp  = 1
   rubriq = 'version_fichier_suite_rayonnement'
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,ierror)
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+  ivers = ival(1)
 
   if (ierror.ne.0) then
     write(nfecra,9200)ficsui
     call csexit (1)
   endif
 
-!  ---> Tests
+  !  Tests
 
   iok = 0
 
   ! Dimensions des supports
 
-  call tstsui(impamr,ncelok,nfaiok,nfabok,nsomok)
-  !==========
-  if (ncelok.eq.0) then
+  call restart_check_base_location(rp,ncelok,nfaiok,nfabok,nsomok)
+  if (ncelok.eqv..false.) then
     write(nfecra,9210)
     iok = iok + 1
   endif
-  if (nfabok.eq.0) then
+  if (nfabok.eqv..false.) then
     write(nfecra,9211)
     iok = iok + 1
   endif
@@ -149,58 +135,34 @@ if (isuird.eq.1) then
 
   nberro = 0
 
-  ! ---> Lecture des donnees
-
   ! Aux faces de bord
 
-  itysup = 3
-  nbval  = 1
-  irtyp  = 2
-
-  rubriq = 'tparoi_fb'
-  call field_get_val_s(itparo, f_val)
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  call restart_read_field_vals(rp, itparo, 0, ierror)
   nberro=nberro+ierror
 
-  rubriq = 'qincid_fb'
-  call field_get_val_s(iqinci, f_val)
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  call restart_read_field_vals(rp, iqinci, 0, ierror)
   nberro=nberro+ierror
 
-  rubriq = 'hfconv_fb'
-  call field_get_val_s(ihconv, f_val)
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  call restart_read_field_vals(rp, ihconv, 0, ierror)
   nberro=nberro+ierror
 
-  rubriq = 'flconv_fb'
-  call field_get_val_s(ifconv, f_val)
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  call restart_read_field_vals(rp, ifconv, 0, ierror)
   nberro=nberro+ierror
 
   ! Aux cellules
 
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-
-  rubriq = 'rayimp_ce'
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-              propce(1,ipproc(itsri(1))),ierror)
+  call restart_read_field_vals(rp, iprpfl(itsri(1)), 0, ierror)
   nberro=nberro+ierror
 
-  rubriq = 'rayexp_ce'
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-              propce(1,ipproc(itsre(1))),ierror)
+  call restart_read_field_vals(rp, iprpfl(itsre(1)), 0, ierror)
   nberro=nberro+ierror
 
-  rubriq = 'luminance'
-  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-              propce(1,ipproc(ilumin)),ierror)
+  call restart_read_field_vals(rp, iprpfl(ilumin), 0, ierror)
   nberro=nberro+ierror
 
   !---> Si pb : arret
 
-  if(nberro.ne.0) then
+  if (nberro.ne.0) then
     write(nfecra,9100)
     call csexit (1)
   endif
@@ -209,11 +171,7 @@ if (isuird.eq.1) then
 
   ! ---> Fermeture du fichier suite
 
-  call clssui(impamr,ierror)
-
-  if (ierror.ne.0) then
-    write(nfecra,8011) ficsui
-  endif
+  call restart_destroy(rp)
 
   write(nfecra,6099)
 
@@ -233,33 +191,6 @@ endif
 '                                                             ',/,&
 '-------------------------------------------------------------',/)
 
- 8011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
-'@    =========   RAYONNEMENT                                 ',/,&
-'@                                                            ',/,&
-'@    Probleme sur le fichier de nom (',A13,')                ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========   RAYONNEMENT                                 ',/,&
-'@      ERREUR A L''OUVERTURE DU FICHIER SUITE                ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut pas etre execute.                     ',/,&
-'@                                                            ',/,&
-'@    Verifier l''existence et le nom (',A13,') du            ',/,&
-'@        fichier suite dans le repertoire de travail.        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/)
  9200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

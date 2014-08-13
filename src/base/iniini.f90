@@ -741,9 +741,6 @@ rlxp1 = 0.95d0
 isuite = 0
 iecaux = 1
 ileaux = 1
-do ii = 1, nscamx
-  iscold(ii) = -999
-enddo
 isuit1 = -1
 isuivo = -1
 isuisy = -1

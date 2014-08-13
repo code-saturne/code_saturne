@@ -256,12 +256,6 @@ cs_f_time_moment_define_by_field_ids(const char                *name,
 int
 cs_f_time_moment_field_id(int  m_num);
 
-void
-cs_f_time_moment_restart_write(int  r_num);
-
-void
-cs_f_time_moment_restart_read(int  r_num);
-
  /*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
@@ -1776,36 +1770,6 @@ cs_f_time_moment_field_id(int m_num)
 {
   const cs_field_t *f = cs_time_moment_get_field(m_num - 1);
   return f->id;
-}
-
-/*----------------------------------------------------------------------------
- * Checkpoint moments information.
- *
- * parameters:
- *   r_num <-- restart file number
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_time_moment_restart_write(int  r_num)
-{
-  cs_restart_t *r = cs_restart_by_fortran_id(r_num);
-  if (r != NULL)
-    cs_time_moment_restart_write(r);
-}
-
-/*----------------------------------------------------------------------------
- * Read restart moments information.
- *
- * parameters:
- *   r_num <-- restart file number
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_time_moment_restart_read(int  r_num)
-{
-  cs_restart_t *r = cs_restart_by_fortran_id(r_num);
-  if (r != NULL)
-    cs_time_moment_restart_read(r);
 }
 
 /*! \endcond (end ignore by Doxygen) */

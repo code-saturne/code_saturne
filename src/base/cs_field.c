@@ -1373,6 +1373,10 @@ cs_field_create(const char   *name,
 
   f->n_time_vals = has_previous ? 2 : 1;
 
+  BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
+  for (int i = 0; i < f->n_time_vals; i++)
+    f->vals[i] = NULL;
+
   return f;
 }
 
@@ -1415,6 +1419,10 @@ cs_field_set_n_time_vals(cs_field_t  *f,
 
   f->n_time_vals = _n_time_vals;
 
+  BFT_REALLOC(f->vals, f->n_time_vals, cs_real_t *);
+  for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
+    f->vals[i] = NULL;
+
   /* If allocation or mapping has already been done */
 
   if (f->val != NULL) {
@@ -1452,9 +1460,7 @@ cs_field_allocate_values(cs_field_t  *f)
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
     int ii;
 
-    BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t*);
-
-   /* Initialization */
+    /* Initialization */
     for (ii = 0; ii < f->n_time_vals; ii++)
       f->vals[ii] = NULL;
 
@@ -1491,11 +1497,14 @@ cs_field_map_values(cs_field_t   *f,
   }
 
   f->val = val;
+  f->vals[0] = val;
 
   /* Add previous time step values if necessary */
 
-  if (f->n_time_vals > 1)
+  if (f->n_time_vals > 1) {
     f->val_pre = val_pre;
+    f->vals[1] = val_pre;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1862,8 +1871,8 @@ cs_field_destroy_all(void)
       int ii;
       for (ii = 0; ii < f->n_time_vals; ii++)
         BFT_FREE(f->vals[ii]);
-      BFT_FREE(f->vals);
     }
+    BFT_FREE(f->vals);
     if (f->bc_coeffs != NULL) {
       BFT_FREE(f->bc_coeffs->a);
       BFT_FREE(f->bc_coeffs->b);

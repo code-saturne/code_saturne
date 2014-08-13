@@ -524,11 +524,7 @@ endif
 
 if (isuite.eq.1) then
 
-  call lecamo &
-  !==========
- ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
-   dt     , rtp    , propce ,                                     &
-   frcxt  , prhyd  )
+  call lecamo(frcxt, prhyd)
 
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
@@ -601,7 +597,7 @@ call inivar(nvar, nscal, dt, rtp, propce)
 !===============================================================================
 
 if (iirayo.gt.0 .and. isuird.eq.1) then
-  call raylec(ncelet, propce)
+  call raylec
   !==========
 endif
 
@@ -697,8 +693,7 @@ nent = 0
 call defsyn(nent)
 
 if (isuisy.eq.1) then
-  ficsui = 'les_inflow'
-  call lecsyn( ficsui, len(ficsui) )
+  call lecsyn('les_inflow'//c_null_char)
 endif
 
 ! ATMO MODULE : INITIALIZATION FOR THE SOIL MODEL (ippmo(iatmos) = 2)
@@ -1037,12 +1032,7 @@ if (iisuit.eq.1) then
   call dmtmps(tecrf1)
   !==========
 
-  call ecrava                                                     &
-  !==========
- ( ndim   , ncelet , ncel   , nfabor  , nvar   , nscal  ,         &
-   xyzcen , cdgfbo ,                                              &
-   dt     , rtp    , propce ,                                     &
-   frcxt  , prhyd  )
+  call ecrava(frcxt, prhyd)
 
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'
@@ -1053,14 +1043,12 @@ if (iisuit.eq.1) then
   endif
 
   if (nent.gt.0) then
-    ficsui = 'les_inflow'
-    call ecrsyn( ficsui, len(ficsui) )
+    call ecrsyn('les_inflow'//c_null_char)
     !==========
   endif
 
   if (ippmod(iaeros).ge.0) then
-     ficsui = 'cooling_towers'
-     call ecrctw (ficsui , len(ficsui))
+     call ecrctw ('cooling_towers'//c_null_char)
      !==========
   endif
 
@@ -1075,7 +1063,7 @@ if (iisuit.eq.1) then
   endif
 
   if (iirayo.gt.0) then
-    call rayout(propce)
+    call rayout
     !==========
   endif
 

@@ -23,34 +23,19 @@
 subroutine ecrava &
 !================
 
- ( ndim   , ncelet , ncel   , nfabor ,                            &
-   nvar   , nscal  ,                                              &
-   xyzcen , cdgfbo ,                                              &
-   dt     , rtp    , propce ,                                     &
-   frcxt  , prhyd  )
+ ( frcxt  , prhyd  )
 
 !===============================================================================
+! Purpose:
+! --------
 
-! FONCTION :
-! ----------
-! ECRITURE D'UN FICHIER SUITE
-
-! PAS DE STOP (RETURN SI ON ECHOUE)
+! Write main and auxliary restart files
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted                 !
@@ -64,6 +49,8 @@ subroutine ecrava &
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -87,7 +74,7 @@ use field
 use atincl, only: init_at_chem
 use atchem, only: ichemistry
 use siream, only: iaerosol
-use mesh, only: isympa
+use mesh
 use cs_c_bindings
 
 !===============================================================================
@@ -96,61 +83,39 @@ implicit none
 
 ! Arguments
 
-integer          ndim   , ncelet , ncel   , nfabor
-integer          nvar   , nscal
-
-double precision xyzcen(ndim,ncelet)
-double precision cdgfbo(ndim,nfabor)
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
-character(len=80) :: fname
 character        rubriq*64,car2*2,car4*4,car54*54
-character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
-character        cphase*2 , cscal(nscamx)*4
-character        cflu  (nvarmx)*4
-character        nomflu(nvarmx)*18, nomrtp(nvarmx)*20
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-logical          lprev , interleaved
-integer          nphas
-integer          ivar  , iscal , f_id  , f_dim
+integer          f_id, t_id
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers
-integer          ierror, irtyp , itysup, nbval
+integer          itysup, nbval
 integer          ipcefj, ipcla1, ipcla2, ipcla3
-integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
+integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
-integer          nbflu , ilecec, iecr
+integer          ilecec, iecr
 integer          ngbstr(2)
-integer          ifac, iel, istr, isou
-integer          impava, impavx, nfld, iflmas, iflmab
-double precision tmpstr(27)
+integer          ifac, iel, istr
+integer          ival(1)
+double precision rval(1), tmpstr(27)
 
-integer, allocatable, dimension(:) :: mflnum
+type(c_ptr) :: rp
+
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:,:) :: l_velocity
-
-double precision, dimension(:,:), pointer :: xut
-double precision, dimension(:), pointer :: sval
-double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:,:), pointer :: val_vp
-
-double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_cp
+double precision, pointer, dimension(:) :: dt_s
 
 !===============================================================================
 !     A noter :
 !        Lorsque qu'il est necessaire d'utiliser un ordre implicite
 !        de rangement des variables, on a choisi :
+!          U, V, W,
 !          P,
-!          (U, V, W, turbulence, scalaires)_phase1,
-!          (...)_phase2,
-!          (...)_...
+!          turbulence
 !          scalaires
 
 !          avec turbulence = k, epsilon
@@ -161,11 +126,6 @@ double precision, dimension(:), pointer :: cpro_cp
 !        Ceci est par exemple utilise pour relier les flux de masse aux
 !        variables
 
-
-!===============================================================================
-! 1. INITIALISATION
-!===============================================================================
-
 !===============================================================================
 ! 1. VERIFICATIONS DE BASE ET CODAGE DES CHAINES DE CARACTERES
 !===============================================================================
@@ -173,41 +133,17 @@ double precision, dimension(:), pointer :: cpro_cp
 !  --->  On code en chaine le numero des phases et scalaires
 !        ----------------------------------------------------
 
-!     Nombre de scalaires, de flux, de moments et de charbons
+!     Nombre de scalaires, de flux, et de charbons
 !       max pour les formats choisis
 nfmtsc = 9999
 nfmtfl = 9999
-nfmtmo = 9999
 nfmtch = 99
 nfmtcl = 9999
 
 !     Indefini (on met qqch de different de lecamo (pour generer une
 !       erreur a la lecture)
-cindfp = 'XX'
-cindfs = 'XXXX'
-cindff = 'XXXX'
-cindfm = 'XXXX'
 cindfc = 'XX'
 cindfl = 'XXXX'
-
-!     Codage en chaine de caracteres du numero de la phase
-write(cphase,'(I2.2)') 1
-
-!     Codage en chaine de caracteres du numero du scalaire
-do iscal = 1, min(nscal ,nfmtsc)
-  write(cscal(iscal),'(I4.4)') iscal
-enddo
-do iscal = min(nscal ,nfmtsc)+1,nscal
-  cscal(iscal) = cindfs
-enddo
-
-!     Codage en chaine de caracteres du numero du flux de masse
-do ivar = 1, min(nvar  ,nfmtfl)
-  write(cflu(ivar),'(I4.4)') ivar
-enddo
-do ivar = min(nvar  ,nfmtfl)+1,nvar
-  cflu(ivar) = cindff
-enddo
 
 !     Verifications pour les formats et les numeros
 !       de scalaire en chaine.
@@ -225,7 +161,6 @@ if (ncpcmx.gt.nfmtcl) then
   write(nfecra,7005)nfmtcl,ncpcmx
 endif
 
-
 !===============================================================================
 ! 2. OUVERTURE FICHIER SUITE DE BASE
 !===============================================================================
@@ -236,13 +171,7 @@ write(nfecra,1000)
 ilecec = 2
 
 ficsui = 'main'
-call opnsui(ficsui, len(ficsui), ilecec, impava, ierror)
-!==========
-if (ierror.ne.0) then
-  write(nfecra,8000) ficsui
-  return
-endif
-
+call restart_create(ficsui, '', 1, rp)
 
 !===============================================================================
 ! 3. ECRITURE FICHIER SUITE DE BASE
@@ -250,53 +179,20 @@ endif
 
 write(nfecra,1100)
 
+! Restart version (for version x.y.z, xxyyzz)
 
-! 3.0 VERSION  : Rubrique "fichier suite ppal"
-!=============   Pourrait porter le numero de version si besoin.
-!                On ne se sert pas de IVERS (=1.2.0) pour le moment.
-
-ivers  = 120
+ivers  = 400000
 itysup = 0
 nbval  = 1
-irtyp  = 1
-rubriq = 'version_fichier_suite_principal'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
+ival(1) = ivers
+rubriq = 'code_saturne:checkpoint:main:version'
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
+! Main field metadata
 
-! 3.1 DIMENSIONS : les dimensions geometriques sont ecrites
-!===============   automatiquement lors de l'ouverture du fichier
-!                  on ecrit ici les nombres de variables
+call restart_write_field_info(rp)
 
-! The checkpoint file is now single-phase by default
-nphas = 1
-
-itysup = 0
-nbval  = 1
-irtyp  = 1
-
-rubriq = 'nombre_variables'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nvar)
-
-rubriq = 'nombre_scalaires'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscal)
-
-rubriq = 'nombre_scalaires_us'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscaus)
-
-rubriq = 'nombre_scalaires_pp'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscapp)
-
-rubriq = 'nombre_phases'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nphas)
-
-#if defined(_CS_LANG_FR)
-car54 =' Fin de l''ecriture des dimensions                    '
-#else
-car54 =' End writing the dimensions                           '
-#endif
-write(nfecra,1110) car54
-
-! 3.2 OPTIONS (Celles servant a donner le nombre de tableaux a lire)
+! 3.1 OPTIONS (Celles servant a donner le nombre de tableaux a lire)
 !============================================================================
 ! Remarque : ces variables ne sont pas toutes utilies pour la relecture
 !            en revanche, elles peuvent completer les infos au sein
@@ -306,42 +202,49 @@ write(nfecra,1110) car54
 rubriq = 'nbre_pas_de_temps'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs)
+ival(1) = ntcabs
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 rubriq = 'instant_precedent'
 itysup = 0
 nbval  = 1
-irtyp  = 2
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcabs)
+rval(1) = ttcabs
+call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
 !  ---> Modeles de turbulence
-rubriq = 'modele_turbulence_phase'//cphase
+rubriq = 'turbulence_model'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iturb)
+ival(1) = iturb
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 !  ---> Methode ALE
 rubriq = 'methode_ALE'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iale)
+ival(1) = iale
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 !  ---> Cavitation
 rubriq = 'cavitation'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,icavit)
+ival(1) = icavit
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 rubriq = 'instant_mobile_precedent'
 itysup = 0
 nbval  = 1
-irtyp  = 2
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcmob)
+rval(1) = ttcmob
+call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
+if (ichemistry.gt.0.or.iaerosol.gt.0) then
+  rubriq = 'atmospheric_chem'
+  itysup = 0
+  nbval  = 1
+  ival(1) = init_at_chem
+  call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
+endif
 
 #if defined(_CS_LANG_FR)
 car54 =' Fin de l''ecriture des options                       '
@@ -350,140 +253,17 @@ car54 =' End writing the options                              '
 #endif
 write(nfecra,1110) car54
 
-! 3.3 VARIABLES "PRINCIPALES"
-!====================================
+! 3.2 VARIABLES "PRINCIPALES"
+!============================
 
-nomrtp(ipr)='pression_ce_phase'//cphase
-nomrtp(iu)='vitesse_u_ce_phase'//cphase
-nomrtp(iv)='vitesse_v_ce_phase'//cphase
-nomrtp(iw)='vitesse_w_ce_phase'//cphase
-if (itytur == 2) then
-  nomrtp(ik)='k_ce_phase'//cphase
-  nomrtp(iep)='eps_ce_phase'//cphase
-elseif (itytur == 3) then
-  nomrtp(ir11)='R11_ce_phase'//cphase
-  nomrtp(ir22)='R22_ce_phase'//cphase
-  nomrtp(ir33)='R33_ce_phase'//cphase
-  nomrtp(ir12)='R12_ce_phase'//cphase
-  nomrtp(ir13)='R13_ce_phase'//cphase
-  nomrtp(ir23)='R23_ce_phase'//cphase
-  nomrtp(iep)='eps_ce_phase'//cphase
-  if (iturb.eq.32) then
-    nomrtp(ial)='alp_ce_phase'//cphase
-  endif
-elseif (itytur == 5) then
-  nomrtp(ik)='k_ce_phase'//cphase
-  nomrtp(iep)='eps_ce_phase'//cphase
-  nomrtp(iphi)='phi_ce_phase'//cphase
-  if (iturb.eq.50) then
-    nomrtp(ifb)='fb_ce_phase'//cphase
-  elseif (iturb.eq.51) then
-    nomrtp(ial)='al_ce_phase'//cphase
-  endif
-elseif (iturb == 60) then
-  nomrtp(ik)='k_ce_phase'//cphase
-  nomrtp(iomg)='omega_ce_phase'//cphase
-elseif (iturb.eq.70) then
-  nomrtp(inusa)='nusa_ce_phase'//cphase
-endif
-if (nscal.gt.0) then
-  do iscal = 1, nscal
-    !  ---> Turbulent flux model
-    rubriq = 'turbulent_flux_model'//cscal(iscal)
-    itysup = 0
-    nbval  = 1
-    irtyp  = 1
-    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iturt(iscal))
-    nomrtp(isca(iscal))='scalaire_ce_'//cscal(iscal)
-  enddo
-endif
-if (iale.eq.1) then
-  nomrtp(iuma)='vit_maillage_u_ce'
-  nomrtp(ivma)='vit_maillage_v_ce'
-  nomrtp(iwma)='vit_maillage_w_ce'
-endif
-if (icavit.ge.0) then
-  nomrtp(ivoidf)='taux_vide_ce'
-endif
-
-!     Dans le cas ou il y a plusieurs phases,
-!       on ne veut ecrire la pression qu'une seule fois
-!       mais ca tombe bien, car on ne la verra qu'une seule fois
-!       dans la liste des variables
-
-! TODO: improve ecrsui for field structure
-call field_get_val_v(ivarfl(iu), vel)
-allocate(l_velocity(ncelet, 3))
-do iel = 1, ncelet
-  do isou = 1, 3
-    l_velocity(iel,isou) = vel(isou,iel)
-  enddo
-enddo
-
-do ivar = 1, 3
-
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-  rubriq = nomrtp(ivar)
-  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,l_velocity(1,ivar))
-
-enddo
-deallocate(l_velocity)
-
-do ivar = nflown, nvar
-
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-  rubriq = nomrtp(ivar)
-  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,rtp(1,ivar))
-
-enddo
-
-
-do iscal = 1, nscal
-  if (ityturt(iscal).eq.2 .or. ityturt(iscal).eq.3) then
-    !  ---> Turbulent flux model
-    ivar = isca(iscal)
-    call field_get_name(ivarfl(ivar), fname)
-    ! Index of the corresponding turbulent flux
-    call field_get_id(trim(fname)//'_turbulent_flux', f_id)
-    call field_get_val_v(f_id, xut)
-    rubriq = trim(fname)//'_turbulent_flux_ce'
-    itysup = 1
-    nbval  = 3
-    irtyp  = 2
-    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,xut)
-  endif
-enddo
-
-if (ichemistry.gt.0.or.iaerosol.gt.0) then
-  rubriq = 'atmospheric_chem'
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,init_at_chem)
-endif
-
-#if defined(_CS_LANG_FR)
-car54 =' Fin de l''ecriture des variables principales         '
-#else
-car54 =' End writing the main variables                       '
-#endif
-write(nfecra,1110)car54
-
+call restart_write_variables(rp, 0)
 
 !===============================================================================
 ! 4. FERMETURE FICHIER SUITE DE BASE
 !===============================================================================
 
-!     Fermeture du fichier suite principal
-call clssui(impava,ierror)
-
-if (ierror.ne.0) then
-  write(nfecra,8010) ficsui
-endif
+! Fermeture du fichier suite principal
+call restart_destroy(rp)
 
 write(nfecra,1200)
 
@@ -501,73 +281,41 @@ if (iecaux.eq.1) then
 
   ilecec = 2
   ficsui = 'auxiliary'
-  call opnsui(ficsui, len(ficsui), ilecec, impavx, ierror)
-  !==========
-  if (ierror.ne.0) then
-    write(nfecra,8001) ficsui
-    return
-  endif
+  call restart_create(ficsui, '', 1, rp)
 
   write(nfecra,1100)
 
-! 5.1 VERSION  : Rubrique "fichier suite auxiliaire"
-!=============   Pourrait porter le numero de version si besoin.
-!                On ne se sert pas de IVERS (=1.2.0) pour le moment.
+! Restart version (for version x.y.z, xxyyzz)
 
-  ivers  = 120
+  ivers  = 400000
   itysup = 0
   nbval  = 1
-  irtyp  = 1
-  rubriq = 'version_fichier_suite_auxiliaire'
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
+  ival(1) = ivers
+  rubriq = 'code_saturne:checkpoint:auxiliary:version'
+  call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
-! 5.2 DIMENSIONS : les dimensions geometriques sont ecrites
+! 5.1 DIMENSIONS : les dimensions geometriques sont ecrites
 !===============   automatiquement lors de l'ouverture du fichier
-
-
-!  ---> Nombre de phases
-!       On les reecrit ici car on en aura besoin a la relecture
-  rubriq = 'nombre_phases'
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nphas)
-
-!  ---> Nombre de pas de temps, instant precedent
-!       On les reecrit ici car on en aura besoin a la relecture
-  rubriq = 'nbre_pas_de_temps'
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs)
 
 !  ---> Indicateur de pas de temps variable
   rubriq = 'indic_dt_variable'
   itysup = 0
   nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,idtvar)
-
-!  ---> Modeles de turbulence
-!       On les reecrit ici car on en aura besoin a la relecture
-  rubriq = 'modele_turbulence_phase'//cphase
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iturb)
+  ival(1) = idtvar
+  call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
   rubriq = 'methode_ALE'
   itysup = 0
   nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iale)
+  ival(1) = iale
+  call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
   !  ---> Cavitation
   rubriq = 'cavitation'
   itysup = 0
   nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,icavit)
+  ival(1) = icavit
+  call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 
 #if defined(_CS_LANG_FR)
@@ -586,60 +334,44 @@ if (iecaux.eq.1) then
   !     On n'ecrit que si XYZP0 a ete specifie par l'utilisateur ou
   !       calcule a partir de faces de sorties ou de Dirichlet
   if (ixyzp0.eq.1) then
-    rubriq = 'ref_presstot'//cphase
+    rubriq = 'ref_presstot01'
     itysup = 0
     nbval  = 3
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,xyzp0(1))
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,xyzp0)
   endif
 
-  ! The physical variables herebelow are required for the low-Mach algorithm
+  ! The physical variables here below are required for the low-Mach algorithm
 
   if (idilat.eq.3) then
 
     !the reference density updated with the low-Mach algorithm
-    rubriq = 'ro0'//cphase
+    rubriq = 'ro001'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ro0)
+    rval(1) = ro0
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     ! the thermodynamic pressure for the previous time step
-    rubriq = 'pther'//cphase
+    rubriq = 'pther01'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,pther)
+    rval(1) = pther
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
   endif
 
   !     Masse volumique si elle est variable uniquement
   !     La masse volumique est egalement ecrite pour le modele de cavitation
   if (irovar.eq.1.or.icavit.ge.0) then
-    !          Masse volumique - cellules
-    rubriq = 'rho_ce_phase'//cphase
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call field_get_val_s(icrom, sval)
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
+    ! Masse volumique - cellules
+    call restart_write_field_vals(rp, icrom, 0)
 
     ! Masse volumique du pdt precedent - cellules (uniquement pour cavitation)
     if (icavit.ge.0) then
-      rubriq = 'rho_old_ce_phase'//cphase
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-      call field_get_val_prev_s(icrom, sval)
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
+      call restart_write_field_vals(rp, icrom, 1)
     endif
 
-    !          Masse volumique - faces de bord
-    rubriq = 'rho_fb_phase'//cphase
-    itysup = 3
-    nbval  = 1
-    irtyp  = 2
-    call field_get_val_s(ibrom, sval)
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
+    ! Masse volumique - faces de bord
+    call restart_write_field_vals(rp, ibrom, 0)
   endif
 
   !     On n'ecrit les proprietes physiques que si on les extrapole ou
@@ -654,54 +386,24 @@ if (iecaux.eq.1) then
   !         pouvoir calculer la temperature H/Cp en debut de calcul
 
   if (iviext.gt.0.or.icavit.ge.0) then
-    !         Viscosite moleculaire - cellules (si variable ou cavitation)
+    !  Viscosite moleculaire - cellules (si variable ou cavitation)
     if (ivivar.eq.1.or.icavit.ge.0) then
-      rubriq = 'viscl_ce_phase'//cphase
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-      call field_get_val_s(iprpfl(iviscl), viscl)
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,viscl)
+      call restart_write_field_vals(rp, iprpfl(iviscl), 0)
     endif
 
     if (iviext.gt.0) then
-      !         Viscosite turbulente ou de sous-maille - cellules
-      rubriq = 'visct_ce_phase'//cphase
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-      call field_get_val_s(iprpfl(ivisct), visct)
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,visct)
+      ! Viscosite turbulente ou de sous-maille - cellules
+      call restart_write_field_vals(rp, iprpfl(ivisct), 0)
     endif
   endif
 
   if ((icpext.gt.0.and.icp.gt.0).or.              &
        (ippmod(ieljou).ge.1.and.icp.gt.0))  then
-    !         Chaleur massique - cellules
-    rubriq = 'cp_ce_phase'//cphase
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call field_get_val_s(iprpfl(icp), cpro_cp)
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,cpro_cp)
+    !  Chaleur massique - cellules
+    call restart_write_field_vals(rp, iprpfl(icp), 0)
   endif
 
-!     Si on a des scalaires, on ecrit leur model de flux et
-!     leur diffusivite (on ne l'ecrit pas pour les variances)
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      if (ivsext(iscal).gt.0.and.ivisls(iscal).gt.0.and.           &
-         (iscavr(iscal).le.0.or.iscavr(iscal).gt.nscal) ) then
-        ! Cell diffusivity
-        rubriq = 'visls_ce_scalaire'//cscal(iscal)
-        itysup = 1
-        nbval  = 1
-        irtyp  = 2
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,ipproc(ivisls(iscal))))
-      endif
-    enddo
-  endif
+  call restart_write_linked_fields(rp, "scalar_diffusivity_id", iecr)
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des proprietes physiques          '
@@ -712,18 +414,15 @@ if (iecaux.eq.1) then
 
 ! ---> Pas de temps
 
+  call field_get_id('dt', f_id)
   if (idtvar.eq.2) then
-    rubriq = 'dt_variable_espace_ce'
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt)
+    call restart_write_field_vals(rp, f_id, 0)
   elseif (idtvar.eq.1) then
+    call field_get_val_s(f_id, dt_s)
     rubriq = 'dt_variable_temps'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,dt_s)
   endif
 
 #if defined(_CS_LANG_FR)
@@ -733,250 +432,10 @@ if (iecaux.eq.1) then
 #endif
   write(nfecra,1110)car54
 
-! ---> Flux de masse
+  ! Mass fluxes
 
-!     Pour garder la memoire de la correspondance entre les variables
-!     et les flux de masse, on memorise le nom de chaque variable
-!     (nomflu(i)= nom de la ieme variable)
-!     Ensuite, pour chaque variable, on ecrit son nom et le numero
-!     local du flux de masse correspondant (en pratique 1 ou 2)
-
-!       Initialisation des tableaux de travail
-
-  call field_get_n_fields(nfld)
-
-  allocate(mflnum(nfld))
-
-  nbflu = 0
-
-  do ii = 1, nfld
-    mflnum(ii) = 0
-  enddo
-
-  nomflu(ipr)='fm_p_phase'//cphase
-  nomflu(iu)='fm_u_phase'//cphase
-  nomflu(iv)='fm_v_phase'//cphase
-  nomflu(iw)='fm_w_phase'//cphase
-  if (itytur.eq.2) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-  elseif (itytur.eq.3) then
-    nomflu(ir11)='fm_R11_phase'//cphase
-    nomflu(ir22)='fm_R22_phase'//cphase
-    nomflu(ir33)='fm_R33_phase'//cphase
-    nomflu(ir12)='fm_R12_phase'//cphase
-    nomflu(ir13)='fm_R13_phase'//cphase
-    nomflu(ir23)='fm_R23_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    if (iturb.eq.32) then
-      nomflu(ial)='fm_alp_phase'//cphase
-    endif
-  elseif (itytur.eq.5) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    nomflu(iphi)='fm_phi_phase'//cphase
-    ! On n'utilise pas le flux de masse pour fb/al en fait mais on le laisse
-    ! ici, car ca ne change rien (le flux n'est ecrit qu'une seule fois)
-    if (iturb.eq.50) then
-      nomflu(ifb)='fm_fb_phase'//cphase
-    elseif (iturb.eq.51) then
-      nomflu(ial)='fm_al_phase'//cphase
-    endif
-  elseif (iturb.eq.60) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iomg)='fm_omega_phase'//cphase
-  elseif (iturb.eq.70) then
-    nomflu(inusa)='fm_nusa_phase'//cphase
-  endif
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      nomflu(isca(iscal))='fm_scalaire'//cscal(iscal)
-    enddo
-  endif
-  if (iale.eq.1) then
-    nomflu(iuma)='fm_vit_maill_u'
-    nomflu(ivma)='fm_vit_maill_v'
-    nomflu(iwma)='fm_vit_maill_w'
-  endif
-  if (icavit.ge.0) then
-    nomflu(ivoidf)='fm_taux_vide'
-  endif
-
-  ! For variables
-
-  do ivar = 1, nvar
-
-    f_id = ivarfl(ivar)
-
-    ! If the variable is not associated with a mass flux, do nothing
-
-    call field_get_key_int(f_id, kimasf, iflmas) ! interior mass flux
-
-    if (iflmas.ge.0) then
-
-      if (mflnum(iflmas).eq.0) then
-
-        ! Flux has not been written yet
-
-        call field_get_val_s(iflmas, sval)
-
-        nbflu=nbflu+1
-        mflnum(iflmas) = nbflu
-
-        ! Write mass flux at interior faces
-        rubriq = 'flux_masse_fi_'//cflu(nbflu)
-        itysup = 2
-        nbval  = 1
-        irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
-
-        call field_get_key_int(f_id, kbmasf, iflmab) ! boundary mass flux
-        call field_get_val_s(iflmab, sval)
-
-        ! Write mass flux at boundary faces
-        rubriq = 'flux_masse_fb_'//cflu(nbflu)
-        itysup = 3
-        nbval  = 1
-        irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
-
-      endif
-
-      ! Whether flux has been written or not, associate variable with flux
-      rubriq = nomflu(ivar)
-      itysup = 0
-      nbval  = 1
-      irtyp  = 1
-      call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,   &
-                  mflnum(iflmas))
-
-    endif
-
-  enddo
-
-  ! Do the same for mass fluxes at previous time
-
-  nbflu = 0
-
-  do ii = 1, nfld
-    mflnum(ii) = 0
-  enddo
-
-  nomflu(ipr)='fm_a_p_phase'//cphase
-  nomflu(iu)='fm_a_u_phase'//cphase
-  nomflu(iv)='fm_a_v_phase'//cphase
-  nomflu(iw)='fm_a_w_phase'//cphase
-  if (itytur.eq.2) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-  elseif (itytur.eq.3) then
-    nomflu(ir11)='fm_a_R11_phase'//cphase
-    nomflu(ir22)='fm_a_R22_phase'//cphase
-    nomflu(ir33)='fm_a_R33_phase'//cphase
-    nomflu(ir12)='fm_a_R12_phase'//cphase
-    nomflu(ir13)='fm_a_R13_phase'//cphase
-    nomflu(ir23)='fm_a_R23_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    if (iturb.eq.32) then
-      nomflu(ial)='fm_a_alp_phase'//cphase
-    endif
-  elseif (itytur.eq.5) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    nomflu(iphi)='fm_a_phi_phase'//cphase
-    if (iturb.eq.50) then
-      nomflu(ifb)='fm_a_fb_phase'//cphase
-    elseif (iturb.eq.51) then
-      nomflu(ial)='fm_a_al_phase'//cphase
-    endif
-  elseif (iturb.eq.60) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iomg)='fm_a_omega_phase'//cphase
-  elseif (iturb.eq.70) then
-    nomflu(inusa)='fm_a_nusa_phase'//cphase
-  endif
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      nomflu(isca(iscal))='fm_a_scalaire'//cscal(iscal)
-    enddo
-  endif
-  if (iale.eq.1) then
-    nomflu(iuma)='fm_a_vit_maill_u'
-    nomflu(ivma)='fm_a_vit_maill_v'
-    nomflu(iwma)='fm_a_vit_maill_w'
-  endif
-  if (icavit.ge.0) then
-    nomflu(ivoidf)='fm_a_taux_vide'
-  endif
-
-  do ivar = 1, nvar
-
-    f_id = ivarfl(ivar)
-
-    ! If the variable is not associated with a mass flux, do nothing
-
-    call field_get_key_int(f_id, kimasf, iflmas) ! interior mass flux
-
-    if (mflnum(iflmas).eq.0) then
-
-      ! Flux has not been written yet
-
-      if (mflnum(iflmas).eq.0) then
-
-        call field_have_previous(iflmas, lprev)
-
-        if (.not. lprev) cycle ! skip to next loop variable
-
-        ! Flux has not been written yet
-
-        call field_get_val_prev_s(iflmas, sval)
-
-        nbflu=nbflu+1
-        mflnum(iflmas) = nbflu
-
-        ! Write mass flux at interior faces
-        rubriq = 'flux_masse_a_fi_'//cflu(nbflu)
-        itysup = 2
-        nbval  = 1
-        irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
-
-        call field_get_key_int(f_id, kbmasf, iflmab) ! boundary mass flux
-        call field_get_val_prev_s(iflmab, sval)
-
-        ! Write mass flux at boundary faces
-        rubriq = 'flux_masse_a_fb_'//cflu(nbflu)
-        itysup = 3
-        nbval  = 1
-        irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
-
-      endif
-
-      ! Whether flux has been written or not, associate variable with flux
-      rubriq = nomflu(ivar)
-      itysup = 0
-      nbval  = 1
-      irtyp  = 1
-      call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,   &
-                  mflnum(iflmas))
-
-    endif
-
-  enddo
-
-  deallocate(mflnum)
-
-#if defined(_CS_LANG_FR)
-  car54 =' Fin de l''ecriture des flux de masse                 '
-#else
-  car54 =' End writing the mass fluxes                          '
-#endif
-  write(nfecra,1110)car54
-
-! ---> Conditions aux limites
-
-  call restart_write_bc_coeffs(impavx)
+  call restart_write_linked_fields(rp, "inner_mass_flux_id", iecr)
+  call restart_write_linked_fields(rp, "boundary_mass_flux_id", iecr)
 
   ! Symmetry flag (used for least-squares gradients,
   ! with extrapolation at boundary).
@@ -984,60 +443,23 @@ if (iecaux.eq.1) then
   rubriq = 'isympa_fb_phase01'
   itysup = 3
   nbval  = 1
-  irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,isympa)
+  call restart_write_section_int_t(rp,rubriq,itysup,nbval,isympa)
 
-#if defined(_CS_LANG_FR)
-  car54 =' Fin de l''ecriture des conditions aux limites        '
-#else
-  car54 =' End writing the boundary conditions                  '
-#endif
-  write(nfecra,1110)car54
+  ! Boundary condition coefficients
+
+  call restart_write_bc_coeffs(rp)
 
   ! Backward differential scheme in time
   if (ibdtso.gt.1) then
-
-    ! Warning: must be adapted if ivar.ne.iu
-    !          must be adapted if ibdtso.gt.2
-    ivar = iu
-    f_id = ivarfl(ivar)
-    call field_get_val_prev_v(f_id, val_vp)
-    rubriq = 'velocity_prev'
-    itysup = 1 ! cells location
-    nbval = 3 ! interleaved velocity
-    irtyp  = 2 ! double precision
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                val_vp)
-
+    do t_id = 1, ibdtso-1
+      call restart_write_field_vals(rp, ivarfl(iu), t_id)
+    enddo
   endif
 
 ! ---> Termes sources
 !      Lorsqu'ils sont extrapoles (pour les versions elec, voir plus bas)
 
-  iecr = 0
-
-  do ivar = 1, nvar
-    call field_get_key_int(ivarfl(ivar), kstprv, f_id)
-    if (f_id .ge. 0) then
-      iecr = 1
-      call field_get_dim(f_id, f_dim, interleaved)
-      if (f_dim.gt.1) then
-        call field_get_val_v(f_id, val_vp)
-        call field_get_name(f_id, rubriq)
-        itysup = 1
-        nbval  = f_dim
-        irtyp  = 2
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,val_vp)
-      else
-        call field_get_val_s(f_id, sval)
-        call field_get_name(f_id, rubriq)
-        itysup = 1
-        nbval  = 1
-        irtyp  = 2
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
-      endif
-    endif
-  enddo
+  call restart_write_linked_fields(rp, "source_term_prev_id", iecr)
 
   if (iecr.ne.0) then
 #if defined(_CS_LANG_FR)
@@ -1050,7 +472,7 @@ if (iecaux.eq.1) then
 
 ! ---> Moyennes (cumuls)
 
-  call time_moment_restart_write(impavx)
+  call time_moment_restart_write(rp)
 
 ! ---> Distance a la paroi
 !      On pourra ecrire ici la distance a la paroi
@@ -1064,11 +486,9 @@ if (iecaux.eq.1) then
       iecr   = 1
       itysup = 1
       nbval  = 1
-      irtyp  = 1
-      rubriq = 'num_fac_par_ce_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,  irtyp,ifapat)
+      rubriq = 'num_fac_par_ce_phase01'
+      call restart_write_section_int_t(rp,rubriq,itysup,nbval,ifapat)
 !     Pour la distance reelle, on a besoin d'un tableau provisoire
-!     on ne prend que la phase 1
       allocate(w1(ncelet))
       do iel = 1, ncel
         ifac = ifapat(iel)
@@ -1079,9 +499,8 @@ if (iecaux.eq.1) then
       iecr   = 1
       itysup = 1
       nbval  = 1
-      irtyp  = 2
-      rubriq = 'dist_fac_par_ce_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,w1)
+      rubriq = 'dist_fac_par_ce_phase01'
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,w1)
       ! Free memory
       deallocate(w1)
 
@@ -1090,9 +509,8 @@ if (iecaux.eq.1) then
       iecr   = 1
       itysup = 1
       nbval  = 1
-      irtyp  = 2
-      rubriq = 'dist_fac_par_ce_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dispar)
+      rubriq = 'dist_fac_par_ce_phase01'
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,dispar)
     endif
   endif
 
@@ -1111,10 +529,9 @@ if (iecaux.eq.1) then
 
     itysup = 1
     nbval  = 3
-    irtyp  = 2
 
-    rubriq = 'force_ext_ce_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,frcxt)
+    rubriq = 'force_ext_ce_phase01'
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,frcxt)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des forces exterieures            '
@@ -1131,10 +548,9 @@ if (iecaux.eq.1) then
 
     itysup = 1
     nbval  = 1
-    irtyp  = 2
 
-    rubriq = 'Prhyd_pre_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,prhyd(1))
+    rubriq = 'Prhyd_pre_phase01'
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,prhyd)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin d''ecriture de la pression hydrostatique predite '
@@ -1151,10 +567,9 @@ if (iecaux.eq.1) then
 
     itysup = 4
     nbval  = 3
-    irtyp  = 2
 
     rubriq = 'vertex_displacement'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,depale)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,depale)
 
 !     Viscosite de maillage (elle est souvent definie geometriquement sur le
 !       maillage initial ... il est donc plus facile de la relire ensuite)
@@ -1162,23 +577,14 @@ if (iecaux.eq.1) then
     rubriq = 'type_visc_mail'
     itysup = 0
     nbval  = 1
-    irtyp  = 1
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iortvm)
+    ival(1) = iortvm
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
-    rubriq = 'visc_maillage_x'
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipproc(ivisma(1))))
+    call restart_write_field_vals(rp, iprpfl(ipproc(ivisma(1))), 0)
 
     if (iortvm.eq.1) then
-      rubriq = 'visc_maillage_y'
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  propce(1,ipproc(ivisma(2))))
-      rubriq = 'visc_maillage_z'
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  propce(1,ipproc(ivisma(3))))
+      call restart_write_field_vals(rp, iprpfl(ipproc(ivisma(2))), 0)
+      call restart_write_field_vals(rp, iprpfl(ipproc(ivisma(3))), 0)
     endif
 
 #if defined(_CS_LANG_FR)
@@ -1194,8 +600,7 @@ if (iecaux.eq.1) then
     rubriq = 'nombre_structures'
     itysup = 0
     nbval  = 2
-    irtyp  = 1
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ngbstr)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ngbstr)
 
     if (nbstru.gt.0) then
 
@@ -1213,7 +618,6 @@ if (iecaux.eq.1) then
         rubriq = 'donnees_structure_'//cstruc(istr)
         itysup = 0
         nbval  = 27
-        irtyp  = 2
 
         do ii = 1, 3
           tmpstr(   ii) = xstr  (ii,istr)
@@ -1227,7 +631,7 @@ if (iecaux.eq.1) then
           tmpstr(24+ii) = forsta(ii,istr)
         enddo
 
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tmpstr)
+        call restart_write_section_real_t(rp,rubriq,itysup,nbval,tmpstr)
       enddo
 
 #if defined(_CS_LANG_FR)
@@ -1251,47 +655,44 @@ if (iecaux.eq.1) then
     rubriq = 'hinfue_cod3p'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hinfue)
+    rval(1) = hinfue
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     rubriq = 'hinoxy_cod3p'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hinoxy)
+    rval(1) = hinoxy
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     rubriq = 'tinfue_cod3p'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tinfue)
+    rval(1) = tinfue
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     rubriq = 'tinoxy_cod3p'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tinoxy)
+    rval(1) = tinoxy
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_cod3p'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
 
 !       Entree Fuel (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientfu_zone_bord_cod3p'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientfu)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientfu)
 
 !       Entree oxydant (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientox_zone_bord_cod3p'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientox)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientox)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion COD3P'
@@ -1310,49 +711,44 @@ if (iecaux.eq.1) then
     rubriq = 'temperature_gaz_frais_ebu'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tgf)
+    rval(1) = tgf
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     rubriq = 'frmel_ebu'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,frmel)
+    rval(1) = frmel
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     ! Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
 
 !       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgb_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgb)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientgb)
 
 !       Entree gaz frais (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgf_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgf)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientgf)
 
 !       FMENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'fment_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fment)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,fment)
 
 !       TKENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'tkent_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tkent)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,tkent)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion EBU '
@@ -1371,61 +767,56 @@ if (iecaux.eq.1) then
     rubriq = 'fmin_lwc'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fmin)
+    rval(1) = fmin
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     rubriq = 'fmax_lwc'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fmax)
+    rval(1) = fmax
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     rubriq = 'hmin_lwc'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hmin)
+    rval(1) = hmin
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     rubriq = 'hmax_lwc'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hmax)
+    rval(1) = hmax
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
 
 !       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgb_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgb)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientgb)
 
 !       Entree gaz frais (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgf_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgf)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientgf)
 
 !       FMENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'fment_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fment)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,fment)
 
 !       TKENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'tkent_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tkent)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,tkent)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion LWC '
@@ -1444,7 +835,6 @@ if (iecaux.eq.1) then
 
     itysup = 0
     nbval  = 1
-    irtyp  = 2
     do icha = 1, ncharb
       if (icha.le.nfmtch) then
         write(car2,'(I2.2)') icha
@@ -1452,8 +842,8 @@ if (iecaux.eq.1) then
         car2 = cindfc
       endif
       rubriq = 'masse_volumique_charbon'//car2
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rhock(icha))
+      rval(1) = rhock(icha)
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
     enddo
 
 
@@ -1463,35 +853,30 @@ if (iecaux.eq.1) then
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_charbon_pulverise'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
 
 !       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientat_zone_bord_charbon_pulverise'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientat)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientat)
 
 !       ientat, inmoxy et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
     if (ippmod(iccoal).ge.0) then
 
       itysup = 0
       nbval  = nozppm
-      irtyp  = 1
       rubriq = 'ientcp_zone_bord_charbon_pulverise'
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientcp)
+      call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientcp)
 
       itysup = 0
       nbval  = nozppm
-      irtyp  = 1
       rubriq = 'inmoxy_zone_bord_charbon_pulverise'
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,inmoxy)
+      call restart_write_section_int_t(rp,rubriq,itysup,nbval,inmoxy)
 
       itysup = 0
       nbval  = nozppm
-      irtyp  = 2
 
       idecal = 0
       do icha = 1, ncharb
@@ -1505,8 +890,7 @@ if (iecaux.eq.1) then
             car4 = cindfl
           endif
           rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
-          call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
-                      irtyp,x20(1,icla))
+          call restart_write_section_real_t(rp,rubriq,itysup,nbval,x20(:,icla))
         enddo
       enddo
 
@@ -1515,9 +899,8 @@ if (iecaux.eq.1) then
 !       Temperature
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'timpat_zone_bord_charbon_pulverise'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,timpat)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,timpat)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion CP    '
@@ -1538,50 +921,42 @@ if (iecaux.eq.1) then
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
 
 !       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientat_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientat)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientat)
 
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientfl_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientfl)
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientfl)
 
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
-    RUBRIQ = 'inmoxy_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                inmoxy)
+    rubriq = 'inmoxy_zone_bord_fuel'
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,inmoxy)
 
 !       Timpat
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'timpat_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,timpat)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,timpat)
 
 !       Qimpat
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'qimpat_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,qimpat)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,qimpat)
 
 !       Qimpfl
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'qimpfl_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,qimpfl)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,qimpfl)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion FUEL  '
@@ -1605,9 +980,9 @@ if (iecaux.eq.1) then
       rubriq = 'coeff_recalage_joule'
       itysup = 0
       nbval  = 1
-      irtyp  = 2
+      rval(1) = coejou
 
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,coejou)
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     endif
   endif
@@ -1619,9 +994,9 @@ if (iecaux.eq.1) then
       rubriq = 'ddpot_recalage_arc_elec'
       itysup = 0
       nbval  = 1
-      irtyp  = 2
+      rval(1) = dpot
 
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dpot)
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
     endif
   endif
@@ -1634,13 +1009,8 @@ if (iecaux.eq.1) then
 
     iecr   = 1
     ipcefj = ipproc(iefjou)
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
 
-    rubriq = 'tsource_sc_ce_joule'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcefj))
+    call restart_write_field_vals(rp, iprpfl(ipcefj), 0)
 
   endif
 
@@ -1650,21 +1020,10 @@ if (iecaux.eq.1) then
     ipcla1 = ipproc(ilapla(1))
     ipcla2 = ipproc(ilapla(2))
     ipcla3 = ipproc(ilapla(3))
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
 
-    rubriq = 'tsource_ns_ce_x_laplace'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcla1))
-
-    rubriq = 'tsource_ns_ce_y_laplace'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcla2))
-
-    rubriq = 'tsource_ns_ce_z_laplace'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcla3))
+    call restart_write_field_vals(rp, iprpfl(ipcla1), 0)
+    call restart_write_field_vals(rp, iprpfl(ipcla2), 0)
+    call restart_write_field_vals(rp, iprpfl(ipcla3), 0)
 
   endif
 
@@ -1678,12 +1037,8 @@ if (iecaux.eq.1) then
   endif
 
 
-!       Fermeture du fichiers suite auxiliaire
-  call clssui(impavx,ierror)
-
-  if (ierror.ne.0) then
-    write(nfecra,8011) ficsui
-  endif
+  ! Fermeture du fichiers suite auxiliaire
+  call restart_destroy(rp)
 
   write(nfecra,1200)
 
@@ -1794,62 +1149,6 @@ return
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 8000 format(                                                          &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A L''OUVERTURE DU FICHIER SUITE      ',/,&
-'@    =========                                 AVAL PRINCIPAL',/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier ',a13,'peut etre                ',/,&
-'@            cree dans le repertoire de travail.             ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8001 format(                                                          &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A L''OUVERTURE DU FICHIER SUITE      ',/,&
-'@    =========                                AVAL AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier ',a13,'peut etre                ',/,&
-'@            cree dans le repertoire de travail.             ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 8010 format(                                                          &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
-'@    =========                                 AVAL PRINCIPAL',/,&
-'@                                                            ',/,&
-'@    Probleme sur le fichier de nom (',a13,')                ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8011 format(                                                          &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
-'@    =========                                AVAL AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@    Probleme sur le fichier de nom (',a13,')                ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
 #else
 
  1000 format(3x,'** Writing the main restart file',/,             &
@@ -1939,62 +1238,6 @@ return
 '@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&
 '@    Refer to the subroutine ecrava.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 8000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ERROR WHILE OPENING THE MAIN RESTART FILE      ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@    Verify that the file ',a13,'can be created              ',/,&
-'@            in the working directory.                       ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ERROR WHILE OPENING THE AUXILIARY RESTART FILE ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@    Verify that the file ',a13,'can be created              ',/,&
-'@            in the working directory.                       ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 8010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ERROR WHILE CLOSING THE MAIN RESTART FILE      ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@    Problem with the file of name (',a13,')                 ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ERROR WHILE CLOSING THE AUXILIARY RESTART FILE ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@    Problem with the file of name (',a13,')                 ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

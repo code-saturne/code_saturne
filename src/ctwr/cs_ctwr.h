@@ -419,17 +419,15 @@ void CS_PROCF(pstict, PSTICT)
  *
  * Fortran interface:
  *
- * SUBROUTINE LECT1D
+ * subroutine ecrctw
  * *****************
  *
- * CHARACTER        NOMSUI : <-- : Name of the restart file
- * INTEGER          LNGNOM : <-- : Name length
+ * character(kind=c_char)  nomsui : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrctw, ECRCTW)
 (
- const char       *const nomsui,
- const cs_int_t   *const lngnom
+ const char  *nomsui
 );
 
 /*----------------------------------------------------------------------------
@@ -437,17 +435,15 @@ void CS_PROCF (ecrctw, ECRCTW)
  *
  * Fortran interface:
  *
- * SUBROUTINE LECT1D
+ * subroutine lecctw
  * *****************
  *
- * CHARACTER        NOMSUI : <-- : Name of the restart file
- * INTEGER          LNGNOM : <-- : Name length
+ * character(kind=c_char)  nomsui : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (lecctw, LECCTW)
 (
- const char       *const nomsui,
- const cs_int_t   *const lngnom
+ const char  *nomsui
 );
 
 /*============================================================================

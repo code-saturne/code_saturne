@@ -132,12 +132,6 @@ static const char _dir_separator = '/';
 static int    _restart_n_opens[2] = {0, 0};
 static double _restart_wtime[2] = {0.0, 0.0};
 
-/* Array for Fortran API */
-
-static size_t         _restart_pointer_size = 2;
-static cs_restart_t  *_restart_pointer_base[2] = {NULL, NULL};
-static cs_restart_t **_restart_pointer = _restart_pointer_base;
-
 /* Do we have a restart directory ? */
 
 static int _restart_present = 0;
@@ -155,129 +149,8 @@ static double _checkpoint_wt_last = 0.;      /* wall-clock time of last
                                                 checkpointing */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_restart_read_int_t_compat(int           file_num,
-                               const char   *sec_name,
-                               const char   *old_name,
-                               int           location_id,
-                               int           n_location_vals,
-                               cs_int_t     *val,
-                               int          *ierror);
-
-void
-cs_f_restart_read_real_t_compat(int           file_num,
-                                const char   *sec_name,
-                                const char   *old_name,
-                                int           location_id,
-                                int           n_location_vals,
-                                cs_real_t    *val,
-                                int          *ierror);
-
-void
-cs_f_restart_read_real_3_t_compat(int           file_num,
-                                  const char   *sec_name,
-                                  const char   *old_name_x,
-                                  const char   *old_name_y,
-                                  const char   *old_name_z,
-                                  int           location_id,
-                                  cs_real_3_t  *val,
-                                  int          *ierror);
-
-void *
-cs_f_restart_ptr(int  file_num);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return an available id in the array of restart file pointers.
- *
- * The array may be allocated or reallocated if necessary.
- *
- * returns:
- *   available id in the array of restart file pointers
- *----------------------------------------------------------------------------*/
-
-static int
-_new_restart_id(void)
-{
-  size_t i, j;
-
-  for (i = 0;
-       i < _restart_pointer_size && _restart_pointer[i] != NULL;
-       i++);
-
-  /* If no slot is available, we allow for more restart files */
-
-  if (i == _restart_pointer_size) {
-
-    if (_restart_pointer == _restart_pointer_base) {
-      BFT_MALLOC(_restart_pointer, _restart_pointer_size*2, cs_restart_t *);
-      for (j = 0; j < _restart_pointer_size; j++) {
-        _restart_pointer[j] = _restart_pointer_base[j];
-        _restart_pointer_base[j] = NULL;
-      }
-    }
-    else
-      BFT_REALLOC(_restart_pointer, _restart_pointer_size*2, cs_restart_t *);
-
-    for (j = _restart_pointer_size; j < _restart_pointer_size * 2; j++)
-      _restart_pointer[j] = NULL;
-
-    _restart_pointer_size *= 2;
-
-  }
-
-  return i;
-}
-
-/*----------------------------------------------------------------------------
- * Free a slot from the array of restart file pointers.
- *
- * The array may be freed or reallocated if possible.
- *
- * parameters:
- *   id <-- id to free in the array of restart file pointers
- *----------------------------------------------------------------------------*/
-
-static void
-_free_restart_id(int id)
-{
-  size_t i, j;
-
-  const size_t restart_pointer_base_size = 2;
-
-  _restart_pointer[id] = NULL;
-
-  /* Revert from dynamic to static array if applicable and possible */
-
-  if ((size_t)id >= restart_pointer_base_size) {
-
-    for (i = restart_pointer_base_size;
-         i < _restart_pointer_size && _restart_pointer[i] == NULL;
-         i++);
-
-    /* If no slot above static array size is used, revert to static array  */
-
-    if (i == _restart_pointer_size) {
-
-      for (j = 0; j < restart_pointer_base_size; j++)
-        _restart_pointer_base[j] = _restart_pointer[j];
-
-      _restart_pointer_size = restart_pointer_base_size;
-
-      BFT_FREE(_restart_pointer[j]);
-
-      _restart_pointer = _restart_pointer_base;
-    }
-
-  }
-}
 
 /*----------------------------------------------------------------------------
  * Compute number of values in a record
@@ -660,39 +533,18 @@ _write_ent_values(const cs_restart_t     *r,
  * Convert read/write arguments from the Fortran API to the C API.
  *
  * parameters:
- *   numsui   <-- restart file id
  *   itysup   <-- location type code
  *   irtype   <-- integer or real
- *   r        <-- pointer to restart file handle
  *   location  <-- location id
  *   val_type <-- integer of real
  *----------------------------------------------------------------------------*/
 
 static void
-_section_f77_to_c(const cs_int_t          *numsui,
-                  const cs_int_t          *itysup,
+_section_f77_to_c(const cs_int_t          *itysup,
                   const cs_int_t          *irtype,
-                  cs_restart_t           **r,
                   int                     *location,
                   cs_restart_val_type_t   *val_type)
 {
-  cs_int_t r_id = *numsui - 1;
-
-  /* Pointer to associated restart file handle */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_error(__FILE__, __LINE__, 0,
-              _("Restart file number <%d> can not be accessed\n"
-                "(file closed or invalid number)."), (int)(*numsui));
-    return;
-  }
-
-  else
-    *r = _restart_pointer[r_id];
-
   /* Location associated with section */
 
   switch (*itysup) {
@@ -744,42 +596,6 @@ _section_f77_to_c(const cs_int_t          *numsui,
 }
 
 /*----------------------------------------------------------------------------
- * Convert read/write arguments from Fortran ISO C bindings API to the C API.
- *
- * parameters:
- *   numsui   <-- restart file id
- *   r        <-- pointer to restart file handle
- *   location <-- location id
- *   ierror   <-- 0 = success, < 0 = error
- *----------------------------------------------------------------------------*/
-
-static void
-_section_f_iso_c_to_c(int             numsui,
-                      cs_restart_t  **r,
-                      cs_int_t       *ierror)
-{
-  int r_id = numsui - 1;
-
-  *ierror = CS_RESTART_SUCCESS;
-
-  /* Pointer to associated restart file handle */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> can not be accessed\n"
-                 "(file closed or invalid number)."), numsui);
-
-    *ierror = CS_RESTART_ERR_FILE_NUM;
-    return;
-  }
-
-  else
-    *r = _restart_pointer[r_id];
-}
-
-/*----------------------------------------------------------------------------
  * Swap values of a renumbered array when reading
  *
  * parameters:
@@ -791,15 +607,15 @@ _section_f_iso_c_to_c(int             numsui,
  *----------------------------------------------------------------------------*/
 
 static void
-_restart_permute_read(cs_int_t                n_ents,
+_restart_permute_read(cs_lnum_t               n_ents,
                       const cs_gnum_t        *ini_ent_num,
-                      cs_int_t                n_location_vals,
+                      int                     n_location_vals,
                       cs_restart_val_type_t   val_type,
                       cs_byte_t              *vals)
 {
-  cs_int_t ent_id, jj;
+  cs_lnum_t ent_id, jj;
 
-  cs_int_t ii = 0;
+  cs_lnum_t ii = 0;
 
   /* Instructions */
 
@@ -909,15 +725,15 @@ _restart_permute_read(cs_int_t                n_ents,
  *----------------------------------------------------------------------------*/
 
 static cs_byte_t *
-_restart_permute_write(cs_int_t                n_ents,
+_restart_permute_write(cs_lnum_t               n_ents,
                        const cs_gnum_t        *ini_ent_num,
-                       cs_int_t                n_location_vals,
+                       int                     n_location_vals,
                        cs_restart_val_type_t   val_type,
                        const cs_byte_t        *vals)
 {
-  cs_int_t  ent_id, jj;
+  cs_lnum_t  ent_id, jj;
 
-  cs_int_t  ii = 0;
+  cs_lnum_t  ii = 0;
 
   /* Instructions */
 
@@ -1272,490 +1088,6 @@ void CS_PROCF (indsui, INDSUI)
 }
 
 /*----------------------------------------------------------------------------
- * Open a restart file
- *
- * Fortran interface
- *
- * subroutine opnsui (nomsui, lngnom, ireawr, numsui, ierror)
- * *****************
- *
- * character*       nomsui      : <-- : Restart file name
- * integer          lngnom      : <-- : Restart file name length
- * integer          ireawr      : <-- : 1: read; 2: write
- * integer          numsui      : --> : Number of opened restart file
- * integer          ierror      : --> : 0: success; < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (opnsui, OPNSUI)
-(
- const char       *nomsui,
- const cs_int_t   *lngnom,
- const cs_int_t   *ireawr,
-       cs_int_t   *numsui,
-       cs_int_t   *ierror
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
-{
-  char    *bufname;
-
-  size_t   id;
-
-  cs_restart_mode_t restart_mode;
-
-  /* Initialization */
-
-  *numsui = 0;
-  *ierror = CS_RESTART_SUCCESS;
-
-  /* Handle name for C API */
-
-  bufname = cs_base_string_f_to_c_create(nomsui, *lngnom);
-
-  /* File creation options */
-
-  {
-    switch(*ireawr) {
-    case 1:
-      restart_mode = CS_RESTART_MODE_READ;
-      break;
-    case 2:
-      restart_mode = CS_RESTART_MODE_WRITE;
-      break;
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _("The access mode of the restart file <%s>\n"
-                  "must be equal to 1 (read) or 2 (write) and not <%d>."),
-                bufname, (int)(*ireawr));
-      *ierror = CS_RESTART_ERR_MODE;
-    }
-
-  }
-
-  /* Search for an available slot and create file */
-
-  if (*ierror == CS_RESTART_SUCCESS) {
-
-    id = _new_restart_id();
-    _restart_pointer[id] = cs_restart_create(bufname, NULL, restart_mode);
-
-    /* Return the position of the handle in the array
-     * (id + 1 to have a 1 to n numbering, more conventional in Fortran) */
-
-    *numsui = id + 1;
-  }
-  else
-    *numsui = -1;
-
-  /* Free memory if necessary */
-
-  cs_base_string_f_to_c_free(&bufname);
-}
-
-/*----------------------------------------------------------------------------
- * Close a restart file
- *
- * Fortran interface
- *
- * subroutine clssui (numsui)
- * *****************
- *
- * integer          numsui      : <-> : number of restart file to close
- * integer          ierror      : --> : 0: success; < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (clssui, CLSSUI)
-(
- const cs_int_t   *numsui,
-       cs_int_t   *ierror
-)
-{
-  cs_int_t r_id = *numsui - 1;
-
-  *ierror = CS_RESTART_SUCCESS;
-
-  /* Check that the file is valid */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> can not be closed\n"
-                 "(file already closed or invalid number)."), (int)(*numsui));
-
-    *ierror = CS_RESTART_ERR_FILE_NUM;
-    return;
-  }
-
-  /* Close file */
-
-  cs_restart_destroy(_restart_pointer + r_id);
-
-  _free_restart_id(r_id);
-}
-
-/*----------------------------------------------------------------------------
- * Check the locations associated with a restart file.
- *
- * For each type of entity, return 1 if the associated number of entities
- * matches the current value (and so that we consider the mesh locations are
- * the same), 0 otherwise.
- *
- * Fortran interface
- *
- * subroutine tstsui (numsui, indcel, indfac, indfbr, indsom)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * integer          indcel      : --> : Matching cells flag
- * integer          indfac      : --> : Matching interior faces flag
- * integer          indfbr      : --> : Matching boundary faces flag
- * integer          indsom      : --> : Matching vertices flag
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (tstsui, TSTSUI)
-(
- const cs_int_t  *numsui,
-       cs_int_t  *indcel,
-       cs_int_t  *indfac,
-       cs_int_t  *indfbr,
-       cs_int_t  *indsom
-)
-{
-  bool  match_cell, match_i_face, match_b_face, match_vertex;
-
-  cs_int_t   r_id   = *numsui - 1;
-
-  /* Associated structure pointer */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Information on the restart file number <%d> unavailable\n"
-                 "(file already closed or invalid number)."), (int)(*numsui));
-
-    *indcel = 0;
-    *indfac = 0;
-    *indfbr = 0;
-    *indsom = 0;
-    return;
-  }
-
-  else {
-
-    cs_restart_check_base_location(_restart_pointer[r_id],
-                                   &match_cell, &match_i_face,
-                                   &match_b_face, &match_vertex);
-
-    *indcel = (match_cell == true ? 1 : 0);
-    *indfac = (match_i_face == true ? 1 : 0);
-    *indfbr = (match_b_face == true ? 1 : 0);
-    *indsom = (match_vertex == true ? 1 : 0);
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Print index associated with a restart file in read mode
- *
- * Fortran interface
- *
- * subroutine infsui (numsui)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (infsui, INFSUI)
-(
- const cs_int_t  *numsui
-)
-{
-  cs_int_t   r_id   = *numsui - 1;
-
-  /* Associated structure pointer */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Information on the restart file number <%d> unavailable\n"
-                 "(file already closed or invalid number)."), (int)(*numsui));
-  }
-  else
-    cs_restart_dump_index(_restart_pointer[r_id]);
-}
-
-/*----------------------------------------------------------------------------
- * Read a section from a restart file
- *
- * Fortran interface
- *
- * subroutine lecsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * character*       nomrub      : <-- : Section name
- * integer          lngnom      : <-- : Section name length
- * integer          itysup      : <-- : Location type:
- *                              :     :  0: scalar (no location)
- *                              :     :  1: cells
- *                              :     :  2: interior faces
- *                              :     :  3: boundary faces
- *                              :     :  4: vertices (if available)
- * integer          nbvent      : <-- : N. values per location entity
- * integer          irtype      : <-- : 1 for integers, 2 for double precision
- * (?)              tabvar      : <-> : Array of values to read
- * integer          ierror      : --> : 0: success, < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lecsui, LECSUI)
-(
- const cs_int_t   *numsui,
- const char       *nomrub,
- const cs_int_t   *lngnom,
- const cs_int_t   *itysup,
- const cs_int_t   *nbvent,
- const cs_int_t   *irtype,
-       void       *tabvar,
-       cs_int_t   *ierror
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
-{
-  char    *bufname;
-
-  cs_restart_val_type_t   val_type;
-
-  cs_restart_t  *restart;
-  int          location_id;
-
-  *ierror = CS_RESTART_SUCCESS;
-
-  /* Handle name for C API */
-
-  bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
-
-  /* Handle other arguments for C API */
-
-  _section_f77_to_c(numsui,
-                    itysup,
-                    irtype,
-                    &restart,
-                    &location_id,
-                    &val_type);
-
-  if (*ierror < CS_RESTART_SUCCESS)
-    return;
-
-  /* Read section */
-
-  *ierror = cs_restart_read_section(restart,
-                                    bufname,
-                                    location_id,
-                                    *nbvent,
-                                    val_type,
-                                    tabvar);
-
-  /* Free memory if necessary */
-
-  cs_base_string_f_to_c_free(&bufname);
-}
-
-/*----------------------------------------------------------------------------
- * Write a section to a restart file
- *
- * Fortran interface
- *
- * subroutine ecrsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * character*       nomrub      : <-- : Section name
- * integer          lngnom      : <-- : Section name length
- * integer          itysup      : <-- : Location type:
- *                              :     :  0: scalar (no location)
- *                              :     :  1: cells
- *                              :     :  2: interior faces
- *                              :     :  3: boundary faces
- *                              :     :  4: vertices (if available)
- * integer          nbvent      : <-- : N. values per location entity
- * integer          irtype      : <-- : 1 for integers, 2 for double precision
- * (?)              tabvar      : <-- : Array of values to write
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ecrsui, ECRSUI)
-(
- const cs_int_t   *numsui,
- const char       *nomrub,
- const cs_int_t   *lngnom,
- const cs_int_t   *itysup,
- const cs_int_t   *nbvent,
- const cs_int_t   *irtype,
- const void       *tabvar
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
-{
-  char *bufname;
-
-  cs_restart_val_type_t val_type;
-
-  cs_restart_t *restart;
-  int location_id;
-
-  /* Handle name for C API */
-
-  bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
-
-  /* Handle other arguments for C API */
-
-  _section_f77_to_c(numsui,
-                    itysup,
-                    irtype,
-                    &restart,
-                    &location_id,
-                    &val_type);
-
-  /* Write section */
-
-  cs_restart_write_section(restart,
-                           bufname,
-                           location_id,
-                           *nbvent,
-                           val_type,
-                           tabvar);
-
-  /* Free memory if necessary */
-
-  cs_base_string_f_to_c_free(&bufname);
-}
-
-/*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
- *
- * Fortran interface
- *
- * subroutine lipsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
- * *****************
- *
- * integer          numsui      : <-- : Restart file number
- * character*       nomrub      : <-- : Particles location name
- * integer          lngnom      : <-- : Particles location name length
- * integer          nbpart      : --> : Number of particles
- * integer          itysup      : --> : Particles location id,
- *                                      or -1 in case of error
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lipsui, LIPSUI)
-(
- const cs_int_t   *numsui,
- const char       *nomrub,
- const cs_int_t   *lngnom,
-       cs_int_t   *nbpart,
-       cs_int_t   *itysup
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
-{
-  char *bufname;
-  cs_restart_t *r;
-
-  int r_id = *numsui - 1;
-
-  *itysup = -1;
-
-  /* Handle name for C API */
-
-  bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
-
-  /* Handle other arguments for C API */
-
-  /* Pointer to associated restart file handle */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> can not be accessed\n"
-                 "(file closed or invalid number)."), (int)(*numsui));
-    return;
-  }
-
-  else
-    r = _restart_pointer[r_id];
-
-  /* Read particles information */
-
-  *itysup = cs_restart_read_particles_info(r, bufname, nbpart);
-
-  /* Free memory if necessary */
-
-  cs_base_string_f_to_c_free(&bufname);
-}
-
-/*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
- *
- * Fortran interface
- *
- * subroutine lepsui (numsui, nomrub, lngnom, inmcoo, nbpart, ipcell,
- * *****************
- *                    coopar, itysup, ierror)
- *
- * integer          numsui      : <-- : Restart file number
- * integer          ipcell      : --> : Particle -> cell number
- * double precision coopar      : --> : Particle coordinate
- * integer          ipsup       : <-- : Particles location id
- * integer          ierror      : --> : 0: success, < 0: error code
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lepsui, LEPSUI)
-(
- const cs_int_t   *numsui,
-       cs_int_t   *ipcell,
-       cs_real_t  *coopar,
- const cs_int_t   *itysup,
-       cs_int_t   *ierror
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
-{
-  cs_restart_t *r;
-
-  int r_id = *numsui - 1;
-
-  *ierror = CS_RESTART_SUCCESS;
-
-  /* Pointer to associated restart file handle */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> can not be accessed\n"
-                 "(file closed or invalid number)."), (int)(*numsui));
-
-    *ierror = CS_RESTART_ERR_FILE_NUM;
-    return;
-  }
-
-  else
-    r = _restart_pointer[r_id];
-
-  /* Write particles information */
-
-  *ierror = cs_restart_read_particles(r,
-                                      *itysup,
-                                      ipcell,
-                                      coopar);
-}
-
-/*----------------------------------------------------------------------------
  * Write basic particles information to a restart file.
  *
  * This includes defining a matching location and associated global numbering,
@@ -1763,11 +1095,11 @@ void CS_PROCF (lepsui, LEPSUI)
  *
  * Fortran interface
  *
- * subroutine ecpsui (numsui, nomrub, lngnom, inmcoo, nbpart, ipcell,
+ * subroutine ecpsui (restart, nomrub, lngnom, inmcoo, nbpart, ipcell,
  * *****************
  *                    coopar, itysup, ierror)
  *
- * integer          numsui      : <-- : Restart file number
+ * type(c_ptr)      restart     : <-- : associated restart file pointer
  * character*       nomrub      : <-- : Particles location name
  * integer          lngnom      : <-- : Particles location name length
  * integer          inmcoo      : <-- : Number by coords
@@ -1779,7 +1111,7 @@ void CS_PROCF (lepsui, LEPSUI)
 
 void CS_PROCF (ecpsui, ECPSUI)
 (
- const cs_int_t   *numsui,
+ cs_restart_t    **restart,
  const char       *nomrub,
  const cs_int_t   *lngnom,
  const cs_int_t   *inmcoo,
@@ -1792,11 +1124,8 @@ void CS_PROCF (ecpsui, ECPSUI)
 )
 {
   char *bufname;
-  cs_restart_t *r;
 
   bool number_by_coords = (*inmcoo) ? true : false;
-
-  int r_id = *numsui - 1;
 
   *itysup = 0;
 
@@ -1806,23 +1135,9 @@ void CS_PROCF (ecpsui, ECPSUI)
 
   /* Handle other arguments for C API */
 
-  /* Pointer to associated restart file handle */
-
-  if (   r_id < 0
-      || r_id > (cs_int_t)_restart_pointer_size
-      || _restart_pointer[r_id] == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("Restart file number <%d> can not be accessed\n"
-                "(file closed or invalid number)."), (int)(*numsui));
-    return;
-  }
-
-  else
-    r = _restart_pointer[r_id];
-
   /* Write particles information */
 
-  *itysup = cs_restart_write_particles(r,
+  *itysup = cs_restart_write_particles(*restart,
                                        bufname,
                                        number_by_coords,
                                        *nbpart,
@@ -1846,11 +1161,11 @@ void CS_PROCF (ecpsui, ECPSUI)
  *
  * Fortran interface
  *
- * subroutine leisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * subroutine leisui (restart, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
  * *****************
  *                    ierror)
  *
- * integer          numsui      : <-- : Restart file number
+ * type(c_ptr)      restart     : <-- : associated restart file pointer
  * character*       nomrub      : <-- : Section name
  * integer          lngnom      : <-- : Section name length
  * integer          itysup      : <-- : Location type:
@@ -1873,7 +1188,7 @@ void CS_PROCF (ecpsui, ECPSUI)
 
 void CS_PROCF (leisui, LEISUI)
 (
- const cs_int_t   *numsui,
+ cs_restart_t    **restart,
  const char       *nomrub,
  const cs_int_t   *lngnom,
  const cs_int_t   *itysup,
@@ -1887,7 +1202,6 @@ void CS_PROCF (leisui, LEISUI)
 {
   char    *bufname;
 
-  cs_restart_t  *restart;
   int  location_id;
   cs_restart_val_type_t  val_type;
 
@@ -1901,10 +1215,8 @@ void CS_PROCF (leisui, LEISUI)
 
   /* Handle other arguments for C API */
 
-  _section_f77_to_c(numsui,
-                    itysup,
+  _section_f77_to_c(itysup,
                     &irtype,
-                    &restart,
                     &location_id,
                     &val_type);
 
@@ -1915,7 +1227,7 @@ void CS_PROCF (leisui, LEISUI)
 
   /* Read section */
 
-  *ierror = cs_restart_read_ids(restart,
+  *ierror = cs_restart_read_ids(*restart,
                                 bufname,
                                 location_id,
                                 *irfsup,
@@ -1935,11 +1247,11 @@ void CS_PROCF (leisui, LEISUI)
  *
  * Fortran interface
  *
- * subroutine ecisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * subroutine ecisui (restart, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
  * *****************
  *                    ierror)
  *
- * integer          numsui      : <-- : Restart file number
+ * type(c_ptr)      restart     : <-- : associated restart file pointer
  * character*       nomrub      : <-- : Section name
  * integer          lngnom      : <-- : Section name length
  * integer          itysup      : <-- : Location type:
@@ -1961,7 +1273,7 @@ void CS_PROCF (leisui, LEISUI)
 
 void CS_PROCF (ecisui, ECISUI)
 (
- const cs_int_t   *numsui,
+ cs_restart_t    **restart,
  const char       *nomrub,
  const cs_int_t   *lngnom,
  const cs_int_t   *itysup,
@@ -1974,7 +1286,6 @@ void CS_PROCF (ecisui, ECISUI)
 {
   char *bufname;
 
-  cs_restart_t  *restart;
   int  location_id;
   cs_restart_val_type_t  val_type;
 
@@ -1986,10 +1297,8 @@ void CS_PROCF (ecisui, ECISUI)
 
   /* Handle other arguments for C API */
 
-  _section_f77_to_c(numsui,
-                    itysup,
+  _section_f77_to_c(itysup,
                     &irtype,
-                    &restart,
                     &location_id,
                     &val_type);
 
@@ -1997,7 +1306,7 @@ void CS_PROCF (ecisui, ECISUI)
 
   /* Write section */
 
-  cs_restart_write_ids(restart,
+  cs_restart_write_ids(*restart,
                        bufname,
                        location_id,
                        *irfsup,
@@ -2008,163 +1317,6 @@ void CS_PROCF (ecisui, ECISUI)
 
   cs_base_string_f_to_c_free(&bufname);
 }
-
-/*============================================================================
- * Fortran wrapper function definitions for iso-c-bindings
- *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*----------------------------------------------------------------------------
- * Read a cs_int_t section from a restart file, when that
- * section may have used a different name in a previous version.
- *
- * parameters:
- *   file_num        <-- number of restart file
- *   sec_name        <-- section name
- *   old_name        <-- old name, x component
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location
- *   val             --> array of values
- *   ierror          --> 0: success; < 0: error code
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_restart_read_int_t_compat(int           file_num,
-                               const char   *sec_name,
-                               const char   *old_name,
-                               int           location_id,
-                               int           n_location_vals,
-                               cs_int_t     *val,
-                               int          *ierror)
-{
-  cs_restart_t  *r;
-
-  *ierror = CS_RESTART_SUCCESS;
-
-  _section_f_iso_c_to_c(file_num, &r, ierror);
-
-  if (*ierror == CS_RESTART_SUCCESS)
-    *ierror = cs_restart_read_section_compat(r,
-                                             sec_name,
-                                             old_name,
-                                             location_id,
-                                             n_location_vals,
-                                             CS_TYPE_cs_int_t,
-                                             val);
-}
-
-/*----------------------------------------------------------------------------
- * Read a cs_real_t section from a restart file, when that
- * section may have used a different name in a previous version.
- *
- * parameters:
- *   file_num        <-- number of restart file
- *   sec_name        <-- section name
- *   old_name        <-- old name, x component
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location
- *   val             --> array of values
- *   ierror          --> 0: success; < 0: error code
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_restart_read_real_t_compat(int           file_num,
-                                const char   *sec_name,
-                                const char   *old_name,
-                                int           location_id,
-                                int           n_location_vals,
-                                cs_real_t    *val,
-                                int          *ierror)
-{
-  cs_restart_t  *r;
-
-  *ierror = CS_RESTART_SUCCESS;
-
-  _section_f_iso_c_to_c(file_num, &r, ierror);
-
-  if (*ierror == CS_RESTART_SUCCESS)
-    *ierror = cs_restart_read_section_compat(r,
-                                             sec_name,
-                                             old_name,
-                                             location_id,
-                                             n_location_vals,
-                                             CS_TYPE_cs_real_t,
-                                             val);
-}
-
-/*----------------------------------------------------------------------------
- * Read a cs_real_3_t vector section from a restart file, when that
- * section may have used a different name and been non-interleaved
- * in a previous version.
- *
- * parameters:
- *   file_num        <-- number of restart file
- *   sec_name        <-- section name
- *   old_name_x      <-- old name, x component
- *   old_name_y      <-- old name, x component
- *   old_name_y      <-- old name, x component
- *   location_id     <-- id of corresponding location
- *   val             --> array of values
- *   ierror          --> 0: success; < 0: error code
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_restart_read_real_3_t_compat(int           file_num,
-                                  const char   *sec_name,
-                                  const char   *old_name_x,
-                                  const char   *old_name_y,
-                                  const char   *old_name_z,
-                                  int           location_id,
-                                  cs_real_3_t  *val,
-                                  int          *ierror)
-{
-  cs_restart_t  *r;
-
-  *ierror = CS_RESTART_SUCCESS;
-
-  _section_f_iso_c_to_c(file_num, &r, ierror);
-
-  if (*ierror == CS_RESTART_SUCCESS)
-    *ierror = cs_restart_read_real_3_t_compat(r,
-                                              sec_name,
-                                              old_name_x,
-                                              old_name_y,
-                                              old_name_z,
-                                              location_id,
-                                              val);
-}
-
-/*----------------------------------------------------------------------------
- * Return pointer associated with a given Fortran restart file number
- *
- * parameters:
- *   file_num  <-- associated restart file number
- *
- * returns:
- *   pointer to associated restart file pointer
- *----------------------------------------------------------------------------*/
-
-void *
-cs_f_restart_ptr(int  file_num)
-{
-  cs_restart_t  *r;
-
-  int ierror = CS_RESTART_SUCCESS;
-
-  _section_f_iso_c_to_c(file_num, &r, &ierror);
-
-  if (ierror != CS_RESTART_SUCCESS) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> does not match an open file."),
-               file_num);
-    r = NULL;
-  }
-
-  return (void *)r;
-}
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Public function definitions
@@ -2383,6 +1535,11 @@ cs_restart_create(const char         *name,
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   timing[0] = cs_timer_wtime();
+
+  if (_path != NULL) {
+    if (strlen(_path) == 0)
+      _path = NULL;
+  }
 
   if (_path == NULL) {
     if (mode == CS_RESTART_MODE_WRITE)
@@ -2665,6 +1822,24 @@ cs_restart_add_location(cs_restart_t     *restart,
   _restart_wtime[restart->mode] += timing[1] - timing[0];
 
   return -1;
+}
+
+/*----------------------------------------------------------------------------
+ * Return name of restart file
+ *
+ * parameters:
+ *   restart <-- associated restart file pointer
+ *
+ * returns:
+ *   base name of restart file
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_restart_get_name(const cs_restart_t  *restart)
+{
+  assert(restart != NULL);
+
+  return restart->name;
 }
 
 /*----------------------------------------------------------------------------
@@ -3830,7 +3005,40 @@ cs_restart_read_section_compat(cs_restart_t           *restart,
 {
   int retval = CS_RESTART_SUCCESS;
 
-  assert(location_id > 0);
+  assert(location_id >= 0);
+
+  /* Check for section with current name */
+
+  retval = cs_restart_check_section(restart,
+                                    sec_name,
+                                    location_id,
+                                    n_location_vals,
+                                    val_type);
+
+  /* Check for older name, read and return if present */
+
+  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS) {
+
+    retval =cs_restart_check_section(restart,
+                                     old_name,
+                                     location_id,
+                                     n_location_vals,
+                                     val_type);
+
+    if (retval == CS_RESTART_SUCCESS) {
+      retval = cs_restart_read_section(restart,
+                                       old_name,
+                                       location_id,
+                                       n_location_vals,
+                                       val_type,
+                                       val);
+      return retval;
+    }
+
+  }
+
+  /* Read with current name (if the section is not found,
+     logging will refer to the current name) */
 
   retval = cs_restart_read_section(restart,
                                    sec_name,
@@ -3838,14 +3046,6 @@ cs_restart_read_section_compat(cs_restart_t           *restart,
                                    n_location_vals,
                                    val_type,
                                    val);
-
-  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS)
-    retval = cs_restart_read_section(restart,
-                                     old_name,
-                                     location_id,
-                                     n_location_vals,
-                                     val_type,
-                                     val);
 
   return retval;
 }
@@ -3883,54 +3083,79 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
 
   assert(location_id > 0);
 
+  /* Check for section with current name */
+
+  retval = cs_restart_check_section(restart,
+                                    sec_name,
+                                    location_id,
+                                    3,
+                                    CS_TYPE_cs_real_t);
+
+  /* Check for older name series, read and return if present */
+
+  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS) {
+
+    retval = cs_restart_check_section(restart,
+                                      old_name_x,
+                                      location_id,
+                                      1,
+                                      CS_TYPE_cs_real_t);
+
+    if (retval == CS_RESTART_SUCCESS) {
+
+      cs_real_t *buffer = NULL;
+      cs_lnum_t i;
+      cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
+
+      BFT_MALLOC(buffer, n_ents*3, cs_real_t);
+
+      retval = cs_restart_read_section(restart,
+                                       old_name_x,
+                                       location_id,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       buffer);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_y,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_z,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*2);
+
+      if (retval == CS_RESTART_SUCCESS) {
+        for (i = 0; i < n_ents; i++) {
+          val[i][0] = buffer[i];
+          val[i][1] = buffer[i + n_ents];
+          val[i][2] = buffer[i + n_ents*2];
+        }
+      }
+
+      BFT_FREE(buffer);
+
+      return retval;
+
+    }
+  }
+
+  /* Read with current name (if the section is not found,
+     logging will refer to the current name) */
+
   retval = cs_restart_read_section(restart,
                                    sec_name,
                                    location_id,
                                    3,
                                    CS_TYPE_cs_real_t,
                                    val);
-
-  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS) {
-
-    cs_real_t *buffer = NULL;
-    cs_lnum_t i;
-    cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
-
-    BFT_MALLOC(buffer, n_ents*3, cs_real_t);
-
-    retval = cs_restart_read_section(restart,
-                                     old_name_x,
-                                     location_id,
-                                     1,
-                                     CS_TYPE_cs_real_t,
-                                     buffer);
-
-    if (retval == CS_RESTART_SUCCESS)
-      retval = cs_restart_read_section(restart,
-                                       old_name_y,
-                                       location_id,
-                                       1,
-                                       CS_TYPE_cs_real_t,
-                                       buffer + n_ents);
-
-    if (retval == CS_RESTART_SUCCESS)
-      retval = cs_restart_read_section(restart,
-                                       old_name_z,
-                                       location_id,
-                                       1,
-                                       CS_TYPE_cs_real_t,
-                                       buffer + n_ents*2);
-
-    if (retval == CS_RESTART_SUCCESS) {
-      for (i = 0; i < n_ents; i++) {
-        val[i][0] = buffer[i];
-        val[i][1] = buffer[i + n_ents];
-        val[i][2] = buffer[i + n_ents*2];
-      }
-    }
-
-    BFT_FREE(buffer);
-  }
 
   return retval;
 }
@@ -3952,30 +3177,6 @@ cs_restart_print_stats(void)
                "  Elapsed time for writing:         %12.3f\n"),
              _restart_n_opens[0], _restart_n_opens[1],
              _restart_wtime[0], _restart_wtime[1]);
-}
-
-/*----------------------------------------------------------------------------
- * Return pointer to restart file based on Fortran id
- *
- * parameters:
- *   r_num  <-- associated fortran restart number
- *
- * returns:
- *   pointer to restart file, or NULL
- *----------------------------------------------------------------------------*/
-
-cs_restart_t *
-cs_restart_by_fortran_id(int  r_num)
-{
-  int r_id = r_num - 1;
-  cs_restart_t *retval = NULL;
-
-  /* Associated structure pointer */
-
-  if (r_id >= 0 && r_id < (int)_restart_pointer_size)
-    retval = _restart_pointer[r_id];
-
-  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

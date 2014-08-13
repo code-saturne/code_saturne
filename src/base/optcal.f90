@@ -394,7 +394,6 @@ module optcal
   !   isuite : suite de calcul
   !     = 0 pour sfs
   !     = 1 pour suite de calcul
-  !   iscold : correspondance nouveaux-anciens scalaires
   !   iecaux : ecriture du suite auxiliaire
   !   ileaux : lecture  du suite auxiliaire
   !   isuit1 : suite du module thermique 1D en paroi
@@ -402,7 +401,7 @@ module optcal
   !   isuivo : suite de la methode des vortex
   !   isuisy : suite des methodes d entree LES
 
-  integer, save :: isuite , ileaux, iecaux, iscold(nscamx),        &
+  integer, save :: isuite , ileaux, iecaux,                        &
                    isuit1 , isuict, isuivo, isuisy
 
   !----------------------------------------------------------------------------

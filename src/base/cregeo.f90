@@ -56,6 +56,8 @@ use ctincl
 use mesh
 use post
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -66,7 +68,6 @@ implicit none
 ! Local variables
 
 integer          nbrsyr , nbzech
-character        ficsui*32
 
 !===============================================================================
 ! 1. Creation of extracted mesh coupled with SYRTHES
@@ -105,8 +106,7 @@ if (ippmod(iaeros).ge.0) then
   endif
 
   if (ippmod(iaeros).ge.0.and.isuict.eq.1) then
-     ficsui = 'cooling_towers'
-     call lecctw (ficsui , len(ficsui))
+     call lecctw ('cooling_towers'//c_null_char)
      !==========
   endif
 

@@ -93,6 +93,8 @@ subroutine laglec &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use cstnum
 use cstphy
@@ -109,6 +111,8 @@ use ppthch
 use ppincl
 use cpincl
 use radiat
+use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -134,8 +138,7 @@ character        rubriq*64 , car4*4, car8*8, kar8*8
 character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
-integer          ncelok , nfaiok , nfabok , nsomok
-integer          ierror , irtyp  , itysup , ipasup, nbval
+integer          ierror , itysup , ipasup, nbval
 integer          irfsup , idbase
 integer          ilecec , nberro , ivers
 integer          mvls   , ivar   , ip     , icha  , ilayer
@@ -144,10 +147,16 @@ integer          jphyla , jtpvar , jdpvar , jmpvar
 integer          jsttio , jdstnt , mstist , mvlsts
 integer          mstbor , musbor , mstits , jturb, jtytur
 integer          mode   , ipas   , ivl    , nclsto
-integer          impaml , impmls
+integer          ival(1)
+double precision rval(1)
+
+logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
+
+type(c_ptr) :: rp
 
 integer, allocatable, dimension(:) :: iflpar
 double precision, allocatable, dimension(:,:) :: coopar
+double precision, pointer, dimension(:) :: sval
 
 !===============================================================================
 
@@ -225,12 +234,7 @@ write(nfecra,6000)
 !     (ILECEC=1:lecture)
 ilecec = 1
 ficsui = 'lagrangian'
-call opnsui(ficsui,len(ficsui),ilecec,impaml,ierror)
-!==========
-if(ierror.ne.0) then
-  write(nfecra,9010) ficsui
-  call csexit (1)
-endif
+call restart_create(ficsui, '', 0, rp)
 
 write(nfecra,6010)
 
@@ -239,12 +243,11 @@ write(nfecra,6010)
 
 itysup = 0
 nbval  = 1
-irtyp  = 1
 rubriq = 'version_fichier_suite_Lagrangien_variables'
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            ivers,ierror)
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+ivers = ival(1)
 
-if(ierror.ne.0) then
+if (ierror.ne.0) then
   write(nfecra,9020) ficsui
   call csexit (1)
 endif
@@ -255,32 +258,30 @@ iok = 0
 
 !     Dimensions des supports
 
-call tstsui(impaml,ncelok,nfaiok,nfabok,nsomok)
-!==========
-if(ncelok.eq.0) then
+call restart_check_base_location(rp,ncelok,nfaiok,nfabok,nsomok)
+if (ncelok.eqv..false.) then
   write(nfecra,9030) ficsui
   iok = iok + 1
 endif
 
-if(nfaiok.eq.0) write(nfecra,9031) ficsui,'internes','internes'
+if (nfaiok.eqv..false.) write(nfecra,9031) ficsui,'internes','internes'
 
-if(nfabok.eq.0) write(nfecra,9031) ficsui,'de bord ','de bord '
+if (nfabok.eqv..false.) write(nfecra,9031) ficsui,'de bord ','de bord '
 
 !     Nombre de particules dans le domaine du calcul
 
 itysup = 0
 nbval  = 1
-irtyp  = 1
 
 rubriq = 'particles'
-call lipsui(impaml,rubriq,len(rubriq),nbpart,ipasup)
+call restart_read_particles_info(rp, rubriq, nbpart, ipasup)
 
-if(ierror.ne.0) then
+if (ipasup.le.0) then
   write(nfecra,9040) ficsui,                                      &
   'nombre_courant_particules                                   '
   iok = iok + 1
 endif
-if(nbpart.gt.nbpmax) then
+if (nbpart.gt.nbpmax) then
   write(nfecra,9050) ficsui, nbpart, nbpmax
   iok = iok + 1
 endif
@@ -288,44 +289,40 @@ endif
 !     Physique associee aux particules
 
 rubriq = 'indicateur_physique_particules'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            jphyla,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jphyla = ival(1)
+if (ierror.ne.0) then
   write(nfecra,9040) ficsui, rubriq
   iok = iok + 1
 endif
 
 rubriq = 'indicateur_temperature_particules'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            jtpvar,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jtpvar = ival(1)
+if (ierror.ne.0) then
   write(nfecra,9040) ficsui,                                      &
   'indicateur_temperature_particules                           '
   iok = iok + 1
 endif
 
 !     Arret
-if(iok.ne.0) then
+if (iok.ne.0) then
   call csexit (1)
 endif
 
 rubriq = 'indicateur_diametre_particules'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            jdpvar,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jdpvar = ival(1)
+if (ierror.ne.0) then
   write(nfecra,9062) ficsui,                                      &
   'indicateur_diametre_particules                              '
   jdpvar = idpvar
 endif
 
 rubriq = 'indicateur_masse_particules'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            jmpvar,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jmpvar = ival(1)
+if (ierror.ne.0) then
   write(nfecra,9062) ficsui,                                      &
   'indicateur_masse_particules                                 '
   jmpvar = impvar
@@ -366,60 +363,55 @@ endif
 ! ---> Infos suivi du calcul
 
 rubriq = 'nombre_iterations_Lagrangiennes'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            iplas,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+iplas = ival(1)
+if (ierror.ne.0) then
   write(nfecra,9060) ficsui,                                      &
   'nombre_iterations_Lagrangiennes                             ', &
   'IPLAS',iplas
 endif
 
-if(istala.eq.1 .and. isuist.eq.0 .and. iplas.ge.idstnt) then
+if (istala.eq.1 .and. isuist.eq.0 .and. iplas.ge.idstnt) then
   write(nfecra,9065) ficsui, isuist, iplas +1, idstnt
   call csexit (1)
 endif
 
-if(iensi3.eq.1 .and. isuist.eq.0 .and. iplas.ge.nstbor) then
+if (iensi3.eq.1 .and. isuist.eq.0 .and. iplas.ge.nstbor) then
   write(nfecra,9066) ficsui, isuist, iplas +1, nstbor
   call csexit (1)
 endif
 
 rubriq = 'temps_physique_Lagrangien'
-irtyp  = 2
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            ttclag,ierror)
-if(ierror.ne.0) then
+call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+ttclag = rval(1)
+if (ierror.ne.0) then
   write(nfecra,9061) ficsui,                                      &
   'temps_physique_Lagrangien                                   ', &
   'TTCLAG',ttclag
 endif
 
 rubriq = 'nombre_total_particules'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            nbptot,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+nbptot = ival(1)
+if (ierror.ne.0) then
   write(nfecra,9060) ficsui,                                      &
   'nombre_total_particules                                     ', &
   'NBPTOT',nbptot
 endif
 
 rubriq = 'nombre_particules_perdues'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            nbpert,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+nbpert = ival(1)
+if (ierror.ne.0) then
   write(nfecra,9060) ficsui,                                      &
   'nombre_particules_perdues                                   ', &
   'NBPERT',nbpert
 endif
 
 rubriq = 'nombre_variables_utilisateur'
-irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            mvls,ierror)
-if(ierror.ne.0) then
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+mvls = ival(1)
+if (ierror.ne.0) then
   mvls = 0
   if (nvls.gt.0) then
     write(nfecra,9062) ficsui,                                    &
@@ -468,7 +460,7 @@ nbval  = 1
 
 allocate(coopar(3,nbpart))
 
-call lepsui(impaml,itepa(1,jisor),coopar,itysup,ierror)
+ierror = cs_restart_read_particles(rp, itysup, itepa(:,jisor), coopar)
 
 nberro = nberro+ierror
 
@@ -484,11 +476,8 @@ deallocate(coopar)
 
 allocate(iflpar(nbpart))
 
-irtyp  = 1
-
 rubriq = 'particle_status_flag'
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            iflpar,ierror)
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,iflpar,ierror)
 nberro = nberro+ierror
 
 if (ierror.eq.0) then
@@ -499,19 +488,17 @@ endif
 
 deallocate(iflpar)
 
-irtyp  = 1
-
 do ivar = 1, nivep
   if (ivar.ne.jisor) then
     rubriq = nomite(ivar)
     if (ivar.eq.jdfac) then
       idbase = 1
       irfsup = 3
-      call leisui(impaml,rubriq,len(rubriq),itysup,irfsup,idbase,   &
-                  itepa(1,ivar),ierror)
+      call leisui(rp,rubriq,len(rubriq),itysup,irfsup,idbase,      &
+                  itepa(:,ivar),ierror)
     else
-      call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                  itepa(1,ivar),ierror)
+      call restart_read_section_int_t(rp,rubriq,itysup,nbval,      &
+                                      itepa(:,ivar),ierror)
     endif
     nberro = nberro+ierror
   endif
@@ -545,12 +532,10 @@ if (ireent.eq.1) then
    nomrte(jndisp) = 'disp_norm'
 endif
 
-irtyp  = 2
-
 do ivar = 1, nvep
   rubriq = nomrte(ivar)
-  call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              tepa(1,ivar),ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,  &
+                                   tepa(:,ivar),ierror)
   if (ivar.eq.jrval .and. ierror.ne.0) then
     do ii = 1, nbpart
       call random_number(tepa(ii,jrval))
@@ -599,13 +584,11 @@ if (mvls.gt.0) then
   enddo
 endif
 
-irtyp  = 2
-
 do ivar = jmp, jwf
   if (ivar .lt. jxp .or. ivar.gt.jzp) then
     rubriq = nomnvl(ivar)
-    call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-                ettp(1,ivar),ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
+                                     ettp(:,ivar),ierror)
     nberro = nberro+ierror
   endif
 enddo
@@ -640,8 +623,8 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
   else if (itpvar.eq.1 .and. jtpvar.eq.1) then
     do ivar = jtp,jcp
       rubriq = nomnvl(ivar)
-      call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  ettp(1,ivar),ierror)
+      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
+                                       ettp(:,ivar),ierror)
       nberro = nberro+ierror
     enddo
   endif
@@ -649,8 +632,8 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
 else if (iphyla.eq.2) then
   do ivar = jhp(1),jcp
     rubriq = nomnvl(ivar)
-    call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ettp(1,ivar),ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
+                                     ettp(:,ivar),ierror)
     nberro = nberro+ierror
   enddo
 endif
@@ -658,8 +641,8 @@ endif
 if (mvls.gt.0) then
   do ivar = 1,mvls
     rubriq = nomnvl(jvls(ivar))
-    call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ettp(1,jvls(ivar)),ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
+                                     ettp(:,jvls(ivar)),ierror)
     nberro = nberro+ierror
   enddo
 endif
@@ -667,7 +650,7 @@ endif
 !  ---> Si pb : arret
 
 
-if(nberro.ne.0) then
+if (nberro.ne.0) then
   write(nfecra,9041) ficsui
   call csexit (1)
 endif
@@ -676,11 +659,7 @@ write(nfecra,6011)
 
 !  ---> Fermeture du fichier suite
 
-call clssui(impaml,ierror)
-
-if(ierror.ne.0) then
-  write(nfecra,9090) ficsui
-endif
+call restart_destroy(rp)
 
 write(nfecra,6099)
 
@@ -699,12 +678,7 @@ if (isuist.eq.1) then
   ! (ILECEC=1:lecture)
   ilecec = 1
   ficsui = 'lagrangian_stats'
-  call opnsui(ficsui,len(ficsui),ilecec,impmls,ierror)
-  !==========
-  if(ierror.ne.0) then
-    write(nfecra,9010) ficsui
-    call csexit (1)
-  endif
+  call restart_create(ficsui, '', 0, rp)
 
   write(nfecra,7010)
 
@@ -714,37 +688,36 @@ if (isuist.eq.1) then
 
   itysup = 0
   nbval  = 1
-  irtyp  = 1
 
   rubriq = 'version_fichier_suite_Lagrangien_statistiques'
-  call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              ivers,ierror)
-  if(ierror.ne.0) then
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+  ivers = ival(1)
+  if (ierror.ne.0) then
     write(nfecra,9020) ficsui
     call csexit (1)
   endif
 
   rubriq = 'indicateur_ecoulement_stationnaire'
-  call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              jsttio,ierror)
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+  jsttio = ival(1)
   if (ierror.ne.0) then
     write(nfecra,9040) ficsui,                                    &
   'indicateur_ecoulement_stationnaire                          '
     call csexit (1)
   endif
 
-!     Dimensions des supports
+  ! Dimensions des supports
 
-  call tstsui(impmls,ncelok,nfaiok,nfabok,nsomok)
+  call restart_check_base_location(rp,ncelok,nfaiok,nfabok,nsomok)
   !==========
-  if(ncelok.eq.0) then
+  if (ncelok.eqv..false.) then
     write(nfecra,9030) ficsui
     call csexit (1)
   endif
 
-  if(nfaiok.eq.0) write(nfecra,9031) ficsui,'internes','internes'
+  if (nfaiok.eqv..false.) write(nfecra,9031) ficsui,'internes','internes'
 
-  if(nfabok.eq.0) write(nfecra,9031) ficsui,'de bord ','de bord '
+  if (nfabok.eqv..false.) write(nfecra,9031) ficsui,'de bord ','de bord '
 
 ! --> Est-on cense lire une suite de stats volumiques ?
 
@@ -755,15 +728,13 @@ if (isuist.eq.1) then
     nbval  = 1
 
     rubriq = 'iteration_debut_statistiques'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                jdstnt,ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    jdstnt = ival(1)
     nberro = nberro+ierror
 
     rubriq = 'iteration_debut_statistiques_stationnaires'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                mstist,ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    mstist = ival(1)
     nberro = nberro+ierror
 
 !  ---> S'il y a des erreurs, on suppose que c'est parce que le fichier
@@ -773,7 +744,7 @@ if (isuist.eq.1) then
 !         est dans une configuration de calcul de stats volumiques
 !         en stationnaire on stoppe.
 
-    if(nberro.ne.0) then
+    if (nberro.ne.0) then
       if ( isttio.eq.0 .or.                                       &
           (isttio.eq.1 .and. iplas.lt.nstist) ) then
         write(nfecra,9110) ficsui, isttio, idstnt, nstist, iplas+1
@@ -798,30 +769,27 @@ if (isuist.eq.1) then
 !  --> Lecture de l'avancement du calcul stats volumiques
 
     rubriq = 'nombre_iterations_statistiques_stationnaires'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npst,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    npst = ival(1)
+    if (ierror.ne.0) then
       write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_statistiques_stationnaires                ', &
       'NPST',npst
     endif
 
     rubriq = 'temps_statistiques_stationnaires'
-    irtyp  = 2
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tstat,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+    tstat = rval(1)
+    if (ierror.ne.0) then
       write(nfecra,9061) ficsui,                                  &
   'temps_statistiques_stationnaires                            ', &
       'TSTAT',tstat
     endif
 
     rubriq = 'classe_statistique_particules'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                nclsto,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    nclsto = ival(1)
+    if (ierror.ne.0) then
       write(nfecra,9061) ficsui,                                  &
   'classes_statistiques                                        ', &
       'NBCLST',nclsto
@@ -866,9 +834,8 @@ if (isuist.eq.1) then
 ! --> Stats supplementaires utilisateurs
 
     rubriq = 'nombre_statistiques_utilisateur'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                mvlsts,ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    mvlsts = ival(1)
 
     if (nvlsts.lt.mvlsts) then
       write(nfecra,9150) ficsui, mvlsts, nvlsts, nvlsts, nvlsts
@@ -878,7 +845,6 @@ if (isuist.eq.1) then
 !        on suppose qu'elles sont dues a un changement de physique.
 
     itysup = 1
-    irtyp  = 2
     nbval  = 1
 
     do ipas  = 0,nbclst
@@ -890,8 +856,8 @@ if (isuist.eq.1) then
         else
           rubriq = 'moy_stat_vol_'//nomlag(ivar)
         endif
-        call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    statis(1,ivar),ierror)
+        call restart_read_section_real_t(rp,rubriq,itysup,nbval,  &
+                                         statis(:,ivar),ierror)
       enddo
 
       do ivl = 1,nvlsta-1
@@ -902,25 +868,23 @@ if (isuist.eq.1) then
         else
           rubriq = 'var_stat_vol_'//nomlav(ivar)
         endif
-        call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    stativ(1,ivar),ierror)
+        call restart_read_section_real_t(rp,rubriq,itysup,nbval,  &
+                                         stativ(:,ivar),ierror)
       enddo
     enddo
 
   endif
 
-
  9991   continue
 
-  if (iensi3.eq.1 .and. nvisbr.gt.0 .and. nfabok.ne.0) then
+  if (iensi3.eq.1 .and. nvisbr.gt.0 .and. nfabok.neqv..false.) then
 
     itysup = 0
     nbval  = 1
 
     rubriq = 'iteration_debut_stats_frontieres_stationnaires'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                mstbor,ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    mstbor = ival(1)
 
 !  ---> S'il y a une erreur, on suppose que c'est parce que le fichier
 !         suite ne contient pas d'infos sur les stats aux frontieres.
@@ -929,7 +893,7 @@ if (isuist.eq.1) then
 !         est dans une configuration de calcul de stats aux frontieres
 !         en stationnaire on stoppe.
 
-    if(ierror.ne.0) then
+    if (ierror.ne.0) then
       if ( isttio.eq.0 .or.                                       &
           (isttio.eq.1 .and. iplas.lt.nstbor) ) then
         write(nfecra,9210) ficsui, isttio, nstbor, iplas+1
@@ -953,30 +917,27 @@ if (isuist.eq.1) then
 !  --> Lecture de l'avancement du calcul stats aux frontieres
 
     rubriq = 'nombre_iterations_stats_frontieres'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npstft,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    npstft = ival(1)
+    if (ierror.ne.0) then
       write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_stats_frontieres                          ', &
       'NPSTFT',npstft
     endif
 
     rubriq = 'nombre_iterations_stats_frontieres_stationnaires'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npstf,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    npstf = ival(1)
+    if (ierror.ne.0) then
       write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_stats_frontieres_stationnaires            ', &
       'NPSTF',npstf
     endif
 
     rubriq = 'temps_stats_frontieres_stationnaires'
-    irtyp  = 2
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tstatp,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+    tstatp = rval(1)
+    if (ierror.ne.0) then
       write(nfecra,9060) ficsui,                                  &
   'temps_stats_frontieres_stationnaires                        ', &
       'TSTATP',tstatp
@@ -1007,9 +968,8 @@ if (isuist.eq.1) then
 ! --> Stats supplementaires utilisateurs
 
     rubriq = 'nombre_stats_frontieres_utilisateur'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                musbor,ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    musbor = ival(1)
 
     if (nusbor.lt.musbor) then
       write(nfecra,9250) ficsui, musbor, nusbor, nusbor, nusbor
@@ -1019,13 +979,12 @@ if (isuist.eq.1) then
 !        on suppose qu'elles sont dues a un changement de physique.
 
     itysup = 3
-    irtyp  = 2
     nbval  = 1
 
     do ivar = 1,nvisbr
       rubriq = 'stat_bord_'//nombrd(ivar)
-      call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  parbor(1,ivar),ierror)
+      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
+                                       parbor(:,ivar),ierror)
     enddo
 
   endif
@@ -1038,10 +997,9 @@ if (isuist.eq.1) then
     nbval  = 1
 
     rubriq = 'iteration_debut_termes_sources_stationnaires'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                mstits,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    mstits = ival(1)
+    if (ierror.ne.0) then
       write(nfecra,9020) ficsui,                                  &
   'iteration_debut_termes_sources_stationnaires                ', &
       'NSTITS',mstits
@@ -1054,7 +1012,7 @@ if (isuist.eq.1) then
 !         est dans une configuration de calcul de stats aux frontieres
 !         en stationnaire on stoppe.
 
-    if(ierror.ne.0) then
+    if (ierror.ne.0) then
       if ( isttio.eq.0 .or.                                       &
           (isttio.eq.1 .and. iplas.lt.nstits) ) then
         write(nfecra,9310) ficsui, isttio, nstits, iplas+1
@@ -1069,9 +1027,8 @@ if (isuist.eq.1) then
 !       des stats volumiques
 
     rubriq = 'modele_turbulence_termes_sources'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                jturb,ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    jturb = ival(1)
 
     jtytur = jturb/10
 
@@ -1094,10 +1051,9 @@ if (isuist.eq.1) then
 !  --> Lecture de l'avancement du couplage retour
 
     rubriq = 'nombre_iterations_termes_sources_stationnaires'
-    irtyp  = 1
-    call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npts,ierror)
-    if(ierror.ne.0) then
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+    npts = ival(1)
+    if (ierror.ne.0) then
       write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_termes_sources_stationnaires              ', &
       'NPTS',npts
@@ -1167,12 +1123,11 @@ if (isuist.eq.1) then
 
     itysup = 1
     nbval  = 1
-    irtyp  = 2
 
     do ivar = 1,ntersl
       rubriq = nomtsl(ivar)
-      call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  tslagr(1,ivar),ierror)
+      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
+                                       tslagr(:,ivar),ierror)
     enddo
 
 
@@ -1186,11 +1141,10 @@ if (isuist.eq.1) then
         icha = nsalto-nsalpp+ivar
         itysup = 1
         nbval  = 1
-        irtyp  = 2
         write(car4,'(i4.4)') ivar
         rubriq = 'scalaires_physiques_pariculieres_charbon'//car4
-        call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,ipproc(icha)),ierror)
+        call field_get_val_s(iprpfl(icha), sval)
+        call restart_read_section_real_t(rp,rubriq,itysup,nbval,sval,ierror)
       enddo
     endif
 
@@ -1202,9 +1156,7 @@ if (isuist.eq.1) then
 
 !  ---> Fermeture du fichier suite
 
-  call clssui(impmls,ierror)
-
-  if(ierror.ne.0) write(nfecra,9090) ficsui, ficsui
+call restart_destroy(rp)
 
 ! ---> En cas d'erreur, on continue quand meme
 
@@ -1217,9 +1169,8 @@ write(nfecra,2000)
 !===============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
-
 
  2000 format(                                                     &
 '                                                             ',/,&
@@ -1241,21 +1192,6 @@ write(nfecra,2000)
  7010 FORMAT (   3X,'   Debut de la lecture                  '  )
  7099 FORMAT (   3X,' Fin de la lecture du fichier suite     ',/,  &
            3X,'   sur les statistiques et TS couplage retour'  )
-
- 9010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''OUVERTURE D''UN FICHIER SUITE    ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut pas etre execute.                     ',/,&
-'@                                                            ',/,&
-'@    Verifier l''existence de ce fichier suite dans le       ',/,&
-'@        sous-repertoire ''restart'' du repertoire de travail.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
  9020 format(                                                     &
 '@                                                            ',/,&
@@ -1598,19 +1534,7 @@ write(nfecra,2000)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 9090 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA FERMETURE DU FICHIER SUITE             ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@                                                            ',/,&
-'@    Le calcul continue...                                   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9110 format(                                                           &
+ 9110 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

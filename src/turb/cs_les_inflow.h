@@ -136,9 +136,7 @@ void CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
 
 void CS_PROCF(lecsyn, LECSYN)
 (
- const char       *const filnam,  /* <- Name of the sequel file               */
- const cs_int_t   *const lngnam   /* <- Length of the name                    */
- CS_ARGF_SUPP_CHAINE
+ const char  *filename
 );
 
 /*----------------------------------------------------------------------------
@@ -147,9 +145,7 @@ void CS_PROCF(lecsyn, LECSYN)
 
 void CS_PROCF(ecrsyn, ECRSYN)
 (
- const char       *const filnam,  /* <- Name of the sequel file               */
- const cs_int_t   *const lngnam   /* <- Length of the name                    */
- CS_ARGF_SUPP_CHAINE
+ const char  *filename
 );
 
 /*=============================================================================

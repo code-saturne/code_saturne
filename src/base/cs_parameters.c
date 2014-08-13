@@ -364,14 +364,20 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("boundary_mass_flux_id", -1, 0);
 
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
+  cs_field_define_key_int("property_id", -1, 0); /* inverse of iprpfl(iprop) */
+  cs_field_define_key_int("scalar_id", -1, 0); /* inverse of isca(iscal) */
   cs_field_define_key_int("post_id", -1, 0);     /* inverse of the ipp array */
 
   cs_field_define_key_int("scalar_diffusivity_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_double("scalar_diffusivity_ref",
                              -1.e12*10., CS_FIELD_VARIABLE); /* old visls0(iscal) */
+
+  cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("turbulent_flux_id", -1, CS_FIELD_VARIABLE);
+
   cs_field_define_key_int("diffusivity_tensor", 0, CS_FIELD_VARIABLE);
-  cs_field_define_key_int("scalar_id", -1, 0); /* inverse of isca(iscal) */
   cs_field_define_key_int("drift_scalar_model", 0, 0);
+
   cs_field_define_key_int("scalar_class", 0, 0);
   cs_field_define_key_int("first_moment_id", -1, 0); /* old iscavr(iscal) */
 
@@ -380,7 +386,6 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
   cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
 
-  cs_field_define_key_int("property_id", -1, 0); /* inverse of iprpfl(iprop) */
 
   cs_field_define_key_struct("var_cal_opt",
                              &_var_cal_opt,

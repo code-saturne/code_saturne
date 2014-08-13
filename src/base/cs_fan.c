@@ -321,7 +321,7 @@ void CS_PROCF (debvtl, DEBVTL)
 }
 
 /*----------------------------------------------------------------------------
- * Computealculate the force induced by the fans (needs a previous calculation
+ * Compute the force induced by the fans (needs a previous calculation
  * of the flows through each fan).
  *
  * The induced force is added to the array crvxep (which can have other

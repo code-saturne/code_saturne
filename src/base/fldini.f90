@@ -83,7 +83,7 @@ implicit none
 
 integer          ii, ivar
 integer          keycpl, iflid, ikeyvl
-integer          kdiftn
+integer          kdiftn, kturt, kfturt
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv, lprev
 integer          f_id, kscavr, f_vis, f_log, f_dften
@@ -113,23 +113,21 @@ ilved  = .false.   ! not interleaved by default
 iprev = .true.     ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 
-name = 'log'
-call field_get_key_id(name, keylog)
-
-name = 'post_vis'
-call field_get_key_id(name, keyvis)
-
-name = 'label'
-call field_get_key_id(name, keylbl)
-
-name = 'coupled'
-call field_get_key_id(name, keycpl)
+call field_get_key_id('log', keylog)
+call field_get_key_id('post_vis', keyvis)
+call field_get_key_id('label', keylbl)
+call field_get_key_id('coupled', keycpl)
 
 ! If a scalar is a variance, store the id of the parent scalar
 call field_get_key_id("first_moment_id", kscavr)
 
 ! Key id for diffusivity tensor
 call field_get_key_id("diffusivity_tensor", kdiftn)
+
+! Keys not stored globally
+
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_id('turbulent_flux_id', kfturt)
 
 call field_get_n_fields(nfld)
 
@@ -177,6 +175,9 @@ do ii = 1, nscal
       endif
       call field_set_key_int(iflid, keyvis, f_vis)
       call field_set_key_int(iflid, keylog, f_log)
+
+      call field_set_key_int(ivarfl(ivar), kturt, iturt(ii))
+      call field_set_key_int(ivarfl(ivar), kfturt, iflid)
 
     ! If the user has chosen a tensorial diffusivity
     else if (f_dften.eq.6) then

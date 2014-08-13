@@ -26,14 +26,14 @@
 
 !> \file lecamx.f90
 !>
-!> \brief Reading of aucxiliary restart file.
+!> \brief Reading of auxiliary restart file.
 !>
 !> Here ileaux = 1.
 !> We stop if:
 !>  - the file cannot be opened
 !>  - the file is not an auxiliary restart file
 !>  - ncel is not correct
-!>  - jturb or jdtvar is not readable
+!>  - jdtvar is not readable
 !>  - a required temporal moment is not readable
 !
 !-------------------------------------------------------------------------------
@@ -43,22 +43,14 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     ncelet        number of extended (real + ghost) cells
-!> \param[in]     ncel          number of cells
-!> \param[in]     nfac          number of inner faces
-!> \param[in]     nfabor        number of boundary faces
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[out]    dt            time step (per cell)
-!> \param[out]    propce        physical properties at cell centers
+!> \param[in]     oflmap        pointer to old field map
 !> \param[out]    frcxt         external forces making hydrostatic pressure
 !> \param[out]    prhyd         predicted hydrostatic pressure
 !_______________________________________________________________________________
 
 
 subroutine lecamx &
- ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
-   dt     , propce ,                                              &
+ ( oflmap ,                                                       &
    frcxt  , prhyd  )
 
 !===============================================================================
@@ -66,6 +58,8 @@ subroutine lecamx &
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use cstphy
@@ -86,7 +80,7 @@ use cpincl
 use cs_fuel_incl
 use elincl
 use ppcpfu
-use mesh, only: isympa
+use mesh
 use field
 use cavitation
 use cs_c_bindings
@@ -97,11 +91,8 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel   , nfac   , nfabor
-integer          nvar   , nscal
+type(c_ptr)      oflmap
 
-double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
@@ -110,37 +101,31 @@ character        rubriq*64,car4*4,car2*2
 character        car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
-character        cphase*2
-character        nomflu(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-logical          lprev , interleaved
-integer          iel   , ifac, ii, istr
-integer          ivar  , iscal , jphas , isco
+logical          lprev
+integer          iel   , ifac, ii, istr, nlfld
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
-integer          jortvm, ipcvmx, ipcvmy, ipcvmz
-integer          numero, ipcefj, ipcla1, ipcla2, ipcla3
-integer          inifok
-integer          ncelok, nfaiok, nfabok, nsomok
-integer          ierror, irtyp,  itysup, nbval
-integer          nberro, inierr, ivers
-integer          ilu   , ilecec, ierrch
-integer          impamx
+integer          jortvm
+integer          ierror, itysup, nbval
+integer          nberro, inierr, ivers(1)
+integer          ilu   , ierrch
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
-integer          jturb , jtytur, jale, jcavit
-integer          f_id, f_dim, nfld, iflmas, iflmab, iflvoi, iflvob
-integer          ngbstr(2)
-double precision tmpstr(27)
+integer          jale, jcavit
+integer          f_id, iflmas, iflmab, iflvoi, iflvob
+integer          ival(1), ngbstr(2)
+double precision rval(1), tmpstr(27)
 
-integer, allocatable, dimension(:) :: mflnum
+logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
+
+type(c_ptr) :: rp
+
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:), pointer :: voidfl
-double precision, dimension(:,:), pointer :: val_vp
 
-double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cpro_vism1, cpro_vism2, cpro_vism3
 
 !===============================================================================
 
@@ -167,30 +152,12 @@ cindfm='YYYY'
 cindfc='YY'
 cindfl='YYYY'
 
-!  Codage en chaine de caracteres du numero de la phase
-cphase='01'
-
-!     Avertissement
-if(nscamx.gt.nfmtsc) then
-  write(nfecra,8001)nfmtsc,nscamx
-endif
-if(nvarmx.gt.nfmtfl) then
-  write(nfecra,8002)nfmtfl,nvarmx
-endif
-
 !===============================================================================
 ! 1. OUVERTURE DU FICHIER SUITE AUXILIAIRE
 !===============================================================================
 
-!  ---> Ouverture du fichier (ILECEC = 1 : lecture)
-ilecec = 1
 ficsui = 'auxiliary'
-call opnsui(ficsui,len(ficsui),ilecec,impamx,ierror)
-!==========
-if (ierror.ne.0) then
-  write(nfecra,9000) ficsui
-  call csexit (1)
-endif
+call restart_create(ficsui, '', 0, rp)
 
 ! ---> Debut de la lecture
 write(nfecra,1100)
@@ -205,10 +172,12 @@ write(nfecra,1100)
 
 itysup = 0
 nbval  = 1
-irtyp  = 1
-rubriq = 'version_fichier_suite_auxiliaire'
-call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
-            ierror)
+
+call restart_read_int_t_compat(rp,                                           &
+                               'code_saturne:checkpoint:auxiliary:version',  &
+                               'version_fichier_suite_auxiliaire',           &
+                               itysup, nbval, ivers, ierror)
+
 
 if (ierror.ne.0) then
   write(nfecra,9100)ficsui
@@ -217,68 +186,16 @@ endif
 
 !     Supports
 
-call tstsui(impamx,ncelok,nfaiok,nfabok,nsomok)
-!==========
+call restart_check_base_location(rp,ncelok,nfaiok,nfabok,nsomok)
 
-if (ncelok.eq.0) then
+if (ncelok.eqv..false.) then
   write(nfecra,9101)
   call csexit (1)
 endif
 
-IF (NFAIOK.EQ.0) WRITE(NFECRA,8200)'internes','internes'
+if (nfaiok.eqv..false.) write(nfecra,8200)'internes','internes'
 
-IF (NFABOK.EQ.0) WRITE(NFECRA,8200)'de bord ','de bord '
-
-
-!     On n'a besoin que
-!       du nombre de phases et du modele de turbulence
-
-nberro = 0
-
-itysup = 0
-nbval  = 1
-irtyp  = 1
-
-rubriq = 'nombre_phases'
-call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,jphas,   &
-            ierror)
-nberro=nberro+ierror
-
-!  ---> On s'arrete si erreur
-!     Si on ne peut pas relire un entier, c'est que le fichier n'est pas bon
-if (nberro.ne.0) then
-  car54 = 'ERREUR A lA LECTURE DES DIMENSIONS (NPHAS)            '
-  write(nfecra,9200)car54
-  call csexit (1)
-endif
-
-
-!  ---> On ne sait relire que des calculs monophasiques
-if (jphas.ne.1) then
-  write(nfecra,8205) jphas
-  call csexit(1)
-endif
-
-!     Modele de turbulence
-
-nberro = 0
-
-rubriq = 'modele_turbulence_phase01'
-itysup = 0
-nbval  = 1
-irtyp  = 1
-call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            jturb,ierror)
-nberro=nberro+ierror
-jtytur=jturb/10
-
-! --->  Stop si erreur
-!     Si on ne peut pas relire un entier, c'est que le fichier n'est pas bon
-if (nberro.ne.0) then
-  car54 = 'ERREUR A lA LECTURE DES MODELES DE TURBULENCE         '
-  write(nfecra,9200)car54
-  call csexit (1)
-endif
+if (nfabok.eqv..false.) write(nfecra,8200)'de bord ','de bord '
 
 !     Methode ALE
 
@@ -287,9 +204,8 @@ nberro = 0
 rubriq = 'methode_ALE'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,jale,    &
-            ierror)
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jale = ival(1)
 nberro=nberro+ierror
 
 ! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
@@ -317,9 +233,8 @@ nberro = 0
 rubriq = 'cavitation'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,jcavit,    &
-            ierror)
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jcavit = ival(1)
 nberro=nberro+ierror
 
 ! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
@@ -329,11 +244,7 @@ if (nberro.ne.0) then
   jcavit = -1
 endif
 
-! --->  Donnees modifiees
-if (iturb .ne. jturb)                             &
-     write(nfecra,8220) iturb, jturb
-
-car54 = ' Fin de la lecture des options                        '
+car54 =' Fin de la lecture des options                        '
 write(nfecra,1110)car54
 
 !===============================================================================
@@ -351,9 +262,8 @@ if (ixyzp0.eq.-1) then
   rubriq = 'ref_presstot01'
   itysup = 0
   nbval  = 3
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-              xyzp0(1),ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,      &
+                                   xyzp0,ierror)
   nberro = nberro+ierror
   if (ierror.eq.0) then
     write(nfecra,7000) (xyzp0(ii),ii=1,3)
@@ -365,23 +275,21 @@ endif
 if (idilat.eq.3) then
 
   !the reference density updated with the low-Mach algorithm
-  rubriq = 'ro0'//cphase
+  rubriq = 'ro001'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,ro0,ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  ro0 = rval(1)
   nberro=nberro+ierror
 
   ! the thermodynamic pressure for the previous time step
-  rubriq = 'pther'//cphase
+  rubriq = 'pther01'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-       pther,ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  pther = rval(1)
   nberro=nberro+ierror
 endif
-
 
 ! ---> Masse volumique
 !     On la lit, qu'elle soit extrapolee ou pas,
@@ -396,42 +304,27 @@ inierr = 0
 if (irovar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
 
   ! Masse volumique - cellules
-  rubriq = 'rho_ce_phase01'
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-  call field_get_val_s(icrom, sval)
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
+  call restart_read_field_vals(rp, icrom, 0, ierror)
   nberro = nberro+ierror
   inierr = inierr+ierror
 
   ! Masse volumique du pdt precedent - cellules (uniquement pour cavitation)
   if (icavit.ge.0.and.jcavit.ge.0) then
-    rubriq = 'rho_old_ce_phase01'
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call field_get_val_prev_s(icrom, sval)
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
+    call restart_read_field_vals(rp, icrom, 1, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
 
   ! Masse volumique - faces de bord
-  if (nfabok.eq.1) then
-    rubriq = 'rho_fb_phase01'
-    itysup = 3
-    nbval  = 1
-    irtyp  = 2
-    call field_get_val_s(ibrom, sval)
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
+  if (nfabok.eqv..true.) then
+    call restart_read_field_vals(rp, ibrom, 0, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
 
   !     Si on a reussi a initialiser la masse volumique aux cellules ET
   !       aux faces de bord, on l'indique (pour schtmp)
-  if (nfabok.eq.1.and.inierr.eq.0) then
+  if (nfabok.eqv..true..and.inierr.eq.0) then
     initro = 1
   endif
 
@@ -446,31 +339,21 @@ endif
 !     La viscosite moleculaire est egalement lue pour le modele de cavitation
 !     Si on reussit, on l'indique
 
-if(iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
+if (iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
 
   inierr = 0
 
   !         Viscosite moleculaire - cellules
   !         Uniquement si elle est variable ou pour le modele de cavitation
   if (ivivar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
-    rubriq = 'viscl_ce_phase01'
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call field_get_val_s(iprpfl(iviscl), viscl)
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,viscl,ierror)
+    call restart_read_field_vals(rp, iprpfl(iviscl), 0, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
 
   !         Viscosite turbulente ou de sous-maille - cellules
   if (iviext.gt.0) then
-    rubriq = 'visct_ce_phase01'
-    itysup = 1
-    nbval  = 1
-    irtyp  = 2
-    call field_get_val_s(iprpfl(ivisct), visct)
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,visct,ierror)
+    call restart_read_field_vals(rp, iprpfl(ivisct), 0, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
@@ -491,22 +374,17 @@ endif
 !        et quand l'utilisateur peut s'en servir pour passer
 !        de H a T, comme en effet Joule par exemple).
 
-if((icpext.gt.0.and.icp.gt.0).or.                &
+if ((icpext.gt.0.and.icp.gt.0).or.                &
      (ippmod(ieljou).ge.1.and.icp.gt.0)) then
 
   inierr = 0
 
-  !         Chaleur massique - cellules
-  rubriq = 'cp_ce_phase01'
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-  call field_get_val_s(iprpfl(icp), cpro_cp)
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,cpro_cp,ierror)
+  ! Chaleur massique - cellules
+  call restart_read_field_vals(rp, iprpfl(icp), 0, ierror)
   nberro = nberro+ierror
   inierr = inierr+ierror
 
-  !     Si on a initialise Cp, on l'indique (pour schtmp)
+  ! Si on a initialise Cp, on l'indique (pour schtmp)
   if (inierr.eq.0) then
     initcp = 1
   endif
@@ -514,55 +392,12 @@ if((icpext.gt.0.and.icp.gt.0).or.                &
 endif
 
 !     Si on a des scalaires, on lit a diffusivite
-!       si le scalaire a  un correspondant et
+!       si le scalaire a un correspondant et
 !       si on doit extrapoler la diffusivite
 !       (et qu'elle est variable, et que le scalaire n'est pas une variance)
 
-if(nscal.gt.0) then
-
-  ! --->  Donnees modifiees
-  do iscal = 1, nscal
-    isco = iscold(iscal)
-    if ( isco         .gt.0.and.                                  &
-         ivsext(iscal).gt.0.and.                                  &
-         ivisls(iscal).gt.0.and.                                  &
-        (iscavr(iscal).le.0.or.iscavr(iscal).gt.nscal) ) then
-
-      inierr = 0
-
-      ! Cell diffusivity
-      if (isco.le.nfmtsc) then
-        write(car4,'(i4.4)')isco
-        rubriq = 'visls_ce_scalaire'//car4
-        itysup = 1
-        nbval  = 1
-        irtyp  = 2
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,ipproc(ivisls(iscal))),ierror)
-        nberro = nberro+ierror
-        inierr = inierr+ierror
-      else
-        nberro = nberro-1
-        inierr = inierr-1
-      endif
-
-!     Si on a initialise visls, on l'indique (pour schtmp)
-      if (inierr.eq.0) then
-        initvs(iscal) = 1
-      endif
-    endif
-
-  enddo
-
-!     Pour les variances, il suffit de dire qu'on a initialise ou non
-!       selon ce qu'on a fait au scalaire correspondant
-  do iscal = 1, nscal
-    if(iscavr(iscal).gt.0.and.iscavr(iscal).le.nscal) then
-      initvs(iscal) = initvs(iscavr(iscal))
-    endif
-  enddo
-
-endif
+nlfld = 0
+call restart_read_linked_fields(rp, oflmap, "scalar_diffusivity_id", nlfld)
 
 !     Si erreur, on previent mais pas stop :
 !       auparavant on n'avait pas stocke les prop phy
@@ -570,31 +405,28 @@ endif
 !       c'est discutable pour rho
 
 if (nberro.ne.0) then
-  car54 = 'LECTURE DES PROPRIETES PHYSIQUES                    '
+  car54 = 'Lecture des proprietes physiques                    '
   write(nfecra,8300)car54
 endif
 
 car54 = ' Fin de la lecture des proprietes physiques           '
 write(nfecra,1110)car54
 
-
 !===============================================================================
 ! 4. PAS DE TEMPS
 !===============================================================================
-
 
 !  ---> Indicateur de pas de temps variable
 rubriq = 'indic_dt_variable'
 itysup = 0
 nbval  = 1
-irtyp  = 1
-call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,jdtvar,  &
-            ierror)
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jdtvar = ival(1)
 
 !  ---> On s'arrete si erreur
 !     Si on ne peut pas relire un entier, c'est que le fichier n'est pas bon
 if (ierror.ne.0) then
-  car54 = 'ERREUR A LA LECTURE DU MODE DE MARCHE EN TEMPS        '
+  car54 ='Erreur a la lecture du mode de marche en temps        '
   write(nfecra,9200)car54
   call csexit(1)
 endif
@@ -605,6 +437,8 @@ endif
 
 nberro = 0
 
+call field_get_id('dt', f_id)
+
 if (idtvar.ne.jdtvar) then
   write(nfecra,8400)idtvar,jdtvar,dtref
 
@@ -612,21 +446,15 @@ elseif (idtvar.eq.1) then
   rubriq = 'dt_variable_temps'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,dt(1), &
-              ierror)
+  call field_get_val_s(f_id, sval)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,sval,ierror)
   nberro=nberro+ierror
   do iel = 1, ncel
-    dt(iel) = dt(1)
+    sval(iel) = sval(1)
   enddo
 
 elseif (idtvar.eq.2) then
-  rubriq = 'dt_variable_espace_ce'
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,dt,    &
-              ierror)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
   nberro=nberro+ierror
 endif
 
@@ -635,11 +463,11 @@ endif
 !       c'est discutable
 
 if (nberro.ne.0) then
-  CAR54 = 'LECTURE DU PAS DE TEMPS                               '
+  car54 = 'Lecture du pas de temps                               '
   write(nfecra,8300)car54
 endif
 
-CAR54 = ' Fin de la lecture du pas de temps                    '
+car54 = ' Fin de la lecture du pas de temps                    '
 write(nfecra,1110)car54
 
 !===============================================================================
@@ -659,213 +487,38 @@ write(nfecra,1110)car54
 !       ensuite a l'instant precedent si on est en schema en temps
 !       particulier (ISTMPF NE 1)
 
-if (nfaiok.eq.1 .or. nfabok.eq.1) then
+if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
+
+  ! restart_read_linked_fields reads all time steps present and required
+
+  nlfld = 0
+  call restart_read_linked_fields(rp, oflmap, "inner_mass_flux_id", nlfld)
+  call restart_read_linked_fields(rp, oflmap, "boundary_mass_flux_id", nlfld)
 
   nberro=0
 
-  ! Initialize work arrays
-
-  call field_get_n_fields(nfld)
-
-  allocate(mflnum(nfld))
-
-  do ii = 1, nfld
-    mflnum(ii) = 0
-  enddo
-
-  ! Name of flux associated with variable in previous calculation
-  nomflu(ipr)='fm_p_phase'//cphase
-  nomflu(iu)='fm_u_phase'//cphase
-  nomflu(iv)='fm_v_phase'//cphase
-  nomflu(iw)='fm_w_phase'//cphase
-  if (itytur.eq.2.and. (jtytur.eq.2.or.jtytur.eq.5)) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-  elseif (itytur.eq.2.and.jtytur.eq.3) then
-    nomflu(ik)='fm_R11_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-  elseif (itytur.eq.2.and.jturb.eq.60) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_omega_phase'//cphase
-  elseif (itytur.eq.3 .and. (jtytur.eq.2.or.jtytur.eq.50)) then
-    nomflu(ir11)='fm_k_phase'//cphase
-    nomflu(ir22)='fm_k_phase'//cphase
-    nomflu(ir33)='fm_k_phase'//cphase
-    nomflu(ir12)='fm_k_phase'//cphase
-    nomflu(ir13)='fm_k_phase'//cphase
-    nomflu(ir23)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-  elseif (itytur.eq.3.and.jtytur.eq.3) then
-    nomflu(ir11)='fm_R11_phase'//cphase
-    nomflu(ir22)='fm_R22_phase'//cphase
-    nomflu(ir33)='fm_R33_phase'//cphase
-    nomflu(ir12)='fm_R12_phase'//cphase
-    nomflu(ir13)='fm_R13_phase'//cphase
-    nomflu(ir23)='fm_R23_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    if (iturb.eq.32.and.jturb.eq.32) then
-      nomflu(ial)='fm_alp_phase'//cphase
-    endif
-    if (iturb.eq.32.and.jturb.ne.32) then
-      nomflu(ial)='fm_eps_phase'//cphase
-    endif
-  elseif (itytur.eq.3.and.jturb.eq.60) then
-    nomflu(ir11)='fm_k_phase'//cphase
-    nomflu(ir22)='fm_k_phase'//cphase
-    nomflu(ir33)='fm_k_phase'//cphase
-    nomflu(ir12)='fm_k_phase'//cphase
-    nomflu(ir13)='fm_k_phase'//cphase
-    nomflu(ir23)='fm_k_phase'//cphase
-    nomflu(iep)='fm_omega_phase'//cphase
-  elseif (itytur.eq.5.and.jtytur.eq.2) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    nomflu(iphi)='fm_k_phase'//cphase
-    if (iturb.eq.50) then
-      nomflu(ifb)='fm_k_phase'//cphase
-    elseif (iturb.eq.51) then
-      nomflu(ial)='fm_k_phase'//cphase
-    endif
-  elseif (itytur.eq.5.and.jtytur.eq.3) then
-    nomflu(ik)='fm_R11_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    nomflu(iphi)='fm_R11_phase'//cphase
-    nomflu(ifb)='fm_R11_phase'//cphase
-    if (iturb.eq.50) then
-      nomflu(ifb)='fm_R11_phase'//cphase
-    elseif (iturb.eq.51) then
-      nomflu(ial)='fm_R11_phase'//cphase
-    endif
-  elseif (iturb.eq.50.and.jturb.eq.50) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    nomflu(iphi)='fm_phi_phase'//cphase
-    nomflu(ifb)='fm_fb_phase'//cphase
-  elseif (iturb.eq.51.and.jturb.eq.51) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    nomflu(iphi)='fm_phi_phase'//cphase
-    nomflu(ial)='fm_al_phase'//cphase
-  elseif (iturb.eq.50.and.jturb.eq.51) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    nomflu(iphi)='fm_phi_phase'//cphase
-    nomflu(ifb)='fm_al_phase'//cphase
-  elseif (iturb.eq.51.and.jturb.eq.50) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_eps_phase'//cphase
-    nomflu(iphi)='fm_phi_phase'//cphase
-    nomflu(ial)='fm_fb_phase'//cphase
-  elseif (iturb.eq.50.and.jturb.eq.60) then
-    nomflu(ik)='fm_k_phase'//cphase
-    nomflu(iep)='fm_omega_phase'//cphase
-    nomflu(iphi)='fm_k_phase'//cphase
-    nomflu(ifb)='fm_k_phase'//cphase
-  elseif (iturb.eq.60.and.(jtytur.eq.2.or.jturb.eq.50)) then
-    nomflu(ik  )='fm_k_phase'//cphase
-    nomflu(iomg)='fm_eps_phase'//cphase
-  elseif (iturb.eq.60.and.jtytur.eq.3) then
-    nomflu(ik  )='fm_R11_phase'//cphase
-    nomflu(iomg)='fm_eps_phase'//cphase
-  elseif (iturb.eq.60.and.jturb.eq.60) then
-    nomflu(ik  )='fm_k_phase'//cphase
-    nomflu(iomg)='fm_omega_phase'//cphase
-  elseif (iturb.eq.70.and.jturb.eq.70) then
-    nomflu(inusa)='fm_nusa_phase'//cphase
-  endif
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      if (iscold(iscal).gt.0) then
-        if (iscold(iscal).le.nfmtsc) then
-          write(car4,'(i4.4)')iscold(iscal)
-        else
-          car4 = cindfs
-        endif
-        nomflu(isca(iscal))='fm_scalaire'//car4
-      endif
-    enddo
-  endif
-  if (iale.eq.1) then
-    nomflu(iuma)='fm_vit_maill_u'
-    nomflu(ivma)='fm_vit_maill_v'
-    nomflu(iwma)='fm_vit_maill_w'
-  endif
-  if (icavit.ge.0) then
-    nomflu(ivoidf)='fm_taux_vide'
-  endif
-
-  ! For variables
-  do ivar = 1, nvar
-
-    f_id = ivarfl(ivar)
-
-    ! Is there an associated flux ?
-
-    call field_get_key_int(f_id, kimasf, iflmas)
-
-    if (iflmas.ge.0) then
-
-      ! If flux has not been read yet, do it
-      if (mflnum(iflmas).eq.0) then
-
-        rubriq = nomflu(ivar)
-        itysup = 0
-        nbval  = 1
-        irtyp  = 1
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    numero,ierror)
-        nberro = nberro+ierror
-        ! If it exists, read it
-        if (ierror.eq.0) then
-          inifok = 0
-          if (numero.gt.0) then
-            if (numero.le.nfmtfl) then
-              write(car4,'(i4.4)') numero
-            else
-              car4 = cindff
-            endif
-            if (nfaiok.eq.1) then
-              call field_get_val_s(iflmas, sval)
-              rubriq = 'flux_masse_fi_'//car4
-              itysup = 2
-              nbval  = 1
-              irtyp  = 2
-              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
-                          irtyp, sval, ierror)
-              nberro = nberro+ierror
-              if (ierror.eq.0) inifok = inifok+1
-            endif
-            if (nfabok.eq.1) then
-              call field_get_key_int(f_id, kbmasf, iflmab)
-              call field_get_val_s(iflmab, sval)
-              rubriq = 'flux_masse_fb_'//car4
-              itysup = 3
-              nbval  = 1
-              irtyp  = 2
-              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
-                          irtyp, sval, ierror)
-              nberro = nberro+ierror
-              if (ierror.eq.0) inifok = inifok+1
-            endif
-          endif
-          ! If everything is OK, mark this flux as read
-          if (inifok.eq.2) then
-            mflnum(iflmas) = 1
-          endif
-        endif
-      endif
-    endif
-  enddo
-
   ! Initialization of the void fraction convective flux, if required
   if (icavit.ge.0.and.jcavit.lt.0) then
+
+    ! Interior faces
+
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-    call field_get_val_s(iflmas, sval)
     call field_get_key_int(ivarfl(ivoidf), kimasf, iflvoi)
+
+    call field_get_val_s(iflmas, sval)
     call field_get_val_s(iflvoi, voidfl)
     do ifac = 1, nfac
       voidfl(ifac) = sval(ifac)/rol
     enddo
+
+    call field_have_previous(iflmas, lprev)
+    if (lprev .neqv. .false.) then
+      call field_get_val_prev_s(iflmas, sval)
+      call field_get_val_prev_s(iflvoi, voidfl)
+      do ifac = 1, nfac
+        voidfl(ifac) = sval(ifac)/rol
+      enddo
+    endif
 
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
     call field_get_val_s(iflmab, sval)
@@ -874,231 +527,27 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     do ifac = 1, nfabor
       voidfl(ifac) = sval(ifac)/rol
     enddo
-  endif
 
-  ! An now, the same for the preceding time step
-
-  ! Initialize work arrays
-
-  do ii = 1, nfld
-    mflnum(ii) = 0
-  enddo
-
-  ! Name of flux associated with variable for previous calculation
-  nomflu(ipr)='fm_a_p_phase'//cphase
-  nomflu(iu)='fm_a_u_phase'//cphase
-  nomflu(iv)='fm_a_v_phase'//cphase
-  nomflu(iw)='fm_a_w_phase'//cphase
-  if (itytur.eq.2 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-  elseif (itytur.eq.2.and.jtytur.eq.3) then
-    nomflu(ik)='fm_a_R11_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-  elseif (itytur.eq.2.and.jturb.eq.60) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_omega_phase'//cphase
-  elseif (itytur.eq.3 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
-    nomflu(ir11)='fm_a_k_phase'//cphase
-    nomflu(ir22)='fm_a_k_phase'//cphase
-    nomflu(ir33)='fm_a_k_phase'//cphase
-    nomflu(ir12)='fm_a_k_phase'//cphase
-    nomflu(ir13)='fm_a_k_phase'//cphase
-    nomflu(ir23)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-  elseif (itytur.eq.3.and.jtytur.eq.3) then
-    nomflu(ir11)='fm_a_R11_phase'//cphase
-    nomflu(ir22)='fm_a_R22_phase'//cphase
-    nomflu(ir33)='fm_a_R33_phase'//cphase
-    nomflu(ir12)='fm_a_R12_phase'//cphase
-    nomflu(ir13)='fm_a_R13_phase'//cphase
-    nomflu(ir23)='fm_a_R23_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    if (iturb.eq.32.and.jturb.eq.32) then
-      nomflu(ial)='fm_a_alp_phase'//cphase
-    endif
-    if (iturb.eq.32.and.jturb.ne.32) then
-      nomflu(ial)='fm_a_eps_phase'//cphase
-    endif
-  elseif (itytur.eq.3.and.jturb.eq.60) then
-    nomflu(ir11)='fm_a_k_phase'//cphase
-    nomflu(ir22)='fm_a_k_phase'//cphase
-    nomflu(ir33)='fm_a_k_phase'//cphase
-    nomflu(ir12)='fm_a_k_phase'//cphase
-    nomflu(ir13)='fm_a_k_phase'//cphase
-    nomflu(ir23)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_omega_phase'//cphase
-    if (iturb.eq.32) then
-      nomflu(ial)='fm_a_omega_phase'//cphase
-    endif
-  elseif (itytur.eq.5.and.jtytur.eq.2) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    nomflu(iphi)='fm_a_k_phase'//cphase
-    if (iturb.eq.50) then
-      nomflu(ifb)='fm_a_k_phase'//cphase
-    elseif (iturb.eq.51) then
-      nomflu(ial)='fm_a_k_phase'//cphase
-    endif
-  elseif (itytur.eq.5.and.jtytur.eq.3) then
-    nomflu(ik)='fm_a_R11_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    nomflu(iphi)='fm_a_R11_phase'//cphase
-    if (iturb.eq.50) then
-      nomflu(ifb)='fm_a_R11_phase'//cphase
-    elseif (iturb.eq.51) then
-      nomflu(ial)='fm_a_R11_phase'//cphase
-    endif
-  elseif (iturb.eq.50.and.jturb.eq.50) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    nomflu(iphi)='fm_a_phi_phase'//cphase
-    nomflu(ifb)='fm_a_fb_phase'//cphase
-  elseif (iturb.eq.51.and.jturb.eq.51) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    nomflu(iphi)='fm_a_phi_phase'//cphase
-    nomflu(ial)='fm_a_al_phase'//cphase
-  elseif (iturb.eq.50.and.jturb.eq.51) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    nomflu(iphi)='fm_a_phi_phase'//cphase
-    nomflu(ifb)='fm_a_al_phase'//cphase
-  elseif (iturb.eq.51.and.jturb.eq.50) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_eps_phase'//cphase
-    nomflu(iphi)='fm_a_phi_phase'//cphase
-    nomflu(ial)='fm_a_fb_phase'//cphase
-  elseif (itytur.eq.5.and.jturb.eq.60) then
-    nomflu(ik)='fm_a_k_phase'//cphase
-    nomflu(iep)='fm_a_omega_phase'//cphase
-    nomflu(iphi)='fm_a_k_phase'//cphase
-    if (iturb.eq.50) then
-      nomflu(ifb)='fm_a_k_phase'//cphase
-    elseif (iturb.eq.51) then
-      nomflu(ial)='fm_a_k_phase'//cphase
-    endif
-  elseif (iturb.eq.60 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
-    nomflu(ik  )='fm_a_k_phase'//cphase
-    nomflu(iomg)='fm_a_eps_phase'//cphase
-  elseif (iturb.eq.60.and.jtytur.eq.3) then
-    nomflu(ik  )='fm_a_R11_phase'//cphase
-    nomflu(iomg)='fm_a_eps_phase'//cphase
-  elseif (iturb.eq.60.and.jturb.eq.60) then
-    nomflu(ik  )='fm_a_k_phase'//cphase
-    nomflu(iomg)='fm_a_omega_phase'//cphase
-  elseif (iturb.eq.70.and.jturb.eq.70) then
-    nomflu(inusa)='fm_a_nusa_phase'//cphase
-  endif
-  if (nscal.gt.0) then
-    do iscal = 1, nscal
-      if (iscold(iscal).gt.0) then
-        if (iscold(iscal).le.nfmtsc) then
-          write(car4,'(i4.4)')iscold(iscal)
-        else
-          car4 = cindfs
-        endif
-        nomflu(isca(iscal))='fm_a_scalaire'//car4
-      endif
-    enddo
-  endif
-  if (iale.eq.1) then
-    nomflu(iuma)='fm_a_vit_maill_u'
-    nomflu(ivma)='fm_a_vit_maill_v'
-    nomflu(iwma)='fm_a_vit_maill_w'
-  endif
-  if (icavit.ge.0) then
-    nomflu(ivoidf)='fm_a_taux_vide'
-  endif
-
-  ! For variables
-
-  do ivar = 1, nvar
-
-    f_id = ivarfl(ivar)
-
-    ! If the variable is not associated with a mass flux, do nothing
-
-    call field_get_key_int(f_id, kimasf, iflmas) ! interior mass flux
-
-    if (iflmas.ge.0) then
-
-      ! If flux has not been read yet, do it
-      if (mflnum(iflmas).eq.0) then
-
-        call field_have_previous(iflmas, lprev)
-
-        if (.not. lprev) cycle ! skip to next loop variable
-
-        ! Read local number of matching flux
-        rubriq = nomflu(ivar)
-        itysup = 0
-        nbval  = 1
-        irtyp  = 1
-        call lecsui(impamx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-                    numero, ierror)
-        nberro = nberro+ierror
-        ! If it exists, read it
-        if (ierror.eq.0) then
-          inifok = 0
-          if (numero.gt.0) then
-            if (numero.le.nfmtfl) then
-              write(car4,'(i4.4)')numero
-            else
-              car4 = cindff
-            endif
-            if (nfaiok.eq.1) then
-              call field_get_val_prev_s(iflmas, sval)
-              rubriq = 'flux_masse_a_fi_'//car4
-              itysup = 2
-              nbval  = 1
-              irtyp  = 2
-              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
-                          irtyp, sval, ierror)
-              nberro = nberro+ierror
-              if (ierror.eq.0) inifok = inifok+1
-            endif
-            if (nfabok.eq.1) then
-              call field_get_key_int(f_id, kbmasf, iflmab)
-              call field_get_val_prev_s(iflmab, sval)
-              rubriq = 'flux_masse_a_fb_'//car4
-              itysup = 3
-              nbval  = 1
-              irtyp  = 2
-              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
-                          irtyp, sval, ierror)
-              nberro = nberro+ierror
-              if (ierror.eq.0) inifok = inifok+1
-            endif
-          endif
-          ! If everything is OK, mark this flux as read
-          if (inifok.eq.2) then
-            mflnum(iflmas) = 1
-          endif
-        endif
-      endif
-    endif
-  enddo
-
-  deallocate(mflnum)
-
-  ! Initialization of the void fraction convective flux, if required
-  if (icavit.ge.0.and.jcavit.lt.0) then
-    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-    call field_get_val_s(iflmas, sval)
-    call field_get_key_int(ivarfl(ivoidf), kimasf, iflvoi)
-    call field_get_val_s(iflvoi, voidfl)
-    do ifac = 1, nfac
-      voidfl(ifac) = sval(ifac)/rol
-    enddo
+    ! Boundary faces
 
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_val_s(iflmab, sval)
     call field_get_key_int(ivarfl(ivoidf), kbmasf, iflvob)
+
+    call field_get_val_s(iflmab, sval)
     call field_get_val_s(iflvob, voidfl)
     do ifac = 1, nfabor
       voidfl(ifac) = sval(ifac)/rol
     enddo
+
+    call field_have_previous(iflmas, lprev)
+    if (lprev .neqv. .false.) then
+      call field_get_val_prev_s(iflmab, sval)
+      call field_get_val_prev_s(iflvob, voidfl)
+      do ifac = 1, nfabor
+        voidfl(ifac) = sval(ifac)/rol
+      enddo
+    endif
+
   endif
 
   ! In case of error, warn but do not stop
@@ -1111,17 +560,18 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
   write(nfecra,1110) car54
 
 endif
-!     fin de "s'il faut lire les flux de masse (ie. supports coincidents)"
+
+! fin de "s'il faut lire les flux de masse (ie. supports coincidents)"
 
 !===============================================================================
 ! 6. CONDITIONS AUX LIMITES
 !===============================================================================
 
-!     A ne relire que si les supports sont identiques (faces de bord)
+! A ne relire que si les supports sont identiques (faces de bord)
 
 ilu = 0
 
-if (nfabok.eq.1) then
+if (nfabok.eqv..true.) then
 
   ilu = 1
 
@@ -1129,7 +579,7 @@ if (nfabok.eq.1) then
 
   ! Variable BC coefficients
 
-  call restart_read_bc_coeffs(impamx)
+  call restart_read_bc_coeffs(rp)
 
   ! Symmetry type (used for least squares gradients on extended
   ! neighborhood, with extrapolation of gradient at boundary).
@@ -1137,8 +587,7 @@ if (nfabok.eq.1) then
   rubriq = 'isympa_fb_phase01'
   itysup = 3
   nbval  = 1
-  irtyp  = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,isympa,ierror)
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,isympa,ierror)
   nberro = nberro+ierror
 
 endif
@@ -1150,8 +599,7 @@ if (ilu.eq.1) then
 !       (on n'a pas forcement les coefs 2, on n'a pas forcement isympa
 !        si on prend les fichiers d'une version anterieure)
   if (nberro.ne.0) then
-    car54 =                                                       &
-         'LECTURE DES CONDITIONS AUX LIMITES                    '
+    car54 = 'Lecture des conditions aux limites                    '
     write(nfecra,8300)car54
   endif
 
@@ -1164,22 +612,16 @@ endif
 ! 7. TERMES SOURCES EXTRAPOLES et TERMES SOURCES SCHEMA EN TEMPS
 !===============================================================================
 
+! Variables at previous time steps
+
 nberro = 0
 ilu = 0
 
 if (ibdtso.gt.1) then
 
-  ! Warning: must be adapted if ivar.ne.iu
-  !          must be adapted if ibdtso.gt.2
-  ivar = iu
-  f_id = ivarfl(ivar)
-  call field_get_val_prev_v(f_id, val_vp)
-  rubriq = 'velocity_prev'
-  itysup = 1 ! cells location
-  nbval = 3 ! interleaved velocity
-  irtyp  = 2 ! double precision
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-              val_vp,ierror)
+  ! Warning: must be adapted if ibdtso.gt.2
+
+  call restart_read_field_vals(rp, ivarfl(iu), 1, ierror)
   nberro=nberro+ierror
 
   ilu = ilu + 1
@@ -1191,39 +633,10 @@ endif
 ! Do not use iscold for scalars here, as we use field names and not
 ! scalar numbers here, and names are assumed stable
 
-do ivar = 1, nvar
-  call field_get_key_int(ivarfl(ivar), kstprv, f_id)
-  if (f_id .ge. 0) then
-    call field_get_dim(f_id, f_dim, interleaved)
-    if (f_dim.gt.1) then
-      call field_get_val_v(f_id, val_vp)
-      call field_get_name(f_id, rubriq)
-      itysup = 1
-      nbval  = f_dim
-      irtyp  = 2
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,val_vp,ierror)
-    else
-      call field_get_val_s(f_id, sval)
-      call field_get_name(f_id, rubriq)
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
-    endif
-    nberro=nberro+ierror
-    ilu = ilu + 1
-  endif
-enddo
+call restart_read_linked_fields(rp, oflmap, "source_term_prev_id", ilu)
 
-!     Si erreur, on previent mais pas stop :
-!       (on n'a pas forcement les ts a l'ordre 2 avant)
-if (nberro.ne.0) then
-    car54 = 'LECTURE DES TERMES SOURCES                            '
-    write(nfecra,8300)car54
-endif
-
-if(ilu.ne.0) then
-  car54 = ' Fin de la lecture des termes sources                 '
+if (ilu.ne.0) then
+  car54 =' Fin de la lecture des termes sources                 '
   write(nfecra,1110)car54
 endif
 
@@ -1231,7 +644,7 @@ endif
 ! 8. MOYENNES
 !===============================================================================
 
-call time_moment_restart_read(impamx)
+call time_moment_restart_read(rp)
 
 !===============================================================================
 ! 9. DISTANCE A LA PAROI
@@ -1242,7 +655,7 @@ nberro = 0
 
 !     MODE DE CALCUL DIRECT (NON COMPATIBLE PARALLELISME ET PERIODICITE)
 
-if(abs(icdpar).eq.2) then
+if (abs(icdpar).eq.2) then
 
 !     On la lit si on en a besoin uniquement.
 
@@ -1253,16 +666,15 @@ if(abs(icdpar).eq.2) then
 
 !     On ne relit les numeros des faces de bord que si on a toujours
 !       le meme nombre de faces de bord (sinon, la numerotation a change)
-  if(ineedy.eq.1) then
-    if(icdpar.eq.2.or.inpdt0.eq.1) then
-      if(nfabok.eq.1) then
+  if (ineedy.eq.1) then
+    if (icdpar.eq.2.or.inpdt0.eq.1) then
+      if (nfabok.eqv..true.) then
 
         itysup = 1
         nbval  = 1
-        irtyp  = 1
         rubriq = 'num_fac_par_ce_phase01'
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,   &
-             irtyp,ifapat,ierror)
+        call restart_read_section_int_t(rp,rubriq,itysup,nbval,   &
+                                        ifapat,ierror)
         nberro=nberro+ierror
         ilu   = ilu + 1
 
@@ -1273,7 +685,7 @@ if(abs(icdpar).eq.2) then
 
 !     MODE DE CALCUL PAR EQUATION DE DIFFUSION
 
-elseif(abs(icdpar).eq.1) then
+elseif (abs(icdpar).eq.1) then
 
 !     On la lit si on en a besoin uniquement.
 
@@ -1286,17 +698,16 @@ elseif(abs(icdpar).eq.1) then
 !       paroi auraient disparu
 !       Si on arrive a la lire, on note qu'elle est a jour (sauf si ALE).
 
-  if(ineedy.eq.1) then
-    if(icdpar.eq.1.or.inpdt0.eq.1) then
-      if(nfabok.eq.1) then
+  if (ineedy.eq.1) then
+    if (icdpar.eq.1.or.inpdt0.eq.1) then
+      if (nfabok.eqv..true.) then
         itysup = 1
         nbval  = 1
-        irtyp  = 2
         rubriq = 'dist_fac_par_ce_phase01'
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    dispar,ierror)
+        call restart_read_section_real_t(rp,rubriq,itysup,nbval,dispar,  &
+                                         ierror)
         nberro=nberro+ierror
-        if(ierror.eq.0 .and. iale.eq.0 ) then
+        if (ierror.eq.0 .and. iale.eq.0 ) then
           imajdy = 1
         endif
         ilu   = ilu + 1
@@ -1307,13 +718,12 @@ elseif(abs(icdpar).eq.1) then
 endif
 
 if (nberro.ne.0) then
-  car54 =                                                         &
-         'LECTURE DE LA DISTANCE A LA PAROI                     '
+  car54 = 'Lecture de la distance a la paroi                     '
   write(nfecra,8300)car54
 endif
 
-if(ilu.ne.0) then
-  CAR54=' Fin de la lecture de la distance a la paroi          '
+if (ilu.ne.0) then
+  car54 = ' Fin de la lecture de la distance a la paroi          '
   write(nfecra,1110)car54
 endif
 
@@ -1322,26 +732,23 @@ endif
 ! 10.  FORCE EXTERIEURE
 !===============================================================================
 
-if(iphydr.eq.1) then
+if (iphydr.eq.1) then
   nberro=0
 
   itysup = 1
   nbval  = 3
-  irtyp  = 2
 
   ! TODO read the old format
-  rubriq = 'force_ext_ce_phase'//cphase
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       frcxt,ierror)
+  rubriq = 'force_ext_ce_phase01'
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,frcxt,ierror)
   nberro=nberro+ierror
 
- if (nberro.ne.0) then
-    car54 =                                                       &
-         'LECTURE DES FORCES EXTERIEURES                        '
+  if (nberro.ne.0) then
+    car54 = 'Lecture des forces exterieures                        '
     write(nfecra,8300)car54
   endif
 
-  CAR54 =' Fin de la lecture des forces exterieures             '
+  car54 = ' Fin de la lecture des forces exterieures             '
   write(nfecra,1110)car54
 
 endif
@@ -1350,25 +757,23 @@ endif
 ! 11. PRESSION HYDROSTATIQUE PREDITE
 !===============================================================================
 
-if(iphydr.eq.2) then
+if (iphydr.eq.2) then
+
   nberro=0
 
   itysup = 1
   nbval  = 1
-  irtyp  = 2
 
   rubriq = 'prhyd_pre_phase01'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       prhyd(1),ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,prhyd,ierror)
   nberro=nberro+ierror
 
  if (nberro.ne.0) then
-    car54 =                                                       &
-         'LECTURE DE LA PRESSION HYDROSTATIQUE PREDITE          '
-    write(nfecra,8300)car54
+   car54 = 'Lecture de la pression hydrostatique predite          '
+   write(nfecra,8300)car54
   endif
 
-  CAR54 =' Fin de la lecture de la pression hydro. predite      '
+  car54 =' Fin de la lecture de la pression hydro. predite      '
   write(nfecra,1110)car54
 
 endif
@@ -1383,7 +788,7 @@ if (iale.eq.1 .and. jale.eq.1) then
   itysup = 4
 
   call restart_read_real_3_t_compat                       &
-         (impamx, 'vertex_displacement',                  &
+         (rp, 'vertex_displacement',                      &
          'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
          itysup, depale, ierror)
 
@@ -1400,32 +805,22 @@ if (iale.eq.1 .and. jale.eq.1) then
   rubriq = 'type_visc_mail'
   itysup = 0
   nbval  = 1
-  irtyp  = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-       jortvm,ierror)
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+  jortvm = ival(1)
 
-  rubriq = 'visc_maillage_x'
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-       propce(1,ipproc(ivisma(1))),ierror)
+  call restart_read_field_vals(rp, iprpfl(ivisma(1)), 0, ierror)
 
   if (iortvm.eq.1) then
     if (jortvm.eq.1) then
-      rubriq = 'visc_maillage_y'
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propce(1,ipproc(ivisma(2))),ierror)
-      rubriq = 'visc_maillage_z'
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propce(1,ipproc(ivisma(3))),ierror)
+      call restart_read_field_vals(rp, iprpfl(ivisma(2)), 0, ierror)
+      call restart_read_field_vals(rp, iprpfl(ivisma(3)), 0, ierror)
     else
+      call field_get_val_s(iprpfl(ivisma(1)), cpro_vism1)
+      call field_get_val_s(iprpfl(ivisma(2)), cpro_vism2)
+      call field_get_val_s(iprpfl(ivisma(3)), cpro_vism3)
       do iel = 1, ncel
-        ipcvmx = ipproc(ivisma(1))
-        ipcvmy = ipproc(ivisma(2))
-        ipcvmz = ipproc(ivisma(3))
-        propce(iel,ipcvmy) = propce(iel,ipcvmx)
-        propce(iel,ipcvmz) = propce(iel,ipcvmx)
+        cpro_vism2(iel) = cpro_vism1(iel)
+        cpro_vism3(iel) = cpro_vism1(iel)
       enddo
     endif
   endif
@@ -1437,9 +832,7 @@ if (iale.eq.1 .and. jale.eq.1) then
   rubriq = 'nombre_structures'
   itysup = 0
   nbval  = 2
-  irtyp  = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-       ngbstr,ierror)
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ngbstr,ierror)
   nberro=nberro+ierror
 
   nbstru = ngbstr(1)
@@ -1455,7 +848,7 @@ if (iale.eq.1 .and. jale.eq.1) then
     do istr = min(nbstru,nfmtst)+1,nbstru
       cstruc(istr) = cindst
     enddo
-    if(nstrmx.gt.nfmtst) then
+    if (nstrmx.gt.nfmtst) then
       write(nfecra,8004)nfmtst,nstrmx
     endif
 
@@ -1464,10 +857,9 @@ if (iale.eq.1 .and. jale.eq.1) then
       rubriq = 'donnees_structure_'//cstruc(istr)
       itysup = 0
       nbval  = 27
-      irtyp  = 2
 
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  tmpstr,ierror)
+      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
+                                       tmpstr,ierror)
       nberro=nberro+ierror
 
       do ii = 1, 3
@@ -1484,7 +876,7 @@ if (iale.eq.1 .and. jale.eq.1) then
 
     enddo
 
-    CAR54 = ' Fin de la lecture des donnees des structures ALE   '
+    car54 =' Fin de la lecture des donnees des structures ALE   '
     write(nfecra,1110)car54
 
   endif
@@ -1497,8 +889,7 @@ if (iale.eq.1 .and. jale.eq.1) then
 endif
 
 !===============================================================================
-! 13. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP ET
-!                                                                  FUEL
+! 13. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP ET FUEL
 !===============================================================================
 
 nberro = 0
@@ -1512,9 +903,8 @@ if ( ippmod(icod3p).ge.0 ) then
   rubriq = 'hinfue_cod3p'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,hinfue,&
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  hinfue = rval(1)
   nberro=nberro+ierror
   ilu = ilu + 1
   if (ierror.ne.0) then
@@ -1524,10 +914,9 @@ if ( ippmod(icod3p).ge.0 ) then
   rubriq = 'hinoxy_cod3p'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = ilu + 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,hinoxy,&
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  hinoxy = rval(1)
   nberro=nberro+ierror
   ilu = ilu + 1
   if (ierror.ne.0) then
@@ -1537,10 +926,9 @@ if ( ippmod(icod3p).ge.0 ) then
   rubriq = 'tinfue_cod3p'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = ilu + 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,tinfue,&
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  tinfue = rval(1)
   nberro=nberro+ierror
   ilu = ilu + 1
   if (ierror.ne.0) then
@@ -1550,10 +938,9 @@ if ( ippmod(icod3p).ge.0 ) then
   rubriq = 'tinoxy_cod3p'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = ilu + 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,tinoxy,&
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  tinoxy = rval(1)
   nberro=nberro+ierror
   ilu = ilu + 1
   if (ierror.ne.0) then
@@ -1561,7 +948,7 @@ if ( ippmod(icod3p).ge.0 ) then
   endif
 
 !       Il faut le meme nbr de faces de bord, sinon on ne lit pas
-  if(nfabok.eq.1) then
+  if (nfabok.eqv..true.) then
 
     ilu = ilu + 1
 
@@ -1570,29 +957,23 @@ if ( ippmod(icod3p).ge.0 ) then
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_cod3p'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
     nberro=nberro+ierror
 
 !       Type entree Fuel
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientfu_zone_bord_cod3p'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientfu, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientfu,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       Type entree Oxydant
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientox_zone_bord_cod3p'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientox, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientox,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
@@ -1601,7 +982,7 @@ if ( ippmod(icod3p).ge.0 ) then
 !       car il a peut etre ete lu.
 !       Ceci permettra d'eviter de se servir des valeurs par defaut
 
-    if(ierrch.ne.0) then
+    if (ierrch.ne.0) then
       do ifac = 1, nfabor
         izfppp(ifac) = 0
       enddo
@@ -1619,10 +1000,9 @@ if ( ippmod(icoebu).ge.0 ) then
   rubriq = 'temperature_gaz_frais_ebu'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,tgf,   &
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  tgf = rval(1)
   nberro=nberro+ierror
   if (ierror.ne.0) then
     write(nfecra,9500)
@@ -1631,17 +1011,16 @@ if ( ippmod(icoebu).ge.0 ) then
   rubriq = 'frmel_ebu'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,frmel, &
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  frmel = rval(1)
   nberro=nberro+ierror
   if (ierror.ne.0) then
     write(nfecra,9500)
   endif
 
 !       Il faut le meme nbr de faces de bord, sinon on ne lit pas
-  if(nfabok.eq.1) then
+  if (nfabok.eqv..true.) then
 
     ilu = ilu + 1
 
@@ -1650,49 +1029,39 @@ if ( ippmod(icoebu).ge.0 ) then
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_ebu'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
     nberro=nberro+ierror
 
 !       Type entree Gaz brulee
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgb_zone_bord_ebu'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgb, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientgb,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       Type entree gaz frais
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgf_zone_bord_ebu'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgf, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientgf,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       FMENT
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'fment_zone_bord_ebu'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                fment , ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,fment,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       TKENT
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'tkent_zone_bord_ebu'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tkent, ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,tkent,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
@@ -1701,7 +1070,7 @@ if ( ippmod(icoebu).ge.0 ) then
 !       car il a peut etre ete lu.
 !       Ceci permettra d'eviter de se servir des valeurs par defaut
 
-    if(ierrch.ne.0) then
+    if (ierrch.ne.0) then
       do ifac = 1, nfabor
         izfppp(ifac) = 0
       enddo
@@ -1719,10 +1088,9 @@ if ( ippmod(icolwc).ge.0 ) then
   rubriq = 'fmin_lwc'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,fmin,  &
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  fmin = rval(1)
   nberro=nberro+ierror
   if (ierror.ne.0) then
     write(nfecra,9600)
@@ -1731,10 +1099,9 @@ if ( ippmod(icolwc).ge.0 ) then
   rubriq = 'fmax_lwc'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,fmax,  &
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  fmax = rval(1)
   nberro=nberro+ierror
   if (ierror.ne.0) then
     write(nfecra,9600)
@@ -1743,10 +1110,9 @@ if ( ippmod(icolwc).ge.0 ) then
   rubriq = 'hmin_lwc'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,hmin,  &
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  hmin = rval(1)
   nberro=nberro+ierror
   if (ierror.ne.0) then
     write(nfecra,9600)
@@ -1755,17 +1121,16 @@ if ( ippmod(icolwc).ge.0 ) then
   rubriq = 'hmax_lwc'
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ilu    = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,hmax,  &
-              ierror)
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  hmax = rval(1)
   nberro=nberro+ierror
   if (ierror.ne.0) then
     write(nfecra,9600)
   endif
 
 !       Il faut le meme nbr de faces de bord, sinon on ne lit pas
-  if(nfabok.eq.1) then
+  if (nfabok.eqv..true.) then
 
     ilu = ilu + 1
 
@@ -1774,49 +1139,39 @@ if ( ippmod(icolwc).ge.0 ) then
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_lwc'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
     nberro=nberro+ierror
 
 !       Type entree Gaz brulee
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgb_zone_bord_lwc'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgb, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientgb,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       Type entree gaz frais
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientgf_zone_bord_lwc'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgf, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientgf,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       FMENT
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'fment_zone_bord_lwc'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                fment , ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,fment,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       TKENT
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'tkent_zone_bord_lwc'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tkent, ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,tkent,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
@@ -1825,7 +1180,7 @@ if ( ippmod(icolwc).ge.0 ) then
 !       car il a peut etre ete lu.
 !       Ceci permettra d'eviter de se servir des valeurs par defaut
 
-    if(ierrch.ne.0) then
+    if (ierrch.ne.0) then
       do ifac = 1, nfabor
         izfppp(ifac) = 0
       enddo
@@ -1840,17 +1195,16 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
     ippmod(iccoal).ge.0) then
   itysup = 0
   nbval  = 1
-  irtyp  = 2
   ierrch = 0
   do icha = 1, ncharb
-    if(icha.le.nfmtch) then
-      WRITE(CAR2,'(I2.2)')ICHA
+    if (icha.le.nfmtch) then
+      write(car2,'(I2.2)')icha
     else
       car2 = cindfc
     endif
-    rubriq = 'masse_volumique_charbon'//CAR2
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                rhock(icha), ierror)
+    rubriq = 'masse_volumique_charbon'//car2
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+    rhock(icha) = rval(1)
     ierrch = ierrch + ierror
     nberro = nberro + ierror
     ilu = ilu + 1
@@ -1867,7 +1221,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
 !     Charbon PuLVerise : type de zones de bord, ientat, ientcp, timpat
 !       et x20 pour le calcul de rho au bord en entree
 !       Il faut le meme nbr de faces de bord, sinon on ne lit pas
-  if(nfabok.eq.1) then
+  if (nfabok.eqv..true.) then
 
     ilu = ilu + 1
 
@@ -1876,19 +1230,15 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_charbon_pulverise'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
     nberro = nberro + ierror
 
 !       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientat_zone_bord_charbon_pulverise'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientat, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientat,ierror)
     ierrch = ierrch + ierror
     nberro = nberro + ierror
 
@@ -1897,40 +1247,35 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
 
       itysup = 0
       nbval  = nozppm
-      irtyp  = 1
       rubriq = 'ientcp_zone_bord_charbon_pulverise'
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  ientcp, ierror)
+      call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientcp,ierror)
       ierrch = ierrch + ierror
       nberro = nberro + ierror
 
       itysup = 0
       nbval  = nozppm
-      irtyp  = 1
       rubriq = 'inmoxy_zone_bord_charbon_pulverise'
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  inmoxy, ierror)
+      call restart_read_section_int_t(rp,rubriq,itysup,nbval,inmoxy,ierror)
       ierrch = ierrch + ierror
       nberro = nberro + ierror
 
       itysup = 0
       nbval  = nozppm
-      irtyp  = 2
 
       idecal = 0
       do icha = 1, ncharb
         do iclapc = 1, nclpch(icha)
           icla = iclapc + idecal
-          if(icha.le.nfmtch.and.iclapc.le.nfmtcl) then
-            WRITE(CAR2,'(I2.2)')ICHA
-            WRITE(CAR4,'(I4.4)')ICLAPC
+          if (icha.le.nfmtch.and.iclapc.le.nfmtcl) then
+            write(car2,'(i2.2)')icha
+            write(car4,'(i4.4)')iclapc
           else
             car2 = cindfc
             car4 = cindfl
           endif
-          rubriq = 'x20_zone_bord_charbon'//CAR2//'_classe'//CAR4
-          call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,     &
-               irtyp,x20(1,icla), ierror)
+          rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
+          call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
+                                           x20(:,icla), ierror)
           ierrch = ierrch + ierror
           nberro = nberro + ierror
 
@@ -1942,10 +1287,8 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
 !       Temperature
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'timpat_zone_bord_charbon_pulverise'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                timpat, ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,timpat,ierror)
     ierrch = ierrch + ierror
     nberro = nberro + ierror
 
@@ -1954,7 +1297,7 @@ if (ippmod(icpl3c).ge.0 .or.                                      &
 !       car il a peut etre ete lu.
 !       Ceci permettra d'eviter de se servir des valeurs par defaut (=0)
 !       de TIMPAT dans cpphyv et cplphy.
-    if(ierrch.ne.0) then
+    if (ierrch.ne.0) then
       do ifac = 1, nfabor
         izfppp(ifac) = 0
       enddo
@@ -1970,7 +1313,7 @@ endif
 if ( ippmod(icfuel).ge.0 ) then
 
 !       Il faut le meme nbr de faces de bord, sinon on ne lit pas
-  if(nfabok.eq.1) then
+  if (nfabok.eqv..true.) then
 
     ilu = ilu + 1
 
@@ -1979,38 +1322,29 @@ if ( ippmod(icfuel).ge.0 ) then
 !       Numero des zones
     itysup = 3
     nbval  = 1
-    irtyp  = 1
     rubriq = 'num_zone_fb_fuel'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
     nberro=nberro+ierror
 
 !       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientat_zone_bord_fuel'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientat, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientat,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'ientfl_zone_bord_fuel'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientfl, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientfl,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
-!
     itysup = 0
     nbval  = nozppm
-    irtyp  = 1
     rubriq = 'inmoxy_zone_bord_fuel'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                inmoxy, ierror)
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,inmoxy,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
@@ -2018,30 +1352,24 @@ if ( ippmod(icfuel).ge.0 ) then
 !       TIMPAT
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'timpat_zone_bord_fuel'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                timpat, ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,timpat,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       QIMPAT
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'qimpat_zone_bord_fuel'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                qimpat, ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,qimpat,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
 !       QIMPFL
     itysup = 0
     nbval  = nozppm
-    irtyp  = 2
     rubriq = 'qimpfl_zone_bord_fuel'
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                qimpfl, ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,qimpfl,ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
 
@@ -2050,7 +1378,7 @@ if ( ippmod(icfuel).ge.0 ) then
 !       car il a peut etre ete lu.
 !       Ceci permettra d'eviter de se servir des valeurs par defaut (=0)
 !       de TIMPAT dans cpphyv et cplphy.
-    if(ierrch.ne.0) then
+    if (ierrch.ne.0) then
       do ifac = 1, nfabor
         izfppp(ifac) = 0
       enddo
@@ -2061,12 +1389,12 @@ if ( ippmod(icfuel).ge.0 ) then
 endif
 
 if (nberro.ne.0) then
-  car54 = 'LECTURE DES INFORMATIONS COMBUSTION                   '
+  car54 = 'Lecture des informations combustion                   '
   write(nfecra,8300)car54
 endif
 
-if(ilu.ne.0) then
-  CAR54= ' Fin de la lecture des informations combustion        '
+if (ilu.ne.0) then
+  car54=' Fin de la lecture des informations combustion        '
   write(nfecra,1110)car54
 endif
 
@@ -2080,26 +1408,24 @@ ilu  = 0
 !     Recalage des CL pot des versions electriques
 
 if ( ippmod(ieljou).ge.1       ) then
-  if(ielcor.eq.1) then
+  if (ielcor.eq.1) then
     ilu = ilu + 1
     rubriq = 'coeff_recalage_joule'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                coejou,ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+    coejou = rval(1)
     nberro=nberro+ierror
   endif
 endif
 if ( ippmod(ielarc).ge.1  .or. ippmod(ieljou).ge.1 ) then
-  if(ielcor.eq.1) then
+  if (ielcor.eq.1) then
     ilu = 1
     rubriq = 'ddpot_recalage_arc_elec'
     itysup = 0
     nbval  = 1
-    irtyp  = 2
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                dpot  ,ierror)
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+    dpot = rval(1)
     nberro=nberro+ierror
   endif
 endif
@@ -2110,55 +1436,37 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
 
-  ipcefj = ipproc(iefjou)
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
-
-  rubriq = 'tsource_sc_ce_joule'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propce(1,ipcefj  ),ierror)
+  call restart_read_field_vals(rp, iprpfl(iefjou), 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
 endif
 
-if( ippmod(ielarc).ge.1 ) then
+if ( ippmod(ielarc).ge.1 ) then
 
-  ipcla1 = ipproc(ilapla(1))
-  ipcla2 = ipproc(ilapla(2))
-  ipcla3 = ipproc(ilapla(3))
-  itysup = 1
   nbval  = 1
-  irtyp  = 2
 
-  rubriq = 'tsource_ns_ce_x_laplace'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propce(1,ipcla1  ),ierror)
+  call restart_read_field_vals(rp, iprpfl(ilapla(1)), 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
-  rubriq = 'tsource_ns_ce_y_laplace'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propce(1,ipcla2  ),ierror)
+  call restart_read_field_vals(rp, iprpfl(ilapla(2)), 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
-  rubriq = 'tsource_ns_ce_z_laplace'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propce(1,ipcla3  ),ierror)
+  call restart_read_field_vals(rp, iprpfl(ilapla(3)), 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
 endif
 
 if (nberro.ne.0) then
-  car54 = 'LECTURE DES INFORMATIONS ELECTRIQUES                  '
+  car54 = 'Lecture des informations electriques                  '
   write(nfecra,8300)car54
 endif
 
 if (ilu.ne.0) then
-  car54 = ' Fin de la lecture des informations electriques       '
+  car54=' Fin de la lecture des informations electriques       '
   write(nfecra,1110)car54
 endif
 
@@ -2167,11 +1475,7 @@ endif
 !===============================================================================
 
 !     Fermeture du fichier suite auxilaire
-call clssui(impamx,ierror)
-
-if (ierror.ne.0) then
-   write(nfecra,8900) ficsui
-endif
+call restart_destroy(rp)
 
 write(nfecra,1200)
 
@@ -2227,48 +1531,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 8001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@      Le nombre de scalaires maximal NSCAMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTSC = ',I10                                       ,/,&
-'@      On a ici un nombre de scalaires maximal superieur     ',/,&
-'@        NSCAMX = ',I10                                       ,/,&
-'@      On ne pourra pas relire les scalaires dont le numero  ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme lecamx.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8002 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@      Le nombre de flux de masse max NVARMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTFL = ',I10                                       ,/,&
-'@      On a ici un nombre de flux      maximal superieur     ',/,&
-'@        NVARMX = ',I10                                       ,/,&
-'@      On ne pourra pas relire les flux      dont le numero  ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme lecamx.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8004 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2317,41 +1579,6 @@ return
 '@    Cette situation peut enfin se produire lorsque le       ',/,&
 '@      fichier suite auxiliaire ne correspond pas au cas     ',/,&
 '@      traite.                                               ',/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier suite auxiliaire utilise        ',/,&
-'@      correspond bien au cas traite                         ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8205 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
-'@    =========                                               ',/,&
-'@      DONNEES AMONT MULTIPHASIQUES                          ',/,&
-'@                                                            ',/,&
-'@  Nombre de phases (amont) : ',I10                           ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8220 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
-'@    =========                                               ',/,&
-'@      REPRISE  DE CALCUL           AVEC ITURB = ',I4         ,/,&
-'@      A PARTIR D''UN CALCUL REALISE AVEC ITURB = ',I4        ,/,&
-'@                                                            ',/,&
-'@    Le modele de turbulence a ete modifie.                  ',/,&
-'@                                                            ',/,&
-'@    Il est conseille cependant de                           ',/,&
-'@      verifier la valeur de ITURB                           ',/,&
 '@                                                            ',/,&
 '@    Verifier que le fichier suite auxiliaire utilise        ',/,&
 '@      correspond bien au cas traite                         ',/,&
@@ -2425,64 +1652,9 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8900 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@    Probleme sur le fichier de nom (',A13,')                ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 #else
 
- 8001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING:       WHEN READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      The maximum number of scalars NSCAMX supported by     ',/,&
-'@        the writing format of the restart file is           ',/,&
-'@        NFMTSC = ',I10                                       ,/,&
-'@      There is here a greater number of scalars            ',/, &
-'@        NSCAMX = ',I10                                       ,/,&
-'@       It is possible not to read the scalars which have    ',/,&
-'@        a greater number.                                   ',/,&
-'@                                                            ',/,&
-'@    The run will continue.                                  ',/,&
-'@                                                            ',/,&
-'@    Check the subroutine lecamx.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8002 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING:       WHEN READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      The number of the max mass flux NVARMX supported by   ',/,&
-'@        the writing format of the suite file is             ',/,&
-'@        NFMTFL = ',I10                                       ,/,&
-'@      There is here a greater number of flux max            ',/,&
-'@        NVARMX = ',I10                                       ,/,&
-'@       It is not possible to read the fluxes which have     ',/,&
-'@        a greater number.                                   ',/,&
-'@                                                            ',/,&
-'@    The run will continue.                                  ',/,&
-'@                                                            ',/,&
-'@    Check the subroutine lecamx.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8004 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2536,41 +1708,6 @@ return
 '@      corresponds to the present case.                      ',/,&
 '@                                                            ',/,&
 '@     The run will continue...                               ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8205 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: WHEN READING THE AUXILIARY RESTART FILE        ',/,&
-'@    =========                                               ',/,&
-'@      CHECKPOINT DATA ARE MULTIPHASE                        ',/,&
-'@                                                            ',/,&
-'@  Number of phases (checkpoint) : ',I10                      ,/,&
-'@                                                            ',/,&
-'@    The computation cannot be executed.                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8220 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: WHEN READING THE AUXILIARY RESTART FILE        ',/,&
-'@    =======                                                 ',/,&
-'@      THE RUN RESTARTED            WITH ITURB = ',I4         ,/,&
-'@      FROM RUN CONDUCTED WITH           ITURB = ',I4         ,/,&
-'@                                                            ',/,&
-'@    The Turbulence model has been modified.                 ',/,&
-'@                                                            ',/,&
-'@    It is advised however in this case to                   ',/,&
-'@      verify the value of ITURB                             ',/,&
-'@                                                            ',/,&
-'@    Verify that the auxiliary restart file being used       ',/,&
-'@      corresponds  to the present case.                     ',/,&
-'@                                                            ',/,&
-'@    The run will continue...                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -2639,19 +1776,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8900 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ERROR CLOSING THE AUXILIARY RESTART FILE       ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@    Problem in the file named (',A13,')                     ',/,&
-'@                                                            ',/,&
-'@    The run will continue...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 #endif
 
@@ -2660,21 +1784,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 9000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@      ERREUR A L''OUVERTURE DU FICHIER SUITE                ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut pas etre execute.                     ',/,&
-'@                                                            ',/,&
-'@    Verifier l''existence et le nom (',A13,') du            ',/,&
-'@        fichier suite dans le repertoire de travail.        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2854,21 +1963,6 @@ return
 
 #else
 
- 9000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: STOP WHILE READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@      ERROR WHEN OPENING THE RESTART FILE                   ',/,&
-'@                                                            ',/,&
-'@    The run can not be executed.                            ',/,&
-'@                                                            ',/,&
-'@    Verify the existence and the name (',A13,') of the      ',/,&
-'@        restart file in the work directory.                 ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9100 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
