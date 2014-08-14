@@ -32,7 +32,7 @@
 !> (use of a pdf rectangle-dirac)
 !> ==> fast chemistry model in 3 points
 !> Extension to 3 combustibles for pulverized coal
-!>                                         --------------------
+!>
 !> Heterogeneous reactions
 !>  - Pyrolysis
 !>    Elemental composition of the mole volatile materials

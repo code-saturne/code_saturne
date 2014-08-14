@@ -289,8 +289,8 @@ do iel = 1, ncel
   enth1(iel) = (rtp(iel,isca(iscalt))-enth1(iel))/ ( 1.d0-x2(iel) )
 enddo
 
-call cs_fuel_physprop1                 &
-!=================================
+call cs_fuel_physprop1 &
+!=====================
  ( ncelet , ncel   ,                                      &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
@@ -398,21 +398,20 @@ endif
 
 !===============================================================================
 ! Deallocation dynamic arrays
-!----
 deallocate(f1m,f2m,f3m,f4m,f5m,STAT=iok1)
 deallocate(f6m,f7m,f8m,f9m,    STAT=iok2)
 deallocate(enth1,x2,fvp2m,     STAT=iok3)
-!----
-if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 ) then
+
+if (iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '     cs_fuel_physprop              '
   call csexit(1)
 endif
-if ( ieqnox .eq. 1 ) then
-!----
+if (ieqnox .eq. 1) then
+
   deallocate(xoxyd,enthox)
-  !----
-  IF ( iok1 > 0 ) THEN
+
+  if (iok1 > 0) then
     write(nfecra,*) ' Memory deallocation error inside:      '
     write(nfecra,*) '   cs_fuel_physprop for xoxyd and enthox'
     call csexit(1)

@@ -33,7 +33,7 @@
 !> (use of a PDF RECTANGLE-DIRAC)
 !> ==> Fast chemistry model in 3 points
 !> Extension for 3 fuels for pulverized coal
-!>                                         --------------------
+!>
 !> Heterogeneous reactions
 !>   - Pyrolysis
 !>     Elementary composition of the mol of volatile materials
@@ -172,20 +172,20 @@ if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
   write(nfecra,*) '     cs_fuel_physprop1           '
   call csexit(1)
 endif
-!
+
 if ( ieqnox .eq. 1 ) then
-  !----
+
   allocate(fs3no(1:ncel) , fs4no(1:ncel),stat=iok1)
-  !----
+
   if ( iok1 > 0 ) then
     write(nfecra,*) ' Memory allocation error inside: '
     write(nfecra,*) '     cs_fuel_physprop1           '
     write(nfecra,*) ' for fs3no and fs4no arrays      '
     call csexit(1)
   endif
-  !----
+
   allocate(yfs4no(1:ncel,1:ngazg),stat=iok2)
-  !----
+
   if ( iok2 > 0 ) then
     write(nfecra,*) ' Memory allocation error inside: '
     write(nfecra,*) '     cs_fuel_physprop1           '
@@ -193,7 +193,6 @@ if ( ieqnox .eq. 1 ) then
     call csexit(1)
   endif
 endif
-!===============================================================================
 !
 !===============================================================================
 ! 1. Initialization
@@ -212,13 +211,13 @@ ipcyp1 = ipproc(iym1(ico2 ))
 ipcyp2 = ipproc(iym1(ih2o ))
 ipcyp3 = ipproc(iym1(iso2 ))
 ipcyin = ipproc(iym1(in2  ))
-!
+
 ipass = ipass + 1
 
 !===============================================================================
 ! 2. Determining the type of pdf
 !===============================================================================
-!
+
 do iel = 1, ncel
   !  min et max boundary of the pdf
   fmini(iel) = 0
@@ -345,7 +344,7 @@ do iel = 1, ncel
 
   rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
 enddo
-!
+
 !===============================================================================
 ! 5. Nox's model
 !===============================================================================
@@ -377,7 +376,7 @@ endif
 !===============================================================================
 ! 6. Calculation of balances in C, O et H
 !===============================================================================
-!
+
 do iel=1,ncel
   propce(iel,ipproc(ibcarbone )) = (1.d0-x2(iel))                      &
             *( propce(iel,ipcyf1)*wmolat(iatc)/wmole(ifo0)             &
@@ -423,37 +422,36 @@ do icla = 1, nclafu
 
   enddo
 enddo
+
 !----
 ! Formats
 !----
 
-!===============================================================================
 ! Deallocation dynamic arrays
-!----
 deallocate(intpdf,                      stat=iok1)
 deallocate(fmini,fmaxi,ffuel,           stat=iok2)
 deallocate(dfuel,doxyd,pdfm1,pdfm2,hrec,stat=iok3)
 deallocate(x2,cx1m,cx2m,wmf1,wmf2,      stat=iok4)
 deallocate(af1, af2,                    stat=iok5)
-!----
+
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '     cs_fuel_physprop1             '
   call csexit(1)
 endif
 if ( ieqnox .eq. 1 ) then
-  !----
+
   deallocate(fs3no,fs4no,stat=iok1)
-  !----
+
   if ( iok1 > 0 ) then
     write(nfecra,*) ' Memory deallocation error inside: '
     write(nfecra,*) '     cs_fuel_physprop1             '
     write(nfecra,*) ' for fs3no and fs4no arrays        '
     call csexit(1)
   endif
-  !----
+
   deallocate(yfs4no,stat=iok2)
-  !----
+
   if ( iok2 > 0 ) then
     write(nfecra,*) ' Memory deallocation error inside: '
     write(nfecra,*) '     cs_fuel_physprop1             '
@@ -461,7 +459,6 @@ if ( ieqnox .eq. 1 ) then
     call csexit(1)
   endif
 endif
-!===============================================================================
 
 !----
 ! End
