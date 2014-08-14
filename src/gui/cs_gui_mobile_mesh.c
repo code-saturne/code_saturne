@@ -83,12 +83,12 @@ BEGIN_C_DECLS
 
 enum ale_boundary_nature
 {
-    ale_boundary_nature_fixed_wall,
-    ale_boundary_nature_sliding_wall,
-    ale_boundary_nature_internal_coupling,
-    ale_boundary_nature_external_coupling,
-    ale_boundary_nature_fixed_velocity,
-    ale_boundary_nature_fixed_displacement
+  ale_boundary_nature_fixed_wall,
+  ale_boundary_nature_sliding_wall,
+  ale_boundary_nature_internal_coupling,
+  ale_boundary_nature_external_coupling,
+  ale_boundary_nature_fixed_velocity,
+  ale_boundary_nature_fixed_displacement
 };
 
 /*============================================================================
@@ -99,8 +99,8 @@ enum ale_boundary_nature
  * Return value for iale method
  *
  * parameters:
- *   param               -->  iale parameter
- *   keyword             <--  value of the iale parameter
+ *   param   <-- iale parameter
+ *   keyword --> value of the iale parameter
  *----------------------------------------------------------------------------*/
 
 static void
@@ -139,7 +139,7 @@ _iale_parameter(const char  *const param,
  * Return the status of ALE method
  *
  * parameters:
- *   keyword        <--  status of ale balise
+ *   keyword --> status of ALE tag
  *----------------------------------------------------------------------------*/
 
 static void
@@ -165,7 +165,7 @@ _get_ale_status(int  *const keyword)
  * Return the viscosity's type of ALE method
  *
  * parameters:
- *   type        <--  type of viscosity's type
+ *   type --> type of viscosity's type
  *----------------------------------------------------------------------------*/
 
 void
@@ -200,14 +200,14 @@ cs_gui_get_ale_viscosity_type(int  * type)
  * Initialize mei tree and check for symbols existence
  *
  * parameters:
- *   formula        -->  mei formula
- *   symbols        -->  array of symbol to check
- *   symbol_nbr     -->  number of symbol in symbols
- *   variables      -->  variables required in the formula
- *   variable_nbr   -->  number of variable in variables
- *   dtref          -->   time step
- *   ttcabs         --> current time
- *   ntcabs         --> current iteration number
+ *   formula        <-- mei formula
+ *   symbols        <-- array of symbol to check
+ *   symbol_nbr     <-- number of symbol in symbols
+ *   variables      <-- variables required in the formula
+ *   variable_nbr   <-- number of variable in variables
+ *   dtref          <-- time step
+ *   ttcabs         <-- current time
+ *   ntcabs         <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 static mei_tree_t *
@@ -301,8 +301,8 @@ _get_ale_mesh_viscosity(void)
  * Get the ale boundary formula
  *
  * parameters:
- *   label        --> boundary label
- *   choice       --> nature: "fixed_velocity" or "fixed_displacement"
+ *   label        <-- boundary label
+ *   choice       <-- nature: "fixed_velocity" or "fixed_displacement"
  *----------------------------------------------------------------------------*/
 
 static char*
@@ -329,16 +329,16 @@ _get_ale_boundary_formula(const char *const label,
  * Get uialcl data for fixed displacement
  *
  * parameters:
- *   label          --> boundary label
- *   begin          --> begin index for nodfbr
- *   end            --> end index for nodfbr
- *   nnod           --> number of node
- *   b_face_vtx_lst --> NODFBR
- *   impale         <-- IMPALE
- *   depale         <-- DEPALE
- *   dtref          --> time step
- *   ttcabs         --> current time
- *   ntcabs         --> current iteration number
+ *   label          <-- boundary label
+ *   begin          <-- begin index for nodfbr
+ *   end            <-- end index for nodfbr
+ *   nnod           <-> number of nodes
+ *   b_face_vtx_lst <-- nodfbr
+ *   impale         --> impale
+ *   depale         --> depale
+ *   dtref          <-- time step
+ *   ttcabs         <-- current time
+ *   ntcabs         <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1030,19 +1030,21 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
  * Retreive data for internal coupling. Called once at initialization
  *
  * parameters:
- *   nfabor   --> Number of boundary faces
+ *   nfabor   <-- Number of boundary faces
  *   idfstr   --> Structure definition
- *   aexxst   <--  Displacement prediction alpha
- *   bexxst   <-- Displacement prediction beta
- *   cfopre   <-- Stress prediction alpha
- *   ihistr   <-- Monitor point synchronisation
- *   xstr0    <-- Values of the initial displacement
- *   xstreq   <-- Values of the equilibrium displacement
- *   vstr0    <-- Values of the initial velocity
+ *   mbstru   <-- number of previous structures (-999 or by restart)
+ *   aexxst   --> Displacement prediction alpha
+ *   bexxst   --> Displacement prediction beta
+ *   cfopre   --> Stress prediction alpha
+ *   ihistr   --> Monitor point synchronisation
+ *   xstr0    <-> Values of the initial displacement
+ *   xstreq   <-> Values of the equilibrium displacement
+ *   vstr0    <-> Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uistr1, UISTR1) (const int *const nfabor,
-                                int       *const idfstr,
+void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
+                                cs_lnum_t        *idfstr,
+                                const int        *mbstru,
                                 double           *aexxst,
                                 double           *bexxst,
                                 double           *cfopre,
@@ -1075,13 +1077,16 @@ void CS_PROCF (uistr1, UISTR1) (const int *const nfabor,
     /* Keep only internal coupling */
     if (  _get_ale_boundary_nature(label)
         == ale_boundary_nature_internal_coupling) {
-      /* Read initial_displacement, equilibrium_displacement and initial_velocity */
-      get_internal_coupling_xyz_values(label, "initial_displacement",
-                                       &xstr0[3 * istruct]);
-      get_internal_coupling_xyz_values(label, "equilibrium_displacement",
-                                       &xstreq[3 * istruct]);
-      get_internal_coupling_xyz_values(label, "initial_velocity",
-                                       &vstr0[3 * istruct]);
+
+      if (istruct+1 > *mbstru) { /* Do not overwrite restart data */
+        /* Read initial_displacement, equilibrium_displacement and initial_velocity */
+        get_internal_coupling_xyz_values(label, "initial_displacement",
+                                         &xstr0[3 * istruct]);
+        get_internal_coupling_xyz_values(label, "equilibrium_displacement",
+                                         &xstreq[3 * istruct]);
+        get_internal_coupling_xyz_values(label, "initial_velocity",
+                                         &vstr0[3 * istruct]);
+      }
 
       faces_list = cs_gui_get_faces_list(izone, label, *nfabor, 0, &faces);
       /* Set idfstr to positiv index starting at 1 */

@@ -107,16 +107,16 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
  *
  *
  * parameters:
- * nozppm       --> Max number of boundary conditions zone
+ * nozppm       <-- Max number of boundary conditions zone
  * ialtyb       --> ialtyb
  * impale       --> uialcl_fixed_displacement
  * depale       --> See uialcl_fixed_displacement
- * dtref        --> time step
- * ttcabs       --> current time
- * ntcabs       --> current iteration number
- * iuma         --> See uialcl_fixed_velocity
- * ivma         --> See uialcl_fixed_velocity
- * iwma         --> See uialcl_fixed_velocity
+ * dtref        <-- time step
+ * ttcabs       <-- current time
+ * ntcabs       <-- current iteration number
+ * iuma         <-- See uialcl_fixed_velocity
+ * ivma         <-- See uialcl_fixed_velocity
+ * iwma         <-- See uialcl_fixed_velocity
  * rcodcl       --> See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
@@ -141,30 +141,32 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nozppm,
  *
  * Fortran Interface:
  *
- * SUBROUTINE UISTR1
+ * subroutine uistr1
  * *****************
  *
  * parameters:
- * nfabor   --> Number of boundary faces
- * idfstr   --> Structure definition
- * aexxst   <--  Displacement prediction alpha
- * bexxst   <-- Displacement prediction beta
- * cfopre   <-- Stress prediction alpha
- * ihistr   <-- Monitor point synchronisation
- * xstr0    <-- Values of the initial displacement
- * xstreq   <-- Values of the equilibrium displacement
- * vstr0    <-- Values of the initial velocity
+ *   nfabor   <-- Number of boundary faces
+ *   idfstr   --> Structure definition
+ *   mbstru   <-- number of previous structures (-999 or by restart)
+ *   aexxst   --> Displacement prediction alpha
+ *   bexxst   --> Displacement prediction beta
+ *   cfopre   --> Stress prediction alpha
+ *   ihistr   --> Monitor point synchronisation
+ *   xstr0    <-> Values of the initial displacement
+ *   xstreq   <-> Values of the equilibrium displacement
+ *   vstr0    <-> Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
-                                 int       *const idfstr,
-                                 double           *aexxst,
-                                 double           *bexxst,
-                                 double           *cfopre,
-                                 int              *ihistr,
-                                 double           *xstr0,
-                                 double           *xstreq,
-                                 double           *vstr0 );
+void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
+                                cs_lnum_t        *idfstr,
+                                const int        *mbstru,
+                                double           *aexxst,
+                                double           *bexxst,
+                                double           *cfopre,
+                                int              *ihistr,
+                                double           *xstr0,
+                                double           *xstreq,
+                                double           *vstr0);
 
 /*-----------------------------------------------------------------------------
  * Retreive data for internal coupling. Called at each step
