@@ -154,6 +154,7 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
  * parameters:
  * nfabor   --> Number of boundary faces
  * idfstr   --> Structure definition
+ * mbstru   --> number of previous structures (-999 or by restart)
  * aexxst   <--  Displacement prediction alpha
  * bexxst   <-- Displacement prediction beta
  * cfopre   <-- Stress prediction alpha
@@ -165,6 +166,7 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
 
 void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
                                  int       *const idfstr,
+                                 const int        *mbstru,
                                  double           *aexxst,
                                  double           *bexxst,
                                  double           *cfopre,

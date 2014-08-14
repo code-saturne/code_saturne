@@ -214,9 +214,11 @@ enddo
 !     a displacement compared to equilibrium XSTREQ = 1 (m) in 'y' direction, too.
 !     - Initial velocity in 'z' direction of structure '2' equals VSTR0=-0.5 (m/s).
 
-xstr0(2,1)  = 2.d0
-xstreq(2,1) = 1.d0
-vstr0(3,2)  =-0.5d0
+if (ntpabs.le.1) then  ! Avoid resetting in case of restart
+  xstr0(2,1)  = 2.d0
+  xstreq(2,1) = 1.d0
+  vstr0(3,2)  =-0.5d0
+endif
 
 ! --- Here one can modify the values of the prediction coefficients for
 !     displacements anf fluid forces in internal FSI coupled algorithm.

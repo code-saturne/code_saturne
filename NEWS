@@ -4,6 +4,10 @@ Release 3.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix restart or structures in case of ALE (bug #85; structures were reinitialized
+  after reading rstart data; this could be avoided with user subroutines, but not
+  with the GUI).
+
 - Fix bugs in fire dilatable algorithm (idilat=4).
 
 - Fix bug in iswdyn option for scalars and velocity (previously already broken for
@@ -19,7 +23,7 @@ Bug fixes:
   same element type due to splitting of polygons or polyhedra.
 
 - Fix bug in which last probes monitoring file (usually local time step)
-  was empty (bug 66).
+  was empty (bug #66).
 
 - Fix argument inversion for scalar boundary formula on wall, using the GUI.
 
