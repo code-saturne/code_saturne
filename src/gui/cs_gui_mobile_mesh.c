@@ -1021,19 +1021,21 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
  * Retreive data for internal coupling. Called once at initialization
  *
  * parameters:
- *   nfabor   --> Number of boundary faces
+ *   nfabor   <-- Number of boundary faces
  *   idfstr   --> Structure definition
- *   aexxst   <--  Displacement prediction alpha
- *   bexxst   <-- Displacement prediction beta
- *   cfopre   <-- Stress prediction alpha
- *   ihistr   <-- Monitor point synchronisation
- *   xstr0    <-- Values of the initial displacement
- *   xstreq   <-- Values of the equilibrium displacement
- *   vstr0    <-- Values of the initial velocity
+ *   mbstru   <-- number of previous structures (-999 or by restart)
+ *   aexxst   --> Displacement prediction alpha
+ *   bexxst   --> Displacement prediction beta
+ *   cfopre   --> Stress prediction alpha
+ *   ihistr   --> Monitor point synchronisation
+ *   xstr0    <-> Values of the initial displacement
+ *   xstreq   <-> Values of the equilibrium displacement
+ *   vstr0    <-> Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uistr1, UISTR1) (const int *const nfabor,
-                                int       *const idfstr,
+void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
+                                cs_lnum_t        *idfstr,
+                                const int        *mbstru,
                                 double           *aexxst,
                                 double           *bexxst,
                                 double           *cfopre,
@@ -1066,13 +1068,16 @@ void CS_PROCF (uistr1, UISTR1) (const int *const nfabor,
     /* Keep only internal coupling */
     if (   get_ale_boundary_nature(label)
         == ale_boundary_nature_internal_coupling) {
-      /* Read initial_displacement, equilibrium_displacement and initial_velocity */
-      get_internal_coupling_xyz_values(label, "initial_displacement",
-                                       &xstr0[3 * istruct]);
-      get_internal_coupling_xyz_values(label, "equilibrium_displacement",
-                                       &xstreq[3 * istruct]);
-      get_internal_coupling_xyz_values(label, "initial_velocity",
-                                       &vstr0[3 * istruct]);
+
+      if (istruct+1 > *mbstru) { /* Do not overwrite restart data */
+        /* Read initial_displacement, equilibrium_displacement and initial_velocity */
+        get_internal_coupling_xyz_values(label, "initial_displacement",
+                                         &xstr0[3 * istruct]);
+        get_internal_coupling_xyz_values(label, "equilibrium_displacement",
+                                         &xstreq[3 * istruct]);
+        get_internal_coupling_xyz_values(label, "initial_velocity",
+                                         &vstr0[3 * istruct]);
+      }
 
       faces_list = cs_gui_get_faces_list(izone, label, *nfabor, 0, &faces);
       /* Set idfstr to positiv index starting at 1 */

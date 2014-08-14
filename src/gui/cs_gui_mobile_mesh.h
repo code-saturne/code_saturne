@@ -153,6 +153,7 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
  * parameters:
  * nfabor   --> Number of boundary faces
  * idfstr   --> Structure definition
+ * mbstru   --> number of previous structures (-999 or by restart)
  * aexxst   <--  Displacement prediction alpha
  * bexxst   <-- Displacement prediction beta
  * cfopre   <-- Stress prediction alpha
@@ -162,15 +163,16 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
  * vstr0    <-- Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
-                                 int       *const idfstr,
-                                 double           *aexxst,
-                                 double           *bexxst,
-                                 double           *cfopre,
-                                 int              *ihistr,
-                                 double           *xstr0,
-                                 double           *xstreq,
-                                 double           *vstr0 );
+void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
+                                cs_lnum_t        *idfstr,
+                                const int        *mbstru,
+                                double           *aexxst,
+                                double           *bexxst,
+                                double           *cfopre,
+                                int              *ihistr,
+                                double           *xstr0,
+                                double           *xstreq,
+                                double           *vstr0);
 
 /*-----------------------------------------------------------------------------
  * Retreive data for internal coupling. Called at each step

@@ -5,6 +5,10 @@ Release 3.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix restart or structures in case of ALE (bug #85; structures were reinitialized
+  after reading rstart data; this could be avoided with user subroutines, but not
+  with the GUI).
+
 - Fix initialization of k-omega when the reference velocity is 0.
 
 - Fix cs_user_source_terms.f90 turbulence example.
