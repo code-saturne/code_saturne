@@ -72,20 +72,14 @@ if test "x$with_ccm" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  # ADF may be provided directly (patched ADF with libccmio)
-  # or through CGNS
+  # ADF is be provided directly (patched ADF with libccmio)
+  # We must be careful not to use CGNS's adf, as this leads to nonworking
+  # CCM-IO builds. CCM's LDFLAGS must thus come first...
 
-  if test "x$cs_have_cgns" = "xno" ; then
-    CCM_LIBS="-lccmio -ladf"
-    CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
-    LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS}"
-    LIBS="${CCM_LIBS} ${LIBS}"
-  elif test "x$CGNS_LIBS" != "x" ; then
-    CCM_LIBS="-lccmio"
-    CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
-    LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS} ${CGNS_LDFLAGS} ${HDF5_LDFLAGS} ${HDF5_LDFLAGS_MPI}"
-    LIBS="${CCM_LIBS} ${CGNS_LIBS} ${HDF5_LIBS} ${HDF5_LIBS_MPI} ${LIBS}"
-  fi
+  CCM_LIBS="-lccmio -ladf"
+  CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
+  LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS}"
+  LIBS="${CCM_LIBS} ${LIBS}"
 
 # Check that CCMIO header files exist
 

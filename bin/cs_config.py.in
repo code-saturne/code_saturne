@@ -90,7 +90,7 @@ class config:
                         'latex', 'doxygen', 'sphinx', # docs
                         'eos',                        # Equations of state
                         'freesteam',                  # Freesteam
-                        'cgns', 'med', 'hdf5', 'ccm', # Mesh filters
+                        'ccm', 'cgns', 'med', 'hdf5', # Mesh filters
                         'catalyst',                   # co-processing library
                         'medcoupling', 'paramedmem',  # MED coupling
                         'metis', 'scotch',            # Partionning libraries

@@ -33,11 +33,20 @@ Changes:
 Architectural changes
 ---------------------
 
+- When building with both lib CCM-IO and CGNS, do not try to use CGNS's ADF
+  library for CCM-IO. This used to work in the past, but now leads to failure
+  opening CCM files. The change might lead to issues for such builds when using
+  ADF output for CGNS files, but HDF5 is now the default for CGNS (where
+  available), and the hdf2adf and adf2hdf tools of the CGNS library suite allow
+  conversion, so this should not be an issue. Builds with both libraries with
+  linkers not allowing or configured to allow multiple definitions might be
+  an issue.
+
 - Restart files now use a new section naming field, at least for field data.
   this allows more automated handling of variables and properties in
   checkpoint/restart.
 
-- Major indexing change: the mesh mesh connectivity arrays (in cs_mesh_t
+- Major indexing change: the mesh connectivity arrays (in cs_mesh_t
   structures, i_face_cell, b_face_cell, i_face_vtx_idx, i_face_vtx_lst,
   b_face_vtx_idx, and b_face_vtx_lst) now use 0-based indexing.
   This simplifies expressions in C code, but may break existing C code
@@ -54,16 +63,17 @@ Architectural changes
 
 Bug fixes:
 ----------
- - Fix bug introduced in rev. 4491:
 
-    - in rev 4491, the call to specific physics laws was moved
-      from BEFORE user call to AFTER user call, which was only needed
-      for the compressible module, whereas it impinge ALL the
-      specifics physics.
-    - therefore ppphyv is splitted into two.
-    - WARNING: this commit MAY impige all the specific physics
-      (Atmospheric, Electric Arcs, Combustion, etc.)
+- Fix bug introduced in rev. 4491 (before release of 3.0.0):
 
+  - in rev 4491, the call to specific physics laws was moved from BEFORE
+    the user call to AFTER the user call, which was only needed for the
+    compressible module, whereas it impinges ALL the specifics physics.
+  - therefore ppphyv is splitted into two.
+  - WARNING: this change MAY impige all the specific physics
+    (Atmospheric, Electric Arcs, Combustion, etc.)
+
+- Many more bug changes (see ChangeLog for details)
 
 Release 3.3.0 (16 May 2014)
 ===========================
