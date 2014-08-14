@@ -3511,10 +3511,10 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
         if (mei_tree_find_symbols(ev_formula, 12, symbols))
           bft_error(__FILE__, __LINE__, 0,
                     _("Error: can not find the required symbol: %s\n%s\n%s\n%s\n"),
-                      "Su, Sv, Sw,",
-                      "dSudu, dSudv, dSudw,"
-                      "dSvdu, dSvdv, dSvdw,"
-                      "dSwdu, dSwdv or dSwdw");
+                    "Su, Sv, Sw,",
+                    "dSudu, dSudv, dSudw,",
+                    "dSvdu, dSvdv, dSvdw,",
+                    "dSwdu, dSwdv or dSwdw");
         for (icel = 0; icel < cells; icel++) {
           iel = cells_list[icel]-1;
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
