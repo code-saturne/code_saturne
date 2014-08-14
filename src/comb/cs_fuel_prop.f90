@@ -56,6 +56,7 @@ use ppcpfu
 use cpincl
 use cs_fuel_incl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -63,7 +64,12 @@ implicit none
 
 ! Local variables
 
-integer       icla , nprini
+integer          icla
+integer          f_id, itycat, ityloc, idim1, idim3, nprini
+integer          keyccl
+integer          iopchr
+
+logical          ilved, iprev, inoprv
 
 character(len=80) :: f_name, f_label
 
@@ -71,12 +77,24 @@ character(len=80) :: f_name, f_label
 
 ! Initialization
 
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 1 ! variables defined on cells
+idim1  = 1
+idim3  = 3
+ilved  = .true.    ! interleaved by default
+iprev  = .true.    ! variables have previous value
+inoprv = .false.   ! variables have no previous value
+iopchr = 1         ! postprocessing level for variables
+
 nprini = nproce
 
 ! Continuous phase (gaseous mix)
 call add_property_field('t_gas', 'T_Gas', itemp1)
 call add_property_field('rho_gas', 'Rho_Gas', irom1)
 
+! Mass fraction of the continuous phase (X1)
+f_name= 'x_c'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
 
 ! Gas mixture fractions
 call add_property_field('ym_fo0',   'Ym_FO0',   iym1(1))

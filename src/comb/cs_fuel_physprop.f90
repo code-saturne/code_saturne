@@ -98,9 +98,10 @@ save             ipass
 integer          iok1,iok2,iok3
 double precision , dimension ( : )     , allocatable :: f1m,f2m,f3m,f4m,f5m
 double precision , dimension ( : )     , allocatable :: f6m,f7m,f8m,f9m
-double precision , dimension ( : )     , allocatable :: enth1 , x2 ,fvp2m
+double precision , dimension ( : )     , allocatable :: enth1 , fvp2m
 double precision , dimension ( : )     , allocatable :: xoxyd,enthox
 double precision, dimension(:), pointer ::  brom, crom
+double precision, dimension(:), pointer :: cpro_x1
 !===============================================================================
 !
 !===============================================================================
@@ -113,13 +114,16 @@ ipass = ipass + 1
 ! 1. Initializations to be kept
 !===============================================================================
 
+! Massic fraction of gas
+call field_get_val_s_by_name("x_c", cpro_x1)
+
 !===============================================================================
 ! Deallocation dynamic arrays
 !----
 allocate(f1m(1:ncelet),f2m(1:ncelet),f3m(1:ncelet),              STAT=iok1)
 allocate(f4m(1:ncelet),f5m(1:ncelet),                            STAT=iok1)
 allocate(f6m(1:ncelet),f7m(1:ncelet),f8m(1:ncelet),f9m(1:ncelet),STAT=iok2)
-allocate(enth1(1:ncel),x2(1:ncel)   ,fvp2m(1:ncel),              STAT=iok3)
+allocate(enth1(1:ncel),fvp2m(1:ncel),              STAT=iok3)
 !----
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory allocation error inside: '
@@ -173,7 +177,7 @@ call cs_fuel_physprop2 ( ncelet , ncel , rtp , propce )
 !        of F9M
 !        of FVP2M
 !
-! Initialization of fm and x2 at 0
+! Initialization of fm
 ! f1m is always equal to zero. In the context of the fuel oil combustion there
 ! is only one gaseous fuel.
 f1m( : ) = 0.d0
@@ -190,14 +194,17 @@ f7m( : ) = 0.d0
 ! f8m, f9m is always equal to zero
 f8m( : ) = 0.d0
 f9m( : ) = 0.d0
-! Mass fraction of kiquid phase.
-x2 ( : ) = 0.d0
 
+! Mass fraction of gas phase
 ! - nclacp = nclafu
-! - X2 is directly calculated in function with iyfol
+! - cpro_x1 is directly calculated in function with iyfol
+do iel = 1, ncel
+  cpro_x1(iel) = 1.d0
+enddo
+
 do icla = 1, nclafu
   do iel = 1, ncel
-    x2(iel) =  x2(iel) + rtp(iel,isca(iyfol(icla)))
+    cpro_x1(iel) = cpro_x1(iel) - rtp(iel,isca(iyfol(icla)))
   enddo
 enddo
 
@@ -207,7 +214,7 @@ enddo
 
 if ( ieqnox .eq. 1 ) then
   do iel = 1, ncel
-    xoxyd(iel)= (1.d0-x2(iel))-f1m(iel)-f2m(iel)
+    xoxyd(iel)= (cpro_x1(iel))-f1m(iel)-f2m(iel)
   enddo
 endif
 
@@ -219,7 +226,7 @@ valmin = 1.d+20
 valmax =-1.d+20
 
 do iel = 1, ncel
-  uns1pw = 1.d0/(1.d0-x2(iel))
+  uns1pw = 1.d0/cpro_x1(iel)
 
    ! -At the moment, the variable <noxyd> does not exist in the fuel oil version
    !  because it is not declared in fulecd.f90. We have to add it in this
@@ -286,7 +293,7 @@ do icla = 1, nclafu
   enddo
 enddo
 do iel = 1, ncel
-  enth1(iel) = (rtp(iel,isca(iscalt))-enth1(iel))/ ( 1.d0-x2(iel) )
+  enth1(iel) = (rtp(iel,isca(iscalt))-enth1(iel))/ cpro_x1(iel)
 enddo
 
 call cs_fuel_physprop1 &
@@ -336,7 +343,7 @@ do iel = 1, ncel
     ipcro2 = ipproc(irom2(icla))
     x2sro2 = x2sro2 + rtp(iel,isca(iyfol(icla))) / propce(iel,ipcro2)
   enddo
-  x1sro1 = (1.d0-x2(iel)) / propce(iel,iromf)
+  x1sro1 = cpro_x1(iel) / propce(iel,iromf)
   ! ---- Under eventual relaxation to give in ppini1.F
   crom(iel) = srrom1*crom(iel)                  &
                      + (1.d0-srrom1)/(x1sro1+x2sro2)
@@ -400,7 +407,7 @@ endif
 ! Deallocation dynamic arrays
 deallocate(f1m,f2m,f3m,f4m,f5m,STAT=iok1)
 deallocate(f6m,f7m,f8m,f9m,    STAT=iok2)
-deallocate(enth1,x2,fvp2m,     STAT=iok3)
+deallocate(enth1,fvp2m,     STAT=iok3)
 
 if (iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '

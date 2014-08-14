@@ -118,6 +118,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use cs_fuel_incl
+use field
 
 !===============================================================================
 
@@ -146,11 +147,12 @@ integer          iok1 , iok2 , iok3 , iok4 , iok5
 integer          , dimension ( : )     , allocatable :: intpdf
 double precision , dimension ( : )     , allocatable :: fmini,fmaxi,ffuel
 double precision , dimension ( : )     , allocatable :: dfuel,doxyd,pdfm1,pdfm2,hrec
-double precision , dimension ( : )     , allocatable :: x2,cx1m,cx2m,wmf1,wmf2
+double precision , dimension ( : )     , allocatable :: cx1m,cx2m,wmf1,wmf2
 double precision , dimension ( : , : ) , allocatable :: af1    , af2
 double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
 double precision, allocatable, dimension(:) :: tpdf
+double precision, dimension(:), pointer :: cpro_x1
 
 integer          ipass
 data ipass / 0 /
@@ -159,11 +161,14 @@ data ipass / 0 /
 ! 0. Memory allocation
 !===============================================================================
 
+! Massic fraction of gas
+call field_get_val_s_by_name("x_c", cpro_x1)
+
 allocate(intpdf(1:ncel)                                       ,stat=iok1)
 allocate(fmini(1:ncel)      ,fmaxi(1:ncel)      ,ffuel(1:ncel),stat=iok2)
 allocate(dfuel(1:ncel)      ,doxyd(1:ncel)      ,pdfm1(1:ncel),stat=iok3)
 allocate(pdfm2(1:ncel)      ,hrec(1:ncel)                     ,stat=iok3)
-allocate(x2(1:ncel)         ,cx1m(1:ncel)       ,cx2m(1:ncel) ,stat=iok4)
+allocate(cx1m(1:ncel)       ,cx2m(1:ncel) ,stat=iok4)
 allocate(wmf1(1:ncel)       ,wmf2(1:ncel)                     ,stat=iok4)
 allocate(af1(1:ncel,1:ngazg),af2(1:ncel,1:ngazg)              ,stat=iok5)
 !----
@@ -250,13 +255,6 @@ do iel = 1, ncel
   wmf2(iel) = wmole(ifov)
 enddo
 
-x2( : ) = 0.d0
-do icla = 1, nclafu
-  do iel = 1, ncel
-    x2(iel) = x2(iel) + rtp(iel,isca(iyfol(icla)))
-  enddo
-enddo
-
 do iel=1,ncel
 
   do ii=1,ngazg
@@ -277,7 +275,7 @@ call cs_gascomb &
 !==============
  ( ncelet , ncel   , ifo0 , ifov ,                                &
    intpdf ,                                                       &
-   rtp    , x2  ,                                                 &
+   rtp    ,                                                       &
    f1m    , f2m , f3m , f4m , f5m , f6m , f7m , f8m , f9m ,       &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                   &
    af1    , af2    , cx1m     , cx2m   , wmf1   , wmf2 ,          &
@@ -378,21 +376,21 @@ endif
 !===============================================================================
 
 do iel=1,ncel
-  propce(iel,ipproc(ibcarbone )) = (1.d0-x2(iel))                      &
+  propce(iel,ipproc(ibcarbone )) = cpro_x1(iel)                        &
             *( propce(iel,ipcyf1)*wmolat(iatc)/wmole(ifo0)             &
               +propce(iel,ipcyf2)*wmolat(iatc)/wmole(ifov)             &
               +propce(iel,ipcyf3)*wmolat(iatc)/wmole(ico )             &
               +propce(iel,ipcyf6)*wmolat(iatc)/wmole(ihcn)             &
               +propce(iel,ipcyp1)*wmolat(iatc)/wmole(ico2) )
 
-  propce(iel,ipproc(iboxygen  )) = (1.d0-x2(iel))                      &
+  propce(iel,ipproc(iboxygen  )) = cpro_x1(iel)                        &
             *( propce(iel,ipcyf3)*     wmolat(iato)/wmole(ico )        &
               +propce(iel,ipcyox)*2.d0*wmolat(iato)/wmole(io2 )        &
               +propce(iel,ipcyp1)*2.d0*wmolat(iato)/wmole(ico2)        &
               +propce(iel,ipcyp2)*     wmolat(iato)/wmole(ih2o)        &
               +propce(iel,ipcyp3)*2.d0*wmolat(iato)/wmole(iso2) )
 
-  propce(iel,ipproc(ibhydrogen)) = (1.d0-x2(iel))                      &
+  propce(iel,ipproc(ibhydrogen)) = cpro_x1(iel)                        &
             *( propce(iel,ipcyf1)*nhcfov*wmolat(iath)/wmole(ifo0)      &
               +propce(iel,ipcyf2)*nhcfov*wmolat(iath)/wmole(ifov)      &
               +propce(iel,ipcyf4)*2.d0     *wmolat(iath)/wmole(ih2s)   &
@@ -431,7 +429,7 @@ enddo
 deallocate(intpdf,                      stat=iok1)
 deallocate(fmini,fmaxi,ffuel,           stat=iok2)
 deallocate(dfuel,doxyd,pdfm1,pdfm2,hrec,stat=iok3)
-deallocate(x2,cx1m,cx2m,wmf1,wmf2,      stat=iok4)
+deallocate(cx1m,cx2m,wmf1,wmf2,      stat=iok4)
 deallocate(af1, af2,                    stat=iok5)
 
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
