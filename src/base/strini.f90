@@ -131,7 +131,7 @@ if (iihmpr.eq.1) then
   call uistr1 &
   !==========
 ( nfabor,                  &
-  idfstr,                  &
+  idfstr, mbstru,          &
   aexxst, bexxst, cfopre,  &
   ihistr,                  &
   xstp, xstreq, xpstr )
