@@ -30,7 +30,7 @@ m4_define([ple_licence_c_comment],
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2013  EDF
+  Copyright (C) 2005-2014  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -54,7 +54,7 @@ m4_define([ple_version_extra], [])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
 
-AC_INIT([ple],[ple_version_string],[yvan.fournier@edf.fr])
+AC_INIT([ple],[ple_version_string],[saturne-support@edf.fr])
 AC_CONFIG_SRCDIR([src/ple_defs.h])
 
 # Use the config directory for libtool stuff ...

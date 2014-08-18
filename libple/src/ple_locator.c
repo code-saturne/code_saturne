@@ -2045,7 +2045,11 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
                       - this_locator->distant_points_idx[i];
 
       dist_v_idx = this_locator->distant_points_idx[i] * stride*size;
-      dist_v_count = n_points_dist * stride * dist_v_flag[i];
+
+      if (distant_var != NULL)
+        dist_v_count = n_points_dist * stride;
+      else
+        dist_v_count = 0;
 
       if (loc_v_flag[i] > 0)
         loc_v_count = n_points_loc*stride;
@@ -2064,7 +2068,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
       MPI_Isend(dist_v_ptr, dist_v_count, datatype, dist_rank, PLE_MPI_TAG,
                 this_locator->comm, &request[i*2+1]);
 
-      loc_v_ptr += loc_v_count;
+      loc_v_ptr += loc_v_count*size;
     }
 
     MPI_Waitall(this_locator->n_intersects*2, request, status);
@@ -2091,7 +2095,11 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
                     - this_locator->distant_points_idx[i];
 
     dist_v_idx = this_locator->distant_points_idx[i] * stride*size;
-    dist_v_count = n_points_dist * stride * dist_v_flag[i];
+
+    if (distant_var != NULL)
+      dist_v_count = n_points_dist * stride;
+    else
+      dist_v_count = 0;
 
     if (loc_v_flag[i] > 0)
       loc_v_count = n_points_loc*stride;
@@ -2174,7 +2182,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
     }
 
-    loc_v_ptr += loc_v_count;
+    loc_v_ptr += loc_v_count*size;
 
   }
 
@@ -2198,7 +2206,11 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
                       - this_locator->distant_points_idx[i];
 
       dist_v_idx = this_locator->distant_points_idx[i] * stride*size;
-      dist_v_count = n_points_dist * stride * dist_v_flag[i];
+
+      if (distant_var != NULL)
+        dist_v_count = n_points_dist * stride;
+      else
+        dist_v_count = 0;
 
       if (loc_v_flag[i] > 0)
         loc_v_count = n_points_loc*stride;
@@ -2217,7 +2229,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
       MPI_Isend(loc_v_buf, loc_v_count, datatype, dist_rank, PLE_MPI_TAG,
                 this_locator->comm, &request[i*2+1]);
 
-      loc_v_ptr += loc_v_count;
+      loc_v_ptr += loc_v_count*size;
     }
 
     MPI_Waitall(this_locator->n_intersects*2, request, status);
