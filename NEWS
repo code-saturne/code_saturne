@@ -5,6 +5,8 @@ Release 3.2.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix memory leaks in Code_Saturne/Code_Saturne coupling.
+
 - Fix restart or structures in case of ALE (bug #85; structures were reinitialized
   after reading rstart data; this could be avoided with user subroutines, but not
   with the GUI).
