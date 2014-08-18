@@ -1,3 +1,13 @@
+2014-08-18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Release of PLE 1.0.4
+
+	* Fix asynchronous exchange for ple_locator_exchange_point_var().
+
+2014-06-16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Add Clang compiler detection.
+
 2013-05-13  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Updates in build scripts and MPI detection.
