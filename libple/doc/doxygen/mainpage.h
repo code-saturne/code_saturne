@@ -39,19 +39,6 @@
   parallel codes at predifined points, and enabling parallel mapping
   of points to meshes, and transfer of variables using this mapping.
 
-  \section install Installation
-
-  PLE may be configured and installed using the \c configure shell script
-  and \c make. Please read the \c INSTALL file in the toplevel source
-  directory if you are not familiar with configuration scripts generated
-  through GNU autoconf and automake.
-
-  \section FVM
-
-  The "Finite Volume Mesh" library is intended to provide mesh and associated
-  fields I/O and manipulation services for unstructure Finite Volume codes
-  or other tools with similar requirements.
-
   \subsection PLE Coupling API
 
   The ple_coupling_...() functions allow identifying applications and
