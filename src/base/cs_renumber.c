@@ -215,7 +215,7 @@ typedef struct {
 
 static int _cs_renumber_vector_size = CS_NUMBERING_SIMD_SIZE;
 
-static int _cs_renumber_n_threads = 1;
+static int _cs_renumber_n_threads = 0;
 
 static cs_lnum_t  _min_i_subset_size = 64;
 static cs_lnum_t  _min_b_subset_size = 64;
