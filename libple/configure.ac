@@ -49,7 +49,7 @@ m4_define([ple_licence_c_comment],
 
 m4_define([ple_major_version], [1])
 m4_define([ple_minor_version], [0])
-m4_define([ple_release_version], [5])
+m4_define([ple_release_version], [4])
 m4_define([ple_version_extra], [])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
