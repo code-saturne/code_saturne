@@ -25,7 +25,7 @@ subroutine elphyv &
 
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -58,14 +58,6 @@ subroutine elphyv &
 !     ==================
 !    si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).
-
-
-!  Il FAUT AVOIR PRECISE ivisls(Numero de scalaire) = 1
-!     ==================
-!     si on souhaite une diffusivite VISCLS variable
-!     pour le scalaire considere (sinon: ecrasement memoire).
-
-
 
 
 ! Remarques :
@@ -110,7 +102,6 @@ subroutine elphyv &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current time steps)                       !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -135,6 +126,7 @@ use ppincl
 use elincl
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -147,14 +139,13 @@ integer          mbrom
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel
-integer          ipcray
-integer          ipcvsl, ith   , iscal , ii
-integer          iiii  , ipcsig, it
+integer          ifcray
+integer          ifcvsl, ith   , iscal , ii
+integer          iiii  , ifcsig, it
 integer          iesp  , iesp1 , iesp2 , mode , isrrom
 
 double precision tp    , delt  , somphi, val
@@ -164,8 +155,8 @@ double precision ym    (ngazgm),yvol  (ngazgm)
 double precision coef(ngazgm,ngazgm)
 double precision roesp (ngazgm),visesp(ngazgm),cpesp(ngazgm)
 double precision sigesp(ngazgm),xlabes(ngazgm),xkabes(ngazgm)
-double precision, dimension(:), pointer ::  crom
-double precision, dimension(:), pointer :: viscl, cpro_cp
+double precision, dimension(:), pointer :: crom, cpro_sig, cpro_ray
+double precision, dimension(:), pointer :: viscl, viscls, cpro_cp, cpro_temp
 
 integer          ipass
 data             ipass /0/
@@ -177,9 +168,9 @@ save             ipass
 
 ! Initialize variables to avoid compiler warnings
 
-ipcvsl = 0
-ipcsig = 0
-ipcray = 0
+ifcvsl = -1
+ifcsig = -1
+ifcray = -1
 
 ! --- Initialisation memoire
 
@@ -199,12 +190,9 @@ endif
 !  -- Les lois doivent etre imposees par l'utilisateur
 !       donc on ne fait rien.
 
-!      if ( ippmod(ieljou).ge.1 ) then
-
-
 !  -- Attention, dans les modules electriques, la chaleur massique, la
 !       conductivite thermique et la conductivite electriques sont
-!       toujours dans le tableau propce
+!       toujours definies sur les cellules
 !       qu'elles soient physiquement variables ou non.
 
 !       On n'utilisera donc PAS les variables
@@ -213,42 +201,26 @@ endif
 !                                visls0(ipotr) et visls0(ipoti)
 
 !       Informatiquement, ceci se traduit par le fait que
-!                                icp>0, ivisls(iscalt)>0,
-!                                ivisls(ipotr)>0 et ivisls(ipoti)>0
+!                                icp>0, et que
+!                                field_get_key_int(., kivisl), ifcvsl)
+!                                renvoie ifcvsl>0 pour ivarfl(iscalt),
+!                                ivarfl(ipotr) et ivarfl(ipoti)
 
 !       Les verifications ont ete faites dans elveri
 
 !  -- Si la conductivite electrique est toujours la meme pour
 !       le potentiel reel et le potentiel imaginaire, on pourrait
-!       n'en avoir qu'une seule (modif dans varpos pour definir
-!       ivisls(ipoti) = ivisls(ipotr)) et economiser ncel reels .
-
-!      call field_get_val_s(icrom, crom)
-!      call field_get_val_s(iprpfl(iviscl), viscl)
-!      call field_get_val_s(iprpfl(icp), cpro_cp)
-!      ipcvsl = ipproc(ivisls(iscalt))
-!      ipcsir = ipproc(ivisls(ipotr))
-!      ipcsii = ipproc(ivisls(ipoti))
-
-!      propce(iel,ipproc(itemp)) =
-!      crom(iel) =
-!      viscl(iel) =
-!      cpro_cp(iel) =
-!      propce(iel,ipcvsl) =
-!      propce(iel,ipcsir) =
-!      propce(iel,ipcsii) =
-
-!      endif
+!       n'en avoir qu'une seule et economiser ncel reels.
 
 !===============================================================================
 ! 2 - ARC ELECTRIQUE
 !===============================================================================
 
-if ( ippmod(ielarc).ge.1 ) then
+if (ippmod(ielarc).ge.1) then
 
 !      Un message une fois au moins pour dire
 !                                    qu'on prend les valeurs sur fichier
-  if(ipass.eq.1) then
+  if (ipass.eq.1) then
     write(nfecra,1000)
   endif
 
@@ -256,12 +228,13 @@ if ( ippmod(ielarc).ge.1 ) then
 
   mode = 1
 
-  if ( ngazg .eq. 1 ) then
+  call field_get_val_s(iprpfl(itemp), cpro_temp)
+
+  if (ngazg .eq. 1) then
     ym(1) = 1.d0
     mode = 1
     do iel = 1, ncel
-      call elthht(mode,ngazg,ym,rtp(iel,isca(iscalt)),               &
-                                propce(iel,ipproc(itemp)))
+      call elthht(mode, ngazg, ym, rtp(iel,isca(iscalt)), cpro_temp(iel))
     enddo
   else
     do iel = 1, ncel
@@ -270,8 +243,7 @@ if ( ippmod(ielarc).ge.1 ) then
         ym(iesp) = rtp(iel,isca(iycoel(iesp)))
         ym(ngazg) = ym(ngazg) - ym(iesp)
       enddo
-      call elthht(mode,ngazg,ym,rtp(iel,isca(iscalt)),               &
-                                propce(iel,ipproc(itemp)))
+      call elthht(mode, ngazg, ym, rtp(iel,isca(iscalt)), cpro_temp(iel))
     enddo
   endif
 
@@ -279,15 +251,20 @@ if ( ippmod(ielarc).ge.1 ) then
 
   call field_get_val_s(icrom, crom)
   call field_get_val_s(iprpfl(iviscl), viscl)
-  if(icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
-  if(ivisls(iscalt).gt.0) then
-    ipcvsl = ipproc(ivisls(iscalt))
+  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+
+  call field_get_key_int (ivarfl(iscalt), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, viscls)
   endif
-  if ( ivisls(ipotr).gt.0 ) then
-    ipcsig = ipproc(ivisls(ipotr))
+
+  call field_get_key_int (ivarfl(ipotr), kivisl, ifcsig)
+  if (ifcsig.ge.0) then
+    call field_get_val_s(ifcsig, cpro_sig)
   endif
-  if ( ixkabe .gt. 0 ) then
-     ipcray = ipproc(idrad)
+  if (ixkabe .gt. 0) then
+    ifcray = iprpfl(idrad)
+    call field_get_val_s(ifcray, cpro_ray)
   endif
 
 !       Interpolation des donnees sur le fichier de donnees
@@ -295,30 +272,30 @@ if ( ippmod(ielarc).ge.1 ) then
 
   do iel = 1, ncel
 
-!        Valeur de la temperature
+    ! Valeur de la temperature
 
-    tp = propce(iel,ipproc(itemp))
+    tp = cpro_temp(iel)
 
-!        On determine  le IT ou il faut interpoler
+    ! On determine  le IT ou il faut interpoler
 
     it = 0
-    if ( tp .le. th(1) ) then
+    if (tp .le. th(1)) then
       it = 1
-    else if ( tp .ge. th(npo) ) then
+    else if (tp .ge. th(npo)) then
       it = npo
     else
       do iiii = 1, npo-1
-        if ( tp .gt. th(iiii) .and. tp .le. th(iiii+1) ) then
+        if (tp .gt. th(iiii) .and. tp .le. th(iiii+1)) then
           it = iiii
         endif
       enddo
     endif
-    if ( it .eq. 0 ) then
+    if (it .eq. 0) then
       write(nfecra,9900) tp
       call csexit(1)
     endif
 
-!        Fraction massique
+    ! Fraction massique
 
     ym(ngazg) = 1.d0
     do iesp = 1, ngazg-1
@@ -326,11 +303,11 @@ if ( ippmod(ielarc).ge.1 ) then
       ym(ngazg) = ym(ngazg) - ym(iesp)
     enddo
 
-!     Masse volumique, Viscosite, CP, Sigm et Lambda de chaque constituant
+    ! Masse volumique, Viscosite, CP, Sigm et Lambda de chaque constituant
 
-    if ( tp .le. th(1) ) then
+    if (tp .le. th(1)) then
 
-!         Extrapolation : Valeur constante = 1ere valeur de la table
+      ! Extrapolation : Valeur constante = 1ere valeur de la table
 
       do iesp = 1, ngazg
         roesp (iesp) = rhoel (iesp,1)
@@ -338,14 +315,14 @@ if ( ippmod(ielarc).ge.1 ) then
         cpesp (iesp) = cpel  (iesp,1)
         sigesp(iesp) = sigel (iesp,1)
         xlabes(iesp) = xlabel(iesp,1)
-        if ( ixkabe .gt. 0 ) then
+        if (ixkabe .gt. 0) then
           xkabes(iesp) = xkabel(iesp,1)
         endif
       enddo
 
-    else if ( tp .ge. th(npo) ) then
+    else if (tp .ge. th(npo)) then
 
-!         Extrapolation : valeur constante = derniere valeur de la table
+      ! Extrapolation : valeur constante = derniere valeur de la table
 
       do iesp = 1, ngazg
         roesp (iesp) = rhoel (iesp,npo)
@@ -353,47 +330,47 @@ if ( ippmod(ielarc).ge.1 ) then
         cpesp (iesp) = cpel  (iesp,npo)
         sigesp(iesp) = sigel (iesp,npo)
         xlabes(iesp) = xlabel(iesp,npo)
-        if ( ixkabe .gt. 0 ) then
+        if (ixkabe .gt. 0) then
           xkabes(iesp) = xkabel(iesp,npo)
         endif
       enddo
 
     else
 
-!         Interpolation
+      ! Interpolation
 
       delt = th(it+1) - th(it)
       do iesp = 1, ngazg
 
-!          Masse volumique de chaque constituant
+        ! Masse volumique de chaque constituant
 
         alpro = (rhoel(iesp,it+1)-rhoel(iesp,it))/delt
         roesp(iesp)  = rhoel(iesp,it) + alpro*(tp-th(it))
 
-!          Viscosite de chaque constituant
+        ! Viscosite de chaque constituant
 
         alpvis = (visel(iesp,it+1)-visel(iesp,it))/delt
         visesp(iesp) = visel(iesp,it) + alpvis*(tp-th(it))
 
-!          CP de chaque constituant
+        ! CP de chaque constituant
 
         alpcp = (cpel(iesp,it+1)-cpel(iesp,it))/delt
         cpesp(iesp) = cpel(iesp,it) + alpcp*(tp-th(it))
 
-!          Conductivite electrique (Sigma) de chaque constituant
+        ! Conductivite electrique (Sigma) de chaque constituant
 
         alpsig = (sigel(iesp,it+1)-sigel(iesp,it))/delt
         sigesp(iesp) = sigel(iesp,it) + alpsig*(tp-th(it))
 
-!          Conductivite thermique (Lambda) de chaque constituant
+        ! Conductivite thermique (Lambda) de chaque constituant
 
         alplab = (xlabel(iesp,it+1)-xlabel(iesp,it))/delt
         xlabes(iesp) = xlabel(iesp,it) + alplab*(tp-th(it))
 
-!          Emission nette radiative ou Terme source radiatif
-!          de chaque constituant
+        ! Emission nette radiative ou Terme source radiatif
+        ! de chaque constituant
 
-        if ( ixkabe .gt. 0 ) then
+        if (ixkabe .gt. 0) then
           alpkab = (xkabel(iesp,it+1)-xkabel(iesp,it))/delt
           xkabes(iesp) = xkabel(iesp,it) + alpkab*(tp-th(it))
         endif
@@ -402,26 +379,25 @@ if ( ippmod(ielarc).ge.1 ) then
 
     endif
 
-!       Masse volumique du melange (sous relaxee eventuellement)
-!       ==========================
+    ! Masse volumique du melange (sous relaxee eventuellement)
+    ! ==========================
 
     rhonp1 = 0.d0
     do iesp = 1, ngazg
       rhonp1 = rhonp1+ym(iesp)/roesp(iesp)
     enddo
     rhonp1 = 1.d0/rhonp1
-    if(isrrom.eq.1) then
-      crom(iel) =                                        &
-           srrom*crom(iel)+(1.d0-srrom)*rhonp1
+    if (isrrom.eq.1) then
+      crom(iel) = srrom*crom(iel)+(1.d0-srrom)*rhonp1
     else
       crom(iel) = rhonp1
     endif
 
-!        Fraction volumique de chaque constituant
+    ! Fraction volumique de chaque constituant
 
     do iesp = 1, ngazg
       yvol(iesp) = ym(iesp)*roesp(iesp)/crom(iel)
-      if ( yvol(iesp) .le. 0.d0 ) yvol(iesp) = epzero**2
+      if (yvol(iesp) .le. 0.d0) yvol(iesp) = epzero**2
     enddo
 
 !       Viscosite moleculaire dynamique en kg/(m s)
@@ -442,7 +418,7 @@ if ( ippmod(ielarc).ge.1 ) then
 
       somphi = 0.d0
       do iesp2=1,ngazg
-        if ( iesp1 .ne. iesp2 ) then
+        if (iesp1 .ne. iesp2) then
           somphi = somphi                                         &
                   +coef(iesp1,iesp2)*yvol(iesp2)/yvol(iesp1)
         endif
@@ -456,7 +432,7 @@ if ( ippmod(ielarc).ge.1 ) then
 !       Chaleur specifique J/(kg degres)
 !       ================================
 
-    if(icp.gt.0) then
+    if (icp.gt.0) then
 
       cpro_cp(iel) = 0.d0
       do iesp = 1, ngazg
@@ -468,7 +444,7 @@ if ( ippmod(ielarc).ge.1 ) then
 !       Lambda/Cp en kg/(m s)
 !       ---------------------
 
-    if(ivisls(iscalt).gt.0) then
+    if (ifcvsl .ge. 0) then
 
       do iesp1=1,ngazg
         do iesp2=1,ngazg
@@ -480,64 +456,56 @@ if ( ippmod(ielarc).ge.1 ) then
         enddo
       enddo
 
-!        On calcule d'abord juste Lambda
+      ! On calcule d'abord juste Lambda
 
-      propce(iel,ipcvsl) = 0.d0
+      viscls(iel) = 0.d0
       do iesp1=1,ngazg
 
         somphi = 0.d0
         do iesp2=1,ngazg
-          if ( iesp1 .ne. iesp2 ) then
+          if (iesp1 .ne. iesp2) then
             somphi = somphi + coef(iesp1,iesp2)*yvol(iesp2)/yvol(iesp1)
           endif
         enddo
 
-        propce(iel,ipcvsl) = propce(iel,ipcvsl)                   &
-                            +xlabes(iesp1)/(1.d0+1.065*somphi)
+        viscls(iel) = viscls(iel) + xlabes(iesp1)/(1.d0+1.065*somphi)
 
       enddo
 
-!        On divise par CP pour avoir Lambda/CP
-!          On suppose Cp renseigne au prealable.
+      ! On divise par CP pour avoir Lambda/CP
+      ! On suppose Cp renseigne au prealable.
 
-      if(icp.le.0) then
-
-! --- Si CP est uniforme, on utilise CP0
-
-        propce(iel,ipcvsl) = propce(iel,ipcvsl)/cp0
-
+      if (icp.le.0) then
+        viscls(iel) = viscls(iel)/cp0
       else
-
-! --- Si CP est non uniforme, on utilise le CP calcul au dessus
-        propce(iel,ipcvsl) = propce(iel,ipcvsl)/cpro_cp(iel)
-
+        viscls(iel) = viscls(iel)/cpro_cp(iel)
       endif
     endif
 
 !       Conductivite electrique en S/m
 !       ==============================
 
-    if ( ivisls(ipotr).gt.0 ) then
-      propce(iel,ipcsig) = 0.d0
+    if (ifcsig.ge.0) then
+      cpro_sig(iel) = 0.d0
       val = 0.d0
       do iesp=1,ngazg
         val = val + yvol(iesp)/sigesp(iesp)
       enddo
 
-      propce(iel,ipcsig) = 1.d0/val
+      cpro_sig(iel) = 1.d0/val
     endif
 
 !       Emission nette radiative en W/m3
 !       ================================
 
-    if ( ixkabe .gt. 0 ) then
-      propce(iel,ipcray) = 0.d0
+    if (ixkabe .gt. 0) then
+      cpro_ray(iel) = 0.d0
       val = 0.d0
       do iesp=1,ngazg
         val = val + yvol(iesp)*xkabes(iesp)
       enddo
 
-      propce(iel,ipcray) = val
+      cpro_ray(iel) = val
     endif
 
   enddo
@@ -562,23 +530,22 @@ if ( ippmod(ielarc).ge.1 ) then
 ! --- Si la variable est une fluctuation, sa diffusivite est
 !       la meme que celle du scalaire auquel elle est rattachee :
 !       il n'y a donc rien a faire ici : on passe directement
-!       a la variable suivante sans renseigner PROPCE(IEL,IPCVSL).
+!       a la variable suivante sans renseigner viscls(iel).
 
-    if ( ith.eq.0 .and. iscavr(iscal).le.0) then
+    if (ith.eq.0 .and. iscavr(iscal).le.0) then
 
 ! --- On ne traite ici que les variables non thermiques
 !                                        et pas le potentiel (sigma)
 !                                   et qui ne sont pas des fluctuations
 
-      if(ivisls(iscal).gt.0) then
+      call field_get_key_int (ivarfl(iscal), kivisl, ifcvsl)
+      if (ifcvsl.ge.0) then
 
-! --- Rang de Lambda du scalaire
-!     dans PROPCE, prop. physiques au centre des elements       : IPCVSL
+        ! Lambda du scalaire:
 
-        ipcvsl = ipproc(ivisls(iscal))
-
+        call field_get_val_s(ifcvsl, viscls)
         do iel = 1, ncel
-          propce(iel,ipcvsl) = 1.d0
+          viscls(iel) = 1.d0
         enddo
 
       endif
@@ -595,7 +562,7 @@ endif
 
 ! POUR LE MOMENT CETTE OPTION N'EST PAS ACTIVEE
 
-if ( ippmod(ielion).ge.1  ) then
+if (ippmod(ielion).ge.1 ) then
 
 !       Masse volumique
 !       ---------------
@@ -616,7 +583,7 @@ if ( ippmod(ielion).ge.1  ) then
 !       CHALEUR SPECIFIQUE VARIABLE J/(kg degres)
 !       =========================================
 
-  if(icp.gt.0) then
+  if (icp.gt.0) then
     call field_get_val_s(iprpfl(icp), cpro_cp)
     do iel = 1, ncel
       cpro_cp(iel) = 1000.d0
@@ -627,23 +594,21 @@ if ( ippmod(ielion).ge.1  ) then
 !       Lambda/CP  VARIABLE en kg/(m s)
 !       ===============================
 
-  if (ivisls(iscalt).gt.0) then
+  call field_get_key_int (ivarfl(iscalt), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
 
-    ipcvsl = ipproc(ivisls(iscalt))
+    call field_get_val_s(ifcvsl, viscls)
 
-    if(icp.le.0) then
-
-! --- Si CP est uniforme, on utilise CP0
+    if (icp.le.0) then
 
       do iel = 1, ncel
-        propce(iel,ipcvsl) = 1.d0/cp0
+        viscls(iel) = 1.d0/cp0
       enddo
 
     else
 
-! --- Si CP est non uniforme, on utilise PROPCE ci dessus
       do iel = 1, ncel
-        propce(iel,ipcvsl) = 1.d0 /cpro_cp(iel)
+        viscls(iel) = 1.d0 /cpro_cp(iel)
       enddo
 
     endif
@@ -665,25 +630,24 @@ if ( ippmod(ielion).ge.1  ) then
 ! --- Si la variable est une fluctuation, sa diffusivite est
 !       la meme que celle du scalaire auquel elle est rattachee :
 !       il n'y a donc rien a faire ici : on passe directement
-!       a la variable suivante sans renseigner PROPCE(IEL,IPCVSL).
+!       a la variable suivante sans renseigner viscls(IEL).
 
-    if ( ith.eq.0 .and. iscavr(iscal).le.0) then
+    if (ith.eq.0 .and. iscavr(iscal).le.0) then
 
 ! --- On ne traite ici que les variables non thermiques
 !                                   et qui ne sont pas des fluctuations
 
-      if(ivisls(iscal).gt.0) then
+      call field_get_key_int (ivarfl(iscal), kivisl, ifcvsl)
+      if (ifcvsl.ge.0) then
 
-! --- Rang de Lambda du scalaire
-!     dans PROPCE, prop. physiques au centre des elements       : IPCVSL
+        ! Lambda du scalaire
 
-        ipcvsl = ipproc(ivisls(iscal))
+        call field_get_val_s(ifcvsl, viscls)
 
-! --- Lambda en kg/(m s) au centre des cellules
-
+        ! Lambda en kg/(m s) au centre des cellules
 
         do iel = 1, ncel
-          propce(iel,ipcvsl) = 1.d0
+          viscls(iel) = 1.d0
         enddo
 
       endif
@@ -703,7 +667,6 @@ call uselph                                                       &
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
    dt     )
-
 
 
 ! La masse volumique au bord est traitee dans phyvar (recopie de la valeur

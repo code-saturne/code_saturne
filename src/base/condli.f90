@@ -93,7 +93,6 @@
 !> \param[in,out] isostd        indicator for standard outlet
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -121,7 +120,7 @@ subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  ,                                                       &
    icodcl , isostd ,                                              &
-   dt     , propce , rcodcl ,                                     &
+   dt     , rcodcl ,                                              &
    visvdr , hbord  , theipb , frcxt  )
 
 !===============================================================================
@@ -160,7 +159,6 @@ integer          icodcl(nfabor,nvarcl)
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(3,ncelet)
 double precision visvdr(ncelet)
@@ -176,7 +174,7 @@ integer          iok   , iok1
 integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
-integer          ipcvsl, ipccv
+integer          ifcvsl, ipccv
 integer          itplus, itstar
 integer          f_id  ,  iut  , ivt   , iwt, iflmab
 
@@ -211,8 +209,9 @@ double precision, dimension(:), pointer :: cofadp, cofbdp
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: crom
 
-double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_cp, cvar_s, cvara_s
+double precision, dimension(:), pointer :: viscl, visct, viscls
+double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cvar_s, cvara_s
+double precision, dimension(:), pointer :: cpro_visma1, cpro_visma2, cpro_visma3
 
 !===============================================================================
 
@@ -686,7 +685,7 @@ if (iclsym.ne.0) then
   call clsyvt &
   !==========
  ( nscal  , icodcl ,                                              &
-   propce , rcodcl ,                                              &
+   rcodcl ,                                                       &
    velipb , rijipb )
 
 endif
@@ -1830,19 +1829,22 @@ if (nscal.ge.1) then
     call field_get_val_s(iprpfl(icp), cpro_cp)
   endif
 
+  if (ipccv.gt.0) then
+    call field_get_val_s(iprpfl(ipccv), cpro_cv)
+  endif
+
   do ii = 1, nscal
 
     ivar   = isca(ii)
 
     isvhbl = 0
-    if(ii.eq.isvhb) then
+    if (ii.eq.isvhb) then
       isvhbl = isvhb
     endif
 
-    if(ivisls(ii).gt.0) then
-      ipcvsl = ipproc(ivisls(ii))
-    else
-      ipcvsl = 0
+    call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
+    if (ifcvsl .ge. 0) then
+      call field_get_val_s(ifcvsl, viscls)
     endif
 
     ! --- Indicateur de prise en compte de Cp ou non
@@ -1898,10 +1900,10 @@ if (nscal.ge.1) then
       endif
 
       ! --- Viscosite variable ou non
-      if (ipcvsl.le.0) then
+      if (ifcvsl.lt.0) then
         rkl = visls0(ii)
       else
-        rkl = propce(iel,ipcvsl)
+        rkl = viscls(iel)
       endif
 
       ! Scalar diffusivity
@@ -2035,7 +2037,7 @@ if (nscal.ge.1) then
           elseif (itherm.eq.3) then
             ! If Cv is variable
             if (ipccv.gt.0) then
-              bhconv(ifac) = hint*propce(iel,ipccv)
+              bhconv(ifac) = hint*cpro_cv(iel)
             else
               bhconv(ifac) = hint*cv0
             endif
@@ -2087,7 +2089,7 @@ if (nscal.ge.1) then
           elseif (itherm.eq.3) then
             ! If Cv is variable
             if (ipccv.gt.0) then
-              bhconv(ifac) = hint*propce(iel,ipccv)
+              bhconv(ifac) = hint*cpro_cv(iel)
             else
               bhconv(ifac) = hint*cv0
             endif
@@ -2140,10 +2142,10 @@ if (nscal.ge.1) then
         ! --- Geometrical quantities
         distbf = distb(ifac)
 
-        if (ivisls(iscal).le.0) then
+        if (ifcvsl.lt.0) then
           rkl = visls0(iscal)/cpp
         else
-          rkl = propce(iel,ipproc(ivisls(iscal)))/cpp
+          rkl = viscls(iel)/cpp
         endif
         hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
                  + visten(1,iel)*ctheta(iscal)/distbf/csrij !FIXME ctheta (iscal)
@@ -2256,17 +2258,21 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
+  call field_get_val_s(iprpfl(ivisma(1)), cpro_visma1)
+  call field_get_val_s(iprpfl(ivisma(2)), cpro_visma2)
+  call field_get_val_s(iprpfl(ivisma(3)), cpro_visma3)
+
   do ifac = 1, nfabor
 
     iel = ifabor(ifac)
     distbf = distb(ifac)
     srfbn2 = surfbn(ifac)**2
     if (iortvm.eq.0) then
-      hint = propce(iel,ipproc(ivisma(1)))/distbf
+      hint = cpro_visma1(iel)/distbf
     else
-      hint = ( propce(iel,ipproc(ivisma(1)))*surfbo(1,ifac)**2    &
-             + propce(iel,ipproc(ivisma(2)))*surfbo(2,ifac)**2    &
-             + propce(iel,ipproc(ivisma(3)))*surfbo(3,ifac)**2 )  &
+      hint = ( cpro_visma1(iel)*surfbo(1,ifac)**2    &
+             + cpro_visma2(iel)*surfbo(2,ifac)**2    &
+             + cpro_visma3(iel)*surfbo(3,ifac)**2 )  &
            /distbf/srfbn2
     endif
 

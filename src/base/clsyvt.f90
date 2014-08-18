@@ -48,7 +48,6 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -72,7 +71,7 @@
 
 subroutine clsyvt &
  ( nscal  , icodcl ,                                     &
-   propce , rcodcl ,                                     &
+   rcodcl ,                                              &
    velipb , rijipb )
 
 !===============================================================================
@@ -102,7 +101,6 @@ integer          nscal
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 
@@ -140,6 +138,7 @@ double precision, dimension(:), pointer :: coefa_r23, coefaf_r23, coefad_r23
 double precision, dimension(:), pointer :: coefb_r23, coefbf_r23, coefbd_r23
 
 double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cpro_visma1, cpro_visma2, cpro_visma3
 
 !===============================================================================
 
@@ -608,7 +607,7 @@ do iscal = 1, nscal
 
   if (ityturt(iscal).eq.3) then
 
-    call clsyvt_scalar(iscal, icodcl, propce)
+    call clsyvt_scalar(iscal, icodcl)
     !=================
 
   endif
@@ -626,6 +625,10 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
+  call field_get_val_s(iprpfl(ivisma(1)), cpro_visma1)
+  call field_get_val_s(iprpfl(ivisma(2)), cpro_visma2)
+  call field_get_val_s(iprpfl(ivisma(3)), cpro_visma3)
+
   do ifac = 1, nfabor
     if (icodcl(ifac,iuma).eq.4) then
 
@@ -640,9 +643,9 @@ if (iale.eq.1) then
       srfbnf = surfbn(ifac)
 
       ! --- Physical properties
-      vismsh(1) = propce(iel, ipproc(ivisma(1)))
-      vismsh(2) = propce(iel, ipproc(ivisma(2)))
-      vismsh(3) = propce(iel, ipproc(ivisma(3)))
+      vismsh(1) = cpro_visma1(iel)
+      vismsh(2) = cpro_visma2(iel)
+      vismsh(3) = cpro_visma3(iel)
 
       hintv(1) = vismsh(1)/distbf
       hintv(2) = vismsh(2)/distbf
@@ -736,12 +739,10 @@ end subroutine
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine clsyvt_scalar &
- ( iscal  , icodcl ,                                     &
-   propce )
+ ( iscal  , icodcl )
 
 !===============================================================================
 ! Module files
@@ -773,13 +774,11 @@ integer          iscal
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          ivar, f_id
 integer          ifac, iel, isou, jsou
-integer          ipccv
+integer          ipccv, ifcvsl
 
 double precision cpp, rkl, visclc
 double precision distbf, srfbnf
@@ -793,7 +792,7 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
-double precision, dimension(:), pointer :: viscl, cpro_cp
+double precision, dimension(:), pointer :: viscl, viscls, cpro_cp
 
 !===============================================================================
 
@@ -815,6 +814,11 @@ call field_get_val_s(icrom, crom)
 
 if (icp.gt.0) then
   call field_get_val_s(iprpfl(icp), cpro_cp)
+endif
+
+call field_get_key_int (f_id, kivisl, ifcvsl)
+if (ifcvsl .ge. 0) then
+  call field_get_val_s(ifcvsl, viscls)
 endif
 
 ipccv = 0
@@ -869,10 +873,10 @@ do ifac = 1, nfabor
     rny = surfbo(2,ifac)/srfbnf
     rnz = surfbo(3,ifac)/srfbnf
 
-    if (ivisls(iscal).le.0) then
+    if (ifcvsl .lt. 0) then
       rkl = visls0(iscal)/cpp
     else
-      rkl = propce(iel,ipproc(ivisls(iscal)))/cpp
+      rkl = viscls(iel)/cpp
     endif
 
     hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &

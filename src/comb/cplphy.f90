@@ -56,14 +56,6 @@ subroutine cplphy &
 !    CP variable (sinon: ecrasement memoire).
 
 
-!  Il FAUT AVOIR PRECISE ivisls(Numero de scalaire) = 1
-!     ==================
-!     si on souhaite une diffusivite viscls variable
-!     pour le scalaire considere (sinon: ecrasement memoire).
-
-
-
-
 ! Remarques :
 ! ---------
 

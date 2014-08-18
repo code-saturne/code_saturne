@@ -181,7 +181,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
-   dt     , rtp    , propce )
+   dt     , rtp    )
 
 endif
 

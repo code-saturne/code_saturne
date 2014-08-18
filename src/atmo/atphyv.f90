@@ -46,14 +46,6 @@ subroutine atphyv &
 !    CP variable (sinon: ecrasement memoire).
 
 
-!  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
-!     ==================
-!     dans usipsc si on souhaite une diffusivite VISCLS variable
-!     pour le scalaire considere (sinon: ecrasement memoire).
-
-
-
-
 ! Remarques :
 ! ---------
 
@@ -223,7 +215,7 @@ do iel = 1, ncel
   else
     ! Pressure profile from meteo file:
     call intprf &
-         ! ===========
+    !==========
        ( nbmett, nbmetm,                                            &
          ztmet , tmmet , phmet , zent, ttcabs, pp )
   endif
