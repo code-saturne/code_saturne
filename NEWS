@@ -2,6 +2,11 @@
 Release 3.3.3 (unreleased)
 ==========================
 
+Bug fixes:
+----------
+
+- Fix memory leaks in Code_Saturne/Code_Saturne coupling.
+
 Release 3.3.2 (14 Aug 2014)
 ===========================
 
