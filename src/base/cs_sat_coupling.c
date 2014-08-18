@@ -514,6 +514,13 @@ _init_all_mpi_sat(void)
 static cs_sat_coupling_t *
 _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
 {
+  BFT_FREE(couplage->sat_name);
+
+  BFT_FREE(couplage->face_cpl_sel);
+  BFT_FREE(couplage->cell_cpl_sel);
+  BFT_FREE(couplage->face_sup_sel);
+  BFT_FREE(couplage->cell_sup_sel);
+
   ple_locator_destroy(couplage->localis_cel);
   ple_locator_destroy(couplage->localis_fbr);
 
@@ -590,7 +597,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   if (couplage->local_of != NULL)
     BFT_FREE(couplage->local_of);
   if (couplage->distant_pond_fbr != NULL)
-    BFT_FREE(couplage->local_pond_fbr);
+    BFT_FREE(couplage->distant_pond_fbr);
   if (couplage->local_pond_fbr != NULL)
     BFT_FREE(couplage->local_pond_fbr);
 
@@ -985,20 +992,25 @@ void CS_PROCF (defloc, DEFLOC)
 
 #if defined(PLE_HAVE_MPI)
 
-  coupl->localis_cel = ple_locator_create(tolerance,
-                                          coupl->comm,
-                                          coupl->n_sat_ranks,
-                                          coupl->sat_root_rank);
+  if (coupl->localis_cel == NULL)
+    coupl->localis_cel = ple_locator_create(tolerance,
+                                            coupl->comm,
+                                            coupl->n_sat_ranks,
+                                            coupl->sat_root_rank);
 
-  coupl->localis_fbr = ple_locator_create(tolerance,
-                                          coupl->comm,
-                                          coupl->n_sat_ranks,
-                                          coupl->sat_root_rank);
+  if (coupl->localis_fbr == NULL)
+    coupl->localis_fbr = ple_locator_create(tolerance,
+                                            coupl->comm,
+                                            coupl->n_sat_ranks,
+                                            coupl->sat_root_rank);
 
 #else
 
-  coupl->localis_cel = ple_locator_create(tolerance);
-  coupl->localis_fbr = ple_locator_create(tolerance);
+  if (coupl->localis_cel == NULL)
+    coupl->localis_cel = ple_locator_create(tolerance);
+
+  if (coupl->localis_fbr == NULL)
+    coupl->localis_fbr = ple_locator_create(tolerance);
 
 #endif
 
