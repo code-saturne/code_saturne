@@ -85,9 +85,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define THR_MIN 128
-
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
@@ -465,7 +462,7 @@ cs_mass_flux(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_massflux[face_id] = 0.;
     }
-#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       b_massflux[face_id] = 0.;
     }
@@ -577,7 +574,7 @@ cs_mass_flux(const cs_mesh_t          *m,
 
     /* Without porosity */
     if (porosi == NULL) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         for (int isou = 0; isou < 3; isou++) {
           coefaq[face_id][isou] = romb[face_id]*coefav[face_id][isou];
@@ -585,7 +582,7 @@ cs_mass_flux(const cs_mesh_t          *m,
       }
       /* With porosity */
     } else if (porosi != NULL && porosf == NULL) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         for (int isou = 0; isou < 3; isou++) {
@@ -595,7 +592,7 @@ cs_mass_flux(const cs_mesh_t          *m,
       }
       /* With anisotropic porosity */
     } else if (porosi != NULL && porosf != NULL) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         coefaq[face_id][0] = ( porosf[cell_id][0]*coefav[face_id][0]
@@ -618,7 +615,7 @@ cs_mass_flux(const cs_mesh_t          *m,
 
     /* Without porosity */
     if (porosi == NULL) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         for (int isou = 0; isou < 3; isou++) {
           coefaq[face_id][isou] = coefav[face_id][isou];
@@ -626,7 +623,7 @@ cs_mass_flux(const cs_mesh_t          *m,
       }
       /* With porosity */
     } else if (porosi != NULL && porosf == NULL) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         for (int isou = 0; isou < 3; isou++) {
@@ -635,7 +632,7 @@ cs_mass_flux(const cs_mesh_t          *m,
       }
       /* With anisotropic porosity */
     } else if (porosi != NULL && porosf != NULL) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         coefaq[face_id][0] = porosf[cell_id][0]*coefav[face_id][0]
@@ -685,7 +682,7 @@ cs_mass_flux(const cs_mesh_t          *m,
     /* Standard mass flux */
     if (itypfl == 1) {
       for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
         for (int t_id = 0; t_id < n_b_threads; t_id++) {
           for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -711,7 +708,7 @@ cs_mass_flux(const cs_mesh_t          *m,
       /* Velocity flux */
     } else {
       for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
         for (int t_id = 0; t_id < n_b_threads; t_id++) {
           for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -808,7 +805,7 @@ cs_mass_flux(const cs_mesh_t          *m,
     /* Standard mass flux */
     if (itypfl == 1) {
       for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
         for (int t_id = 0; t_id < n_b_threads; t_id++) {
           for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -847,7 +844,7 @@ cs_mass_flux(const cs_mesh_t          *m,
       /* Velocity flux */
     } else {
       for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
         for (int t_id = 0; t_id < n_b_threads; t_id++) {
           for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -900,7 +897,7 @@ cs_mass_flux(const cs_mesh_t          *m,
 
   if (iflmb0 == 1) {
     /* Force flumab to 0 for velocity */
-#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       if (fvq->b_sym_flag[face_id] == 0) {
         b_massflux[face_id] = 0.;
@@ -959,7 +956,7 @@ cs_divergence(const cs_mesh_t          *m,
       diverg[cell_id] = 0.;
     }
   } else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       diverg[cell_id] = 0.;
     }
@@ -996,7 +993,7 @@ cs_divergence(const cs_mesh_t          *m,
     ==========================================================================*/
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -1062,7 +1059,7 @@ cs_tensor_divergence(const cs_mesh_t            *m,
       }
     }
   } else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
         diverg[cell_id][isou] = 0.;
@@ -1103,7 +1100,7 @@ cs_tensor_divergence(const cs_mesh_t            *m,
     ==========================================================================*/
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];

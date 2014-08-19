@@ -57,9 +57,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define THR_MIN 128
-
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -145,13 +142,9 @@ cs_dot(cs_lnum_t         n,
 {
   const cs_lnum_t block_size = 60;
 
-  cs_lnum_t sid, bid, i;
-  cs_lnum_t start_id, end_id;
-  double sdot, cdot;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+  const cs_lnum_t n_blocks = n / block_size;
+  const cs_lnum_t n_sblocks = sqrt(n_blocks);
+  const cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
   double dot = 0.0;
 
@@ -163,17 +156,16 @@ cs_dot(cs_lnum_t         n,
   * 2008 Society for Industrial and Applied Mathematics
   */
 
-# pragma omp parallel for reduction(+:dot) private(bid, start_id, end_id, i, \
-                                                   cdot, sdot) if (n > THR_MIN)
-  for (sid = 0; sid < n_sblocks; sid++) {
+# pragma omp parallel for reduction(+:dot) if (n > CS_THR_MIN)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    sdot = 0.0;
+    double sdot = 0.0;
 
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot = 0.0;
-      for (i = start_id; i < end_id; i++)
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double cdot = 0.0;
+      for (cs_lnum_t i = start_id; i < end_id; i++)
         cdot += x[i]*y[i];
       sdot += cdot;
     }
@@ -182,10 +174,10 @@ cs_dot(cs_lnum_t         n,
 
   }
 
-  cdot = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++)
+  double cdot = 0.0;
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n;
+  for (cs_lnum_t i = start_id; i < end_id; i++)
     cdot += x[i]*y[i];
   dot += cdot;
 
@@ -193,7 +185,7 @@ cs_dot(cs_lnum_t         n,
 }
 
 /*----------------------------------------------------------------------------
- * Return the global resildual of 2 extensive vectors:
+ * Return the global residual of 2 extensive vectors:
  *  1/sum(vol) . sum(X.Y/vol)
  *
  * For better precision, a superblock algorithm is used.
@@ -205,25 +197,20 @@ cs_dot(cs_lnum_t         n,
  *   y   <-- array of floating-point values
  *
  * returns:
- *   dot product
+ *   global residual
  *----------------------------------------------------------------------------*/
 
 double
 cs_gres(cs_lnum_t         n,
-       const cs_real_t  *vol,
-       const cs_real_t  *x,
-       const cs_real_t  *y)
+        const cs_real_t  *vol,
+        const cs_real_t  *x,
+        const cs_real_t  *y)
 {
   const cs_lnum_t block_size = 60;
 
-  cs_lnum_t sid, bid, i;
-  cs_lnum_t start_id, end_id;
-  double sdot, cdot;
-  double svtot, cvtot;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+  const cs_lnum_t n_blocks = n / block_size;
+  const cs_lnum_t n_sblocks = sqrt(n_blocks);
+  const cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
   double dot = 0.;
   double vtot = 0.;
@@ -236,19 +223,18 @@ cs_gres(cs_lnum_t         n,
   * 2008 Society for Industrial and Applied Mathematics
   */
 
-# pragma omp parallel for reduction(+:dot, vtot) private(bid, start_id, end_id, i, \
-                                                   cdot, sdot, cvtot, svtot) if (n > THR_MIN)
-  for (sid = 0; sid < n_sblocks; sid++) {
+# pragma omp parallel for reduction(+:dot, vtot) if (n > CS_THR_MIN)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    sdot = 0.;
-    svtot = 0.;
+    double sdot = 0.;
+    double svtot = 0.;
 
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot = 0.;
-      cvtot = 0.;
-      for (i = start_id; i < end_id; i++) {
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double cdot = 0.;
+      double cvtot = 0.;
+      for (cs_lnum_t i = start_id; i < end_id; i++) {
         cdot += x[i]*y[i]/vol[i];
         cvtot += vol[i];
       }
@@ -261,21 +247,21 @@ cs_gres(cs_lnum_t         n,
 
   }
 
-  cdot = 0.;
-  cvtot = 0.;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++) {
+  double cdot = 0.;
+  double cvtot = 0.;
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n;
+  for (cs_lnum_t i = start_id; i < end_id; i++) {
     cdot += x[i]*y[i]/vol[i];
     cvtot += vol[i];
   }
   dot += cdot;
   vtot += cvtot;
 
-  cs_parall_sum(1, CS_DOUBLE, &dot);
-  cs_parall_sum(1, CS_DOUBLE, &vtot);
+  double atot[2] = {dot, vtot};
+  cs_parall_sum(2, CS_DOUBLE, atot);
 
-  dot /= vtot;
+  dot = atot[0] / atot[1];
 
   return dot;
 }
@@ -299,28 +285,22 @@ cs_dot_xx(cs_lnum_t         n,
 {
   const cs_lnum_t block_size = 60;
 
-  cs_lnum_t sid, bid, i;
-  cs_lnum_t start_id, end_id;
-  double sdot_xx, cdot_xx;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+  const cs_lnum_t n_blocks = n / block_size;
+  const cs_lnum_t n_sblocks = sqrt(n_blocks);
+  const cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
   double dot_xx = 0.0;
 
-# pragma omp parallel for private(bid, start_id, end_id, i, \
-                                  cdot_xx, sdot_xx) \
-                          reduction(+:dot_xx) if (n > THR_MIN)
-  for (sid = 0; sid < n_sblocks; sid++) {
+# pragma omp parallel for reduction(+:dot_xx) if (n > CS_THR_MIN)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    sdot_xx = 0.0;
+    double sdot_xx = 0.0;
 
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot_xx = 0.0;
-      for (i = start_id; i < end_id; i++)
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double cdot_xx = 0.0;
+      for (cs_lnum_t i = start_id; i < end_id; i++)
         cdot_xx += x[i]*x[i];
       sdot_xx += cdot_xx;
     }
@@ -329,10 +309,10 @@ cs_dot_xx(cs_lnum_t         n,
 
   }
 
-  cdot_xx = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++)
+  double cdot_xx = 0.0;
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n;
+  for (cs_lnum_t i = start_id; i < end_id; i++)
     cdot_xx += x[i]*x[i];
   dot_xx += cdot_xx;
 
@@ -365,13 +345,9 @@ cs_dot_xx_xy(cs_lnum_t                    n,
 {
   const cs_lnum_t block_size = 60;
 
-  cs_lnum_t sid, bid, i;
-  cs_lnum_t start_id, end_id;
-  double sdot_xx, sdot_xy, cdot_xx, cdot_xy;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+  const cs_lnum_t n_blocks = n / block_size;
+  const cs_lnum_t n_sblocks = sqrt(n_blocks);
+  const cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
   double dot_xx = 0.0;
   double dot_xy = 0.0;
@@ -380,20 +356,18 @@ cs_dot_xx_xy(cs_lnum_t                    n,
 #pragma disjoint(*x, *y, *xx, *xy)
 #endif
 
-# pragma omp parallel for private(bid, start_id, end_id, i, \
-                                  cdot_xx, cdot_xy, sdot_xx, sdot_xy) \
-                          reduction(+:dot_xx, dot_xy) if (n > THR_MIN)
-  for (sid = 0; sid < n_sblocks; sid++) {
+# pragma omp parallel for reduction(+:dot_xx, dot_xy) if (n > CS_THR_MIN)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    sdot_xx = 0.0;
-    sdot_xy = 0.0;
+    double sdot_xx = 0.0;
+    double sdot_xy = 0.0;
 
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot_xx = 0.0;
-      cdot_xy = 0.0;
-      for (i = start_id; i < end_id; i++) {
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double cdot_xx = 0.0;
+      double cdot_xy = 0.0;
+      for (cs_lnum_t i = start_id; i < end_id; i++) {
         cdot_xx += x[i]*x[i];
         cdot_xy += x[i]*y[i];
       }
@@ -406,11 +380,11 @@ cs_dot_xx_xy(cs_lnum_t                    n,
 
   }
 
-  cdot_xx = 0.0;
-  cdot_xy = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++) {
+  double cdot_xx = 0.0;
+  double cdot_xy = 0.0;
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n;
+  for (cs_lnum_t i = start_id; i < end_id; i++) {
     cdot_xx += x[i]*x[i];
     cdot_xy += x[i]*y[i];
   }
@@ -449,13 +423,9 @@ cs_dot_xy_yz(cs_lnum_t                    n,
 {
   const cs_lnum_t block_size = 60;
 
-  cs_lnum_t sid, bid, i;
-  cs_lnum_t start_id, end_id;
-  double sdot_xy, sdot_yz, cdot_xy, cdot_yz;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+  const cs_lnum_t n_blocks = n / block_size;
+  const cs_lnum_t n_sblocks = sqrt(n_blocks);
+  const cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
   double dot_xy = 0.0;
   double dot_yz = 0.0;
@@ -464,20 +434,18 @@ cs_dot_xy_yz(cs_lnum_t                    n,
 #pragma disjoint(*x, *y, *xy, *yz)
 #endif
 
-# pragma omp parallel for private(bid, start_id, end_id, i, \
-                                  cdot_xy, cdot_yz, sdot_xy, sdot_yz) \
-                                  reduction(+:dot_xy, dot_yz) if (n > THR_MIN)
-  for (sid = 0; sid < n_sblocks; sid++) {
+# pragma omp parallel for reduction(+:dot_xy, dot_yz) if (n > CS_THR_MIN)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    sdot_xy = 0.0;
-    sdot_yz = 0.0;
+    double sdot_xy = 0.0;
+    double sdot_yz = 0.0;
 
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot_xy = 0.0;
-      cdot_yz = 0.0;
-      for (i = start_id; i < end_id; i++) {
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double cdot_xy = 0.0;
+      double cdot_yz = 0.0;
+      for (cs_lnum_t i = start_id; i < end_id; i++) {
         cdot_xy += x[i]*y[i];
         cdot_yz += y[i]*z[i];
       }
@@ -490,11 +458,11 @@ cs_dot_xy_yz(cs_lnum_t                    n,
 
   }
 
-  cdot_xy = 0.0;
-  cdot_yz = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++) {
+  double cdot_xy = 0.0;
+  double cdot_yz = 0.0;
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n;
+  for (cs_lnum_t i = start_id; i < end_id; i++) {
     cdot_xy += x[i]*y[i];
     cdot_yz += y[i]*z[i];
   }
@@ -535,13 +503,9 @@ cs_dot_xx_xy_yz(cs_lnum_t                    n,
 {
   const cs_lnum_t block_size = 60;
 
-  cs_lnum_t sid, bid, i;
-  cs_lnum_t start_id, end_id;
-  double sdot_xx, sdot_xy, sdot_yz, cdot_xx, cdot_xy, cdot_yz;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+  const cs_lnum_t n_blocks = n / block_size;
+  const cs_lnum_t n_sblocks = sqrt(n_blocks);
+  const cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
   double dot_xx = 0.0;
   double dot_xy = 0.0;
@@ -551,22 +515,20 @@ cs_dot_xx_xy_yz(cs_lnum_t                    n,
 #pragma disjoint(*x, *y, *xy, *yz)
 #endif
 
-# pragma omp parallel for private(bid, start_id, end_id, i, cdot_xx, cdot_xy, \
-                                  cdot_yz, sdot_xx, sdot_xy, sdot_yz) \
-                          reduction(+:dot_xx, dot_xy, dot_yz) if (n > THR_MIN)
-  for (sid = 0; sid < n_sblocks; sid++) {
+# pragma omp parallel for reduction(+:dot_xx, dot_xy, dot_yz) if (n > CS_THR_MIN)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    sdot_xx = 0.0;
-    sdot_xy = 0.0;
-    sdot_yz = 0.0;
+    double sdot_xx = 0.0;
+    double sdot_xy = 0.0;
+    double sdot_yz = 0.0;
 
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot_xx = 0.0;
-      cdot_xy = 0.0;
-      cdot_yz = 0.0;
-      for (i = start_id; i < end_id; i++) {
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double cdot_xx = 0.0;
+      double cdot_xy = 0.0;
+      double cdot_yz = 0.0;
+      for (cs_lnum_t i = start_id; i < end_id; i++) {
         cdot_xx += x[i]*x[i];
         cdot_xy += x[i]*y[i];
         cdot_yz += y[i]*z[i];
@@ -582,12 +544,12 @@ cs_dot_xx_xy_yz(cs_lnum_t                    n,
 
   }
 
-  cdot_xx = 0.0;
-  cdot_xy = 0.0;
-  cdot_yz = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++) {
+  double cdot_xx = 0.0;
+  double cdot_xy = 0.0;
+  double cdot_yz = 0.0;
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n;
+  for (cs_lnum_t i = start_id; i < end_id; i++) {
     cdot_xx += x[i]*x[i];
     cdot_xy += x[i]*y[i];
     cdot_yz += y[i]*z[i];

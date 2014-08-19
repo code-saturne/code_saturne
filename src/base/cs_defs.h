@@ -370,6 +370,11 @@ typedef cs_real_33_t  cs_real_332_t[2]; /* vector of 2 3x3 matrices of real valu
 #define CS_REAL_TYPE      CS_DOUBLE
 #define CS_COORD_TYPE     CS_DOUBLE
 
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+/*--------------------------------------------------------------*/
+
+#define CS_THR_MIN 128
+
 /*----------------------------------------------------------------------------
  * Type independent min an max (caution: the argument is evaluated)
  *----------------------------------------------------------------------------*/

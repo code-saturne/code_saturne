@@ -87,9 +87,6 @@ BEGIN_C_DECLS
 
 #define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
 
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define THR_MIN 128
-
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -668,7 +665,7 @@ _polynomial_preconditionning(cs_int_t             n_cells,
 #endif
 
   if (poly_degree < 0) {
-#   pragma omp parallel for if(n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (ii = 0; ii < n_cells; ii++)
       gk[ii] = rk[ii];
     return;
@@ -677,7 +674,7 @@ _polynomial_preconditionning(cs_int_t             n_cells,
   /* Polynomial of degree 0 (diagonal)
    *-----------------------------------*/
 
-# pragma omp parallel for if(n_cells > THR_MIN)
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (ii = 0; ii < n_cells; ii++)
     gk[ii] = rk[ii] * ad_inv[ii];
 
@@ -694,7 +691,7 @@ _polynomial_preconditionning(cs_int_t             n_cells,
 
     cs_matrix_exdiag_vector_multiply(rotation_mode, a, gk, wk);
 
-#   pragma omp parallel for if(n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (ii = 0; ii < n_cells; ii++)
       gk[ii] = (rk[ii] - wk[ii]) * ad_inv[ii];
 
@@ -792,7 +789,7 @@ _conjugate_gradient(const char             *var_name,
 
   /* Initialize arrays */
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
 
@@ -803,7 +800,7 @@ _conjugate_gradient(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
@@ -823,7 +820,7 @@ _conjugate_gradient(const char             *var_name,
 
 #if defined(HAVE_OPENMP)
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     dk[ii] = gk[ii];
 
@@ -843,7 +840,7 @@ _conjugate_gradient(const char             *var_name,
 
   alpha =  - ro_0 / ro_1;
 
-# pragma omp parallel if(n_rows > THR_MIN)
+# pragma omp parallel if(n_rows > CS_THR_MIN)
   {
 #   pragma omp for nowait
     for (ii = 0; ii < n_rows; ii++)
@@ -897,7 +894,7 @@ _conjugate_gradient(const char             *var_name,
     beta = rk_gk / rk_gkm1;
     rk_gkm1 = rk_gk;
 
-#   pragma omp parallel for firstprivate(alpha) if(n_rows > THR_MIN)
+#   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++)
       dk[ii] = gk[ii] + (beta * dk[ii]);
 
@@ -907,7 +904,7 @@ _conjugate_gradient(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > THR_MIN)
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
       for (ii = 0; ii < n_rows; ii++)
@@ -1019,7 +1016,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
   /* Initialize arrays */
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
 
@@ -1030,7 +1027,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
@@ -1051,7 +1048,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
 #if defined(HAVE_OPENMP)
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     dk[ii] = gk[ii];
 
@@ -1071,7 +1068,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
   rk_gkm1 = ro_0;
 
-# pragma omp parallel if(n_rows > THR_MIN)
+# pragma omp parallel if(n_rows > CS_THR_MIN)
   {
 #   pragma omp for nowait
     for (ii = 0; ii < n_rows; ii++)
@@ -1132,7 +1129,7 @@ _conjugate_gradient_sr(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > THR_MIN)
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
       for (ii = 0; ii < n_rows; ii++) {
@@ -1230,7 +1227,7 @@ _conjugate_gradient_npc(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
@@ -1239,7 +1236,7 @@ _conjugate_gradient_npc(const char             *var_name,
 
 #if defined(HAVE_OPENMP)
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     dk[ii] = rk[ii];
 
@@ -1259,7 +1256,7 @@ _conjugate_gradient_npc(const char             *var_name,
 
   alpha =  - ro_0 / ro_1;
 
-# pragma omp parallel if(n_rows > THR_MIN)
+# pragma omp parallel if(n_rows > CS_THR_MIN)
   {
 #   pragma omp for nowait
     for (ii = 0; ii < n_rows; ii++)
@@ -1304,7 +1301,7 @@ _conjugate_gradient_npc(const char             *var_name,
     beta = rk_rk / rk_rkm1;
     rk_rkm1 = rk_rk;
 
-#   pragma omp parallel for firstprivate(alpha) if(n_rows > THR_MIN)
+#   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++)
       dk[ii] = rk[ii] + (beta * dk[ii]);
 
@@ -1314,7 +1311,7 @@ _conjugate_gradient_npc(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > THR_MIN)
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
       for (ii = 0; ii < n_rows; ii++)
@@ -1416,7 +1413,7 @@ _conjugate_gradient_npc_sr(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] = rk[ii] - rhs[ii];
 
@@ -1425,7 +1422,7 @@ _conjugate_gradient_npc_sr(const char             *var_name,
 
 #if defined(HAVE_OPENMP)
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     dk[ii] = rk[ii];
 
@@ -1445,7 +1442,7 @@ _conjugate_gradient_npc_sr(const char             *var_name,
 
   rk_rkm1 = ro_0;
 
-# pragma omp parallel if(n_rows > THR_MIN)
+# pragma omp parallel if(n_rows > CS_THR_MIN)
   {
 #   pragma omp for nowait
     for (ii = 0; ii < n_rows; ii++)
@@ -1499,7 +1496,7 @@ _conjugate_gradient_npc_sr(const char             *var_name,
 
     alpha =  - ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > THR_MIN)
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
       for (ii = 0; ii < n_rows; ii++) {
@@ -1590,7 +1587,7 @@ _jacobi(const char             *var_name,
     rk     = _aux_vectors + wa_size;
   }
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad[ii];
 
@@ -1607,7 +1604,7 @@ _jacobi(const char             *var_name,
 
 #if defined(HAVE_OPENMP)
 
-#   pragma omp parallel for if(n_rows > THR_MIN)
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++)
       rk[ii] = vx[ii];
 
@@ -1623,7 +1620,7 @@ _jacobi(const char             *var_name,
 
     res2 = 0.0;
 
-#   pragma omp parallel for private(r) reduction(+:res2) if(n_rows > THR_MIN)
+#   pragma omp parallel for private(r) reduction(+:res2) if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++) {
       vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
       r = ad[ii] * (vx[ii]-rk[ii]);
@@ -1678,7 +1675,7 @@ _fact_lu33(const cs_real_t   *ad,
   cs_real_t * _ad_inv = NULL;
   const cs_real_t * _ad = NULL;
 
-# pragma omp parallel for private(_ad, _ad_inv) if(n_blocks > THR_MIN)
+# pragma omp parallel for private(_ad, _ad_inv) if(n_blocks > CS_THR_MIN)
   for (i = 0; i < n_blocks; i++) {
     _ad_inv = &ad_inv[9*i];
     _ad = &ad[9*i];
@@ -1823,7 +1820,7 @@ _block_3_jacobi(const char             *var_name,
     res2 = 0.0;
 
 #   pragma omp parallel for private(jj, kk, r, temp) \
-                            reduction(+:res2) if(n_blocks > THR_MIN)
+                            reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (ii = 0; ii < n_blocks; ii++) {
       _fw_and_bw_lu33(ad_inv + 9*ii,
                       vx + 3*ii,
@@ -1950,11 +1947,11 @@ _bi_cgstab(const char             *var_name,
   }
 
   cs_matrix_copy_diagonal(a, ad_inv);
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++) {
     pk[ii] = 0.0;
     uk[ii] = 0.0;
@@ -1965,7 +1962,7 @@ _bi_cgstab(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, res0);
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++) {
     res0[ii] = -res0[ii] + rhs[ii];
     rk[ii] = res0[ii];
@@ -2039,7 +2036,7 @@ _bi_cgstab(const char             *var_name,
 
     /* Compute pk */
 
-#   pragma omp parallel for if(n_rows > THR_MIN)
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++)
       pk[ii] = rk[ii] + omega*(pk[ii] - alpha*uk[ii]);
 
@@ -2066,7 +2063,7 @@ _bi_cgstab(const char             *var_name,
 
     /* First update of vx and rk */
 
-#   pragma omp parallel if(n_rows > THR_MIN)
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
       for (ii = 0; ii < n_rows; ii++)
@@ -2113,7 +2110,7 @@ _bi_cgstab(const char             *var_name,
 
     /* Final update of vx and rk */
 
-#   pragma omp parallel if(n_rows > THR_MIN)
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
       for (ii = 0; ii < n_rows; ii++)
@@ -2364,7 +2361,7 @@ _gmres(const char             *var_name,
 
   cs_matrix_copy_diagonal(a, ad_inv);
 
-# pragma omp parallel for if(n_rows > THR_MIN)
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1./ad_inv[ii];
 
@@ -2378,7 +2375,7 @@ _gmres(const char             *var_name,
 
     /* compute  rk <- rhs - rk (r0 = b-A*x0) */
 
-#   pragma omp parallel for if(n_rows > THR_MIN)
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++)
       dk[ii] = rhs[ii] - dk[ii];
 
@@ -2400,7 +2397,7 @@ _gmres(const char             *var_name,
       /* krk = k-ieth col of _krylov_vector = vi */
       krk = _krylov_vectors + ii*n_rows;
 
-#     pragma omp parallel for if(n_rows > THR_MIN)
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (jj = 0; jj < n_rows; jj++)
         krk[jj] = dk[jj]/dot_prod;
 
@@ -2456,7 +2453,7 @@ _gmres(const char             *var_name,
         /* solve diag sup system */
         _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
 
-#       pragma omp parallel for private(kk) if(n_rows > THR_MIN)
+#       pragma omp parallel for private(kk) if(n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++) {
           fk[jj] = 0.0;
           for (kk = 0; kk <= l_iter; kk++)
@@ -2473,7 +2470,7 @@ _gmres(const char             *var_name,
                                      bk);
 
 
-#       pragma omp parallel for if(n_rows > THR_MIN)
+#       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++)
           fk[jj] = vx[jj] + gk[jj];
 
@@ -2482,7 +2479,7 @@ _gmres(const char             *var_name,
         /* compute residue = | Ax - b |_1 */
 
         residue = 0.;
-#       pragma omp parallel for reduction(+:residue) if(n_rows > THR_MIN)
+#       pragma omp parallel for reduction(+:residue) if(n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++)
           residue += pow(rhs[jj] - bk[jj], 2);
 
@@ -2510,7 +2507,7 @@ _gmres(const char             *var_name,
       l_iter++;
 
       if (cvg == 1 || l_iter == krylov_size - 1 || scaltest == 1) {
-#       pragma omp parallel for if(n_rows > THR_MIN)
+#       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++)
           vx[jj] = fk[jj];
         break;
@@ -2624,7 +2621,7 @@ _cell_residual(const int           *diag_block_size,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, res);
 
-# pragma omp parallel for if(n_vals > THR_MIN)
+# pragma omp parallel for if(n_vals > CS_THR_MIN)
   for (ii = 0; ii < n_vals; ii++)
     res[ii] = fabs(res[ii] - rhs[ii]);
 }

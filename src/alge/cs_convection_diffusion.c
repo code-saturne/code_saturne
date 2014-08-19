@@ -87,9 +87,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define THR_MIN 128
-
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
@@ -898,7 +895,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, pfac) \
-                              if(m->n_b_faces > THR_MIN)
+                              if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -951,7 +948,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   n_upwind = 0;
 
   if (n_cells_ext>n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       rhs[cell_id] = 0.;
     }
@@ -1691,7 +1688,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 #       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, \
                                         flui, fluj, pir, pipr, pfac, pfacd,  \
                                         flux, pi, pia)                       \
-                            if(m->n_b_faces > THR_MIN)
+                            if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -1738,7 +1735,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
       for (g_id = 0; g_id < n_b_groups; g_id++) {
 #       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,    \
                                         flui, fluj, pip, pfac, pfacd, flux, pi) \
-                            if(m->n_b_faces > THR_MIN)
+                            if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -1799,7 +1796,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 #       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, \
                                         flui, fluj, pir, pipr, pfac, pfacd,  \
                                         flux, pi, pia)                       \
-                            if(m->n_b_faces > THR_MIN)
+                            if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -1854,7 +1851,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
       for (g_id = 0; g_id < n_b_groups; g_id++) {
 #       pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,   \
                                         flui, fluj, pip, pfac, pfacd, flux, pi)\
-                            if(m->n_b_faces > THR_MIN)
+                            if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -2220,7 +2217,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, pfac) \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -2276,7 +2273,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > THR_MIN)
+#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > CS_THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (isou = 0; isou < 3; isou++)
         rhs[cell_id][isou] = 0.;
@@ -3089,7 +3086,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 #       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
                                         flui, fluj, pfac, pfacd, pir,    \
                                         pipr, flux, pi, pia)            \
-                   if(m->n_b_faces > THR_MIN)
+                   if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -3149,7 +3146,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       for (g_id = 0; g_id < n_b_groups; g_id++) {
 #       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv,         \
                                         flui, fluj, pfac, pfacd, pip, flux, pi)  \
-                   if(m->n_b_faces > THR_MIN)
+                   if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -3219,7 +3216,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 #       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv,    \
                                         flui, fluj, pfac, pfacd, pir, pipr, \
                                         flux, pi, pia)                      \
-                   if(m->n_b_faces > THR_MIN)
+                   if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -3315,7 +3312,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       for (g_id = 0; g_id < n_b_groups; g_id++) {
 #       pragma omp parallel for private(face_id, ii, isou, jsou, diipbv,        \
                                         flui, fluj, pfac, pfacd, pip, flux, pi) \
-                   if(m->n_b_faces > THR_MIN)
+                   if(m->n_b_faces > CS_THR_MIN)
         for (t_id = 0; t_id < n_b_threads; t_id++) {
           for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -3417,7 +3414,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
       bndcel[cell_id] = 1.;
 
-#   pragma omp parallel for private(ityp) if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for private(ityp) if(m->n_b_faces > CS_THR_MIN)
     for (face_id = 0; face_id < m->n_b_faces; face_id++) {
       ityp = bc_type[face_id];
       if (   ityp == CS_OUTLET
@@ -3781,7 +3778,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz, pfac) \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -3828,7 +3825,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++)
       rhs[cell_id] = 0.;
   }
@@ -4589,7 +4586,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 #     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,     \
                                       flui, fluj, pir, pipr, pfac, pfacd,      \
                                       flux, pi, pia)                           \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -4634,7 +4631,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, diipbx, diipby, diipbz,     \
                                       flui, fluj, pip, pfac, pfacd, flux, pi)  \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -4921,7 +4918,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       rhs[cell_id] = 0.;
     }
@@ -5125,7 +5122,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, visci, fikdvi,       \
                                       pir, pippr, pfacd, flux, pi, pia) \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -5181,7 +5178,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, visci, fikdvi, \
                                       diippf, pipp, pfacd, flux, pi)      \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -5423,7 +5420,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > THR_MIN)
+#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > CS_THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (isou = 0; isou < 3; isou++) {
         rhs[cell_id][isou] = 0.;
@@ -5600,7 +5597,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
                                       pfacd, pir, pipr, flux)          \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -5642,7 +5639,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
                                       pfacd, pir, flux, pi)            \
-                 if(m->n_b_faces > THR_MIN)
+                 if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -5694,7 +5691,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
       bndcel[cell_id] = 1.;
     }
 
-#   pragma omp parallel for private(ityp) if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for private(ityp) if(m->n_b_faces > CS_THR_MIN)
     for (face_id = 0; face_id < m->n_b_faces; face_id++) {
       ityp = bc_type[face_id];
       if (   ityp == CS_OUTLET
@@ -5907,7 +5904,7 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_massflux[face_id] = 0.;
     }
-#   pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
       b_massflux[face_id] = 0.;
     }
@@ -5966,7 +5963,7 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
     /* Mass flow through boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -6063,7 +6060,7 @@ cs_face_diffusion_potential(const cs_mesh_t          *m,
     /* Mass flow through boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -6634,7 +6631,7 @@ cs_diffusion_potential(const cs_mesh_t          *m,
       diverg[ii] = 0.;
     }
   } else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t ii = n_cells; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
@@ -6695,7 +6692,7 @@ cs_diffusion_potential(const cs_mesh_t          *m,
     /* Mass flow through boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -6796,7 +6793,7 @@ cs_diffusion_potential(const cs_mesh_t          *m,
     /* Mass flow through boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -6974,7 +6971,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
       diverg[ii] = 0.;
     }
   } else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > THR_MIN)
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t ii = n_cells+0; ii < n_cells_ext; ii++) {
       diverg[ii] = 0.;
     }
@@ -7050,7 +7047,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
     /* Mass flow though boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -7216,7 +7213,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
     /* Mass flow though boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > THR_MIN)
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];

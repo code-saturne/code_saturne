@@ -108,9 +108,6 @@ BEGIN_C_DECLS
 #define IA64_OPTIM
 #endif
 
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define THR_MIN 128
-
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -307,12 +304,12 @@ _diag_vec_p_l(const cs_real_t  *restrict da,
 # endif
 
   if (da != NULL) {
-#   pragma omp parallel for  if(n_elts > THR_MIN)
+#   pragma omp parallel for  if(n_elts > CS_THR_MIN)
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = da[ii] * x[ii];
   }
   else {
-#   pragma omp parallel for  if(n_elts > THR_MIN)
+#   pragma omp parallel for  if(n_elts > CS_THR_MIN)
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = 0.0;
   }
@@ -344,12 +341,12 @@ _b_diag_vec_p_l(const cs_real_t  *restrict da,
   cs_lnum_t   ii;
 
   if (da != NULL) {
-#   pragma omp parallel for  if(n_elts > THR_MIN)
+#   pragma omp parallel for  if(n_elts > CS_THR_MIN)
     for (ii = 0; ii < n_elts; ii++)
       _dense_b_ax(ii, b_size, da, x, y);
   }
   else {
-#   pragma omp parallel for  if(n_elts*b_size[1] > THR_MIN)
+#   pragma omp parallel for  if(n_elts*b_size[1] > CS_THR_MIN)
     for (ii = 0; ii < n_elts*b_size[1]; ii++)
       y[ii] = 0.0;
   }
@@ -376,12 +373,12 @@ _3_3_diag_vec_p_l(const cs_real_t  *restrict da,
   cs_lnum_t   ii;
 
   if (da != NULL) {
-#   pragma omp parallel for  if(n_elts*9 > THR_MIN)
+#   pragma omp parallel for  if(n_elts*9 > CS_THR_MIN)
     for (ii = 0; ii < n_elts; ii++)
       _dense_3_3_ax(ii, da, x, y);
   }
   else {
-#   pragma omp parallel for  if(n_elts*3 > THR_MIN)
+#   pragma omp parallel for  if(n_elts*3 > CS_THR_MIN)
     for (ii = 0; ii < n_elts*3; ii++)
       y[ii] = 0.0;
   }
@@ -403,7 +400,7 @@ _zero_range(cs_real_t  *restrict y,
 {
   cs_lnum_t   ii;
 
-# pragma omp parallel for  if(end_id - start_id > THR_MIN)
+# pragma omp parallel for  if(end_id - start_id > CS_THR_MIN)
   for (ii = start_id; ii < end_id; ii++)
     y[ii] = 0.0;
 }
@@ -428,7 +425,7 @@ _b_zero_range(cs_real_t  *restrict y,
 {
   cs_lnum_t  ii;
 
-# pragma omp parallel for  if((end_id-start_id)*b_size[1] > THR_MIN)
+# pragma omp parallel for  if((end_id-start_id)*b_size[1] > CS_THR_MIN)
   for (ii = start_id*b_size[1]; ii < end_id*b_size[1]; ii++)
     y[ii] = 0.0;
 }
@@ -449,7 +446,7 @@ _3_3_zero_range(cs_real_t  *restrict y,
 {
   cs_lnum_t  ii;
 
-# pragma omp parallel for  if((end_id-start_id)*3 > THR_MIN)
+# pragma omp parallel for  if((end_id-start_id)*3 > CS_THR_MIN)
   for (ii = start_id*3; ii < end_id*3; ii++)
     y[ii] = 0.0;
 }
@@ -798,12 +795,12 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
   if (matrix->db_size[3] == 1) {
 
     if (_da != NULL) {
-#     pragma omp parallel for  if(n_cells > THR_MIN)
+#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_cells; ii++)
         da[ii] = _da[ii];
     }
     else {
-#     pragma omp parallel for  if(n_cells > THR_MIN)
+#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_cells; ii++)
         da[ii] = 0.0;
     }
@@ -817,14 +814,14 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
     const int *db_size = matrix->db_size;
 
     if (_da != NULL) {
-#     pragma omp parallel for  if(n_cells*db_size[0] > THR_MIN)
+#     pragma omp parallel for  if(n_cells*db_size[0] > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
         for (cs_lnum_t jj = 0; jj < db_size[0]; jj++)
           da[ii*db_size[1] + jj] = _da[ii*db_size[3] + jj*db_size[2] + jj];
       }
     }
     else {
-#     pragma omp parallel for  if(n_cells*db_size[1] > THR_MIN)
+#     pragma omp parallel for  if(n_cells*db_size[1] > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_cells*db_size[1]; ii++)
         da[ii] = 0.0;
     }
@@ -2236,7 +2233,7 @@ _copy_diagonal_csr(const cs_matrix_t  *matrix,
 
   if (ms->have_diag == true) {
 
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
       const cs_lnum_t  *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -2255,7 +2252,7 @@ _copy_diagonal_csr(const cs_matrix_t  *matrix,
 
   }
   else { /* if (have_diag == false) */
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       da[ii] = 0.0;
   }
@@ -2286,7 +2283,7 @@ _mat_vec_p_l_csr(bool                exclude_diag,
 
   if (!exclude_diag) {
 
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
       cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -2307,7 +2304,7 @@ _mat_vec_p_l_csr(bool                exclude_diag,
 
   else {
 
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
       cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -2690,7 +2687,7 @@ _set_xa_coeffs_csr_sym_direct(cs_matrix_t      *matrix,
 
   assert(matrix->face_cell != NULL);
 
-# pragma omp parallel for  if(n_faces > THR_MIN)
+# pragma omp parallel for  if(n_faces > CS_THR_MIN)
   for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
     cs_lnum_t ii = face_cel[face_id][0];
     cs_lnum_t jj = face_cel[face_id][1];
@@ -2782,7 +2779,7 @@ _set_coeffs_csr_sym(cs_matrix_t      *matrix,
 
   if (ms->direct_assembly == false) {
     cs_lnum_t val_size = ms->row_index[ms->n_rows];
-#   pragma omp parallel for  if(val_size > THR_MIN)
+#   pragma omp parallel for  if(val_size > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < val_size; ii++)
       mc->val[ii] = 0.0;
   }
@@ -2794,12 +2791,12 @@ _set_coeffs_csr_sym(cs_matrix_t      *matrix,
     const cs_lnum_t *_diag_index = ms->row_index;
 
     if (da != NULL) {
-#     pragma omp parallel for  if(ms->n_rows > THR_MIN)
+#     pragma omp parallel for  if(ms->n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++)
         mc->val[_diag_index[ii]] = da[ii];
     }
     else {
-#     pragma omp parallel for  if(ms->n_rows > THR_MIN)
+#     pragma omp parallel for  if(ms->n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++)
         mc->val[_diag_index[ii]] = 0.0;
     }
@@ -2825,7 +2822,7 @@ _set_coeffs_csr_sym(cs_matrix_t      *matrix,
     }
     else { /* if (xa == NULL) */
 
-#     pragma omp parallel for  if(ms->n_rows > THR_MIN)
+#     pragma omp parallel for  if(ms->n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
         const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
         cs_real_t *m_row = mc->val + ms->row_index[ii];
@@ -3382,7 +3379,7 @@ _mat_vec_p_l_msr(bool                exclude_diag,
 
   if (!exclude_diag && mc->d_val != NULL) {
 
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
       cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -3403,7 +3400,7 @@ _mat_vec_p_l_msr(bool                exclude_diag,
 
   else {
 
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
       cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -3448,7 +3445,7 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
 
   if (!exclude_diag && mc->d_val != NULL) {
 
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
       cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -3472,7 +3469,7 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
 
   else {
 
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
       cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -3531,7 +3528,7 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
   if (!exclude_diag && mc->d_val != NULL) {
     cs_lnum_t ii;
     const double *restrict da = mc->d_val;
-#   pragma omp parallel for  if(n_rows > THR_MIN)
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++)
       y[ii] += da[ii] * x[ii];
   }
@@ -5133,7 +5130,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
           BFT_REALLOC(mc->_da, matrix->db_size[3]*matrix->n_cells, cs_real_t);
           mc->max_db_size = matrix->db_size[3];
         }
-#       pragma omp parallel for  if(n_rows > THR_MIN)
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
         for (ii = 0; ii < n_rows; ii++)
           mc->_da[ii] = 0.0;
         mc->da = mc->_da;
@@ -5179,7 +5176,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
           BFT_REALLOC(mc->_d_val, matrix->db_size[3]*matrix->n_cells, cs_real_t);
           mc->max_db_size = matrix->db_size[3];
         }
-#       pragma omp parallel for  if(n_rows > THR_MIN)
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
         for (ii = 0; ii < n_rows; ii++)
           mc->_d_val[ii] = 0.0;
         mc->d_val = mc->_d_val;

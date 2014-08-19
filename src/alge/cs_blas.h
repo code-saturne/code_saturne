@@ -104,7 +104,7 @@ cs_dot(cs_lnum_t         n,
        const cs_real_t  *y);
 
 /*----------------------------------------------------------------------------
- * Return the global resildual of 2 extensive vectors:
+ * Return the global residual of 2 extensive vectors:
  *  1/sum(vol) . sum(X.Y/vol)
  *
  * For better precision, a superblock algorithm is used.
@@ -116,14 +116,14 @@ cs_dot(cs_lnum_t         n,
  *   y   <-- array of floating-point values
  *
  * returns:
- *   dot product
+ *   global residual
  *----------------------------------------------------------------------------*/
 
 double
 cs_gres(cs_lnum_t         n,
-       const cs_real_t  *vol,
-       const cs_real_t  *x,
-       const cs_real_t  *y);
+        const cs_real_t  *vol,
+        const cs_real_t  *x,
+        const cs_real_t  *y);
 
 /*----------------------------------------------------------------------------
  * Return dot products of a vector with itself: x.x

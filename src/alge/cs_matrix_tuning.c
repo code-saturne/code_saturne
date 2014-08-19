@@ -110,9 +110,6 @@ BEGIN_C_DECLS
 #define IA64_OPTIM
 #endif
 
-/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
-#define THR_MIN 128
-
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
