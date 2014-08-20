@@ -149,7 +149,7 @@ integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
 integer          ipcvsl, iflmas, iflmab
-integer          ippvar, ipp   , ipcvso
+integer          ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -221,7 +221,6 @@ xk = 0.d0
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
-ippvar = ipprtp(ivar)
 
 ! --- Numero du scalaire eventuel associe dans le cas fluctuation
 !         et numero de variable de calcul
@@ -889,7 +888,6 @@ iswdyp = iswdyn(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-ipp    = ippvar
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -911,7 +909,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

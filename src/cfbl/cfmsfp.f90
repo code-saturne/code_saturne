@@ -108,7 +108,7 @@ double precision vela  (3  ,ncelet)
 
 integer          ivar
 integer          ifac  , iel, ischcp, idftnp, ircflp
-integer          init  , inc   , iccocg, ippu, isstpp
+integer          init  , inc   , iccocg, isstpp
 integer          nswrgp, imligp, iwarnp, iconvp, idiffp
 integer          icvflb, f_id0
 integer          isou  , jsou
@@ -249,7 +249,6 @@ if (itsqdm.ne.0) then
   extrap = extrag(iu)
   relaxp = relaxv(iu)
   thetap = thetav(iu)
-  ippu   = ipprtp(iu)
 
   itypfl = 1
 

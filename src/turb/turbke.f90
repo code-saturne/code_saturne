@@ -109,7 +109,7 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iflmas, iflmab
-integer          iwarnp, ipp
+integer          iwarnp
 integer          istprv
 integer          ipcvto, ipcvlo
 integer          iphydp, iprev
@@ -1122,7 +1122,6 @@ endif
 
 ! ---> turbulent kinetic (k) energy treatment
 ivar = ik
-ipp    = ipprtp(ivar)
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -1195,7 +1194,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
@@ -1209,7 +1208,6 @@ call codits &
 
 ! ---> Turbulent dissipation (epsilon) treatment
 ivar = iep
-ipp    = ipprtp(ivar)
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -1281,7 +1279,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

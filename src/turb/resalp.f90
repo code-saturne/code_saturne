@@ -76,7 +76,7 @@ double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 integer          ivar  , iel
 integer          ipcvlo
 integer          iflmas, iflmab
-integer          nswrgp, imligp, iwarnp, ipp
+integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -143,7 +143,6 @@ endif
 !===============================================================================
 
 ivar = ial
-ipp    = ipprtp(ivar)
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -261,7 +260,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

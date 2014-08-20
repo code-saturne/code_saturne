@@ -609,7 +609,7 @@ integer, intent(out)         :: ivar
 
 ! Local variables
 
-integer  id, ii
+integer  id, ii, ipp
 integer  type_flag, location_id
 logical  interleaved, has_previous
 
@@ -652,7 +652,7 @@ nvar = nvar + dim
 call fldvar_check_nvar
 
 ivarfl(ivar) = id
-ipprtp(ivar) = field_post_id(id)
+ipp = field_post_id(id)
 
 call field_set_key_int(id, keyvar, ivar)
 
@@ -660,7 +660,6 @@ if (dim .gt. 1) then
   call field_set_key_int(id, keycpl, 1)
   do ii = 2, dim
     ivarfl(ivar + ii - 1) = id
-    ipprtp(ivar + ii - 1) = ipprtp(ivar) -1 + ii
   enddo
 endif
 
@@ -731,7 +730,7 @@ implicit none
 ! Local variables
 
 integer  iscal, nfld1, nfld2
-integer  dim, id
+integer  dim, id, ipp
 logical  interleaved
 
 integer :: keyvar, keysca
@@ -785,7 +784,7 @@ do id = nfld1, nfld2 - 1
 
   isca(iscal) = nvar
   ivarfl(nvar) = id
-  ipprtp(nvar) = field_post_id(id)
+  ipp = field_post_id(id)
 
   call field_set_key_int(id, keyvar, nvar)
   call field_set_key_int(id, keysca, iscal)
@@ -845,7 +844,7 @@ integer, intent(out)         :: iscal
 
 ! Local variables
 
-integer  dim, id
+integer  dim, id, ipp
 integer  type_flag, location_id
 logical  interleaved, has_previous
 
@@ -894,7 +893,7 @@ call fldvar_check_nscapp
 isca(iscal) = nvar
 iscapp(nscapp) = iscal
 ivarfl(isca(iscal)) = id
-ipprtp(nvar) = field_post_id(id)
+ipp = field_post_id(id)
 
 call field_set_key_int(id, keyvar, nvar)
 call field_set_key_int(id, keysca, iscal)
@@ -977,7 +976,7 @@ integer, intent(out)         :: iscal
 
 ! Local variables
 
-integer  ivar, id, ii
+integer  ivar, id, ii, ipp
 integer  type_flag, location_id,  keycpl
 logical  interleaved, has_previous
 
@@ -1030,10 +1029,7 @@ do ii = 1, dim
   iscapp(nscapp - dim + ii) = iscal + ii - 1
 enddo
 
-ipprtp(isca(iscal)) = field_post_id(id)
-do ii = 2, dim
-  ipprtp(isca(iscal + ii - 1)) = ipprtp(isca(iscal) + ii - 1)
-enddo
+ipp = field_post_id(id)
 
 call field_set_key_int(id, keyvar, nvar)
 call field_set_key_int(id, keysca, iscal)

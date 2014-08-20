@@ -120,7 +120,7 @@ integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
 integer          ipcvsl, iflmas, iflmab
-integer          ippvar, ipp   , icvflb
+integer          icvflb
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -178,7 +178,6 @@ allocate(dpvar(ncelet))
 
 ! Computation number and post-treatment number of the scalar total energy
 ivar   = isca(iscal)
-ippvar = ipprtp(ivar)
 
 ! Physical property numbers
 call field_get_val_s(icrom, crom)
@@ -619,7 +618,6 @@ isstpp = isstpc(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-ipp    = ippvar
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -649,7 +647,7 @@ call codits                                                      &
 ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+  imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

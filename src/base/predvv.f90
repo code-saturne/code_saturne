@@ -180,7 +180,7 @@ double precision vela  (3  ,ncelet)
 
 integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl
 integer          iccocg, inc   , iprev , init  , ii    , jj    , isqrt
-integer          ireslp, nswrgp, imligp, iwarnp, ipp
+integer          ireslp, nswrgp, imligp, iwarnp
 integer          iswdyp, idftnp
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
@@ -188,7 +188,7 @@ integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iflmb0, nswrp
 integer          idtva0, icvflb
-integer          ippu  , ippv  , ippw  , jsou, ivisep
+integer          jsou, ivisep
 integer          ivoid(1)
 
 double precision rnorm , vitnor
@@ -1389,7 +1389,6 @@ do iel = 1, ncel
   enddo
 enddo
 
-ipp  = ipprtp(iu)
 ! The computation of esplicit and implicit source terms is performed
 ! at the first iter only.
 if (iterns.eq.1) then
@@ -1759,9 +1758,6 @@ climgp = climgr(iu)
 extrap = extrag(iu)
 relaxp = relaxv(iu)
 thetap = thetav(iu)
-ippu   = ipprtp(iu)
-ippv   = ipprtp(iv)
-ippw   = ipprtp(iw)
 
 if (ippmod(icompf).ge.0) then
   ! impose boundary convective flux at some faces (face indicator icvfli)
@@ -1784,7 +1780,7 @@ if (iappel.eq.1) then
  ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
+   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vela   , vela   ,                                              &
@@ -1804,7 +1800,7 @@ if (iappel.eq.1) then
  ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
+   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vela   , uvwk   ,                                              &
@@ -1850,7 +1846,7 @@ if (iappel.eq.1) then
  ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
+   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vect   , vect   ,                                              &
@@ -1896,10 +1892,6 @@ elseif (iappel.eq.2) then
   inc = 1
   ! Pas de relaxation en stationnaire
   idtva0 = 0
-
-  ippu  = ipprtp(iu)
-  ippv  = ipprtp(iv)
-  ippw  = ipprtp(iw)
 
   call bilscv &
   !==========

@@ -74,7 +74,7 @@ double precision propce(ncelet,*)
 
 character(len=80) :: chaine
 integer          iel   , isou  , jsou  , ifac
-integer          ipcvmx, ipcvmy, ipcvmz, ippu  , ippv  , ippw
+integer          ipcvmx, ipcvmy, ipcvmz
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
@@ -177,10 +177,6 @@ enddo
 ! 2. SOLVING OF THE MESH VELOCITY EQUATION
 !===============================================================================
 
-ippu = ipprtp(iuma)
-ippv = ipprtp(ivma)
-ippw = ipprtp(iwma)
-
 if (iwarni(iuma).ge.1) then
   call field_get_name(ivarfl(iuma), chaine)
   write(nfecra,1100) chaine(1:16)
@@ -245,7 +241,7 @@ call coditv &
  ( idtvar , iuma   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
+   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    mshvela         , mshvela         ,                            &

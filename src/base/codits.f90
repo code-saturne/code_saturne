@@ -123,7 +123,6 @@
 !>                               - 1 otherwise
 !> \param[in]     ncymxp        max. number of multigrid cycles
 !> \param[in]     nitmfp        number of equivalent iterations on fine mesh
-!> \param[in]     ipp           index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsilp        precision pour resol iter
@@ -190,7 +189,7 @@ subroutine codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp , iwarnp ,                            &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    pvara  , pvark  ,                                              &
@@ -217,6 +216,8 @@ use mltgrd
 use optcal, only: rlxp1
 use mesh
 use field
+use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 
@@ -229,7 +230,7 @@ integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
 integer          ischcp , isstpp , iescap , imgrp
 integer          ncymxp , nitmfp
-integer          ipp    , iwarnp
+integer          iwarnp
 integer          imucpp , idftnp , iswdyp , icvflb
 
 integer          icvfli(nfabor)
@@ -267,6 +268,8 @@ integer          insqrt
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
+
+type(solving_info) sinfo
 
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
@@ -531,7 +534,7 @@ do iel = 1, ncel
 enddo
 
 call prodsc(ncel,isqrt,w1,w1,rnorm)
-rnsmbr(ipp) = rnorm
+sinfo%rnsmbr = rnorm
 rnorm2 = rnorm**2
 
 ! Free memory
@@ -542,7 +545,7 @@ nswmod = max(nswrsp, 1)
 
 ! Reconstruction loop (beginning)
 !--------------------------------
-nbivar(ipp) = 0
+sinfo%nbivar = 0
 isweep = 1
 
 do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
@@ -728,7 +731,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   call prodsc(ncel , isqrt , smbrp , smbrp , residu)
 
   ! Writing
-  nbivar(ipp) = nbivar(ipp) + niterf
+  sinfo%nbivar = sinfo%nbivar + niterf
 
   ! Writing
   if (iwarnp.ge.2) then
@@ -745,9 +748,14 @@ enddo
 
 ! Writing: convergence
 if (abs(rnorm).gt.epzero) then
-  resvar(ipp) = residu/rnorm
+  sinfo%resvar = residu/rnorm
 else
-  resvar(ipp) = 0.d0
+  sinfo%resvar = 0.d0
+endif
+
+! Save convergence info
+if (ivar.gt.0) then
+  call field_set_key_struct_solving_info(ivarfl(ivar), sinfo)
 endif
 
 if (iwarnp.ge.1) then

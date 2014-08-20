@@ -1159,9 +1159,9 @@ else
 endif
 if (modntl.eq.0) then
 
-  call ecrlis                                                     &
+  call ecrlis &
   !==========
-  ( nvar   , ncelet , ncel   ,                                    &
+  ( ncelet , ncel   ,                                    &
     dt     , volume )
 
   call log_iteration

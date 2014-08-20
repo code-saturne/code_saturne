@@ -112,7 +112,6 @@ integer          iel   , ifac
 integer          ireslp
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
-integer          ipp
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp
 integer          ibsize
@@ -149,9 +148,6 @@ double precision, dimension(:), pointer :: crom
 
 ! Boundary conditions for delta P
 allocate(coefap(nfabor), cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
-
-! --- Prints
-ipp    = ipprtp(ipr)
 
 ! --- Physical properties
 call field_get_val_s(icrom, crom)
@@ -266,7 +262,6 @@ iswdyp = iswdyn(ivar)
 imgrp  = 0           ! we do not use multigrid
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-ipp    = ipprtp(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -286,7 +281,7 @@ call codits &
 ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+  imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   prhyd  , prhyd  ,                                              &

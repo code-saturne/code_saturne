@@ -82,6 +82,15 @@ module cs_c_bindings
 
   !---------------------------------------------------------------------------
 
+  type, bind(c)  :: solving_info
+    integer(c_int) :: nbivar
+    real(c_double) :: rnsmbr
+    real(c_double) :: resvar
+    real(c_double) :: dervar
+  end type solving_info
+
+  !---------------------------------------------------------------------------
+
   type, bind(c)  :: severe_acc_species_prop
     real(c_double) :: mol_mas
     real(c_double) :: cp
@@ -735,6 +744,47 @@ contains
 
   !=============================================================================
 
+  !> \brief Assign a solving_info for a cs_solving_info_t key to a field.
+
+  !> If the field category is not compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id     field id
+  !> \param[in]   k_value  structure associated with key
+
+  subroutine field_set_key_struct_solving_info (f_id, k_value)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)                    :: f_id
+    type(solving_info), intent(in), target :: k_value
+
+    ! Local variables
+
+    integer(c_int)                   :: c_f_id, c_k_id
+    type(solving_info), pointer      :: p_k_value
+    type(c_ptr)                      :: c_k_value
+    character(len=12+1, kind=c_char) :: c_name
+
+    c_name = "solving_info"//c_null_char
+    c_k_id = cs_f_field_key_id_try(c_name)
+
+    c_f_id = f_id
+
+    p_k_value => k_value
+    c_k_value = c_loc(p_k_value)
+
+    call cs_f_field_set_key_struct(c_f_id, c_k_id, c_k_value)
+
+    return
+
+  end subroutine field_set_key_struct_solving_info
+
+
+  !=============================================================================
+
   !> \brief Assign a severe_acc_species_prop for a cs_severe_acc_species_prop_t key to a field.
 
   !> If the field category is not compatible, a fatal error is provoked.
@@ -813,6 +863,48 @@ contains
     return
 
   end subroutine field_get_key_struct_var_cal_opt
+
+  !=============================================================================
+
+  !> \brief Return a pointer to the solving_info structure for
+  !>        cs_solving_info_t key associated with a field.
+
+  !> If the field category is not compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id     field id
+  !> \param[out]  k_value  integer value associated with key id for this field
+
+  subroutine field_get_key_struct_solving_info (f_id, k_value)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)                       :: f_id
+    type(solving_info), intent(inout), target :: k_value
+
+    ! Local variables
+
+    integer(c_int)                   :: c_f_id, c_k_id
+    type(solving_info), pointer      :: p_k_value
+    type(c_ptr)                      :: c_k_value
+    character(len=12+1, kind=c_char) :: c_name
+
+    c_name = "solving_info"//c_null_char
+    c_k_id = cs_f_field_key_id_try(c_name)
+
+    c_f_id = f_id
+
+    p_k_value => k_value
+    c_k_value = c_loc(p_k_value)
+
+    call cs_f_field_get_key_struct(c_f_id, c_k_id, c_k_value)
+
+    return
+
+  end subroutine field_get_key_struct_solving_info
+
 
   !=============================================================================
 

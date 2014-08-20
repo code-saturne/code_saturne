@@ -331,8 +331,6 @@ module entsor
   character(len=80), save :: nomva0
 
   !> locator pointer for variables output
-  integer, save :: ipprtp(nvarmx)
-  !> locator pointer for variables output
   integer, save :: ipppro(npromx)
   !> locator pointer for variables output
   integer, save :: ippdt
@@ -353,23 +351,6 @@ module entsor
   !> (problems with disk space, memory problems while opening the file with a
   !> text editor, problems finding the desired information in the file, ...).
   integer, save :: ntlist
-
-  !> \defgroup convergence Convergence information
-
-  !> \addtogroup convergence
-  !> \{
-
-  !> number of iterations
-  integer, save :: nbivar(nvppmx)
-  !> right-hand-side norm
-  double precision, save :: rnsmbr(nvppmx)
-  !> normed residual
-  double precision, save :: resvar(nvppmx)
-  !> norm of drift in time
-  double precision, save :: dervar(nvppmx)
-
-  !> \}
-  !> \}
 
   !> \defgroup other_output Boundary post-processing
 

@@ -145,7 +145,7 @@ integer          iconv1, idiff1, ndirc1, ireso1
 integer          nitmap, nswrsp, nswrgp, iwarnp
 integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
 integer          ncymap, nitmgp
-integer          idir  , kdir  , ipp   , inum
+integer          idir  , kdir
 integer          ii, jj, kk, idtva0, ivar0
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
@@ -286,7 +286,6 @@ enddo
 !      la possibilite d'imprimer dans le listing, on utilise
 !      la position numero 1 qui est une poubelle.
 
-ipp  = 1
 nomva0 = 'RayonXXX'
 
 !===============================================================================
@@ -313,7 +312,6 @@ do ii = -1,1,2
 
         cnom = ' '
         write(cnom,'(a5,i3.3)')'Rayon',kdir
-        inum = ipp
         nomva0 = cnom
 
 !===============================================================================
@@ -379,7 +377,7 @@ do ii = -1,1,2
  ( idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
+   imgr1  , ncymap , nitmgp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rua    , ru     ,                                              &

@@ -105,7 +105,7 @@ double precision disty(ncelet)
 integer          idtva0, ivar  , f_id  , iconvp, idiffp
 integer          ndircp, ireslp
 integer          iescap, iflmb0, itypfl
-integer          ncymxp, nitmfp, ipp
+integer          ncymxp, nitmfp
 integer          ifac  , iel   , init
 integer          inc   , iccocg, isym  , isweep, infpar
 integer          imucpp, idftnp, iswdyp, icvflb
@@ -523,8 +523,6 @@ do isweep = 1, ntcmxy
   iswdyp = 0
   ncymxp = 100
   nitmfp = 10
-  ! La case 1 est une poubelle
-  ipp    = 1
   nomva0 = 'YplusPar'
   ! Ordre 1 en temps (etat stationnaire cherche)
   thetap = 1.d0
@@ -541,7 +539,7 @@ do isweep = 1, ntcmxy
  ( idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrpy , ncymxp , nitmfp , ipp    , iwarny ,                   &
+   imgrpy , ncymxp , nitmfp , iwarny ,                            &
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
    rtpdp  , rtpdp  ,                                              &

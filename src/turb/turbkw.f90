@@ -109,7 +109,7 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iflmas, iflmab
-integer          iwarnp, ipp
+integer          iwarnp
 integer          istprv
 integer          ipcvto, ipcvlo
 integer          imucpp, idftnp, iswdyp
@@ -921,8 +921,6 @@ endif
 ! ---> turbulent kinetic (k) energy treatment
 ivar = ik
 
-ipp    = ipprtp(ivar)
-
 ! Face viscosity
 if (idiff(ivar).ge. 1) then
 
@@ -985,7 +983,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
@@ -999,8 +997,6 @@ call codits &
 
 ! ---> Omega treatment
 ivar = iomg
-
-ipp    = ipprtp(ivar)
 
 ! Face viscosity
 if (idiff(ivar).ge. 1) then
@@ -1063,7 +1059,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

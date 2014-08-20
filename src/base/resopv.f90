@@ -124,6 +124,7 @@ use field
 use field_operator
 use cavitation
 use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 
@@ -164,7 +165,6 @@ integer          isweep, niterf, icycle
 integer          iflmb0, ifcsor
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
-integer          ipp
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe, indhyd
@@ -191,6 +191,8 @@ double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
 double precision cfl, kpdc, rho, pimp, bpmasf
+
+type(solving_info) sinfo
 
 double precision rvoid(1)
 
@@ -251,7 +253,6 @@ if (idften(ipr).eq.6)  vitenp => tpucou(:,:)
 ! --- Writing
 call field_get_name(ivarfl(ipr), chaine)
 lchain = 16
-ipp    = ipprtp(ipr)
 
 f_id0 = -1
 
@@ -461,16 +462,14 @@ if(irnpnw.ne.1) then
   if(iwarni(ipr).ge.2) then
     write(nfecra,1300)chaine(1:16) ,rnormp
   endif
-  dervar(ipp) = rnormp
-  nbivar(ipp) = 0
+  sinfo%nbivar = 0
 
 else
 
   if(iwarni(ipr).ge.2) then
     write(nfecra,1300)chaine(1:16) ,rnormp
   endif
-  dervar(ipp) = rnormp
-  nbivar(ipp) = 0
+  sinfo%nbivar = 0
 
 endif
 
@@ -1420,7 +1419,14 @@ enddo
 ! --- Right hand side residual
 call prodsc(ncel,isqrt,rhs,rhs,residu)
 
-rnsmbr(ipp) = residu
+sinfo%rnsmbr = residu
+
+! Pressure derive for the log
+if (rnormp.lt.epzero) then
+  sinfo%dervar = - sinfo%rnsmbr
+else
+  sinfo%dervar = sinfo%rnsmbr/rnormp
+endif
 
 isweep = 1
 
@@ -1728,7 +1734,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   call prodsc(ncel,isqrt,rhs,rhs,residu)
 
   ! Writing
-  nbivar(ipp) = nbivar(ipp) + niterf
+  sinfo%nbivar = sinfo%nbivar + niterf
 
   ! Writing
   if (iwarni(ipr).ge.2) then
@@ -1737,9 +1743,9 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   endif
 
   if (abs(rnormp).gt.0.d0) then
-    resvar(ipp) = residu/rnormp
+    sinfo%resvar = residu/rnormp
   else
-    resvar(ipp) = 0.d0
+    sinfo%resvar = 0.d0
   endif
 
   isweep = isweep + 1
@@ -1757,6 +1763,9 @@ if(iwarni(ipr).ge.1) then
     write(nfecra,1600) chaine(1:16),nswmpr
   endif
 endif
+
+! Save convergence info
+call field_set_key_struct_solving_info(ivarfl(ipr), sinfo)
 
 ! --- Compute the indicator, taken the volume into account (L2 norm)
 !     or not
@@ -2052,7 +2061,6 @@ if (idilat.eq.4) then
   isstpp = isstpc(ivar)
   inc    = 1
   iccocg = 1
-  ipp    = ipprtp(ivar)
   iwarnp = iwarni(ivar)
   imucpp = 0
   idftnp = idften(ivar)
@@ -2107,7 +2115,6 @@ if (idilat.eq.4) then
   imgrp  = 0
   ncymxp = ncymax(ivar)
   nitmfp = nitmgf(ivar)
-  ipp    = ipprtp(ivar)
   iwarnp = iwarni(ivar)
   blencp = blencv(ivar)
   epsilp = epsilo(ivar)
@@ -2127,7 +2134,7 @@ if (idilat.eq.4) then
    ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-     imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+     imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
      drtp   , drtp   ,                                              &

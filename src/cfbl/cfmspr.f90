@@ -112,7 +112,7 @@ integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt , ii, jj
 integer          iflmas, iflmab
-integer          ippvar, ipp   , iphydp, icvflb
+integer          iphydp, icvflb
 integer          nswrgp, imligp, iwarnp
 integer          istatp, iconvp, idiffp, ireslp, ndircp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -166,7 +166,6 @@ allocate(dpvar(ncelet))
 ! --- Number of computational variable and post for pressure
 
 ivar   = ipr
-ippvar = ipprtp(ivar)
 
 ! --- Mass flux associated to energy
 call field_get_key_int(ivarfl(isca(ienerg)), kimasf, iflmas)
@@ -322,7 +321,6 @@ iswdyp = iswdyn(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
 nitmfp = nitmgf(ivar)
-ipp    = ippvar
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -339,7 +337,7 @@ call codits                                                                     
 ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap ,                &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                                  &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                         &
-  imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                                  &
+  imgrp  , ncymxp , nitmfp ,          iwarnp ,                                  &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                         &
   relaxp , thetv  ,                                                             &
   rtpa(1,ivar)    , rtpa(1,ivar)    ,                                           &

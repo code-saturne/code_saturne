@@ -1229,7 +1229,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     const cs_field_t *f = cs_field_by_id(f_id);
     const int ipp = cs_field_get_key_int(f, k_post);
-    bft_printf("-->variable ipprtp[%i] = %s\n", ipp, f->name);
+    bft_printf("-->variable post_id[%i] = %s\n", ipp, f->name);
     bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
       for (j=0; j<ihisvr[0 + (ipp-1)]; j++)

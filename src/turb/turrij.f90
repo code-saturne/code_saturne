@@ -105,7 +105,7 @@ double precision, dimension(:), pointer :: bromo, cromo
 
 integer          ifac  , iel   , ivar  , isou  , ii
 integer          inc   , iccocg
-integer          ipp   , iwarnp, iclip
+integer          iwarnp, iclip
 integer          nswrgp, imligp
 integer          iivar
 integer          iitsla
@@ -344,7 +344,6 @@ do isou = 1, 6
   elseif(isou.eq.6) then
     ivar   = ir23
   endif
-  ipp    = ipprtp(ivar)
 
   if (iilagr.eq.2) then
     iitsla = itsr11 + (isou-1)
@@ -357,7 +356,7 @@ do isou = 1, 6
     call resrij &
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   , isou   , ipp    ,                                     &
+   ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   ,                                     &
    produc , gradro ,                                              &
@@ -372,7 +371,7 @@ do isou = 1, 6
     call resssg &
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   , isou   , ipp    ,                                     &
+   ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   ,                                     &
    gradv  , gradro ,                                              &
@@ -389,12 +388,11 @@ enddo
 !===============================================================================
 
 ivar   = iep
-ipp    = ipprtp(ivar)
 
 call reseps &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   , ipp    ,                                              &
+   ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   ,                                     &
    gradv  , produc , gradro ,                                     &

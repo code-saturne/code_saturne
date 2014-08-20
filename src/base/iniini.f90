@@ -316,9 +316,6 @@ enddo
 !     NTLIST : periode d'ecriture
 !       ( -1 : dernier pas de temps : > 0 : periode)
 
-do ii = 1, nvarmx
-  ipprtp(ii) = 1
-enddo
 do ii = 1, npromx
   ipppro(ii) = 1
 enddo
@@ -328,17 +325,6 @@ ippty        = 1
 ipptz        = 1
 
 ntlist = 1
-
-!   PARAMETRES DE CONVERGENCE, NORME DU SECOND MEMBRE, NOMBRE ITERATIONS
-!                                RESIDU NORME, DERIVE
-do ii = 1, nvppmx
-  nbivar(ii) = 0
-enddo
-do ii = 1, nvppmx
-  rnsmbr(ii) = 0.d0
-  resvar(ii) = 0.d0
-  dervar(ii) = 0.d0
-enddo
 
 ! ---> Post traitement automatique (bord)
 

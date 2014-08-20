@@ -83,7 +83,6 @@ double precision scandd(ncelet)
 
 integer          ivar, iel, iflid
 integer          iclmax, iclmin, iiscav
-integer          ippvar
 integer          kscmin, kscmax, f_id
 double precision vmin(1), vmax(1), vfmin, vfmax
 double precision scmax, scmin
@@ -98,7 +97,6 @@ double precision scmaxp, scminp
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
 iflid  = ivarfl(ivar)
-ippvar = ipprtp(ivar)
 
 ! --- Numero du scalaire eventuel associe dans le cas fluctuation
 iiscav = iscavr(iscal)

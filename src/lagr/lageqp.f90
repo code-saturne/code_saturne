@@ -81,7 +81,6 @@ double precision phi(ncelet), alphal(ncelet)
 character(len=80) :: chaine
 integer          idtva0, ivar
 integer          ifac, iel
-integer          ipp
 integer          nswrgp, imligp, iwarnp , iescap
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp
@@ -277,7 +276,6 @@ iescap = 0
 ! all boundary convective flux with upwind
 icvflb = 0
 
-ipp  = 1
 nomva0 = 'PoissonL'
 
 !  IVAR = 0 (indique pour la periodicite de rotation que la variable
@@ -304,7 +302,7 @@ call codits &
  ( idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    phia   , phia   , coefap , coefbp ,                            &

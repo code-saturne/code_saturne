@@ -74,6 +74,21 @@ typedef struct {
   double  relaxv;
 } cs_var_cal_opt_t;
 
+/*----------------------------------------------------------------------------
+ * Structure of the solving info
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  int     n_it;
+  double  rhs_norm;
+  double  res_norm;
+  double  derive;
+} cs_solving_info_t;
+
+/*----------------------------------------------------------------------------
+ * Structure of condensation modelling physical properties
+ *----------------------------------------------------------------------------*/
+
 typedef struct {
   double  mol_mas;
   double  cp;

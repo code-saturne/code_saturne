@@ -23,7 +23,7 @@
 subroutine ecrlis &
 !================
 
- ( nvar   , ncelet , ncel   ,                                     &
+ ( ncelet , ncel   ,                                     &
    dt     , volume )
 
 !===============================================================================
@@ -37,7 +37,6 @@ subroutine ecrlis &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! e  ! <-- ! nombre de variables                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! dt   (ncelet)    ! tr ! <-- ! valeur du pas de temps                         !
@@ -67,93 +66,34 @@ use ppppar
 use ppthch
 use ppincl
 use field
+use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 
 implicit none
 
-integer          nvar, ncelet, ncel
+integer          ncelet, ncel
 double precision dt(ncelet), volume(ncelet)
 
 ! Local variables
 
 integer          ic, icel, ivar, ipp, f_id, f_id_prv, c_id, f_dim
-integer          ippf, kval
+integer          ippf, kval, nfld, f_type
 logical          interleaved
-character(len=200) :: chain, chainc
+character(len=200) :: chain, chainc, flabel,fname
+
+double precision dervar(9)
 
 double precision, dimension(:), pointer :: field_s_v, field_s_vp
 double precision, dimension(:,:), pointer :: field_v_v, field_v_vp
 
-integer, save :: keypp = -1
+type(solving_info) sinfo
 
 !===============================================================================
 
-if (keypp.lt.0) then
-  call field_get_key_id("post_id", keypp)
-endif
-
-f_id = -1
-c_id = 1
-
-do ivar = 1, nvar
-  if (ivar.eq.ipr.and.ippmod(icompf).lt.0) cycle
-
-  f_id_prv = f_id
-  f_id = ivarfl(ivar)
-  if (f_id.eq.f_id_prv) then
-    c_id = c_id + 1
-  else
-    c_id = 1
-  endif
-  call field_get_key_int(f_id, keypp, ippf)
-  if (ippf.le.1) cycle
-
-  call field_get_dim(f_id, f_dim, interleaved)
-  if (f_dim.gt.1) then
-    call field_get_val_v(f_id, field_v_v)
-    call field_get_val_prev_v(f_id, field_v_vp)
-  else if (f_dim.eq.1) then
-    call field_get_val_s(f_id, field_s_v)
-    call field_get_val_prev_s(f_id, field_s_vp)
-  endif
-
-  if (f_dim.gt.1) then
-    call field_get_key_int(f_id, keylog, kval)
-    if (kval.gt.0) then
-      call field_get_key_int(f_id, keypp, ipp)
-      dervar(ipp) = 0.d0
-      do icel = 1, ncel
-        dervar(ipp) = dervar(ipp)                                            &
-                + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2          &
-                *  volume(icel)/dt(icel)
-      enddo
-      if (irangp.ge.0) call parsom (dervar(ipp))
-      dervar(ipp) = dervar(ipp) / voltot
-    endif
-  else if (f_dim.eq.1) then
-    call field_get_key_int(f_id, keylog, kval)
-    if (kval.gt.0) then
-      call field_get_key_int(f_id, keypp, ipp)
-      dervar(ipp) = 0.d0
-      do icel = 1, ncel
-        dervar(ipp) = dervar(ipp)                                            &
-                + (field_s_v(icel) - field_s_vp(icel))**2                    &
-                *  volume(icel)/dt(icel)
-      enddo
-      if (irangp.ge.0) call parsom (dervar(ipp))
-      dervar(ipp) = dervar(ipp) / voltot
-    endif
-  endif
-enddo
-
-if (ippmod(icompf).lt.0) then
-  ipp = ipprtp(ipr)
-  if (dervar(ipp).lt.epzero) then
-    dervar(ipp) = -1.d0
-  endif
-  dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
-endif
+! Number of fields
+call field_get_n_fields(nfld)
 
 !===============================================================================
 ! 2. ECRITURE DES CRITERES DE CONVERGENCE
@@ -164,56 +104,176 @@ write(nfecra,1010)
 write(nfecra,1011)
 write(nfecra,1010)
 
-f_id = -1
-c_id = 1
 
-do ivar = 1, nvar
+do f_id = 0, nfld - 1
 
-  ipp = ipprtp(ivar)
+  call field_get_type(f_id, f_type)
+  call field_get_key_int(f_id, keylog, kval)
 
-  f_id_prv = f_id
-  f_id = ivarfl(ivar)
-  if (f_id.eq.f_id_prv) then
-    c_id = c_id + 1
-  else
-    c_id = 1
-  endif
-
-  call field_get_key_int(ivarfl(ivar), keylog, kval)
-  if (kval.gt.0) then
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE    &
+     .and.kval.gt.0) then
     chainc = 'c'
     chain = ' '
     ic = 4
     call field_get_dim (f_id, f_dim, interleaved)
-    call field_get_label(f_id, chain)
-    if (f_dim.gt.1) then
-      if (c_id.eq.1) then
-        chain = trim(chain) // 'X'
-      else if (c_id.eq.2) then
-        chain = trim(chain) // 'Y'
-      else if (c_id.eq.3) then
-        chain = trim(chain) // 'Z'
-      endif
-    endif
-    chainc(ic:ic+12) = chain(1:12)
+    call field_get_label(f_id, flabel)
+    call field_get_name(f_id, fname)
+
+    chainc(ic:ic+12) = flabel(1:12)
     ic=ic+12
     chain = ' '
-    write(chain,3000) rnsmbr(ipp)
+    call field_get_key_struct_solving_info(f_id, sinfo)
+    write(chain,3000) sinfo%rnsmbr
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+13
     chain = ' '
-    write(chain,4000) nbivar(ipp)
+    write(chain,4000) sinfo%nbivar
     chainc(ic:ic+7) = chain(1:7)
     ic=ic+9
     chain = ' '
-    write(chain,3000) resvar(ipp)
+    write(chain,3000) sinfo%resvar
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+14
     chain = ' '
-    write(chain,3000) dervar(ipp)
+
+    ! Scalar derive (except pressure)
+    if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
+      call field_get_val_s(f_id, field_s_v)
+      call field_get_val_prev_s(f_id, field_s_vp)
+      dervar(1) = 0.d0
+      do icel = 1, ncel
+        dervar(1) = dervar(1)                                            &
+                  + (field_s_v(icel) - field_s_vp(icel))**2              &
+                  *  volume(icel)/dt(icel)
+      enddo
+      if (irangp.ge.0) call parsom (dervar(1))
+      dervar(1) = dervar(1) / voltot
+
+    ! Pressure derive (computed in resopv.f90)
+    else if (f_dim.eq.1) then
+      dervar(1) = sinfo%dervar
+
+    ! Vector or tensor derive (total derive)
+    else
+      call field_get_val_v(f_id, field_v_v)
+      call field_get_val_prev_v(f_id, field_v_vp)
+
+      ! Compute the derive
+      dervar(1) = 0.d0
+
+      do icel = 1, ncel
+
+        ! Loop over the components
+        do c_id = 1, f_dim
+          dervar(1) = dervar(1)                                         &
+                    + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2 &
+                    *  volume(icel)/dt(icel)
+        enddo
+      enddo
+
+      if (irangp.ge.0) call parsom (dervar(1))
+      dervar(1) = dervar(1) / voltot
+
+    endif
+
+    write(chain,3000) dervar(1)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
     write(nfecra,'(a)') chainc(1:ic)
+
+    ! Vector or tensor derive (by component)
+    if (f_dim.gt.1) then
+      call field_get_val_v(f_id, field_v_v)
+      call field_get_val_prev_v(f_id, field_v_vp)
+
+      ! Loop over the components
+      do c_id = 1, f_dim
+
+        ! Compute the derive
+        dervar(c_id) = 0.d0
+        do icel = 1, ncel
+          dervar(c_id) = dervar(c_id)                                      &
+                       + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2 &
+                       *  volume(icel)/dt(icel)
+        enddo
+        if (irangp.ge.0) call parsom (dervar(c_id))
+        dervar(c_id) = dervar(c_id) / voltot
+
+        chainc = 'c'
+        chain = ' '
+        ic = 4
+
+        ! Vectors
+        if (f_dim.eq.3) then
+          if (c_id.eq.1) then
+            chain = trim(flabel) // '[X]'
+          else if (c_id.eq.2) then
+            chain = trim(flabel) // '[Y]'
+          else if (c_id.eq.3) then
+            chain = trim(flabel) // '[Z]'
+          endif
+        endif
+
+        ! Symmetric tensors
+        if (f_dim.eq.6) then
+          if (c_id.eq.1) then
+            chain = trim(flabel) // '[XX]'
+          else if (c_id.eq.2) then
+            chain = trim(flabel) // '[YY]'
+          else if (c_id.eq.3) then
+            chain = trim(flabel) // '[ZZ]'
+          else if (c_id.eq.4) then
+            chain = trim(flabel) // '[XY]'
+          else if (c_id.eq.5) then
+            chain = trim(flabel) // '[YZ]'
+          else if (c_id.eq.6) then
+            chain = trim(flabel) // '[XZ]'
+          endif
+        endif
+
+        ! Tensors
+        if (f_dim.eq.9) then
+          if (c_id.eq.1) then
+            chain = trim(flabel) // '[XX]'
+          else if (c_id.eq.2) then
+            chain = trim(flabel) // '[XY]'
+          else if (c_id.eq.3) then
+            chain = trim(flabel) // '[XZ]'
+          else if (c_id.eq.4) then
+            chain = trim(flabel) // '[YX]'
+          else if (c_id.eq.5) then
+            chain = trim(flabel) // '[YY]'
+          else if (c_id.eq.6) then
+            chain = trim(flabel) // '[YZ]'
+          else if (c_id.eq.7) then
+            chain = trim(flabel) // '[ZX]'
+          else if (c_id.eq.8) then
+            chain = trim(flabel) // '[ZY]'
+          else if (c_id.eq.9) then
+            chain = trim(flabel) // '[ZZ]'
+          endif
+        endif
+
+        chainc(ic:ic+12) = chain(1:12)
+        ic=ic+12
+        chainc(ic:ic+12) = ' '
+        ic=ic+13
+        chainc(ic:ic+7) = ' '
+        ic=ic+9
+        chainc(ic:ic+12) = ' '
+        ic=ic+14
+        chain = ' '
+        write(chain,3000) dervar(c_id)
+        chainc(ic:ic+12) = chain(1:12)
+        ic=ic+12
+
+        ! Print the derive of the component
+        write(nfecra,'(a)') chainc(1:ic)
+
+      enddo
+    endif
+
   endif
 
 enddo

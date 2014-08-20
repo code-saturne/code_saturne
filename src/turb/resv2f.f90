@@ -41,7 +41,6 @@
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in,out] ivar          variable number
 !> \param[in]     isou          passage number
-!> \param[in,out] ipp           variable number for the post output
 !> \param[in]     icepdc        number of ncepdp cells with head losses
 !> \param[in]     icetsm        number of cells with mass source
 !> \param[in]     itypsm        type of masss source for the
@@ -102,7 +101,7 @@ double precision prdv2f(ncelet)
 ! Local variables
 
 integer          init  , ifac  , iel   , inc   , iprev , iccocg
-integer          ivar, ipp
+integer          ivar
 integer          iiun
 integer          ipcvlo, ipcvso
 integer          iflmas, iflmab
@@ -245,7 +244,6 @@ if (iturb.eq.50) then
 elseif (iturb.eq.51) then
   ivar = ial
 endif
-ipp    = ipprtp(ivar)
 
 if (iwarni(ivar).ge.1) then
   call field_get_label(ivarfl(ivar), label)
@@ -506,7 +504,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
@@ -523,7 +521,6 @@ call codits &
 !===============================================================================
 
 ivar = iphi
-ipp  = ipprtp(ivar)
 
 if (iwarni(ivar).ge.1) then
   call field_get_label(ivarfl(ivar), label)
@@ -827,7 +824,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

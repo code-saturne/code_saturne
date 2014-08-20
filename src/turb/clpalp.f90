@@ -78,7 +78,7 @@ double precision rtp(ncelet,nflown:nvar)
 
 ! VARIABLES LOCALES
 
-integer          iel, ivar, ipp
+integer          iel, ivar
 integer          iclpmn, iclpmx
 double precision vmin(1), vmax(1), var
 
@@ -93,7 +93,6 @@ double precision, dimension(:), pointer :: cvar_al
 call field_get_val_s(ivarfl(ial), cvar_al)
 
 ivar = ial
-ipp = ipprtp(ivar)
 
 vmin(1) =  grand
 vmax(1) = -grand

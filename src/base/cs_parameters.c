@@ -206,6 +206,15 @@ int                      _n_user_properties = 0;
 cs_user_variable_def_t  *_user_variable_defs = NULL;
 cs_user_property_def_t  *_user_property_defs = NULL;
 
+static cs_solving_info_t _solving_info =
+{
+  0,     /* n_it: number of iterations for the linear solver */
+  0.,    /* rhs_norm: right hand side norm                   */
+  0.,    /* res_norm: normed residual                        */
+  0.,    /* derive: norm of the time derivative              */
+};
+
+
 static cs_severe_acc_species_prop_t _severe_acc_species_prop =
 {
   -1.,   /* molar mass             */
@@ -273,15 +282,27 @@ _log_func_var_opt_cal(const void *t)
 }
 
 static void
+_log_func_solving_info(const void *t)
+{
+  const char fmt_i[] = N_("      %-19s  %-4d\n");
+  const char fmt_r[] = N_("      %-19s  %-12.3g\n");
+  const cs_solving_info_t *_t = (const void *)t;
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "n_it", _t->n_it);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "rhs_norm", _t->rhs_norm);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "res_norm", _t->res_norm);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "derive", _t->derive);
+}
+
+static void
 _log_func_severe_acc_species_prop(const void *t)
 {
   const char fmt[] = N_("      %-23s  %-12.3g\n");
   const cs_severe_acc_species_prop_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "molar mass             ", _t->mol_mas);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "specific heat          ", _t->cp);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "volume diffusion       ", _t->vol_dif);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity a    ", _t->mu_a);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity b    ", _t->mu_b);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "molar mass            ", _t->mol_mas);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "specific heat         ", _t->cp);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "volume diffusion      ", _t->vol_dif);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity a   ", _t->mu_a);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity b   ", _t->mu_b);
   cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity a", _t->lambda_a);
   cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity b", _t->lambda_b);
 }
@@ -387,10 +408,18 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
 
 
+  /* Structure containing the calculation options of the field variables */
   cs_field_define_key_struct("var_cal_opt",
                              &_var_cal_opt,
                              _log_func_var_opt_cal,
                              sizeof(cs_var_cal_opt_t),
+                             CS_FIELD_VARIABLE);
+
+  /* Structure containing the solving info of the field variables */
+  cs_field_define_key_struct("solving_info",
+                             &_solving_info,
+                             _log_func_solving_info,
+                             sizeof(cs_solving_info_t),
                              CS_FIELD_VARIABLE);
 
   /* Structure containing physical properties relative to

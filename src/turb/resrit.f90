@@ -87,7 +87,6 @@ double precision gradt(ncelet,3)
 
 integer          iel
 integer          ii, ivar
-integer          ipput, ippvt, ippwt
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
@@ -175,10 +174,9 @@ endif
 call field_get_val_v(ivsten, visten)
 
 ivar = isca(iscal)
-ipput = ipprtp(ivar)
 if (iwarni(ivar).ge.1) then
-  call field_get_label(ivarfl(ipput), name)
-  write(nfecra,1000) trim(name)//'_turbulent_flux'!FIXME
+  call field_get_name(ivarfl(ivar), name)
+  write(nfecra,1000) trim(name)//'_turbulent_flux'
 endif
 
 ! S pour Source, V pour Variable
@@ -393,10 +391,6 @@ epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
 relaxp = relaxv(ivar)
 
-ipput = ipprtp(ivar)!FIXME
-ippvt = ipprtp(ivar)
-ippwt = ipprtp(ivar)
-
 ! We do not take into account transpose of grad
 ivisep = 0
 
@@ -408,7 +402,7 @@ call coditv &
 (idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
  ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
- imgrp  , ncymxp , nitmfp , ipput  , ippvt  , ippwt  , iwarnp , &
+ imgrp  , ncymxp , nitmfp ,                            iwarnp , &
  blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
  relaxp , thetv  ,                                              &
  xuta   , xuta   ,                                              &

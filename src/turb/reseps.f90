@@ -41,7 +41,6 @@
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
-!> \param[in]     ipp           index for writing
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
@@ -66,7 +65,7 @@
 
 subroutine reseps &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   , ipp    ,                                              &
+   ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   ,                                     &
    gradv  , produc , gradro ,                                     &
@@ -103,7 +102,7 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          ivar   , ipp
+integer          ivar
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -538,7 +537,7 @@ call codits &
  ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

@@ -129,7 +129,6 @@ integer          iconv1, idiff1, ndirc1, ireso1
 integer          nitmap, nswrsp, nswrgp, iwarnp
 integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
 integer          ncymap, nitmgp
-integer          inum
 integer          idtva0, ivar0
 integer          inc, iccocg
 integer          imucpp, idftnp, iswdyp, icvflb
@@ -239,7 +238,6 @@ idtva0 = 0
 
 cnom = ' '
 write(cnom,'(A)') 'Rayon P1'
-inum = 1
 nomva0 = cnom
 
 call codits &
@@ -247,7 +245,7 @@ call codits &
  ( idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
+   imgr1  , ncymap , nitmgp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    thetaa , thetaa , coefap , coefbp , cofafp , cofbfp ,          &

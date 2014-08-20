@@ -72,7 +72,7 @@ integer          iwaphi
 
 ! Local variables
 
-integer          iel, ipp
+integer          iel
 integer          nclpmx, nclpmn
 double precision xphi, xal, vmin(1), vmax(1), var
 
@@ -92,8 +92,6 @@ if (iturb.eq.51) call field_get_val_s(ivarfl(ial), cvar_al)
 !===============================================================================
 !     1.a Stockage Min et Max pour listing
 !===============================================================================
-
-ipp = ipprtp(iphi)
 
 vmin(1) =  grand
 vmax(1) = -grand
@@ -142,8 +140,6 @@ if (iturb.eq.51) then
 !===============================================================================
 !     2.a Stockage Min et Max pour listing
 !===============================================================================
-
-  ipp = ipprtp(ial)
 
   vmin(1) =  grand
   vmax(1) = -grand
