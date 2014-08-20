@@ -292,18 +292,15 @@ enddo
 
 ! --> Calculation of the surfaces of the Lagrangian boundary zones
 
-nrangp = irangp
-
 if (irangp.ge.0) then
-   nrangp = irangp
-   call parcmx(nrangp)
+
    allocate(surflag(nflagm))
-   allocate(surlgrg(nflagm, nrangp + 1))
-   allocate(ninjrg(nrangp  + 1))
+   allocate(surlgrg(nflagm, nrangp))
+   allocate(ninjrg(nrangp))
 
    do kk = 1, nflagm
       surflag(kk) = 0.d0
-      do jj = 1, nrangp + 1
+      do jj = 1, nrangp
          surlgrg(kk,jj) = 0.d0
       enddo
    enddo
@@ -322,7 +319,7 @@ if (irangp.ge.0) then
 
    do kk = 1, nflagm
       call parsom(surflag(kk))
-      do jj = 1, nrangp + 1
+      do jj = 1, nrangp
          call parsom(surlgrg(kk, jj))
       enddo
    enddo
@@ -879,11 +876,11 @@ do ii = 1,nfrtot
 
           ! Calcul sur le rang 0 du nombre de particules à injecter pour chaque rang
           ! base sur la surface relative de chaque zone d'injection presente sur
-          ! chaque rang --> remplissage du tableau ninjrg(nrangp+1)
+          ! chaque rang --> remplissage du tableau ninjrg(nrangp)
 
             if (irangp.eq.0) then
 
-               do irp = 1, nrangp + 1
+               do irp = 1, nrangp
                   ninjrg(irp) = 0
                enddo
 
@@ -906,7 +903,7 @@ do ii = 1,nfrtot
 
             ! Broadcast a tous les rangs
             if (irangp.ge.0) then
-               call parbci(0, nrangp + 1, ninjrg)
+               call parbci(0, nrangp, ninjrg)
             endif
 
             ! Fin du calcul du nombre de particules à injecter
