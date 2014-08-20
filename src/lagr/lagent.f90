@@ -168,7 +168,7 @@ integer, allocatable, dimension(:) :: ilftot
 double precision, dimension(:,:), pointer :: vela
 
 double precision unif(1), offset, rapsurf
-integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
+integer irp, ipart, jj, kk, nfrtot, nlocnew
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -296,7 +296,7 @@ nrangp = irangp
 
 if (irangp.ge.0) then
    nrangp = irangp
-   call parmax(nrangp)
+   call parcmx(nrangp)
    allocate(surflag(nflagm))
    allocate(surlgrg(nflagm, nrangp + 1))
    allocate(ninjrg(nrangp  + 1))
@@ -841,13 +841,9 @@ do ii = 1,nfrtot
 enddo
 
 ! --> Limite du nombre de particules a NBPMAX
-nbpartall = nbpart
-if (irangp.ge.0) then
-   call parsom(nbpartall)
-endif
 
-if ( (nbpartall+nbpnew).gt.nbpmax ) then
-  write(nfecra,3000) nbpartall,nbpnew,nbpmax
+if ( (nbpart+nbpnew).gt.nbpmax ) then
+  write(nfecra,3000) nbpart,nbpnew,nbpmax
   nbpnew = 0
 endif
 
