@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2013 EDF S.A.
+! Copyright (C) 1998-2014 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -166,7 +166,7 @@ integer, allocatable, dimension(:,:,:) :: iusloc
 integer, allocatable, dimension(:) :: ilftot
 
 double precision unif(1), offset, rapsurf
-integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
+integer irp, ipart, jj, kk, nfrtot, nlocnew
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -287,18 +287,15 @@ enddo
 
 ! --> Calculation of the surfaces of the Lagrangian boundary zones
 
-nrangp = irangp
-
 if (irangp.ge.0) then
-   nrangp = irangp
-   call parmax(nrangp)
+
    allocate(surflag(nflagm))
-   allocate(surlgrg(nflagm, nrangp + 1))
-   allocate(ninjrg(nrangp  + 1))
+   allocate(surlgrg(nflagm, nrangp))
+   allocate(ninjrg(nrangp))
 
    do kk = 1, nflagm
       surflag(kk) = 0.d0
-      do jj = 1, nrangp + 1
+      do jj = 1, nrangp
          surlgrg(kk,jj) = 0.d0
       enddo
    enddo
@@ -317,7 +314,7 @@ if (irangp.ge.0) then
 
    do kk = 1, nflagm
       call parsom(surflag(kk))
-      do jj = 1, nrangp + 1
+      do jj = 1, nrangp
          call parsom(surlgrg(kk, jj))
       enddo
    enddo
@@ -836,13 +833,9 @@ do ii = 1,nfrtot
 enddo
 
 ! --> Limite du nombre de particules a NBPMAX
-nbpartall = nbpart
-if (irangp.ge.0) then
-   call parsom(nbpartall)
-endif
 
-if ( (nbpartall+nbpnew).gt.nbpmax ) then
-  write(nfecra,3000) nbpartall,nbpnew,nbpmax
+if ( (nbpart+nbpnew).gt.nbpmax ) then
+  write(nfecra,3000) nbpart,nbpnew,nbpmax
   nbpnew = 0
 endif
 
@@ -878,11 +871,11 @@ do ii = 1,nfrtot
 
           ! Calcul sur le rang 0 du nombre de particules à injecter pour chaque rang
           ! base sur la surface relative de chaque zone d'injection presente sur
-          ! chaque rang --> remplissage du tableau ninjrg(nrangp+1)
+          ! chaque rang --> remplissage du tableau ninjrg(nrangp)
 
             if (irangp.eq.0) then
 
-               do irp = 1, nrangp + 1
+               do irp = 1, nrangp
                   ninjrg(irp) = 0
                enddo
 
@@ -905,7 +898,7 @@ do ii = 1,nfrtot
 
             ! Broadcast a tous les rangs
             if (irangp.ge.0) then
-               call parbci(0, nrangp + 1, ninjrg)
+               call parbci(0, nrangp, ninjrg)
             endif
 
             ! Fin du calcul du nombre de particules à injecter
