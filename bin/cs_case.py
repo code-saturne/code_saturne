@@ -1015,7 +1015,7 @@ export SALOME_INSTANCE=$3
 
             s_args = self.domains[0].solver_command()
 
-            s.write('cd "' + s_args[0] + '"\n\n')
+            s.write('cd ' + s_args[0] + '\n\n')
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
             s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
             s.write(' ' + cs_exec_environment.get_script_positional_args() +
