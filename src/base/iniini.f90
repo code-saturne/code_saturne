@@ -1260,23 +1260,7 @@ cthdfm = 0.31d0
 ! --- Ici tout cstphy a ete initialise
 
 !===============================================================================
-! 8. INDICATEURS DE VECTORISATION
-!===============================================================================
-
-!  On les prend ici egaux a -1 ; si l'utilisateur ne les positionne pas
-!    a zero, ils seront ensuite renseignes dans numvec, apres des tests
-!    de vectorisation.
-
-!  Sur machine vectorielle, on effectue les tests de vectorisation
-!  (exemple ici pour le VPP 5000, obsolete, mais on pourrait porter
-!  le code sur NEC SX8 ou Cray X1 de maniere analogue).
-!  Sur machine non vectorielle, inutile de chercher a vectoriser.
-
-ivecti = -1
-ivectb = -1
-
-!===============================================================================
-! 10. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
+! 9. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
 !===============================================================================
 
 !     Par defaut, pas de fichier IHM consulte (on regarde ensuite si on
@@ -1285,7 +1269,7 @@ ivectb = -1
 iihmpr = 0
 
 !===============================================================================
-! 11. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
+! 10. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
 !===============================================================================
 
 ! --- Methode ALE
@@ -1349,7 +1333,7 @@ betnmk = -grand
 gamnmk = -grand
 
 !===============================================================================
-! 12. INITIALISATION DES PARAMETRES DE COUPLAGE CS/CS
+! 11. INITIALISATION DES PARAMETRES DE COUPLAGE CS/CS
 !===============================================================================
 
 ! --- Nombre de couplage
@@ -1359,7 +1343,7 @@ nbrcpl = 0
 ifaccp = 0
 
 !===============================================================================
-! 13. Lagrangian arrays
+! 12. Lagrangian arrays
 !===============================================================================
 
 itepa => ivoid2
@@ -1374,14 +1358,14 @@ tslagr => rvoid2
 nullify(dlgeo)
 
 !===============================================================================
-! 14. INITIALISATION DES PARAMETRES DU MODULE DE CAVITATION
+! 13. Cavitation module
 !===============================================================================
 
 call init_cavitation
 !===================
 
 !===============================================================================
-! 15. SORTIE
+! 14. Exit
 !===============================================================================
 
 return

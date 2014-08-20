@@ -169,7 +169,7 @@ module mesh
   !> and oriented from the first to the second cell
   double precision, dimension(:), pointer :: dist
 
-  !> \anchor distd
+  !> \anchor distb
   !> For every boundary face, dot product between the vectors
   !> \f$\vect{IF}\f$ and \f$\vect{n}\f$.
   !> I is the center of the neighboring cell. F is the face center.

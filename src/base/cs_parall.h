@@ -37,315 +37,18 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_parall.h
+        Functions dealing with parallellism.
+*/
+
 /*============================================================================
  *  Public function prototypes for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute the maximum value of a counter (int) for the entire domain in
- * case of parallelism.
- *
- * Fortran Interface
- *
- * subroutine parcmx (counter)
- * *****************
- *
- * integer          counter       <-> : input = local counter
- *                                      output = global max counter
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcmx, PARCMX)(cs_int_t  *counter);
-
-/*----------------------------------------------------------------------------
- * Compute the minimum value of a counter (int) for the entire domain in
- * case of parallelism.
- *
- * Fortran Interface
- *
- * subroutine parcmn (counter)
- * *****************
- *
- * integer          counter       <-> : input = local counter
- *                                      output = global min counter
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcmn, PARCMN)(cs_int_t  *counter);
-
-/*----------------------------------------------------------------------------
- * Compute the global sum of a counter (int) for the entire domain in case
- * of parallelism.
- *
- * Fortran Interface :
- *
- * subroutine parcpt (counter)
- * *****************
- *
- * integer          counter     : <-> : input = counter to sum
- *                                      output = global sum
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parcpt, PARCPT)(cs_int_t  *counter);
-
-/*----------------------------------------------------------------------------
- * Compute the global sum of a real for the entire domain in case of parellism
- *
- * Fortran Interface :
- *
- * subroutine parsom (var)
- * *****************
- *
- * double precision var         : <-> : input = value to sum
- *                                      output = global sum
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parsom, PARSOM)(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
- * Compute the maximum value of a real variable for the entire domain in case
- * of parallelism.
- *
- * Fortran Interface :
- *
- * subroutine parmax (var)
- * *****************
- *
- * double precision var         : <-> : input = local maximum value
- *                                      output = global maximum value
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parmax, PARMAX)(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
- * Compute the minimum value of a real variable for the entire domain in case
- * of parallelism.
- *
- * Fortran Interface :
- *
- * subroutine parmin (var)
- * *****************
- *
- * double precision var         : <-> : input = local minimum value
- *                                      output = global minimum value
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parmin, PARMIN)(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
- * Maximum value of a real and its related rank for the entire domain in
- * case of parallelism.
- *
- * Fortran Interface
- *
- * subroutine parmxl (nbr, var, xyzvar)
- * *****************
- *
- * integer          nbr         : <-- : size of the related variable
- * double precision var         : <-> : input: local max. value
- *                                      output: global max. value
- * double precision xyzvar(nbr) : <-> : input: value related to local max.
- *                                      output: value related to global max.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parmxl, PARMXL)(cs_int_t   *nbr,
-                          cs_real_t  *var,
-                          cs_real_t   xyzvar[]);
-
-/*----------------------------------------------------------------------------
- * Minimum value of a real and its related rank for the entire domain in
- * case of parallelism.
- *
- * Fortran Interface
- *
- * Interface Fortran :
- *
- * subroutine parmnl (nbr, var, xyzvar)
- * *****************
- *
- * integer          nbr         : <-- : size of the related variable
- * double precision var         : <-> : input: local max. value
- *                                      output: global max. value
- * double precision xyzvar(nbr) : <-> : input: value related to local max.
- *                                      output: value related to global max.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parmnl, PARMNL)(cs_int_t   *nbr,
-                          cs_real_t  *var,
-                          cs_real_t   xyzvar[]);
-
-/*----------------------------------------------------------------------------
- * Compute the global sum for each element of an array of int in case of
- * parallelism.
- *
- * Fortran Interface
- *
- * subroutine parism (n_elts, array)
- * *****************
- *
- * integer          n_elts       : <-- : size of the array.
- * integer          array(*)     : <-> : input = local array
- *                                       output = array of global sum values.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parism, PARISM)(cs_int_t  *n_elts,
-                          cs_int_t   array[]);
-
-/*----------------------------------------------------------------------------
- * Compute the global maximum value for each element of an array of int in
- * case of parallelism.
- *
- * Fortran Interface :
- *
- * subroutine parimx (n_elts, array)
- * *****************
- *
- * integer          n_elts       : <-- : size of the array.
- * integer          array(*)     : <-> : input = local array
- *                                       output = array of global max. values.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parimx, PARIMX)(cs_int_t  *n_elts,
-                          cs_int_t   array[]);
-
-/*----------------------------------------------------------------------------
- * Compute the global minimum value for each element of an array of int in
- * case of parallelism.
- *
- * Fortran Interface :
- *
- * subroutine parimn (n_elts, array)
- * *****************
- *
- * integer          n_elts       : <-- : size of the array.
- * integer          array(*)     : <-> : input = local array
- *                                       output = array of global min. values.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parimn, PARIMN)(cs_int_t  *n_elts,
-                          cs_int_t   array[]);
-
-/*----------------------------------------------------------------------------
- * Compute the global sum for each element of an array of real in case of
- * parallelism.
- *
- * Fortran Interface
- *
- * subroutine parrsm (n_elts, array)
- * *****************
- *
- * integer          n_elts       : <-- : size of the array.
- * double precision array(*)     : <-> : input = local array
- *                                       output = array of global sum values.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parrsm, PARRSM)(cs_int_t   *n_elts,
-                          cs_real_t   array[]);
-
-/*----------------------------------------------------------------------------
- * Compute the global maximum value for each element of an array of real in
- * case of parallelism.
- *
- * Fortran Interface :
- *
- * subroutine parrmx (n_elts, array)
- * *****************
- *
- * integer          n_elts        : <-- : size of the array
- * double precision array(*)      : <-> : input = local array
- *                                        output = array of global max. values.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parrmx, PARRMX)(cs_int_t   *n_elts,
-                          cs_real_t   array[]);
-
-/*----------------------------------------------------------------------------
- * Compute the global minimum value for each element of an array of real in
- * case of parallelism.
- *
- * Fortran Interface :
- *
- * subroutine parrmn (n_elts, array)
- * *****************
- *
- * integer          n_elts        : <-- : size of the array
- * double precision array(*)      : <-> : input = local array
- *                                        output = array of global min. values.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parrmn, PARRMN)(cs_int_t   *n_elts,
-                          cs_real_t   array[]);
-
-/*----------------------------------------------------------------------------
- * Broadcast to all the ranks the value of each element of an array of int.
- * (encapsulation of MPI_Bcast())
- *
- * Fortran Interface :
- *
- * subroutine parbci (irank, n_elts, array)
- * *****************
- *
- * integer          irank       : <-- : rank related to the sending process
- * integer          n_elts      : <-- : size of the array
- * integer          array(*)    : <-> : array to broadcast
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parbci, PARBCI)(cs_int_t   *irank,
-                          cs_int_t   *n_elts,
-                          cs_int_t    array[]);
-
-/*----------------------------------------------------------------------------
- * Broadcast to all the ranks the value of each element of an array of real.
- * (encapsulation of MPI_Bcast())
- *
- * Fortran Interface :
- *
- * subroutine parbcr (irank, n_elts, array)
- * *****************
- *
- * integer            irank     : <-- : rank related to the sending process
- * integer            n_elts    : <-- : size of the array
- * double precision   array(*)  : <-> : array to broadcast
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parbcr, PARBCR)(cs_int_t   *irank,
-                          cs_int_t   *n_elts,
-                          cs_real_t   array[]);
-
-/*----------------------------------------------------------------------------
- * Build a global array from each local array in each domain. The size of
- * each local array can be different.
- *
- * Fortran Interface :
- *
- * subroutine paragv (nvar, nvargb, var, vargb)
- * *****************
- *
- * integer           n_elts      : <-- : size of the local array
- * integer           n_g_elts    : <-- : size of the global array
- * double precision  array(*)    : <-- : local array
- * double precision  g_array(*)  : --> : global array
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (paragv, PARAGV)(cs_int_t   *n_elts,
-                          cs_int_t   *n_g_elts,
-                          cs_real_t   array[],
-                          cs_real_t  *g_array);
 
 /*----------------------------------------------------------------------------
  * Find a node which minimizes a given distance and its related rank.
@@ -391,32 +94,18 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
                           cs_real_t   var[],
                           cs_real_t  *varcap);
 
-/*----------------------------------------------------------------------------
- * Call a barrier in case of parallelism
- *
- * This function should not be necessary in production code,
- * but it may be useful for debugging purposes.
- *
- * Fortran interface :
- *
- * subroutine parbar
- * *****************
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parbar, PARBAR)(void);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Sum counters on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a counter on all default communicator processes.
  *
- * parameters:
- *   cpt <-> local counter value  input, global counter value output (array)
- *   n   <-- number of counter array values
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  cpt       local counter in, global counter out (size: n)
+ * \param[in]       n         number of values
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -442,13 +131,14 @@ cs_parall_counter(cs_gnum_t   cpt[],
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Maximum values of a counter on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a counter on all default communicator processes.
  *
- * parameters:
- *   cpt <-> local counter value  input, global counter value output (array)
- *   n   <-- number of counter array values
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  cpt       local counter in, global counter out (size: n)
+ * \param[in]       n         number of values
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -474,14 +164,16 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Sum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a given datatype on all
+ *        default communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local value  input, global value output (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in, out]  val       local sum in, global sum out (size: n)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -509,14 +201,16 @@ cs_parall_sum(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Maximum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a given datatype on all
+ *        default communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local value  input, global value output (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in, out]  val       local maximum in, global maximum out (size: n)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -544,14 +238,16 @@ cs_parall_max(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Minimum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Minimum values of a given datatype on all
+ *        default communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local value  input, global value output (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in, out]  val       local minimum in, global minimum out (size: n)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -579,6 +275,93 @@ cs_parall_min(int             n,
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Broadcast values of a given datatype to all
+ *        default communicator processes.
+ *
+ * \param[in]       root_rank  rank from which to broadcast
+ * \param[in]       n          number of values
+ * \param[in]       datatype   matching Code_Saturne datatype
+ * \param[in, out]  val        values to broadcast; input on root_rank,
+ *                             output on others (size: n)
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+inline static void
+cs_parall_bcast(int             root_rank,
+                int             n,
+                cs_datatype_t   datatype,
+                void           *val)
+{
+  if (cs_glob_n_ranks > 1)
+    MPI_Bcast(val, n, cs_datatype_to_mpi[datatype], root_rank,
+              cs_glob_mpi_comm);
+}
+
+#else
+
+#define cs_parall_bcast(_root_rank, _n, _datatype, _val);
+
+#endif
+
+/*----------------------------------------------------------------------------
+ * Build a global array from each local array in each domain.
+ *
+ * Local arrays are appened in order of owning MPI rank.
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * parameters:
+ *   n_elts   <-- size of the local array
+ *   n_g_elts <-- size of the global array
+ *   array    <-- local array (size: n_elts)
+ *   g_array  --> global array  (size: n_g_elts)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parall_allgather_r(int        n_elts,
+                      int        n_g_elts,
+                      cs_real_t  array[],
+                      cs_real_t  g_array[]);
+
+/*----------------------------------------------------------------------------
+ * Maximum value of a real and the value of related array on all
+ * default communicator processes.
+ *
+ * parameters:
+ *   n            <-- size of the related array
+ *   max          <-> local max in, global max out
+ *   max_loc_vals <-> array values at location of local max in,
+ *                    and at location of global max out
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parall_max_loc_vals(int         n,
+                       cs_real_t  *max,
+                       cs_real_t   max_loc_vals[]);
+
+/*----------------------------------------------------------------------------
+ * Minimum value of a real and the value of related array on all
+ * default communicator processes.
+ *
+ * parameters:
+ *   n            <-- size of the related array
+ *   min          <-> local min in, global min out
+ *   min_loc_vals <-> array values at location of local min in,
+ *                    and at location of global min out
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parall_min_loc_vals(int         n,
+                       cs_real_t  *min,
+                       cs_real_t   min_loc_vals[]);
+
 /*----------------------------------------------------------------------------
  * Return minimum recommended scatter or gather buffer size.
  *
@@ -593,7 +376,7 @@ size_t
 cs_parall_get_min_coll_buf_size(void);
 
 /*----------------------------------------------------------------------------
- * Define minimum recommended scatter or gather buffer size.
+ * Define minimum recommended gather buffer size.
  *
  * This is used by some internal part to block or scatter/gather algorithms,
  * so as to allow I/O buffer size tuning.

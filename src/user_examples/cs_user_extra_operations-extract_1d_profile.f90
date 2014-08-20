@@ -181,13 +181,12 @@ if (ntcabs.eq.ntmabs) then
 
       ! Broadcast to other ranks in parallel
       if (irangp.ge.0) then
-        iun = 1
-        call parbcr(irangv, iun, xabs)
-        call parbcr(irangv, iun, xu)
-        call parbcr(irangv, iun, xv)
-        call parbcr(irangv, iun, xw)
-        call parbcr(irangv, iun, xk)
-        call parbcr(irangv, iun, xeps)
+        call parall_bcast_r(irangv, xabs)
+        call parall_bcast_r(irangv, xu)
+        call parall_bcast_r(irangv, xv)
+        call parall_bcast_r(irangv, xw)
+        call parall_bcast_r(irangv, xk)
+        call parall_bcast_r(irangv, xeps)
       endif
 
       if (irangp.le.0) write(impout,99) xabs, xu, xv, xw, xk, xeps

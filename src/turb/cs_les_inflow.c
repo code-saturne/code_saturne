@@ -1213,7 +1213,6 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
 void CS_PROCF(defsyn, DEFSYN)
 (
  cs_int_t            *n_inlets     /* --> number of inlets                    */
- CS_ARGF_SUPP_CHAINE
 )
 {
   cs_int_t inlet_id;
@@ -1325,10 +1324,7 @@ void CS_PROCF(synthe, SYNTHE)
  const cs_int_t  *const iw,        /* --> index of velocity component         */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
- const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
- const cs_real_t        rtp[],     /* --> variables at cellules               */
        cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
- CS_ARGF_SUPP_CHAINE
 )
 {
   cs_int_t  face_id;
@@ -1525,7 +1521,6 @@ void CS_PROCF(lecsyn, LECSYN)
   bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
   cs_int_t            nbvent;
   cs_int_t            indfac, ierror;
-  cs_int_t            version;    /* Not used at the moment */
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
@@ -1591,8 +1586,6 @@ void CS_PROCF(lecsyn, LECSYN)
                   "Verify that the restart file corresponds to a\n"
                   "restart file for the LES inflow module.\n"),
                 filename);
-
-    version = *tabvar;
 
     BFT_FREE(tabvar);
   }
@@ -1942,7 +1935,7 @@ void CS_PROCF(ecrsyn, ECRSYN)
 {
   int   inlet_id;
 
-  cs_int_t            nbvent, ierror;
+  cs_int_t            nbvent;
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
@@ -1952,8 +1945,6 @@ void CS_PROCF(ecrsyn, ECRSYN)
     return;
 
   bft_printf(_("\n Writing the LES inflow module restart file...\n"));
-
-  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
   cs_glob_inflow_suite

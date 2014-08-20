@@ -81,7 +81,6 @@ typedef struct _cs_inlet_t  cs_inlet_t;
 void CS_PROCF(defsyn, DEFSYN)
 (
  cs_int_t            *n_inlets     /* <-- number of inlets                    */
- CS_ARGF_SUPP_CHAINE
 );
 
 /*----------------------------------------------------------------------------
@@ -96,10 +95,7 @@ void CS_PROCF(synthe, SYNTHE)(
  const cs_int_t  *const iw,        /* --> index of velocity component         */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
- const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
- const cs_real_t        rtp[],     /* --> variables at cellules               */
        cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
- CS_ARGF_SUPP_CHAINE
 );
 
 void CS_PROCF(cs_user_les_inflow_init, CS_USER_LES_INFLOW_INIT)(

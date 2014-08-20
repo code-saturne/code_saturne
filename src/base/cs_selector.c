@@ -34,16 +34,17 @@
 #include <assert.h>
 #include <math.h>
 
-#include <bft_mem_usage.h>
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
+#include "bft_mem_usage.h"
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "fvm_selector.h"
 
 #include "cs_halo.h"
 #include "cs_mesh.h"
-#include "cs_selector.h"
 
-#include "fvm_selector.h"
+#include "cs_selector.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -52,8 +53,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
-
-#define CS_SELECTOR_STR_LEN 127
 
 /*=============================================================================
  * Local Type Definitions
@@ -70,255 +69,6 @@ BEGIN_C_DECLS
 /*============================================================================
  *  Public function definitions for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Build a list of boundary faces verifying a given selection criteria.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(csgfbr, CSGFBR)
-(
- const char   *const fstr,      /* <-- Fortran string */
- cs_int_t     *const len,       /* <-- String Length  */
- cs_int_t     *const n_faces,   /* --> number of faces */
- cs_int_t     *const face_list  /* --> face list  */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  char _c_string[CS_SELECTOR_STR_LEN + 1];
-  char *c_string = _c_string;
-  int i;
-  int c_len = *len -1;
-
-  /* Initialization */
-
-  *n_faces = 0;
-
-  /* Copy fstr without last blanks  */
-  while(fstr[c_len--] == ' ' &&  c_len >= 0);
-
-  if (c_len < -1)
-    return;
-
-  c_len += 2;
-
-  if (c_len > CS_SELECTOR_STR_LEN)
-    BFT_MALLOC(c_string, c_len + 1, char);
-
-  for(i = 0; i < c_len; i++)
-    c_string[i] = fstr[i];
-  c_string[c_len] = '\0';
-
-  /* Get faces with C string */
-
-  cs_selector_get_b_face_list(c_string, n_faces, face_list);
-
-  if (c_string != _c_string)
-    BFT_FREE(c_string);
-}
-
-/*----------------------------------------------------------------------------
- * Build a list of interior faces verifying a given selection criteria.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(csgfac, CSGFAC)
-(
- const char   *const fstr,      /* <-- Fortran string */
- cs_int_t     *const len,       /* <-- String Length  */
- cs_int_t     *const n_faces,   /* --> number of faces */
- cs_int_t     *const face_list  /* --> face list  */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  char _c_string[CS_SELECTOR_STR_LEN + 1];
-  char *c_string = _c_string;
-  int i;
-  int c_len = *len -1;
-
-  /* Initialization */
-
-  *n_faces = 0;
-
-  /* Copy fstr without last blanks  */
-  while(fstr[c_len--] == ' ' &&  c_len >= 0);
-
-  if (c_len < -1)
-    return;
-
-  c_len += 2;
-
-  if (c_len > CS_SELECTOR_STR_LEN)
-    BFT_MALLOC(c_string, c_len + 1, char);
-
-  for(i = 0; i < c_len; i++)
-    c_string[i] = fstr[i];
-  c_string[c_len] = '\0';
-
-  /* Get faces with C string */
-
-  cs_selector_get_i_face_list(c_string, n_faces, face_list);
-
-  if (c_string != _c_string)
-    BFT_FREE(c_string);
-}
-
-/*----------------------------------------------------------------------------
- * Build a list of cells verifying a given selection criteria.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(csgcel, CSGCEL)
-(
- const char   *const fstr,      /* <-- Fortran string */
- cs_int_t     *const len,       /* <-- String Length  */
- cs_int_t     *const n_cells,   /* --> number of cells */
- cs_int_t     *const cell_list  /* --> cell list  */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  char _c_string[CS_SELECTOR_STR_LEN + 1];
-  char *c_string = _c_string;
-  int i;
-  int c_len = *len -1;
-
-  /* Initialization */
-
-  *n_cells = 0;
-
-  /* Copy fstr without last blanks  */
-  while(fstr[c_len--] == ' ' &&  c_len >= 0);
-
-  if (c_len < -1)
-    return;
-
-  c_len += 2;
-
-  if (c_len > CS_SELECTOR_STR_LEN)
-    BFT_MALLOC(c_string, c_len + 1, char);
-
-  for(i = 0; i < c_len; i++)
-    c_string[i] = fstr[i];
-  c_string[c_len] = '\0';
-
-  /* Get cells with C string */
-
-  cs_selector_get_cell_list(c_string, n_cells, cell_list);
-
-  if (c_string != _c_string)
-    BFT_FREE(c_string);
-}
-
-/*----------------------------------------------------------------------------
- * Build a list of cells verifying a given selection criteria.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(csgceb, CSGCEB)
-(
- const char   *const fstr,        /* <-- Fortran string */
- cs_int_t     *const len,         /* <-- String Length  */
- cs_int_t     *const n_i_faces,   /* --> number of interior faces */
- cs_int_t     *const n_b_faces,   /* --> number of boundary faces */
- cs_int_t     *const i_face_list, /* --> interior face list  */
- cs_int_t     *const b_face_list  /* --> boundary face list  */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  char _c_string[CS_SELECTOR_STR_LEN + 1];
-  char *c_string = _c_string;
-  int i;
-  int c_len = *len -1;
-
-  /* Initialization */
-
-  *n_i_faces = 0;
-  *n_b_faces = 0;
-
-  /* Copy fstr without last blanks  */
-  while(fstr[c_len--] == ' ' &&  c_len >= 0);
-
-  if (c_len < -1)
-    return;
-
-  c_len += 2;
-
-  if (c_len > CS_SELECTOR_STR_LEN)
-    BFT_MALLOC(c_string, c_len + 1, char);
-
-  for(i = 0; i < c_len; i++)
-    c_string[i] = fstr[i];
-  c_string[c_len] = '\0';
-
-  /* Get cells with C string */
-
-  cs_selector_get_cells_boundary(c_string,
-                                 n_i_faces,
-                                 n_b_faces,
-                                 i_face_list,
-                                 b_face_list);
-
-  if (c_string != _c_string)
-    BFT_FREE(c_string);
-}
-
-/*----------------------------------------------------------------------------
- * Build a list of interior faces belonging to a given periodicity.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(getfpe, GETFPE)
-(
- cs_int_t     *const perio_num, /* <-- Periodicity number */
- cs_int_t     *const n_faces,   /* --> number of faces */
- cs_int_t     *const face_list  /* --> face list  */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  cs_selector_get_perio_face_list(*perio_num,
-                                  n_faces,
-                                  face_list);
-}
-
-/*----------------------------------------------------------------------------
- * Build a list of families verifying a given selection criteria.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(csgfam, CSGFAM)
-(
- const char   *const fstr,         /* <-- Fortran string */
- cs_int_t     *const len,          /* <-- String Length  */
- cs_int_t     *const n_families,   /* --> number of families */
- cs_int_t     *const family_list   /* --> family list  */
- CS_ARGF_SUPP_CHAINE
-)
-{
-  char _c_string[CS_SELECTOR_STR_LEN + 1];
-  char *c_string = _c_string;
-  int i;
-  int c_len = *len -1;
-
-  /* Initialization */
-
-  *n_families = 0;
-
-  /* Copy fstr without last blanks  */
-  while(fstr[c_len--] == ' ' &&  c_len >= 0);
-
-  if (c_len < -1)
-    return;
-
-  c_len += 2;
-
-  if (c_len > CS_SELECTOR_STR_LEN)
-    BFT_MALLOC(c_string, c_len + 1, char);
-
-  for(i = 0; i < c_len; i++)
-    c_string[i] = fstr[i];
-  c_string[c_len] = '\0';
-
-  /* Get faces with C string */
-
-  cs_selector_get_family_list(c_string, n_families, family_list);
-
-  if (c_string != _c_string)
-    BFT_FREE(c_string);
-}
 
 /*=============================================================================
  * Public function definitions

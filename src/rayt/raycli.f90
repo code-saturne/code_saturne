@@ -1517,7 +1517,7 @@ double precision rvferr(nerrcd)
 
 ! Local variables
 
-integer irkerr, n
+integer irkerr
 
 !===============================================================================
 
@@ -1526,9 +1526,8 @@ if (irangp.ge.0) then
   if (nerloc.gt.0) irkerr = irangp
   call parcpt(nerloc)
   if (nerloc .ne. 0) then
-    n = 1
-    call parimx(1, irkerr)
-    call parbci(irkerr, n, znferr)
+    call parcmx(irkerr)
+    call parall_bcast_i(irkerr, znferr)
     call parbcr(irkerr, nerrcd, rvferr)
   endif
 endif

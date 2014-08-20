@@ -48,6 +48,8 @@ subroutine getfac &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -59,16 +61,30 @@ integer       faces(*), facnb
 
 ! Local variables
 
-integer          lenstr
+character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 !===============================================================================
 
-lenstr=len(fstr)
-call csgfac(fstr, lenstr, facnb, faces)
+interface
+
+  subroutine cs_selector_get_i_face_list(criteria, n_faces, i_face_list)  &
+    bind(C, name='cs_selector_get_i_face_list')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
+    integer(c_int), intent(out) :: n_faces
+    integer(c_int), dimension(*), intent(out) :: i_face_list
+  end subroutine cs_selector_get_i_face_list
+
+end interface
+
+c_crit = trim(fstr)//c_null_char
+
+call cs_selector_get_i_face_list(c_crit, facnb, faces)
 
 return
 
-end subroutine
+end subroutine getfac
 
 !===============================================================================
 
@@ -98,6 +114,8 @@ subroutine getfbr &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -109,16 +127,30 @@ integer      faces(*), facnb
 
 ! Local variables
 
-integer          lenstr
+character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 !===============================================================================
 
-lenstr=len(fstr)
-call csgfbr(fstr, lenstr, facnb, faces)
+interface
+
+  subroutine cs_selector_get_b_face_list(criteria, n_faces, b_face_list)  &
+    bind(C, name='cs_selector_get_b_face_list')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
+    integer(c_int), intent(out) :: n_faces
+    integer(c_int), dimension(*), intent(out) :: b_face_list
+  end subroutine cs_selector_get_b_face_list
+
+end interface
+
+c_crit = trim(fstr)//c_null_char
+
+call cs_selector_get_b_face_list(c_crit, facnb, faces)
 
 return
 
-end subroutine
+end subroutine getfbr
 
 !===============================================================================
 
@@ -149,6 +181,8 @@ subroutine getcel &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -160,16 +194,30 @@ integer       cells(*), cellnb
 
 ! Local variables
 
-integer          lenstr
+character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 !===============================================================================
 
-lenstr=len(fstr)
-call csgcel(fstr, lenstr, cellnb, cells)
+interface
+
+  subroutine cs_selector_get_cell_list(criteria, n_faces, cell_list)  &
+    bind(C, name='cs_selector_get_cell_list')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
+    integer(c_int), intent(out) :: n_faces
+    integer(c_int), dimension(*), intent(out) :: cell_list
+  end subroutine cs_selector_get_cell_list
+
+end interface
+
+c_crit = trim(fstr)//c_null_char
+
+call cs_selector_get_cell_list(c_crit, cellnb, cells)
 
 return
 
-end subroutine
+end subroutine getcel
 
 !===============================================================================
 
@@ -202,6 +250,8 @@ subroutine getceb &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -213,16 +263,31 @@ integer       ifaces(*), bfaces(*), ifacnb, bfacnb
 
 ! Local variables
 
-integer       lenstr
+character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 !===============================================================================
 
-lenstr=len(fstr)
-call csgceb(fstr, lenstr, ifacnb, bfacnb, ifaces, bfaces)
+interface
+
+  subroutine cs_selector_get_cells_boundary(criteria, n_i_faces, n_b_faces,   &
+                                            i_face_list, b_face_list)         &
+    bind(C, name='cs_selector_get_cells_boundary')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
+    integer(c_int), intent(out) :: n_i_faces, n_b_faces
+    integer(c_int), dimension(*), intent(out) :: i_face_list, b_face_list
+  end subroutine cs_selector_get_cells_boundary
+
+end interface
+
+c_crit = trim(fstr)//c_null_char
+
+call cs_selector_get_cells_boundary(c_crit, ifacnb, bfacnb, ifaces, bfaces)
 
 return
 
-end subroutine
+end subroutine getceb
 
 !===============================================================================
 
@@ -252,6 +317,8 @@ subroutine getfam &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -263,13 +330,90 @@ integer       families(*), famnb
 
 ! Local variables
 
-integer          lenstr
+character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 !===============================================================================
 
-lenstr=len(fstr)
-call csgfac(fstr, lenstr, famnb, families)
+interface
+
+  subroutine cs_selector_get_family_list(criteria, n_families, family_list)   &
+    bind(C, name='cs_selector_get_family_list')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
+    integer(c_int), intent(out) :: n_families
+    integer(c_int), dimension(*), intent(out) :: family_list
+  end subroutine cs_selector_get_family_list
+
+end interface
+
+c_crit = trim(fstr)//c_null_char
+
+call cs_selector_get_family_list(c_crit, famnb, families)
 
 return
 
-end subroutine
+end subroutine getfam
+
+!===============================================================================
+! Function:
+! ---------
+
+!> \brief Build the list of interior faces belonging to a given periodicity.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     perio_num     periodicity number
+!> \param[out]    n_faces       number of faces
+!> \param[out]    face_list     faces list
+!_______________________________________________________________________________
+
+subroutine getfpe &
+ ( perio_num, n_faces, face_list )
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use, intrinsic :: iso_c_binding
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer       face_list(*), perio_num, n_faces
+
+! Local variables
+
+!===============================================================================
+
+interface
+
+  subroutine cs_selector_get_perio_face_list(perio_num, n_faces, face_list)   &
+    bind(C, name='cs_selector_get_perio_face_list')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: perio_num
+    integer(c_int), intent(out) :: n_faces
+    integer(c_int), dimension(*), intent(out) :: face_list
+  end subroutine cs_selector_get_perio_face_list
+
+end interface
+
+call cs_selector_get_perio_face_list(perio_num, n_faces, face_list)
+
+return
+
+end subroutine getfpe
+
+!===============================================================================
+
+

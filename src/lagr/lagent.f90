@@ -350,7 +350,7 @@ if (irangp.ge.0) then
       enddo
    endif
 
-   call parbci(0, 1, nfrtot)
+   call parall_bcast_i(0, nfrtot)
    call parbci(0, nfrtot, ilftot)
 
 else

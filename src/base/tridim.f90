@@ -917,8 +917,7 @@ do while (iterns.le.nterup)
     !==========
   ( nvar   , nscal  ,                                              &
     iu     , iv     , iw     ,                                     &
-    ttcabs ,                                                       &
-    dt     , rtpa   , rtp    ,                                     &
+    ttcabs , dt     ,                                              &
     rcodcl )
 
   ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)

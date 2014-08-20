@@ -1746,7 +1746,7 @@ if (irangp.ge.0) then
   if (nerloc.gt.0) irkerr = irangp
   call parcpt(nerloc)
   if (nerloc .ne. 0) then
-    call parimx(1, irkerr)
+    call parcmx(irkerr)
     call parbci(irkerr, nerrcd, errcod)
   endif
 endif

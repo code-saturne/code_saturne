@@ -251,7 +251,7 @@ if (ntcabs.eq.ntmabs) then
 
     if (irangp.ge.0) then
       iun = 1
-      call parbcr(irangv, iun, lambda)
+      call parall_bcast_r(irangv, lambda)
       call parsom(xtbulk)
       call parsom(xubulk)
     endif

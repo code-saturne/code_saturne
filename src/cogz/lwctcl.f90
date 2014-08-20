@@ -81,6 +81,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -100,7 +101,7 @@ integer          icke, ii, iel, iok
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent, hgazf , tgazf, hgazb, tgazb
 double precision qcalc(nozppm), hgent(nozppm)
-double precision coefg(ngazgm)
+double precision coefg(ngazgm), rval(1)
 double precision, dimension(:), pointer ::  brom
 double precision, dimension(:), pointer :: viscl
 
@@ -516,15 +517,22 @@ do ifac = 1, nfabor
 enddo
 
 if (irangp.ge.0) then
+
   nbr = 1
-  call parmxl(nbr,fmax,hmax)
-  call parmnl(nbr,fmin,hmin)
+
+  rval(1) = hmax
+  call parmxl(nbr,fmax,rval)
+  hmax = rval(1)
+
+  rval(1) = hmin
+  call parmnl(nbr,fmin,rval)
+  hmin = rval(1)
+
 endif
 
 !----
 ! FORMATS
 !----
-
 
 !----
 ! FIN

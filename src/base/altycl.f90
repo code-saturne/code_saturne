@@ -334,7 +334,7 @@ endif
 if (ierror(4).gt.0) then
   ierror(1) = 1
   if (irangp.ge.0) then
-    call parimx(1, irkerr)
+    call parcmx(irkerr)
     call parbci(irkerr, 4, icoder)
     write(nfecra,3000) icoder(1), icoder(2), icoder(3), icoder(4)
   endif

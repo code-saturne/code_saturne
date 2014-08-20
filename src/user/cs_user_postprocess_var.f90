@@ -283,11 +283,6 @@ if (ipart .eq. -1) then
     call field_get_val_s(time_moment_field_id(imom1), cmom_1)
     call field_get_val_s(time_moment_field_id(imom2), cmom_2)
 
-    ! The temporal accumulation for moments must be divided by the accumulated
-    ! time, which id an array of size ncel or a single real number:
-    ! - array of size ncel if idtmom(imom) > 0 : propce(iel, idtcm)
-    ! - or simple real     if idtmom(imom) < 0 : dtcmom(idtcm)
-
     ! To improve this example's readability, we assume moments imom1 and imom2
     ! have been computed on the same time window.
 
