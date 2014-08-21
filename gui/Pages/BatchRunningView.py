@@ -788,7 +788,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             cs_exec_environment.run_command(cmd)
 
         if self.case['salome'] or key == 'localhost':
-            self.__updateRuncase(None)  # remove --id <id> from runcase
+            self.__updateRuncase('')  # remove --id <id> from runcase
 
         os.chdir(prv_dir)
 

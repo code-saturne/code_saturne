@@ -328,15 +328,15 @@ class runcase(object):
         line = self.lines[self.run_cmd_line_id]
 
         args = separate_args(line)
-        if run_id:
+        if run_id != None:
             args = update_command_single_value(args,
                                                ('--id',),
                                                enquote_arg(run_id))
-        if run_id_prefix:
+        if run_id_prefix != None:
             args = update_command_single_value(args,
                                                ('--id-prefix',),
                                                enquote_arg(run_id_prefix))
-        if run_id_suffix:
+        if run_id_suffix != None:
             args = update_command_single_value(args,
                                                ('--id-suffix',),
                                                enquote_arg(run_id_suffix))
