@@ -136,10 +136,10 @@ def main(argv, pkg):
 
     # Test the package name to know which modules have to be imported
     if pkg.name == 'code_saturne':
-        icons_path = os.path.join(pkg.get_dir('pkgpythondir'), 'Base', 'icons')
+        images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
         sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'Base'))
     else:
-        icons_path = os.path.join(pkg.get_dir('pkgpythondir'), 'core', 'icons')
+        images_path = os.path.join(pkg.get_dir('pkgpythondir'), 'core', 'icons')
         sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'core'))
 
     # Test if EOS modules could be imported
@@ -179,7 +179,7 @@ def main(argv, pkg):
 
     if spl:
         app.setOverrideCursor(QCursor(Qt.WaitCursor))
-        pixmap = QPixmap('%s/splashscreen.png' % icons_path)
+        pixmap = QPixmap('%s/splashscreen.png' % images_path)
         splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
         splash.setMask(pixmap.mask()) # this is usefull if the splashscreen is not a regular ractangle...
         splash.show()

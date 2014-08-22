@@ -26,5 +26,7 @@ SUBDIRS = Base Pages
 
 # Install data
 
-nobase_pkgpython_DATA = \
-$(srcdir)/Base/icons/splashscreen.png
+imagesdir = ${pkgdatadir}/images
+
+images_DATA = \
+Base/icons/splashscreen.png
