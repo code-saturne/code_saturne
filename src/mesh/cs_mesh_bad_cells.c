@@ -61,6 +61,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -610,6 +612,8 @@ _bad_cells_post_function(void                  *mesh,
                   1,
                   ts);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -63,6 +63,8 @@ BEGIN_C_DECLS
         Fan modeling through velocity source terms.
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -171,6 +173,8 @@ _flag_fan_cells(const cs_mesh_t  *mesh,
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

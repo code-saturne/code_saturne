@@ -74,6 +74,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *===========================================================================*/
@@ -1430,6 +1432,8 @@ _set_advanced_param(cs_join_t   *join,
   join->param.max_sub_faces = max_sub_faces;
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

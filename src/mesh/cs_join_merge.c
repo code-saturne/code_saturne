@@ -65,17 +65,19 @@
 
 BEGIN_C_DECLS
 
-/*============================================================================
- * Structure and type definitions
- *===========================================================================*/
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Macro definitions
+ * Local macro definitions
  *===========================================================================*/
 
 /* Turn on (1) or off (0) the tolerance reduc. */
 #define  CS_JOIN_MERGE_TOL_REDUC  1
 #define  CS_JOIN_MERGE_INV_TOL  1
+
+/*============================================================================
+ * Local structure and type definitions
+ *===========================================================================*/
 
 /*============================================================================
  * Global variable definitions
@@ -3016,6 +3018,8 @@ _redistribute_mesh(const cs_gnum_t         gnum_rank_index[],
   *p_recv_mesh = recv_mesh;
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

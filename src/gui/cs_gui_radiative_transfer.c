@@ -68,6 +68,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -414,6 +416,8 @@ _radiative_boundary_output_zone_max(void)
 
   return zone_max;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions

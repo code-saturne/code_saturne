@@ -62,6 +62,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*----------------------------------------------------------------------------
  * Local macro definitions
  *----------------------------------------------------------------------------*/
@@ -496,6 +498,8 @@ _find_symbol(mei_tree_t  *ev,
 
   return iok;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

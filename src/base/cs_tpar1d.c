@@ -57,6 +57,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
@@ -76,7 +78,6 @@ struct par1d
 
 static struct par1d *cs_glob_par1d = NULL;
 static cs_restart_t *cs_glob_tpar1d_suite = NULL;
-
 
 /*============================================================================
  * Private function definitions
@@ -150,6 +151,8 @@ cs_loc_tpar1d_opnsuite(const char              *nomsui,
   /* Free the memory if necessary */
   cs_base_string_f_to_c_free(&nombuf);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public functions for Fortran API

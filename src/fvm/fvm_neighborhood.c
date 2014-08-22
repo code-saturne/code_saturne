@@ -59,6 +59,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro and Type definitions
  *============================================================================*/
@@ -618,6 +620,8 @@ _sync_by_block(fvm_neighborhood_t  *n,
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

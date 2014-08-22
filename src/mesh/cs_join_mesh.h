@@ -122,7 +122,7 @@ typedef struct {
 
 } cs_join_mesh_t;
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

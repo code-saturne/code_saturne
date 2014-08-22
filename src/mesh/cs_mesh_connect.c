@@ -60,6 +60,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -280,6 +282,8 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
   if (num_glob_fac != NULL)
     BFT_FREE(num_glob_fac);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

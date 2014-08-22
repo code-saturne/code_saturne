@@ -64,6 +64,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Macro and type definitions
  *===========================================================================*/
@@ -1361,6 +1363,8 @@ _log_vertex(cs_join_vertex_t  vertex)
 }
 
 #endif /* HAVE_MPI */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

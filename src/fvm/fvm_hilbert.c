@@ -54,6 +54,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -1137,6 +1139,8 @@ _bucket_sampling(int                       dim,
 }
 
 #endif /* FM_HAVE_MPI */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

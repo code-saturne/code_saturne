@@ -280,7 +280,7 @@ extern cs_join_t  **cs_glob_join_array;
 
 extern FILE  *cs_glob_join_log;
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

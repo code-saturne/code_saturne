@@ -68,6 +68,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -3161,6 +3163,8 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
   return current_section;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

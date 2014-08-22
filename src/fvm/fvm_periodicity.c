@@ -55,6 +55,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -508,6 +510,8 @@ _transform_dump(_transform_t  *this_transform,
              tr->m[1][0], tr->m[1][1], tr->m[1][2], tr->m[1][3],
              tr->m[2][0], tr->m[2][1], tr->m[2][2], tr->m[2][3]);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

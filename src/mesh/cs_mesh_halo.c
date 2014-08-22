@@ -60,6 +60,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure and type definitions
  *============================================================================*/
@@ -2961,6 +2963,8 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
   *p_cell_faces_idx = cell_faces_idx;
   *p_cell_faces_lst = cell_faces_lst;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

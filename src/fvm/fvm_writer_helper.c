@@ -59,13 +59,14 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
 
 #define FVM_WRITER_MIN_ELEMENTS     32
 #define FVM_WRITER_MIN_SUB_ELEMENTS 32
-
 
 /*============================================================================
  * Local Type Definitions
@@ -2053,6 +2054,8 @@ fvm_writer_field_helper_step_n(fvm_writer_field_helper_t   *helper,
                                output_buffer_size,
                                output_size);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 

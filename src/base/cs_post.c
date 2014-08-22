@@ -176,11 +176,11 @@ BEGIN_C_DECLS
 
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Specific (forced) writer output times */
 /*---------------------------------------*/
@@ -399,8 +399,6 @@ cs_f_post_write_var(int               mesh_id,
                     const cs_real_t  *cel_vals,
                     const cs_real_t  *i_face_vals,
                     const cs_real_t  *b_face_vals);
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Fortran function prototypes for subroutines from field.f90.
@@ -2728,8 +2726,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*----------------------------------------------------------------------------
  * Update "active" or "inactive" flag of writers based on the time step.
  *
@@ -2794,7 +2790,7 @@ cs_f_post_write_var(int               mesh_id,
                     ts);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

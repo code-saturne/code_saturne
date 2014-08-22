@@ -63,6 +63,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Static global variables
  *===========================================================================*/
@@ -2026,6 +2028,8 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
 
 }
 #endif /* defined(HAVE_MPI) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

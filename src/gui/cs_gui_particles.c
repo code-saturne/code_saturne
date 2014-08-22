@@ -59,6 +59,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -116,6 +118,8 @@ static int      _max_boundary_vars = 0;
 static int      _last_boundary_var = 0;
 static char  ** _array_boundary_varname = NULL;
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -123,6 +127,8 @@ static char  ** _array_boundary_varname = NULL;
 /* Pointer on the main boundaries structure */
 
 extern cs_boundary_t *boundaries;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function definitions
@@ -522,6 +528,8 @@ _copy_boundary_varname(const char *varname, int ipp)
 
   strcpy(_array_boundary_varname[ipp-1], varname);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions

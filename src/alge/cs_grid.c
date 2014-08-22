@@ -84,6 +84,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -3334,6 +3336,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   BFT_FREE(w1);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public function definitions for Fortran API

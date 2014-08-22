@@ -54,6 +54,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro and Type definitions
  *============================================================================*/
@@ -1934,6 +1936,8 @@ _dump_node(const fvm_box_tree_t  *bt,
       _dump_node(bt, c_id[i]);
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

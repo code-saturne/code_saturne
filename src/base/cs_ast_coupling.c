@@ -74,6 +74,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -103,7 +105,6 @@ struct _cs_ast_coupling_t {
 
 cs_ast_coupling_t  *cs_glob_ast_coupling = NULL;
 
-
 static int  comp_id = 0;
 
 static double  cur_time = 0.;
@@ -112,9 +113,14 @@ static double  max_time = 0.;
 
 static cs_calcium_timedep_t  time_dep = CALCIUM_iteration;
 
-
 /*============================================================================
  * Private function definitions
+ *============================================================================*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------

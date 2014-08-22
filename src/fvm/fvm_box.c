@@ -55,6 +55,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *===========================================================================*/
@@ -177,6 +179,8 @@ _get_distrib_statistics(const fvm_box_distrib_t  *distrib,
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

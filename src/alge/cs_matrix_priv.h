@@ -361,7 +361,7 @@ struct _cs_matrix_variant_t {
 
 };
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Semi-private function prototypes

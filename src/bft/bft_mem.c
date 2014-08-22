@@ -62,23 +62,8 @@
 BEGIN_C_DECLS
 
 /*-------------------------------------------------------------------------------
- * Local type definitions
+ * Additional doxygen documentation
  *-----------------------------------------------------------------------------*/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-/*
- * Structure defining an allocated memory block (for memory tracing)
- */
-
-struct _bft_mem_block_t {
-
-  void    *p_bloc;  /* Allocated memory block start adress */
-  size_t   size;    /* Allocated memory block length */
-
-};
-
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 /*-------------------------------------------------------------------------------
  * Local macro documentation
@@ -129,6 +114,8 @@ struct _bft_mem_block_t {
  * \param [in]  _type  element type.
  */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*-------------------------------------------------------------------------------
  * Local macro definitions
  *-----------------------------------------------------------------------------*/
@@ -138,6 +125,21 @@ struct _bft_mem_block_t {
    but '/' should work for all on modern systems) */
 
 #define DIR_SEPARATOR '/'
+
+/*-------------------------------------------------------------------------------
+ * Local type definitions
+ *-----------------------------------------------------------------------------*/
+
+/*
+ * Structure defining an allocated memory block (for memory tracing)
+ */
+
+struct _bft_mem_block_t {
+
+  void    *p_bloc;  /* Allocated memory block start adress */
+  size_t   size;    /* Allocated memory block length */
+
+};
 
 /*-----------------------------------------------------------------------------
  * Local function prototypes
@@ -544,6 +546,8 @@ _bft_mem_block_free(const void *p_free)
 
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

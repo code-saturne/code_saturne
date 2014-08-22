@@ -61,6 +61,8 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -182,6 +184,8 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
   this_section->entity_dim += 1;
   this_section->stride *=2;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

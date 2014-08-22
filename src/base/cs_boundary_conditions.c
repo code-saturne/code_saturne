@@ -68,6 +68,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -238,6 +240,8 @@ _post_valid_faces_select(void         *input,
   *n_faces = _n_faces;
   *face_ids = _face_ids;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions

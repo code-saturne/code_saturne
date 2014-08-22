@@ -62,6 +62,12 @@ extern "C" {
 
 #include "mei_math_util.h"
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*-----------------------------------------------------------------------------
+ * Local macro definitions
+ *-----------------------------------------------------------------------------*/
+
 #undef SIZE_MAX
 #define SIZE_MAX 1000
 
@@ -439,6 +445,8 @@ _user_data_interp(const mei_user_data_t *d,
 
   return y;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

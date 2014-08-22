@@ -74,6 +74,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -425,6 +427,8 @@ _init_all_mpi_syr(void)
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public function definitions for Fortran API

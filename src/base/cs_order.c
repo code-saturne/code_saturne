@@ -50,6 +50,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
@@ -672,6 +674,8 @@ _order_lnum_s(const cs_lnum_t   number[],
     _order_lnum_descend_tree_s(number, stride, 0, i, order);
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

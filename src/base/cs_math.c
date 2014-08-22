@@ -64,12 +64,11 @@ BEGIN_C_DECLS
            Mathematical base functions.
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  *  Global variables
@@ -78,6 +77,8 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

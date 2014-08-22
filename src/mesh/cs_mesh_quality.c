@@ -60,6 +60,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -736,6 +738,8 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
                          CS_REAL_TYPE,
                          vtx_val);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

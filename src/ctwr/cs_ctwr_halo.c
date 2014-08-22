@@ -61,6 +61,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure and type definitions
  *============================================================================*/
@@ -1308,6 +1310,8 @@ _create_faces_faces_connect(cs_ctwr_zone_t  *ct,
 
   BFT_FREE(counter);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

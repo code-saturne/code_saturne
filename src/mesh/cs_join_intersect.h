@@ -98,7 +98,7 @@ typedef struct {
 
 } cs_join_inter_edges_t;
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

@@ -56,6 +56,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

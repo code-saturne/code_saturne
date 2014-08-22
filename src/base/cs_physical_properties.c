@@ -77,6 +77,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -194,6 +196,8 @@ _get_eos_dl_function_pointer(const char  *name)
 }
 
 #endif
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

@@ -82,7 +82,7 @@ typedef struct {
                                  size = 2 * n_equiv */
 } cs_join_eset_t;
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

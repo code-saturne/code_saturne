@@ -73,6 +73,8 @@ BEGIN_C_DECLS
         Checkpoint/restart handling for default application.
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -86,8 +88,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -96,8 +96,6 @@ const char *_coeff_name[] = {"bc_coeffs::a", "bc_coeffs::b",
                              "bc_coeffs::af", "bc_coeffs::bf",
                              "bc_coeffs::ad", "bc_coeffs::bd",
                              "bc_coeffs::ac", "bc_coeffs::bc"};
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Private function definitions
@@ -1347,9 +1345,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

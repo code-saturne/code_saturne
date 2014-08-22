@@ -78,6 +78,8 @@ BEGIN_C_DECLS
         tensor in the case of periodicity of rotation.
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
@@ -213,6 +215,8 @@ _save_halo_perio_rij(int           comp_id,
   } /* End of loop on transformations */
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

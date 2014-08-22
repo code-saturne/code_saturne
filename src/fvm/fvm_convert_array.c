@@ -56,6 +56,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
@@ -1947,6 +1949,8 @@ _convert_array_uint64_to_uint64(const cs_lnum_t               src_idx_start,
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

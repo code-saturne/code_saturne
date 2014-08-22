@@ -72,6 +72,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -817,6 +819,8 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

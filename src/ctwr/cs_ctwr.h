@@ -166,7 +166,7 @@ struct _cs_ctwr_zone_t {
 
 };
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Static global variables

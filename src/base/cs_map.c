@@ -55,6 +55,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -167,6 +169,8 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
 
   m->size += 1;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

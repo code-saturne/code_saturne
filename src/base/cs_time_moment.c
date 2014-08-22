@@ -105,11 +105,11 @@ BEGIN_C_DECLS
 
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Moment time accumulator definition */
 /*------------------------------------*/
@@ -233,10 +233,18 @@ static double _t_prev_iter = 0.;
 
 static const cs_real_t *_p_dt = NULL; /* Mapped cell time step */
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
 /* Names associated with moment types */
 
 const char  *cs_time_moment_type_name[] = {N_("mean"),
                                            N_("variance")};
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -255,8 +263,6 @@ cs_f_time_moment_define_by_field_ids(const char                *name,
 
 int
 cs_f_time_moment_field_id(int  m_num);
-
- /*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Private function definitions
@@ -1701,8 +1707,6 @@ _restart_read_legacy(cs_restart_t  *restart)
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*----------------------------------------------------------------------------
  * Define a moment of a product of existing fields components.
  *
@@ -1772,7 +1776,7 @@ cs_f_time_moment_field_id(int m_num)
   return f->id;
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

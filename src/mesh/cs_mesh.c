@@ -71,6 +71,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -1849,6 +1851,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   bft_printf_flush();
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public function definitions for Fortran API

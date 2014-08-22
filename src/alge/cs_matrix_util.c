@@ -74,6 +74,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -1615,6 +1617,8 @@ _write_vector_l(cs_lnum_t         n_elts,
   else
     cs_file_write_global(f, vals, sizeof(double), n_elts);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

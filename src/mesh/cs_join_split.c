@@ -62,6 +62,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Macro definitions
  *===========================================================================*/
@@ -1813,6 +1815,8 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
   *p_o2n_hist = o2n_hist;
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

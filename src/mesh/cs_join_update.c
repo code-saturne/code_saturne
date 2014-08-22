@@ -64,6 +64,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Static global variables
  *===========================================================================*/
@@ -4335,6 +4337,8 @@ _delete_edges(cs_lnum_t        s,
 
   return connect_size;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

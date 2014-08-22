@@ -59,6 +59,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -3438,6 +3440,8 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

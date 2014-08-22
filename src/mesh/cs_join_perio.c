@@ -60,6 +60,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Structure Definitions
  *===========================================================================*/
@@ -312,6 +314,8 @@ void CS_PROCF(tstjpe, tstjpe)
       *iperot = 1;
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

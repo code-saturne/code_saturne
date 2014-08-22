@@ -66,6 +66,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -81,7 +83,7 @@ BEGIN_C_DECLS
 static FILE  *_bft_printf_file = NULL;
 
 /*============================================================================
- * Priototypes for Fortran subroutines
+ * Prototypes for Fortran subroutines
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -210,6 +212,8 @@ _close_c_log_file(void)
     _bft_printf_file = NULL;
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

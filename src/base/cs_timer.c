@@ -80,6 +80,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*-----------------------------------------------------------------------------
  * Local type definitions
  *-----------------------------------------------------------------------------*/
@@ -463,6 +465,8 @@ _cs_timer_initialize(void)
 
   _cs_timer_initialized = true;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

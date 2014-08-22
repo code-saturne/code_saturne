@@ -72,6 +72,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local types and structures
  *============================================================================*/
@@ -1807,6 +1809,8 @@ _dump_index(const cs_io_sec_index_t  *idx)
 
   bft_printf("\n");
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

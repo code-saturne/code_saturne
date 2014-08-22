@@ -70,6 +70,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
@@ -1883,6 +1885,8 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 
   return this_io_num;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 /*-----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
- * Local type definitions
+ * Additional Doxygen documentation
  *-----------------------------------------------------------------------------*/
 
 /* Associated typedef documentation (for bft_printf.h) */
@@ -71,6 +71,12 @@ BEGIN_C_DECLS
  *
  * \brief Function pointer for fflush(stdout) type functions.
  */
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*-----------------------------------------------------------------------------
+ * Local type definitions
+ *-----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
  * Local function prototypes
@@ -110,6 +116,8 @@ _bft_printf_flush_proxy_default(void)
 {
   return fflush(stdout);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -66,6 +66,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -910,6 +912,8 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
   BFT_FREE(cell_buffer);
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

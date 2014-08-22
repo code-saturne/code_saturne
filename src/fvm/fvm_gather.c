@@ -54,6 +54,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro and Type definitions
  *============================================================================*/
@@ -262,6 +264,8 @@ fvm_gather_slice_dump(fvm_gather_slice_t  * this_slice)
 #endif /* 0 && defined(DEBUG) && !defined(NDEBUG) */
 
 #endif /* defined(HAVE_MPI) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

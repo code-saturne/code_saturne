@@ -80,6 +80,12 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Local structure definitions
+ *============================================================================*/
+
 /* Turbomachinery structure */
 
 typedef struct {
@@ -697,8 +703,6 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*----------------------------------------------------------------------------
  * Assist map turbomachinery to fortran module
  *
@@ -738,7 +742,7 @@ cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
   }
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

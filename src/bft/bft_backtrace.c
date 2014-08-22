@@ -62,10 +62,25 @@
 BEGIN_C_DECLS
 
 /*-----------------------------------------------------------------------------
+ * Additional doxygen documentation
+ *----------------------------------------------------------------------------*/
+
+/* Associated typedef documentation (for bft_backtrace.h) */
+
+/*!
+ * \typedef bft_backtrace_print_t
+ *
+ * \brief Function pointer to backtrace print function.
+ *
+ * \param [in] start_depth    depth of backtrace at which to start printing
+ *                            (0 for all, including backtrace print function)
+ */
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*-----------------------------------------------------------------------------
  * Local type definitions
  *-----------------------------------------------------------------------------*/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 /*
  * BFT backtrace descriptor
@@ -81,19 +96,6 @@ struct _bft_backtrace_t {
 
 };
 
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
-
-/* Associated typedef documentation (for bft_backtrace.h) */
-
-/*!
- * \typedef bft_backtrace_print_t
- *
- * \brief Function pointer to backtrace print function.
- *
- * \param [in] start_depth    depth of backtrace at which to start printing
- *                            (0 for all, including backtrace print function)
- */
-
 /*-----------------------------------------------------------------------------
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
@@ -103,6 +105,8 @@ static bft_backtrace_print_t  *_bft_backtrace_print = NULL;
 /*-----------------------------------------------------------------------------
  * Local function definitions
  *-----------------------------------------------------------------------------*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

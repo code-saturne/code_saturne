@@ -60,6 +60,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -492,6 +494,8 @@ _get_dl_function_pointer(void        *handle,
 }
 
 #endif /* defined(HAVE_DLOPEN)*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

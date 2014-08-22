@@ -63,6 +63,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -311,6 +313,8 @@ _control_postprocess(const cs_time_step_t   *ts,
     bft_printf(_("   ignored: \"%s\"\n"), cur_line);
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

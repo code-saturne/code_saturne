@@ -71,6 +71,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -1775,6 +1777,8 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
   return cvg;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public function definitions for Fortran API

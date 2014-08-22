@@ -71,6 +71,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure declaration
  *============================================================================*/
@@ -82,6 +84,8 @@ static cs_lagr_clogging_param_t cs_lagr_clogging_param;
  *============================================================================*/
 
 static const double _pi = 3.14159265358979323846;
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function for Fortran API

@@ -83,6 +83,8 @@ BEGIN_C_DECLS
         Handle successive preprocessing operations.
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -90,8 +92,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Static global variables
@@ -151,8 +151,6 @@ extern void cs_f_majgeo(const cs_int_t     *ncel,
                         const cs_real_t     diipb[],
                         const cs_real_t     dofij[]);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -161,10 +159,7 @@ extern void cs_f_majgeo(const cs_int_t     *ncel,
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

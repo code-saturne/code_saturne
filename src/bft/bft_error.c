@@ -52,7 +52,7 @@ BEGIN_C_DECLS
 /*-----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
- * Local type definitions
+ * Additional doxygen documentation
  *-----------------------------------------------------------------------------*/
 
 /* Associated typedef documentation (for bft_error.h) */
@@ -85,6 +85,12 @@ BEGIN_C_DECLS
  * In a more complex environment, \c MPI_COMM_WORLD could be replaced
  * by another communicator.
  */
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*-----------------------------------------------------------------------------
+ * Local type definitions
+ *-----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
  * Local function prototypes
@@ -159,6 +165,8 @@ _bft_error_handler_default(const char     *const file_name,
 
   exit(EXIT_FAILURE);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

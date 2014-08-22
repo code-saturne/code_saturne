@@ -143,8 +143,6 @@ static cs_log_clip_t  *_clips = NULL;
 void
 cs_f_log_iteration(void);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Fortran function prototypes for subroutines from field.f90.
  *============================================================================*/
@@ -1267,9 +1265,7 @@ _log_clips(void)
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -113,6 +113,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*-------------------------------------------------------------------------------
  * Local type definitions
  *-----------------------------------------------------------------------------*/
@@ -415,6 +417,8 @@ _bft_mem_usage_pr_size_init(void)
 #define _bft_mem_usage_pr_size_init()
 
 #endif /* defined (__linux__) && ... */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

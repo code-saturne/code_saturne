@@ -80,6 +80,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -4561,6 +4563,8 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
 
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

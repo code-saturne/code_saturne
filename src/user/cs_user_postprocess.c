@@ -62,6 +62,8 @@ BEGIN_C_DECLS
  * Local (user defined) function definitions
  *============================================================================*/
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*----------------------------------------------------------------------------
  * Example function for advanced selection of interior faces.
  *
@@ -246,6 +248,8 @@ _he_fraction_05_select(void        *input,
   *n_cells = _n_cells;
   *cell_ids = _cell_ids;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * User function definitions

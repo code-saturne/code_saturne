@@ -64,6 +64,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -1057,6 +1059,8 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
 
   fvm_mesh = fvm_nodal_destroy(fvm_mesh);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

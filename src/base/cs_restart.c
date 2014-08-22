@@ -71,6 +71,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -995,6 +997,8 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions

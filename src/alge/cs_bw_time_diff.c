@@ -70,6 +70,8 @@ BEGIN_C_DECLS
 
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -77,9 +79,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -94,6 +93,8 @@ cs_backward_differentiation_in_time(const int     field_id,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

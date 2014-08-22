@@ -67,6 +67,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -1201,6 +1203,8 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
   cs_glob_inflow_inlet_array[cs_glob_inflow_n_inlets] = inlet;
   cs_glob_inflow_n_inlets++;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public function definitions for Fortran API

@@ -74,6 +74,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -2466,6 +2468,8 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
   } /* End of loop on bases */
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

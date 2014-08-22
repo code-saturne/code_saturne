@@ -63,6 +63,8 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -388,6 +390,8 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
   BFT_FREE(new_to_old);
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

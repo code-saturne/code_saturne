@@ -63,6 +63,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -442,6 +444,8 @@ _test_halo_compatibility(const cs_halo_t  *halo)
                 "with the main mesh transformations (numbering %d).\n"),
               halo->n_transforms, (int)(cs_glob_mesh->n_transforms));
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

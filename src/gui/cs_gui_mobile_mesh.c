@@ -66,6 +66,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -160,41 +162,6 @@ _get_ale_status(int  *const keyword)
 
   BFT_FREE(path);
 }
-
-/*-----------------------------------------------------------------------------
- * Return the viscosity's type of ALE method
- *
- * parameters:
- *   type --> type of viscosity's type
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_get_ale_viscosity_type(int  * type)
-{
-  char *path = NULL;
-  char *buff = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "thermophysical_models", "ale_method", "mesh_viscosity");
-  cs_xpath_add_attribute(&path, "type");
-
-  buff = cs_gui_get_attribute_value(path);
-
-  if (cs_gui_strcmp(buff, "orthotrop"))
-    *type = 1;
-  else if (cs_gui_strcmp(buff, "isotrop"))
-    *type = 0;
-  else
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  BFT_FREE(path);
-  BFT_FREE(buff);
-}
-
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*-----------------------------------------------------------------------------
  * Initialize mei tree and check for symbols existence
@@ -786,6 +753,8 @@ get_uistr2_data(const char    *label,
                                dtref, ttcabs, ntcabs);
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -814,7 +783,9 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
 {
   int          iel            = 0;
   const char*  symbols[3]     = { "x", "y", "z" };
-  const char*  variables[3]   = { "mesh_viscosity_1", "mesh_viscosity_2", "mesh_viscosity_3" };
+  const char*  variables[3]   = { "mesh_viscosity_1",
+                                  "mesh_viscosity_2",
+                                  "mesh_viscosity_3" };
   unsigned int variable_nbr   = 1;
 
   /* Get formula */
@@ -1156,6 +1127,41 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
       ++istru;
     }
   }
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Return the viscosity's type of ALE method
+ *
+ * parameters:
+ *   type --> type of viscosity's type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_get_ale_viscosity_type(int  * type)
+{
+  char *path = NULL;
+  char *buff = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models", "ale_method", "mesh_viscosity");
+  cs_xpath_add_attribute(&path, "type");
+
+  buff = cs_gui_get_attribute_value(path);
+
+  if (cs_gui_strcmp(buff, "orthotrop"))
+    *type = 1;
+  else if (cs_gui_strcmp(buff, "isotrop"))
+    *type = 0;
+  else
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  BFT_FREE(buff);
 }
 
 /*----------------------------------------------------------------------------*/

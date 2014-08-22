@@ -72,6 +72,8 @@ BEGIN_C_DECLS
         Field based algebraic operators.
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -79,8 +81,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Static global variables
@@ -113,7 +113,7 @@ void cs_f_field_gradient_vector(int                     f_id,
                                 int                     inc,
                                 cs_real_33_t  *restrict grad);
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Private function definitions
@@ -256,7 +256,7 @@ void cs_f_field_gradient_vector(int                     f_id,
                            grad);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

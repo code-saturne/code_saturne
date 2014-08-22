@@ -58,6 +58,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -306,6 +308,8 @@ _zero_rotation_values(const cs_halo_t  *halo,
 
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

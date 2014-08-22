@@ -155,8 +155,6 @@ typedef struct {
 
 } cs_user_property_def_t;
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -243,8 +241,6 @@ cs_f_piso_get_pointers(int     **nterup,
                        double  **xnrmu,
                        double  **xnrmu0);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -311,8 +307,6 @@ _log_func_severe_acc_species_prop(const void *t)
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global space disc structure.
  *
@@ -363,7 +357,7 @@ cs_f_piso_get_pointers(int     **nterup,
   *xnrmu0 = &(_piso.xnrmu0);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

@@ -64,6 +64,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -100,6 +102,8 @@ _get_syrthes_coupling(const char*  keyword,
   BFT_FREE(path);
   return value;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions

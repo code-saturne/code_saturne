@@ -54,6 +54,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -1654,6 +1656,8 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
     wsum[j] += c[dim+j];
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

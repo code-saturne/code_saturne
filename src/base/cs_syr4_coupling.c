@@ -81,6 +81,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -1114,6 +1116,8 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
     bft_printf(_(" Correction coefficient used to force conservativity during"
                  " coupling with SYRTHES: %5.3e\n"), coef);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

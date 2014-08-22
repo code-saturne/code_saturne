@@ -53,6 +53,8 @@ extern "C" {
 
 #include "mei_hash_table.h"
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private functions definitions
  *============================================================================*/
@@ -108,6 +110,8 @@ _new_item(const char *const key)
 
   return new;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public functions definitions
@@ -457,7 +461,7 @@ mei_hash_table_dump(hash_table_t *const htable)
  * Test
  *============================================================================*/
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 #undef _TEST_
 #ifdef _TEST_
@@ -483,8 +487,7 @@ main_test(int argc, char *argv[])
 
 #endif
 
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
-
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 

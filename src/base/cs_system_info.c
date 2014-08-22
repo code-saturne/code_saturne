@@ -79,6 +79,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local type definitions
  *============================================================================*/
@@ -149,6 +151,8 @@ _sys_info_cpu(char      *cpu_str,
 
 #endif /* HAVE_SYS_UTSNAME_H */
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

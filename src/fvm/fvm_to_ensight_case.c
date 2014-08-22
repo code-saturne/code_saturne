@@ -58,6 +58,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -538,6 +540,8 @@ _update_geom_file_name(fvm_to_ensight_case_t  *const this_case)
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

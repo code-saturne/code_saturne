@@ -136,8 +136,6 @@ cs_f_wall_functions_get_pointers(int     **ideuch,
 void
 cs_f_wall_reference_values(double  **ypluli);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -535,8 +533,6 @@ _no_wallfunction(cs_real_t   l_visc,
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*----------------------------------------------------------------------------
  * Get pointers to members of the wall functions structure.
  *
@@ -575,7 +571,7 @@ cs_f_wall_reference_values(double  **ypluli)
   *ypluli = &(_wall_functions.ypluli);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

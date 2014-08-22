@@ -70,11 +70,15 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
 static const double _pi = 3.14159265358979323846;
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function for Fortran API

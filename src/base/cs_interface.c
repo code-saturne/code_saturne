@@ -59,6 +59,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
@@ -3569,6 +3571,8 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
 
   BFT_FREE(send_buf);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

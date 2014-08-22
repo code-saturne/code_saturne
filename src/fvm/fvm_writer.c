@@ -79,6 +79,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -292,6 +294,8 @@ static fvm_writer_format_t _fvm_writer_format_list[6] = {
 
 };
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -303,6 +307,8 @@ const char  *fvm_writer_time_dep_name[] = {N_("fixed mesh"),
                                            N_("transient connectivity")};
 
 const char _empty_string[] = "";
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function definitions
@@ -687,6 +693,8 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
   if (n_g_elements_section != _n_g_elements_section)
     BFT_FREE(_n_g_elements_section);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

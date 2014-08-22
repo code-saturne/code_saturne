@@ -87,6 +87,8 @@ static int  fvm_nodal_n_edges_element[] = {1,   /* Edge */
                                            12,  /* Hexahedron */
                                            0};  /* Simple polyhedron */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -994,6 +996,8 @@ fvm_nodal_cell_face_connect(fvm_element_t   element_type,
       face_vertices[i][j] -= 1;
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -60,6 +60,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -90,8 +92,6 @@ BEGIN_C_DECLS
  * \param [out]  elt_list     list of selected elements.
  */
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
 struct _cs_mesh_location_t {
 
   char                        name[32];     /* Name */
@@ -113,8 +113,6 @@ struct _cs_mesh_location_t {
                                              trivial (i.e. a subset) */
 
 };
-
-#endif
 
 /*============================================================================
  * Static global variables
@@ -229,6 +227,8 @@ _mesh_location_define(const char               *name,
 
   return id;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

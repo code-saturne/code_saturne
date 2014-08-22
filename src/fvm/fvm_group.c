@@ -53,6 +53,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro and Type definitions
  *============================================================================*/
@@ -305,6 +307,8 @@ _group_class_dump(const fvm_group_class_t  *this_group_class,
       bft_printf("     \" %s\"\n", this_group_class->group_name[i]);
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

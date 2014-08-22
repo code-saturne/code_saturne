@@ -94,6 +94,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -728,6 +730,8 @@ _sub_matrix_vector_test(double               t_measure,
   _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

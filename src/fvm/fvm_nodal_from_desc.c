@@ -60,6 +60,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Enumeration definitions
  *============================================================================*/
@@ -1236,6 +1238,8 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
   this_nodal->n_sections += section_count;
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

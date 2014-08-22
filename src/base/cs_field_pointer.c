@@ -95,16 +95,15 @@ BEGIN_C_DECLS
  * \param [in] i field enumerator value.
  */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local macro definitions
  *============================================================================*/
 
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Static global variables
@@ -120,6 +119,8 @@ static union cs_field_pointer_val_t  *_field_pointer = NULL;
 
 static bool  *_is_sublist = NULL;
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -128,7 +129,7 @@ static bool  *_is_sublist = NULL;
 
 union cs_field_pointer_val_t  *cs_glob_field_pointers = NULL;
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function definitions
@@ -154,6 +155,8 @@ _init_pointers(void)
 
   cs_glob_field_pointers = _field_pointer;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

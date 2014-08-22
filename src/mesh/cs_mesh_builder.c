@@ -62,6 +62,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -81,6 +83,8 @@ BEGIN_C_DECLS
 /* Pointer on the temporary mesh used for building main mesh */
 
 cs_mesh_builder_t  *cs_glob_mesh_builder = NULL;
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

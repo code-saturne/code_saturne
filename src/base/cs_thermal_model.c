@@ -121,7 +121,7 @@ cs_f_thermal_model_get_pointers(int     **itherm,
                                 int     **itpscl,
                                 int     **iscalt);
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Private function definitions
@@ -155,7 +155,7 @@ cs_f_thermal_model_get_pointers(int     **itherm,
   *iscalt = &(_thermal_model.iscalt);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

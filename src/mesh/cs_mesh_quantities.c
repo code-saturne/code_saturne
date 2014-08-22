@@ -61,6 +61,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local type definitions
  *============================================================================*/
@@ -1902,6 +1904,8 @@ _compute_face_sup_vectors(int                dim,
 
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

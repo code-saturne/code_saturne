@@ -58,6 +58,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Macro and type definitions
  *===========================================================================*/
@@ -258,6 +260,8 @@ _order_local_s2(const cs_lnum_t  number[],
     _order_descend_tree_s2(number, 0, i, order);
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -57,6 +57,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -685,6 +687,8 @@ _fortran_time_plot_realloc(int                     plot_num,
               _("Plot number %d is already defined."), plot_num);
   _n_files[format] += 1;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

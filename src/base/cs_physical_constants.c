@@ -250,8 +250,16 @@ static cs_fluid_properties_t  _fluid_properties = {-1, 1.17862, 1.83337e-5,
                                                    1017.24, 0., 1.013e5, 0.,
                                                    -1.};
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
 const
 cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -281,8 +289,6 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **pthera,
                                    double  **pthermax);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -290,8 +296,6 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global physical constants structure.
@@ -376,7 +380,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *pthermax = &(_fluid_properties.pthermax);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

@@ -132,6 +132,8 @@ BEGIN_C_DECLS
         Ownership flag for values
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -143,8 +145,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Field key definition values */
 
@@ -337,8 +337,6 @@ cs_f_field_get_label(int           f_id,
                      int           str_max,
                      const char  **str,
                      int          *str_len);
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Private function definitions
@@ -704,8 +702,6 @@ _check_key(const cs_field_t  *f,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Return the number of defined fields.
@@ -1321,7 +1317,7 @@ cs_f_field_get_label(int           f_id,
   }
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

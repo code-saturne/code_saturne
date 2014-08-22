@@ -73,6 +73,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -91,6 +93,8 @@ const char *xmlRootName     = NULL;   /* Name of the root node        */
 #endif
 
 double _cs_gui_mei_time = 0.;
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions

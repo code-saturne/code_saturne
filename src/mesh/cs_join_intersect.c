@@ -71,6 +71,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Macro definitions
  *===========================================================================*/
@@ -2311,6 +2313,8 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   cs_log_printf_flush(CS_LOG_PERFORMANCE);
   bft_printf_flush();
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

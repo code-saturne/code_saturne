@@ -73,6 +73,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -846,6 +848,8 @@ _cs_base_mpi_setup(const char *app_name)
 }
 
 #endif /* HAVE_MPI */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

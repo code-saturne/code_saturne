@@ -175,8 +175,6 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **iifren,
                                  int     **icalhy);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -184,8 +182,6 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global Stokes model structure.
@@ -242,7 +238,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *icalhy = &(_stokes_model.icalhy);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

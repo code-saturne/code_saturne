@@ -290,6 +290,8 @@ const char *cs_file_mpi_positionning_name[] = {N_("explicit offsets"),
                                                N_("individual file pointers")};
 #endif
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1725,6 +1727,8 @@ _cs_file_compare_names(const void  *a,
 {
   return strcmp(*((const char *const *)a), *((const char *const *)b));
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

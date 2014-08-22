@@ -177,8 +177,9 @@ BEGIN_C_DECLS
        Lexicographical ordering with highest adjacent id first
 } ;
 
-
 */
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
  * Local Macro Definitions
@@ -5459,6 +5460,8 @@ _renumber_mesh(cs_mesh_t  *mesh)
     bft_printf
       ("\n ----------------------------------------------------------\n");
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

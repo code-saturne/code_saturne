@@ -390,7 +390,7 @@ EXTRACT_PACKAGE        = NO
 # If the EXTRACT_STATIC tag is set to YES all static members of a file
 # will be included in the documentation.
 
-EXTRACT_STATIC         = NO
+EXTRACT_STATIC         = YES
 
 # If the EXTRACT_LOCAL_CLASSES tag is set to YES classes (and structs)
 # defined locally in source files will be included in the documentation.
@@ -1616,7 +1616,6 @@ INCLUDE_FILE_PATTERNS  = *.h
 PREDEFINED             = HAVE_CONFIG_H=1 \
                          CS_PROCF(x,y)=x \
                          CS_ENUMF_(e)=e \
-                         DOXYGEN_SHOULD_SKIP_THIS=1 \
                          BEGIN_C_DECLS=extern \
                          "C" \
                          { \

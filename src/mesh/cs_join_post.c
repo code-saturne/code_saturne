@@ -59,6 +59,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Macro and type definitions
  *===========================================================================*/
@@ -212,6 +214,8 @@ _post_elt_ifield(fvm_nodal_t  *mesh,
                           0.,
                           (const void **)var_ptr);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

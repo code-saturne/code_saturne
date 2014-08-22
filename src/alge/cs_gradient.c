@@ -79,11 +79,11 @@ BEGIN_C_DECLS
         Gradient reconstruction.
 */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Basic per gradient compuation options and logging */
 /*---------------------------------------------------*/
@@ -98,8 +98,6 @@ typedef struct _cs_gradient_info_t {
   cs_timer_counter_t   t_tot;              /* Total time used */
 
 } cs_gradient_info_t;
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  *  Global variables
@@ -4367,7 +4365,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
   _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
 }
 
-
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

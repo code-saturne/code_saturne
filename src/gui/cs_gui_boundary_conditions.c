@@ -71,6 +71,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -1397,173 +1399,7 @@ _init_boundaries(const int  *nfabor,
   } /*  for izone */
 }
 
-/*============================================================================
- * C API public functions
- *============================================================================*/
-
-/*-----------------------------------------------------------------------------
- * Return number of boundary regions definition
- *----------------------------------------------------------------------------*/
-
-int cs_gui_boundary_zones_number(void)
-{
-  int zones = 0;
-  char *path = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "boundary_conditions");
-  cs_xpath_add_element(&path, "boundary");
-
-  zones = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return zones;
-}
-
-/*-----------------------------------------------------------------------------
- * Return the nature of boundary condition for the given zone
- *----------------------------------------------------------------------------*/
-
-char *cs_gui_boundary_zone_nature(const int ith_zone)
-{
-  char *path = NULL;
-  char *nature = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "boundary_conditions");
-  cs_xpath_add_element_num(&path, "boundary", ith_zone);
-  cs_xpath_add_attribute(&path, "nature");
-
-  nature = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return nature;
-}
-
-
-/*-----------------------------------------------------------------------------
- * Return the label of boundary condition for the given zone
- *----------------------------------------------------------------------------*/
-
-char *cs_gui_boundary_zone_label(const int ith_zone)
-{
-  char *path = NULL;
-  char *label = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "boundary_conditions");
-  cs_xpath_add_element_num(&path, "boundary", ith_zone);
-  cs_xpath_add_attribute(&path, "label");
-
-  label = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label;
-}
-
-
-/*-----------------------------------------------------------------------------
- * Return the zone number of boundary condition for the given zone
- *----------------------------------------------------------------------------*/
-
-int cs_gui_boundary_zone_number(const int ith_zone)
-{
-  char *path = NULL;
-  char *czone = NULL;
-  int zone;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "boundary_conditions");
-  cs_xpath_add_element_num(&path, "boundary", ith_zone);
-  cs_xpath_add_attribute(&path, "name");
-
-  czone = cs_gui_get_attribute_value(path);
-  zone = atoi(czone);
-
-  BFT_FREE(path);
-  BFT_FREE(czone);
-
-  return zone;
-}
-
-/*-----------------------------------------------------------------------------
- * Return the description of a boundary zone
- *
- * parameters:
- *   label                   <--  label of boundary zone
- *----------------------------------------------------------------------------*/
-
-char *cs_gui_boundary_zone_localization(const char  *label)
-{
-  char *path = NULL;
-  char *localization = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions",  "boundary");
-  cs_xpath_add_test_attribute(&path, "label", label);
-  cs_xpath_add_function_text(&path);
-
-  localization = cs_gui_get_text_value(path);
-
-  BFT_FREE(path);
-
-  return localization;
-}
-
-/*-----------------------------------------------------------------------------
- * Helper to get the face list for the izone
- *
- * parameters:
- *   izone   <--  zone index
- *   label   <--  boundary label
- *   nfabor  <--  number of boundary faces
- *   nozppm  <--  max number of boundary zone for preefined physics
- *   faces   -->  number of faces
- *----------------------------------------------------------------------------*/
-
-int*
-cs_gui_get_faces_list(int          izone,
-                      const char  *label,
-                      int          nfabor,
-                      int          nozppm,
-                      int         *faces )
-{
-  int  c_id        = 0;
-  int  *faces_list = NULL;
-  char *description = NULL;
-
-  int  boundary_zones = cs_gui_boundary_zone_number(izone + 1);
-
-  if (nozppm && boundary_zones >  nozppm)
-    bft_error(__FILE__, __LINE__, 0,
-              _("zone's label number %i is greater than %i,"
-                " the maximum allowed \n"), boundary_zones , nozppm);
-
-  description = cs_gui_boundary_zone_localization(label);
-
-  /* list of faces building */
-  BFT_MALLOC(faces_list, nfabor, int);
-
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                               description,
-                               faces,
-                               faces_list);
-
-  if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"  "\"%s\"\n"
-                 " does not correspond to any boundary face.\n"),
-                  missing, description);
-  }
-  BFT_FREE(description);
-  return faces_list;
-}
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions
@@ -2895,6 +2731,173 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Return number of boundary regions definition
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_boundary_zones_number(void)
+{
+  int zones = 0;
+  char *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element(&path, "boundary");
+
+  zones = cs_gui_get_nb_element(path);
+
+  BFT_FREE(path);
+
+  return zones;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the nature of boundary condition for the given zone
+ *----------------------------------------------------------------------------*/
+
+char *
+cs_gui_boundary_zone_nature(const int ith_zone)
+{
+  char *path = NULL;
+  char *nature = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element_num(&path, "boundary", ith_zone);
+  cs_xpath_add_attribute(&path, "nature");
+
+  nature = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return nature;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the label of boundary condition for the given zone
+ *----------------------------------------------------------------------------*/
+
+char *cs_gui_boundary_zone_label(const int ith_zone)
+{
+  char *path = NULL;
+  char *label = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element_num(&path, "boundary", ith_zone);
+  cs_xpath_add_attribute(&path, "label");
+
+  label = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return label;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * Return the zone number of boundary condition for the given zone
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_boundary_zone_number(const int ith_zone)
+{
+  char *path = NULL;
+  char *czone = NULL;
+  int zone;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "boundary_conditions");
+  cs_xpath_add_element_num(&path, "boundary", ith_zone);
+  cs_xpath_add_attribute(&path, "name");
+
+  czone = cs_gui_get_attribute_value(path);
+  zone = atoi(czone);
+
+  BFT_FREE(path);
+  BFT_FREE(czone);
+
+  return zone;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the description of a boundary zone
+ *
+ * parameters:
+ *   label                   <--  label of boundary zone
+ *----------------------------------------------------------------------------*/
+
+char *
+cs_gui_boundary_zone_localization(const char  *label)
+{
+  char *path = NULL;
+  char *localization = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions",  "boundary");
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_function_text(&path);
+
+  localization = cs_gui_get_text_value(path);
+
+  BFT_FREE(path);
+
+  return localization;
+}
+
+/*-----------------------------------------------------------------------------
+ * Helper to get the face list for the izone
+ *
+ * parameters:
+ *   izone   <--  zone index
+ *   label   <--  boundary label
+ *   nfabor  <--  number of boundary faces
+ *   nozppm  <--  max number of boundary zone for preefined physics
+ *   faces   -->  number of faces
+ *----------------------------------------------------------------------------*/
+
+int*
+cs_gui_get_faces_list(int          izone,
+                      const char  *label,
+                      int          nfabor,
+                      int          nozppm,
+                      int         *faces )
+{
+  int  c_id        = 0;
+  int  *faces_list = NULL;
+  char *description = NULL;
+
+  int  boundary_zones = cs_gui_boundary_zone_number(izone + 1);
+
+  if (nozppm && boundary_zones >  nozppm)
+    bft_error(__FILE__, __LINE__, 0,
+              _("zone's label number %i is greater than %i,"
+                " the maximum allowed \n"), boundary_zones , nozppm);
+
+  description = cs_gui_boundary_zone_localization(label);
+
+  /* list of faces building */
+  BFT_MALLOC(faces_list, nfabor, int);
+
+  c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                               description,
+                               faces,
+                               faces_list);
+
+  if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+    const char *missing
+      = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                 "criteria:\n"  "\"%s\"\n"
+                 " does not correspond to any boundary face.\n"),
+                  missing, description);
+  }
+  BFT_FREE(description);
+  return faces_list;
+}
 
 /*----------------------------------------------------------------------------
  * Free boundary conditions structures

@@ -66,9 +66,13 @@ const char  *cs_numbering_type_name[] = {N_("default"),
                                          N_("vectorization"),
                                          N_("threads")};
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

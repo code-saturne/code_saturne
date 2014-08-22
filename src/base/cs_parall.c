@@ -56,9 +56,67 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
+  \file cs_parall.h
+        Functions and dealing with parallellism.
+*/
+
+/*! \fn cs_parall_counter(cpt, n)
+ *
+ * \brief Sum values of a counter on all default communicator processes.
+ *
+ * \param[in, out]  cpt local counter in, global counter out (size: n)
+ * \param[in]       n   number of values
+ */
+
+/*! \fn cs_parall_sum(n, datatype, val)
+ *
+ * \brief Sum values of a given datatype on all default communicator processes.
+ *
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in, out]  val       local sum in, global sum out (size: n)
+ */
+
+/*! \fn cs_parall_max(n, datatype, val)
+ *
+ * \brief Maximum values of a given datatype on all
+ *        default communicator processes.
+ *
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in, out]  val       local maximum in, global maximum out (size: n)
+ */
+
+/*! \fn cs_parall_min(n, datatype, val)
+ *
+ * \brief Minimum values of a given datatype on all
+ *        default communicator processes.
+ *
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in, out]  val       local minimum in, global minimum out (size: n)
+ */
+
+/*! \fn cs_parall_bcast(root_rank, n, datatype, val)
+ *
+ * \brief Broadcast values of a given datatype to all
+ *        default communicator processes.
+ *
+ * \param[in]       root_rank  rank from which to broadcast
+ * \param[in]       n          number of values
+ * \param[in]       datatype   matching Code_Saturne datatype
+ * \param[in, out]  val        values to broadcast; input on root_rank,
+ *                             output on others (size: n)
+ */
+
+/*----------------------------------------------------------------------------*/
+
+/*!
   \file cs_parall.c
         Functions dealing with parallellism.
 */
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Local structure and type definitions
@@ -73,7 +131,7 @@ typedef struct
 } _mpi_double_int_t;
 
 /*============================================================================
- * Global variables
+ * Static global variables
  *============================================================================*/
 
 #if defined(HAVE_MPI)
@@ -198,8 +256,6 @@ _cs_parall_allreduce(int             n,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Compute the global maximum of an integer in case of parallelism
@@ -515,7 +571,7 @@ cs_f_parall_barrier(void)
 #endif
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public function definitions for Fortran API

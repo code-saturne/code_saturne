@@ -58,6 +58,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -2744,6 +2746,8 @@ _eval_coord_le(const fvm_selector_postfix_t  *pf,
   *i += _postfix_float_size;
   return (coords[coord_id] <= cmp_val ? true : false);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

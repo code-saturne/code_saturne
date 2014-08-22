@@ -62,6 +62,8 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -221,6 +223,8 @@ _fvm_nodal_order_indexed_connect(cs_lnum_t           connect_idx[],
   BFT_FREE(tmp_connect);
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -66,6 +66,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -2603,6 +2605,8 @@ _compare_files(_cs_io_t    *inp1,
 
   return retval;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

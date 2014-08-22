@@ -69,6 +69,7 @@ BEGIN_C_DECLS
   \file cs_turbulence_model.c
         Base turbulence model data.
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_turb_model_t
@@ -191,6 +192,7 @@ BEGIN_C_DECLS
 
         Useful if and only if \ref iturb= 10 (mixing length).
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_turb_les_model_t
@@ -258,7 +260,7 @@ static cs_turb_les_model_t  _turb_les_model = {-1, 0};
 
 const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*!
  * Karman constant. (= 0.42)
@@ -843,8 +845,6 @@ cs_f_turb_reference_values(double  **almax,
 void
 cs_f_turb_complete_constants(void);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -852,8 +852,6 @@ cs_f_turb_complete_constants(void);
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global turbulence model structure.
@@ -1006,7 +1004,7 @@ cs_f_turb_complete_constants(void)
   cs_turb_smagmx = 10.*cs_turb_csmago;
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

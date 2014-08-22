@@ -111,6 +111,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -2085,6 +2087,8 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
 
   return retval;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

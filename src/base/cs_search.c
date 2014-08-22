@@ -49,6 +49,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Macro and type definitions
  *===========================================================================*/
@@ -180,6 +182,8 @@ _binary_index_gsearch(int                 start,
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

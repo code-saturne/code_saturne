@@ -59,6 +59,30 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
+ * Additional Doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_all_to_all.c
+        All-to-all parallel data exchange.
+
+  \typedef cs_all_to_all_t
+        Opaque all-to-all distribution structure
+
+  \enum cs_all_to_all_type_t
+
+  \brief All-to-all algorithm selection
+
+  \var CS_ALL_TO_ALL_MPI_DEFAULT
+       Use MPI_Alltoall and MPI_Alltoallv sequences
+
+  \var CS_ALL_TO_ALL_CRYSTAL_ROUTER
+       Use crystal router algorithm
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*=============================================================================
  * Macro definitions
  *============================================================================*/
 
@@ -73,8 +97,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 #if defined(HAVE_MPI)
 
@@ -177,30 +199,6 @@ static size_t              _all_to_all_calls[5] = {0, 0, 0, 0, 0};
 static cs_timer_counter_t  _all_to_all_timers[5];
 
 #endif /* defined(HAVE_MPI) */
-
-/*! \endcond (end ignore by Doxygen) */
-
-/*=============================================================================
- * Additional doxygen documentation
- *============================================================================*/
-
-/*!
-  \file cs_all_to_all.c
-        All-to-all parallel data exchange.
-
-  \typedef cs_all_to_all_t
-        Opaque all-to-all distribution structure
-
-  \enum cs_all_to_all_type_t
-
-  \brief All-to-all algorithm selection
-
-  \var CS_ALL_TO_ALL_MPI_DEFAULT
-       Use MPI_Alltoall and MPI_Alltoallv sequences
-
-  \var CS_ALL_TO_ALL_CRYSTAL_ROUTER
-       Use crystal router algorithm
-*/
 
 /*============================================================================
  * Local function defintions
@@ -1212,6 +1210,8 @@ _crystal_sort_by_source_rank_strided(_crystal_router_t  *cr)
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

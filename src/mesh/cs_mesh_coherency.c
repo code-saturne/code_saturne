@@ -58,6 +58,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local structure and type definitions
  *============================================================================*/
@@ -154,6 +156,8 @@ _check_bounding_boxes(const char        *halo_type,
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

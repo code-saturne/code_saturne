@@ -172,6 +172,8 @@ BEGIN_C_DECLS
  *                                     stage after preprocessing)
  */
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -2834,6 +2836,8 @@ _select_algorithm(cs_partition_stage_t  stage)
 
   return retval;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

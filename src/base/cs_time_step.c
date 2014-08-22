@@ -127,8 +127,6 @@ cs_f_time_step_get_pointers(int     **nt_prev,
                             double  **t_cur,
                             double  **t_max);
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -136,8 +134,6 @@ cs_f_time_step_get_pointers(int     **nt_prev,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global time step structure.
@@ -170,7 +166,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
   *t_max = &(_time_step.t_max);
 }
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

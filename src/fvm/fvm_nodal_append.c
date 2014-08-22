@@ -57,6 +57,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -224,6 +226,8 @@ _map_to_section(cs_lnum_t       n_elements,
 
   return this_section;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

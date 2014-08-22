@@ -67,6 +67,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local types and structures
  *============================================================================*/
@@ -284,6 +286,8 @@ _write_additional_vars(void                  *input,
                             cell_list, i_face_list, b_face_list);
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Fortran function definitions
